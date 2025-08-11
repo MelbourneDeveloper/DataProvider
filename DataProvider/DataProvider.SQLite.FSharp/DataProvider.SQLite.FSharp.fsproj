@@ -10,18 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="SchemaExample.fs" />
-    <Compile Include="ProperFSharpExample.fs" />
+    <Compile Include="SimpleSqlite.fs" />
     <Compile Include="Program.fs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="GetCustomers.lql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="GetInvoices.lql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -29,9 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../Lql/Lql.TypeProvider.FSharp/Lql.TypeProvider.FSharp.fsproj" />
-    <ProjectReference Include="../../Lql/Lql.SQLite/Lql.SQLite.csproj" />
-    <ProjectReference Include="../../Lql/Lql/Lql.csproj" />
     <ProjectReference Include="../../Other/Results/Results.csproj" />
   </ItemGroup>
 

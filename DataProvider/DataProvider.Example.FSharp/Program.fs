@@ -105,7 +105,7 @@ let main argv =
             printfn "=== Testing LQL Queries in F# ==="
             
             // Test GetCustomers query
-            let customersLql = File.ReadAllText("GetCustomers.lql")
+            let customersLql = File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__, "GetCustomers.lql"))
             printfn "\n--- Executing GetCustomers.lql ---"
             printfn "LQL Query:\n%s\n" customersLql
             
@@ -123,7 +123,7 @@ let main argv =
                 printfn "Error executing customers query: %s" errorMsg
             
             // Test GetInvoices query with parameter
-            let invoicesLql = File.ReadAllText("GetInvoices.lql")
+            let invoicesLql = File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__, "GetInvoices.lql"))
             printfn "\n--- Executing GetInvoices.lql ---"
             printfn "LQL Query:\n%s\n" invoicesLql
             
@@ -184,11 +184,16 @@ let main argv =
                 printfn "Error: %s" errorMsg
     
     try
-        setupDatabase()
-        printfn "Database setup completed successfully."
+        // Demonstrate proper F# functional programming
+        ProperFSharpExample.demonstrateProperFSharp() |> Async.RunSynchronously
+        
+        // Demonstrate what a proper type provider should provide
+        SchemaExample.demonstrateTypeSafety()
         
         testSqlConversion()
         
+        printfn "\n=== Original Working Examples ==="
+        setupDatabase()
         testLqlQueries() |> Async.RunSynchronously
         
         printfn "\nF# LQL example completed successfully!"

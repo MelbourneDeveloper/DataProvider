@@ -1,5 +1,4 @@
 Invoice
 |> join(InvoiceLine, on = Invoice.Id = InvoiceLine.InvoiceId)
-|> filter(fn(row) => (@customerName IS NULL OR Invoice.CustomerName LIKE '%' + @customerName + '%'))
 |> select(Invoice.Id, Invoice.InvoiceNumber, Invoice.InvoiceDate, Invoice.CustomerName, Invoice.CustomerEmail, Invoice.TotalAmount, InvoiceLine.Description, InvoiceLine.Quantity, InvoiceLine.UnitPrice, InvoiceLine.Amount)
 |> order_by(Invoice.InvoiceDate)
