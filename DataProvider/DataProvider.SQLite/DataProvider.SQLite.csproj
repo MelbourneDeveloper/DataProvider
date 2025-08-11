@@ -1,11 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <IncludeBuildOutput>false</IncludeBuildOutput>
-        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+        <!-- Package Information -->
         <PackageId>DataProvider.SQLite</PackageId>
-        <PackageVersion>1.0.0</PackageVersion>
-        <Authors>DataProvider</Authors>
-        <Description>SQLite source generator for DataProvider</Description>
+        <Version>0.1.0-beta</Version>
+        <Authors>ChristianFindlay</Authors>
+        <Description>SQLite source generator for DataProvider. Provides compile-time safe database access with automatic code generation from SQL files for SQLite databases.</Description>
+        <PackageTags>source-generator;sql;sqlite;database;compile-time-safety;code-generation</PackageTags>
+        <PackageProjectUrl>https://github.com/MelbourneDeveloper/DataProvider</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/MelbourneDeveloper/DataProvider</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+        <PackageReleaseNotes>Initial beta release of DataProvider.SQLite source generator.</PackageReleaseNotes>
+        
+        <!-- Source Generator Properties -->
+        <IncludeBuildOutput>true</IncludeBuildOutput>
         <!-- Exclude from Directory.Build.props analyzer packages -->
         <!-- Temporarily disable strict rules for source generator to build -->
         <NoWarn>CA1849;CA2100;CA1308;EPC13;CA1017;CA1305;CA1307;</NoWarn>
@@ -45,4 +55,22 @@
         <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
         <ProjectReference Include="../../Other/Results/Results.csproj" />
     </ItemGroup>
+    
+    <!-- Package Content -->
+    <ItemGroup>
+        <None Include="../../DataProvider/README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+    
+    <!-- Release Configuration -->
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <Optimize>true</Optimize>
+        <DebugType>portable</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <Deterministic>true</Deterministic>
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    </PropertyGroup>
 </Project>

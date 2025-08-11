@@ -29,6 +29,17 @@
             "cwd": "${workspaceFolder}/DataProvider/DataProvider.Example",
             "console": "internalConsole",
             "stopAtEntry": false
+        },
+        {
+            "name": "Run DataProvider.Example.FSharp",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/DataProvider/DataProvider.Example.FSharp/bin/Debug/net9.0/DataProvider.Example.FSharp.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/DataProvider/DataProvider.Example.FSharp",
+            "console": "internalConsole",
+            "stopAtEntry": false
         }
     ]
 }
