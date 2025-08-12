@@ -10,8 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="SchemaExample.fs" />
-    <Compile Include="ProperFSharpExample.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

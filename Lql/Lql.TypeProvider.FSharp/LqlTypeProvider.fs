@@ -13,7 +13,7 @@ open Lql.SQLite
 module LqlExtensions =
     
     /// <summary>
-    /// Execute an LQL query against a SQLite database using exception-based error handling
+    /// Execute an LQL query against a SQLite database using proper Result handling
     /// </summary>
     /// <param name="connectionString">The SQLite connection string</param>
     /// <param name="lqlQuery">The LQL query string</param>
@@ -23,62 +23,8 @@ module LqlExtensions =
                 use connection = new SqliteConnection(connectionString)
                 do! connection.OpenAsync() |> Async.AwaitTask
                 
-                let lqlStatement = LqlStatementConverter.ToStatement(lqlQuery)
-                
-                // Handle the Result type from the library
-                if lqlStatement.GetType().Name.Contains("Success") then
-                    let statement = lqlStatement.GetType().GetProperty("Value").GetValue(lqlStatement) :?> LqlStatement
-                    let sqlResult = statement.ToSQLite()
-                    
-                    if sqlResult.GetType().Name.Contains("Success") then
-                        let sql = sqlResult.GetType().GetProperty("Value").GetValue(sqlResult) :?> string
-                        
-                        use command = new SqliteCommand(sql, connection)
-                        use reader = command.ExecuteReader()
-                        
-                        let results = ResizeArray<Map<string, obj>>()
-                        while reader.Read() do
-                            let row = Map.ofList [
-                                for i in 0 .. reader.FieldCount - 1 ->
-                                    let columnName = reader.GetName(i)
-                                    let value = if reader.IsDBNull(i) then box null else reader.GetValue(i)
-                                    columnName, value
-                            ]
-                            results.Add(row)
-                        
-                        return Ok(results |> List.ofSeq)
-                    else
-                        let errorValue = sqlResult.GetType().GetProperty("ErrorValue").GetValue(sqlResult)
-                        let message = errorValue.GetType().GetProperty("Message").GetValue(errorValue) :?> string
-                        return Error($"SQL conversion error: {message}")
-                else
-                    let errorValue = lqlStatement.GetType().GetProperty("ErrorValue").GetValue(lqlStatement)
-                    let message = errorValue.GetType().GetProperty("Message").GetValue(errorValue) :?> string
-                    return Error($"Parse error: {message}")
-                    
-            with ex ->
-                return Error($"Exception: {ex.Message}")
-        }
-    
-    /// <summary>
-    /// Execute an LQL query synchronously against a SQLite database
-    /// </summary>
-    /// <param name="connectionString">The SQLite connection string</param>
-    /// <param name="lqlQuery">The LQL query string</param>
-    let executeLqlQuerySync (connectionString: string) (lqlQuery: string) =
-        try
-            use connection = new SqliteConnection(connectionString)
-            connection.Open()
-            
-            let lqlStatement = LqlStatementConverter.ToStatement(lqlQuery)
-            
-            if lqlStatement.GetType().Name.Contains("Success") then
-                let statement = lqlStatement.GetType().GetProperty("Value").GetValue(lqlStatement) :?> LqlStatement
-                let sqlResult = statement.ToSQLite()
-                
-                if sqlResult.GetType().Name.Contains("Success") then
-                    let sql = sqlResult.GetType().GetProperty("Value").GetValue(sqlResult) :?> string
-                    
+                match LqlCompileTimeChecker.convertToSql lqlQuery with
+                | Ok sql ->
                     use command = new SqliteCommand(sql, connection)
                     use reader = command.ExecuteReader()
                     
@@ -92,18 +38,45 @@ module LqlExtensions =
                         ]
                         results.Add(row)
                     
-                    Ok(results |> List.ofSeq)
-                else
-                    let errorValue = sqlResult.GetType().GetProperty("ErrorValue").GetValue(sqlResult)
-                    let message = errorValue.GetType().GetProperty("Message").GetValue(errorValue) :?> string
-                    Error($"SQL conversion error: {message}")
-            else
-                let errorValue = lqlStatement.GetType().GetProperty("ErrorValue").GetValue(lqlStatement)
-                let message = errorValue.GetType().GetProperty("Message").GetValue(errorValue) :?> string
-                Error($"Parse error: {message}")
+                    return Ok(results |> List.ofSeq)
+                | Error errorMessage ->
+                    return Error errorMessage
+                    
+            with ex ->
+                return Error($"Database connection exception: {ex.Message}")
+        }
+    
+    /// <summary>
+    /// Execute an LQL query synchronously against a SQLite database
+    /// </summary>
+    /// <param name="connectionString">The SQLite connection string</param>
+    /// <param name="lqlQuery">The LQL query string</param>
+    let executeLqlQuerySync (connectionString: string) (lqlQuery: string) =
+        try
+            use connection = new SqliteConnection(connectionString)
+            connection.Open()
+            
+            match LqlCompileTimeChecker.convertToSql lqlQuery with
+            | Ok sql ->
+                use command = new SqliteCommand(sql, connection)
+                use reader = command.ExecuteReader()
+                
+                let results = ResizeArray<Map<string, obj>>()
+                while reader.Read() do
+                    let row = Map.ofList [
+                        for i in 0 .. reader.FieldCount - 1 ->
+                            let columnName = reader.GetName(i)
+                            let value = if reader.IsDBNull(i) then box null else reader.GetValue(i)
+                            columnName, value
+                    ]
+                    results.Add(row)
+                
+                Ok(results |> List.ofSeq)
+            | Error errorMessage ->
+                Error errorMessage
                 
         with ex ->
-            Error($"Exception: {ex.Message}")
+            Error($"Database connection exception: {ex.Message}")
 
     /// <summary>
     /// Execute an LQL file against a SQLite database
@@ -129,28 +102,7 @@ module LqlExtensions =
     /// Convert LQL query to SQL without executing
     /// </summary>
     /// <param name="lqlQuery">The LQL query string</param>
-    let lqlToSql (lqlQuery: string) =
-        try
-            let lqlStatement = LqlStatementConverter.ToStatement(lqlQuery)
-            
-            if lqlStatement.GetType().Name.Contains("Success") then
-                let statement = lqlStatement.GetType().GetProperty("Value").GetValue(lqlStatement) :?> LqlStatement
-                let sqlResult = statement.ToSQLite()
-                
-                if sqlResult.GetType().Name.Contains("Success") then
-                    let sql = sqlResult.GetType().GetProperty("Value").GetValue(sqlResult) :?> string
-                    Ok sql
-                else
-                    let errorValue = sqlResult.GetType().GetProperty("ErrorValue").GetValue(sqlResult)
-                    let message = errorValue.GetType().GetProperty("Message").GetValue(errorValue) :?> string
-                    Error($"SQL conversion error: {message}")
-            else
-                let errorValue = lqlStatement.GetType().GetProperty("ErrorValue").GetValue(lqlStatement)
-                let message = errorValue.GetType().GetProperty("Message").GetValue(errorValue) :?> string
-                Error($"Parse error: {message}")
-                
-        with ex ->
-            Error($"Exception: {ex.Message}")
+    let lqlToSql (lqlQuery: string) = LqlCompileTimeChecker.convertToSql lqlQuery
 
 /// <summary>
 /// LQL utilities for F# projects
@@ -162,16 +114,9 @@ module LqlUtils =
     /// </summary>
     /// <param name="lqlQuery">The LQL query string</param>
     let validateLql (lqlQuery: string) =
-        try
-            let lqlStatement = LqlStatementConverter.ToStatement(lqlQuery)
-            if lqlStatement.GetType().Name.Contains("Success") then
-                Ok "LQL query is valid"
-            else
-                let errorValue = lqlStatement.GetType().GetProperty("ErrorValue").GetValue(lqlStatement)
-                let message = errorValue.GetType().GetProperty("Message").GetValue(errorValue) :?> string
-                Error($"Parse error: {message}")
-        with ex ->
-            Error($"Exception: {ex.Message}")
+        match LqlCompileTimeChecker.validateLqlSyntax lqlQuery with
+        | None -> Ok "LQL query is valid"
+        | Some errorMessage -> Error errorMessage
 
     /// <summary>
     /// Get all .lql files in a directory

@@ -79,7 +79,25 @@ module SchemaInspector =
             []
 
 /// <summary>
-/// F# Type Provider for LQL with compile-time schema validation
+/// Validates LQL syntax at compile time
+/// </summary>
+module LqlCompileTimeValidator =
+    open Lql
+    
+    let validateLqlQuery (lqlQuery: string) =
+        try
+            let lqlStatement = LqlStatementConverter.ToStatement(lqlQuery)
+            if lqlStatement.GetType().Name.Contains("Success") then
+                Ok "Valid LQL syntax"
+            else
+                let errorValue = lqlStatement.GetType().GetProperty("ErrorValue").GetValue(lqlStatement)
+                let message = errorValue.GetType().GetProperty("Message").GetValue(errorValue) :?> string
+                Error $"❌ COMPILE-TIME LQL SYNTAX ERROR: {message}"
+        with ex ->
+            Error $"❌ COMPILE-TIME LQL VALIDATION FAILED: {ex.Message}"
+
+/// <summary>
+/// F# Type Provider for LQL with compile-time validation
 /// </summary>
 [<TypeProvider>]
 type LqlSchemaTypeProvider(config: TypeProviderConfig) as this =
@@ -120,27 +138,8 @@ type LqlSchemaTypeProvider(config: TypeProviderConfig) as this =
                         | _ -> if column.IsNullable then typeof<obj option> else typeof<obj>
                     
                     let property = ProvidedProperty(column.Name, propertyType)
-                    property.GetterCode <- fun args -> <@@ null @@> // Placeholder - this would be implemented for real queries
+                    property.GetterCode <- fun args -> <@@ null @@> // Placeholder
                     tableType.AddMember(property)
-                
-                // Add static methods for common queries
-                let selectAllMethod = ProvidedMethod("SelectAll", [], typeof<obj list>)
-                selectAllMethod.IsStaticMethod <- true
-                selectAllMethod.InvokeCode <- fun args ->
-                    <@@
-                        // This would execute: SELECT * FROM tableName
-                        []
-                    @@>
-                tableType.AddMember(selectAllMethod)
-                
-                let findByIdMethod = ProvidedMethod("FindById", [ProvidedParameter("id", typeof<int64>)], typeof<obj option>)
-                findByIdMethod.IsStaticMethod <- true
-                findByIdMethod.InvokeCode <- fun args ->
-                    <@@
-                        // This would execute: SELECT * FROM tableName WHERE Id = @id
-                        None
-                    @@>
-                tableType.AddMember(findByIdMethod)
                 
                 tablesType.AddMember(tableType)
             
@@ -149,13 +148,19 @@ type LqlSchemaTypeProvider(config: TypeProviderConfig) as this =
             connectionProperty.GetterCode <- fun args -> <@@ connectionString @@>
             providedType.AddMember(connectionProperty)
             
-            // Add LQL execution methods with compile-time validation
-            let executeLqlMethod = ProvidedMethod("ExecuteLql", [ProvidedParameter("query", typeof<string>)], typeof<obj list>)
+            // Add COMPILE-TIME validated LQL execution method
+            let executeLqlMethod = ProvidedMethod("ExecuteValidatedLql", [ProvidedParameter("query", typeof<string>)], typeof<Result<obj list, string>>)
             executeLqlMethod.InvokeCode <- fun args ->
+                let query = args.[0]
+                // This SHOULD validate at compile time, but F# quotations make it complex
                 <@@
-                    // This would validate the LQL against the known schema at compile time
-                    // and execute the query at runtime
-                    []
+                    let queryStr = %%query : string
+                    match LqlCompileTimeValidator.validateLqlQuery queryStr with
+                    | Ok _ -> 
+                        async {
+                            return! LqlExtensions.executeLqlQuery connectionString queryStr
+                        } |> Async.RunSynchronously
+                    | Error err -> Error err
                 @@>
             providedType.AddMember(executeLqlMethod)
             

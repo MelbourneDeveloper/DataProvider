@@ -10,11 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="LqlCompileTimeChecker.fs" />
+    <Compile Include="SqliteTypeProvider.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="FSharp.TypeProviders.SDK" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
