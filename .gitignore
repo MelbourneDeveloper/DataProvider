@@ -11,3 +11,5 @@ invoices.db
 
 *.generated.sql
 DataProvider/DataProvider.Example.FSharp/test.db
+
+test.db
