@@ -9,7 +9,6 @@ open Lql.SQLite
 /// <summary>
 /// Extension module for working with LQL queries in F#
 /// </summary>
-[<AutoOpen>]
 module LqlExtensions =
     
     /// <summary>
@@ -104,6 +103,24 @@ module LqlExtensions =
     /// <param name="lqlQuery">The LQL query string</param>
     let lqlToSql (lqlQuery: string) = LqlCompileTimeChecker.convertToSql lqlQuery
 
+    /// <summary>
+    /// Execute LQL directly against a SQLite connection with custom row mapping
+    /// </summary>
+    /// <param name="conn">The SQLite connection</param>
+    /// <param name="lqlQuery">The LQL query string</param>
+    /// <param name="mapRow">Function to map each row from SqliteDataReader</param>
+    let executeLql (conn: SqliteConnection) (lqlQuery: string) (mapRow: SqliteDataReader -> 'T) =
+        match LqlCompileTimeChecker.convertToSql lqlQuery with
+        | Ok sql ->
+            use cmd = new SqliteCommand(sql, conn)
+            use reader = cmd.ExecuteReader()
+            
+            let results = ResizeArray<'T>()
+            while reader.Read() do
+                results.Add(mapRow reader)
+            Ok(results |> List.ofSeq)
+        | Error err -> Error err
+
 /// <summary>
 /// LQL utilities for F# projects
 /// </summary>
@@ -138,8 +155,21 @@ module LqlUtils =
             
             for lqlFile in lqlFiles do
                 let fileName = Path.GetFileNameWithoutExtension(lqlFile) |> Option.ofObj |> Option.defaultValue ""
-                let! result = executeLqlFile connectionString lqlFile
+                let! result = LqlExtensions.executeLqlFile connectionString lqlFile
                 results.Add((fileName, result))
             
             return results |> List.ofSeq
         }
+
+/// <summary>
+/// Public API module for easy access to common LQL functions
+/// </summary>
+module LqlApi =
+    /// <summary>
+    /// Execute LQL directly against a SQLite connection with custom row mapping
+    /// </summary>
+    /// <param name="conn">The SQLite connection</param>
+    /// <param name="lqlQuery">The LQL query string</param>
+    /// <param name="mapRow">Function to map each row from SqliteDataReader</param>
+    let executeLql (conn: SqliteConnection) (lqlQuery: string) (mapRow: SqliteDataReader -> 'T) =
+        LqlExtensions.executeLql conn lqlQuery mapRow
