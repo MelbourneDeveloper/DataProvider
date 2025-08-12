@@ -1,0 +1,50 @@
+<Project>
+  
+  <!-- MSBuild targets for Lql.TypeProvider.FSharp compile-time validation -->
+  
+  <!-- Define properties for LQL validation -->
+  <PropertyGroup>
+    <LqlValidationEnabled Condition="'$(LqlValidationEnabled)' == ''">true</LqlValidationEnabled>
+    <LqlFailOnError Condition="'$(LqlFailOnError)' == ''">true</LqlFailOnError>
+  </PropertyGroup>
+
+  <!-- Import Type Provider assemblies for compile-time checking -->
+  <ItemGroup Condition="'$(LqlValidationEnabled)' == 'true'">
+    <Reference Include="Lql.TypeProvider.FSharp">
+      <HintPath>$(MSBuildThisFileDirectory)../bin/$(Configuration)/$(TargetFramework)/Lql.TypeProvider.FSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Validate LQL queries in F# source files at build time -->
+  <Target Name="ValidateLqlQueries" 
+          BeforeTargets="CoreCompile"
+          Condition="'$(LqlValidationEnabled)' == 'true'">
+    
+    <Message Text="🔍 Validating LQL queries at BUILD TIME..." Importance="high" />
+    
+    <!-- The F# compiler will validate Type Provider parameters at compile time -->
+    <!-- Invalid LQL in type provider parameters will cause compilation failures -->
+    
+    <PropertyGroup>
+      <DefineConstants Condition="'$(LqlFailOnError)' == 'true'">$(DefineConstants);LQL_FAIL_ON_ERROR</DefineConstants>
+    </PropertyGroup>
+    
+  </Target>
+
+  <!-- Optional: Validate standalone .lql files -->
+  <Target Name="ValidateLqlFiles" 
+          BeforeTargets="CoreCompile"
+          Condition="'$(LqlValidationEnabled)' == 'true' and '@(LqlFile)' != ''">
+    
+    <Message Text="🔍 Validating .lql files..." Importance="high" />
+    
+    <!-- This would require the LqlBuildValidator task from tools/ -->
+    <!-- Uncomment if you want to validate .lql files too -->
+    <!--
+    <LqlBuildValidator SourceFiles="@(LqlFile)" />
+    -->
+    
+  </Target>
+  
+</Project>

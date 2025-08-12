@@ -33,4 +33,8 @@
     <ProjectReference Include="../../Other/Results/Results.csproj" />
   </ItemGroup>
 
+  <!-- Import the LQL build-time validation -->
+  <Import Project="../../Lql/Lql.TypeProvider.FSharp/build/Lql.TypeProvider.FSharp.targets" />
+  <Import Project="../../tools/ValidateLql.targets" />
+
 </Project>

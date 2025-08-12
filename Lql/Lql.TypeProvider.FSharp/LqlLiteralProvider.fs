@@ -104,15 +104,14 @@ type LqlProvider(config: TypeProviderConfig) as this =
 /// <summary>
 /// Helper type for creating validated LQL queries with compile-time checking
 /// </summary>
-type ValidatedLql<'T when 'T :> string> = 
-    static member inline Create(query: 'T) =
+type ValidatedLql = 
+    static member inline Create(query: string) =
         // This validates at compile time when used with string literals
-        let queryStr = string query
-        match LqlCompileTimeChecker.getValidationResult queryStr with
+        match LqlCompileTimeChecker.getValidationResult query with
         | Ok statement -> 
-            {| Query = queryStr; IsValid = true; Error = None; Statement = Some statement |}
+            {| Query = query; IsValid = true; Error = None; Statement = Some statement |}
         | Error errorMessage ->
-            {| Query = queryStr; IsValid = false; Error = Some errorMessage; Statement = None |}
+            {| Query = query; IsValid = false; Error = Some errorMessage; Statement = None |}
 
 /// <summary>
 /// Compile-time LQL validation attribute for documentation

@@ -1,8 +1,6 @@
 open Microsoft.Data.Sqlite
 open Lql.TypeProvider.FSharp
 
-
-
 [<EntryPoint>]
 let main _ =
     let connStr = "Data Source=test.db"
@@ -22,7 +20,7 @@ let main _ =
                 columnName, value
         ]
     
-    let lqlResult = LqlApi.executeLql conn "Customer |> select(*)" mapCustomerRow
+    let lqlResult = CompileTimeLql.execute conn "Customer |> seldect(*)" mapCustomerRow
     match lqlResult with
     | Ok (data: Map<string, obj> list) ->
         printfn "Found %d customers:" data.Length
