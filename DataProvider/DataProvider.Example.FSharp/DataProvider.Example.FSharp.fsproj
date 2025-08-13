@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="LqlValidator.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -27,14 +28,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../Lql/Lql.TypeProvider.FSharp/Lql.TypeProvider.FSharp.fsproj" />
     <ProjectReference Include="../../Lql/Lql.SQLite/Lql.SQLite.csproj" />
     <ProjectReference Include="../../Lql/Lql/Lql.csproj" />
     <ProjectReference Include="../../Other/Results/Results.csproj" />
   </ItemGroup>
-
-  <!-- Import the LQL build-time validation -->
-  <Import Project="../../Lql/Lql.TypeProvider.FSharp/build/Lql.TypeProvider.FSharp.targets" />
-  <Import Project="../../tools/ValidateLql.targets" />
 
 </Project>

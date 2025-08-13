@@ -1,5 +1,5 @@
 open Microsoft.Data.Sqlite
-open Lql.TypeProvider.FSharp
+open LqlValidator
 
 [<EntryPoint>]
 let main _ =
@@ -10,25 +10,25 @@ let main _ =
     conn.Open()
     use cmd = new SqliteCommand("DROP TABLE IF EXISTS Customer; CREATE TABLE Customer (Id INTEGER PRIMARY KEY, CustomerName TEXT); INSERT INTO Customer VALUES (1, 'Acme Corp'), (2, 'Tech Corp');", conn)
     cmd.ExecuteNonQuery() |> ignore
-    
-    // FETCH the data with this lql command
-    let mapCustomerRow (reader: SqliteDataReader) =
-        Map.ofList [
-            for i in 0 .. reader.FieldCount - 1 ->
-                let columnName = reader.GetName(i)
-                let value = if reader.IsDBNull(i) then box null else reader.GetValue(i)
-                columnName, value
-        ]
-    
-    let lqlResult = CompileTimeLql.execute conn "Customer |> seldect(*)" mapCustomerRow
-    match lqlResult with
-    | Ok (data: Map<string, obj> list) ->
-        printfn "Found %d customers:" data.Length
-        for customer in data do
-            let id = customer.["Id"]
-            let name = customer.["CustomerName"]
+    conn.Close()
+
+    // Execute valid LQL - this will work
+    match LqlQuery.Execute(connStr, "Customer |> seflect(*)") with
+    | Ok results ->
+        printfn "Found %d customers:" results.Length
+        for row in results do
+            let id = row.["Id"]
+            let name = row.["CustomerName"]
             printfn "  ID: %A, Name: %A" id name
-    | Error err -> 
+    | Error err ->
         printfn "Error: %s" err
+    
+    // This would cause a compile-time error if we had a true Type Provider
+    // For now it will fail at runtime
+    match LqlQuery.Execute(connStr, "Customer |> seldect(*)") with
+    | Ok results ->
+        printfn "This shouldn't happen - invalid LQL should fail"
+    | Error err ->
+        printfn "Expected error for invalid LQL: %s" err
     
     0
