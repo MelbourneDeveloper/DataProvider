@@ -42,18 +42,17 @@ jobs:
       - name: Build
         run: dotnet build ./Lql/Website/LqlWebsite.csproj -c Release --no-restore
         
-      - name: Publish Blazor project
+      - name: Publish Blazor WebAssembly project
         run: dotnet publish ./Lql/Website/LqlWebsite.csproj -c Release -o release --nologo
         
       - name: Update base href for GitHub Pages
         run: |
           REPO_NAME=$(echo ${{ github.repository }} | cut -d'/' -f2)
-          if [ -f release/wwwroot/index.html ]; then
-            sed -i 's/<base href="\/" \/>/<base href="\/'$REPO_NAME'\/" \/>/g' release/wwwroot/index.html
-          fi
+          sed -i 's/<base href="\/" \/>/<base href="\/'$REPO_NAME'\/" \/>/g' release/wwwroot/index.html
         
       - name: Add .nojekyll file
         run: touch release/wwwroot/.nojekyll
+        
         
       - name: Setup Pages
         uses: actions/configure-pages@v4

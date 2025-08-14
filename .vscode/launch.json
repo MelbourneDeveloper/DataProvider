@@ -2,21 +2,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Blazor Website",
+            "name": "Launch Blazor LQL Website",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Lql/Website/bin/Debug/net9.0/LqlWebsite.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/Lql/Website",
+            "program": "dotnet",
+            "args": ["run", "--project", "Lql/Website"],
+            "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development",
-                "ASPNETCORE_URLS": "http://localhost:3000;https://localhost:3001"
-            },
             "serverReadyAction": {
                 "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+                "pattern": "Now listening on: (https?://\\S+)"
             }
         },
         {

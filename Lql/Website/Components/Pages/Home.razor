@@ -1,27 +1,11 @@
 @page "/"
 @using Microsoft.AspNetCore.Components.Web
+@using Lql
+@using Lql.Postgres
+@using Lql.SqlServer
+@using Results
 
 <PageTitle>Lambda Query Language (LQL) - Functional Data Querying</PageTitle>
-
-<header>
-    <div class="container">
-        <div class="header-content">
-            <div class="logo">
-                <img src="lql-icon.png" alt="LQL Logo">
-                <span class="logo-text">LQL</span>
-            </div>
-            <nav>
-                <ul>
-                    <li><a href="#features">Features</a></li>
-                    <li><a href="#examples">Examples</a></li>
-                    <li><a href="/playground">Playground</a></li>
-                    <li><a href="#docs">Documentation</a></li>
-                    <li><a href="#github">GitHub</a></li>
-                </ul>
-            </nav>
-        </div>
-    </div>
-</header>
 
 <section class="hero">
     <div class="container">
@@ -31,7 +15,7 @@
             
             <div class="cta-buttons">
                 <a href="#examples" class="btn btn-primary">See Examples</a>
-                <a href="/playground" class="btn btn-secondary">Try Playground</a>
+                <a href="#playground" class="btn btn-secondary">Try Playground</a>
             </div>
 
             <div class="hero-code">
@@ -220,6 +204,65 @@
     </div>
 </section>
 
+<section id="playground" class="playground">
+    <div class="container">
+        <div class="section-header">
+            <h2>LQL Playground</h2>
+            <p>Try Lambda Query Language and see how it transpiles to PostgreSQL or SQL Server</p>
+        </div>
+        
+        <div class="playground-content">
+            <div class="input-section">
+                <h3 class="section-title">LQL Input</h3>
+                <div class="controls">
+                    <select @bind="selectedDialect" class="dialect-selector">
+                        <option value="PostgreSQL">PostgreSQL</option>
+                        <option value="SqlServer">SQL Server</option>
+                    </select>
+                    <button @onclick="ConvertLql" class="convert-btn" disabled="@isConverting">
+                        @if (isConverting)
+                        {
+                            <text>Converting...</text>
+                        }
+                        else
+                        {
+                            <text>Convert to SQL</text>
+                        }
+                    </button>
+                </div>
+                <textarea @bind="lqlInput" @bind:event="oninput" class="lql-input" 
+                         placeholder="Enter your LQL query here...
+
+Example:
+users |> select(users.id, users.name, users.email)"></textarea>
+            </div>
+
+            <div class="output-section">
+                <h3 class="section-title">@selectedDialect Output</h3>
+                <div class="sql-output">@sqlOutput</div>
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="error-message">
+                        <strong>Error:</strong> @errorMessage
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="examples-section">
+            <h3 class="section-title">Example Queries</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">Click any example to load it into the editor:</p>
+            <div class="example-buttons">
+                <button @onclick="() => LoadExample(simpleSelectExample)" class="example-btn">Simple Select</button>
+                <button @onclick="() => LoadExample(joinExample)" class="example-btn">Join Tables</button>
+                <button @onclick="() => LoadExample(filterExample)" class="example-btn">Filter Data</button>
+                <button @onclick="() => LoadExample(aggregateExample)" class="example-btn">Aggregation</button>
+                <button @onclick="() => LoadExample(complexExample)" class="example-btn">Complex Query</button>
+            </div>
+        </div>
+    </div>
+</section>
+
 <footer>
     <div class="container">
         <div class="footer-content">
@@ -233,3 +276,124 @@
         </div>
     </div>
 </footer>
+
+@code {
+    private string lqlInput = "";
+    private string sqlOutput = "Enter LQL code and click 'Convert to SQL' to see the result.";
+    private string errorMessage = "";
+    private string selectedDialect = "PostgreSQL";
+    private bool isConverting = false;
+
+    // Example queries
+    private readonly string simpleSelectExample = "users |> select(users.id, users.name, users.email)";
+    
+    private readonly string joinExample = @"users 
+|> join(orders, on = users.id = orders.user_id) 
+|> select(users.name, orders.total, orders.status)";
+    
+    private readonly string filterExample = @"employees
+|> select(employees.id, employees.name, employees.salary)
+|> filter(fn(row) => row.employees.salary > 50000 and row.employees.department = 'Engineering')";
+    
+    private readonly string aggregateExample = @"orders
+|> group_by(orders.user_id)
+|> select(
+    orders.user_id,
+    count(*) as order_count,
+    sum(orders.total) as total_amount,
+    avg(orders.total) as avg_amount
+)
+|> having(fn(group) => count(*) > 2)
+|> order_by(total_amount desc)";
+    
+    private readonly string complexExample = @"-- Complex analytics query
+let joined =
+    users
+    |> join(orders, on = users.id = orders.user_id)
+    |> filter(fn(row) => row.orders.status = 'completed')
+
+joined
+|> group_by(users.id)
+|> select(
+    users.name,
+    count(*) as total_orders,
+    sum(orders.total) as revenue,
+    avg(orders.total) as avg_order_value
+)
+|> filter(fn(row) => row.revenue > 1000)
+|> order_by(revenue desc)
+|> limit(10)";
+
+    private async Task ConvertLql()
+    {
+        if (string.IsNullOrWhiteSpace(lqlInput))
+        {
+            errorMessage = "Please enter some LQL code to convert.";
+            sqlOutput = "";
+            return;
+        }
+
+        isConverting = true;
+        errorMessage = "";
+        sqlOutput = "Converting...";
+        
+        try
+        {
+            await Task.Delay(100); // Small delay to show loading state
+            
+            // Parse the LQL code
+            var statementResult = LqlStatementConverter.ToStatement(lqlInput);
+            
+            if (statementResult is Result<LqlStatement, SqlError>.Failure parseFailure)
+            {
+                errorMessage = parseFailure.ErrorValue.DetailedMessage ?? parseFailure.ErrorValue.Message;
+                sqlOutput = "";
+                return;
+            }
+            
+            var statement = ((Result<LqlStatement, SqlError>.Success)statementResult).Value;
+            
+            // Convert to the selected SQL dialect
+            Result<string, SqlError> sqlResult = selectedDialect switch
+            {
+                "PostgreSQL" => statement.ToPostgreSql(),
+                "SqlServer" => statement.ToSqlServer(),
+                _ => new Result<string, SqlError>.Failure(new SqlError($"Unsupported dialect: {selectedDialect}"))
+            };
+            
+            if (sqlResult is Result<string, SqlError>.Failure sqlFailure)
+            {
+                errorMessage = sqlFailure.ErrorValue.DetailedMessage ?? sqlFailure.ErrorValue.Message;
+                sqlOutput = "";
+                return;
+            }
+            
+            var sql = ((Result<string, SqlError>.Success)sqlResult).Value;
+            sqlOutput = sql;
+            errorMessage = "";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An unexpected error occurred: {ex}";
+            sqlOutput = "";
+        }
+        finally
+        {
+            isConverting = false;
+        }
+    }
+
+    private void LoadExample(string example)
+    {
+        lqlInput = example;
+        errorMessage = "";
+        sqlOutput = "Click 'Convert to SQL' to see the result.";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load a simple example by default
+        lqlInput = simpleSelectExample;
+        await ConvertLql();
+    }
+}
