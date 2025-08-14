@@ -6,6 +6,8 @@ open Lql
 open Lql.SQLite
 open Results
 
+//TODO: this does not belong here. Move to core code
+
 /// Validates LQL at compile time and provides execution methods
 type LqlQuery private() =
     

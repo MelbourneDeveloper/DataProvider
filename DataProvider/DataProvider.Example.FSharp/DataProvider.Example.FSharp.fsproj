@@ -25,12 +25,14 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+    <PackageReference Include="FSharp.TypeProviders.SDK" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="../../Lql/Lql.SQLite/Lql.SQLite.csproj" />
     <ProjectReference Include="../../Lql/Lql/Lql.csproj" />
     <ProjectReference Include="../../Other/Results/Results.csproj" />
+    <ProjectReference Include="../../Lql/Lql.TypeProvider.FSharp/Lql.TypeProvider.FSharp.fsproj" />
   </ItemGroup>
 
 </Project>

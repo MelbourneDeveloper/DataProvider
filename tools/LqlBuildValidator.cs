@@ -1,9 +1,9 @@
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
+using Lql;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using Lql;
 
 /// <summary>
 /// MSBuild task that validates LQL queries at build time
@@ -13,10 +13,11 @@ public class LqlBuildValidator : Microsoft.Build.Utilities.Task
 {
     [Required]
     public ITaskItem[] SourceFiles { get; set; } = Array.Empty<ITaskItem>();
-    
+
     private readonly Regex lqlPattern = new Regex(
-        @"""([^""]*\|>[^""]*)\""", 
-        RegexOptions.Compiled | RegexOptions.Multiline);
+        @"""([^""]*\|>[^""]*)\""",
+        RegexOptions.Compiled | RegexOptions.Multiline
+    );
 
     public override bool Execute()
     {
@@ -39,7 +40,7 @@ public class LqlBuildValidator : Microsoft.Build.Utilities.Task
             {
                 var lqlQuery = match.Groups[1].Value;
                 totalQueries++;
-                
+
                 Log.LogMessage(MessageImportance.Low, $"Validating LQL: {lqlQuery}");
 
                 try
@@ -47,15 +48,15 @@ public class LqlBuildValidator : Microsoft.Build.Utilities.Task
                     // Use the C# LQL library to validate
                     var converter = new LqlStatementConverter();
                     var result = converter.ConvertLqlToSql(lqlQuery);
-                    
+
                     if (!result.Success)
                     {
                         invalidQueries++;
                         success = false;
-                        
+
                         // This causes a BUILD ERROR with detailed information
                         Log.LogError(
-                            subcategory: "LQL", 
+                            subcategory: "LQL",
                             errorCode: "LQL001",
                             helpKeyword: "InvalidLqlSyntax",
                             file: filePath,
@@ -63,7 +64,8 @@ public class LqlBuildValidator : Microsoft.Build.Utilities.Task
                             columnNumber: GetColumnNumber(content, match.Index),
                             endLineNumber: 0,
                             endColumnNumber: 0,
-                            message: $"❌ INVALID LQL SYNTAX: {result.ErrorMessage} in query: {lqlQuery}");
+                            message: $"❌ INVALID LQL SYNTAX: {result.ErrorMessage} in query: {lqlQuery}"
+                        );
                     }
                     else
                     {
@@ -74,9 +76,9 @@ public class LqlBuildValidator : Microsoft.Build.Utilities.Task
                 {
                     invalidQueries++;
                     success = false;
-                    
+
                     Log.LogError(
-                        subcategory: "LQL", 
+                        subcategory: "LQL",
                         errorCode: "LQL002",
                         helpKeyword: "LqlValidationError",
                         file: filePath,
@@ -84,7 +86,8 @@ public class LqlBuildValidator : Microsoft.Build.Utilities.Task
                         columnNumber: GetColumnNumber(content, match.Index),
                         endLineNumber: 0,
                         endColumnNumber: 0,
-                        message: $"❌ LQL VALIDATION ERROR: {ex.Message} in query: {lqlQuery}");
+                        message: $"❌ LQL VALIDATION ERROR: {ex.Message} in query: {lqlQuery}"
+                    );
                 }
             }
         }
@@ -93,12 +96,16 @@ public class LqlBuildValidator : Microsoft.Build.Utilities.Task
         {
             if (success)
             {
-                Log.LogMessage(MessageImportance.Normal, 
-                    $"✅ BUILD-TIME LQL VALIDATION PASSED: {totalQueries} queries validated successfully");
+                Log.LogMessage(
+                    MessageImportance.Normal,
+                    $"✅ BUILD-TIME LQL VALIDATION PASSED: {totalQueries} queries validated successfully"
+                );
             }
             else
             {
-                Log.LogError($"❌ BUILD-TIME LQL VALIDATION FAILED: {invalidQueries} out of {totalQueries} queries are invalid");
+                Log.LogError(
+                    $"❌ BUILD-TIME LQL VALIDATION FAILED: {invalidQueries} out of {totalQueries} queries are invalid"
+                );
             }
         }
         else
