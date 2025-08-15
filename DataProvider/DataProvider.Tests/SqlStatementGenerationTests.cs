@@ -141,7 +141,7 @@ public sealed class SqlStatementGenerationTests
             .AddSelectColumn("Country")
             .AddSelectColumn(ColumnInfo.FromExpression("COUNT(*)", "Total"))
             .AddTable("Users")
-            .AddGroupBy(new[] { ColumnInfo.Named("Country") })
+            .AddGroupBy([ColumnInfo.Named("Country")])
             .WithHaving("COUNT(*) > 10")
             .Build();
 

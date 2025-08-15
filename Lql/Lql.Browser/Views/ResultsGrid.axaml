@@ -1,0 +1,54 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Lql.Browser.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="300"
+             x:Class="Lql.Browser.Views.ResultsGrid"
+             x:DataType="vm:ResultsGridViewModel">
+
+    <Border Background="{StaticResource ObsidianBrush}">
+        <Border Background="{StaticResource ObsidianBrush}" BorderBrush="{StaticResource BorderDefaultBrush}"
+                BorderThickness="1" CornerRadius="0">
+
+
+            <!-- Results Grid -->
+            <ScrollViewer>
+                <DataGrid Name="QueryResultsDataGrid"
+                          ItemsSource="{Binding QueryResults}"
+                          AutoGenerateColumns="False"
+                          Classes="DataGridStyle">
+                    <DataGrid.Styles>
+                        <Style Selector="DataGrid">
+                            <Setter Property="Background" Value="Transparent" />
+                        </Style>
+                        <Style Selector="DataGridRow">
+                            <Setter Property="Background" Value="Transparent" />
+                        </Style>
+                        <Style Selector="DataGridRow:pointerover">
+                            <Setter Property="Background" Value="{StaticResource HoverBackgroundBrush}" />
+                        </Style>
+                        <Style Selector="DataGridRow:selected">
+                            <Setter Property="Background" Value="{StaticResource SelectedBackgroundBrush}" />
+                        </Style>
+                        <Style Selector="DataGridColumnHeader">
+                            <Setter Property="Background" Value="{StaticResource HoverBackgroundBrush}" />
+                            <Setter Property="Foreground" Value="{StaticResource DataGridHeaderTextBrush}" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
+                            <Setter Property="FontSize" Value="11" />
+                            <Setter Property="Padding" Value="8,8" />
+                            <Setter Property="BorderBrush" Value="{StaticResource BorderSubtleBrush}" />
+                            <Setter Property="BorderThickness" Value="0,0,1,1" />
+                        </Style>
+                        <Style Selector="DataGridCell">
+                            <Setter Property="BorderBrush" Value="{StaticResource BorderSubtleBrush}" />
+                            <Setter Property="BorderThickness" Value="0,0,1,1" />
+                            <Setter Property="Padding" Value="8,6" />
+                        </Style>
+                    </DataGrid.Styles>
+                </DataGrid>
+            </ScrollViewer>
+
+        </Border>
+    </Border>
+</UserControl>

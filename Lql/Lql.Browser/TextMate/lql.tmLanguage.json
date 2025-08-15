@@ -1,0 +1,169 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Lambda Query Language",
+    "scopeName": "source.lql",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#operators"
+        },
+        {
+            "include": "#functions"
+        },
+        {
+            "include": "#strings"
+        },
+        {
+            "include": "#numbers"
+        },
+        {
+            "include": "#identifiers"
+        }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.double-dash.lql",
+                    "match": "--.*$"
+                },
+                {
+                    "name": "comment.block.lql",
+                    "begin": "/\\*",
+                    "end": "\\*/"
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.lql",
+                    "match": "\\b(let|fn|if|then|else|case|when|match)\\b"
+                },
+                {
+                    "name": "keyword.operator.logical.lql",
+                    "match": "\\b(and|or|not)\\b"
+                },
+                {
+                    "name": "keyword.other.lql",
+                    "match": "\\b(as|on|desc|asc)\\b"
+                },
+                {
+                    "name": "constant.language.boolean.lql",
+                    "match": "\\b(true|false|null)\\b"
+                }
+            ]
+        },
+        "operators": {
+            "patterns": [
+                {
+                    "name": "keyword.operator.pipeline.lql",
+                    "match": "\\|>"
+                },
+                {
+                    "name": "keyword.operator.lambda.lql",
+                    "match": "=>"
+                },
+                {
+                    "name": "keyword.operator.assignment.lql",
+                    "match": "="
+                },
+                {
+                    "name": "keyword.operator.comparison.lql",
+                    "match": "(==|!=|<>|<=|>=|<|>)"
+                },
+                {
+                    "name": "keyword.operator.arithmetic.lql",
+                    "match": "(\\+|\\-|\\*|/|%)"
+                }
+            ]
+        },
+        "functions": {
+            "patterns": [
+                {
+                    "name": "entity.name.function.query.lql",
+                    "match": "\\b(select|filter|join|group_by|order_by|having|limit|offset|union|union_all|insert|update|delete)\\b"
+                },
+                {
+                    "name": "entity.name.function.aggregate.lql",
+                    "match": "\\b(count|sum|avg|min|max|first|last)\\b"
+                },
+                {
+                    "name": "entity.name.function.string.lql",
+                    "match": "\\b(concat|substring|length|trim|upper|lower|replace)\\b"
+                },
+                {
+                    "name": "entity.name.function.math.lql",
+                    "match": "\\b(round|floor|ceil|abs|sqrt|power|mod)\\b"
+                },
+                {
+                    "name": "entity.name.function.date.lql",
+                    "match": "\\b(now|today|year|month|day|hour|minute|second)\\b"
+                },
+                {
+                    "name": "entity.name.function.conditional.lql",
+                    "match": "\\b(coalesce|nullif|isnull|isnotnull)\\b"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.single.lql",
+                    "begin": "'",
+                    "end": "'",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.lql",
+                            "match": "\\\\."
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.double.lql",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.lql",
+                            "match": "\\\\."
+                        }
+                    ]
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.decimal.lql",
+                    "match": "\\b\\d+\\.\\d+\\b"
+                },
+                {
+                    "name": "constant.numeric.integer.lql",
+                    "match": "\\b\\d+\\b"
+                }
+            ]
+        },
+        "identifiers": {
+            "patterns": [
+                {
+                    "name": "variable.other.table.lql",
+                    "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*\\|>|\\s*$)"
+                },
+                {
+                    "name": "variable.other.column.lql",
+                    "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\.[a-zA-Z_][a-zA-Z0-9_]*\\b"
+                },
+                {
+                    "name": "variable.other.lql",
+                    "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+                }
+            ]
+        }
+    }
+}

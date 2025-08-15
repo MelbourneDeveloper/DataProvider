@@ -7,6 +7,7 @@
 - DO NOT USE GIT - Unless explicitly requested
 - Static extension methods on IDbConnection and ITransaction only! No classes for getting data
 - NO CLASSES. Records and Static Methods!!! - FP style code wherever with pure static methods
+- Never make consecutive Console.WriteLine calls. Use string interpolation
 - Turn all warnings up to ERRORS and include as many Roslyn analyzer rules as possible, especially for null safety
 - Never use Fluent Assertions
 - Keep files under 450 LOC

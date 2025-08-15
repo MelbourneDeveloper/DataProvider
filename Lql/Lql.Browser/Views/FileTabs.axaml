@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Lql.Browser.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="50"
+             x:Class="Lql.Browser.Views.FileTabs"
+             x:DataType="vm:MainWindowViewModel">
+
+    <StackPanel Orientation="Horizontal" Spacing="0">
+            <ItemsControl ItemsSource="{Binding FileTabs}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="0"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Content="{Binding DisplayName}" 
+                                Classes="SecondaryButtonStyle Tab"
+                                Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).SwitchTabCommand}"
+                                CommandParameter="{Binding}">
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Close" 
+                                              Command="{Binding $parent[ContextMenu].((vm:MainWindowViewModel)DataContext).CloseTabCommand}"
+                                              CommandParameter="{Binding}"/>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            
+            <Button Content="+" 
+                    Classes="SecondaryButtonStyle Tab"
+                    Padding="8,6"
+                    Command="{Binding NewFileCommand}"
+                    CommandParameter="lql"/>
+        </StackPanel>
+</UserControl>

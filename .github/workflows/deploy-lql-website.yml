@@ -45,10 +45,9 @@ jobs:
       - name: Publish Blazor WebAssembly project
         run: dotnet publish ./Lql/Website/LqlWebsite.csproj -c Release -o release --nologo
         
-      - name: Update base href for GitHub Pages
+      - name: Update base href for custom domain
         run: |
-          REPO_NAME=$(echo ${{ github.repository }} | cut -d'/' -f2)
-          sed -i 's/<base href="\/" \/>/<base href="\/'$REPO_NAME'\/" \/>/g' release/wwwroot/index.html
+          sed -i 's/<base href="\/" \/>/<base href="\/" \/>/g' release/wwwroot/index.html
         
       - name: Add .nojekyll file
         run: touch release/wwwroot/.nojekyll

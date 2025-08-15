@@ -1,0 +1,30 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Lql.Browser.ViewModels"
+             xmlns:converters="using:Lql.Browser.Converters"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="40"
+             x:Class="Lql.Browser.Views.StatusBar"
+             x:DataType="vm:StatusBarViewModel">
+
+    <UserControl.Resources>
+        <converters:ConnectionStatusToBrushConverter x:Key="ConnectionStatusToBrushConverter"/>
+    </UserControl.Resources>
+
+    <Border Background="{StaticResource ObsidianBrush}" BorderBrush="{StaticResource CharcoalBrush}" BorderThickness="0,1,0,0" Padding="12,8">
+        <StackPanel Orientation="Horizontal" Spacing="16">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Ellipse Width="6" Height="6" Fill="{Binding ConnectionStatus, Converter={StaticResource ConnectionStatusToBrushConverter}}" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding ConnectionStatusText}" 
+                           Classes="SecondaryTextStyle"/>
+            </StackPanel>
+            <TextBlock Text="{Binding DatabasePath}" 
+                       Classes="SecondaryTextStyle"/>
+            <TextBlock Text="SQLite" 
+                       Classes="SecondaryTextStyle"/>
+            <TextBlock Text="{Binding StatusMessage}" 
+                       Classes="SecondaryTextStyle"/>
+        </StackPanel>
+    </Border>
+</UserControl>

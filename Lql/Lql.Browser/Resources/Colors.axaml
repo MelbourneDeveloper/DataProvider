@@ -1,0 +1,71 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Primary Colors (from design system) -->
+    <Color x:Key="VolcanicOrangeColor">#FF4500</Color>
+    <Color x:Key="DeepForestColor">#228B22</Color>
+    <Color x:Key="ObsidianColor">#1C1C1C</Color>
+    
+    <!-- Secondary Colors (from design system) -->
+    <Color x:Key="AmberGlowColor">#FFA500</Color>
+    <Color x:Key="CharcoalColor">#36454F</Color>
+    <Color x:Key="IvoryColor">#FFFFF0</Color>
+    <Color x:Key="ElectricVioletColor">#8A2BE2</Color>
+    
+    <!-- Neutral Palette (from design system) -->
+    <Color x:Key="PureWhiteColor">#FFFFFF</Color>
+    <Color x:Key="LightGrayColor">#E5E7EB</Color>
+    <Color x:Key="MediumGrayColor">#9CA3AF</Color>
+    <Color x:Key="DarkGrayColor">#1F2937</Color>
+    <Color x:Key="PureBlackColor">#000000</Color>
+    
+    <!-- Extended colors for dark theme -->
+    <Color x:Key="CodeBackgroundColor">#1E293B</Color>
+    <Color x:Key="CodeTextColor">#E2E8F0</Color>
+    <Color x:Key="BorderDefaultColor">#21262D</Color>
+    <Color x:Key="BorderSubtleColor">#333333</Color>
+    <Color x:Key="SecondaryDarkColor">#0A0E14</Color>
+    <Color x:Key="SchemaPanelColor">#0D1117</Color>
+    <Color x:Key="WindowHeaderColor">#090E13</Color>
+    <Color x:Key="HoverBackgroundColor">#21262D</Color>
+    <Color x:Key="SelectedBackgroundColor">#1F6FEB20</Color>
+    <Color x:Key="ErrorRedColor">#FF0000</Color>
+    
+    <!-- Additional UI colors -->
+    <Color x:Key="DataGridHeaderTextColor">#8B949E</Color>
+    
+    <!-- Primary Brushes -->
+    <SolidColorBrush x:Key="VolcanicOrangeBrush" Color="{StaticResource VolcanicOrangeColor}"/>
+    <SolidColorBrush x:Key="DeepForestBrush" Color="{StaticResource DeepForestColor}"/>
+    <SolidColorBrush x:Key="ObsidianBrush" Color="{StaticResource ObsidianColor}"/>
+    
+    <!-- Secondary Brushes -->
+    <SolidColorBrush x:Key="AmberGlowBrush" Color="{StaticResource AmberGlowColor}"/>
+    <SolidColorBrush x:Key="CharcoalBrush" Color="{StaticResource CharcoalColor}"/>
+    <SolidColorBrush x:Key="IvoryBrush" Color="{StaticResource IvoryColor}"/>
+    <SolidColorBrush x:Key="ElectricVioletBrush" Color="{StaticResource ElectricVioletColor}"/>
+    
+    <!-- Neutral Brushes -->
+    <SolidColorBrush x:Key="PureWhiteBrush" Color="{StaticResource PureWhiteColor}"/>
+    <SolidColorBrush x:Key="LightGrayBrush" Color="{StaticResource LightGrayColor}"/>
+    <SolidColorBrush x:Key="MediumGrayBrush" Color="{StaticResource MediumGrayColor}"/>
+    <SolidColorBrush x:Key="DarkGrayBrush" Color="{StaticResource DarkGrayColor}"/>
+    <SolidColorBrush x:Key="PureBlackBrush" Color="{StaticResource PureBlackColor}"/>
+    
+    <!-- Extended Brushes -->
+    <SolidColorBrush x:Key="CodeBackgroundBrush" Color="{StaticResource CodeBackgroundColor}"/>
+    <SolidColorBrush x:Key="CodeTextBrush" Color="{StaticResource CodeTextColor}"/>
+    <SolidColorBrush x:Key="BorderDefaultBrush" Color="{StaticResource BorderDefaultColor}"/>
+    <SolidColorBrush x:Key="BorderSubtleBrush" Color="{StaticResource BorderSubtleColor}"/>
+    <SolidColorBrush x:Key="SecondaryDarkBrush" Color="{StaticResource SecondaryDarkColor}"/>
+    <SolidColorBrush x:Key="SchemaPanelBrush" Color="{StaticResource SchemaPanelColor}"/>
+    <SolidColorBrush x:Key="WindowHeaderBrush" Color="{StaticResource WindowHeaderColor}"/>
+    <SolidColorBrush x:Key="HoverBackgroundBrush" Color="{StaticResource HoverBackgroundColor}"/>
+    <SolidColorBrush x:Key="SelectedBackgroundBrush" Color="{StaticResource SelectedBackgroundColor}"/>
+    <SolidColorBrush x:Key="ErrorRedBrush" Color="{StaticResource ErrorRedColor}"/>
+    <SolidColorBrush x:Key="DataGridHeaderTextBrush" Color="{StaticResource DataGridHeaderTextColor}"/>
+    
+    <!-- Transparent brush -->
+    <SolidColorBrush x:Key="TransparentBrush" Color="Transparent"/>
+
+</ResourceDictionary>

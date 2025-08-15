@@ -1,0 +1,118 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Lql.Browser.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+        xmlns:views="using:Lql.Browser.Views"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="Lql.Browser.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/lql-icon.png"
+        Title="LQL DB Browser"
+        WindowStartupLocation="CenterScreen"
+        MinWidth="800" MinHeight="600"
+        FontFamily="{StaticResource PrimaryFont}"
+        FontSize="{StaticResource FontSizeMD}"
+        Background="{StaticResource ObsidianBrush}">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="F5" Command="{Binding ExecuteQueryCommand}"/>
+    </Window.KeyBindings>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Top Toolbar -->
+        <Border Grid.Row="0" Classes="ToolbarBorderStyle">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Left side buttons -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
+                    <Button Content="Connect" 
+                            Classes="PrimaryButtonStyle"
+                            Command="{Binding ConnectDatabaseCommand}"/>
+                    
+                    <!-- File Tabs -->
+                    <views:FileTabs DataContext="{Binding}"/>
+                    
+                    <Button Content="Run" 
+                            Classes="PrimaryButtonStyle"
+                            Margin="8,0,0,0"
+                            Command="{Binding ExecuteQueryCommand}"/>
+                </StackPanel>
+                
+                <!-- Right side buttons and logo -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Button Content="Open" 
+                            Classes="SecondaryButtonStyle"
+                            Command="{Binding OpenFileCommand}"/>
+                    <Button Content="Save" 
+                            Classes="SecondaryButtonStyle"
+                            Command="{Binding SaveFileCommand}"/>
+                    <Button Content="CSV" 
+                            Classes="SecondaryButtonStyle Success"
+                            Command="{Binding ExportCsvCommand}"/>
+                    <Button Content="JSON" 
+                            Classes="SecondaryButtonStyle Success"
+                            Command="{Binding ExportJsonCommand}"/>
+                    
+                    <!-- LQL Logo -->
+                    <Image Source="/Assets/lql-icon.png" 
+                           Width="20" 
+                           Height="20" 
+                           Margin="8,0,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200" MinWidth="180"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Sidebar -->
+            <views:SchemaPanel Grid.Column="0" DataContext="{Binding SchemaPanelViewModel}"/>
+
+            <!-- Splitter -->
+            <GridSplitter Grid.Column="1" Classes="VerticalSplitterStyle"/>
+
+            <!-- Right Content Area -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="2*" MinHeight="200"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*" MinHeight="150"/>
+                </Grid.RowDefinitions>
+
+                <!-- Query Editor -->
+                <views:QueryEditor Grid.Row="0" DataContext="{Binding}"/>
+
+                <!-- Horizontal Splitter -->
+                <GridSplitter Grid.Row="1" Classes="HorizontalSplitterStyle"/>
+
+                <!-- Results Area -->
+                <views:ResultsGrid Grid.Row="2" DataContext="{Binding ResultsGridViewModel}"/>
+            </Grid>
+        </Grid>
+
+        <!-- Status Bar -->
+        <views:StatusBar Grid.Row="2" DataContext="{Binding StatusBarViewModel}"/>
+    </Grid>
+
+</Window>

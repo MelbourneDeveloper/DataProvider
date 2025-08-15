@@ -2,6 +2,13 @@
 
 This repository contains two complementary projects that work together to provide compile-time safe database access and a functional query language for .NET applications.
 
+[Try Lambda Query Language live](https://melbournedeveloper.github.io/DataProvider/#playground) in the browser now.
+
+This is what LQL looks like when querying an SQLite database. App source [here](Lql/Lql.Browser).
+
+![LQL DB Browser](lqldbbrowser.png)
+
+
 ## Aims
 
 This project delivers compile-time safe, high-performance data access inspired by [F# Type Providers](https://learn.microsoft.com/en-us/dotnet/fsharp/tutorials/type-providers/) like [SQLProvider](https://fsprojects.github.io/SQLProvider/). It solves the fundamental problems with existing ORMs through two complementary approaches.

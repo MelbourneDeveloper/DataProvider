@@ -1,0 +1,72 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Lql.Browser.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="600"
+             x:Class="Lql.Browser.Views.SchemaPanel"
+             x:DataType="vm:SchemaPanelViewModel">
+    
+    <Border Background="{StaticResource SchemaPanelBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="0,0,1,0">
+        <ScrollViewer>
+            <StackPanel Margin="8,8" Spacing="2">
+                <!-- Tables Section -->
+                <TextBlock Text="Tables" 
+                           Classes="HeaderTextStyle"
+                           Margin="0,0,0,8"/>
+                <ItemsControl ItemsSource="{Binding DatabaseTables}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Classes="SecondaryButtonStyle Sidebar"
+                                    Command="{Binding $parent[ItemsControl].((vm:SchemaPanelViewModel)DataContext).SelectTableCommand}"
+                                    CommandParameter="{Binding}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <PathIcon Data="M3,3H21V5H3V3M3,7H21V9H3V7M3,11H21V13H3V11M3,15H21V17H3V15M3,19H21V21H3V19Z" 
+                                              Foreground="{StaticResource DeepForestBrush}" 
+                                              Width="14" 
+                                              Height="14" 
+                                              VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Views Section -->
+                <TextBlock Text="Views" 
+                           Classes="HeaderTextStyle"
+                           Margin="0,16,0,8"/>
+                <ItemsControl ItemsSource="{Binding DatabaseViews}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Classes="SecondaryButtonStyle Sidebar">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <PathIcon Data="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" 
+                                              Foreground="{StaticResource DeepForestBrush}" 
+                                              Width="14" 
+                                              Height="14" 
+                                              VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Other Sections -->
+                <TextBlock Text="Indexes" 
+                           Classes="HeaderTextStyle"
+                           Margin="0,16,0,8"/>
+                
+                <TextBlock Text="Triggers" 
+                           Classes="HeaderTextStyle"
+                           Margin="0,16,0,8"/>
+                
+                <TextBlock Text="Pragmas" 
+                           Classes="HeaderTextStyle"
+                           Margin="0,16,0,8"/>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</UserControl>

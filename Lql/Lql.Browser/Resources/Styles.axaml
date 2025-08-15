@@ -1,0 +1,189 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Styles.Resources>
+        <!-- Spacing Values -->
+        <Thickness x:Key="SpacingXS">2</Thickness>
+        <Thickness x:Key="SpacingSM">4</Thickness>
+        <Thickness x:Key="SpacingMD">8</Thickness>
+        <Thickness x:Key="SpacingLG">12</Thickness>
+        <Thickness x:Key="SpacingXL">16</Thickness>
+        <Thickness x:Key="Spacing2XL">24</Thickness>
+        <Thickness x:Key="Spacing3XL">32</Thickness>
+
+        <!-- Font Families -->
+        <FontFamily x:Key="PrimaryFont">Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif</FontFamily>
+        <FontFamily x:Key="CodeFont">JetBrains Mono, 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace</FontFamily>
+
+        <!-- Border Thickness Values -->
+        <Thickness x:Key="BorderThin">1</Thickness>
+        <Thickness x:Key="BorderMedium">2</Thickness>
+        <Thickness x:Key="BorderTopOnly">0,0,0,1</Thickness>
+        <Thickness x:Key="BorderBottomOnly">0,1,0,0</Thickness>
+        <Thickness x:Key="BorderRightOnly">0,0,1,0</Thickness>
+        <Thickness x:Key="BorderLeftOnly">1,0,0,0</Thickness>
+
+        <!-- Corner Radius Values -->
+        <CornerRadius x:Key="CornerRadiusNone">0</CornerRadius>
+        <CornerRadius x:Key="CornerRadiusSM">4</CornerRadius>
+        <CornerRadius x:Key="CornerRadiusMD">6</CornerRadius>
+        <CornerRadius x:Key="CornerRadiusLG">8</CornerRadius>
+        <CornerRadius x:Key="CornerRadiusXL">12</CornerRadius>
+
+        <!-- Font Size Values -->
+        <x:Double x:Key="FontSizeXS">10</x:Double>
+        <x:Double x:Key="FontSizeSM">12</x:Double>
+        <x:Double x:Key="FontSizeMD">14</x:Double>
+        <x:Double x:Key="FontSizeLG">18</x:Double>
+    </Styles.Resources>
+
+    <!-- Button Styles -->
+    <Style Selector="Button.PrimaryButtonStyle">
+        <Setter Property="Background" Value="{StaticResource VolcanicOrangeBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource PureWhiteBrush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Padding" Value="12,6"/>
+        <Setter Property="CornerRadius" Value="{StaticResource CornerRadiusSM}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+    </Style>
+    
+    <Style Selector="Button.PrimaryButtonStyle:pointerover">
+        <Setter Property="Background" Value="{StaticResource AmberGlowBrush}"/>
+    </Style>
+    
+    <Style Selector="Button.PrimaryButtonStyle:pressed">
+        <Setter Property="Background" Value="{StaticResource DeepForestBrush}"/>
+    </Style>
+
+    <Style Selector="Button.SecondaryButtonStyle">
+        <Setter Property="Background" Value="{StaticResource TransparentBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource MediumGrayBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource MediumGrayBrush}"/>
+        <Setter Property="BorderThickness" Value="{StaticResource BorderThin}"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="Padding" Value="10,5"/>
+        <Setter Property="CornerRadius" Value="{StaticResource CornerRadiusNone}"/>
+        <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+    </Style>
+
+    <Style Selector="Button.SecondaryButtonStyle:pointerover">
+        <Setter Property="Foreground" Value="{StaticResource CodeTextBrush}"/>
+    </Style>
+
+    <Style Selector="Button.SecondaryButtonStyle.Success">
+        <Setter Property="Foreground" Value="{StaticResource DeepForestBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DeepForestBrush}"/>
+    </Style>
+
+    <Style Selector="Button.SecondaryButtonStyle.Tab">
+        <Setter Property="BorderBrush" Value="{StaticResource TransparentBrush}"/>
+        <Setter Property="Padding" Value="12,6"/>
+        <Setter Property="Foreground" Value="{StaticResource ElectricVioletBrush}"/>
+        <Setter Property="Background" Value="{StaticResource TransparentBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,2"/>
+    </Style>
+    
+    <Style Selector="Button.SecondaryButtonStyle.Tab:pointerover">
+        <Setter Property="BorderBrush" Value="{StaticResource ElectricVioletBrush}"/>
+        <Setter Property="Opacity" Value="0.8"/>
+    </Style>
+    
+    <Style Selector="Button.SecondaryButtonStyle.Tab.Active">
+        <Setter Property="BorderBrush" Value="{StaticResource ElectricVioletBrush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <Style Selector="Button.SecondaryButtonStyle.Sidebar">
+        <Setter Property="Foreground" Value="{StaticResource CodeTextBrush}"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="FontWeight" Value="Regular"/>
+        <Setter Property="Padding" Value="8,6,8,6"/>
+        <Setter Property="Margin" Value="0,1"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="BorderBrush" Value="{StaticResource TransparentBrush}"/>
+    </Style>
+
+    <Style Selector="Button.SecondaryButtonStyle.Sidebar:pointerover">
+        <Setter Property="Background" Value="{StaticResource HoverBackgroundBrush}"/>
+    </Style>
+
+
+    <!-- Border Styles -->
+    <Style Selector="Border.MainBorderStyle">
+        <Setter Property="Background" Value="{StaticResource ObsidianBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderDefaultBrush}"/>
+        <Setter Property="BorderThickness" Value="{StaticResource BorderThin}"/>
+        <Setter Property="CornerRadius" Value="{StaticResource CornerRadiusNone}"/>
+    </Style>
+
+    <Style Selector="Border.SidebarBorderStyle">
+        <Setter Property="Background" Value="{StaticResource SchemaPanelBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderDefaultBrush}"/>
+        <Setter Property="BorderThickness" Value="{StaticResource BorderRightOnly}"/>
+    </Style>
+
+    <Style Selector="Border.ToolbarBorderStyle">
+        <Setter Property="Background" Value="{StaticResource WindowHeaderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource CharcoalBrush}"/>
+        <Setter Property="BorderThickness" Value="{StaticResource BorderBottomOnly}"/>
+        <Setter Property="Padding" Value="8,6"/>
+    </Style>
+
+    <Style Selector="Border.TabContainerBorderStyle">
+        <Setter Property="Background" Value="{StaticResource BorderDefaultBrush}"/>
+        <Setter Property="CornerRadius" Value="{StaticResource CornerRadiusMD}"/>
+        <Setter Property="Padding" Value="2"/>
+        <Setter Property="Margin" Value="8,0"/>
+    </Style>
+
+    <!-- Text Styles -->
+    <Style Selector="TextBlock.HeaderTextStyle">
+        <Setter Property="Foreground" Value="{StaticResource CodeTextBrush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+    </Style>
+
+    <Style Selector="TextBlock.SecondaryTextStyle">
+        <Setter Property="Foreground" Value="{StaticResource MediumGrayBrush}"/>
+        <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeMD}"/>
+    </Style>
+
+    <Style Selector="TextBlock.SuccessTextStyle">
+        <Setter Property="Foreground" Value="{StaticResource AmberGlowBrush}"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeMD}"/>
+        <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+    </Style>
+
+    <!-- DataGrid Styles -->
+    <Style Selector="DataGrid.DataGridStyle">
+        <Setter Property="Background" Value="{StaticResource TransparentBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource CodeTextBrush}"/>
+        <Setter Property="BorderThickness" Value="{StaticResource BorderThin}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderSubtleBrush}"/>
+        <Setter Property="GridLinesVisibility" Value="All"/>
+        <Setter Property="HeadersVisibility" Value="All"/>
+        <Setter Property="IsReadOnly" Value="True"/>
+        <Setter Property="CanUserReorderColumns" Value="True"/>
+        <Setter Property="CanUserResizeColumns" Value="True"/>
+        <Setter Property="CanUserSortColumns" Value="True"/>
+        <Setter Property="FontFamily" Value="{StaticResource CodeFont}"/>
+    </Style>
+
+    <!-- GridSplitter Styles -->
+    <Style Selector="GridSplitter.HorizontalSplitterStyle">
+        <Setter Property="Height" Value="1"/>
+        <Setter Property="Background" Value="{StaticResource BorderDefaultBrush}"/>
+        <Setter Property="ResizeDirection" Value="Rows"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    </Style>
+
+    <Style Selector="GridSplitter.VerticalSplitterStyle">
+        <Setter Property="Width" Value="1"/>
+        <Setter Property="Background" Value="{StaticResource BorderDefaultBrush}"/>
+        <Setter Property="ResizeDirection" Value="Columns"/>
+    </Style>
+
+</Styles>

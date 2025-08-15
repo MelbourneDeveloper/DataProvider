@@ -1,0 +1,56 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Lql.Browser.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="70"
+             x:Class="Lql.Browser.Views.Toolbar"
+             x:DataType="vm:ToolbarViewModel">
+
+    <Border Classes="ToolbarBorderStyle">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Left side buttons -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                <Button Content="Connect" 
+                        Classes="PrimaryButtonStyle"
+                        Command="{Binding ConnectDatabaseCommand}"/>
+                
+                <!-- File Tabs placeholder - will be replaced with FileTabs component -->
+                <ContentControl Content="{Binding FileTabs}"/>
+                
+                <Button Content="Run" 
+                        Classes="PrimaryButtonStyle"
+                        Padding="20,8" 
+                        Margin="16,0,0,0"
+                        Command="{Binding ExecuteQueryCommand}"/>
+            </StackPanel>
+            
+            <!-- Right side buttons and logo -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                <Button Content="Open" 
+                        Classes="SecondaryButtonStyle"
+                        Command="{Binding OpenFileCommand}"/>
+                <Button Content="Save" 
+                        Classes="SecondaryButtonStyle"
+                        Command="{Binding SaveFileCommand}"/>
+                <Button Content="CSV" 
+                        Classes="SecondaryButtonStyle Success"
+                        Command="{Binding ExportCsvCommand}"/>
+                <Button Content="JSON" 
+                        Classes="SecondaryButtonStyle Success"
+                        Command="{Binding ExportJsonCommand}"/>
+                
+                <!-- LQL Logo -->
+                <Image Source="/Assets/lql-icon.png" 
+                       Width="24" 
+                       Height="24" 
+                       Margin="12,0,0,0"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>
