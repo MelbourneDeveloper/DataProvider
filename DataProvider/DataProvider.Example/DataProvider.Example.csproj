@@ -25,6 +25,7 @@
         <AdditionalFiles Include="GetCustomersLql.lql" />
         <AdditionalFiles Include="GetCustomersLql.grouping.json" />
         <AdditionalFiles Include="DataProvider.json" />
+        <AdditionalFiles Include="schema.sql" />
     </ItemGroup>
     <!-- Pre-compile: transpile LQL to SQL, then generate C# from SQL using external CLI -->
     <Target Name="TranspileLqlAndGenerateDataProvider" BeforeTargets="CoreCompile">

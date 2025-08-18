@@ -164,6 +164,93 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Gets table metadata using SQLite's native PRAGMA table_info command
+    /// </summary>
+    private static Result<DatabaseTable, SqlError> GetTableMetadataFromDatabase(string connectionString, string tableName)
+    {
+        try
+        {
+            using var connection = new Microsoft.Data.Sqlite.SqliteConnection(connectionString);
+            connection.Open();
+            
+            // Get column information from SQLite's PRAGMA table_info
+            var columns = new List<DatabaseColumn>();
+            using (var cmd = connection.CreateCommand())
+            {
+                cmd.CommandText = $"PRAGMA table_info({tableName})";
+                using var reader = cmd.ExecuteReader();
+                
+                while (reader.Read())
+                {
+                    var columnName = reader.GetString(1); // name column
+                    var sqliteType = reader.GetString(2); // type column  
+                    var notNull = reader.GetInt32(3) == 1; // notnull column
+                    var isPrimaryKey = reader.GetInt32(5) > 0; // pk column
+                    
+                    var csharpType = MapSqliteTypeToCSharpType(sqliteType, !notNull);
+                    
+                    columns.Add(new DatabaseColumn
+                    {
+                        Name = columnName,
+                        SqlType = sqliteType,
+                        CSharpType = csharpType,
+                        IsNullable = !notNull,
+                        IsPrimaryKey = isPrimaryKey,
+                        IsIdentity = isPrimaryKey && sqliteType.Contains("INTEGER", StringComparison.OrdinalIgnoreCase),
+                        IsComputed = false
+                    });
+                }
+            }
+            
+            if (columns.Count == 0)
+            {
+                return new Result<DatabaseTable, SqlError>.Failure(
+                    new SqlError($"Table {tableName} not found or has no columns")
+                );
+            }
+            
+            var table = new DatabaseTable
+            {
+                Schema = "main",
+                Name = tableName,
+                Columns = columns.AsReadOnly()
+            };
+            
+            return new Result<DatabaseTable, SqlError>.Success(table);
+        }
+        catch (Exception ex)
+        {
+            return new Result<DatabaseTable, SqlError>.Failure(
+                new SqlError($"Failed to get table metadata for {tableName}", ex)
+            );
+        }
+    }
+    
+    /// <summary>
+    /// Maps SQLite types to C# types
+    /// </summary>
+    private static string MapSqliteTypeToCSharpType(string sqliteType, bool isNullable)
+    {
+        var baseType = sqliteType.ToUpperInvariant() switch
+        {
+            var t when t.Contains("INT", StringComparison.OrdinalIgnoreCase) => "long",
+            var t when t.Contains("REAL", StringComparison.OrdinalIgnoreCase) || t.Contains("FLOAT", StringComparison.OrdinalIgnoreCase) || t.Contains("DOUBLE", StringComparison.OrdinalIgnoreCase) => "double",
+            var t when t.Contains("DECIMAL", StringComparison.OrdinalIgnoreCase) || t.Contains("NUMERIC", StringComparison.OrdinalIgnoreCase) => "double",
+            var t when t.Contains("BOOL", StringComparison.OrdinalIgnoreCase) => "bool",
+            var t when t.Contains("DATE", StringComparison.OrdinalIgnoreCase) || t.Contains("TIME", StringComparison.OrdinalIgnoreCase) => "string", // SQLite stores dates as text
+            var t when t.Contains("BLOB", StringComparison.OrdinalIgnoreCase) => "byte[]",
+            _ => "string"
+        };
+        
+        if (isNullable && baseType != "string" && baseType != "byte[]")
+        {
+            return baseType + "?";
+        }
+        
+        return baseType;
+    }
+
     private static Result<string, SqlError> GenerateGroupedVersionWithMetadata(
         string fileName,
         string sql,
@@ -228,7 +315,11 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
         var additional = context.AdditionalTextsProvider;
 
         var sqlFiles = additional.Where(at =>
-            at.Path.EndsWith(".sql", StringComparison.OrdinalIgnoreCase)
+            at.Path.EndsWith(".sql", StringComparison.OrdinalIgnoreCase) &&
+            !Path.GetFileName(at.Path).Equals("schema.sql", StringComparison.OrdinalIgnoreCase)
+        );
+        var schemaFiles = additional.Where(at =>
+            Path.GetFileName(at.Path).Equals("schema.sql", StringComparison.OrdinalIgnoreCase)
         );
         var configFiles = additional.Where(at =>
             at.Path.EndsWith("DataProvider.json", StringComparison.OrdinalIgnoreCase)
@@ -238,28 +329,34 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
         );
 
         var sqlCollected = sqlFiles.Collect();
+        var schemaCollected = schemaFiles.Collect();
         var configCollected = configFiles.Collect();
         var groupingCollected = groupingFiles.Collect();
 
-        var left = sqlCollected.Combine(configCollected);
-        var all = left.Combine(groupingCollected);
+        var left = sqlCollected.Combine(schemaCollected);
+        var middle = left.Combine(configCollected);
+        var all = middle.Combine(groupingCollected);
 
-        context.RegisterSourceOutput(all, GenerateCodeForAllSqlFiles);
+        context.RegisterSourceOutput(all, GenerateCodeForAllFiles);
     }
 
-    private static void GenerateCodeForAllSqlFiles(
+    private static void GenerateCodeForAllFiles(
         SourceProductionContext context,
         (
             (
-                ImmutableArray<AdditionalText> SqlFiles,
+                (
+                    ImmutableArray<AdditionalText> SqlFiles,
+                    ImmutableArray<AdditionalText> SchemaFiles
+                ) Left,
                 ImmutableArray<AdditionalText> ConfigFiles
-            ) Left,
+            ) Middle,
             ImmutableArray<AdditionalText> GroupingFiles
         ) data
     )
     {
-        var (left, groupingFiles) = data;
-        var (sqlFiles, configFiles) = left;
+        var (middle, groupingFiles) = data;
+        var (left, configFiles) = middle;
+        var (sqlFiles, schemaFiles) = left;
 
         // Read configuration
         SourceGeneratorDataProviderConfiguration? config = null;
@@ -503,6 +600,96 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                     ex.Message
                 );
                 context.ReportDiagnostic(diag);
+            }
+        }
+
+        // Generate table operations if configured
+        if (config.Tables.Count > 0)
+        {
+            var tableOperationGenerator = new DefaultTableOperationGenerator("SqliteConnection");
+            
+            foreach (var tableConfigItem in config.Tables)
+            {
+                try
+                {
+                    // Use SQLite's native schema inspection
+                    var tableMetadataResult = GetTableMetadataFromDatabase(config.ConnectionString, tableConfigItem.Name);
+                    if (tableMetadataResult is not Result<DatabaseTable, SqlError>.Success tableOk)
+                    {
+                        var err = (tableMetadataResult as Result<DatabaseTable, SqlError>.Failure)!.ErrorValue;
+                        var diag = Diagnostic.Create(
+                            new DiagnosticDescriptor(
+                                "DataProvider007",
+                                "Table metadata error",
+                                "Failed to get metadata for table {0}: {1}",
+                                "DataProvider",
+                                DiagnosticSeverity.Warning,
+                                true
+                            ),
+                            Location.None,
+                            tableConfigItem.Name,
+                            err.Message
+                        );
+                        context.ReportDiagnostic(diag);
+                        continue;
+                    }
+
+                    // Convert TableConfigItem to TableConfig
+                    var tableConfig = new TableConfig
+                    {
+                        Schema = tableConfigItem.Schema,
+                        Name = tableConfigItem.Name,
+                        GenerateInsert = tableConfigItem.GenerateInsert,
+                        GenerateUpdate = tableConfigItem.GenerateUpdate,
+                        GenerateDelete = tableConfigItem.GenerateDelete,
+                        ExcludeColumns = tableConfigItem.ExcludeColumns.ToList().AsReadOnly(),
+                        PrimaryKeyColumns = tableConfigItem.PrimaryKeyColumns.ToList().AsReadOnly()
+                    };
+
+                    // Generate table operations
+                    var operationsResult = tableOperationGenerator.GenerateTableOperations(tableOk.Value, tableConfig);
+                    if (operationsResult is Result<string, SqlError>.Success operationsSuccess)
+                    {
+                        context.AddSource(
+                            tableConfigItem.Name + "Operations.g.cs",
+                            SourceText.From(operationsSuccess.Value, Encoding.UTF8)
+                        );
+                    }
+                    else if (operationsResult is Result<string, SqlError>.Failure operationsFailure)
+                    {
+                        var diag = Diagnostic.Create(
+                            new DiagnosticDescriptor(
+                                "DataProvider008",
+                                "Table operations generation failed",
+                                "Failed to generate table operations for {0}: {1}",
+                                "DataProvider",
+                                DiagnosticSeverity.Error,
+                                true
+                            ),
+                            Location.None,
+                            tableConfigItem.Name,
+                            operationsFailure.ErrorValue.Message
+                        );
+                        context.ReportDiagnostic(diag);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var diag = Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            "DataProvider009",
+                            "Table operations error",
+                            "Error generating table operations for {0}: {1}",
+                            "DataProvider",
+                            DiagnosticSeverity.Error,
+                            true
+                        ),
+                        Location.None,
+                        tableConfigItem.Name,
+                        ex.Message
+                    );
+                    context.ReportDiagnostic(diag);
+                }
             }
         }
     }

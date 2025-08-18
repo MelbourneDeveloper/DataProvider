@@ -38,6 +38,7 @@ public class DefaultTableOperationGenerator : ITableOperationGenerator
         sb.AppendLine("using System;");
         sb.AppendLine("using System.Collections.Generic;");
         sb.AppendLine("using System.Collections.Immutable;");
+        sb.AppendLine("using System.Globalization;");
         sb.AppendLine("using System.Threading.Tasks;");
         sb.AppendLine(CultureInfo.InvariantCulture, $"using {GetConnectionNamespace()};");
         sb.AppendLine("using Results;");
@@ -46,6 +47,9 @@ public class DefaultTableOperationGenerator : ITableOperationGenerator
         sb.AppendLine("{");
 
         var className = string.Create(CultureInfo.InvariantCulture, $"{table.Name}Extensions");
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"    /// Extension methods for table operations on {table.Name}");
+        sb.AppendLine("    /// </summary>");
         sb.AppendLine(CultureInfo.InvariantCulture, $"    public static partial class {className}");
         sb.AppendLine("    {");
 
