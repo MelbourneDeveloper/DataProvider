@@ -604,6 +604,20 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
         }
 
         // Generate table operations if configured
+        var debugDiag = Diagnostic.Create(
+            new DiagnosticDescriptor(
+                "DataProvider010",
+                "Debug info",
+                "Processing {0} table configurations",
+                "DataProvider",
+                DiagnosticSeverity.Info,
+                true
+            ),
+            Location.None,
+            config.Tables.Count
+        );
+        context.ReportDiagnostic(debugDiag);
+
         if (config.Tables.Count > 0)
         {
             var tableOperationGenerator = new DefaultTableOperationGenerator("SqliteConnection");
@@ -617,7 +631,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                     if (tableMetadataResult is not Result<DatabaseTable, SqlError>.Success tableOk)
                     {
                         var err = (tableMetadataResult as Result<DatabaseTable, SqlError>.Failure)!.ErrorValue;
-                        var diag = Diagnostic.Create(
+                        var tableDiag = Diagnostic.Create(
                             new DiagnosticDescriptor(
                                 "DataProvider007",
                                 "Table metadata error",
@@ -630,7 +644,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                             tableConfigItem.Name,
                             err.Message
                         );
-                        context.ReportDiagnostic(diag);
+                        context.ReportDiagnostic(tableDiag);
                         continue;
                     }
 
@@ -657,7 +671,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                     }
                     else if (operationsResult is Result<string, SqlError>.Failure operationsFailure)
                     {
-                        var diag = Diagnostic.Create(
+                        var opsDiag = Diagnostic.Create(
                             new DiagnosticDescriptor(
                                 "DataProvider008",
                                 "Table operations generation failed",
@@ -670,12 +684,12 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                             tableConfigItem.Name,
                             operationsFailure.ErrorValue.Message
                         );
-                        context.ReportDiagnostic(diag);
+                        context.ReportDiagnostic(opsDiag);
                     }
                 }
                 catch (Exception ex)
                 {
-                    var diag = Diagnostic.Create(
+                    var exceptionDiag = Diagnostic.Create(
                         new DiagnosticDescriptor(
                             "DataProvider009",
                             "Table operations error",
@@ -688,7 +702,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                         tableConfigItem.Name,
                         ex.Message
                     );
-                    context.ReportDiagnostic(diag);
+                    context.ReportDiagnostic(exceptionDiag);
                 }
             }
         }

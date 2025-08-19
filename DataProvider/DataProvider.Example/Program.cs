@@ -108,46 +108,202 @@ internal static class Program
             await command.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
 
-        // Insert sample data without explicit IDs to let SQLite auto-assign
-        using (
-            var command = new SqliteCommand(
-                """
-                INSERT INTO Invoice (InvoiceNumber, InvoiceDate, CustomerName, CustomerEmail, TotalAmount, DiscountAmount, Notes) 
-                VALUES ('INV-001', '2024-01-15', 'Acme Corp', 'billing@acme.com', 1250.00, 50.00, 'Sample invoice');
+        // Insert sample data using generated insert methods wrapped in Transact()
+        var insertResult = await connection
+            .Transact<Result<string, SqlError>>(
+                async (transaction) =>
+                {
+                    // Insert Customers
+                    var customer1Result = await connection
+                        .InsertCustomerAsync(
+                            "Acme Corp",
+                            "contact@acme.com",
+                            "555-0100",
+                            "2024-01-01"
+                        )
+                        .ConfigureAwait(false);
+                    if (customer1Result is not Result<long, SqlError>.Success customer1Success)
+                        return new Result<string, SqlError>.Failure(
+                            (customer1Result as Result<long, SqlError>.Failure)!.ErrorValue
+                        );
 
-                INSERT INTO InvoiceLine (InvoiceId, Description, Quantity, UnitPrice, Amount, DiscountPercentage, Notes) 
-                VALUES 
-                    (1, 'Software License', 1.0, 1000.00, 1000.00, NULL, NULL),
-                    (1, 'Support Package', 1.0, 250.00, 250.00, NULL, 'First year');
+                    var customer2Result = await connection
+                        .InsertCustomerAsync(
+                            "Tech Solutions",
+                            "info@techsolutions.com",
+                            "555-0200",
+                            "2024-01-02"
+                        )
+                        .ConfigureAwait(false);
+                    if (customer2Result is not Result<long, SqlError>.Success customer2Success)
+                        return new Result<string, SqlError>.Failure(
+                            (customer2Result as Result<long, SqlError>.Failure)!.ErrorValue
+                        );
 
-                INSERT INTO Customer (CustomerName, Email, Phone, CreatedDate)
-                VALUES 
-                    ('Acme Corp', 'contact@acme.com', '555-0100', '2024-01-01'),
-                    ('Tech Solutions', 'info@techsolutions.com', '555-0200', '2024-01-02');
+                    // Insert Invoice
+                    var invoiceResult = await connection
+                        .InsertInvoiceAsync(
+                            "INV-001",
+                            "2024-01-15",
+                            "Acme Corp",
+                            "billing@acme.com",
+                            1250.00,
+                            50.00,
+                            "Sample invoice"
+                        )
+                        .ConfigureAwait(false);
+                    if (invoiceResult is not Result<long, SqlError>.Success invoiceSuccess)
+                        return new Result<string, SqlError>.Failure(
+                            (invoiceResult as Result<long, SqlError>.Failure)!.ErrorValue
+                        );
 
-                INSERT INTO Address (CustomerId, Street, City, State, ZipCode, Country)
-                VALUES 
-                    (1, '123 Business Ave', 'New York', 'NY', '10001', 'USA'),
-                    (1, '456 Main St', 'Albany', 'NY', '12201', 'USA'),
-                    (2, '789 Tech Blvd', 'San Francisco', 'CA', '94105', 'USA');
+                    // Insert InvoiceLines
+                    var invoiceLine1Result = await connection
+                        .InsertInvoiceLineAsync(
+                            invoiceSuccess.Value,
+                            "Software License",
+                            1.0,
+                            1000.00,
+                            1000.00,
+                            null,
+                            null
+                        )
+                        .ConfigureAwait(false);
+                    if (invoiceLine1Result is not Result<long, SqlError>.Success)
+                        return new Result<string, SqlError>.Failure(
+                            (invoiceLine1Result as Result<long, SqlError>.Failure)!.ErrorValue
+                        );
 
-                INSERT INTO Orders (OrderNumber, OrderDate, CustomerId, TotalAmount, Status)
-                VALUES 
-                    ('ORD-001', '2024-01-10', 1, 500.00, 'Completed'),
-                    ('ORD-002', '2024-01-11', 2, 750.00, 'Processing');
+                    var invoiceLine2Result = await connection
+                        .InsertInvoiceLineAsync(
+                            invoiceSuccess.Value,
+                            "Support Package",
+                            1.0,
+                            250.00,
+                            250.00,
+                            null,
+                            "First year"
+                        )
+                        .ConfigureAwait(false);
+                    if (invoiceLine2Result is not Result<long, SqlError>.Success)
+                        return new Result<string, SqlError>.Failure(
+                            (invoiceLine2Result as Result<long, SqlError>.Failure)!.ErrorValue
+                        );
 
-                INSERT INTO OrderItem (OrderId, ProductName, Quantity, Price, Subtotal)
-                VALUES 
-                    (1, 'Widget A', 2.0, 100.00, 200.00),
-                    (1, 'Widget B', 3.0, 100.00, 300.00),
-                    (2, 'Service Package', 1.0, 750.00, 750.00);
-                """,
-                connection
+                    // Insert Addresses
+                    var address1Result = await connection
+                        .InsertAddressAsync(
+                            customer1Success.Value,
+                            "123 Business Ave",
+                            "New York",
+                            "NY",
+                            "10001",
+                            "USA"
+                        )
+                        .ConfigureAwait(false);
+                    if (address1Result is not Result<long, SqlError>.Success)
+                        return new Result<string, SqlError>.Failure(
+                            (address1Result as Result<long, SqlError>.Failure)!.ErrorValue
+                        );
+
+                    var address2Result = await connection
+                        .InsertAddressAsync(
+                            customer1Success.Value,
+                            "456 Main St",
+                            "Albany",
+                            "NY",
+                            "12201",
+                            "USA"
+                        )
+                        .ConfigureAwait(false);
+                    if (address2Result is not Result<long, SqlError>.Success)
+                        return new Result<string, SqlError>.Failure(
+                            (address2Result as Result<long, SqlError>.Failure)!.ErrorValue
+                        );
+
+                    var address3Result = await connection
+                        .InsertAddressAsync(
+                            customer2Success.Value,
+                            "789 Tech Blvd",
+                            "San Francisco",
+                            "CA",
+                            "94105",
+                            "USA"
+                        )
+                        .ConfigureAwait(false);
+                    if (address3Result is not Result<long, SqlError>.Success)
+                        return new Result<string, SqlError>.Failure(
+                            (address3Result as Result<long, SqlError>.Failure)!.ErrorValue
+                        );
+
+                    // Insert Orders
+                    var order1Result = await connection
+                        .InsertOrdersAsync(
+                            "ORD-001",
+                            "2024-01-10",
+                            customer1Success.Value,
+                            500.00,
+                            "Completed"
+                        )
+                        .ConfigureAwait(false);
+                    if (order1Result is not Result<long, SqlError>.Success order1Success)
+                        return new Result<string, SqlError>.Failure(
+                            (order1Result as Result<long, SqlError>.Failure)!.ErrorValue
+                        );
+
+                    var order2Result = await connection
+                        .InsertOrdersAsync(
+                            "ORD-002",
+                            "2024-01-11",
+                            customer2Success.Value,
+                            750.00,
+                            "Processing"
+                        )
+                        .ConfigureAwait(false);
+                    if (order2Result is not Result<long, SqlError>.Success order2Success)
+                        return new Result<string, SqlError>.Failure(
+                            (order2Result as Result<long, SqlError>.Failure)!.ErrorValue
+                        );
+
+                    // Insert OrderItems
+                    var orderItem1Result = await connection
+                        .InsertOrderItemAsync(order1Success.Value, "Widget A", 2.0, 100.00, 200.00)
+                        .ConfigureAwait(false);
+                    if (orderItem1Result is not Result<long, SqlError>.Success)
+                        return new Result<string, SqlError>.Failure(
+                            (orderItem1Result as Result<long, SqlError>.Failure)!.ErrorValue
+                        );
+
+                    var orderItem2Result = await connection
+                        .InsertOrderItemAsync(order1Success.Value, "Widget B", 3.0, 100.00, 300.00)
+                        .ConfigureAwait(false);
+                    if (orderItem2Result is not Result<long, SqlError>.Success)
+                        return new Result<string, SqlError>.Failure(
+                            (orderItem2Result as Result<long, SqlError>.Failure)!.ErrorValue
+                        );
+
+                    var orderItem3Result = await connection
+                        .InsertOrderItemAsync(
+                            order2Success.Value,
+                            "Service Package",
+                            1.0,
+                            750.00,
+                            750.00
+                        )
+                        .ConfigureAwait(false);
+                    if (orderItem3Result is not Result<long, SqlError>.Success)
+                        return new Result<string, SqlError>.Failure(
+                            (orderItem3Result as Result<long, SqlError>.Failure)!.ErrorValue
+                        );
+
+                    return new Result<string, SqlError>.Success(
+                        "Data inserted successfully using generated methods"
+                    );
+                }
             )
-        )
-        {
-            await command.ExecuteNonQueryAsync().ConfigureAwait(false);
-        }
+            .ConfigureAwait(false);
+
+        Console.WriteLine("✅ Sample data processed within transaction");
 
         // Test all queries to verify source generator works with different table names
         Console.WriteLine("=== Testing GetInvoicesAsync ===");
