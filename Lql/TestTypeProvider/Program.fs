@@ -2,6 +2,7 @@ open System
 open Microsoft.Data.Sqlite
 
 // Reference the type provider
+open Lql.TypeProvider
 open Lql
 
 printfn "Testing LQL Type Provider (FSharp.Data.SqlClient pattern)"
