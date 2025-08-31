@@ -38,6 +38,6 @@ public abstract record ColumnInfo
     /// <summary>
     /// Creates a subquery column
     /// </summary>
-    public static ColumnInfo FromSubQuery(SqlStatement subQuery, string? alias = null) =>
+    public static ColumnInfo FromSubQuery(SelectStatement subQuery, string? alias = null) =>
         new SubQueryColumn(subQuery, alias);
 }

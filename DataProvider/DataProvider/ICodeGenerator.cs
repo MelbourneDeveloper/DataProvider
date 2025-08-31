@@ -20,7 +20,7 @@ public static class CodeGenerators
     public delegate Result<string, SqlError> GenerateCodeFunc(
         string fileName,
         string sql,
-        SqlStatement statement,
+        SelectStatement statement,
         bool hasCustomImplementation,
         GroupingConfig? groupingConfig = null
     );
@@ -39,7 +39,7 @@ public static class CodeGenerators
     public delegate Result<string, SqlError> GenerateCodeWithMetadataFunc(
         string fileName,
         string sql,
-        SqlStatement statement,
+        SelectStatement statement,
         string connectionString,
         IReadOnlyList<DatabaseColumn> columnMetadata,
         bool hasCustomImplementation,

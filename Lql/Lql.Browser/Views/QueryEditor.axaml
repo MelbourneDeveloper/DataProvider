@@ -8,8 +8,8 @@
              x:Class="Lql.Browser.Views.QueryEditor"
              x:DataType="vm:MainWindowViewModel">
 
-    <Border Background="{StaticResource ObsidianBrush}" >
-        <Border Background="{StaticResource ObsidianBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" CornerRadius="0">
+    <Border  >
+        <Border  BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" CornerRadius="0">
             <AvaloniaEdit:TextEditor x:Name="TextEditor"
                                      Background="Transparent"
                                      Foreground="{StaticResource CodeTextBrush}"

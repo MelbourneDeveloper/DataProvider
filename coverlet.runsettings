@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>json,lcov,opencover</Format>
+          <Exclude>[*]*.g*</Exclude> <!-- Exclude generated files -->
+          <ExcludeByFile>**/obj/**/*,**/bin/**/*</ExcludeByFile>
+          <ExcludeByAttribute>System.Diagnostics.DebuggerNonUserCode,System.Diagnostics.DebuggerHidden,System.ComponentModel.EditorBrowsableAttribute,System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage,Microsoft.CodeAnalysis.GeneratorAttribute</ExcludeByAttribute>
+          <SkipAutoProps>true</SkipAutoProps>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

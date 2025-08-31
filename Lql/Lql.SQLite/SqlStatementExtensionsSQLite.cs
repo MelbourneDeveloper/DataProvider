@@ -3,12 +3,13 @@ using Results;
 namespace Lql.SQLite;
 
 /// <summary>
-/// SQLite-specific extension methods for SqlStatement
+/// SQLite-specific extension methods for SelectStatement
 /// </summary>
 public static class SqlStatementExtensionsSQLite
 {
     /// <summary>
     /// Converts a LqlStatement to SQLite syntax
+    /// TODO: this should not return a result because it can't fail
     /// </summary>
     /// <param name="statement">The LqlStatement to convert</param>
     /// <returns>A Result containing either SQLite SQL string or a SqlError</returns>
@@ -48,19 +49,13 @@ public static class SqlStatementExtensionsSQLite
     }
 
     /// <summary>
-    /// Converts a Selecta.SqlStatement to SQLite syntax
+    /// Converts a Selecta.SelectStatement to SQLite syntax
+    /// TODO: this should not return a result because it can't fail
     /// </summary>
-    /// <param name="statement">The SqlStatement to convert</param>
+    /// <param name="statement">The SelectStatement to convert</param>
     /// <returns>A Result containing either SQLite SQL string or a SqlError</returns>
-    public static Result<string, SqlError> ToSQLite(this Selecta.SqlStatement statement)
+    public static Result<string, SqlError> ToSQLite(this Selecta.SelectStatement statement)
     {
-        ArgumentNullException.ThrowIfNull(statement);
-
-        if (statement.ParseError != null)
-        {
-            return new Result<string, SqlError>.Failure(SqlError.Create(statement.ParseError));
-        }
-
         try
         {
             var sql = SQLiteContext.ToSQLiteSql(statement);

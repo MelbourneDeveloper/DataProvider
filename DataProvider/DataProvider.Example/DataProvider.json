@@ -25,6 +25,51 @@
             "generateDelete": true,
             "excludeColumns": ["Id"],
             "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "Invoice",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "InvoiceLine",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "Address",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "Orders",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "OrderItem",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
         }
     ],
     "connectionString": "Data Source=invoices.db"

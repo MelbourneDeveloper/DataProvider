@@ -1,3 +1,5 @@
+using Results;
+
 namespace Selecta;
 
 /// <summary>
@@ -9,6 +11,6 @@ public interface ISqlParser
     /// Parse SQL text and extract comprehensive metadata including SELECT list, tables, parameters, and joins
     /// </summary>
     /// <param name="sql">The SQL text to parse</param>
-    /// <returns>The parsed SQL statement metadata</returns>
-    SqlStatement ParseSql(string sql);
+    /// <returns>A Result containing either the parsed SQL statement metadata or an error message</returns>
+    Result<SelectStatement, string> ParseSql(string sql);
 }

@@ -1,3 +1,4 @@
+using Results;
 using Selecta;
 using SqlParser;
 using SqlParser.Ast;
@@ -12,11 +13,11 @@ public sealed class SqlParserCsImplementation : ISqlParser
     private readonly SqlQueryParser _parser = new();
 
     /// <summary>
-    /// Parses the specified SQL text into a <see cref="SqlStatement"/> including parameters and query type.
+    /// Parses the specified SQL text into a Result containing either a SelectStatement or an error.
     /// </summary>
     /// <param name="sql">The SQL text to parse.</param>
-    /// <returns>A <see cref="SqlStatement"/> describing parameters, query type, and any parse error.</returns>
-    public SqlStatement ParseSql(string sql)
+    /// <returns>A Result containing either a SelectStatement or an error message.</returns>
+    public Result<SelectStatement, string> ParseSql(string sql)
     {
         try
         {
@@ -27,20 +28,16 @@ public sealed class SqlParserCsImplementation : ISqlParser
             // Determine query type from the first statement
             var queryType = DetermineQueryType(statements);
 
-            return new SqlStatement
+            var selectStatement = new SelectStatement
             {
-                Parameters = parameterInfos.AsReadOnly(),
-                QueryType = queryType,
+                Parameters = parameterInfos.ToFrozenSet(),
             };
+            
+            return new Result<SelectStatement, string>.Success(selectStatement);
         }
         catch (Exception ex)
         {
-            return new SqlStatement
-            {
-                Parameters = new List<ParameterInfo>().AsReadOnly(),
-                QueryType = "UNKNOWN",
-                ParseError = ex.ToString(),
-            };
+            return new Result<SelectStatement, string>.Failure(ex.Message);
         }
     }
 

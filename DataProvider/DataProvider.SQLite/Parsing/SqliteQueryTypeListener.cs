@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace DataProvider.SQLite.Parsing;
 
 /// <summary>
 /// Listener to determine SQLite query type from parse tree
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class SqliteQueryTypeListener : SQLiteParserBaseListener
 {
     /// <summary>

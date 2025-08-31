@@ -1,7 +1,9 @@
 using System.CommandLine;
 using System.Text.Json;
+using DataProvider.CodeGeneration;
 using DataProvider.SQLite.Parsing;
 using Results;
+using Selecta;
 
 #pragma warning disable CA1849 // Call async methods when in an async method
 
@@ -157,7 +159,15 @@ internal static class Program
                         // Skip schema file; it's only for DB initialization
                         continue;
                     }
-                    var stmt = parser.ParseSql(sql);
+                    var parseResult = parser.ParseSql(sql);
+                    if (parseResult is Result<SelectStatement, string>.Failure parseFailure)
+                    {
+                        Console.WriteLine(
+                            $"Error parsing SQL file '{sqlPath}': {parseFailure.ErrorValue}"
+                        );
+                        continue;
+                    }
+                    var stmt = ((Result<SelectStatement, string>.Success)parseResult).Value;
 
                     var colsResult = await SqliteCodeGenerator
                         .GetColumnMetadataFromSqlAsync(cfg.ConnectionString, sql, stmt.Parameters)
@@ -240,6 +250,128 @@ internal static class Program
                 }
             }
 
+            // Generate table operations if configured
+            if (cfg.Tables?.Count > 0)
+            {
+                Console.WriteLine($"🔧 Processing {cfg.Tables.Count} table configurations...");
+
+                foreach (var tableConfigItem in cfg.Tables)
+                {
+                    try
+                    {
+                        Console.WriteLine(
+                            $"🔧 Generating operations for table {tableConfigItem.Name}..."
+                        );
+
+                        // Use SQLite's native schema inspection to get table metadata
+                        using var conn = new Microsoft.Data.Sqlite.SqliteConnection(
+                            cfg.ConnectionString
+                        );
+                        await conn.OpenAsync().ConfigureAwait(false);
+
+                        var columns = new List<DatabaseColumn>();
+                        using (var cmd = conn.CreateCommand())
+                        {
+                            cmd.CommandText = $"PRAGMA table_info({tableConfigItem.Name})";
+                            using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+
+                            while (await reader.ReadAsync().ConfigureAwait(false))
+                            {
+                                var columnName = reader.GetString(1); // name column
+                                var sqliteType = reader.GetString(2); // type column
+                                var notNull = reader.GetInt32(3) == 1; // notnull column
+                                var isPrimaryKey = reader.GetInt32(5) > 0; // pk column
+
+                                var csharpType = MapSqliteTypeToCSharpType(sqliteType, !notNull);
+
+                                columns.Add(
+                                    new DatabaseColumn
+                                    {
+                                        Name = columnName,
+                                        SqlType = sqliteType,
+                                        CSharpType = csharpType,
+                                        IsNullable = !notNull,
+                                        IsPrimaryKey = isPrimaryKey,
+                                        IsIdentity =
+                                            isPrimaryKey
+                                            && sqliteType.Contains(
+                                                "INTEGER",
+                                                StringComparison.OrdinalIgnoreCase
+                                            ),
+                                        IsComputed = false,
+                                    }
+                                );
+                            }
+                        }
+
+                        if (columns.Count == 0)
+                        {
+                            Console.WriteLine(
+                                $"❌ Table {tableConfigItem.Name} not found or has no columns"
+                            );
+                            hadErrors = true;
+                            continue;
+                        }
+
+                        var table = new DatabaseTable
+                        {
+                            Schema = "main",
+                            Name = tableConfigItem.Name,
+                            Columns = columns.AsReadOnly(),
+                        };
+
+                        // Convert TableConfigItem to TableConfig
+                        var tableConfig = new TableConfig
+                        {
+                            Schema = tableConfigItem.Schema,
+                            Name = tableConfigItem.Name,
+                            GenerateInsert = tableConfigItem.GenerateInsert,
+                            GenerateUpdate = tableConfigItem.GenerateUpdate,
+                            GenerateDelete = tableConfigItem.GenerateDelete,
+                            ExcludeColumns = tableConfigItem.ExcludeColumns.ToList().AsReadOnly(),
+                            PrimaryKeyColumns = tableConfigItem
+                                .PrimaryKeyColumns.ToList()
+                                .AsReadOnly(),
+                        };
+
+                        // Generate table operations
+                        var tableOperationGenerator = new DefaultTableOperationGenerator(
+                            "SqliteConnection"
+                        );
+                        var operationsResult = tableOperationGenerator.GenerateTableOperations(
+                            table,
+                            tableConfig
+                        );
+                        if (operationsResult is Result<string, SqlError>.Success operationsSuccess)
+                        {
+                            var target = Path.Combine(
+                                outDir.FullName,
+                                tableConfigItem.Name + "Operations.g.cs"
+                            );
+                            await File.WriteAllTextAsync(target, operationsSuccess.Value)
+                                .ConfigureAwait(false);
+                            Console.WriteLine($"✅ Generated {target}");
+                        }
+                        else if (
+                            operationsResult is Result<string, SqlError>.Failure operationsFailure
+                        )
+                        {
+                            Console.WriteLine(
+                                $"❌ Failed to generate table operations for {tableConfigItem.Name}: {operationsFailure.ErrorValue.Message}"
+                            );
+                            hadErrors = true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(
+                            $"❌ Error generating table operations for {tableConfigItem.Name}: {ex.Message}"
+                        );
+                        hadErrors = true;
+                    }
+                }
+            }
+
             return hadErrors ? 1 : 0;
         }
         catch (Exception ex)
@@ -315,5 +447,36 @@ internal static class Program
             ? head
             : $"{head}{tail} (SQLite generation Error {codeText})";
         return final;
+    }
+
+    /// <summary>
+    /// Maps SQLite types to C# types
+    /// </summary>
+    private static string MapSqliteTypeToCSharpType(string sqliteType, bool isNullable)
+    {
+        var baseType = sqliteType.ToUpperInvariant() switch
+        {
+            var t when t.Contains("INT", StringComparison.OrdinalIgnoreCase) => "long",
+            var t
+                when t.Contains("REAL", StringComparison.OrdinalIgnoreCase)
+                    || t.Contains("FLOAT", StringComparison.OrdinalIgnoreCase)
+                    || t.Contains("DOUBLE", StringComparison.OrdinalIgnoreCase) => "double",
+            var t
+                when t.Contains("DECIMAL", StringComparison.OrdinalIgnoreCase)
+                    || t.Contains("NUMERIC", StringComparison.OrdinalIgnoreCase) => "double",
+            var t when t.Contains("BOOL", StringComparison.OrdinalIgnoreCase) => "bool",
+            var t
+                when t.Contains("DATE", StringComparison.OrdinalIgnoreCase)
+                    || t.Contains("TIME", StringComparison.OrdinalIgnoreCase) => "string", // SQLite stores dates as text
+            var t when t.Contains("BLOB", StringComparison.OrdinalIgnoreCase) => "byte[]",
+            _ => "string",
+        };
+
+        if (isNullable && baseType != "string" && baseType != "byte[]")
+        {
+            return baseType + "?";
+        }
+
+        return baseType;
     }
 }

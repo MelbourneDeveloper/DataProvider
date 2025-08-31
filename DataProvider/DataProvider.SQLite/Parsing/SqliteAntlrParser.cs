@@ -1,20 +1,24 @@
+using System.Collections.Frozen;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
+using Results;
 using Selecta;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DataProvider.SQLite.Parsing;
 
 /// <summary>
 /// SQLite parser implementation using ANTLR grammar
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class SqliteAntlrParser : ISqlParser
 {
     /// <summary>
-    /// Parses the specified SQL text and returns a <see cref="SqlStatement"/> containing parameters and query type.
+    /// Parses the specified SQL text and returns a Result containing either a SelectStatement or an error.
     /// </summary>
     /// <param name="sql">The SQL text to parse.</param>
-    /// <returns>A parsed <see cref="SqlStatement"/> including discovered parameters and query type.</returns>
-    public SqlStatement ParseSql(string sql)
+    /// <returns>A Result containing either a parsed SelectStatement or an error message.</returns>
+    public Result<SelectStatement, string> ParseSql(string sql)
     {
         try
         {
@@ -34,20 +38,12 @@ public sealed class SqliteAntlrParser : ISqlParser
             // Determine query type
             var queryType = DetermineQueryType(parseTree);
 
-            return new SqlStatement
-            {
-                Parameters = parameterInfos.AsReadOnly(),
-                QueryType = queryType,
-            };
+            var statement = new SelectStatement { Parameters = parameterInfos.ToFrozenSet() };
+            return new Result<SelectStatement, string>.Success(statement);
         }
         catch (Exception ex)
         {
-            return new SqlStatement
-            {
-                Parameters = new List<ParameterInfo>().AsReadOnly(),
-                QueryType = "UNKNOWN",
-                ParseError = ex.ToString(),
-            };
+            return new Result<SelectStatement, string>.Failure($"Failed to parse SQL: {ex}");
         }
     }
 

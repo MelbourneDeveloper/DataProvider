@@ -1421,7 +1421,7 @@ public sealed class LqlToAstVisitor : LqlBaseVisitor<INode>
                 .orderClause()
                 .argList()
                 .arg()
-                .Select(arg => ProcessWindowOrderItem(arg))
+                .Select(ProcessWindowOrderItem)
                 .ToArray();
             windowClause += $"ORDER BY {string.Join(", ", orderArgs)}";
         }
@@ -1667,7 +1667,7 @@ public sealed class LqlToAstVisitor : LqlBaseVisitor<INode>
     /// <returns>The ORDER BY step.</returns>
     private static OrderByStep CreateOrderByStep(INode baseNode, LqlParser.ArgContext[] args)
     {
-        var orderItems = args.Select(arg => ExtractOrderItem(arg)).ToList();
+        var orderItems = args.Select(ExtractOrderItem).ToList();
         return new OrderByStep(orderItems) { Base = baseNode };
     }
 

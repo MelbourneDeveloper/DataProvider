@@ -150,7 +150,7 @@ public static class DbConnectionExtensions
     }
 
     /// <summary>
-    /// Execute a SqlStatement by generating platform-specific SQL and mapping results.
+    /// Execute a SelectStatement by generating platform-specific SQL and mapping results.
     /// </summary>
     /// <typeparam name="T">Result row type</typeparam>
     /// <param name="connection">The database connection</param>
@@ -161,10 +161,10 @@ public static class DbConnectionExtensions
     /// <returns>Result with list of T or SqlError on failure</returns>
     public static Result<IReadOnlyList<T>, SqlError> GetRecords<T>(
         this IDbConnection connection,
-        Selecta.SqlStatement statement,
-        Func<Selecta.SqlStatement, Result<string, SqlError>> sqlGenerator,
-        IEnumerable<IDataParameter>? parameters = null,
-        Func<IDataReader, T>? mapper = null
+        Selecta.SelectStatement statement,
+        Func<Selecta.SelectStatement, Result<string, SqlError>> sqlGenerator,
+        Func<IDataReader, T> mapper,
+        IEnumerable<IDataParameter>? parameters = null
     )
     {
         if (connection == null)
@@ -173,7 +173,7 @@ public static class DbConnectionExtensions
             );
         if (statement == null)
             return new Result<IReadOnlyList<T>, SqlError>.Failure(
-                SqlError.Create("SqlStatement is null")
+                SqlError.Create("SelectStatement is null")
             );
         if (sqlGenerator == null)
             return new Result<IReadOnlyList<T>, SqlError>.Failure(

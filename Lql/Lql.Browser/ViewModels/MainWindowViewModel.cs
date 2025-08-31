@@ -46,6 +46,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// </summary>
     public FileTabsViewModel FileTabsViewModel { get; }
 
+    /// <summary>
+    /// ViewModel for the messages panel component
+    /// </summary>
+    public MessagesPanelViewModel MessagesPanelViewModel { get; }
+
     public ObservableCollection<FileTab> FileTabs { get; } = [];
 
     /// <summary>
@@ -77,6 +82,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ToolbarViewModel = new ToolbarViewModel();
         StatusBarViewModel = new StatusBarViewModel();
         FileTabsViewModel = new FileTabsViewModel();
+        MessagesPanelViewModel = new MessagesPanelViewModel();
 
         ConnectDatabaseCommand = new AsyncRelayCommand(ConnectDatabaseAsync);
         NewFileCommand = new RelayCommand<string>(NewFile);
@@ -468,9 +474,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         Console.WriteLine("=== ExecuteQueryAsync Started ===");
 
+        // Clear previous messages
+        MessagesPanelViewModel.ClearAll();
+
         if (_connection == null)
         {
             Console.WriteLine("ERROR: No database connection");
+            MessagesPanelViewModel.AddError("No database connection");
             StatusBarViewModel.StatusMessage = "No database connection";
             return;
         }
@@ -478,6 +488,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         if (ActiveTab == null || string.IsNullOrWhiteSpace(ActiveTab.Content))
         {
             Console.WriteLine("ERROR: No query to execute");
+            MessagesPanelViewModel.AddError("No query to execute");
             StatusBarViewModel.StatusMessage = "No query to execute";
             return;
         }
@@ -489,12 +500,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         {
             var stopwatch = Stopwatch.StartNew();
             StatusBarViewModel.StatusMessage = "Executing query...";
+            MessagesPanelViewModel.AddInfo("Starting query execution...");
 
             string sqlToExecute;
 
             if (ActiveTab.FileType == FileType.Lql)
             {
                 Console.WriteLine("Converting LQL to SQL...");
+                MessagesPanelViewModel.AddInfo("Converting LQL to SQL...");
                 var lqlStatement = LqlStatementConverter.ToStatement(ActiveTab.Content);
                 if (lqlStatement is Result<LqlStatement, SqlError>.Success lqlSuccess)
                 {
@@ -504,11 +517,15 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     {
                         sqlToExecute = sqlSuccess.Value;
                         Console.WriteLine($"LQL converted to SQL: {sqlToExecute}");
+                        MessagesPanelViewModel.SetTranspiledSql(sqlToExecute);
                         StatusBarViewModel.StatusMessage = $"LQL converted to SQL: {sqlToExecute}";
                     }
                     else if (sqlResult is Result<string, SqlError>.Failure sqlFailure)
                     {
                         Console.WriteLine($"LQL conversion error: {sqlFailure.ErrorValue.Message}");
+                        MessagesPanelViewModel.AddError(
+                            $"LQL conversion error: {sqlFailure.ErrorValue.Message}"
+                        );
                         StatusBarViewModel.StatusMessage =
                             $"LQL conversion error: {sqlFailure.ErrorValue.Message}";
                         return;
@@ -516,6 +533,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     else
                     {
                         Console.WriteLine("Unknown LQL conversion result");
+                        MessagesPanelViewModel.AddError("Unknown LQL conversion result");
                         StatusBarViewModel.StatusMessage = "Unknown LQL conversion result";
                         return;
                     }
@@ -523,6 +541,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 else if (lqlStatement is Result<LqlStatement, SqlError>.Failure lqlFailure)
                 {
                     Console.WriteLine($"LQL parse error: {lqlFailure.ErrorValue.Message}");
+                    MessagesPanelViewModel.AddError(
+                        $"LQL parse error: {lqlFailure.ErrorValue.Message}"
+                    );
                     StatusBarViewModel.StatusMessage =
                         $"LQL parse error: {lqlFailure.ErrorValue.Message}";
                     return;
@@ -530,6 +551,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 else
                 {
                     Console.WriteLine("Unknown LQL parse result");
+                    MessagesPanelViewModel.AddError("Unknown LQL parse result");
                     StatusBarViewModel.StatusMessage = "Unknown LQL parse result";
                     return;
                 }
@@ -538,9 +560,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             {
                 sqlToExecute = ActiveTab.Content;
                 Console.WriteLine($"Using SQL directly: {sqlToExecute}");
+                MessagesPanelViewModel.SetTranspiledSql(sqlToExecute);
+                MessagesPanelViewModel.AddInfo("Using SQL query directly");
             }
 
             Console.WriteLine($"Executing SQL: {sqlToExecute}");
+            MessagesPanelViewModel.AddInfo($"Executing SQL query...");
 
             using var command = _connection.CreateCommand();
             command.CommandText = sqlToExecute;
@@ -590,8 +615,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 _currentDataTable.Columns.Count > 0
                     ? _currentDataTable.Columns[0].ColumnName
                     : "Results";
-            StatusBarViewModel.StatusMessage =
-                $"Query executed successfully in {stopwatch.ElapsedMilliseconds} ms";
+
+            var successMessage =
+                $"Query executed successfully in {stopwatch.ElapsedMilliseconds} ms - {_currentDataTable.Rows.Count} rows returned";
+            StatusBarViewModel.StatusMessage = successMessage;
+            MessagesPanelViewModel.AddSuccess(successMessage);
 
             Console.WriteLine("=== ExecuteQueryAsync Completed Successfully ===");
         }
@@ -599,7 +627,19 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         {
             Console.WriteLine($"=== ERROR in ExecuteQueryAsync ===");
             Console.WriteLine($"Exception: {ex}");
-            StatusBarViewModel.StatusMessage = $"Query execution error: {ex.Message}";
+
+            var errorMessage = $"Query execution error: {ex.Message}";
+            StatusBarViewModel.StatusMessage = errorMessage;
+            MessagesPanelViewModel.AddError(errorMessage);
+
+            // Add the SQL that failed to the messages panel for debugging
+            if (!string.IsNullOrEmpty(MessagesPanelViewModel.TranspiledSql))
+            {
+                MessagesPanelViewModel.AddError(
+                    $"Failed SQL: {MessagesPanelViewModel.TranspiledSql}"
+                );
+            }
+
             ResultsGridViewModel.QueryResults = null;
             ResultsGridViewModel.ExecutionTime = "";
             ResultsGridViewModel.RowCount = "";

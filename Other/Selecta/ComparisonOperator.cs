@@ -15,6 +15,7 @@ public abstract record ComparisonOperator
 
     /// <summary>
     /// Gets the SQL symbol or keyword that represents this operator.
+    /// TODO: there should be no ToSql methods
     /// </summary>
     public string ToSql() =>
         this switch

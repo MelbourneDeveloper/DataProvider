@@ -65,12 +65,6 @@ public interface ISqlContext
     /// <param name="count">The offset count</param>
     void SetOffset(string count);
 
-    /// <summary>
-    /// Sets the INSERT target table and columns
-    /// </summary>
-    /// <param name="table">The target table</param>
-    /// <param name="columns">The columns to insert</param>
-    void SetInsertTarget(string table, IEnumerable<string> columns);
 
     /// <summary>
     /// Adds a UNION or UNION ALL

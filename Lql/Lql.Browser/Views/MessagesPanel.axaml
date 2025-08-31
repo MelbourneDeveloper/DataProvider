@@ -1,0 +1,61 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Lql.Browser.ViewModels"
+             xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="300"
+             x:Class="Lql.Browser.Views.MessagesPanel"
+             x:DataType="vm:MessagesPanelViewModel">
+
+    <Border Background="{StaticResource ObsidianBrush}">
+        <Border Background="{StaticResource ObsidianBrush}" BorderBrush="{StaticResource BorderDefaultBrush}"
+                BorderThickness="1" CornerRadius="0">
+            
+            <!-- Messages List -->
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Messages}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="8,4" 
+                                    Background="Transparent"
+                                    BorderBrush="{StaticResource BorderSubtleBrush}" 
+                                    BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <TextBlock Grid.Column="0" 
+                                               Text="{Binding Icon}"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,8,0"
+                                               FontSize="12"/>
+                                    
+                                    <TextBlock Grid.Column="1" 
+                                               Text="{Binding FormattedTimestamp}"
+                                               Foreground="{StaticResource SubtleTextBrush}"
+                                               FontFamily="{StaticResource CodeFont}"
+                                               FontSize="10"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,12,0"/>
+                                    
+                                    <TextBlock Grid.Column="2" 
+                                               Text="{Binding Message}"
+                                               TextWrapping="Wrap"
+                                               VerticalAlignment="Center"
+                                               FontFamily="{StaticResource CodeFont}"
+                                               FontSize="11"
+                                               Foreground="{Binding Type, Converter={x:Static vm:MessageTypeToColorConverter.Instance}}"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            
+        </Border>
+    </Border>
+</UserControl>

@@ -7,8 +7,8 @@
              x:Class="Lql.Browser.Views.ResultsGrid"
              x:DataType="vm:ResultsGridViewModel">
 
-    <Border Background="{StaticResource ObsidianBrush}">
-        <Border Background="{StaticResource ObsidianBrush}" BorderBrush="{StaticResource BorderDefaultBrush}"
+    <Border >
+        <Border  BorderBrush="{StaticResource BorderDefaultBrush}"
                 BorderThickness="1" CornerRadius="0">
 
 

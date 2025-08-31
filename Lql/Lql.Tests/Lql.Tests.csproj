@@ -6,6 +6,7 @@
     <IsTestProject>true</IsTestProject>
     <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)Testing.ruleset</CodeAnalysisRuleSet>
     <WarningsNotAsErrors>CA1303</WarningsNotAsErrors>
+    <NoWarn>CA1303</NoWarn>
     <!-- Tests are exempt from XML docs per repo rules -->
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>

@@ -1,0 +1,43 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Lql.Browser.ViewModels"
+             xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="300"
+             x:Class="Lql.Browser.Views.TranspiledSqlPanel"
+             x:DataType="vm:MessagesPanelViewModel">
+
+    <Border Background="{StaticResource ObsidianBrush}">
+        <Border Background="{StaticResource ObsidianBrush}" BorderBrush="{StaticResource BorderDefaultBrush}"
+                BorderThickness="1" CornerRadius="0">
+            
+            <Grid>
+                <AvaloniaEdit:TextEditor x:Name="SqlEditor"
+                                         Background="Transparent"
+                                         Foreground="{StaticResource CodeTextBrush}"
+                                         FontFamily="{StaticResource CodeFont}"
+                                         Document="{Binding TranspiledSqlDocument}"
+                                         IsReadOnly="True"
+                                         ShowLineNumbers="True"
+                                         WordWrap="True"
+                                         IsVisible="{Binding TranspiledSql, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <AvaloniaEdit:TextEditor.Options>
+                        <AvaloniaEdit:TextEditorOptions ShowSpaces="False" 
+                                                        ShowTabs="False" 
+                                                        ShowEndOfLine="False"
+                                                        HighlightCurrentLine="False"/>
+                    </AvaloniaEdit:TextEditor.Options>
+                </AvaloniaEdit:TextEditor>
+                
+                <TextBlock Text="No SQL to display"
+                           Foreground="{StaticResource SubtleTextBrush}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontStyle="Italic"
+                           IsVisible="{Binding TranspiledSql, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
+            </Grid>
+            
+        </Border>
+    </Border>
+</UserControl>

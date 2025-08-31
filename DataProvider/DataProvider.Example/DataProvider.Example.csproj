@@ -5,10 +5,10 @@
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)Example.ruleset</CodeAnalysisRuleSet>
         <WarningsNotAsErrors>CA1303</WarningsNotAsErrors>
+        <NoWarn>CA1303</NoWarn>
         <EnableLqlTranspile>true</EnableLqlTranspile>
     </PropertyGroup>
     <ItemGroup>
-        <!-- Removed analyzer reference to avoid Roslyn dependency loading issues -->
         <ProjectReference Include="../../Other/Results/Results.csproj" />
         <ProjectReference Include="../DataProvider/DataProvider.csproj" />
         <ProjectReference Include="../../Lql/Lql.SQLite/Lql.SQLite.csproj" />
@@ -25,6 +25,7 @@
         <AdditionalFiles Include="GetCustomersLql.lql" />
         <AdditionalFiles Include="GetCustomersLql.grouping.json" />
         <AdditionalFiles Include="DataProvider.json" />
+        <AdditionalFiles Include="schema.sql" />
     </ItemGroup>
     <!-- Pre-compile: transpile LQL to SQL, then generate C# from SQL using external CLI -->
     <Target Name="TranspileLqlAndGenerateDataProvider" BeforeTargets="CoreCompile">

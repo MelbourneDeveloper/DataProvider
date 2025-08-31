@@ -7,7 +7,7 @@ namespace Lql.SQLite;
 /// </summary>
 public sealed class SQLiteContext : ISqlContext
 {
-    private readonly SqlStatementBuilder _builder = new();
+    private readonly SelectStatementBuilder _builder = new();
     private string? _baseTable;
 
     /// <summary>
@@ -97,14 +97,6 @@ public sealed class SQLiteContext : ISqlContext
     public void SetOffset(string count) => _builder.WithOffset(count);
 
     /// <summary>
-    /// Sets the INSERT target table and columns
-    /// </summary>
-    /// <param name="table">The target table</param>
-    /// <param name="columns">The columns to insert</param>
-    public void SetInsertTarget(string table, IEnumerable<string> columns) =>
-        _builder.WithInsertTarget(table, columns);
-
-    /// <summary>
     /// Adds a UNION or UNION ALL
     /// </summary>
     /// <param name="query">The query to union with</param>
@@ -118,8 +110,8 @@ public sealed class SQLiteContext : ISqlContext
     public string GenerateSQL()
     {
         // Generate SQL from the builder instead of creating another statement
-        var statement = _builder.Build();
-        return GenerateSQLiteSQL(statement);
+        var selectStatement = _builder.Build();
+        return GenerateSQLiteSQL(selectStatement);
     }
 
     /// <summary>
@@ -136,8 +128,8 @@ public sealed class SQLiteContext : ISqlContext
         }
 
         // Generate SQL from the builder instead of recursing
-        var statement = _builder.Build();
-        return GenerateSQLiteSQL(statement);
+        var selectStatement = _builder.Build();
+        return GenerateSQLiteSQL(selectStatement);
     }
 
     private void ProcessStep(IStep step)
@@ -202,18 +194,18 @@ public sealed class SQLiteContext : ISqlContext
         _builder.WithLimit(limitStep.Count.ToString());
 
     /// <summary>
-    /// Public helper to generate SQLite SQL from an existing SqlStatement
+    /// Public helper to generate SQLite SQL from an existing SelectStatement
     /// </summary>
     /// <param name="statement">The statement to generate SQL for</param>
     /// <returns>SQLite SQL string</returns>
-    public static string ToSQLiteSql(SqlStatement statement) => GenerateSQLiteSQL(statement);
+    public static string ToSQLiteSql(SelectStatement statement) => GenerateSQLiteSQL(statement);
 
     /// <summary>
-    /// Generates SQLite SQL from a SqlStatement
+    /// Generates SQLite SQL from a SelectStatement
     /// </summary>
     /// <param name="statement">The statement to generate SQL for</param>
     /// <returns>SQLite SQL string</returns>
-    private static string GenerateSQLiteSQL(SqlStatement statement)
+    private static string GenerateSQLiteSQL(SelectStatement statement)
     {
         var sql = new System.Text.StringBuilder();
 
@@ -237,8 +229,15 @@ public sealed class SQLiteContext : ISqlContext
         if (statement.Tables.Count > 0)
         {
             sql.Append(" FROM ");
-            var baseTable = statement.Tables[0];
+            var baseTable = statement.Tables.First();
             sql.Append(baseTable.Name);
+            if (!string.IsNullOrEmpty(baseTable.Alias))
+            {
+                sql.Append(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    $" {baseTable.Alias}"
+                );
+            }
 
             // Add JOINs - get from JoinGraph
             var joinTables = statement.Tables.Count > 1 ? statement.Tables.Skip(1) : [];
@@ -249,12 +248,23 @@ public sealed class SQLiteContext : ISqlContext
                 var relationship = joinRelationships.FirstOrDefault(j =>
                     j.RightTable == table.Name
                 );
-                var joinType = relationship?.JoinType ?? "INNER JOIN";
+                var joinType = relationship?.JoinType ?? "INNER";
+                var fullJoinType = joinType.Contains("JOIN", StringComparison.OrdinalIgnoreCase)
+                    ? joinType
+                    : $"{joinType} JOIN";
 
                 sql.Append(
                     System.Globalization.CultureInfo.InvariantCulture,
-                    $" {joinType} {table.Name}"
+                    $" {fullJoinType} {table.Name}"
                 );
+
+                if (!string.IsNullOrEmpty(table.Alias))
+                {
+                    sql.Append(
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        $" {table.Alias}"
+                    );
+                }
 
                 if (relationship != null && !string.IsNullOrEmpty(relationship.Condition))
                 {
@@ -270,7 +280,42 @@ public sealed class SQLiteContext : ISqlContext
         if (statement.WhereConditions.Count > 0)
         {
             sql.Append(" WHERE ");
-            sql.Append(string.Join(" ", statement.WhereConditions.Select(FormatWhereCondition)));
+            for (int i = 0; i < statement.WhereConditions.Count; i++)
+            {
+                var condition = statement.WhereConditions[i];
+                var formatted = FormatWhereCondition(condition);
+
+                // Add space before condition based on specific rules
+                if (i > 0)
+                {
+                    var prevCondition = statement.WhereConditions[i - 1];
+
+                    // Space before closing parenthesis only if prev wasn't opening
+                    if (condition is Parenthesis { IsOpening: false })
+                    {
+                        if (prevCondition is not Parenthesis { IsOpening: true })
+                        {
+                            sql.Append(' ');
+                        }
+                    }
+                    // Space before everything else except after opening parenthesis
+                    else if (prevCondition is not Parenthesis { IsOpening: true })
+                    {
+                        sql.Append(' ');
+                    }
+                }
+
+                sql.Append(formatted);
+
+                // Add space after opening parenthesis only
+                if (
+                    condition is Parenthesis { IsOpening: true }
+                    && i < statement.WhereConditions.Count - 1
+                )
+                {
+                    sql.Append(' ');
+                }
+            }
         }
 
         // GROUP BY clause
@@ -322,8 +367,16 @@ public sealed class SQLiteContext : ISqlContext
         column switch
         {
             NamedColumn named => string.IsNullOrEmpty(named.Alias)
-                ? named.Name
-                : $"{named.Name} AS {named.Alias}",
+                ? (
+                    string.IsNullOrEmpty(named.TableAlias)
+                        ? named.Name
+                        : $"{named.TableAlias}.{named.Name}"
+                )
+                : (
+                    string.IsNullOrEmpty(named.TableAlias)
+                        ? $"{named.Name} AS {named.Alias}"
+                        : $"{named.TableAlias}.{named.Name} AS {named.Alias}"
+                ),
             ExpressionColumn expr => string.IsNullOrEmpty(expr.Alias)
                 ? expr.Expression
                 : $"{expr.Expression} AS {expr.Alias}",

@@ -1,9 +1,12 @@
+using System.Collections.Frozen;
+
 namespace Selecta;
 
 /// <summary>
-/// Builder for constructing SqlStatement instances
+/// Builder for constructing SelectStatement instances
+/// ONLY FOR SELECT STATEMENTS!!!!
 /// </summary>
-public sealed class SqlStatementBuilder
+public sealed class SelectStatementBuilder
 {
     private readonly List<ColumnInfo> _selectList = [];
     private readonly List<TableInfo> _tables = [];
@@ -13,15 +16,10 @@ public sealed class SqlStatementBuilder
     private readonly List<ColumnInfo> _groupByColumns = [];
     private readonly List<OrderByItem> _orderByItems = [];
     private readonly List<UnionOperation> _unions = [];
-    private readonly List<string> _insertColumns = [];
     private string? _havingCondition;
     private string? _limit;
     private string? _offset;
     private bool _isDistinct;
-    private string? _insertTable;
-    private bool _forceTableAliases;
-    private string _queryType = "SELECT";
-    private string? _parseError;
 
     /// <summary>
     /// Sets the SELECT list columns
@@ -29,7 +27,7 @@ public sealed class SqlStatementBuilder
     /// <param name="columns">The columns to select</param>
     /// <param name="distinct">Whether to use DISTINCT</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder WithSelectColumns(
+    public SelectStatementBuilder WithSelectColumns(
         IEnumerable<ColumnInfo> columns,
         bool distinct = false
     )
@@ -45,7 +43,7 @@ public sealed class SqlStatementBuilder
     /// </summary>
     /// <param name="column">The column to add</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder AddSelectColumn(ColumnInfo column)
+    public SelectStatementBuilder AddSelectColumn(ColumnInfo column)
     {
         _selectList.Add(column);
         return this;
@@ -58,7 +56,7 @@ public sealed class SqlStatementBuilder
     /// <param name="alias">The column alias</param>
     /// <param name="tableAlias">The table alias</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder AddSelectColumn(
+    public SelectStatementBuilder AddSelectColumn(
         string name,
         string? alias = null,
         string? tableAlias = null
@@ -73,7 +71,7 @@ public sealed class SqlStatementBuilder
     /// </summary>
     /// <param name="table">The table to add</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder AddTable(TableInfo table)
+    public SelectStatementBuilder AddTable(TableInfo table)
     {
         _tables.Add(table);
         return this;
@@ -85,7 +83,7 @@ public sealed class SqlStatementBuilder
     /// <param name="name">The table name</param>
     /// <param name="alias">The table alias</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder AddTable(string name, string? alias = null)
+    public SelectStatementBuilder AddTable(string name, string? alias = null)
     {
         _tables.Add(new TableInfo(name, alias));
         return this;
@@ -99,7 +97,7 @@ public sealed class SqlStatementBuilder
     /// <param name="condition">The join condition</param>
     /// <param name="joinType">The join type</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder AddJoin(
+    public SelectStatementBuilder AddJoin(
         string leftTable,
         string rightTable,
         string condition,
@@ -115,7 +113,7 @@ public sealed class SqlStatementBuilder
     /// </summary>
     /// <param name="condition">The condition to add</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder AddWhereCondition(WhereCondition condition)
+    public SelectStatementBuilder AddWhereCondition(WhereCondition condition)
     {
         _whereConditions.Add(condition);
         return this;
@@ -126,7 +124,7 @@ public sealed class SqlStatementBuilder
     /// </summary>
     /// <param name="condition">The condition string to add</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder AddWhereCondition(string condition)
+    public SelectStatementBuilder AddWhereCondition(string condition)
     {
         _whereConditions.Add(WhereCondition.FromExpression(condition));
         return this;
@@ -137,7 +135,7 @@ public sealed class SqlStatementBuilder
     /// </summary>
     /// <param name="columns">The columns to group by</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder AddGroupBy(IEnumerable<ColumnInfo> columns)
+    public SelectStatementBuilder AddGroupBy(IEnumerable<ColumnInfo> columns)
     {
         _groupByColumns.AddRange(columns);
         return this;
@@ -149,7 +147,7 @@ public sealed class SqlStatementBuilder
     /// <param name="column">The column to order by</param>
     /// <param name="direction">The order direction</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder AddOrderBy(string column, string direction)
+    public SelectStatementBuilder AddOrderBy(string column, string direction)
     {
         _orderByItems.Add(new OrderByItem(column, direction));
         return this;
@@ -160,7 +158,7 @@ public sealed class SqlStatementBuilder
     /// </summary>
     /// <param name="condition">The having condition</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder WithHaving(string condition)
+    public SelectStatementBuilder WithHaving(string condition)
     {
         _havingCondition = condition;
         return this;
@@ -171,7 +169,7 @@ public sealed class SqlStatementBuilder
     /// </summary>
     /// <param name="limit">The limit value</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder WithLimit(string limit)
+    public SelectStatementBuilder WithLimit(string limit)
     {
         _limit = limit;
         return this;
@@ -182,7 +180,7 @@ public sealed class SqlStatementBuilder
     /// </summary>
     /// <param name="offset">The offset value</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder WithOffset(string offset)
+    public SelectStatementBuilder WithOffset(string offset)
     {
         _offset = offset;
         return this;
@@ -193,7 +191,7 @@ public sealed class SqlStatementBuilder
     /// </summary>
     /// <param name="distinct">Whether to use DISTINCT</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder WithDistinct(bool distinct = true)
+    public SelectStatementBuilder WithDistinct(bool distinct = true)
     {
         _isDistinct = distinct;
         return this;
@@ -205,57 +203,9 @@ public sealed class SqlStatementBuilder
     /// <param name="query">The query to union with</param>
     /// <param name="isUnionAll">Whether this is UNION ALL</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder AddUnion(string query, bool isUnionAll = false)
+    public SelectStatementBuilder AddUnion(string query, bool isUnionAll = false)
     {
         _unions.Add(new UnionOperation(query, isUnionAll));
-        return this;
-    }
-
-    /// <summary>
-    /// Sets the INSERT target
-    /// </summary>
-    /// <param name="table">The target table</param>
-    /// <param name="columns">The columns to insert</param>
-    /// <returns>This builder instance</returns>
-    public SqlStatementBuilder WithInsertTarget(string table, IEnumerable<string> columns)
-    {
-        _insertTable = table;
-        _insertColumns.Clear();
-        _insertColumns.AddRange(columns);
-        _queryType = "INSERT";
-        return this;
-    }
-
-    /// <summary>
-    /// Sets whether to force table aliases
-    /// </summary>
-    /// <param name="force">Whether to force table aliases</param>
-    /// <returns>This builder instance</returns>
-    public SqlStatementBuilder WithForceTableAliases(bool force = true)
-    {
-        _forceTableAliases = force;
-        return this;
-    }
-
-    /// <summary>
-    /// Sets the query type
-    /// </summary>
-    /// <param name="queryType">The query type</param>
-    /// <returns>This builder instance</returns>
-    public SqlStatementBuilder WithQueryType(string queryType)
-    {
-        _queryType = queryType;
-        return this;
-    }
-
-    /// <summary>
-    /// Sets the parse error
-    /// </summary>
-    /// <param name="parseError">The parse error</param>
-    /// <returns>This builder instance</returns>
-    public SqlStatementBuilder WithParseError(string parseError)
-    {
-        _parseError = parseError;
         return this;
     }
 
@@ -264,7 +214,7 @@ public sealed class SqlStatementBuilder
     /// </summary>
     /// <param name="parameter">The parameter to add</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder AddParameter(ParameterInfo parameter)
+    public SelectStatementBuilder AddParameter(ParameterInfo parameter)
     {
         _parameters.Add(parameter);
         return this;
@@ -276,35 +226,30 @@ public sealed class SqlStatementBuilder
     /// <param name="name">The parameter name</param>
     /// <param name="sqlType">The SQL type</param>
     /// <returns>This builder instance</returns>
-    public SqlStatementBuilder AddParameter(string name, string sqlType = "NVARCHAR")
+    public SelectStatementBuilder AddParameter(string name, string sqlType = "NVARCHAR")
     {
         _parameters.Add(new ParameterInfo(name, sqlType));
         return this;
     }
 
     /// <summary>
-    /// Builds the SqlStatement
+    /// Builds the SelectStatement
     /// </summary>
-    /// <returns>The constructed SqlStatement</returns>
-    public SqlStatement Build() =>
+    /// <returns>The constructed SelectStatement</returns>
+    public SelectStatement Build() =>
         new()
         {
             SelectList = _selectList.AsReadOnly(),
-            Tables = _tables.AsReadOnly(),
-            Parameters = _parameters.AsReadOnly(),
+            Tables = _tables.ToFrozenSet(),
+            Parameters = _parameters.ToFrozenSet(),
             JoinGraph = _joinGraph,
             WhereConditions = _whereConditions.AsReadOnly(),
-            GroupByColumns = _groupByColumns.AsReadOnly(),
+            GroupByColumns = _groupByColumns.ToFrozenSet(),
             OrderByItems = _orderByItems.AsReadOnly(),
             HavingCondition = _havingCondition,
             Limit = _limit,
             Offset = _offset,
             IsDistinct = _isDistinct,
-            Unions = _unions.AsReadOnly(),
-            InsertTable = _insertTable,
-            InsertColumns = _insertColumns.AsReadOnly(),
-            ForceTableAliases = _forceTableAliases,
-            QueryType = _queryType,
-            ParseError = _parseError,
+            Unions = _unions.ToFrozenSet(),
         };
 }

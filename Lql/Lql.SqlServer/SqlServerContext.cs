@@ -9,7 +9,7 @@ namespace Lql.SqlServer;
 public sealed class SqlServerContext : ISqlContext
 {
     private readonly IFunctionMappingProvider _functionMappingProvider;
-    private readonly SqlStatementBuilder _builder = new();
+    private readonly SelectStatementBuilder _builder = new();
     private string? _baseTable;
     private string? _baseAlias;
 
@@ -26,11 +26,6 @@ public sealed class SqlServerContext : ISqlContext
     /// Gets a value indicating whether this query has joins
     /// </summary>
     public bool HasJoins => _builder.Build().HasJoins;
-
-    /// <summary>
-    /// Forces table aliases to be applied even for single-table queries
-    /// </summary>
-    public void ForceTableAliases() => _builder.WithForceTableAliases(true);
 
     /// <summary>
     /// Sets the base table for the query
@@ -120,14 +115,6 @@ public sealed class SqlServerContext : ISqlContext
     public void SetOffset(string count) => _builder.WithOffset(count);
 
     /// <summary>
-    /// Sets the INSERT target table and columns
-    /// </summary>
-    /// <param name="table">The target table</param>
-    /// <param name="columns">The columns to insert</param>
-    public void SetInsertTarget(string table, IEnumerable<string> columns) =>
-        _builder.WithInsertTarget(table, columns);
-
-    /// <summary>
     /// Adds a UNION or UNION ALL
     /// </summary>
     /// <param name="query">The query to union with</param>
@@ -141,11 +128,6 @@ public sealed class SqlServerContext : ISqlContext
     public string GenerateSQL()
     {
         var statement = _builder.Build();
-
-        if (!string.IsNullOrEmpty(statement.InsertTable))
-        {
-            return GenerateInsertSQL(statement);
-        }
 
         var sql = GenerateSelectSQL(statement);
 
@@ -164,7 +146,7 @@ public sealed class SqlServerContext : ISqlContext
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The SELECT SQL</returns>
-    private string GenerateSelectSQL(SqlStatement statement)
+    private string GenerateSelectSQL(SelectStatement statement)
     {
         var selectClause = GenerateSelectClause(statement);
         var fromClause = GenerateFromClause(statement);
@@ -191,58 +173,11 @@ public sealed class SqlServerContext : ISqlContext
     }
 
     /// <summary>
-    /// Generates INSERT SQL
-    /// </summary>
-    /// <param name="statement">The SQL statement to generate from</param>
-    /// <returns>The INSERT SQL</returns>
-    private string GenerateInsertSQL(SqlStatement statement)
-    {
-        if (string.IsNullOrEmpty(statement.InsertTable))
-            return "-- No insert table specified";
-
-        // Use explicit insert columns if provided, otherwise use the select columns
-        var columnsToUse =
-            statement.InsertColumns.Count > 0
-                ? statement.InsertColumns.Select(col => col)
-                : statement.SelectList.Select(col => GenerateColumnSql(col));
-
-        var columns = string.Join(", ", columnsToUse);
-
-        var selectSql = GenerateSelectSQL(statement);
-
-        // If we have UNION operations, wrap the entire query in a subquery
-        if (statement.Unions.Count > 0)
-        {
-            // Create a subquery with the UNION operations
-            var subquery = selectSql;
-
-            // Add UNIONs to the subquery
-            foreach (var union in statement.Unions)
-            {
-                var unionType = union.IsUnionAll ? "UNION ALL" : "UNION";
-                subquery += $"\n\n{unionType}\n\n{union.Query}";
-            }
-
-            // Indent the subquery content
-            var indentedSubquery = string.Join(
-                "\n",
-                subquery
-                    .Split('\n')
-                    .Select(line => string.IsNullOrWhiteSpace(line) ? line : $"    {line}")
-            );
-
-            return $"INSERT INTO {statement.InsertTable} ({columns})\nSELECT {columns}\nFROM (\n{indentedSubquery}\n) AS all_users";
-        }
-
-        return $"INSERT INTO {statement.InsertTable} ({columns})\n{selectSql}";
-    }
-
-    /// <summary>
     /// Generates the SELECT clause with SQL Server-specific TOP handling
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The SELECT clause</returns>
-    private static string GenerateSelectClause(SqlStatement statement)
+    private static string GenerateSelectClause(SelectStatement statement)
     {
         var distinctKeyword = statement.IsDistinct ? "DISTINCT " : "";
         // Only use TOP if LIMIT is present but OFFSET is not (since OFFSET requires FETCH NEXT syntax)
@@ -257,7 +192,7 @@ public sealed class SqlServerContext : ISqlContext
         }
 
         // Process columns using local method
-        var processedColumns = statement.SelectList.Select(col => GenerateColumnSqlWithAlias(col));
+        var processedColumns = statement.SelectList.Select(GenerateColumnSqlWithAlias);
 
         // Use multi-line format for SELECT clauses with 7+ columns
         if (statement.SelectList.Count >= 7)
@@ -274,19 +209,19 @@ public sealed class SqlServerContext : ISqlContext
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The FROM clause</returns>
-    private string GenerateFromClause(SqlStatement statement)
+    private string GenerateFromClause(SelectStatement statement)
     {
         if (_baseTable == null)
             return "-- No base table";
 
-        var baseTable = statement.Tables.Count > 0 ? statement.Tables[0] : null;
+        var baseTable = statement.Tables.Count > 0 ? statement.Tables.First() : null;
         if (baseTable == null)
             return "-- No base table";
 
         var fromClause = $"FROM {baseTable.Name}";
 
-        // Add table alias if there are joins (multi-table queries) or if forced
-        if ((statement.HasJoins || statement.ForceTableAliases) && baseTable.Alias != null)
+        // Add table alias if there are joins (multi-table queries)
+        if (statement.HasJoins && baseTable.Alias != null)
         {
             fromClause += $" {baseTable.Alias}";
         }
@@ -320,14 +255,12 @@ public sealed class SqlServerContext : ISqlContext
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The WHERE clause or empty string</returns>
-    private static string GenerateWhereClause(SqlStatement statement)
+    private static string GenerateWhereClause(SelectStatement statement)
     {
         if (statement.WhereConditions.Count == 0)
             return "";
 
-        var processedConditions = statement.WhereConditions.Select(condition =>
-            GenerateWhereConditionSql(condition)
-        );
+        var processedConditions = statement.WhereConditions.Select(GenerateWhereConditionSql);
 
         return $"WHERE {string.Join(" AND ", processedConditions)}";
     }
@@ -392,11 +325,11 @@ public sealed class SqlServerContext : ISqlContext
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The GROUP BY clause or empty string</returns>
-    private static string GenerateGroupByClause(SqlStatement statement)
+    private static string GenerateGroupByClause(SelectStatement statement)
     {
         if (statement.GroupByColumns.Count == 0)
             return "";
-        var processedColumns = statement.GroupByColumns.Select(col => GenerateColumnSql(col));
+        var processedColumns = statement.GroupByColumns.Select(GenerateColumnSql);
         return $"GROUP BY {string.Join(", ", processedColumns)}";
     }
 
@@ -405,7 +338,7 @@ public sealed class SqlServerContext : ISqlContext
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The HAVING clause or empty string</returns>
-    private static string GenerateHavingClause(SqlStatement statement)
+    private static string GenerateHavingClause(SelectStatement statement)
     {
         if (string.IsNullOrEmpty(statement.HavingCondition))
             return "";
@@ -418,7 +351,7 @@ public sealed class SqlServerContext : ISqlContext
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The ORDER BY clause or empty string</returns>
-    private static string GenerateOrderByClause(SqlStatement statement)
+    private static string GenerateOrderByClause(SelectStatement statement)
     {
         if (statement.OrderByItems.Count == 0)
             return "";
@@ -438,7 +371,7 @@ public sealed class SqlServerContext : ISqlContext
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The LIMIT clause or empty string</returns>
-    private string GenerateLimitClause(SqlStatement statement)
+    private string GenerateLimitClause(SelectStatement statement)
     {
         if (!string.IsNullOrEmpty(statement.Offset))
         {

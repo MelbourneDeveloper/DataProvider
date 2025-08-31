@@ -110,7 +110,21 @@ public class DataProviderIncrementalSourceGenerator : IIncrementalGenerator
             return;
         }
 
-        // Delegate the actual generation work - call the existing method directly
-        GenerateCodeForAllSqlFiles(context, ((sqlFiles, configFiles), groupingFiles));
+        // This incremental source generator is not implemented
+        // Code generation is handled by the CLI-based MSBuild target TranspileLqlAndGenerateDataProvider
+        // The CLI generates all necessary files into $(IntermediateOutputPath)Generated/
+        context.ReportDiagnostic(
+            Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    "DataProvider005",
+                    "Source generator delegated to CLI",
+                    "Code generation is handled by CLI in MSBuild target, not by this incremental generator",
+                    "DataProvider",
+                    DiagnosticSeverity.Info,
+                    true
+                ),
+                Location.None
+            )
+        );
     }
 }

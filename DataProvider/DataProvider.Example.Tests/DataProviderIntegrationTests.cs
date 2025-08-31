@@ -1,8 +1,12 @@
 using System.Collections.Immutable;
+using DataProvider.Example;
 using Generated;
+using Lql.SQLite;
 using Microsoft.Data.Sqlite;
 using Results;
+using Selecta;
 using Xunit;
+using static DataProvider.Example.MapFunctions;
 
 namespace DataProvider.Example.Tests;
 
@@ -353,6 +357,133 @@ public sealed class DataProviderIntegrationTests : IDisposable
         Assert.Empty(orders);
     }
 
+    [Fact]
+    public void FluentQueryBuilder_InnerJoin_GeneratesCorrectSQL()
+    {
+        // Arrange & Act
+        var query = "Orders"
+            .From("o")
+            .InnerJoin("Customer", "CustomerId", "Id", "o", "c")
+            .Select(
+                ("o", "OrderNumber"),
+                ("o", "TotalAmount"),
+                ("o", "Status"),
+                ("c", "CustomerName"),
+                ("c", "Email")
+            )
+            .Where("o.TotalAmount", ComparisonOperator.GreaterThan, "400.00")
+            .OrderByDescending("o.TotalAmount")
+            .Take(5)
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(
+            sqlResult is Result<string, SqlError>.Success,
+            $"SQL generation should succeed, got: {(sqlResult as Result<string, SqlError>.Failure)?.ErrorValue.Message}"
+        );
+
+        var sql = ((Result<string, SqlError>.Success)sqlResult).Value;
+
+        // Verify JOIN is included
+        Assert.Contains("INNER JOIN", sql);
+        Assert.Contains("Customer", sql);
+        Assert.Contains("ON o.CustomerId = c.Id", sql);
+
+        // Verify table aliases are included
+        Assert.Contains("FROM Orders o", sql);
+        Assert.Contains("Customer c", sql);
+
+        // Verify full expected SQL structure
+        Assert.Contains(
+            "SELECT o.OrderNumber, o.TotalAmount, o.Status, c.CustomerName, c.Email",
+            sql
+        );
+        Assert.Contains("WHERE o.TotalAmount > '400.00'", sql);
+        Assert.Contains("ORDER BY o.TotalAmount DESC", sql);
+        Assert.Contains("LIMIT 5", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_LeftJoin_GeneratesCorrectSQL()
+    {
+        // Arrange & Act
+        var query = "Orders"
+            .From("ord")
+            .LeftJoin("Customer", "CustomerId", "Id", "ord", "cust")
+            .Select(("ord", "OrderNumber"), ("cust", "CustomerName"))
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is Result<string, SqlError>.Success);
+        var sql = ((Result<string, SqlError>.Success)sqlResult).Value;
+
+        Assert.Contains("LEFT JOIN", sql);
+        Assert.Contains("Customer cust", sql);
+        Assert.Contains("FROM Orders ord", sql);
+        Assert.Contains("ON ord.CustomerId = cust.Id", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_MultipleJoins_GeneratesCorrectSQL()
+    {
+        // Arrange & Act - Simulate Orders -> Customer -> Address join chain
+        var query = "Orders"
+            .From("o")
+            .InnerJoin("Customer", "CustomerId", "Id", "o", "c")
+            .LeftJoin("Address", "Id", "CustomerId", "c", "a")
+            .Select(("o", "OrderNumber"), ("c", "CustomerName"), ("a", "City"))
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is Result<string, SqlError>.Success);
+        var sql = ((Result<string, SqlError>.Success)sqlResult).Value;
+
+        // Verify both JOINs are present
+        Assert.Contains("INNER JOIN Customer c", sql);
+        Assert.Contains("LEFT JOIN Address a", sql);
+        Assert.Contains("ON o.CustomerId = c.Id", sql);
+        Assert.Contains("ON c.Id = a.CustomerId", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_InnerJoinWithComplex_GeneratesCorrectSQL()
+    {
+        // Arrange & Act - Test a complex JOIN with multiple conditions
+        var query = "Orders"
+            .From("o")
+            .InnerJoin("Customer", "CustomerId", "Id", "o", "c")
+            .Select(("o", "OrderNumber"), ("c", "CustomerName"), ("o", "TotalAmount"))
+            .Where("o.Status", ComparisonOperator.Eq, "Completed")
+            .OrderBy("c.CustomerName")
+            .Take(10)
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is Result<string, SqlError>.Success);
+        var sql = ((Result<string, SqlError>.Success)sqlResult).Value;
+
+        // Test that all parts of the fluent API are preserved in the generated SQL
+        Assert.Contains(
+            "SELECT o.OrderNumber, c.CustomerName, o.TotalAmount",
+            sql,
+            StringComparison.Ordinal
+        );
+        Assert.Contains("FROM Orders o", sql, StringComparison.Ordinal);
+        Assert.Contains("INNER JOIN Customer c", sql, StringComparison.Ordinal);
+        Assert.Contains("ON o.CustomerId = c.Id", sql, StringComparison.Ordinal);
+        Assert.Contains("WHERE o.Status = 'Completed'", sql, StringComparison.Ordinal);
+        Assert.Contains("ORDER BY c.CustomerName ASC", sql, StringComparison.Ordinal);
+        Assert.Contains("LIMIT 10", sql, StringComparison.Ordinal);
+    }
+
     private async Task SetupTestDatabase()
     {
         await _connection.OpenAsync().ConfigureAwait(false);
@@ -539,6 +670,279 @@ public sealed class DataProviderIntegrationTests : IDisposable
         using var command = new SqliteCommand(createTablesScript, _connection);
         await command.ExecuteNonQueryAsync().ConfigureAwait(false);
     }
+
+    #region PredicateBuilder E2E Tests
+
+    /// <summary>
+    /// Tests PredicateBuilder True predicate with actual database data
+    /// </summary>
+    [Fact]
+    public async Task PredicateBuilder_True_E2E_ReturnsAllCustomers()
+    {
+        // Arrange
+        await SetupTestDatabase();
+        var predicate = PredicateBuilder.True<Customer>();
+        var query = SelectStatement.From<Customer>("Customer").Where(predicate);
+
+        // Act
+        var statement = query.ToSqlStatement();
+        var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
+
+        // Assert
+        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Success);
+        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Success)result).Value;
+        Assert.Equal(2, customers.Count);
+    }
+
+    /// <summary>
+    /// Tests PredicateBuilder False predicate with actual database data
+    /// </summary>
+    [Fact]
+    public async Task PredicateBuilder_False_E2E_ReturnsNoCustomers()
+    {
+        // Arrange
+        await SetupTestDatabase();
+        var predicate = PredicateBuilder.False<Customer>();
+        var query = SelectStatement.From<Customer>("Customer").Where(predicate);
+
+        // Act
+        var statement = query.ToSqlStatement();
+        var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
+
+        // Assert
+        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Success);
+        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Success)result).Value;
+        Assert.Empty(customers);
+    }
+
+    /// <summary>
+    /// Tests PredicateBuilder Or operation with actual database data
+    /// </summary>
+    [Fact]
+    public async Task PredicateBuilder_Or_E2E_CombinesPredicatesWithOrLogic()
+    {
+        // Arrange
+        await SetupTestDatabase();
+        var predicate = PredicateBuilder.False<Customer>();
+        predicate = predicate.Or(c => c.Id == 1);
+        predicate = predicate.Or(c => c.Id == 2);
+        var query = SelectStatement.From<Customer>("Customer").Where(predicate).OrderBy(c => c.Id);
+
+        // Act
+        var statement = query.ToSqlStatement();
+        var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
+
+        // Assert
+        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Success);
+        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Success)result).Value;
+        Assert.Equal(2, customers.Count);
+        Assert.Equal(1, customers[0].Id);
+        Assert.Equal(2, customers[1].Id);
+    }
+
+    /// <summary>
+    /// Tests PredicateBuilder And operation with actual database data
+    /// </summary>
+    [Fact]
+    public async Task PredicateBuilder_And_E2E_CombinesPredicatesWithAndLogic()
+    {
+        // Arrange
+        await SetupTestDatabase();
+        var predicate = PredicateBuilder.True<Customer>();
+        predicate = predicate.And(c => c.Id >= 1);
+        predicate = predicate.And(c => c.Id <= 1);
+        var query = SelectStatement.From<Customer>("Customer").Where(predicate);
+
+        // Act
+        var statement = query.ToSqlStatement();
+        var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
+
+        // Assert
+        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Success);
+        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Success)result).Value;
+        Assert.Single(customers);
+        Assert.Equal(1, customers[0].Id);
+    }
+
+    /// <summary>
+    /// Tests PredicateBuilder Not operation with actual database data
+    /// </summary>
+    [Fact]
+    public async Task PredicateBuilder_Not_E2E_NegatesPredicateLogic()
+    {
+        // Arrange
+        await SetupTestDatabase();
+        var predicate = PredicateBuilder.True<Customer>();
+        predicate = predicate.And(c => c.Id == 1);
+        predicate = predicate.Not();
+        var query = SelectStatement.From<Customer>("Customer").Where(predicate);
+
+        // Act
+        var statement = query.ToSqlStatement();
+        var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
+
+        // Assert
+        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Success);
+        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Success)result).Value;
+        Assert.Single(customers);
+        Assert.Equal(2, customers[0].Id);
+    }
+
+    /// <summary>
+    /// Tests PredicateBuilder with dynamic OR conditions like building search filters
+    /// </summary>
+    [Fact]
+    public async Task PredicateBuilder_DynamicOrConditions_E2E_BuildsSearchFilters()
+    {
+        // Arrange
+        await SetupTestDatabase();
+        var searchIds = new[] { 1, 3, 5 }; // Only ID 1 exists in test data
+        var predicate = PredicateBuilder.False<Customer>();
+
+        // Act - simulate building dynamic OR conditions
+        foreach (var id in searchIds)
+        {
+            var tempId = id; // Capture for closure
+            predicate = predicate.Or(c => c.Id == tempId);
+        }
+
+        var query = SelectStatement.From<Customer>("Customer").Where(predicate);
+        var statement = query.ToSqlStatement();
+        var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
+
+        // Assert
+        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Success);
+        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Success)result).Value;
+        Assert.Single(customers); // Only customer with ID 1 exists
+        Assert.Equal(1, customers[0].Id);
+    }
+
+    /// <summary>
+    /// Tests PredicateBuilder with dynamic AND conditions like building filter chains
+    /// </summary>
+    [Fact]
+    public async Task PredicateBuilder_DynamicAndConditions_E2E_BuildsFilterChains()
+    {
+        // Arrange
+        await SetupTestDatabase();
+        var predicate = PredicateBuilder.True<Customer>();
+
+        // Act - simulate building dynamic AND conditions for filtering
+        predicate = predicate.And(c => c.Id >= 1);
+        predicate = predicate.And(c => c.Id <= 2);
+        predicate = predicate.And(c => c.Email != null);
+
+        var query = SelectStatement.From<Customer>("Customer").Where(predicate).OrderBy(c => c.Id);
+        var statement = query.ToSqlStatement();
+        var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
+
+        // Assert
+        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Success);
+        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Success)result).Value;
+        Assert.Equal(2, customers.Count); // Both customers have email and are in range
+    }
+
+    /// <summary>
+    /// Tests PredicateBuilder with mixed And/Or operations for complex business logic
+    /// </summary>
+    [Fact]
+    public async Task PredicateBuilder_MixedAndOrOperations_E2E_ComplexBusinessLogic()
+    {
+        // Arrange
+        await SetupTestDatabase();
+        var searchNames = new[] { "Acme Corp", "NonExistent Corp" };
+
+        // Act - build name filter with OR
+        var namePredicate = PredicateBuilder.False<Customer>();
+        foreach (var name in searchNames)
+        {
+            var tempName = name;
+            namePredicate = namePredicate.Or(c => c.CustomerName == tempName);
+        }
+
+        // Combine with email filter using AND
+        var finalPredicate = namePredicate.And(c => c.Email != null);
+
+        var query = SelectStatement.From<Customer>("Customer").Where(finalPredicate);
+        var statement = query.ToSqlStatement();
+        var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
+
+        // Assert
+        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Success);
+        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Success)result).Value;
+        Assert.Single(customers); // Only "Acme Corp" exists and has email
+        Assert.Equal("Acme Corp", customers[0].CustomerName);
+    }
+
+    /// <summary>
+    /// Tests PredicateBuilder with conditional building to eliminate duplication
+    /// </summary>
+    [Fact]
+    public async Task PredicateBuilder_ConditionalBuilding_E2E_EliminatesDuplication()
+    {
+        // Arrange
+        await SetupTestDatabase();
+        var searchByName = true;
+        var searchByEmail = false;
+        var customerName = "Tech Solutions";
+
+        var predicate = PredicateBuilder.True<Customer>();
+
+        // Act - conditional predicate building (eliminates if/else duplication)
+        if (searchByName)
+        {
+            predicate = predicate.And(c => c.CustomerName == customerName);
+        }
+        if (searchByEmail)
+        {
+            predicate = predicate.And(c => c.Email != null);
+        }
+
+        var query = SelectStatement.From<Customer>("Customer").Where(predicate);
+        var statement = query.ToSqlStatement();
+        var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
+
+        // Assert
+        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Success);
+        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Success)result).Value;
+        Assert.Single(customers);
+        Assert.Equal("Tech Solutions", customers[0].CustomerName);
+    }
+
+    /// <summary>
+    /// Tests PredicateBuilder with Orders table for different entity type
+    /// </summary>
+    [Fact]
+    public async Task PredicateBuilder_WithOrdersEntity_E2E_WorksAcrossEntityTypes()
+    {
+        // Arrange
+        await SetupTestDatabase();
+        var statuses = new[] { "Completed", "Processing" };
+        var predicate = PredicateBuilder.False<Order>();
+
+        // Act - build status filter with OR conditions
+        foreach (var status in statuses)
+        {
+            var tempStatus = status;
+            predicate = predicate.Or(o => o.Status == tempStatus);
+        }
+
+        // Add minimum amount filter with AND
+        predicate = predicate.And(o => o.TotalAmount > 0);
+
+        var query = SelectStatement.From<Order>("Orders").Where(predicate).OrderBy(o => o.Id);
+        var statement = query.ToSqlStatement();
+        var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapOrder);
+
+        // Assert
+        Assert.True(result is Result<IReadOnlyList<Order>, SqlError>.Success);
+        var orders = ((Result<IReadOnlyList<Order>, SqlError>.Success)result).Value;
+        Assert.Equal(2, orders.Count); // Both orders match the criteria
+        Assert.Equal("Completed", orders[0].Status);
+        Assert.Equal("Processing", orders[1].Status);
+    }
+
+    #endregion
 
     public void Dispose()
     {

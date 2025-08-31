@@ -6,7 +6,6 @@
         <!-- Remove unused parameter -->
         <Rule Id="IDE0290" Action="None" />
         <Rule Id="CA1031" Action="None" />
-        <Rule Id="CA1062" Action="None" />
         <Rule Id="CA1016" Action="None" />
         <Rule Id="CA1303" Action="None" />
         <Rule Id="EPS06" Action="None" />
@@ -21,7 +20,7 @@
         <Rule Id="IDE0028" Action="Error" />
         <Rule Id="IDE0300" Action="Error" />
         <Rule Id="IDE0305" Action="Error" />
-        <Rule Id="IDE0301" Action="Error" />
+        <!-- <Rule Id="IDE0320" Action="Warning" /> -->
         <Rule Id="IDE0059" Action="Error" />
         <Rule Id="IDE0303" Action="Error" />
         <Rule Id="IDE0052" Action="Error" />
@@ -30,6 +29,8 @@
         <Rule Id="IDE0060" Action="Error" />
         <Rule Id="IDE0090" Action="Error" />
         <Rule Id="IDE0044" Action="Error" />
+        <Rule Id="IDE0063" Action="Error" />
+        <Rule Id="IDE0200" Action="Error" />
     </Rules>
     <!-- Microsoft.CodeAnalysis.NetAnalyzers - Critical rules as errors -->
     <Rules AnalyzerId="Microsoft.CodeAnalysis.NetAnalyzers" RuleNamespace="Microsoft.CodeAnalysis.NetAnalyzers">

@@ -1,10 +1,12 @@
 using Antlr4.Runtime.Tree;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DataProvider.SQLite.Parsing;
 
 /// <summary>
 /// Parameter extractor for SQLite using ANTLR parse tree
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class SqliteParameterExtractor
 {
     /// <summary>

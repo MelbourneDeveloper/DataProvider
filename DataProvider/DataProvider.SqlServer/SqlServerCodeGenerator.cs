@@ -25,7 +25,7 @@ public static class SqlServerCodeGenerator
     public static Result<string, SqlError> GenerateCode(
         string fileName,
         string sql,
-        SqlStatement statement,
+        SelectStatement statement,
         bool _ = false,
         GroupingConfig? __ = null
     )
@@ -67,7 +67,7 @@ public static class SqlServerCodeGenerator
     public static Result<string, SqlError> GenerateCodeWithMetadata(
         string fileName,
         string sql,
-        SqlStatement statement,
+        SelectStatement statement,
         string connectionString,
         IReadOnlyList<DatabaseColumn> columnMetadata,
         bool _ = false,
@@ -455,7 +455,7 @@ public static class SqlServerCodeGenerator
     private static Result<string, SqlError> GenerateGroupedVersionWithMetadata(
         string fileName,
         string sql,
-        SqlStatement statement,
+        SelectStatement statement,
         IReadOnlyList<DatabaseColumn> columnMetadata,
         GroupingConfig groupingConfig
     )

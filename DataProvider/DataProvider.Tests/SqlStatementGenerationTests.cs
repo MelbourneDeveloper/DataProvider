@@ -10,7 +10,7 @@ public sealed class SqlStatementGenerationTests
     [Fact]
     public void ToSQLite_SimpleSelectFromSingleTable_GeneratesExpectedSql()
     {
-        var stmt = new SqlStatementBuilder()
+        var stmt = new SelectStatementBuilder()
             .AddSelectColumn("Id")
             .AddSelectColumn("Name")
             .AddTable("Users")
@@ -26,7 +26,7 @@ public sealed class SqlStatementGenerationTests
     [Fact]
     public void ToSQLite_SelectAllWildcard_WhenNoColumnsSelected_GeneratesStar()
     {
-        var stmt = new SqlStatementBuilder().AddTable("Users").Build();
+        var stmt = new SelectStatementBuilder().AddTable("Users").Build();
 
         var result = stmt.ToSQLite();
 
@@ -42,7 +42,7 @@ public sealed class SqlStatementGenerationTests
             ComparisonOperator.GreaterThan,
             "18"
         );
-        var stmt = new SqlStatementBuilder()
+        var stmt = new SelectStatementBuilder()
             .AddSelectColumn("Id")
             .AddTable("Users")
             .AddWhereCondition(where)
@@ -55,7 +55,7 @@ public sealed class SqlStatementGenerationTests
     [Fact]
     public void ToSQLite_WithWhereLogicalOperators_FormatsSequence()
     {
-        var stmt = new SqlStatementBuilder()
+        var stmt = new SelectStatementBuilder()
             .AddSelectColumn("Id")
             .AddTable("Users")
             .AddWhereCondition(
@@ -82,7 +82,7 @@ public sealed class SqlStatementGenerationTests
     [Fact]
     public void ToSQLite_WithParenthesesInWhere_FormatsParens()
     {
-        var stmt = new SqlStatementBuilder()
+        var stmt = new SelectStatementBuilder()
             .AddSelectColumn("Id")
             .AddTable("Users")
             .AddWhereCondition(WhereCondition.OpenParen())
@@ -118,7 +118,7 @@ public sealed class SqlStatementGenerationTests
     [Fact]
     public void ToSQLite_WithJoin_OutputsInnerJoin()
     {
-        var stmt = new SqlStatementBuilder()
+        var stmt = new SelectStatementBuilder()
             .AddSelectColumn("Users.Id")
             .AddSelectColumn("Orders.Total")
             .AddTable("Users")
@@ -137,7 +137,7 @@ public sealed class SqlStatementGenerationTests
     [Fact]
     public void ToSQLite_WithGroupByAndHaving_OutputsClauses()
     {
-        var stmt = new SqlStatementBuilder()
+        var stmt = new SelectStatementBuilder()
             .AddSelectColumn("Country")
             .AddSelectColumn(ColumnInfo.FromExpression("COUNT(*)", "Total"))
             .AddTable("Users")
@@ -155,7 +155,7 @@ public sealed class SqlStatementGenerationTests
     [Fact]
     public void ToSQLite_WithOrderBy_OutputsOrderBy()
     {
-        var stmt = new SqlStatementBuilder()
+        var stmt = new SelectStatementBuilder()
             .AddSelectColumn("Id")
             .AddTable("Users")
             .AddOrderBy("Name", "ASC")
@@ -169,7 +169,7 @@ public sealed class SqlStatementGenerationTests
     [Fact]
     public void ToSQLite_WithDistinctAndPaging_OutputsDistinctLimitOffset()
     {
-        var stmt = new SqlStatementBuilder()
+        var stmt = new SelectStatementBuilder()
             .WithDistinct(true)
             .AddSelectColumn("Name")
             .AddTable("Users")
@@ -184,24 +184,12 @@ public sealed class SqlStatementGenerationTests
     [Fact]
     public void ToSQLite_WithWildcardAndAlias_FormatsCorrectly()
     {
-        var stmt = new SqlStatementBuilder()
+        var stmt = new SelectStatementBuilder()
             .AddSelectColumn(ColumnInfo.Wildcard("u"))
             .AddTable("Users")
             .Build();
 
         var success = Assert.IsType<Result<string, SqlError>.Success>(stmt.ToSQLite());
         Assert.Equal("SELECT u.* FROM Users", success.Value);
-    }
-
-    [Fact]
-    public void ToSQLite_ParseError_ReturnsFailure()
-    {
-        var stmt = new SqlStatementBuilder()
-            .AddTable("Users")
-            .WithParseError("Invalid syntax")
-            .Build();
-
-        var failure = Assert.IsType<Result<string, SqlError>.Failure>(stmt.ToSQLite());
-        Assert.Equal("Invalid syntax", failure.ErrorValue.Message);
     }
 }

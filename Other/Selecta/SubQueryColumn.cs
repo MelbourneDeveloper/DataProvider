@@ -8,9 +8,9 @@ public sealed record SubQueryColumn : ColumnInfo
     /// <summary>
     /// Gets the subquery that produces the column value.
     /// </summary>
-    public SqlStatement SubQuery { get; }
+    public SelectStatement SubQuery { get; }
 
-    internal SubQueryColumn(SqlStatement subQuery, string? alias = null)
+    internal SubQueryColumn(SelectStatement subQuery, string? alias = null)
         : base(alias)
     {
         SubQuery = subQuery;

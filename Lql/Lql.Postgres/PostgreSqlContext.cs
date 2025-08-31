@@ -12,7 +12,7 @@ public sealed class PostgreSqlContext : ISqlContext
 #pragma warning disable IDE0052 // Remove unread private members
     private readonly IFunctionMappingProvider _functionMappingProvider;
 #pragma warning restore IDE0052 // Remove unread private members
-    private readonly SqlStatementBuilder _builder = new();
+    private readonly SelectStatementBuilder _builder = new();
     private string? _baseTable;
     private string? _baseAlias;
 
@@ -41,11 +41,6 @@ public sealed class PostgreSqlContext : ISqlContext
         _baseAlias = GenerateTableAlias(tableName);
         _builder.AddTable(tableName, _baseAlias);
     }
-
-    /// <summary>
-    /// Forces table aliases to be applied even for single-table queries
-    /// </summary>
-    public void ForceTableAliases() => _builder.WithForceTableAliases(true);
 
     /// <summary>
     /// Adds a JOIN to the query
@@ -160,14 +155,6 @@ public sealed class PostgreSqlContext : ISqlContext
     public void SetOffset(string count) => _builder.WithOffset(count);
 
     /// <summary>
-    /// Sets the INSERT target table and columns
-    /// </summary>
-    /// <param name="table">The target table</param>
-    /// <param name="columns">The columns to insert</param>
-    public void SetInsertTarget(string table, IEnumerable<string> columns) =>
-        _builder.WithInsertTarget(table, columns);
-
-    /// <summary>
     /// Adds a UNION or UNION ALL
     /// </summary>
     /// <param name="query">The query to union with</param>
@@ -182,16 +169,6 @@ public sealed class PostgreSqlContext : ISqlContext
     {
         var statement = _builder.Build();
 
-        if (!string.IsNullOrEmpty(statement.InsertTable))
-        {
-            // Check if we have unions with INSERT - need to wrap in subquery
-            if (statement.Unions.Count > 0)
-            {
-                return GenerateInsertWithUnionSQL(statement);
-            }
-            return GenerateInsertSQL(statement);
-        }
-
         if (statement.Unions.Count > 0)
         {
             return GenerateUnionSQL(statement);
@@ -205,7 +182,7 @@ public sealed class PostgreSqlContext : ISqlContext
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The SELECT SQL string</returns>
-    private string GenerateSelectSQL(SqlStatement statement)
+    private string GenerateSelectSQL(SelectStatement statement)
     {
         var sql = new StringBuilder();
 
@@ -257,91 +234,12 @@ public sealed class PostgreSqlContext : ISqlContext
         return sql.ToString();
     }
 
-    private string GenerateInsertWithUnionSQL(SqlStatement statement)
-    {
-        if (string.IsNullOrEmpty(statement.InsertTable))
-        {
-            throw new InvalidOperationException("Insert table not set");
-        }
-
-        var sql = new StringBuilder();
-
-        sql.Append(
-            System.Globalization.CultureInfo.InvariantCulture,
-            $"INSERT INTO {statement.InsertTable}"
-        );
-
-        // If no INSERT columns specified, use the SELECT columns
-        var columnsToUse =
-            statement.InsertColumns.Count > 0
-                ? statement.InsertColumns
-                : statement.SelectList.Select(col => GenerateColumnSql(col));
-
-        if (columnsToUse.Any())
-        {
-            // Strip table prefixes from column names for INSERT statement
-            var insertColumnNames = columnsToUse.Select(StripTablePrefix);
-            sql.Append(
-                System.Globalization.CultureInfo.InvariantCulture,
-                $" ({string.Join(", ", insertColumnNames)})"
-            );
-        }
-
-        sql.Append('\n');
-        sql.Append('(');
-        sql.Append(GenerateUnionSQL(statement));
-        sql.Append(')');
-
-        return sql.ToString();
-    }
-
-    /// <summary>
-    /// Generates an INSERT SQL query
-    /// </summary>
-    /// <param name="statement">The SQL statement to generate from</param>
-    /// <returns>The INSERT SQL string</returns>
-    private string GenerateInsertSQL(SqlStatement statement)
-    {
-        if (string.IsNullOrEmpty(statement.InsertTable))
-        {
-            throw new InvalidOperationException("Insert table not set");
-        }
-
-        var sql = new StringBuilder();
-
-        sql.Append(
-            System.Globalization.CultureInfo.InvariantCulture,
-            $"INSERT INTO {statement.InsertTable}"
-        );
-
-        // If no INSERT columns specified, use the SELECT columns
-        var columnsToUse =
-            statement.InsertColumns.Count > 0
-                ? statement.InsertColumns
-                : statement.SelectList.Select(col => GenerateColumnSql(col));
-
-        if (columnsToUse.Any())
-        {
-            // Strip table prefixes from column names for INSERT statement
-            var insertColumnNames = columnsToUse.Select(StripTablePrefix);
-            sql.Append(
-                System.Globalization.CultureInfo.InvariantCulture,
-                $" ({string.Join(", ", insertColumnNames)})"
-            );
-        }
-
-        sql.Append('\n');
-        sql.Append(GenerateSelectSQL(statement));
-
-        return sql.ToString();
-    }
-
     /// <summary>
     /// Generates a UNION SQL query
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The UNION SQL string</returns>
-    private string GenerateUnionSQL(SqlStatement statement)
+    private string GenerateUnionSQL(SelectStatement statement)
     {
         var sql = new StringBuilder();
 
@@ -363,7 +261,7 @@ public sealed class PostgreSqlContext : ISqlContext
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The SELECT clause string</returns>
-    private static string GenerateSelectClause(SqlStatement statement)
+    private static string GenerateSelectClause(SelectStatement statement)
     {
         var selectKeyword = statement.IsDistinct ? "SELECT DISTINCT" : "SELECT";
 
@@ -372,12 +270,11 @@ public sealed class PostgreSqlContext : ISqlContext
             return $"{selectKeyword} *";
         }
 
-        var processedColumns = statement.SelectList.Select(col => GenerateColumnSqlWithAlias(col));
+        var processedColumns = statement.SelectList.Select(GenerateColumnSqlWithAlias);
 
         // Use single-line format for simple queries (3 or fewer columns, no joins)
         // Use multi-line format for complex queries
-        bool useMultiLine =
-            statement.SelectList.Count > 3 || statement.HasJoins || statement.ForceTableAliases;
+        bool useMultiLine = statement.SelectList.Count > 3 || statement.HasJoins;
 
         if (useMultiLine)
         {
@@ -399,7 +296,7 @@ public sealed class PostgreSqlContext : ISqlContext
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The FROM clause string</returns>
-    private string GenerateFromClause(SqlStatement statement)
+    private string GenerateFromClause(SelectStatement statement)
     {
         if (_baseTable == null)
         {
@@ -408,13 +305,13 @@ public sealed class PostgreSqlContext : ISqlContext
 
         var sql = new StringBuilder();
 
-        var baseTable = statement.Tables.Count > 0 ? statement.Tables[0] : null;
+        var baseTable = statement.Tables.Count > 0 ? statement.Tables.First() : null;
         if (baseTable == null)
         {
             return "";
         }
 
-        if (statement.HasJoins || statement.ForceTableAliases)
+        if (statement.HasJoins)
         {
             sql.Append(
                 System.Globalization.CultureInfo.InvariantCulture,
@@ -461,14 +358,8 @@ public sealed class PostgreSqlContext : ISqlContext
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The WHERE clause string</returns>
-    private static string GenerateWhereClause(SqlStatement statement)
-    {
-        var processedConditions = statement.WhereConditions.Select(condition =>
-            GenerateWhereConditionSql(condition)
-        );
-
-        return $"\nWHERE {string.Join(" AND ", processedConditions)}";
-    }
+    private static string GenerateWhereClause(SelectStatement statement) =>
+        $"\nWHERE {string.Join(" AND ", statement.WhereConditions.Select(GenerateWhereConditionSql))}";
 
     /// <summary>
     /// Generates SQL for a single WHERE condition
@@ -530,9 +421,9 @@ public sealed class PostgreSqlContext : ISqlContext
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The GROUP BY clause string</returns>
-    private static string GenerateGroupByClause(SqlStatement statement)
+    private static string GenerateGroupByClause(SelectStatement statement)
     {
-        var processedColumns = statement.GroupByColumns.Select(col => GenerateColumnSql(col));
+        var processedColumns = statement.GroupByColumns.Select(GenerateColumnSql);
 
         return $"\nGROUP BY {string.Join(", ", processedColumns)}";
     }
@@ -542,7 +433,7 @@ public sealed class PostgreSqlContext : ISqlContext
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The HAVING clause string</returns>
-    private static string GenerateHavingClause(SqlStatement statement)
+    private static string GenerateHavingClause(SelectStatement statement)
     {
         if (string.IsNullOrEmpty(statement.HavingCondition))
         {
@@ -559,7 +450,7 @@ public sealed class PostgreSqlContext : ISqlContext
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The ORDER BY clause string</returns>
-    private static string GenerateOrderByClause(SqlStatement statement)
+    private static string GenerateOrderByClause(SelectStatement statement)
     {
         var processedItems = statement.OrderByItems.Select(item =>
         {
@@ -575,26 +466,6 @@ public sealed class PostgreSqlContext : ISqlContext
     /// </summary>
     /// <param name="statement">The SQL statement to generate from</param>
     /// <returns>The LIMIT clause string</returns>
-    private static string GenerateLimitClause(SqlStatement statement) =>
+    private static string GenerateLimitClause(SelectStatement statement) =>
         $"\nLIMIT {statement.Limit}";
-
-    /// <summary>
-    /// Strips table prefix from a column name for use in INSERT statements
-    /// </summary>
-    /// <param name="columnName">The column name that may have a table prefix</param>
-    /// <returns>The column name without table prefix</returns>
-    private static string StripTablePrefix(string columnName)
-    {
-        if (string.IsNullOrEmpty(columnName))
-            return columnName;
-
-        // Check if the column has a table prefix (table.column)
-        var dotIndex = columnName.IndexOf('.', StringComparison.Ordinal);
-        if (dotIndex > 0 && dotIndex < columnName.Length - 1)
-        {
-            return columnName[(dotIndex + 1)..];
-        }
-
-        return columnName;
-    }
 }

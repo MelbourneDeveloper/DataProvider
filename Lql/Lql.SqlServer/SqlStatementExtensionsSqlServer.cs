@@ -3,7 +3,7 @@ using Results;
 namespace Lql.SqlServer;
 
 /// <summary>
-/// SQL Server-specific extension methods for SqlStatement
+/// SQL Server-specific extension methods for SelectStatement
 /// </summary>
 public static class SqlStatementExtensionsSqlServer
 {

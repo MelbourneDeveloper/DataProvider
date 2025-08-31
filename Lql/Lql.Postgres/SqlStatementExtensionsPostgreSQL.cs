@@ -3,7 +3,7 @@ using Results;
 namespace Lql.Postgres;
 
 /// <summary>
-/// PostgreSQL-specific extension methods for SqlStatement
+/// PostgreSQL-specific extension methods for SelectStatement
 /// </summary>
 public static class SqlStatementExtensionsPostgreSQL
 {

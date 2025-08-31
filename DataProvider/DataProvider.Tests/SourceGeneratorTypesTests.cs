@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Selecta;
 using Xunit;
 
@@ -121,20 +122,18 @@ public sealed class SourceGeneratorTypesTests
     public void SqlStatement_CanBeCreatedWithDefaults()
     {
         // Arrange & Act
-        var statement = new SqlStatement();
+        var selectStatement = new SelectStatement();
 
         // Assert
-        Assert.NotNull(statement.SelectList);
-        Assert.Empty(statement.SelectList);
-        Assert.NotNull(statement.Tables);
-        Assert.Empty(statement.Tables);
-        Assert.NotNull(statement.Parameters);
-        Assert.Empty(statement.Parameters);
-        Assert.NotNull(statement.JoinGraph);
-        Assert.Equal(0, statement.JoinGraph.Count);
-        Assert.Equal("SELECT", statement.QueryType);
-        Assert.False(statement.HasOneToManyJoins);
-        Assert.Null(statement.ParseError);
+        Assert.NotNull(selectStatement.SelectList);
+        Assert.Empty(selectStatement.SelectList);
+        Assert.NotNull(selectStatement.Tables);
+        Assert.Empty(selectStatement.Tables);
+        Assert.NotNull(selectStatement.Parameters);
+        Assert.Empty(selectStatement.Parameters);
+        Assert.NotNull(selectStatement.JoinGraph);
+        Assert.Equal(0, selectStatement.JoinGraph.Count);
+        Assert.False(selectStatement.HasJoins);
     }
 
     [Fact]
@@ -159,57 +158,43 @@ public sealed class SourceGeneratorTypesTests
         joinGraph.Add("Invoice", "Customer", "i.CustomerId = c.Id");
 
         // Act
-        var statement = new SqlStatement
+        var selectStatement = new SelectStatement
         {
             SelectList = selectList,
-            Tables = tables,
-            Parameters = parameters,
+            Tables = tables.ToFrozenSet(),
+            Parameters = parameters.ToFrozenSet(),
             JoinGraph = joinGraph,
-            QueryType = "UPDATE",
-            ParseError = "Test error",
         };
 
         // Assert
-        Assert.Equal(2, statement.SelectList.Count);
-        Assert.Equal(2, statement.Tables.Count);
-        Assert.Equal(2, statement.Parameters.Count);
-        Assert.Equal(1, statement.JoinGraph.Count);
-        Assert.Equal("UPDATE", statement.QueryType);
-        Assert.True(statement.HasOneToManyJoins);
-        Assert.Equal("Test error", statement.ParseError);
+        Assert.Equal(2, selectStatement.SelectList.Count);
+        Assert.Equal(2, selectStatement.Tables.Count);
+        Assert.Equal(2, selectStatement.Parameters.Count);
+        Assert.Equal(1, selectStatement.JoinGraph.Count);
+        Assert.True(selectStatement.HasJoins);
     }
 
     [Fact]
-    public void SqlStatement_HasOneToManyJoins_ReturnsTrueWhenJoinsExist()
+    public void SqlStatement_HasJoins_ReturnsTrueWhenJoinsExist()
     {
         // Arrange
         var joinGraph = new JoinGraph();
         joinGraph.Add("Invoice", "InvoiceLine", "i.Id = l.InvoiceId");
 
-        var statement = new SqlStatement { JoinGraph = joinGraph };
+        var selectStatement = new SelectStatement { JoinGraph = joinGraph };
 
         // Act & Assert
-        Assert.True(statement.HasOneToManyJoins);
+        Assert.True(selectStatement.HasJoins);
     }
 
     [Fact]
-    public void SqlStatement_HasOneToManyJoins_ReturnsFalseWhenNoJoins()
+    public void SqlStatement_HasJoins_ReturnsFalseWhenNoJoins()
     {
         // Arrange
-        var statement = new SqlStatement();
+        var selectStatement = new SelectStatement();
 
         // Act & Assert
-        Assert.False(statement.HasOneToManyJoins);
-    }
-
-    [Fact]
-    public void SqlStatement_CanHaveParseError()
-    {
-        // Arrange & Act
-        var statement = new SqlStatement { ParseError = "Syntax error near line 5" };
-
-        // Assert
-        Assert.Equal("Syntax error near line 5", statement.ParseError);
+        Assert.False(selectStatement.HasJoins);
     }
 
     [Fact]
@@ -220,17 +205,17 @@ public sealed class SourceGeneratorTypesTests
         var tables = new List<TableInfo> { new("Invoice", null) }.AsReadOnly();
         var parameters = new List<ParameterInfo> { new("id") }.AsReadOnly();
 
-        var statement = new SqlStatement
+        var selectStatement = new SelectStatement
         {
             SelectList = selectList,
-            Tables = tables,
-            Parameters = parameters,
+            Tables = tables.ToFrozenSet(),
+            Parameters = parameters.ToFrozenSet(),
         };
 
         // Act & Assert - These should be read-only collections
-        Assert.IsAssignableFrom<IReadOnlyList<ColumnInfo>>(statement.SelectList);
-        Assert.IsAssignableFrom<IReadOnlyList<TableInfo>>(statement.Tables);
-        Assert.IsAssignableFrom<IReadOnlyList<ParameterInfo>>(statement.Parameters);
+        Assert.IsAssignableFrom<IReadOnlyList<ColumnInfo>>(selectStatement.SelectList);
+        Assert.IsAssignableFrom<IReadOnlySet<TableInfo>>(selectStatement.Tables);
+        Assert.IsAssignableFrom<IReadOnlySet<ParameterInfo>>(selectStatement.Parameters);
     }
 
     [Fact]
