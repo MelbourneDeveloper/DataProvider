@@ -1,6 +1,3 @@
-using System.Collections.Immutable;
-using System.Linq.Expressions;
-using DataProvider.Example.Model;
 using Generated;
 using Lql.SQLite;
 using Microsoft.Data.Sqlite;

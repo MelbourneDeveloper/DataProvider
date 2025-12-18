@@ -1,6 +1,4 @@
 using Microsoft.Data.Sqlite;
-using Outcome;
-using Selecta;
 
 namespace DataProvider.Example;
 

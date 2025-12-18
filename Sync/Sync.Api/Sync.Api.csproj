@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>Sync.Api</RootNamespace>
-    <NoWarn>$(NoWarn);CA1848</NoWarn>
+    <NoWarn>$(NoWarn);CA1848;CA1017;CA1515;CA1307;CA2007;EPC13;CS1591;IDE0005</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

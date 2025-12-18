@@ -1,8 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Logging.Abstractions;
-using Sync;
-using Sync.SQLite;
 using Xunit;
 
 namespace Sync.SQLite.Tests;
@@ -88,7 +85,7 @@ public sealed class SpecComplianceTests : IDisposable
         Assert.EndsWith("Z", timestamp);
 
         // Must be parseable as ISO 8601
-        Assert.True(DateTime.TryParse(timestamp, out var parsed));
+        Assert.True(DateTime.TryParse(timestamp, out _));
 
         // Must have milliseconds (format: yyyy-MM-ddTHH:mm:ss.fffZ)
         Assert.Contains(".", timestamp);
@@ -403,7 +400,7 @@ public sealed class SpecComplianceTests : IDisposable
             batch,
             _originId,
             3,
-            entry => ApplySingleChange(entry),
+            ApplySingleChange,
             NullLogger.Instance
         );
 
@@ -700,7 +697,7 @@ public sealed class SpecComplianceTests : IDisposable
 
         // Hash is 64 hex chars (SHA-256)
         Assert.Equal(64, hash1.Length);
-        Assert.True(hash1.All(c => char.IsLetterOrDigit(c)));
+        Assert.True(hash1.All(char.IsLetterOrDigit));
     }
 
     [Fact]

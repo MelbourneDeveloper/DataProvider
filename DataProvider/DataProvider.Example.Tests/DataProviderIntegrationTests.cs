@@ -1,9 +1,6 @@
-using System.Collections.Immutable;
-using DataProvider.Example;
 using Generated;
 using Lql.SQLite;
 using Microsoft.Data.Sqlite;
-using Outcome;
 using Selecta;
 using Xunit;
 using static DataProvider.Example.MapFunctions;

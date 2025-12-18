@@ -18,9 +18,10 @@
 14. [Conflict Resolution](#14-conflict-resolution)
 15. [Hash Verification](#15-hash-verification)
 16. [Security Considerations](#16-security-considerations)
-17. [Conformance Requirements](#17-conformance-requirements)
-18. [Appendices](#18-appendices)
-19. [References](#19-references)
+17. [Schema Metadata](#17-schema-metadata)
+18. [Conformance Requirements](#18-conformance-requirements)
+19. [Appendices](#19-appendices)
+20. [References](#20-references)
 
 ---
 
@@ -802,7 +803,126 @@ After sync, client and server can compare full database hashes. Mismatch indicat
 
 ---
 
-## 17. Conformance Requirements
+## 17. Schema Metadata
+
+### 17.1 Overview
+
+Schema metadata enables sync participants to share table structure information in a standardized JSON format. This is essential for:
+
+- Validating incoming changes match expected schema
+- Generating triggers dynamically
+- Schema migration coordination
+- Client-server schema negotiation
+
+### 17.2 Schema Metadata JSON Format
+
+```json
+{
+    "version": "1.0",
+    "generated_at": "2025-12-18T10:30:00.000Z",
+    "tables": [
+        {
+            "name": "Person",
+            "pk_column": "Id",
+            "pk_type": "uuid",
+            "columns": [
+                {
+                    "name": "Id",
+                    "type": "uuid",
+                    "nullable": false,
+                    "is_pk": true
+                },
+                {
+                    "name": "Name",
+                    "type": "string",
+                    "nullable": false,
+                    "max_length": 255
+                },
+                {
+                    "name": "Email",
+                    "type": "string",
+                    "nullable": true,
+                    "max_length": 255
+                },
+                {
+                    "name": "CreatedAt",
+                    "type": "datetime",
+                    "nullable": false
+                }
+            ],
+            "sync_enabled": true,
+            "excluded_columns": []
+        }
+    ]
+}
+```
+
+### 17.3 Column Type Mappings
+
+Portable type identifiers map to platform-specific types:
+
+| Portable Type | SQLite | SQL Server | PostgreSQL |
+|---------------|--------|------------|------------|
+| `uuid` | TEXT | UNIQUEIDENTIFIER | UUID |
+| `string` | TEXT | NVARCHAR(n) | VARCHAR(n) |
+| `int` | INTEGER | INT | INTEGER |
+| `bigint` | INTEGER | BIGINT | BIGINT |
+| `decimal` | REAL | DECIMAL(p,s) | NUMERIC(p,s) |
+| `boolean` | INTEGER | BIT | BOOLEAN |
+| `datetime` | TEXT | DATETIME2 | TIMESTAMPTZ |
+| `blob` | BLOB | VARBINARY(MAX) | BYTEA |
+
+### 17.4 Schema Exchange Protocol
+
+**Request schema from server:**
+```json
+{
+    "action": "get_schema",
+    "tables": ["Person", "Order"]  // null = all tables
+}
+```
+
+**Server response:**
+```json
+{
+    "schema": { /* Schema metadata JSON */ },
+    "schema_hash": "abc123...",  // SHA-256 of canonical schema JSON
+    "sync_tables": ["Person", "Order"]
+}
+```
+
+### 17.5 Schema Validation
+
+Before applying changes, implementations SHOULD validate:
+
+1. **Table exists**: `table_name` in change exists in schema
+2. **PK matches**: `pk_value` key matches `pk_column` in schema
+3. **Payload columns**: All payload keys exist in table's columns
+4. **Type compatibility**: Payload values are compatible with column types
+
+### 17.6 Schema Hash
+
+Schema hash enables quick compatibility checks:
+
+```
+1. Serialize schema metadata to canonical JSON (per Section 15.2)
+2. Compute SHA-256 hash
+3. Return lowercase hex digest
+```
+
+Clients can cache schema and only re-fetch when hash changes.
+
+### 17.7 Requirements
+
+- Schema metadata MUST include all sync-enabled tables
+- Column metadata MUST include type, nullability, and PK indicator
+- Schema hash MUST be computed using canonical JSON serialization
+- Implementations SHOULD validate incoming changes against schema
+- Schema changes MUST trigger trigger regeneration
+
+---
+
+## 18. Conformance Requirements
 
 An implementation is **conformant** if:
 
@@ -817,10 +937,11 @@ An implementation is **conformant** if:
 9. Batching uses per-batch transactions with version checkpointing
 10. Triggers are generated via LQL transpilation
 11. Server supports real-time subscriptions (record and table level)
+12. Schema metadata is available in standard JSON format
 
 ---
 
-## 18. Appendices
+## 19. Appendices
 
 ### Appendix A: Complete Schema
 
@@ -887,7 +1008,7 @@ CREATE TABLE _sync_clients (
 
 ---
 
-## 19. References
+## 20. References
 
 - [SQLite CREATE TRIGGER](https://sqlite.org/lang_createtrigger.html)
 - [SQLite JSON Functions](https://sqlite.org/json1.html)

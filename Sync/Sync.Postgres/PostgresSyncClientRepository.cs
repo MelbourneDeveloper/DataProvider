@@ -1,5 +1,3 @@
-using Npgsql;
-
 namespace Sync.Postgres;
 
 /// <summary>

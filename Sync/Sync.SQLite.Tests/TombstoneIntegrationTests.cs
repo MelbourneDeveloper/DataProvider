@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Microsoft.Data.Sqlite;
-using Sync.SQLite;
 using Xunit;
 
 namespace Sync.SQLite.Tests;

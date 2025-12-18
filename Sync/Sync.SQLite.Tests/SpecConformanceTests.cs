@@ -2,8 +2,6 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Logging.Abstractions;
-using Sync.SQLite;
 using Xunit;
 
 namespace Sync.SQLite.Tests;
@@ -302,28 +300,19 @@ public sealed partial class SpecConformanceTests : IDisposable
         // Act: Check initial state
         using var cmd = _db.CreateCommand();
         cmd.CommandText = "SELECT sync_active FROM _sync_session";
-        var initial = Convert.ToInt32(
-            cmd.ExecuteScalar(),
-            CultureInfo.InvariantCulture
-        );
+        var initial = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
         Assert.Equal(0, initial);
 
         // Enable suppression
         SyncSessionManager.EnableSuppression(_db);
         cmd.CommandText = "SELECT sync_active FROM _sync_session";
-        var active = Convert.ToInt32(
-            cmd.ExecuteScalar(),
-            CultureInfo.InvariantCulture
-        );
+        var active = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
         Assert.Equal(1, active);
 
         // Disable suppression
         SyncSessionManager.DisableSuppression(_db);
         cmd.CommandText = "SELECT sync_active FROM _sync_session";
-        var disabled = Convert.ToInt32(
-            cmd.ExecuteScalar(),
-            CultureInfo.InvariantCulture
-        );
+        var disabled = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
         Assert.Equal(0, disabled);
     }
 

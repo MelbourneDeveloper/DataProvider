@@ -25,9 +25,6 @@ global using ConflictResolutionResult = Outcome.Result<Sync.ConflictResolution, 
 global using IntSyncError = Outcome.Result<int, Sync.SyncError>.Error<int, Sync.SyncError>;
 global using IntSyncOk = Outcome.Result<int, Sync.SyncError>.Ok<int, Sync.SyncError>;
 global using IntSyncResult = Outcome.Result<int, Sync.SyncError>;
-global using LongSyncError = Outcome.Result<long, Sync.SyncError>.Error<long, Sync.SyncError>;
-global using LongSyncOk = Outcome.Result<long, Sync.SyncError>.Ok<long, Sync.SyncError>;
-global using LongSyncResult = Outcome.Result<long, Sync.SyncError>;
 global using PullResultError = Outcome.Result<Sync.PullResult, Sync.SyncError>.Error<
     Sync.PullResult,
     Sync.SyncError

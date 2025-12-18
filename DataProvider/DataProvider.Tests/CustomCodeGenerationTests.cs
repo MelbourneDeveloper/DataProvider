@@ -119,6 +119,7 @@ using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Outcome;
+using Selecta;
 
 namespace CustomGenerated;
 
@@ -159,11 +160,11 @@ public static partial class UserExtensions
                 }
             }
 
-            return new Result<ImmutableList<User>, SqlError>.Ok(results.ToImmutable());
+            return new Result<ImmutableList<User>, SqlError>.Ok<ImmutableList<User>, SqlError>(results.ToImmutable());
         }
         catch (Exception ex)
         {
-            return new Result<ImmutableList<User>, SqlError>.Error(new SqlError(""Database error"", ex));
+            return new Result<ImmutableList<User>, SqlError>.Error<ImmutableList<User>, SqlError>(new SqlError(""Database error"", ex));
         }
     }
 }
@@ -178,7 +179,7 @@ public class UserData
     public string? Email { get; set; }
 
     public UserData() { }
-    
+
     public UserData Clone() => new UserData
     {
         Id = this.Id,
@@ -195,6 +196,7 @@ using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Outcome;
+using Selecta;
 
 namespace CustomGenerated;
 
@@ -235,11 +237,11 @@ public static partial class UserExtensions
                 }
             }
 
-            return new Result<ImmutableList<User>, SqlError>.Ok(results.ToImmutable());
+            return new Result<ImmutableList<User>, SqlError>.Ok<ImmutableList<User>, SqlError>(results.ToImmutable());
         }
         catch (Exception ex)
         {
-            return new Result<ImmutableList<User>, SqlError>.Error(new SqlError(""Database error"", ex));
+            return new Result<ImmutableList<User>, SqlError>.Error<ImmutableList<User>, SqlError>(new SqlError(""Database error"", ex));
         }
     }
 }
@@ -254,7 +256,7 @@ public class UserData
     public string? Email { get; set; }
 
     public UserData() { }
-    
+
     public UserData Clone() => new UserData
     {
         Id = this.Id,
@@ -359,6 +361,7 @@ using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Outcome;
+using Selecta;
 
 namespace FluentGenerated;
 
