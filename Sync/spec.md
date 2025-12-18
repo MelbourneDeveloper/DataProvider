@@ -1,11 +1,5 @@
 # .NET Sync Framework Specification
 
-**Version:** 0.3.0-draft
-**Status:** Draft
-**Last Updated:** 2025-12-18
-
----
-
 ## Table of Contents
 
 1. [Introduction](#1-introduction)
@@ -16,14 +10,14 @@
 6. [Timestamps](#6-timestamps)
 7. [Unified Change Log](#7-unified-change-log)
 8. [Trigger Suppression](#8-trigger-suppression)
-9. [Triggers](#9-triggers)
-10. [Bi-Directional Sync Protocol](#10-bi-directional-sync-protocol)
-11. [Batching](#11-batching)
-12. [Tombstone Retention](#12-tombstone-retention)
-13. [Conflict Resolution](#13-conflict-resolution)
-14. [Hash Verification](#14-hash-verification)
-15. [Security Considerations](#15-security-considerations)
-16. [Future Considerations](#16-future-considerations)
+9. [LQL Trigger Generation](#9-lql-trigger-generation)
+10. [Real-Time Subscriptions](#10-real-time-subscriptions)
+11. [Bi-Directional Sync Protocol](#11-bi-directional-sync-protocol)
+12. [Batching](#12-batching)
+13. [Tombstone Retention](#13-tombstone-retention)
+14. [Conflict Resolution](#14-conflict-resolution)
+15. [Hash Verification](#15-hash-verification)
+16. [Security Considerations](#16-security-considerations)
 17. [Conformance Requirements](#17-conformance-requirements)
 18. [Appendices](#18-appendices)
 19. [References](#19-references)
@@ -74,10 +68,8 @@ This specification does **not** cover:
 
 ### 2.2 Non-Goals
 
-- Real-time streaming (batch-oriented by design)
 - CRDT-based automatic merge (out of scope, but extensible)
-- Binary blob synchronization
-- File system sync
+- Binary blob or file system synchronization
 
 ---
 
@@ -347,91 +339,214 @@ UPDATE _sync_session SET sync_active = 0;
 
 ---
 
-## 9. Triggers
+## 9. LQL Trigger Generation
 
-### 9.1 General Requirements
+### 9.1 Overview
 
-- Each tracked table MUST define `AFTER INSERT`, `AFTER UPDATE`, and `AFTER DELETE` triggers
-- All triggers MUST check the suppression flag
-- All triggers MUST include origin from `_sync_state`
-- Triggers serialize the entire row to JSON
+Triggers are defined in LQL (Lambda Query Language) and transpiled to platform-specific SQL. This enables a single trigger definition to work across SQLite, SQL Server, and PostgreSQL.
 
-### 9.2 Insert Trigger
+### 9.2 LQL Trigger Syntax
 
+```lql
+-- Define sync triggers for a table
+Person
+|> syncTriggers({
+    columns: ["Id", "Name", "Email"],
+    pkColumn: "Id"
+   })
+```
+
+The `syncTriggers` operator generates INSERT, UPDATE, and DELETE triggers that:
+- Check the suppression flag before logging
+- Serialize specified columns to JSON payload
+- Include origin ID from `_sync_state`
+- Format timestamps per platform
+
+### 9.3 Column Enumeration
+
+The LQL transpiler queries schema metadata to enumerate columns:
+
+| Platform | Metadata Source |
+|----------|-----------------|
+| SQLite | `PRAGMA table_info(TableName)` |
+| SQL Server | `INFORMATION_SCHEMA.COLUMNS` |
+| PostgreSQL | `information_schema.columns` |
+
+Columns can be explicitly listed (recommended for excluding sensitive data) or auto-discovered from schema.
+
+### 9.4 Transpilation Output
+
+**SQLite:**
 ```sql
 CREATE TRIGGER Person_sync_insert
 AFTER INSERT ON Person
 WHEN (SELECT sync_active FROM _sync_session) = 0
 BEGIN
     INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
-    VALUES (
-        'Person',
-        json_object('Id', NEW.Id),
-        'insert',
-        json_object('Id', NEW.Id, 'Name', NEW.Name, 'Email', NEW.Email),
-        (SELECT value FROM _sync_state WHERE key = 'origin_id'),
-        strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-    );
+    VALUES ('Person', json_object('Id', NEW.Id), 'insert',
+            json_object('Id', NEW.Id, 'Name', NEW.Name, 'Email', NEW.Email),
+            (SELECT value FROM _sync_state WHERE key = 'origin_id'),
+            strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
 END;
 ```
 
-### 9.3 Update Trigger
-
+**SQL Server:**
 ```sql
-CREATE TRIGGER Person_sync_update
-AFTER UPDATE ON Person
-WHEN (SELECT sync_active FROM _sync_session) = 0
+CREATE TRIGGER Person_sync_insert ON Person AFTER INSERT AS
 BEGIN
+    IF (SELECT sync_active FROM _sync_session) = 0
     INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
-    VALUES (
-        'Person',
-        json_object('Id', NEW.Id),
-        'update',
-        json_object('Id', NEW.Id, 'Name', NEW.Name, 'Email', NEW.Email),
-        (SELECT value FROM _sync_state WHERE key = 'origin_id'),
-        strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-    );
+    SELECT 'Person', (SELECT i.Id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER), 'insert',
+           (SELECT i.Id, i.Name, i.Email FOR JSON PATH, WITHOUT_ARRAY_WRAPPER),
+           (SELECT value FROM _sync_state WHERE [key] = 'origin_id'),
+           FORMAT(SYSUTCDATETIME(), 'yyyy-MM-ddTHH:mm:ss.fffZ')
+    FROM inserted i;
 END;
 ```
 
-### 9.4 Delete Trigger
-
+**PostgreSQL:**
 ```sql
-CREATE TRIGGER Person_sync_delete
-AFTER DELETE ON Person
-WHEN (SELECT sync_active FROM _sync_session) = 0
+CREATE OR REPLACE FUNCTION person_sync_insert() RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
-    VALUES (
-        'Person',
-        json_object('Id', OLD.Id),
-        'delete',
-        NULL,
-        (SELECT value FROM _sync_state WHERE key = 'origin_id'),
-        strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-    );
+    IF (SELECT sync_active FROM _sync_session) = 0 THEN
+        INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
+        VALUES ('Person', jsonb_build_object('Id', NEW.Id), 'insert',
+                jsonb_build_object('Id', NEW.Id, 'Name', NEW.Name, 'Email', NEW.Email),
+                (SELECT value FROM _sync_state WHERE key = 'origin_id'),
+                to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'));
+    END IF;
+    RETURN NEW;
 END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER Person_sync_insert AFTER INSERT ON Person
+FOR EACH ROW EXECUTE FUNCTION person_sync_insert();
 ```
+
+### 9.5 Requirements
+
+- Triggers MUST be generated via LQL transpilation, not hand-written SQL
+- Each tracked table MUST have INSERT, UPDATE, and DELETE triggers
+- Triggers MUST be regenerated when table schema changes
+- LQL trigger definitions SHOULD be stored alongside table definitions
 
 ---
 
-## 10. Bi-Directional Sync Protocol
+## 10. Real-Time Subscriptions
 
-### 10.1 The Problem
+### 10.1 Overview
+
+Clients can subscribe to real-time change notifications from the server. This complements batch sync with immediate push notifications for active clients.
+
+### 10.2 Subscription Types
+
+| Type | Description | Use Case |
+|------|-------------|----------|
+| **Record** | Subscribe to specific PK(s) | Editing a document, watching an order |
+| **Table** | Subscribe to all changes in a table | Dashboard, admin panel |
+| **Query** | Subscribe to records matching criteria | "My orders", "Assigned tasks" |
+
+### 10.3 Subscription Protocol
+
+**Subscribe:**
+```json
+{
+    "action": "subscribe",
+    "subscription_id": "sub-uuid-123",
+    "type": "record",
+    "table": "Orders",
+    "pk_values": ["order-uuid-456", "order-uuid-789"]
+}
+```
+
+**Table subscription:**
+```json
+{
+    "action": "subscribe",
+    "subscription_id": "sub-uuid-124",
+    "type": "table",
+    "table": "Products"
+}
+```
+
+**Unsubscribe:**
+```json
+{
+    "action": "unsubscribe",
+    "subscription_id": "sub-uuid-123"
+}
+```
+
+### 10.4 Server Notifications
+
+When a subscribed record changes, the server pushes:
+
+```json
+{
+    "type": "change",
+    "subscription_id": "sub-uuid-123",
+    "change": {
+        "version": 12345,
+        "table_name": "Orders",
+        "pk_value": {"Id": "order-uuid-456"},
+        "operation": "update",
+        "payload": {"Id": "order-uuid-456", "Status": "shipped"},
+        "origin": "origin-uuid-999",
+        "timestamp": "2025-12-18T10:30:00.123Z"
+    }
+}
+```
+
+### 10.5 Delivery Guarantees
+
+- **At-least-once**: Notifications may be delivered multiple times; clients must handle idempotently
+- **Client acknowledgment**: Clients SHOULD acknowledge received notifications
+- **Missed notifications**: If connection drops, client resumes via batch sync from last known version
+
+### 10.6 Server-Side Tracking
+
+```sql
+CREATE TABLE _sync_subscriptions (
+    subscription_id TEXT PRIMARY KEY,
+    origin_id TEXT NOT NULL,
+    subscription_type TEXT NOT NULL CHECK (subscription_type IN ('record', 'table', 'query')),
+    table_name TEXT NOT NULL,
+    filter TEXT,                    -- JSON: pk_values for record, query criteria for query
+    created_at TEXT NOT NULL,
+    expires_at TEXT                 -- Optional TTL
+);
+
+CREATE INDEX idx_subscriptions_table ON _sync_subscriptions(table_name);
+CREATE INDEX idx_subscriptions_origin ON _sync_subscriptions(origin_id);
+```
+
+### 10.7 Requirements
+
+- Server MUST support record-level and table-level subscriptions
+- Subscriptions MUST be scoped to authenticated origin
+- Server MUST clean up subscriptions when client disconnects or subscription expires
+- Notifications MUST include full change payload (same format as `_sync_log` entries)
+- Clients MUST NOT rely solely on subscriptions; batch sync remains the source of truth
+
+---
+
+## 11. Bi-Directional Sync Protocol
+
+### 11.1 The Problem
 
 Tables have foreign key relationships. Syncing in wrong order causes:
 - FK constraint violations
 - Failed inserts
 - Orphaned records
 
-### 10.2 Sync Direction
+### 11.2 Sync Direction
 
 Bi-directional sync has two phases:
 
 1. **Pull**: Get changes from server, apply locally
 2. **Push**: Send local changes to server
 
-### 10.3 Table Ordering (CRITICAL)
+### 11.3 Table Ordering (CRITICAL)
 
 Tables MUST be synced in **dependency order** based on foreign key relationships.
 
@@ -448,7 +563,7 @@ Tables MUST be synced in **dependency order** based on foreign key relationships
 - Inserts/Updates: Same as pull (parent first)
 - Deletes: Reverse order (child first)
 
-### 10.4 Dependency Resolution Algorithm
+### 11.4 Dependency Resolution Algorithm
 
 ```
 1. Build directed graph: table → tables it references
@@ -460,7 +575,7 @@ Tables MUST be synced in **dependency order** based on foreign key relationships
    d. Validate (fail sync if violations)
 ```
 
-### 10.5 Handling FK Violations
+### 11.5 Handling FK Violations
 
 When a change references a row that doesn't exist yet:
 
@@ -476,7 +591,7 @@ Retry deferred: Applied 2/2
 Sync complete.
 ```
 
-### 10.6 Sync Session Protocol
+### 11.6 Sync Session Protocol
 
 ```
 PULL PHASE:
@@ -499,7 +614,7 @@ PUSH PHASE:
 6. Commit transaction
 ```
 
-### 10.7 Requirements
+### 11.7 Requirements
 
 - Sync engine MUST calculate table dependency order before sync
 - FK violations during apply MUST be deferred, not failed immediately
@@ -509,13 +624,13 @@ PUSH PHASE:
 
 ---
 
-## 11. Batching
+## 12. Batching
 
-### 11.1 The Problem
+### 12.1 The Problem
 
 A device offline for weeks may need to sync millions of records. Loading all changes into memory is not feasible.
 
-### 11.2 Batch Query
+### 12.2 Batch Query
 
 ```sql
 SELECT version, table_name, pk_value, operation, payload, origin, timestamp
@@ -525,7 +640,7 @@ ORDER BY version ASC
 LIMIT @batch_size;
 ```
 
-### 11.3 Batch Processing Requirements
+### 12.3 Batch Processing Requirements
 
 - Batches MUST be processed in order (ascending version)
 - Client MUST persist `to_version` after successfully applying each batch
@@ -533,7 +648,7 @@ LIMIT @batch_size;
 - Batch size SHOULD be configurable (default: 1000-5000 records)
 - Trigger suppression MUST be active for entire pull phase, not per-batch
 
-### 11.4 Batch Application
+### 12.4 Batch Application
 
 For each batch:
 
@@ -548,17 +663,17 @@ For each batch:
 
 ---
 
-## 12. Tombstone Retention
+## 13. Tombstone Retention
 
-### 12.1 The Problem
+### 13.1 The Problem
 
 Deleted records must be tracked so replicas know to delete them too. But keeping tombstones forever wastes storage.
 
-### 12.2 Retention Strategy
+### 13.2 Retention Strategy
 
 Tombstones are retained based on **time since last successful sync from any replica**, not just calendar time.
 
-### 12.3 Server Tracking
+### 13.3 Server Tracking
 
 The server tracks the last sync version for each known origin:
 
@@ -570,7 +685,7 @@ CREATE TABLE _sync_clients (
 );
 ```
 
-### 12.4 Safe Purge Calculation
+### 13.4 Safe Purge Calculation
 
 Tombstones can be purged when:
 
@@ -584,7 +699,7 @@ WHERE operation = 'delete'
   AND version < @safe_purge_version;
 ```
 
-### 12.5 Stale Client Handling
+### 13.5 Stale Client Handling
 
 Clients that haven't synced for extended periods:
 
@@ -594,7 +709,7 @@ Clients that haven't synced for extended periods:
 | Client missed purged tombstones | Full resync required |
 | Client inactive > 90 days | Remove from `_sync_clients`, require re-registration |
 
-### 12.6 Full Resync Protocol
+### 13.6 Full Resync Protocol
 
 When a client has fallen too far behind:
 
@@ -604,7 +719,7 @@ When a client has fallen too far behind:
 4. Client downloads full current state
 5. Client resumes incremental sync
 
-### 12.7 Requirements
+### 13.7 Requirements
 
 - Server MUST track last sync version per origin
 - Tombstones MUST NOT be purged until all active clients have synced past them
@@ -613,9 +728,9 @@ When a client has fallen too far behind:
 
 ---
 
-## 13. Conflict Resolution
+## 14. Conflict Resolution
 
-### 13.1 Conflict Detection
+### 14.1 Conflict Detection
 
 Two changes conflict when:
 
@@ -623,7 +738,7 @@ Two changes conflict when:
 - Different `origin` values
 - Both changes occurred since last sync
 
-### 13.2 Resolution Strategies (Pluggable)
+### 14.2 Resolution Strategies (Pluggable)
 
 | Strategy | Description |
 |----------|-------------|
@@ -632,7 +747,7 @@ Two changes conflict when:
 | **Client Wins** | Client version always wins |
 | **Application Logic** | Custom merge function per table |
 
-### 13.3 Echo Prevention
+### 14.3 Echo Prevention
 
 Changes MUST NOT be re-applied to their origin:
 
@@ -643,13 +758,13 @@ WHERE origin != @my_origin_id
 
 ---
 
-## 14. Hash Verification
+## 15. Hash Verification
 
-### 14.1 Purpose
+### 15.1 Purpose
 
 Hash verification ensures database consistency. If two replicas have the same data, they produce the same hash.
 
-### 14.2 Canonical JSON Specification
+### 15.2 Canonical JSON Specification
 
 To ensure identical hashes across implementations, JSON MUST be serialized canonically:
 
@@ -665,7 +780,7 @@ To ensure identical hashes across implementations, JSON MUST be serialized canon
 {"Email":"alice@example.com","Id":"550e8400-e29b-41d4-a716-446655440000","Name":"Alice"}
 ```
 
-### 14.3 Full Database Hash Algorithm
+### 15.3 Full Database Hash Algorithm
 
 ```
 1. Initialize SHA-256 hasher
@@ -678,7 +793,7 @@ To ensure identical hashes across implementations, JSON MUST be serialized canon
 3. Return hex-encoded SHA-256 digest (lowercase)
 ```
 
-### 14.4 Batch Hash
+### 15.4 Batch Hash
 
 Each batch includes a hash of its contents:
 
@@ -689,7 +804,7 @@ Each batch includes a hash of its contents:
 3. Return hex-encoded SHA-256 digest
 ```
 
-### 14.5 Verification
+### 15.5 Verification
 
 After sync, client and server can compare full database hashes. Mismatch indicates:
 - Sync bug
@@ -698,27 +813,13 @@ After sync, client and server can compare full database hashes. Mismatch indicat
 
 ---
 
-## 15. Security Considerations
+## 16. Security Considerations
 
 - Change log MUST NOT store secrets beyond what base tables contain
 - Origin IDs are identifiers, NOT authentication tokens
 - Sync endpoints MUST authenticate before accepting/sending changes
 - Hash verification provides integrity checking, not authentication
 - Consider encrypting payloads for sensitive data
-
----
-
-## 16. Future Considerations
-
-### 16.1 Partial Column Updates
-
-Current design stores full row on every change. Future versions MAY support:
-
-- Column-level change tracking (only changed columns in payload)
-- Diff-based updates for bandwidth optimization
-- Configurable per-table (full row vs changes only)
-
-This is deferred to keep initial implementation simple. Full-row updates are correct, just not optimal for wide tables with frequent small changes.
 
 ---
 
@@ -735,6 +836,8 @@ An implementation is **conformant** if:
 7. Tombstones are retained until all clients have synced past them
 8. Hash computation follows canonical JSON specification
 9. Batching supports resumable sync from last successful version
+10. Triggers are generated via LQL transpilation
+11. Server supports real-time subscriptions (record and table level)
 
 ---
 
@@ -812,13 +915,3 @@ CREATE TABLE _sync_clients (
 - [RFC 4122 - UUID](https://tools.ietf.org/html/rfc4122)
 - [RFC 8785 - JSON Canonicalization](https://tools.ietf.org/html/rfc8785)
 - [Dotmim.Sync Documentation](https://dotmimsync.readthedocs.io/)
-
----
-
-## Document History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 0.1.0-draft | 2025-12-18 | Initial specification |
-| 0.2.0-draft | 2025-12-18 | Unified change log model, batching, hash verification |
-| 0.3.0-draft | 2025-12-18 | Added: PK requirements, origin ID generation, trigger suppression, bi-directional sync ordering, tombstone retention strategy, canonical JSON spec, timestamp format |
