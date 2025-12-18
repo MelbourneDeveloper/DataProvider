@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Sync.Api</RootNamespace>
+    <NoWarn>$(NoWarn);CA1848</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Sync/Sync.csproj" />
+    <ProjectReference Include="../Sync.SQLite/Sync.SQLite.csproj" />
+    <ProjectReference Include="../Sync.Postgres/Sync.Postgres.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+    <PackageReference Include="Npgsql" Version="9.0.2" />
+  </ItemGroup>
+
+</Project>
