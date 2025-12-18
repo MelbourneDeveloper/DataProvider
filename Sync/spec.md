@@ -1,6 +1,6 @@
 # .NET Sync Framework Specification
 
-**Version:** 0.1.0-draft
+**Version:** 0.3.0-draft
 **Status:** Draft
 **Last Updated:** 2025-12-18
 
@@ -11,17 +11,22 @@
 1. [Introduction](#1-introduction)
 2. [Goals & Non-Goals](#2-goals--non-goals)
 3. [Architecture Overview](#3-architecture-overview)
-4. [Unified Change Log](#4-unified-change-log)
-5. [Versioning Model](#5-versioning-model)
-6. [Triggers](#6-triggers)
-7. [Batching](#7-batching)
-8. [Change Enumeration](#8-change-enumeration)
-9. [Conflict Resolution](#9-conflict-resolution)
-10. [Hash Verification](#10-hash-verification)
-11. [Security Considerations](#11-security-considerations)
-12. [Conformance Requirements](#12-conformance-requirements)
-13. [Appendices](#13-appendices)
-14. [References](#14-references)
+4. [Primary Key Requirements](#4-primary-key-requirements)
+5. [Origin Identification](#5-origin-identification)
+6. [Timestamps](#6-timestamps)
+7. [Unified Change Log](#7-unified-change-log)
+8. [Trigger Suppression](#8-trigger-suppression)
+9. [Triggers](#9-triggers)
+10. [Bi-Directional Sync Protocol](#10-bi-directional-sync-protocol)
+11. [Batching](#11-batching)
+12. [Tombstone Retention](#12-tombstone-retention)
+13. [Conflict Resolution](#13-conflict-resolution)
+14. [Hash Verification](#14-hash-verification)
+15. [Security Considerations](#15-security-considerations)
+16. [Future Considerations](#16-future-considerations)
+17. [Conformance Requirements](#17-conformance-requirements)
+18. [Appendices](#18-appendices)
+19. [References](#19-references)
 
 ---
 
@@ -38,21 +43,20 @@ This specification covers:
 - Version-based change enumeration with batching
 - Tombstone management for deletions
 - Hash-based database verification
-- Conflict detection semantics
+- Bi-directional sync ordering
+- Trigger suppression during sync
 
 This specification does **not** cover:
 
 - Network transport protocols
 - Authentication/authorization
 - Specific conflict resolution algorithms (pluggable)
-- Multi-master topology coordination
 
 ### 1.2 Target Platforms
 
 - SQLite (primary - requires trigger-based tracking)
 - SQL Server (can leverage native Change Tracking)
 - PostgreSQL (can leverage logical replication)
-- Any other platform we want to implement
 
 ---
 
@@ -65,7 +69,7 @@ This specification does **not** cover:
 - **Offline-first**: Full functionality without network connectivity
 - **Deterministic sync**: Reproducible change ordering via monotonic versions
 - **Extensible conflict handling**: Pluggable resolution strategies
-- **Hash based verification**: Every sync produces a new hash that can be used to verify the contents of the database
+- **Hash-based verification**: Every sync produces a verifiable hash
 - **Efficient batching**: Handle millions of records for long-offline scenarios
 
 ### 2.2 Non-Goals
@@ -92,7 +96,7 @@ This specification does **not** cover:
 │                  Tracking Layer                          │
 │         ┌─────────────────────────────────┐              │
 │         │   Unified Change Log (_sync)    │              │
-│         │   - All tables in one place     │              │
+│         │   - Trigger suppression flag    │              │
 │         │   - JSON payloads               │              │
 │         │   - Inserts, updates, deletes   │              │
 │         └─────────────────────────────────┘              │
@@ -104,185 +108,414 @@ This specification does **not** cover:
 
 ---
 
-## 4. Unified Change Log
+## 4. Primary Key Requirements
 
-### 4.1 Design Rationale
+### 4.1 Single-Column UUID Primary Key (REQUIRED)
 
-Instead of per-table tracking tables, all changes are stored in a **single unified table** with JSON payloads. This approach:
+Every tracked table MUST have a single-column primary key. **UUID/GUID is strongly recommended**.
+
+**Rationale:**
+- Composite keys complicate JSON serialization, conflict detection, and FK references
+- Auto-increment integers cause collision issues in distributed systems
+- UUIDs can be generated offline without coordination
+
+### 4.2 Supported PK Types
+
+| Type | Suitability | Notes |
+|------|-------------|-------|
+| UUID/GUID | **Recommended** | No collision risk, offline-safe |
+| ULID | Excellent | Sortable, offline-safe |
+| Integer (auto-inc) | Poor | Collisions across replicas |
+| Composite | **Not supported** | Simplicity over flexibility |
+
+### 4.3 Implementation
+
+```sql
+-- Recommended: UUID primary key
+CREATE TABLE Person (
+    Id TEXT PRIMARY KEY,  -- UUID as text
+    Name TEXT NOT NULL,
+    Email TEXT
+);
+
+-- The pk_value in _sync_log is always a simple JSON string
+-- {"Id": "550e8400-e29b-41d4-a716-446655440000"}
+```
+
+Implementations MAY support integer PKs for simple cases but MUST document the collision risks.
+
+---
+
+## 5. Origin Identification
+
+### 5.1 Purpose
+
+Every replica needs a unique identifier to:
+- Track which changes came from where
+- Prevent echo (re-applying own changes)
+- Detect conflicts between replicas
+
+### 5.2 Origin ID Generation
+
+Origin IDs MUST be generated using UUID v4 (random).
+
+```csharp
+// Generated ONCE on first sync initialization
+var originId = Guid.NewGuid().ToString();
+// Store in _sync_state, never regenerate
+```
+
+### 5.3 Origin ID Lifecycle
+
+| Event | Action |
+|-------|--------|
+| First app install | Generate new UUID v4, store permanently |
+| App reinstall | Generate new UUID v4 (treated as new device) |
+| Database restore | Keep existing origin ID from backup |
+| Device clone | MUST regenerate origin ID on clone |
+
+### 5.4 Storage
+
+```sql
+CREATE TABLE _sync_state (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+-- Set once, never change
+INSERT INTO _sync_state VALUES ('origin_id', '550e8400-e29b-41d4-a716-446655440000');
+```
+
+### 5.5 Requirements
+
+- Origin ID MUST be 36 characters (standard UUID format with hyphens)
+- Origin ID MUST be stored before any sync operations
+- Origin ID MUST NOT change after initial generation (except clone scenario)
+- Origin ID MUST be included in every change log entry
+
+---
+
+## 6. Timestamps
+
+### 6.1 Format
+
+All timestamps MUST be stored as **ISO 8601 UTC strings** with millisecond precision:
+
+```
+2025-12-18T10:30:00.000Z
+```
+
+### 6.2 Requirements
+
+- Timestamps MUST be UTC (indicated by `Z` suffix)
+- Timestamps MUST include milliseconds (3 decimal places)
+- Timestamps MUST NOT use local time zones
+- Timestamps are for conflict resolution hints, NOT causal ordering (use version for ordering)
+
+### 6.3 Implementation
+
+**SQLite:**
+```sql
+-- strftime for consistent formatting
+strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+-- Result: 2025-12-18T10:30:00.123Z
+```
+
+**SQL Server:**
+```sql
+FORMAT(SYSUTCDATETIME(), 'yyyy-MM-ddTHH:mm:ss.fffZ')
+```
+
+**PostgreSQL:**
+```sql
+to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+```
+
+---
+
+## 7. Unified Change Log
+
+### 7.1 Design Rationale
+
+All changes are stored in a **single unified table** with JSON payloads:
 
 - Simplifies schema management (one table for everything)
 - Makes schema evolution trivial (JSON is schema-agnostic)
 - Enables efficient batched enumeration across all tables
 - Stores tombstones naturally alongside other changes
-- Produces wire-ready format (already JSON)
 
-### 4.2 Definitions
-
-| Term | Definition |
-|------|------------|
-| **Change Log** | Single table storing all tracked changes as JSON |
-| **Version** | Monotonically increasing change identifier (global) |
-| **Origin** | Identifier of the logical writer (device, node, replica) |
-| **Operation** | Type of change: `insert`, `update`, `delete` |
-| **Payload** | JSON representation of the row data |
-
-### 4.3 Change Log Schema
-
-A single table `_sync_log` stores ALL changes from ALL tracked tables.
+### 7.2 Schema
 
 ```sql
 CREATE TABLE _sync_log (
-    version     INTEGER PRIMARY KEY,
+    version     INTEGER PRIMARY KEY AUTOINCREMENT,
     table_name  TEXT NOT NULL,
-    pk_value    TEXT NOT NULL,           -- JSON: {"Id": 123} or {"A": 1, "B": 2}
-    operation   TEXT NOT NULL,           -- 'insert' | 'update' | 'delete'
+    pk_value    TEXT NOT NULL,           -- JSON: {"Id": "uuid-here"}
+    operation   TEXT NOT NULL CHECK (operation IN ('insert', 'update', 'delete')),
     payload     TEXT,                    -- JSON: full row data (NULL for deletes)
-    origin      TEXT,                    -- writer identifier
-    timestamp   TEXT NOT NULL            -- ISO 8601 UTC
+    origin      TEXT NOT NULL,           -- UUID of writer
+    timestamp   TEXT NOT NULL            -- ISO 8601 UTC with milliseconds
 );
 
+-- Primary access pattern: get changes since version X
+CREATE INDEX idx_sync_log_version ON _sync_log(version);
+
+-- Secondary: table-specific queries
 CREATE INDEX idx_sync_log_table ON _sync_log(table_name, version);
 ```
 
-### 4.4 Example Records
+### 7.3 JSON Payload Serialization
 
-```json
-{"version": 1, "table_name": "Person", "pk_value": "{\"Id\":42}", "operation": "insert",
- "payload": "{\"Id\":42,\"Name\":\"Alice\",\"Email\":\"alice@example.com\"}", "timestamp": "2025-12-18T10:30:00Z"}
+Payloads are generated by triggers using the database's native JSON functions. The trigger generator MUST enumerate all columns at generation time.
 
-{"version": 2, "table_name": "Person", "pk_value": "{\"Id\":42}", "operation": "update",
- "payload": "{\"Id\":42,\"Name\":\"Alice Smith\",\"Email\":\"alice@example.com\"}", "timestamp": "2025-12-18T11:00:00Z"}
-
-{"version": 3, "table_name": "Order", "pk_value": "{\"OrderId\":100}", "operation": "insert",
- "payload": "{\"OrderId\":100,\"PersonId\":42,\"Total\":99.99}", "timestamp": "2025-12-18T11:05:00Z"}
-
-{"version": 4, "table_name": "Person", "pk_value": "{\"Id\":42}", "operation": "delete",
- "payload": null, "timestamp": "2025-12-18T12:00:00Z"}
-```
-
-### 4.5 Tombstones
-
-Deletions are stored as records with `operation = 'delete'` and `payload = NULL`. The `pk_value` is retained to identify which row was deleted.
-
-- Tombstones MUST be retained for a configurable retention window
-- After confirmed propagation to all replicas, tombstones MAY be purged
-- Purging before full propagation causes "resurrection" on stale replicas
-
----
-
-## 5. Versioning Model
-
-### 5.1 Requirements
-
-- Versions MUST be strictly monotonic within a single node
-- Versions MUST be 64-bit integers minimum
-- Version is the PRIMARY KEY of `_sync_log` - auto-incrementing
-- Version generation is atomic with the INSERT into `_sync_log`
-
-### 5.2 Implementation
-
-SQLite's `INTEGER PRIMARY KEY` with `AUTOINCREMENT` provides:
-- Guaranteed monotonic values
-- Atomic assignment
-- No contention issues
+**Column Enumeration:** The code generator reads table metadata (column names, types) and generates triggers with explicit column lists. When schema changes, triggers MUST be regenerated.
 
 ```sql
-CREATE TABLE _sync_log (
-    version INTEGER PRIMARY KEY AUTOINCREMENT,
-    ...
-);
+-- Generated trigger knows all columns at generation time
+json_object('Id', NEW.Id, 'Name', NEW.Name, 'Email', NEW.Email, 'CreatedAt', NEW.CreatedAt)
 ```
+
+This is acceptable because:
+- Triggers are generated code, regenerated on schema change
+- Explicit columns prevent accidentally syncing sensitive columns
+- Failed triggers on missing columns surface schema drift immediately
 
 ---
 
-## 6. Triggers
+## 8. Trigger Suppression
 
-### 6.1 General Requirements
+### 8.1 The Problem
 
-- Each tracked base table MUST define `AFTER INSERT`, `AFTER UPDATE`, and `AFTER DELETE` triggers
-- Triggers serialize the row to JSON and INSERT into `_sync_log`
-- Triggers MUST be minimal - just capture and log
+When applying incoming changes, local triggers fire and log those changes again. This creates:
+- Duplicate entries in the log
+- Infinite sync loops
+- Wasted storage and bandwidth
 
-### 6.2 Insert Trigger
+### 8.2 Solution: Sync Session Flag
+
+A session-scoped flag disables trigger logging during sync application.
+
+```sql
+-- Add to _sync_state or use a temp table
+CREATE TABLE _sync_session (
+    sync_active INTEGER DEFAULT 0
+);
+INSERT INTO _sync_session VALUES (0);
+```
+
+### 8.3 Modified Triggers
+
+All triggers MUST check the suppression flag:
 
 ```sql
 CREATE TRIGGER Person_sync_insert
 AFTER INSERT ON Person
+WHEN (SELECT sync_active FROM _sync_session) = 0
 BEGIN
-    INSERT INTO _sync_log (table_name, pk_value, operation, payload, timestamp)
+    INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
     VALUES (
         'Person',
         json_object('Id', NEW.Id),
         'insert',
         json_object('Id', NEW.Id, 'Name', NEW.Name, 'Email', NEW.Email),
-        datetime('now')
+        (SELECT value FROM _sync_state WHERE key = 'origin_id'),
+        strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
     );
 END;
 ```
 
-### 6.3 Update Trigger
+### 8.4 Sync Application Pattern
+
+```sql
+-- 1. Enable suppression
+UPDATE _sync_session SET sync_active = 1;
+
+-- 2. Apply all incoming changes in transaction
+BEGIN TRANSACTION;
+-- ... apply changes ...
+COMMIT;
+
+-- 3. Disable suppression
+UPDATE _sync_session SET sync_active = 0;
+```
+
+### 8.5 Requirements
+
+- Trigger suppression MUST be enabled before applying ANY incoming changes
+- Trigger suppression MUST be disabled after sync completes (success or failure)
+- Local changes made while sync_active = 1 will NOT be tracked (this is intentional)
+
+---
+
+## 9. Triggers
+
+### 9.1 General Requirements
+
+- Each tracked table MUST define `AFTER INSERT`, `AFTER UPDATE`, and `AFTER DELETE` triggers
+- All triggers MUST check the suppression flag
+- All triggers MUST include origin from `_sync_state`
+- Triggers serialize the entire row to JSON
+
+### 9.2 Insert Trigger
+
+```sql
+CREATE TRIGGER Person_sync_insert
+AFTER INSERT ON Person
+WHEN (SELECT sync_active FROM _sync_session) = 0
+BEGIN
+    INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
+    VALUES (
+        'Person',
+        json_object('Id', NEW.Id),
+        'insert',
+        json_object('Id', NEW.Id, 'Name', NEW.Name, 'Email', NEW.Email),
+        (SELECT value FROM _sync_state WHERE key = 'origin_id'),
+        strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+    );
+END;
+```
+
+### 9.3 Update Trigger
 
 ```sql
 CREATE TRIGGER Person_sync_update
 AFTER UPDATE ON Person
+WHEN (SELECT sync_active FROM _sync_session) = 0
 BEGIN
-    INSERT INTO _sync_log (table_name, pk_value, operation, payload, timestamp)
+    INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
     VALUES (
         'Person',
         json_object('Id', NEW.Id),
         'update',
         json_object('Id', NEW.Id, 'Name', NEW.Name, 'Email', NEW.Email),
-        datetime('now')
+        (SELECT value FROM _sync_state WHERE key = 'origin_id'),
+        strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
     );
 END;
 ```
 
-### 6.4 Delete Trigger
+### 9.4 Delete Trigger
 
 ```sql
 CREATE TRIGGER Person_sync_delete
 AFTER DELETE ON Person
+WHEN (SELECT sync_active FROM _sync_session) = 0
 BEGIN
-    INSERT INTO _sync_log (table_name, pk_value, operation, payload, timestamp)
+    INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
     VALUES (
         'Person',
         json_object('Id', OLD.Id),
         'delete',
         NULL,
-        datetime('now')
+        (SELECT value FROM _sync_state WHERE key = 'origin_id'),
+        strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
     );
 END;
 ```
 
 ---
 
-## 7. Batching
+## 10. Bi-Directional Sync Protocol
 
-### 7.1 The Problem
+### 10.1 The Problem
 
-A device offline for days/weeks may need to sync millions of records. Loading all changes into memory is not feasible. Batching is **critical**.
+Tables have foreign key relationships. Syncing in wrong order causes:
+- FK constraint violations
+- Failed inserts
+- Orphaned records
 
-### 7.2 Batch Request Model
+### 10.2 Sync Direction
 
-Clients request changes in batches:
+Bi-directional sync has two phases:
+
+1. **Pull**: Get changes from server, apply locally
+2. **Push**: Send local changes to server
+
+### 10.3 Table Ordering (CRITICAL)
+
+Tables MUST be synced in **dependency order** based on foreign key relationships.
+
+**Pull Order (Parent → Child):**
+```
+1. Users        (no FK dependencies)
+2. Categories   (no FK dependencies)
+3. Products     (FK → Categories)
+4. Orders       (FK → Users)
+5. OrderItems   (FK → Orders, Products)
+```
+
+**Push Order (Child → Parent for deletes, Parent → Child for inserts/updates):**
+- Inserts/Updates: Same as pull (parent first)
+- Deletes: Reverse order (child first)
+
+### 10.4 Dependency Resolution Algorithm
 
 ```
-GET /sync?from_version=1000&batch_size=5000
+1. Build directed graph: table → tables it references
+2. Topological sort to get order
+3. For circular dependencies:
+   a. Disable FK constraints
+   b. Apply all changes
+   c. Re-enable FK constraints
+   d. Validate (fail sync if violations)
 ```
 
-Server responds with:
+### 10.5 Handling FK Violations
 
-```json
-{
-    "changes": [...],           // Array of change records
-    "from_version": 1000,       // Requested start
-    "to_version": 5999,         // Last version in this batch
-    "has_more": true,           // More batches available
-    "batch_hash": "abc123..."   // Hash of this batch for verification
-}
+When a change references a row that doesn't exist yet:
+
+1. **Defer**: Queue the change, continue with others, retry deferred changes
+2. **Retry Loop**: After each batch, retry deferred changes up to N times
+3. **Fail**: If deferred changes cannot be applied after all batches, fail the sync
+
+```
+Batch 1: Applied 950/1000, deferred 50 (missing FK targets)
+Batch 2: Applied 1000/1000
+Retry deferred: Applied 48/50
+Retry deferred: Applied 2/2
+Sync complete.
 ```
 
-### 7.3 Batch Query
+### 10.6 Sync Session Protocol
+
+```
+PULL PHASE:
+1. Enable trigger suppression
+2. Begin transaction
+3. For each table in dependency order:
+   a. Fetch changes from server (batched)
+   b. Apply changes, deferring FK violations
+4. Retry deferred changes (max 3 passes)
+5. Update last_server_version
+6. Commit transaction
+7. Disable trigger suppression
+
+PUSH PHASE:
+1. Begin transaction
+2. Collect local changes since last push
+3. Group by table in dependency order
+4. Send to server (server applies with same ordering logic)
+5. Update last_push_version on success
+6. Commit transaction
+```
+
+### 10.7 Requirements
+
+- Sync engine MUST calculate table dependency order before sync
+- FK violations during apply MUST be deferred, not failed immediately
+- Deferred changes MUST be retried after each batch
+- Circular FK dependencies MUST be handled by disabling constraints temporarily
+- Sync MUST fail if deferred changes cannot be resolved after all retries
+
+---
+
+## 11. Batching
+
+### 11.1 The Problem
+
+A device offline for weeks may need to sync millions of records. Loading all changes into memory is not feasible.
+
+### 11.2 Batch Query
 
 ```sql
 SELECT version, table_name, pk_value, operation, payload, origin, timestamp
@@ -292,234 +525,293 @@ ORDER BY version ASC
 LIMIT @batch_size;
 ```
 
-### 7.4 Batch Processing Requirements
+### 11.3 Batch Processing Requirements
 
 - Batches MUST be processed in order (ascending version)
 - Client MUST persist `to_version` after successfully applying each batch
-- Client MUST NOT advance version until batch is fully applied
 - On failure, client retries from last successful `to_version`
 - Batch size SHOULD be configurable (default: 1000-5000 records)
+- Trigger suppression MUST be active for entire pull phase, not per-batch
 
-### 7.5 Batch Application
+### 11.4 Batch Application
 
 For each batch:
 
-1. Begin transaction
+1. Trigger suppression already active (set at start of pull phase)
 2. For each change in order:
-   - `insert`: INSERT row (or upsert if exists)
-   - `update`: UPDATE row
-   - `delete`: DELETE row
-3. Update local sync state with `to_version`
-4. Commit transaction
-
-If any step fails, rollback and retry the entire batch.
-
-### 7.6 Memory Considerations
-
-- Stream changes rather than loading entire batch into memory
-- Process and apply changes row-by-row within the batch transaction
-- For very large syncs, consider chunked batch transactions (e.g., commit every 1000 rows within a batch)
-
-### 7.7 Progress Reporting
-
-For long-running syncs, report progress:
-
-```
-Syncing: 45,000 / 2,300,000 records (2%)
-Batch 9 of ~460 | ETA: 12 minutes
-```
+   - `insert`: INSERT or UPSERT
+   - `update`: UPDATE (or UPSERT)
+   - `delete`: DELETE
+   - On FK violation: defer to retry queue
+3. After batch: retry deferred changes
+4. Update local sync state with `to_version`
 
 ---
 
-## 8. Change Enumeration
+## 12. Tombstone Retention
 
-### 8.1 Query Pattern
+### 12.1 The Problem
 
-Enumerate all changes since a version:
+Deleted records must be tracked so replicas know to delete them too. But keeping tombstones forever wastes storage.
 
-```sql
-SELECT version, table_name, pk_value, operation, payload, origin, timestamp
-FROM _sync_log
-WHERE version > @last_sync_version
-ORDER BY version ASC
-LIMIT @batch_size;
-```
+### 12.2 Retention Strategy
 
-### 8.2 Table-Specific Enumeration
+Tombstones are retained based on **time since last successful sync from any replica**, not just calendar time.
 
-To sync a specific table:
+### 12.3 Server Tracking
+
+The server tracks the last sync version for each known origin:
 
 ```sql
-SELECT version, table_name, pk_value, operation, payload, origin, timestamp
-FROM _sync_log
-WHERE version > @last_sync_version
-  AND table_name = @table_name
-ORDER BY version ASC
-LIMIT @batch_size;
+CREATE TABLE _sync_clients (
+    origin_id TEXT PRIMARY KEY,
+    last_sync_version INTEGER NOT NULL,
+    last_sync_timestamp TEXT NOT NULL
+);
 ```
 
-### 8.3 Requirements
+### 12.4 Safe Purge Calculation
 
-- `ORDER BY version ASC` is REQUIRED to preserve causal ordering
-- Consumers MUST persist their last processed version
-- Batching is REQUIRED for large change sets
+Tombstones can be purged when:
+
+```sql
+-- Find the minimum version that ALL known clients have synced past
+SELECT MIN(last_sync_version) AS safe_purge_version FROM _sync_clients;
+
+-- Purge tombstones older than that version
+DELETE FROM _sync_log
+WHERE operation = 'delete'
+  AND version < @safe_purge_version;
+```
+
+### 12.5 Stale Client Handling
+
+Clients that haven't synced for extended periods:
+
+| Scenario | Action |
+|----------|--------|
+| Client syncs within retention window | Normal sync |
+| Client missed purged tombstones | Full resync required |
+| Client inactive > 90 days | Remove from `_sync_clients`, require re-registration |
+
+### 12.6 Full Resync Protocol
+
+When a client has fallen too far behind:
+
+1. Server detects: client's `last_sync_version` < oldest available version
+2. Server responds with `requires_full_resync: true`
+3. Client wipes local data (or specific tables)
+4. Client downloads full current state
+5. Client resumes incremental sync
+
+### 12.7 Requirements
+
+- Server MUST track last sync version per origin
+- Tombstones MUST NOT be purged until all active clients have synced past them
+- Clients that miss tombstones MUST perform full resync
+- Retention policy SHOULD be configurable (default: purge when all clients synced, max 90 days)
 
 ---
 
-## 9. Conflict Resolution
+## 13. Conflict Resolution
 
-### 9.1 Conflict Detection
+### 13.1 Conflict Detection
 
 Two changes conflict when:
 
 - Same `table_name` and `pk_value`
-- Different versions from different origins
-- Neither has been applied to the other's replica
+- Different `origin` values
+- Both changes occurred since last sync
 
-### 9.2 Resolution Strategies (Pluggable)
+### 13.2 Resolution Strategies (Pluggable)
 
 | Strategy | Description |
 |----------|-------------|
-| **Last-Write-Wins (LWW)** | Highest timestamp wins |
-| **Origin Priority** | Predefined origin hierarchy |
+| **Last-Write-Wins (LWW)** | Highest timestamp wins (default) |
+| **Server Wins** | Server version always wins |
+| **Client Wins** | Client version always wins |
 | **Application Logic** | Custom merge function per table |
-| **User Resolution** | Surface to UI for manual merge |
 
-### 9.3 Echo Prevention
+### 13.3 Echo Prevention
 
-- Origin field SHOULD be used to prevent re-applying own changes
-- Sync consumers MUST skip changes where `origin = self`
+Changes MUST NOT be re-applied to their origin:
 
----
-
-## 10. Hash Verification
-
-### 10.1 Purpose
-
-Hash verification ensures database consistency after sync. If two replicas have the same data, they produce the same hash.
-
-### 10.2 Hash Computation
-
-After applying a batch (or full sync), compute a hash of the current database state:
-
-1. For each tracked table (in alphabetical order):
-2. Select all rows ordered by primary key
-3. Serialize each row to canonical JSON
-4. Append to hash input
-5. Compute SHA-256 of concatenated data
-
-### 10.3 Batch Hash
-
-Each batch response includes a `batch_hash` computed from the changes in that batch. This allows:
-
-- Verification that batch was transmitted correctly
-- Detection of tampering or corruption
-
-### 10.4 Full Database Hash
-
-After sync completion, both client and server can compute and compare full database hashes to verify consistency.
+```sql
+-- Skip changes from self
+WHERE origin != @my_origin_id
+```
 
 ---
 
-## 11. Security Considerations
+## 14. Hash Verification
+
+### 14.1 Purpose
+
+Hash verification ensures database consistency. If two replicas have the same data, they produce the same hash.
+
+### 14.2 Canonical JSON Specification
+
+To ensure identical hashes across implementations, JSON MUST be serialized canonically:
+
+1. **Keys**: Sorted alphabetically (Unicode code point order)
+2. **Whitespace**: None (no spaces, no newlines)
+3. **Numbers**: No leading zeros, no trailing zeros after decimal, no positive sign
+4. **Strings**: Minimal escaping (only `"`, `\`, and control characters)
+5. **Unicode**: UTF-8 encoded, no escaping of non-ASCII characters
+6. **Null**: Literal `null`, not omitted
+
+**Example:**
+```json
+{"Email":"alice@example.com","Id":"550e8400-e29b-41d4-a716-446655440000","Name":"Alice"}
+```
+
+### 14.3 Full Database Hash Algorithm
+
+```
+1. Initialize SHA-256 hasher
+2. For each tracked table (sorted alphabetically by name):
+   a. Append table name + newline to hasher
+   b. Select all rows ordered by primary key ASC
+   c. For each row:
+      - Serialize to canonical JSON
+      - Append JSON + newline to hasher
+3. Return hex-encoded SHA-256 digest (lowercase)
+```
+
+### 14.4 Batch Hash
+
+Each batch includes a hash of its contents:
+
+```
+1. Initialize SHA-256 hasher
+2. For each change in batch (in version order):
+   a. Append: "{version}:{table_name}:{pk_value}:{operation}:{payload}\n"
+3. Return hex-encoded SHA-256 digest
+```
+
+### 14.5 Verification
+
+After sync, client and server can compare full database hashes. Mismatch indicates:
+- Sync bug
+- Data corruption
+- Unauthorized modification
+
+---
+
+## 15. Security Considerations
 
 - Change log MUST NOT store secrets beyond what base tables contain
-- Origin fields MUST NOT be trusted for authorization
+- Origin IDs are identifiers, NOT authentication tokens
 - Sync endpoints MUST authenticate before accepting/sending changes
-- Batch hashes provide integrity verification, not authentication
+- Hash verification provides integrity checking, not authentication
+- Consider encrypting payloads for sensitive data
 
 ---
 
-## 12. Conformance Requirements
+## 16. Future Considerations
+
+### 16.1 Partial Column Updates
+
+Current design stores full row on every change. Future versions MAY support:
+
+- Column-level change tracking (only changed columns in payload)
+- Diff-based updates for bandwidth optimization
+- Configurable per-table (full row vs changes only)
+
+This is deferred to keep initial implementation simple. Full-row updates are correct, just not optimal for wide tables with frequent small changes.
+
+---
+
+## 17. Conformance Requirements
 
 An implementation is **conformant** if:
 
-1. All tracked tables define INSERT, UPDATE, and DELETE triggers
-2. All changes are logged to the unified `_sync_log` table
-3. Deletes are stored as tombstones (not physical deletions from log)
-4. Changes can be enumerated by ascending version with batching
-5. Version values are strictly monotonic within a node
-6. Batch processing is transactional and resumable
+1. All tracked tables have single-column primary keys
+2. Origin ID is generated as UUID v4 and stored permanently
+3. All timestamps are UTC ISO 8601 with milliseconds
+4. Triggers check suppression flag before logging
+5. Triggers include origin ID in every entry
+6. Bi-directional sync respects FK dependency ordering
+7. Tombstones are retained until all clients have synced past them
+8. Hash computation follows canonical JSON specification
+9. Batching supports resumable sync from last successful version
 
 ---
 
-## 13. Appendices
+## 18. Appendices
 
-### Appendix A: Suggested Indexes
-
-```sql
--- Primary index is on version (PK)
--- Secondary index for table-specific queries
-CREATE INDEX idx_sync_log_table ON _sync_log(table_name, version);
-
--- Optional: for tombstone cleanup
-CREATE INDEX idx_sync_log_deletes ON _sync_log(operation, timestamp)
-    WHERE operation = 'delete';
-```
-
-### Appendix B: Sync State Table
+### Appendix A: Complete Schema
 
 ```sql
+-- Sync state (persistent)
 CREATE TABLE _sync_state (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
 
--- Track sync progress
+-- Sync session (ephemeral flag)
+CREATE TABLE _sync_session (
+    sync_active INTEGER DEFAULT 0
+);
+INSERT INTO _sync_session VALUES (0);
+
+-- Change log
+CREATE TABLE _sync_log (
+    version     INTEGER PRIMARY KEY AUTOINCREMENT,
+    table_name  TEXT NOT NULL,
+    pk_value    TEXT NOT NULL,
+    operation   TEXT NOT NULL CHECK (operation IN ('insert', 'update', 'delete')),
+    payload     TEXT,
+    origin      TEXT NOT NULL,
+    timestamp   TEXT NOT NULL
+);
+
+CREATE INDEX idx_sync_log_version ON _sync_log(version);
+CREATE INDEX idx_sync_log_table ON _sync_log(table_name, version);
+
+-- Initialize
+INSERT INTO _sync_state VALUES ('origin_id', '');  -- Set on first sync init
 INSERT INTO _sync_state VALUES ('last_server_version', '0');
-INSERT INTO _sync_state VALUES ('last_sync_timestamp', '');
-INSERT INTO _sync_state VALUES ('origin_id', 'device-abc-123');
+INSERT INTO _sync_state VALUES ('last_push_version', '0');
+```
+
+### Appendix B: Server Client Tracking (for tombstone retention)
+
+```sql
+CREATE TABLE _sync_clients (
+    origin_id TEXT PRIMARY KEY,
+    last_sync_version INTEGER NOT NULL DEFAULT 0,
+    last_sync_timestamp TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
 ```
 
 ### Appendix C: Platform-Specific Notes
 
 **SQLite:**
 - `json_object()` available in SQLite 3.38+ (2022)
-- No transaction log decoding - triggers are required
-- `INTEGER PRIMARY KEY AUTOINCREMENT` for versions
+- `strftime('%Y-%m-%dT%H:%M:%fZ', 'now')` for timestamps
+- `WHEN` clause on triggers for suppression
 
 **SQL Server:**
 - Can use native Change Tracking instead of triggers
 - `FOR JSON` for payload serialization
-- Consider `SEQUENCE` for version generation
+- Session context or temp table for suppression flag
 
 **PostgreSQL:**
-- Can use logical replication / `pg_logical`
-- `jsonb` type for payloads
-- `LISTEN/NOTIFY` for real-time notifications
-
-### Appendix D: Retention & Cleanup
-
-```sql
--- Purge tombstones older than 30 days
-DELETE FROM _sync_log
-WHERE operation = 'delete'
-  AND timestamp < datetime('now', '-30 days');
-
--- Compact: remove superseded changes for same row
--- (Keep only latest change per table+pk)
--- WARNING: Only safe after all replicas have synced past these versions
-```
+- `jsonb_build_object()` for payloads
+- `current_setting()` for session variables (suppression)
+- Consider `pg_logical` for change capture
 
 ---
 
-## 14. References
+## 19. References
 
-### 14.1 SQLite Documentation
-
-- [CREATE TRIGGER](https://sqlite.org/lang_createtrigger.html) — Official SQLite trigger documentation. Explains that triggers fire `FOR EACH ROW` and can reference `NEW.*`/`OLD.*` column values.
-
-- [JSON Functions](https://sqlite.org/json1.html) — SQLite JSON1 extension documentation. Covers `json_object()`, `json_extract()`, and related functions.
-
-### 14.2 Sync Frameworks
-
-- [Dotmim.Sync Documentation](https://dotmimsync.readthedocs.io/) — Modern .NET sync framework. The SQLite provider uses triggers and tracking tables.
-
-- [Dotmim.Sync Change Tracking](https://dotmimsync.readthedocs.io/en/latest/ChangeTracking.html) — Explains SQL Server's built-in change tracking.
-
-### 14.3 Enterprise Sync Solutions
-
-- [SymmetricDS FAQ](https://www.symmetricds.org/docs/faq) — Enterprise replication engine. States that "triggers are installed in the database to guarantee that data changes are captured."
+- [SQLite CREATE TRIGGER](https://sqlite.org/lang_createtrigger.html)
+- [SQLite JSON Functions](https://sqlite.org/json1.html)
+- [RFC 4122 - UUID](https://tools.ietf.org/html/rfc4122)
+- [RFC 8785 - JSON Canonicalization](https://tools.ietf.org/html/rfc8785)
+- [Dotmim.Sync Documentation](https://dotmimsync.readthedocs.io/)
 
 ---
 
@@ -529,3 +821,4 @@ WHERE operation = 'delete'
 |---------|------|---------|
 | 0.1.0-draft | 2025-12-18 | Initial specification |
 | 0.2.0-draft | 2025-12-18 | Unified change log model, batching, hash verification |
+| 0.3.0-draft | 2025-12-18 | Added: PK requirements, origin ID generation, trigger suppression, bi-directional sync ordering, tombstone retention strategy, canonical JSON spec, timestamp format |
