@@ -546,36 +546,13 @@ Bi-directional sync has two phases:
 1. **Pull**: Get changes from server, apply locally
 2. **Push**: Send local changes to server
 
-### 11.3 Table Ordering (CRITICAL)
+### 11.3 Change Ordering
 
-Tables MUST be synced in **dependency order** based on foreign key relationships.
+Changes are applied in **global version order** (ascending). This is the natural order from `_sync_log` and ensures causal consistency.
 
-**Pull Order (Parent → Child):**
-```
-1. Users        (no FK dependencies)
-2. Categories   (no FK dependencies)
-3. Products     (FK → Categories)
-4. Orders       (FK → Users)
-5. OrderItems   (FK → Orders, Products)
-```
+FK violations are handled via defer/retry, not pre-computed table ordering. This is simpler and handles all cases including circular references.
 
-**Push Order (Child → Parent for deletes, Parent → Child for inserts/updates):**
-- Inserts/Updates: Same as pull (parent first)
-- Deletes: Reverse order (child first)
-
-### 11.4 Dependency Resolution Algorithm
-
-```
-1. Build directed graph: table → tables it references
-2. Topological sort to get order
-3. For circular dependencies:
-   a. Disable FK constraints
-   b. Apply all changes
-   c. Re-enable FK constraints
-   d. Validate (fail sync if violations)
-```
-
-### 11.5 Handling FK Violations
+### 11.4 Handling FK Violations
 
 When a change references a row that doesn't exist yet:
 
@@ -591,35 +568,37 @@ Retry deferred: Applied 2/2
 Sync complete.
 ```
 
-### 11.6 Sync Session Protocol
+### 11.5 Sync Session Protocol
 
 ```
 PULL PHASE:
 1. Enable trigger suppression
-2. Begin transaction
-3. For each table in dependency order:
-   a. Fetch changes from server (batched)
-   b. Apply changes, deferring FK violations
-4. Retry deferred changes (max 3 passes)
-5. Update last_server_version
-6. Commit transaction
-7. Disable trigger suppression
+2. For each batch (in version order):
+   a. Begin transaction
+   b. Fetch batch from server (version > last_server_version, LIMIT batch_size)
+   c. Apply changes in version order, deferring FK violations
+   d. Retry deferred changes (max 3 passes)
+   e. Update last_server_version to batch's max version
+   f. Commit transaction
+3. Repeat until server returns empty batch
+4. Disable trigger suppression
 
 PUSH PHASE:
 1. Begin transaction
-2. Collect local changes since last push
-3. Group by table in dependency order
-4. Send to server (server applies with same ordering logic)
-5. Update last_push_version on success
-6. Commit transaction
+2. Collect local changes since last push (version order)
+3. Send to server in batches
+4. Update last_push_version on success
+5. Commit transaction
 ```
 
-### 11.7 Requirements
+**Per-batch transactions** ensure million-record syncs don't hold locks forever or blow memory. Each batch is independently resumable from `last_server_version`.
 
-- Sync engine MUST calculate table dependency order before sync
+### 11.6 Requirements
+
+- Changes MUST be applied in global version order
 - FK violations during apply MUST be deferred, not failed immediately
 - Deferred changes MUST be retried after each batch
-- Circular FK dependencies MUST be handled by disabling constraints temporarily
+- Each batch MUST be applied in its own transaction
 - Sync MUST fail if deferred changes cannot be resolved after all retries
 
 ---
@@ -832,10 +811,10 @@ An implementation is **conformant** if:
 3. All timestamps are UTC ISO 8601 with milliseconds
 4. Triggers check suppression flag before logging
 5. Triggers include origin ID in every entry
-6. Bi-directional sync respects FK dependency ordering
+6. Changes are applied in global version order with FK defer/retry
 7. Tombstones are retained until all clients have synced past them
 8. Hash computation follows canonical JSON specification
-9. Batching supports resumable sync from last successful version
+9. Batching uses per-batch transactions with version checkpointing
 10. Triggers are generated via LQL transpilation
 11. Server supports real-time subscriptions (record and table level)
 
