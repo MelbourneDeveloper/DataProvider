@@ -1,5 +1,3 @@
-using Results;
-
 namespace Sync;
 
 /// <summary>
@@ -69,16 +67,16 @@ public static class TombstoneManager
     /// <param name="clients">All tracked clients.</param>
     /// <param name="purgeTombstones">Function to delete tombstones below version.</param>
     /// <returns>Number of tombstones purged or error.</returns>
-    public static Result<int, SyncError> PurgeTombstones(
+    public static IntSyncResult PurgeTombstones(
         IEnumerable<SyncClient> clients,
-        Func<long, Result<int, SyncError>> purgeTombstones
+        Func<long, IntSyncResult> purgeTombstones
     )
     {
         var safeVersion = CalculateSafePurgeVersion(clients);
 
         if (safeVersion <= 0)
         {
-            return new Result<int, SyncError>.Success(0);
+            return new IntSyncOk(0);
         }
 
         return purgeTombstones(safeVersion);

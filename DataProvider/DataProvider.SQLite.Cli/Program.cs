@@ -2,7 +2,7 @@ using System.CommandLine;
 using System.Text.Json;
 using DataProvider.CodeGeneration;
 using DataProvider.SQLite.Parsing;
-using Results;
+using Outcome;
 using Selecta;
 
 #pragma warning disable CA1849 // Call async methods when in an async method
@@ -160,26 +160,41 @@ internal static class Program
                         continue;
                     }
                     var parseResult = parser.ParseSql(sql);
-                    if (parseResult is Result<SelectStatement, string>.Failure parseFailure)
+                    if (
+                        parseResult
+                        is Result<SelectStatement, string>.Error<
+                            SelectStatement,
+                            string
+                        > parseFailure
+                    )
                     {
                         Console.WriteLine(
-                            $"Error parsing SQL file '{sqlPath}': {parseFailure.ErrorValue}"
+                            $"Error parsing SQL file '{sqlPath}': {parseFailure.Value}"
                         );
                         continue;
                     }
-                    var stmt = ((Result<SelectStatement, string>.Success)parseResult).Value;
+                    var stmt = (
+                        (Result<SelectStatement, string>.Ok<SelectStatement, string>)parseResult
+                    ).Value;
 
                     var colsResult = await SqliteCodeGenerator
                         .GetColumnMetadataFromSqlAsync(cfg.ConnectionString, sql, stmt.Parameters)
                         .ConfigureAwait(false);
                     if (
                         colsResult
-                        is not Result<IReadOnlyList<DatabaseColumn>, SqlError>.Success cols
+                        is not Result<IReadOnlyList<DatabaseColumn>, SqlError>.Ok<
+                            IReadOnlyList<DatabaseColumn>,
+                            SqlError
+                        > cols
                     )
                     {
                         var err = (
-                            colsResult as Result<IReadOnlyList<DatabaseColumn>, SqlError>.Failure
-                        )!.ErrorValue;
+                            colsResult
+                            as Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error<
+                                IReadOnlyList<DatabaseColumn>,
+                                SqlError
+                            >
+                        )!.Value;
                         var prettyMeta = FormatSqliteMetadataMessage(err.DetailedMessage);
                         Console.WriteLine($"❌ {prettyMeta}");
                         // Also emit an MSBuild-formatted error so IDE Problem Matchers pick it up
@@ -210,17 +225,15 @@ internal static class Program
                         hasCustomImplementation: false,
                         grouping
                     );
-                    if (gen is Result<string, SqlError>.Success success)
+                    if (gen is Result<string, SqlError>.Ok<string, SqlError> success)
                     {
                         var target = Path.Combine(outDir.FullName, baseName + ".g.cs");
                         await File.WriteAllTextAsync(target, success.Value).ConfigureAwait(false);
                         Console.WriteLine($"✅ Generated {target}");
                     }
-                    else if (gen is Result<string, SqlError>.Failure failure)
+                    else if (gen is Result<string, SqlError>.Error<string, SqlError> failure)
                     {
-                        var prettyGen = FormatSqliteMetadataMessage(
-                            failure.ErrorValue.DetailedMessage
-                        );
+                        var prettyGen = FormatSqliteMetadataMessage(failure.Value.DetailedMessage);
                         Console.WriteLine($"❌ {prettyGen}");
                         // Also emit an MSBuild-formatted error so IDE Problem Matchers pick it up
                         Console.Error.WriteLine($"{sqlPath}(1,1): error DL0002: {prettyGen}");
@@ -342,7 +355,10 @@ internal static class Program
                             table,
                             tableConfig
                         );
-                        if (operationsResult is Result<string, SqlError>.Success operationsSuccess)
+                        if (
+                            operationsResult
+                            is Result<string, SqlError>.Ok<string, SqlError> operationsSuccess
+                        )
                         {
                             var target = Path.Combine(
                                 outDir.FullName,
@@ -353,11 +369,12 @@ internal static class Program
                             Console.WriteLine($"✅ Generated {target}");
                         }
                         else if (
-                            operationsResult is Result<string, SqlError>.Failure operationsFailure
+                            operationsResult
+                            is Result<string, SqlError>.Error<string, SqlError> operationsFailure
                         )
                         {
                             Console.WriteLine(
-                                $"❌ Failed to generate table operations for {tableConfigItem.Name}: {operationsFailure.ErrorValue.Message}"
+                                $"❌ Failed to generate table operations for {tableConfigItem.Name}: {operationsFailure.Value.Message}"
                             );
                             hadErrors = true;
                         }

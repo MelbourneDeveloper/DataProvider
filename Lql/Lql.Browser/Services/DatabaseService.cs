@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
 
 namespace Lql.Browser.Services;
 
@@ -35,13 +35,13 @@ public static class DatabaseService
             await connection.OpenAsync();
             Console.WriteLine("Database connection opened successfully");
 
-            return new Result<SqliteConnection, string>.Success(connection);
+            return new Result<SqliteConnection, string>.Ok<SqliteConnection, string>(connection);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"=== Database connection failed ===");
             Console.WriteLine($"Exception: {ex}");
-            return new Result<SqliteConnection, string>.Failure($"Connection failed: {ex.Message}");
+            return new Result<SqliteConnection, string>.Error<SqliteConnection, string>($"Connection failed: {ex.Message}");
         }
     }
 
@@ -80,14 +80,14 @@ public static class DatabaseService
             return new Result<
                 (ObservableCollection<string>, ObservableCollection<string>),
                 string
-            >.Success((tables, views));
+            >.Ok<(ObservableCollection<string>, ObservableCollection<string>), string>((tables, views));
         }
         catch (Exception ex)
         {
             return new Result<
                 (ObservableCollection<string>, ObservableCollection<string>),
                 string
-            >.Failure($"Error loading schema: {ex.Message}");
+            >.Error<(ObservableCollection<string>, ObservableCollection<string>), string>($"Error loading schema: {ex.Message}");
         }
     }
 }

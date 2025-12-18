@@ -1,5 +1,6 @@
 using Lql.Parsing;
-using Results;
+using Outcome;
+using Selecta;
 
 namespace Lql;
 
@@ -17,17 +18,17 @@ public static class LqlStatementConverter
     {
         var parseResult = LqlCodeParser.Parse(lqlCode);
 
+#pragma warning disable EXHAUSTION001 // Result type is exhaustive
         return parseResult switch
         {
-            Result<INode, SqlError>.Success success => new Result<LqlStatement, SqlError>.Success(
+            Result<INode, SqlError>.Ok<INode, SqlError> success => new Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>(
                 new LqlStatement { AstNode = success.Value }
             ),
-            Result<INode, SqlError>.Failure failure => new Result<LqlStatement, SqlError>.Failure(
-                failure.ErrorValue
+            Result<INode, SqlError>.Error<INode, SqlError> failure => new Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>(
+                failure.Value
             ),
-            _ => new Result<LqlStatement, SqlError>.Failure(
-                new SqlError("Unknown parse result type")
-            ),
+            _ => throw new InvalidOperationException("Unexpected Result type")
         };
+#pragma warning restore EXHAUSTION001
     }
 }

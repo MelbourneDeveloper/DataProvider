@@ -1,5 +1,5 @@
 using Microsoft.CodeAnalysis;
-using Results;
+using Outcome;
 using Selecta;
 
 namespace DataProvider.SqlServer;

@@ -23,7 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../Other/Results/Results.csproj" />
     <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
   </ItemGroup>
 

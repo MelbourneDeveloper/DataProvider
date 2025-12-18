@@ -1,5 +1,5 @@
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
 
 namespace Sync.SQLite;
 
@@ -21,11 +21,11 @@ public static class SyncSessionManager
             using var cmd = connection.CreateCommand();
             cmd.CommandText = "UPDATE _sync_session SET sync_active = 1";
             cmd.ExecuteNonQuery();
-            return new Result<bool, SyncError>.Success(true);
+            return new Result<bool, SyncError>.Ok<bool, SyncError>(true);
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Failure(
+            return new Result<bool, SyncError>.Error<bool, SyncError>(
                 new SyncErrorDatabase($"Failed to enable trigger suppression: {ex.Message}")
             );
         }
@@ -43,11 +43,11 @@ public static class SyncSessionManager
             using var cmd = connection.CreateCommand();
             cmd.CommandText = "UPDATE _sync_session SET sync_active = 0";
             cmd.ExecuteNonQuery();
-            return new Result<bool, SyncError>.Success(true);
+            return new Result<bool, SyncError>.Ok<bool, SyncError>(true);
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Failure(
+            return new Result<bool, SyncError>.Error<bool, SyncError>(
                 new SyncErrorDatabase($"Failed to disable trigger suppression: {ex.Message}")
             );
         }
@@ -65,11 +65,13 @@ public static class SyncSessionManager
             using var cmd = connection.CreateCommand();
             cmd.CommandText = "SELECT sync_active FROM _sync_session LIMIT 1";
             var result = cmd.ExecuteScalar();
-            return new Result<bool, SyncError>.Success(result is long value && value == 1);
+            return new Result<bool, SyncError>.Ok<bool, SyncError>(
+                result is long value && value == 1
+            );
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Failure(
+            return new Result<bool, SyncError>.Error<bool, SyncError>(
                 new SyncErrorDatabase($"Failed to check suppression state: {ex.Message}")
             );
         }

@@ -1,7 +1,8 @@
 using System.CommandLine;
 using Lql;
 using Lql.SQLite;
-using Results;
+using Outcome;
+using Selecta;
 
 namespace LqlCli;
 
@@ -98,20 +99,22 @@ internal static class Program
             // Parse the LQL using Lql
             var parseResult = LqlStatementConverter.ToStatement(lqlContent);
 
+#pragma warning disable EXHAUSTION001
             return parseResult switch
             {
-                Result<LqlStatement, SqlError>.Success success => await ProcessSuccessfulParse(
+                Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> success => await ProcessSuccessfulParse(
                         success.Value,
                         outputFile,
                         validate,
                         inputFile.FullName
                     )
                     .ConfigureAwait(false),
-                Result<LqlStatement, SqlError>.Failure failure => HandleParseError(
-                    failure.ErrorValue
+                Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> failure => HandleParseError(
+                    failure.Value
                 ),
                 _ => HandleUnknownError(),
             };
+#pragma warning restore EXHAUSTION001
         }
         catch (Exception ex)
         {
@@ -144,15 +147,17 @@ internal static class Program
         // Convert to SQLite
         var sqliteResult = statement.ToSQLite();
 
+#pragma warning disable EXHAUSTION001
         return sqliteResult switch
         {
-            Result<string, SqlError>.Success success => await OutputSql(success.Value, outputFile)
+            Result<string, SqlError>.Ok<string, SqlError> success => await OutputSql(success.Value, outputFile)
                 .ConfigureAwait(false),
-            Result<string, SqlError>.Failure failure => HandleTranspilationError(
-                failure.ErrorValue
+            Result<string, SqlError>.Error<string, SqlError> failure => HandleTranspilationError(
+                failure.Value
             ),
             _ => HandleUnknownError(),
         };
+#pragma warning restore EXHAUSTION001
     }
 
     /// <summary>

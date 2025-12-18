@@ -1,6 +1,5 @@
 using System.Data;
 using Generated;
-using Results;
 
 namespace DataProvider.Example;
 
@@ -14,7 +13,7 @@ internal static class SampleDataSeeder
     /// </summary>
     /// <param name="transaction">The database transaction to insert data within</param>
     /// <returns>A result indicating success or failure with details</returns>
-    public static async Task<(bool flowControl, Result<string, SqlError> value)> SeedDataAsync(
+    public static async Task<(bool flowControl, StringSqlResult value)> SeedDataAsync(
         IDbTransaction transaction
     )
     {
@@ -22,12 +21,10 @@ internal static class SampleDataSeeder
         var customer1Result = await transaction
             .InsertCustomerAsync("Acme Corp", "contact@acme.com", "555-0100", "2024-01-01")
             .ConfigureAwait(false);
-        if (customer1Result is not Result<long, SqlError>.Success customer1Success)
+        if (customer1Result is not LongSqlOk customer1Success)
             return (
                 flowControl: false,
-                value: new Result<string, SqlError>.Failure(
-                    (customer1Result as Result<long, SqlError>.Failure)!.ErrorValue
-                )
+                value: new StringSqlError((customer1Result as LongSqlError)!.Value)
             );
 
         var customer2Result = await transaction
@@ -38,12 +35,10 @@ internal static class SampleDataSeeder
                 "2024-01-02"
             )
             .ConfigureAwait(false);
-        if (customer2Result is not Result<long, SqlError>.Success customer2Success)
+        if (customer2Result is not LongSqlOk customer2Success)
             return (
                 flowControl: false,
-                value: new Result<string, SqlError>.Failure(
-                    (customer2Result as Result<long, SqlError>.Failure)!.ErrorValue
-                )
+                value: new StringSqlError((customer2Result as LongSqlError)!.Value)
             );
 
         // Insert Invoice
@@ -58,12 +53,10 @@ internal static class SampleDataSeeder
                 "Sample invoice"
             )
             .ConfigureAwait(false);
-        if (invoiceResult is not Result<long, SqlError>.Success invoiceSuccess)
+        if (invoiceResult is not LongSqlOk invoiceSuccess)
             return (
                 flowControl: false,
-                value: new Result<string, SqlError>.Failure(
-                    (invoiceResult as Result<long, SqlError>.Failure)!.ErrorValue
-                )
+                value: new StringSqlError((invoiceResult as LongSqlError)!.Value)
             );
 
         // Insert InvoiceLines
@@ -78,12 +71,10 @@ internal static class SampleDataSeeder
                 null
             )
             .ConfigureAwait(false);
-        if (invoiceLine1Result is not Result<long, SqlError>.Success)
+        if (invoiceLine1Result is not LongSqlOk)
             return (
                 flowControl: false,
-                value: new Result<string, SqlError>.Failure(
-                    (invoiceLine1Result as Result<long, SqlError>.Failure)!.ErrorValue
-                )
+                value: new StringSqlError((invoiceLine1Result as LongSqlError)!.Value)
             );
 
         var invoiceLine2Result = await transaction
@@ -97,12 +88,10 @@ internal static class SampleDataSeeder
                 "First year"
             )
             .ConfigureAwait(false);
-        if (invoiceLine2Result is not Result<long, SqlError>.Success)
+        if (invoiceLine2Result is not LongSqlOk)
             return (
                 flowControl: false,
-                value: new Result<string, SqlError>.Failure(
-                    (invoiceLine2Result as Result<long, SqlError>.Failure)!.ErrorValue
-                )
+                value: new StringSqlError((invoiceLine2Result as LongSqlError)!.Value)
             );
 
         // Insert Addresses
@@ -116,12 +105,10 @@ internal static class SampleDataSeeder
                 "USA"
             )
             .ConfigureAwait(false);
-        if (address1Result is not Result<long, SqlError>.Success)
+        if (address1Result is not LongSqlOk)
             return (
                 flowControl: false,
-                value: new Result<string, SqlError>.Failure(
-                    (address1Result as Result<long, SqlError>.Failure)!.ErrorValue
-                )
+                value: new StringSqlError((address1Result as LongSqlError)!.Value)
             );
 
         var address2Result = await transaction
@@ -134,12 +121,10 @@ internal static class SampleDataSeeder
                 "USA"
             )
             .ConfigureAwait(false);
-        if (address2Result is not Result<long, SqlError>.Success)
+        if (address2Result is not LongSqlOk)
             return (
                 flowControl: false,
-                value: new Result<string, SqlError>.Failure(
-                    (address2Result as Result<long, SqlError>.Failure)!.ErrorValue
-                )
+                value: new StringSqlError((address2Result as LongSqlError)!.Value)
             );
 
         var address3Result = await transaction
@@ -152,24 +137,20 @@ internal static class SampleDataSeeder
                 "USA"
             )
             .ConfigureAwait(false);
-        if (address3Result is not Result<long, SqlError>.Success)
+        if (address3Result is not LongSqlOk)
             return (
                 flowControl: false,
-                value: new Result<string, SqlError>.Failure(
-                    (address3Result as Result<long, SqlError>.Failure)!.ErrorValue
-                )
+                value: new StringSqlError((address3Result as LongSqlError)!.Value)
             );
 
         // Insert Orders
         var order1Result = await transaction
             .InsertOrdersAsync("ORD-001", "2024-01-10", customer1Success.Value, 500.00, "Completed")
             .ConfigureAwait(false);
-        if (order1Result is not Result<long, SqlError>.Success order1Success)
+        if (order1Result is not LongSqlOk order1Success)
             return (
                 flowControl: false,
-                value: new Result<string, SqlError>.Failure(
-                    (order1Result as Result<long, SqlError>.Failure)!.ErrorValue
-                )
+                value: new StringSqlError((order1Result as LongSqlError)!.Value)
             );
 
         var order2Result = await transaction
@@ -181,51 +162,40 @@ internal static class SampleDataSeeder
                 "Processing"
             )
             .ConfigureAwait(false);
-        if (order2Result is not Result<long, SqlError>.Success order2Success)
+        if (order2Result is not LongSqlOk order2Success)
             return (
                 flowControl: false,
-                value: new Result<string, SqlError>.Failure(
-                    (order2Result as Result<long, SqlError>.Failure)!.ErrorValue
-                )
+                value: new StringSqlError((order2Result as LongSqlError)!.Value)
             );
 
         // Insert OrderItems
         var orderItem1Result = await transaction
             .InsertOrderItemAsync(order1Success.Value, "Widget A", 2.0, 100.00, 200.00)
             .ConfigureAwait(false);
-        if (orderItem1Result is not Result<long, SqlError>.Success)
+        if (orderItem1Result is not LongSqlOk)
             return (
                 flowControl: false,
-                value: new Result<string, SqlError>.Failure(
-                    (orderItem1Result as Result<long, SqlError>.Failure)!.ErrorValue
-                )
+                value: new StringSqlError((orderItem1Result as LongSqlError)!.Value)
             );
 
         var orderItem2Result = await transaction
             .InsertOrderItemAsync(order1Success.Value, "Widget B", 3.0, 100.00, 300.00)
             .ConfigureAwait(false);
-        if (orderItem2Result is not Result<long, SqlError>.Success)
+        if (orderItem2Result is not LongSqlOk)
             return (
                 flowControl: false,
-                value: new Result<string, SqlError>.Failure(
-                    (orderItem2Result as Result<long, SqlError>.Failure)!.ErrorValue
-                )
+                value: new StringSqlError((orderItem2Result as LongSqlError)!.Value)
             );
 
         var orderItem3Result = await transaction
             .InsertOrderItemAsync(order2Success.Value, "Service Package", 1.0, 750.00, 750.00)
             .ConfigureAwait(false);
-        if (orderItem3Result is not Result<long, SqlError>.Success)
+        if (orderItem3Result is not LongSqlOk)
             return (
                 flowControl: false,
-                value: new Result<string, SqlError>.Failure(
-                    (orderItem3Result as Result<long, SqlError>.Failure)!.ErrorValue
-                )
+                value: new StringSqlError((orderItem3Result as LongSqlError)!.Value)
             );
 
-        return (
-            flowControl: true,
-            value: new Result<string, SqlError>.Success("Sample data seeded successfully")
-        );
+        return (flowControl: true, value: new StringSqlOk("Sample data seeded successfully"));
     }
 }

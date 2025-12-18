@@ -5,7 +5,8 @@ using Lql.Browser.Models;
 using Lql.Browser.ViewModels;
 using Lql.SQLite;
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
+using Selecta;
 
 namespace Lql.Browser.Services;
 
@@ -47,21 +48,21 @@ public static class QueryExecutor
             {
                 Console.WriteLine("Converting LQL to SQL...");
                 var lqlStatement = LqlStatementConverter.ToStatement(activeTab.Content);
-                if (lqlStatement is Result<LqlStatement, SqlError>.Success lqlSuccess)
+                if (lqlStatement is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> lqlSuccess)
                 {
                     Console.WriteLine("LQL parsed successfully");
                     var sqlResult = lqlSuccess.Value.ToSQLite();
-                    if (sqlResult is Result<string, SqlError>.Success sqlSuccess)
+                    if (sqlResult is Result<string, SqlError>.Ok<string, SqlError> sqlSuccess)
                     {
                         sqlToExecute = sqlSuccess.Value;
                         Console.WriteLine($"LQL converted to SQL: {sqlToExecute}");
                         statusBarViewModel.StatusMessage = $"LQL converted to SQL: {sqlToExecute}";
                     }
-                    else if (sqlResult is Result<string, SqlError>.Failure sqlFailure)
+                    else if (sqlResult is Result<string, SqlError>.Error<string, SqlError> sqlFailure)
                     {
-                        Console.WriteLine($"LQL conversion error: {sqlFailure.ErrorValue.Message}");
+                        Console.WriteLine($"LQL conversion error: {sqlFailure.Value.Message}");
                         statusBarViewModel.StatusMessage =
-                            $"LQL conversion error: {sqlFailure.ErrorValue.Message}";
+                            $"LQL conversion error: {sqlFailure.Value.Message}";
                         return null;
                     }
                     else
@@ -71,11 +72,11 @@ public static class QueryExecutor
                         return null;
                     }
                 }
-                else if (lqlStatement is Result<LqlStatement, SqlError>.Failure lqlFailure)
+                else if (lqlStatement is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> lqlFailure)
                 {
-                    Console.WriteLine($"LQL parse error: {lqlFailure.ErrorValue.Message}");
+                    Console.WriteLine($"LQL parse error: {lqlFailure.Value.Message}");
                     statusBarViewModel.StatusMessage =
-                        $"LQL parse error: {lqlFailure.ErrorValue.Message}";
+                        $"LQL parse error: {lqlFailure.Value.Message}";
                     return null;
                 }
                 else

@@ -1,5 +1,4 @@
 using Microsoft.Data.Sqlite;
-using Results;
 using Xunit;
 
 namespace Sync.Tests;
@@ -151,7 +150,12 @@ public sealed class SyncIntegrationTests : IDisposable
         }
 
         // Pull with small batch size
-        var pullResult = PullChangesWithBatchSize(_serverDb, _clientDb, ClientOrigin, batchSize: 10);
+        var pullResult = PullChangesWithBatchSize(
+            _serverDb,
+            _clientDb,
+            ClientOrigin,
+            batchSize: 10
+        );
 
         Assert.Equal(50, pullResult);
         Assert.Equal("Person 1", GetPersonName(_clientDb, "p1"));
@@ -370,7 +374,8 @@ public sealed class SyncIntegrationTests : IDisposable
     private static void SetLastSyncVersion(SqliteConnection db, long version)
     {
         using var cmd = db.CreateCommand();
-        cmd.CommandText = "UPDATE _sync_state SET value = $version WHERE key = 'last_server_version'";
+        cmd.CommandText =
+            "UPDATE _sync_state SET value = $version WHERE key = 'last_server_version'";
         cmd.Parameters.AddWithValue("$version", version.ToString());
         cmd.ExecuteNonQuery();
     }
@@ -383,7 +388,11 @@ public sealed class SyncIntegrationTests : IDisposable
         cmd.ExecuteNonQuery();
     }
 
-    private static IReadOnlyList<SyncLogEntry> FetchChanges(SqliteConnection db, long fromVersion, int limit)
+    private static IReadOnlyList<SyncLogEntry> FetchChanges(
+        SqliteConnection db,
+        long fromVersion,
+        int limit
+    )
     {
         var entries = new List<SyncLogEntry>();
         using var cmd = db.CreateCommand();
@@ -400,33 +409,39 @@ public sealed class SyncIntegrationTests : IDisposable
         using var reader = cmd.ExecuteReader();
         while (reader.Read())
         {
-            entries.Add(new SyncLogEntry(
-                reader.GetInt64(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                ParseOperation(reader.GetString(3)),
-                reader.IsDBNull(4) ? null : reader.GetString(4),
-                reader.GetString(5),
-                reader.GetString(6)));
+            entries.Add(
+                new SyncLogEntry(
+                    reader.GetInt64(0),
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    ParseOperation(reader.GetString(3)),
+                    reader.IsDBNull(4) ? null : reader.GetString(4),
+                    reader.GetString(5),
+                    reader.GetString(6)
+                )
+            );
         }
 
         return entries;
     }
 
-    private static SyncOperation ParseOperation(string op) => op switch
-    {
-        "insert" => SyncOperation.Insert,
-        "update" => SyncOperation.Update,
-        "delete" => SyncOperation.Delete,
-        _ => throw new ArgumentException($"Unknown operation: {op}")
-    };
+    private static SyncOperation ParseOperation(string op) =>
+        op switch
+        {
+            "insert" => SyncOperation.Insert,
+            "update" => SyncOperation.Update,
+            "delete" => SyncOperation.Delete,
+            _ => throw new ArgumentException($"Unknown operation: {op}"),
+        };
 
-    private int PullChanges(SqliteConnection source, SqliteConnection target, string targetOrigin)
-    {
-        return PullChangesWithBatchSize(source, target, targetOrigin, 1000);
-    }
+    private int PullChanges(SqliteConnection source, SqliteConnection target, string targetOrigin) => PullChangesWithBatchSize(source, target, targetOrigin, 1000);
 
-    private int PullChangesWithBatchSize(SqliteConnection source, SqliteConnection target, string targetOrigin, int batchSize)
+    private int PullChangesWithBatchSize(
+        SqliteConnection source,
+        SqliteConnection target,
+        string targetOrigin,
+        int batchSize
+    )
     {
         var lastVersion = GetLastSyncVersion(target);
         var totalApplied = 0;
@@ -439,20 +454,21 @@ public sealed class SyncIntegrationTests : IDisposable
             var result = BatchManager.ProcessAllBatches(
                 lastVersion,
                 new BatchConfig(batchSize),
-                (from, limit) => new Result<IReadOnlyList<SyncLogEntry>, SyncError>.Success(
-                    FetchChanges(source, from, limit)),
+                (from, limit) => new SyncLogListOk(FetchChanges(source, from, limit)),
                 batch =>
                 {
                     var applyResult = ChangeApplier.ApplyBatch(
                         batch,
                         targetOrigin,
                         3,
-                        entry => ApplyChange(target, entry));
+                        entry => ApplyChange(target, entry)
+                    );
                     return applyResult;
                 },
-                version => SetLastSyncVersion(target, version));
+                version => SetLastSyncVersion(target, version)
+            );
 
-            if (result is Result<int, SyncError>.Success success)
+            if (result is IntSyncOk success)
             {
                 totalApplied = success.Value;
             }
@@ -465,14 +481,12 @@ public sealed class SyncIntegrationTests : IDisposable
         return totalApplied;
     }
 
-    private int PushChanges(SqliteConnection source, SqliteConnection target, string targetOrigin)
-    {
+    private int PushChanges(SqliteConnection source, SqliteConnection target, string targetOrigin) =>
         // For push, we read from source's log and apply to target
         // This is similar to pull but in reverse direction
-        return PullChanges(source, target, targetOrigin);
-    }
+        PullChanges(source, target, targetOrigin);
 
-    private static Result<bool, SyncError> ApplyChange(SqliteConnection db, SyncLogEntry entry)
+    private static BoolSyncResult ApplyChange(SqliteConnection db, SyncLogEntry entry)
     {
         try
         {
@@ -491,21 +505,23 @@ public sealed class SyncIntegrationTests : IDisposable
                     break;
             }
 
-            return new Result<bool, SyncError>.Success(true);
+            return new BoolSyncOk(true);
         }
         catch (SqliteException ex) when (ChangeApplier.IsForeignKeyViolation(ex.Message))
         {
-            return new Result<bool, SyncError>.Success(false); // Defer for retry
+            return new BoolSyncOk(false); // Defer for retry
         }
         catch (Exception ex)
         {
-            return new Result<bool, SyncError>.Failure(new SyncErrorDatabase(ex.Message));
+            return new BoolSyncError(new SyncErrorDatabase(ex.Message));
         }
     }
 
     private static void ApplyInsert(SqliteConnection db, SyncLogEntry entry)
     {
-        var payload = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(entry.Payload!);
+        var payload = System.Text.Json.JsonSerializer.Deserialize<
+            Dictionary<string, System.Text.Json.JsonElement>
+        >(entry.Payload!);
 
         using var cmd = db.CreateCommand();
 
@@ -522,7 +538,8 @@ public sealed class SyncIntegrationTests : IDisposable
                 cmd.Parameters.AddWithValue("$name", payload["Name"].GetString());
                 break;
             case "Child":
-                cmd.CommandText = "INSERT OR REPLACE INTO Child (Id, ParentId, Name) VALUES ($id, $parentId, $name)";
+                cmd.CommandText =
+                    "INSERT OR REPLACE INTO Child (Id, ParentId, Name) VALUES ($id, $parentId, $name)";
                 cmd.Parameters.AddWithValue("$id", payload!["Id"].GetString());
                 cmd.Parameters.AddWithValue("$parentId", payload["ParentId"].GetString());
                 cmd.Parameters.AddWithValue("$name", payload["Name"].GetString());
@@ -532,15 +549,15 @@ public sealed class SyncIntegrationTests : IDisposable
         cmd.ExecuteNonQuery();
     }
 
-    private static void ApplyUpdate(SqliteConnection db, SyncLogEntry entry)
-    {
+    private static void ApplyUpdate(SqliteConnection db, SyncLogEntry entry) =>
         // For simplicity, treat update same as insert (upsert)
         ApplyInsert(db, entry);
-    }
 
     private static void ApplyDelete(SqliteConnection db, SyncLogEntry entry)
     {
-        var pk = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(entry.PkValue);
+        var pk = System.Text.Json.JsonSerializer.Deserialize<
+            Dictionary<string, System.Text.Json.JsonElement>
+        >(entry.PkValue);
 
         using var cmd = db.CreateCommand();
         cmd.CommandText = $"DELETE FROM {entry.TableName} WHERE Id = $id";
@@ -558,11 +575,13 @@ public sealed class SyncIntegrationTests : IDisposable
         using var reader = cmd.ExecuteReader();
         while (reader.Read())
         {
-            rows.Add(new Dictionary<string, object?>
-            {
-                ["Id"] = reader.GetString(0),
-                ["Name"] = reader.GetString(1)
-            });
+            rows.Add(
+                new Dictionary<string, object?>
+                {
+                    ["Id"] = reader.GetString(0),
+                    ["Name"] = reader.GetString(1),
+                }
+            );
         }
 
         return HashVerifier.ComputeDatabaseHash(["Person"], _ => rows);

@@ -1,5 +1,5 @@
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
 
 namespace Sync.SQLite;
 
@@ -31,21 +31,27 @@ public static class SyncClientRepository
 
             while (reader.Read())
             {
-                clients.Add(new SyncClient(
-                    OriginId: reader.GetString(0),
-                    LastSyncVersion: reader.GetInt64(1),
-                    LastSyncTimestamp: reader.GetString(2),
-                    CreatedAt: reader.GetString(3)
-                ));
+                clients.Add(
+                    new SyncClient(
+                        OriginId: reader.GetString(0),
+                        LastSyncVersion: reader.GetInt64(1),
+                        LastSyncTimestamp: reader.GetString(2),
+                        CreatedAt: reader.GetString(3)
+                    )
+                );
             }
 
-            return new Result<IReadOnlyList<SyncClient>, SyncError>.Success(clients);
+            return new Result<IReadOnlyList<SyncClient>, SyncError>.Ok<
+                IReadOnlyList<SyncClient>,
+                SyncError
+            >(clients);
         }
         catch (SqliteException ex)
         {
-            return new Result<IReadOnlyList<SyncClient>, SyncError>.Failure(
-                new SyncErrorDatabase($"Failed to get clients: {ex.Message}")
-            );
+            return new Result<IReadOnlyList<SyncClient>, SyncError>.Error<
+                IReadOnlyList<SyncClient>,
+                SyncError
+            >(new SyncErrorDatabase($"Failed to get clients: {ex.Message}"));
         }
     }
 
@@ -57,7 +63,8 @@ public static class SyncClientRepository
     /// <returns>Client if found, null if not found, or database error.</returns>
     public static Result<SyncClient?, SyncError> GetByOrigin(
         SqliteConnection connection,
-        string originId)
+        string originId
+    )
     {
         try
         {
@@ -72,19 +79,21 @@ public static class SyncClientRepository
             using var reader = cmd.ExecuteReader();
             if (reader.Read())
             {
-                return new Result<SyncClient?, SyncError>.Success(new SyncClient(
-                    OriginId: reader.GetString(0),
-                    LastSyncVersion: reader.GetInt64(1),
-                    LastSyncTimestamp: reader.GetString(2),
-                    CreatedAt: reader.GetString(3)
-                ));
+                return new Result<SyncClient?, SyncError>.Ok<SyncClient?, SyncError>(
+                    new SyncClient(
+                        OriginId: reader.GetString(0),
+                        LastSyncVersion: reader.GetInt64(1),
+                        LastSyncTimestamp: reader.GetString(2),
+                        CreatedAt: reader.GetString(3)
+                    )
+                );
             }
 
-            return new Result<SyncClient?, SyncError>.Success(null);
+            return new Result<SyncClient?, SyncError>.Ok<SyncClient?, SyncError>(null);
         }
         catch (SqliteException ex)
         {
-            return new Result<SyncClient?, SyncError>.Failure(
+            return new Result<SyncClient?, SyncError>.Error<SyncClient?, SyncError>(
                 new SyncErrorDatabase($"Failed to get client: {ex.Message}")
             );
         }
@@ -114,11 +123,11 @@ public static class SyncClientRepository
             cmd.Parameters.AddWithValue("@createdAt", client.CreatedAt);
 
             cmd.ExecuteNonQuery();
-            return new Result<bool, SyncError>.Success(true);
+            return new Result<bool, SyncError>.Ok<bool, SyncError>(true);
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Failure(
+            return new Result<bool, SyncError>.Error<bool, SyncError>(
                 new SyncErrorDatabase($"Failed to upsert client: {ex.Message}")
             );
         }
@@ -139,11 +148,11 @@ public static class SyncClientRepository
             cmd.Parameters.AddWithValue("@originId", originId);
 
             cmd.ExecuteNonQuery();
-            return new Result<bool, SyncError>.Success(true);
+            return new Result<bool, SyncError>.Ok<bool, SyncError>(true);
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Failure(
+            return new Result<bool, SyncError>.Error<bool, SyncError>(
                 new SyncErrorDatabase($"Failed to delete client: {ex.Message}")
             );
         }
@@ -165,11 +174,11 @@ public static class SyncClientRepository
             var result = cmd.ExecuteScalar();
             var minVersion = result is long v ? v : 0;
 
-            return new Result<long, SyncError>.Success(minVersion);
+            return new Result<long, SyncError>.Ok<long, SyncError>(minVersion);
         }
         catch (SqliteException ex)
         {
-            return new Result<long, SyncError>.Failure(
+            return new Result<long, SyncError>.Error<long, SyncError>(
                 new SyncErrorDatabase($"Failed to get min version: {ex.Message}")
             );
         }
@@ -183,7 +192,8 @@ public static class SyncClientRepository
     /// <returns>Number of clients deleted or database error.</returns>
     public static Result<int, SyncError> DeleteStaleClients(
         SqliteConnection connection,
-        IEnumerable<string> originIds)
+        IEnumerable<string> originIds
+    )
     {
         try
         {
@@ -196,11 +206,11 @@ public static class SyncClientRepository
                 deleted += cmd.ExecuteNonQuery();
             }
 
-            return new Result<int, SyncError>.Success(deleted);
+            return new Result<int, SyncError>.Ok<int, SyncError>(deleted);
         }
         catch (SqliteException ex)
         {
-            return new Result<int, SyncError>.Failure(
+            return new Result<int, SyncError>.Error<int, SyncError>(
                 new SyncErrorDatabase($"Failed to delete stale clients: {ex.Message}")
             );
         }

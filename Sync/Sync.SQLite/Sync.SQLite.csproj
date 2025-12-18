@@ -7,7 +7,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../Sync/Sync.csproj" />
-    <ProjectReference Include="../../Other/Results/Results.csproj" />
   </ItemGroup>
 
   <ItemGroup>

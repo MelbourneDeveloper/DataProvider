@@ -1,4 +1,4 @@
-using Results;
+using Outcome;
 using Xunit;
 
 namespace Sync.Tests;
@@ -13,10 +13,7 @@ public sealed class BatchManagerTests : IDisposable
         var result = BatchManager.FetchBatch(
             0,
             100,
-            (from, limit) =>
-                new Result<IReadOnlyList<SyncLogEntry>, SyncError>.Success(
-                    _db.FetchChanges(from, limit)
-                )
+            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit))
         );
 
         var batch = AssertSuccess(result);
@@ -49,10 +46,7 @@ public sealed class BatchManagerTests : IDisposable
         var result = BatchManager.FetchBatch(
             0,
             100,
-            (from, limit) =>
-                new Result<IReadOnlyList<SyncLogEntry>, SyncError>.Success(
-                    _db.FetchChanges(from, limit)
-                )
+            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit))
         );
 
         var batch = AssertSuccess(result);
@@ -80,10 +74,7 @@ public sealed class BatchManagerTests : IDisposable
         var result = BatchManager.FetchBatch(
             0,
             3,
-            (from, limit) =>
-                new Result<IReadOnlyList<SyncLogEntry>, SyncError>.Success(
-                    _db.FetchChanges(from, limit)
-                )
+            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit))
         );
 
         var batch = AssertSuccess(result);
@@ -110,10 +101,7 @@ public sealed class BatchManagerTests : IDisposable
         var result = BatchManager.FetchBatch(
             3,
             100,
-            (from, limit) =>
-                new Result<IReadOnlyList<SyncLogEntry>, SyncError>.Success(
-                    _db.FetchChanges(from, limit)
-                )
+            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit))
         );
 
         var batch = AssertSuccess(result);
@@ -143,14 +131,11 @@ public sealed class BatchManagerTests : IDisposable
         var result = BatchManager.ProcessAllBatches(
             0,
             new BatchConfig(BatchSize: 3),
-            (from, limit) =>
-                new Result<IReadOnlyList<SyncLogEntry>, SyncError>.Success(
-                    _db.FetchChanges(from, limit)
-                ),
+            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit)),
             batch =>
             {
                 appliedBatches.Add(batch);
-                return new Result<BatchApplyResult, SyncError>.Success(
+                return new BatchApplyResultOk(
                     new BatchApplyResult(batch.Changes.Count, 0, batch.ToVersion)
                 );
             },
@@ -165,8 +150,8 @@ public sealed class BatchManagerTests : IDisposable
 
     private static T AssertSuccess<T>(Result<T, SyncError> result)
     {
-        Assert.IsType<Result<T, SyncError>.Success>(result);
-        return ((Result<T, SyncError>.Success)result).Value;
+        Assert.IsType<Result<T, SyncError>.Ok<T, SyncError>>(result);
+        return ((Result<T, SyncError>.Ok<T, SyncError>)result).Value;
     }
 
     public void Dispose() => _db.Dispose();

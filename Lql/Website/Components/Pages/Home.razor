@@ -3,7 +3,8 @@
 @using Lql
 @using Lql.Postgres
 @using Lql.SqlServer
-@using Results
+@using Outcome
+@using Selecta
 
 <PageTitle>Lambda Query Language (LQL) - Functional Data Querying</PageTitle>
 
@@ -343,32 +344,32 @@ joined
             
             // Parse the LQL code
             var statementResult = LqlStatementConverter.ToStatement(lqlInput);
-            
-            if (statementResult is Result<LqlStatement, SqlError>.Failure parseFailure)
+
+            if (statementResult is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> parseFailure)
             {
-                errorMessage = parseFailure.ErrorValue.DetailedMessage ?? parseFailure.ErrorValue.Message;
+                errorMessage = parseFailure.Value.DetailedMessage ?? parseFailure.Value.Message;
                 sqlOutput = "";
                 return;
             }
-            
-            var statement = ((Result<LqlStatement, SqlError>.Success)statementResult).Value;
-            
+
+            var statement = ((Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)statementResult).Value;
+
             // Convert to the selected SQL dialect
             Result<string, SqlError> sqlResult = selectedDialect switch
             {
                 "PostgreSQL" => statement.ToPostgreSql(),
                 "SqlServer" => statement.ToSqlServer(),
-                _ => new Result<string, SqlError>.Failure(new SqlError($"Unsupported dialect: {selectedDialect}"))
+                _ => new Result<string, SqlError>.Error<string, SqlError>(new SqlError($"Unsupported dialect: {selectedDialect}"))
             };
-            
-            if (sqlResult is Result<string, SqlError>.Failure sqlFailure)
+
+            if (sqlResult is Result<string, SqlError>.Error<string, SqlError> sqlFailure)
             {
-                errorMessage = sqlFailure.ErrorValue.DetailedMessage ?? sqlFailure.ErrorValue.Message;
+                errorMessage = sqlFailure.Value.DetailedMessage ?? sqlFailure.Value.Message;
                 sqlOutput = "";
                 return;
             }
-            
-            var sql = ((Result<string, SqlError>.Success)sqlResult).Value;
+
+            var sql = ((Result<string, SqlError>.Ok<string, SqlError>)sqlResult).Value;
             sqlOutput = sql;
             errorMessage = "";
         }

@@ -1,5 +1,3 @@
-using Results;
-
 namespace Sync;
 
 /// <summary>
@@ -35,30 +33,22 @@ public static class SyncCoordinator
     /// <summary>
     /// Pulls changes from a remote source and applies them locally.
     /// </summary>
-    /// <param name="myOriginId">This replica's origin ID.</param>
-    /// <param name="lastSyncedVersion">Last version successfully synced.</param>
-    /// <param name="config">Batch configuration.</param>
-    /// <param name="fetchRemoteChanges">Function to fetch changes from remote.</param>
-    /// <param name="applyLocalChange">Function to apply a change locally.</param>
-    /// <param name="enableTriggerSuppression">Function to suppress triggers during apply.</param>
-    /// <param name="disableTriggerSuppression">Function to re-enable triggers after apply.</param>
-    /// <param name="updateLastSyncedVersion">Function to persist the last synced version.</param>
-    /// <returns>Pull result or error.</returns>
-    public static Result<PullResult, SyncError> Pull(
+    public static PullResultResult Pull(
         string myOriginId,
         long lastSyncedVersion,
         BatchConfig config,
-        Func<long, int, Result<IReadOnlyList<SyncLogEntry>, SyncError>> fetchRemoteChanges,
-        Func<SyncLogEntry, Result<bool, SyncError>> applyLocalChange,
-        Func<Result<bool, SyncError>> enableTriggerSuppression,
-        Func<Result<bool, SyncError>> disableTriggerSuppression,
-        Action<long> updateLastSyncedVersion)
+        Func<long, int, SyncLogListResult> fetchRemoteChanges,
+        Func<SyncLogEntry, BoolSyncResult> applyLocalChange,
+        Func<BoolSyncResult> enableTriggerSuppression,
+        Func<BoolSyncResult> disableTriggerSuppression,
+        Action<long> updateLastSyncedVersion
+    )
     {
         // Enable trigger suppression to prevent echo
         var suppressResult = enableTriggerSuppression();
-        if (suppressResult is Result<bool, SyncError>.Failure suppressFailure)
+        if (suppressResult is BoolSyncError suppressFailure)
         {
-            return new Result<PullResult, SyncError>.Failure(suppressFailure.ErrorValue);
+            return new PullResultError(suppressFailure.Value);
         }
 
         try
@@ -69,14 +59,18 @@ public static class SyncCoordinator
 
             while (true)
             {
-                var batchResult = BatchManager.FetchBatch(currentVersion, config.BatchSize, fetchRemoteChanges);
+                var batchResult = BatchManager.FetchBatch(
+                    currentVersion,
+                    config.BatchSize,
+                    fetchRemoteChanges
+                );
 
-                if (batchResult is Result<SyncBatch, SyncError>.Failure batchFailure)
+                if (batchResult is SyncBatchError batchFailure)
                 {
-                    return new Result<PullResult, SyncError>.Failure(batchFailure.ErrorValue);
+                    return new PullResultError(batchFailure.Value);
                 }
 
-                var batch = ((Result<SyncBatch, SyncError>.Success)batchResult).Value;
+                var batch = ((SyncBatchOk)batchResult).Value;
 
                 if (batch.Changes.Count == 0)
                 {
@@ -87,14 +81,15 @@ public static class SyncCoordinator
                     batch,
                     myOriginId,
                     config.MaxRetryPasses,
-                    applyLocalChange);
+                    applyLocalChange
+                );
 
-                if (applyResult is Result<BatchApplyResult, SyncError>.Failure applyFailure)
+                if (applyResult is BatchApplyResultError applyFailure)
                 {
-                    return new Result<PullResult, SyncError>.Failure(applyFailure.ErrorValue);
+                    return new PullResultError(applyFailure.Value);
                 }
 
-                var applied = ((Result<BatchApplyResult, SyncError>.Success)applyResult).Value;
+                var applied = ((BatchApplyResultOk)applyResult).Value;
                 totalApplied += applied.AppliedCount;
                 currentVersion = applied.ToVersion;
                 updateLastSyncedVersion(currentVersion);
@@ -105,8 +100,7 @@ public static class SyncCoordinator
                 }
             }
 
-            return new Result<PullResult, SyncError>.Success(
-                new PullResult(totalApplied, startVersion, currentVersion));
+            return new PullResultOk(new PullResult(totalApplied, startVersion, currentVersion));
         }
         finally
         {
@@ -117,18 +111,13 @@ public static class SyncCoordinator
     /// <summary>
     /// Pushes local changes to a remote destination.
     /// </summary>
-    /// <param name="lastPushedVersion">Last version successfully pushed.</param>
-    /// <param name="config">Batch configuration.</param>
-    /// <param name="fetchLocalChanges">Function to fetch local changes.</param>
-    /// <param name="sendToRemote">Function to send changes to remote.</param>
-    /// <param name="updateLastPushedVersion">Function to persist the last pushed version.</param>
-    /// <returns>Push result or error.</returns>
-    public static Result<PushResult, SyncError> Push(
+    public static PushResultResult Push(
         long lastPushedVersion,
         BatchConfig config,
-        Func<long, int, Result<IReadOnlyList<SyncLogEntry>, SyncError>> fetchLocalChanges,
-        Func<IReadOnlyList<SyncLogEntry>, Result<bool, SyncError>> sendToRemote,
-        Action<long> updateLastPushedVersion)
+        Func<long, int, SyncLogListResult> fetchLocalChanges,
+        Func<IReadOnlyList<SyncLogEntry>, BoolSyncResult> sendToRemote,
+        Action<long> updateLastPushedVersion
+    )
     {
         var startVersion = lastPushedVersion;
         var totalPushed = 0;
@@ -136,25 +125,29 @@ public static class SyncCoordinator
 
         while (true)
         {
-            var batchResult = BatchManager.FetchBatch(currentVersion, config.BatchSize, fetchLocalChanges);
+            var batchResult = BatchManager.FetchBatch(
+                currentVersion,
+                config.BatchSize,
+                fetchLocalChanges
+            );
 
-            if (batchResult is Result<SyncBatch, SyncError>.Failure batchFailure)
+            if (batchResult is SyncBatchError batchFailure)
             {
-                return new Result<PushResult, SyncError>.Failure(batchFailure.ErrorValue);
+                return new PushResultError(batchFailure.Value);
             }
 
-            var batch = ((Result<SyncBatch, SyncError>.Success)batchResult).Value;
+            var batch = ((SyncBatchOk)batchResult).Value;
 
             if (batch.Changes.Count == 0)
             {
                 break;
             }
 
-            var sendResult = sendToRemote(batch.Changes.ToList());
+            var sendResult = sendToRemote([.. batch.Changes]);
 
-            if (sendResult is Result<bool, SyncError>.Failure sendFailure)
+            if (sendResult is BoolSyncError sendFailure)
             {
-                return new Result<PushResult, SyncError>.Failure(sendFailure.ErrorValue);
+                return new PushResultError(sendFailure.Value);
             }
 
             totalPushed += batch.Changes.Count;
@@ -167,39 +160,26 @@ public static class SyncCoordinator
             }
         }
 
-        return new Result<PushResult, SyncError>.Success(
-            new PushResult(totalPushed, startVersion, currentVersion));
+        return new PushResultOk(new PushResult(totalPushed, startVersion, currentVersion));
     }
 
     /// <summary>
     /// Performs a full bidirectional sync: pull then push.
     /// </summary>
-    /// <param name="myOriginId">This replica's origin ID.</param>
-    /// <param name="lastServerVersion">Last version pulled from server.</param>
-    /// <param name="lastPushVersion">Last version pushed to server.</param>
-    /// <param name="config">Batch configuration.</param>
-    /// <param name="fetchRemoteChanges">Function to fetch changes from remote.</param>
-    /// <param name="applyLocalChange">Function to apply a change locally.</param>
-    /// <param name="enableTriggerSuppression">Function to suppress triggers.</param>
-    /// <param name="disableTriggerSuppression">Function to re-enable triggers.</param>
-    /// <param name="updateLastServerVersion">Function to persist last server version.</param>
-    /// <param name="fetchLocalChanges">Function to fetch local changes.</param>
-    /// <param name="sendToRemote">Function to send changes to remote.</param>
-    /// <param name="updateLastPushVersion">Function to persist last push version.</param>
-    /// <returns>Full sync result or error.</returns>
-    public static Result<SyncResult, SyncError> Sync(
+    public static SyncResultResult Sync(
         string myOriginId,
         long lastServerVersion,
         long lastPushVersion,
         BatchConfig config,
-        Func<long, int, Result<IReadOnlyList<SyncLogEntry>, SyncError>> fetchRemoteChanges,
-        Func<SyncLogEntry, Result<bool, SyncError>> applyLocalChange,
-        Func<Result<bool, SyncError>> enableTriggerSuppression,
-        Func<Result<bool, SyncError>> disableTriggerSuppression,
+        Func<long, int, SyncLogListResult> fetchRemoteChanges,
+        Func<SyncLogEntry, BoolSyncResult> applyLocalChange,
+        Func<BoolSyncResult> enableTriggerSuppression,
+        Func<BoolSyncResult> disableTriggerSuppression,
         Action<long> updateLastServerVersion,
-        Func<long, int, Result<IReadOnlyList<SyncLogEntry>, SyncError>> fetchLocalChanges,
-        Func<IReadOnlyList<SyncLogEntry>, Result<bool, SyncError>> sendToRemote,
-        Action<long> updateLastPushVersion)
+        Func<long, int, SyncLogListResult> fetchLocalChanges,
+        Func<IReadOnlyList<SyncLogEntry>, BoolSyncResult> sendToRemote,
+        Action<long> updateLastPushVersion
+    )
     {
         // Pull first (get remote changes)
         var pullResult = Pull(
@@ -210,14 +190,15 @@ public static class SyncCoordinator
             applyLocalChange,
             enableTriggerSuppression,
             disableTriggerSuppression,
-            updateLastServerVersion);
+            updateLastServerVersion
+        );
 
-        if (pullResult is Result<PullResult, SyncError>.Failure pullFailure)
+        if (pullResult is PullResultError pullFailure)
         {
-            return new Result<SyncResult, SyncError>.Failure(pullFailure.ErrorValue);
+            return new SyncResultError(pullFailure.Value);
         }
 
-        var pull = ((Result<PullResult, SyncError>.Success)pullResult).Value;
+        var pull = ((PullResultOk)pullResult).Value;
 
         // Push second (send local changes)
         var pushResult = Push(
@@ -225,15 +206,16 @@ public static class SyncCoordinator
             config,
             fetchLocalChanges,
             sendToRemote,
-            updateLastPushVersion);
+            updateLastPushVersion
+        );
 
-        if (pushResult is Result<PushResult, SyncError>.Failure pushFailure)
+        if (pushResult is PushResultError pushFailure)
         {
-            return new Result<SyncResult, SyncError>.Failure(pushFailure.ErrorValue);
+            return new SyncResultError(pushFailure.Value);
         }
 
-        var push = ((Result<PushResult, SyncError>.Success)pushResult).Value;
+        var push = ((PushResultOk)pushResult).Value;
 
-        return new Result<SyncResult, SyncError>.Success(new SyncResult(pull, push));
+        return new SyncResultOk(new SyncResult(pull, push));
     }
 }

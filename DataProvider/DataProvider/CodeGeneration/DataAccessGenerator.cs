@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Text;
-using Results;
+using Outcome;
 using Selecta;
 
 namespace DataProvider.CodeGeneration;
@@ -45,27 +45,27 @@ public static class DataAccessGenerator
     )
     {
         if (string.IsNullOrWhiteSpace(className))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("className cannot be null or empty")
             );
 
         if (string.IsNullOrWhiteSpace(methodName))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("methodName cannot be null or empty")
             );
 
         if (string.IsNullOrWhiteSpace(returnTypeName))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("returnTypeName cannot be null or empty")
             );
 
         if (string.IsNullOrWhiteSpace(sql))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("sql cannot be null or empty")
             );
 
         if (columns == null || columns.Count == 0)
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("columns cannot be null or empty")
             );
 
@@ -172,20 +172,20 @@ public static class DataAccessGenerator
         sb.AppendLine();
         sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            return new Result<ImmutableList<{returnTypeName}>, SqlError>.Success(results.ToImmutable());"
+            $"            return new Result<ImmutableList<{returnTypeName}>, SqlError>.Ok<ImmutableList<{returnTypeName}>, SqlError>(results.ToImmutable());"
         );
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");
         sb.AppendLine("        {");
         sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            return new Result<ImmutableList<{returnTypeName}>, SqlError>.Failure(new SqlError(\"Database error\", ex));"
+            $"            return new Result<ImmutableList<{returnTypeName}>, SqlError>.Error<ImmutableList<{returnTypeName}>, SqlError>(new SqlError(\"Database error\", ex));"
         );
         sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine("}");
 
-        return new Result<string, SqlError>.Success(sb.ToString());
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
 
     /// <summary>
@@ -200,11 +200,11 @@ public static class DataAccessGenerator
     )
     {
         if (table == null)
-            return new Result<string, SqlError>.Failure(new SqlError("table cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(new SqlError("table cannot be null"));
 
         var insertableColumns = table.InsertableColumns;
         if (insertableColumns.Count == 0)
-            return new Result<string, SqlError>.Success("");
+            return new Result<string, SqlError>.Ok<string, SqlError>("");
 
         var sb = new StringBuilder();
         var parameterList = string.Join(
@@ -280,23 +280,23 @@ public static class DataAccessGenerator
         );
         sb.AppendLine("                if (result == null || result == DBNull.Value)");
         sb.AppendLine(
-            "                    return new Result<long, SqlError>.Failure(new SqlError(\"Insert failed: no ID returned\"));"
+            "                    return new Result<long, SqlError>.Error<long, SqlError>(new SqlError(\"Insert failed: no ID returned\"));"
         );
         sb.AppendLine(
             "                var newId = Convert.ToInt64(result, CultureInfo.InvariantCulture);"
         );
-        sb.AppendLine("                return new Result<long, SqlError>.Success(newId);");
+        sb.AppendLine("                return new Result<long, SqlError>.Ok<long, SqlError>(newId);");
         sb.AppendLine("            }");
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");
         sb.AppendLine("        {");
         sb.AppendLine(
-            "            return new Result<long, SqlError>.Failure(new SqlError(\"Insert failed\", ex));"
+            "            return new Result<long, SqlError>.Error<long, SqlError>(new SqlError(\"Insert failed\", ex));"
         );
         sb.AppendLine("        }");
         sb.AppendLine("    }");
 
-        return new Result<string, SqlError>.Success(sb.ToString());
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
 
     /// <summary>
@@ -311,13 +311,13 @@ public static class DataAccessGenerator
     )
     {
         if (table == null)
-            return new Result<string, SqlError>.Failure(new SqlError("table cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(new SqlError("table cannot be null"));
 
         var updateableColumns = table.UpdateableColumns;
         var primaryKeyColumns = table.PrimaryKeyColumns;
 
         if (updateableColumns.Count == 0 || primaryKeyColumns.Count == 0)
-            return new Result<string, SqlError>.Success("");
+            return new Result<string, SqlError>.Ok<string, SqlError>("");
 
         var sb = new StringBuilder();
         var allColumns = primaryKeyColumns.Concat(updateableColumns).ToList();
@@ -384,17 +384,17 @@ public static class DataAccessGenerator
         sb.AppendLine(
             "                var rowsAffected = await command.ExecuteNonQueryAsync().ConfigureAwait(false);"
         );
-        sb.AppendLine("                return new Result<int, SqlError>.Success(rowsAffected);");
+        sb.AppendLine("                return new Result<int, SqlError>.Ok<int, SqlError>(rowsAffected);");
         sb.AppendLine("            }");
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");
         sb.AppendLine("        {");
         sb.AppendLine(
-            "            return new Result<int, SqlError>.Failure(new SqlError(\"Update failed\", ex));"
+            "            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Update failed\", ex));"
         );
         sb.AppendLine("        }");
         sb.AppendLine("    }");
 
-        return new Result<string, SqlError>.Success(sb.ToString());
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
 }

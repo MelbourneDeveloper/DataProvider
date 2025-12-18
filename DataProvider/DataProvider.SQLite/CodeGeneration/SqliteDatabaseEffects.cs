@@ -1,6 +1,6 @@
 using DataProvider.CodeGeneration;
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
 using Selecta;
 using System.Diagnostics.CodeAnalysis;
 
@@ -24,17 +24,17 @@ public class SqliteDatabaseEffects : IDatabaseEffects
     )
     {
         if (string.IsNullOrWhiteSpace(connectionString))
-            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Failure(
+            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error<IReadOnlyList<DatabaseColumn>, SqlError>(
                 new SqlError("connectionString cannot be null or empty")
             );
 
         if (string.IsNullOrWhiteSpace(sql))
-            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Failure(
+            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error<IReadOnlyList<DatabaseColumn>, SqlError>(
                 new SqlError("sql cannot be null or empty")
             );
 
         if (parameters == null)
-            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Failure(
+            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error<IReadOnlyList<DatabaseColumn>, SqlError>(
                 new SqlError("parameters cannot be null")
             );
 
@@ -86,18 +86,18 @@ public class SqliteDatabaseEffects : IDatabaseEffects
         catch (SqliteException ex)
         {
             // If we can't execute the query, return error
-            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Failure(
+            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error<IReadOnlyList<DatabaseColumn>, SqlError>(
                 new SqlError("Failed to get column metadata", ex)
             );
         }
         catch (Exception ex)
         {
-            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Failure(
+            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error<IReadOnlyList<DatabaseColumn>, SqlError>(
                 new SqlError("Unexpected error getting column metadata", ex)
             );
         }
 
-        return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Success(columns.AsReadOnly());
+        return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Ok<IReadOnlyList<DatabaseColumn>, SqlError>(columns.AsReadOnly());
     }
 
     /// <summary>

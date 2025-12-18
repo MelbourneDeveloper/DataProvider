@@ -1,6 +1,6 @@
 using System.Globalization;
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
 
 namespace Sync.SQLite;
 
@@ -53,13 +53,17 @@ public static class SyncLogRepository
                 entries.Add(entry);
             }
 
-            return new Result<IReadOnlyList<SyncLogEntry>, SyncError>.Success(entries);
+            return new Result<IReadOnlyList<SyncLogEntry>, SyncError>.Ok<
+                IReadOnlyList<SyncLogEntry>,
+                SyncError
+            >(entries);
         }
         catch (SqliteException ex)
         {
-            return new Result<IReadOnlyList<SyncLogEntry>, SyncError>.Failure(
-                new SyncErrorDatabase($"Failed to fetch changes: {ex.Message}")
-            );
+            return new Result<IReadOnlyList<SyncLogEntry>, SyncError>.Error<
+                IReadOnlyList<SyncLogEntry>,
+                SyncError
+            >(new SyncErrorDatabase($"Failed to fetch changes: {ex.Message}"));
         }
     }
 
@@ -76,12 +80,12 @@ public static class SyncLogRepository
             cmd.CommandText = "SELECT value FROM _sync_state WHERE key = 'last_server_version'";
             var result = cmd.ExecuteScalar();
             return result is string strValue && long.TryParse(strValue, out var version)
-                ? new Result<long, SyncError>.Success(version)
-                : new Result<long, SyncError>.Success(0);
+                ? new Result<long, SyncError>.Ok<long, SyncError>(version)
+                : new Result<long, SyncError>.Ok<long, SyncError>(0);
         }
         catch (SqliteException ex)
         {
-            return new Result<long, SyncError>.Failure(
+            return new Result<long, SyncError>.Error<long, SyncError>(
                 new SyncErrorDatabase($"Failed to get last server version: {ex.Message}")
             );
         }
@@ -105,11 +109,11 @@ public static class SyncLogRepository
                 "UPDATE _sync_state SET value = @version WHERE key = 'last_server_version'";
             cmd.Parameters.AddWithValue("@version", version.ToString(CultureInfo.InvariantCulture));
             cmd.ExecuteNonQuery();
-            return new Result<bool, SyncError>.Success(true);
+            return new Result<bool, SyncError>.Ok<bool, SyncError>(true);
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Failure(
+            return new Result<bool, SyncError>.Error<bool, SyncError>(
                 new SyncErrorDatabase($"Failed to update last server version: {ex.Message}")
             );
         }

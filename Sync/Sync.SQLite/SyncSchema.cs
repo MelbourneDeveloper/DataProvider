@@ -1,5 +1,5 @@
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
 
 namespace Sync.SQLite;
 
@@ -108,11 +108,11 @@ public static class SyncSchema
             cmd.CommandText =
                 $"{CreateSyncStateTable}\n{CreateSyncSessionTable}\n{CreateSyncLogTable}\n{CreateSyncClientsTable}\n{CreateSyncSubscriptionsTable}\n{InitializeSyncState}";
             cmd.ExecuteNonQuery();
-            return new Result<bool, SyncError>.Success(true);
+            return new Result<bool, SyncError>.Ok<bool, SyncError>(true);
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Failure(
+            return new Result<bool, SyncError>.Error<bool, SyncError>(
                 new SyncErrorDatabase($"Failed to create sync schema: {ex.Message}")
             );
         }
@@ -132,11 +132,11 @@ public static class SyncSchema
             cmd.CommandText = "UPDATE _sync_state SET value = @origin WHERE key = 'origin_id'";
             cmd.Parameters.AddWithValue("@origin", originId);
             cmd.ExecuteNonQuery();
-            return new Result<bool, SyncError>.Success(true);
+            return new Result<bool, SyncError>.Ok<bool, SyncError>(true);
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Failure(
+            return new Result<bool, SyncError>.Error<bool, SyncError>(
                 new SyncErrorDatabase($"Failed to set origin ID: {ex.Message}")
             );
         }
@@ -155,14 +155,14 @@ public static class SyncSchema
             cmd.CommandText = "SELECT value FROM _sync_state WHERE key = 'origin_id'";
             var result = cmd.ExecuteScalar();
             return result is string originId
-                ? new Result<string, SyncError>.Success(originId)
-                : new Result<string, SyncError>.Failure(
+                ? new Result<string, SyncError>.Ok<string, SyncError>(originId)
+                : new Result<string, SyncError>.Error<string, SyncError>(
                     new SyncErrorDatabase("Origin ID not found")
                 );
         }
         catch (SqliteException ex)
         {
-            return new Result<string, SyncError>.Failure(
+            return new Result<string, SyncError>.Error<string, SyncError>(
                 new SyncErrorDatabase($"Failed to get origin ID: {ex.Message}")
             );
         }

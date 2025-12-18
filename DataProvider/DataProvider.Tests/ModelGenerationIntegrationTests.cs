@@ -1,5 +1,5 @@
 using DataProvider.CodeGeneration;
-using Results;
+using Outcome;
 using Xunit;
 
 namespace DataProvider.Tests;
@@ -45,8 +45,8 @@ public sealed class ModelGenerationIntegrationTests
         var result = ModelGenerator.GenerateRecordType("UserRecord", columns);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Success);
-        var success = (Result<string, SqlError>.Success)result;
+        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
+        var success = (Result<string, SqlError>.Ok<string, SqlError>)result;
         var code = success.Value;
 
         Assert.Contains("public record UserRecord", code);
@@ -77,9 +77,9 @@ public sealed class ModelGenerationIntegrationTests
         var result = ModelGenerator.GenerateRecordType(null!, columns);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Failure);
-        var failure = (Result<string, SqlError>.Failure)result;
-        Assert.Contains("typeName cannot be null or empty", failure.ErrorValue.Message);
+        Assert.True(result is Result<string, SqlError>.Error<string, SqlError>);
+        var failure = (Result<string, SqlError>.Error<string, SqlError>)result;
+        Assert.Contains("typeName cannot be null or empty", failure.Value.Message);
     }
 
     [Fact]
@@ -89,9 +89,9 @@ public sealed class ModelGenerationIntegrationTests
         var result = ModelGenerator.GenerateRecordType("TestRecord", []);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Failure);
-        var failure = (Result<string, SqlError>.Failure)result;
-        Assert.Contains("columns cannot be null or empty", failure.ErrorValue.Message);
+        Assert.True(result is Result<string, SqlError>.Error<string, SqlError>);
+        var failure = (Result<string, SqlError>.Error<string, SqlError>)result;
+        Assert.Contains("columns cannot be null or empty", failure.Value.Message);
     }
 
     [Fact]
@@ -150,8 +150,8 @@ public sealed class ModelGenerationIntegrationTests
         );
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Success);
-        var success = (Result<string, SqlError>.Success)result;
+        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
+        var success = (Result<string, SqlError>.Ok<string, SqlError>)result;
         var code = success.Value;
 
         // Check parent record
@@ -201,8 +201,8 @@ public sealed class ModelGenerationIntegrationTests
         var result = ModelGenerator.GenerateRawRecordType("UserOrderRaw", columns);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Success);
-        var success = (Result<string, SqlError>.Success)result;
+        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
+        var success = (Result<string, SqlError>.Ok<string, SqlError>)result;
         var code = success.Value;
 
         Assert.Contains("internal record UserOrderRaw(", code);
@@ -248,8 +248,8 @@ public sealed class ModelGenerationIntegrationTests
         var result = ModelGenerator.GenerateRecordType("UserProfile", columns);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Success);
-        var success = (Result<string, SqlError>.Success)result;
+        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
+        var success = (Result<string, SqlError>.Ok<string, SqlError>)result;
         var code = success.Value;
 
         Assert.Contains("public int user_id { get; init; }", code);
@@ -281,8 +281,8 @@ public sealed class ModelGenerationIntegrationTests
         var result = ModelGenerator.GenerateRecordType("LargeRecord", columns);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Success);
-        var success = (Result<string, SqlError>.Success)result;
+        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
+        var success = (Result<string, SqlError>.Ok<string, SqlError>)result;
         var code = success.Value;
 
         Assert.Contains("public record LargeRecord", code);
@@ -335,7 +335,7 @@ public sealed class ModelGenerationIntegrationTests
             validColumns,
             allColumns
         );
-        Assert.True(result1 is Result<string, SqlError>.Failure);
+        Assert.True(result1 is Result<string, SqlError>.Error<string, SqlError>);
 
         // Act & Assert - Null child name
         var result2 = ModelGenerator.GenerateGroupedRecordTypes(
@@ -345,7 +345,7 @@ public sealed class ModelGenerationIntegrationTests
             validColumns,
             allColumns
         );
-        Assert.True(result2 is Result<string, SqlError>.Failure);
+        Assert.True(result2 is Result<string, SqlError>.Error<string, SqlError>);
 
         // Act & Assert - Empty parent columns
         var result3 = ModelGenerator.GenerateGroupedRecordTypes(
@@ -355,7 +355,7 @@ public sealed class ModelGenerationIntegrationTests
             validColumns,
             allColumns
         );
-        Assert.True(result3 is Result<string, SqlError>.Failure);
+        Assert.True(result3 is Result<string, SqlError>.Error<string, SqlError>);
 
         // Act & Assert - Empty child columns
         var result4 = ModelGenerator.GenerateGroupedRecordTypes(
@@ -365,7 +365,7 @@ public sealed class ModelGenerationIntegrationTests
             [],
             allColumns
         );
-        Assert.True(result4 is Result<string, SqlError>.Failure);
+        Assert.True(result4 is Result<string, SqlError>.Error<string, SqlError>);
 
         // Act & Assert - Empty all columns
         var result5 = ModelGenerator.GenerateGroupedRecordTypes(
@@ -375,7 +375,7 @@ public sealed class ModelGenerationIntegrationTests
             validColumns,
             []
         );
-        Assert.True(result5 is Result<string, SqlError>.Failure);
+        Assert.True(result5 is Result<string, SqlError>.Error<string, SqlError>);
     }
 
     [Fact]
@@ -408,8 +408,8 @@ public sealed class ModelGenerationIntegrationTests
         var result = ModelGenerator.GenerateRecordType("TestEntity", columns);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Success);
-        var success = (Result<string, SqlError>.Success)result;
+        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
+        var success = (Result<string, SqlError>.Ok<string, SqlError>)result;
         var code = success.Value;
 
         // Verify proper C# syntax elements

@@ -1,6 +1,6 @@
 using System.Data;
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
 using Xunit;
 
 namespace DataProvider.Tests;
@@ -59,8 +59,8 @@ public sealed class DbTransactionExtensionsTests : IDisposable
             }
         );
 
-        Assert.True(result is Result<IReadOnlyList<TestRecord>, SqlError>.Success);
-        var records = ((Result<IReadOnlyList<TestRecord>, SqlError>.Success)result).Value;
+        Assert.True(result is Result<IReadOnlyList<TestRecord>, SqlError>.Ok<IReadOnlyList<TestRecord>, SqlError>);
+        var records = ((Result<IReadOnlyList<TestRecord>, SqlError>.Ok<IReadOnlyList<TestRecord>, SqlError>)result).Value;
         Assert.Equal(2, records.Count);
         Assert.Equal("Test1", records[0].Name);
         Assert.Equal(100, records[0].Value);
@@ -93,8 +93,8 @@ public sealed class DbTransactionExtensionsTests : IDisposable
             }
         );
 
-        Assert.True(result is Result<IReadOnlyList<TestRecord>, SqlError>.Success);
-        var records = ((Result<IReadOnlyList<TestRecord>, SqlError>.Success)result).Value;
+        Assert.True(result is Result<IReadOnlyList<TestRecord>, SqlError>.Ok<IReadOnlyList<TestRecord>, SqlError>);
+        var records = ((Result<IReadOnlyList<TestRecord>, SqlError>.Ok<IReadOnlyList<TestRecord>, SqlError>)result).Value;
         Assert.Equal(2, records.Count);
         Assert.Equal("Beta", records[0].Name);
         Assert.Equal(20, records[0].Value);
@@ -115,8 +115,8 @@ public sealed class DbTransactionExtensionsTests : IDisposable
             }
         );
 
-        Assert.True(result is Result<IReadOnlyList<TestRecord>, SqlError>.Success);
-        var records = ((Result<IReadOnlyList<TestRecord>, SqlError>.Success)result).Value;
+        Assert.True(result is Result<IReadOnlyList<TestRecord>, SqlError>.Ok<IReadOnlyList<TestRecord>, SqlError>);
+        var records = ((Result<IReadOnlyList<TestRecord>, SqlError>.Ok<IReadOnlyList<TestRecord>, SqlError>)result).Value;
         Assert.Empty(records);
     }
 
@@ -133,10 +133,10 @@ public sealed class DbTransactionExtensionsTests : IDisposable
             }
         );
 
-        Assert.True(result is Result<IReadOnlyList<TestRecord>, SqlError>.Failure);
-        var failure = (Result<IReadOnlyList<TestRecord>, SqlError>.Failure)result;
-        Assert.NotNull(failure.ErrorValue.Message);
-        Assert.Contains("no such table", failure.ErrorValue.Message);
+        Assert.True(result is Result<IReadOnlyList<TestRecord>, SqlError>.Error<IReadOnlyList<TestRecord>, SqlError>);
+        var failure = (Result<IReadOnlyList<TestRecord>, SqlError>.Error<IReadOnlyList<TestRecord>, SqlError>)result;
+        Assert.NotNull(failure.Value.Message);
+        Assert.Contains("no such table", failure.Value.Message);
     }
 
     public void Dispose()

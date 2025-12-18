@@ -1,4 +1,4 @@
-using Results;
+using Outcome;
 using Selecta;
 
 namespace DataProvider.CodeGeneration;
@@ -15,7 +15,8 @@ public record CodeGenerationConfig
         string,
         IReadOnlyList<DatabaseColumn>,
         Result<string, SqlError>
-    > GenerateModelType { get; init; } = ModelGenerator.GenerateRecordType;
+    > GenerateModelType
+    { get; init; } = ModelGenerator.GenerateRecordType;
 
     /// <summary>
     /// Function to generate data access methods
@@ -28,7 +29,8 @@ public record CodeGenerationConfig
         IReadOnlyList<DatabaseColumn>,
         string,
         Result<string, SqlError>
-    > GenerateDataAccessMethod { get; init; } =
+    > GenerateDataAccessMethod
+    { get; init; } =
         (className, methodName, sql, parameters, columns, connectionType) =>
             DataAccessGenerator.GenerateQueryMethod(
                 className,
@@ -48,7 +50,8 @@ public record CodeGenerationConfig
         string,
         string,
         Result<string, SqlError>
-    > GenerateSourceFile { get; init; } = GenerateDefaultSourceFile;
+    > GenerateSourceFile
+    { get; init; } = GenerateDefaultSourceFile;
 
     /// <summary>
     /// Function to generate grouped model types
@@ -60,7 +63,8 @@ public record CodeGenerationConfig
         IReadOnlyList<string>,
         IReadOnlyList<DatabaseColumn>,
         Result<string, SqlError>
-    > GenerateGroupedModels { get; init; } = ModelGenerator.GenerateGroupedRecordTypes;
+    > GenerateGroupedModels
+    { get; init; } = ModelGenerator.GenerateGroupedRecordTypes;
 
     /// <summary>
     /// Function to generate raw record types for grouping
@@ -69,7 +73,8 @@ public record CodeGenerationConfig
         string,
         IReadOnlyList<DatabaseColumn>,
         Result<string, SqlError>
-    > GenerateRawRecordType { get; init; } = ModelGenerator.GenerateRawRecordType;
+    > GenerateRawRecordType
+    { get; init; } = ModelGenerator.GenerateRawRecordType;
 
     /// <summary>
     /// Function to generate grouped query methods
@@ -83,7 +88,8 @@ public record CodeGenerationConfig
         GroupingConfig,
         string,
         Result<string, SqlError>
-    > GenerateGroupedQueryMethod { get; init; } =
+    > GenerateGroupedQueryMethod
+    { get; init; } =
         GroupingTransformations.GenerateGroupedQueryMethod;
 
     /// <summary>
@@ -94,7 +100,8 @@ public record CodeGenerationConfig
         string,
         IEnumerable<ParameterInfo>,
         Task<Result<IReadOnlyList<DatabaseColumn>, SqlError>>
-    > GetColumnMetadata { get; init; }
+    > GetColumnMetadata
+    { get; init; }
 
     /// <summary>
     /// Table operation generator
@@ -139,12 +146,12 @@ public record CodeGenerationConfig
     )
     {
         if (string.IsNullOrWhiteSpace(namespaceName))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("namespaceName cannot be null or empty")
             );
 
         if (string.IsNullOrWhiteSpace(modelCode) && string.IsNullOrWhiteSpace(dataAccessCode))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("At least one of modelCode or dataAccessCode must be provided")
             );
 
@@ -156,7 +163,8 @@ public record CodeGenerationConfig
         sb.AppendLine("using System.Collections.Immutable;");
         sb.AppendLine("using System.Threading.Tasks;");
         sb.AppendLine("using Microsoft.Data.Sqlite;");
-        sb.AppendLine("using Results;");
+        sb.AppendLine("using Outcome;");
+        sb.AppendLine("using Selecta;");
         sb.AppendLine();
 
         // Generate namespace
@@ -179,6 +187,6 @@ public record CodeGenerationConfig
             sb.Append(modelCode);
         }
 
-        return new Result<string, SqlError>.Success(sb.ToString());
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
 }

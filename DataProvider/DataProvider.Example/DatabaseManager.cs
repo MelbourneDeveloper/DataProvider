@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
+using Selecta;
 
 namespace DataProvider.Example;
 
@@ -48,7 +49,7 @@ internal static class DatabaseManager
                         return value;
                     }
 
-                    return new Result<string, SqlError>.Success(
+                    return new Result<string, SqlError>.Ok<string, SqlError>(
                         "Data inserted successfully using generated methods"
                     );
                 }

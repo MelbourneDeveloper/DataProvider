@@ -70,8 +70,17 @@ public static class SubscriptionManager
         string tableName,
         string pkValues,
         string timestamp,
-        string? expiresAt = null) =>
-        new(subscriptionId, originId, SubscriptionType.Record, tableName, pkValues, timestamp, expiresAt);
+        string? expiresAt = null
+    ) =>
+        new(
+            subscriptionId,
+            originId,
+            SubscriptionType.Record,
+            tableName,
+            pkValues,
+            timestamp,
+            expiresAt
+        );
 
     /// <summary>
     /// Creates a new table-level subscription.
@@ -87,8 +96,17 @@ public static class SubscriptionManager
         string originId,
         string tableName,
         string timestamp,
-        string? expiresAt = null) =>
-        new(subscriptionId, originId, SubscriptionType.Table, tableName, null, timestamp, expiresAt);
+        string? expiresAt = null
+    ) =>
+        new(
+            subscriptionId,
+            originId,
+            SubscriptionType.Table,
+            tableName,
+            null,
+            timestamp,
+            expiresAt
+        );
 
     /// <summary>
     /// Creates a new query-level subscription.
@@ -106,8 +124,17 @@ public static class SubscriptionManager
         string tableName,
         string queryCriteria,
         string timestamp,
-        string? expiresAt = null) =>
-        new(subscriptionId, originId, SubscriptionType.Query, tableName, queryCriteria, timestamp, expiresAt);
+        string? expiresAt = null
+    ) =>
+        new(
+            subscriptionId,
+            originId,
+            SubscriptionType.Query,
+            tableName,
+            queryCriteria,
+            timestamp,
+            expiresAt
+        );
 
     /// <summary>
     /// Checks if a subscription matches a change.
@@ -127,7 +154,7 @@ public static class SubscriptionManager
             SubscriptionType.Table => true,
             SubscriptionType.Record => MatchesRecordFilter(subscription.Filter, change.PkValue),
             SubscriptionType.Query => true, // Query matching requires application-level logic
-            _ => false
+            _ => false,
         };
     }
 
@@ -138,8 +165,8 @@ public static class SubscriptionManager
     /// <param name="currentTimestamp">Current UTC timestamp.</param>
     /// <returns>True if the subscription has expired.</returns>
     public static bool IsExpired(SyncSubscription subscription, string currentTimestamp) =>
-        subscription.ExpiresAt is not null &&
-        string.Compare(currentTimestamp, subscription.ExpiresAt, StringComparison.Ordinal) > 0;
+        subscription.ExpiresAt is not null
+        && string.Compare(currentTimestamp, subscription.ExpiresAt, StringComparison.Ordinal) > 0;
 
     /// <summary>
     /// Finds all subscriptions that match a change.
@@ -149,8 +176,8 @@ public static class SubscriptionManager
     /// <returns>Matching subscriptions.</returns>
     public static IReadOnlyList<SyncSubscription> FindMatchingSubscriptions(
         IEnumerable<SyncSubscription> subscriptions,
-        SyncLogEntry change) =>
-        subscriptions.Where(s => MatchesChange(s, change)).ToList();
+        SyncLogEntry change
+    ) => [.. subscriptions.Where(s => MatchesChange(s, change))];
 
     /// <summary>
     /// Creates notifications for all matching subscriptions.
@@ -160,10 +187,12 @@ public static class SubscriptionManager
     /// <returns>Notifications to send.</returns>
     public static IReadOnlyList<ChangeNotification> CreateNotifications(
         IEnumerable<SyncSubscription> subscriptions,
-        SyncLogEntry change) =>
-        FindMatchingSubscriptions(subscriptions, change)
-            .Select(s => new ChangeNotification(s.SubscriptionId, change))
-            .ToList();
+        SyncLogEntry change
+    ) =>
+        [
+            .. FindMatchingSubscriptions(subscriptions, change)
+                .Select(s => new ChangeNotification(s.SubscriptionId, change)),
+        ];
 
     /// <summary>
     /// Filters out expired subscriptions.
@@ -173,8 +202,8 @@ public static class SubscriptionManager
     /// <returns>Active (non-expired) subscriptions.</returns>
     public static IReadOnlyList<SyncSubscription> FilterExpired(
         IEnumerable<SyncSubscription> subscriptions,
-        string currentTimestamp) =>
-        subscriptions.Where(s => !IsExpired(s, currentTimestamp)).ToList();
+        string currentTimestamp
+    ) => [.. subscriptions.Where(s => !IsExpired(s, currentTimestamp))];
 
     private static bool MatchesRecordFilter(string? filter, string pkValue)
     {

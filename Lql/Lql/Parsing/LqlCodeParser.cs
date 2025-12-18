@@ -1,5 +1,6 @@
 using Antlr4.Runtime;
-using Results;
+using Outcome;
+using Selecta;
 
 namespace Lql.Parsing;
 
@@ -22,14 +23,14 @@ public static class LqlCodeParser
             // Validate input
             if (string.IsNullOrEmpty(lqlCode))
             {
-                return new Result<INode, SqlError>.Failure(
+                return new Result<INode, SqlError>.Error<INode, SqlError>(
                     SqlError.WithPosition("Empty LQL input", 1, 0, lqlCode)
                 );
             }
 
             if (string.IsNullOrWhiteSpace(lqlCode))
             {
-                return new Result<INode, SqlError>.Failure(
+                return new Result<INode, SqlError>.Error<INode, SqlError>(
                     SqlError.WithPosition("LQL input contains only whitespace", 1, 0, lqlCode)
                 );
             }
@@ -38,7 +39,7 @@ public static class LqlCodeParser
             var semanticIssues = CheckBasicSemantics(lqlCode);
             if (semanticIssues != null)
             {
-                return new Result<INode, SqlError>.Failure(semanticIssues);
+                return new Result<INode, SqlError>.Error<INode, SqlError>(semanticIssues);
             }
 
             // Create ANTLR input stream
@@ -65,13 +66,13 @@ public static class LqlCodeParser
             // Check for lexer errors
             if (lexerErrorListener.Errors.Count > 0)
             {
-                return new Result<INode, SqlError>.Failure(lexerErrorListener.Errors[0]);
+                return new Result<INode, SqlError>.Error<INode, SqlError>(lexerErrorListener.Errors[0]);
             }
 
             // Check for parser errors
             if (parserErrorListener.Errors.Count > 0)
             {
-                return new Result<INode, SqlError>.Failure(parserErrorListener.Errors[0]);
+                return new Result<INode, SqlError>.Error<INode, SqlError>(parserErrorListener.Errors[0]);
             }
 
             // Create visitor and visit the parse tree
@@ -80,15 +81,15 @@ public static class LqlCodeParser
             var visitor = new LqlToAstVisitor(lqlCode);
             var astNode = visitor.Visit(programContext);
 
-            return new Result<INode, SqlError>.Success(astNode);
+            return new Result<INode, SqlError>.Ok<INode, SqlError>(astNode);
         }
         catch (SqlErrorException ex)
         {
-            return new Result<INode, SqlError>.Failure(ex.SqlError ?? SqlError.FromException(ex));
+            return new Result<INode, SqlError>.Error<INode, SqlError>(ex.SqlError ?? SqlError.FromException(ex));
         }
         catch (Exception ex)
         {
-            return new Result<INode, SqlError>.Failure(SqlError.FromException(ex));
+            return new Result<INode, SqlError>.Error<INode, SqlError>(SqlError.FromException(ex));
         }
     }
 

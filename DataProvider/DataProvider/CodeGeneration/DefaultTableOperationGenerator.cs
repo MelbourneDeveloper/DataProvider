@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
-using Results;
+using Outcome;
+using Selecta;
 
 namespace DataProvider.CodeGeneration;
 
@@ -29,10 +30,10 @@ public class DefaultTableOperationGenerator : ITableOperationGenerator
     )
     {
         if (table == null)
-            return new Result<string, SqlError>.Failure(new SqlError("table cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(new SqlError("table cannot be null"));
 
         if (config == null)
-            return new Result<string, SqlError>.Failure(new SqlError("config cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(new SqlError("config cannot be null"));
 
         var sb = new StringBuilder();
         sb.AppendLine("using System;");
@@ -42,7 +43,8 @@ public class DefaultTableOperationGenerator : ITableOperationGenerator
         sb.AppendLine("using System.Globalization;");
         sb.AppendLine("using System.Threading.Tasks;");
         sb.AppendLine(CultureInfo.InvariantCulture, $"using {GetConnectionNamespace()};");
-        sb.AppendLine("using Results;");
+        sb.AppendLine("using Outcome;");
+        sb.AppendLine("using Selecta;");
         sb.AppendLine();
         sb.AppendLine("namespace Generated");
         sb.AppendLine("{");
@@ -60,11 +62,11 @@ public class DefaultTableOperationGenerator : ITableOperationGenerator
         if (config.GenerateInsert)
         {
             var insertResult = GenerateInsertMethod(table);
-            if (insertResult is Result<string, SqlError>.Success insertSuccess)
+            if (insertResult is Result<string, SqlError>.Ok<string, SqlError> insertSuccess)
             {
                 sb.AppendLine(insertSuccess.Value);
             }
-            else if (insertResult is Result<string, SqlError>.Failure insertFailure)
+            else if (insertResult is Result<string, SqlError>.Error<string, SqlError> insertFailure)
             {
                 return insertFailure;
             }
@@ -73,11 +75,11 @@ public class DefaultTableOperationGenerator : ITableOperationGenerator
         if (config.GenerateUpdate)
         {
             var updateResult = GenerateUpdateMethod(table);
-            if (updateResult is Result<string, SqlError>.Success updateSuccess)
+            if (updateResult is Result<string, SqlError>.Ok<string, SqlError> updateSuccess)
             {
                 sb.AppendLine(updateSuccess.Value);
             }
-            else if (updateResult is Result<string, SqlError>.Failure updateFailure)
+            else if (updateResult is Result<string, SqlError>.Error<string, SqlError> updateFailure)
             {
                 return updateFailure;
             }
@@ -86,7 +88,7 @@ public class DefaultTableOperationGenerator : ITableOperationGenerator
         sb.AppendLine("    }");
         sb.AppendLine("}");
 
-        return new Result<string, SqlError>.Success(sb.ToString());
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
 
     /// <summary>

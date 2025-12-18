@@ -1,4 +1,3 @@
-using Results;
 using Xunit;
 
 namespace Sync.Tests;
@@ -146,7 +145,7 @@ public sealed class HashVerifierTests
     {
         var result = HashVerifier.VerifyHash("abc123", "ABC123");
 
-        Assert.IsType<Result<bool, SyncError>.Success>(result);
+        Assert.IsType<BoolSyncOk>(result);
     }
 
     [Fact]
@@ -154,9 +153,9 @@ public sealed class HashVerifierTests
     {
         var result = HashVerifier.VerifyHash("abc123", "xyz789");
 
-        Assert.IsType<Result<bool, SyncError>.Failure>(result);
-        var failure = (Result<bool, SyncError>.Failure)result;
-        Assert.IsType<SyncErrorHashMismatch>(failure.ErrorValue);
+        Assert.IsType<BoolSyncError>(result);
+        var failure = (BoolSyncError)result;
+        Assert.IsType<SyncErrorHashMismatch>(failure.Value);
     }
 
     [Fact]

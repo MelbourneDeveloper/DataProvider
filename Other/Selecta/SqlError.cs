@@ -1,4 +1,4 @@
-namespace Results;
+namespace Selecta;
 
 /// <summary>
 /// Represents a position in source code

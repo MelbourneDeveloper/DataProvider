@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
-using Results;
+using Outcome;
+using Selecta;
 
 namespace DataProvider.CodeGeneration;
 
@@ -21,12 +22,12 @@ public static class ModelGenerator
     )
     {
         if (string.IsNullOrWhiteSpace(typeName))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("typeName cannot be null or empty")
             );
 
         if (columns == null || columns.Count == 0)
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("columns cannot be null or empty")
             );
 
@@ -83,7 +84,7 @@ public static class ModelGenerator
         sb.AppendLine("    }");
         sb.AppendLine("}");
 
-        return new Result<string, SqlError>.Success(sb.ToString());
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
 
     /// <summary>
@@ -104,27 +105,27 @@ public static class ModelGenerator
     )
     {
         if (string.IsNullOrWhiteSpace(parentName))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("parentName cannot be null or empty")
             );
 
         if (string.IsNullOrWhiteSpace(childName))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("childName cannot be null or empty")
             );
 
         if (parentColumns == null || parentColumns.Count == 0)
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("parentColumns cannot be null or empty")
             );
 
         if (childColumns == null || childColumns.Count == 0)
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("childColumns cannot be null or empty")
             );
 
         if (allColumns == null || allColumns.Count == 0)
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("allColumns cannot be null or empty")
             );
 
@@ -262,7 +263,7 @@ public static class ModelGenerator
         sb.AppendLine("    }");
         sb.AppendLine("}");
 
-        return new Result<string, SqlError>.Success(sb.ToString());
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
 
     /// <summary>
@@ -277,12 +278,12 @@ public static class ModelGenerator
     )
     {
         if (string.IsNullOrWhiteSpace(typeName))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("typeName cannot be null or empty")
             );
 
         if (columns == null || columns.Count == 0)
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("columns cannot be null or empty")
             );
 
@@ -300,6 +301,6 @@ public static class ModelGenerator
         }
         sb.AppendLine(");");
 
-        return new Result<string, SqlError>.Success(sb.ToString());
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
 }

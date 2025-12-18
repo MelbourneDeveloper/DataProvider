@@ -38,5 +38,6 @@
   <ItemGroup>
     <ProjectReference Include="../Lql/Lql.csproj" />
     <ProjectReference Include="../Lql.SQLite/Lql.SQLite.csproj" />
+    <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
   </ItemGroup>
 </Project>

@@ -28,7 +28,6 @@
         <ProjectReference Include="../DataProvider/DataProvider.csproj" />
         <ProjectReference Include="../DataProvider.SQLite/DataProvider.SQLite.csproj" />
         <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
-        <ProjectReference Include="../../Other/Results/Results.csproj" />
         <ProjectReference Include="../../Lql/Lql.SQLite/Lql.SQLite.csproj" />
     </ItemGroup>
     <ItemGroup>

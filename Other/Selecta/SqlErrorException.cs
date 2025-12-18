@@ -1,4 +1,4 @@
-namespace Results;
+namespace Selecta;
 
 /// <summary>
 /// Exception that wraps a SqlError for proper error propagation

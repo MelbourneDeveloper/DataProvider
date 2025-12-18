@@ -5,8 +5,5 @@
     <RootNamespace>Sync</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="../../Other/Results/Results.csproj" />
-  </ItemGroup>
 
 </Project>

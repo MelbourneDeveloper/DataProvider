@@ -1,4 +1,4 @@
-using Results;
+using Outcome;
 using Xunit;
 
 namespace DataProvider.Tests;

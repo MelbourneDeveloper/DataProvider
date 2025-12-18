@@ -48,6 +48,7 @@ This repository contains two complementary projects:
 - **AVOID ASSIGNMENTS** - Use expressions where possible
 - **Static extension methods on IDbConnection and IDbTransaction only** - No classes for data access
 - **Test at the highest level** - Avoid mocks. Only full integration testing
+- **Always use type aliases (using) for result types** - Don't write like this: `new Result<string, SqlError>.Ok`
 - **No singletons** - Inject `Func` into static methods
 - **NO REGEX** - Parse SQL with ANTLR .g4 grammars or SqlParserCS library
 - **All public members require XMLDOC** - Except in test projects

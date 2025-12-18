@@ -9,7 +9,6 @@
   <!-- You are not allowed to reference database platform specific dependencies here -->
 
   <ItemGroup>
-    <ProjectReference Include="../../Other/Results/Results.csproj" />
     <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
   </ItemGroup>
 

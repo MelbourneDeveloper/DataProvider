@@ -1,5 +1,5 @@
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
 using Sync;
 using Sync.SQLite;
 using Xunit;
@@ -125,7 +125,8 @@ public sealed class EndToEndSyncTests : IDisposable
         while (true)
         {
             var batch = FetchChangesFromSource(fromVersion, batchSize: 10);
-            if (batch.Count == 0) break;
+            if (batch.Count == 0)
+                break;
             allChanges.AddRange(batch);
             fromVersion = batch.Max(c => c.Version);
         }
@@ -135,7 +136,7 @@ public sealed class EndToEndSyncTests : IDisposable
         // Apply in batches
         foreach (var batch in allChanges.Chunk(10))
         {
-            ApplyChangesToTarget(batch.ToList());
+            ApplyChangesToTarget([.. batch]);
         }
 
         // Assert: All 50 records synced
@@ -170,7 +171,9 @@ public sealed class EndToEndSyncTests : IDisposable
     {
         // Arrange: Create change with target's own origin
         var fakeEntry = new SyncLogEntry(
-            1, "Person", "{\"Id\":\"p1\"}",
+            1,
+            "Person",
+            "{\"Id\":\"p1\"}",
             SyncOperation.Insert,
             "{\"Id\":\"p1\",\"Name\":\"Fake\",\"Email\":\"fake@example.com\"}",
             _targetOrigin, // Same as target's origin
@@ -186,8 +189,8 @@ public sealed class EndToEndSyncTests : IDisposable
         );
 
         // Assert: No error, but nothing applied
-        Assert.IsType<Result<BatchApplyResult, SyncError>.Success>(result);
-        var applyResult = ((Result<BatchApplyResult, SyncError>.Success)result).Value;
+        Assert.IsType<BatchApplyResultOk>(result);
+        var applyResult = ((BatchApplyResultOk)result).Value;
         Assert.Equal(0, applyResult.AppliedCount);
         Assert.Null(GetPerson(_targetDb, "p1"));
     }
@@ -329,25 +332,32 @@ public sealed class EndToEndSyncTests : IDisposable
     private List<SyncLogEntry> FetchChangesFromSource(long fromVersion = 0, int batchSize = 1000)
     {
         var result = SyncLogRepository.FetchChanges(_sourceDb, fromVersion, batchSize);
-        Assert.IsType<Result<IReadOnlyList<SyncLogEntry>, SyncError>.Success>(result);
-        return ((Result<IReadOnlyList<SyncLogEntry>, SyncError>.Success)result).Value.ToList();
+        Assert.IsType<SyncLogListOk>(result);
+        return [.. ((SyncLogListOk)result).Value];
     }
 
-    private static List<SyncLogEntry> FetchChanges(SqliteConnection db, long fromVersion, int batchSize = 1000)
+    private static List<SyncLogEntry> FetchChanges(
+        SqliteConnection db,
+        long fromVersion,
+        int batchSize = 1000
+    )
     {
         var result = SyncLogRepository.FetchChanges(db, fromVersion, batchSize);
-        Assert.IsType<Result<IReadOnlyList<SyncLogEntry>, SyncError>.Success>(result);
-        return ((Result<IReadOnlyList<SyncLogEntry>, SyncError>.Success)result).Value.ToList();
+        Assert.IsType<SyncLogListOk>(result);
+        return [.. ((SyncLogListOk)result).Value];
     }
 
-    private void ApplyChangesToTarget(List<SyncLogEntry> changes, bool skipSuppression = false)
-    {
-        ApplyChanges(_targetDb, changes, _targetOrigin, skipSuppression);
-    }
+    private void ApplyChangesToTarget(List<SyncLogEntry> changes, bool skipSuppression = false) => ApplyChanges(_targetDb, changes, _targetOrigin, skipSuppression);
 
-    private static void ApplyChanges(SqliteConnection db, List<SyncLogEntry> changes, string myOrigin, bool skipSuppression = false)
+    private static void ApplyChanges(
+        SqliteConnection db,
+        List<SyncLogEntry> changes,
+        string myOrigin,
+        bool skipSuppression = false
+    )
     {
-        if (changes.Count == 0) return;
+        if (changes.Count == 0)
+            return;
 
         if (!skipSuppression)
         {
@@ -370,7 +380,7 @@ public sealed class EndToEndSyncTests : IDisposable
                 entry => ApplySingleChange(db, entry)
             );
 
-            Assert.IsType<Result<BatchApplyResult, SyncError>.Success>(result);
+            Assert.IsType<BatchApplyResultOk>(result);
         }
         finally
         {
@@ -381,7 +391,10 @@ public sealed class EndToEndSyncTests : IDisposable
         }
     }
 
-    private static Result<bool, SyncError> ApplySingleChange(SqliteConnection db, SyncLogEntry entry)
+    private static BoolSyncResult ApplySingleChange(
+        SqliteConnection db,
+        SyncLogEntry entry
+    )
     {
         try
         {
@@ -393,7 +406,9 @@ public sealed class EndToEndSyncTests : IDisposable
                 {
                     case SyncOperation.Insert:
                     case SyncOperation.Update:
-                        var payload = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(entry.Payload!);
+                        var payload = System.Text.Json.JsonSerializer.Deserialize<
+                            Dictionary<string, string>
+                        >(entry.Payload!);
                         cmd.CommandText = """
                             INSERT INTO Person (Id, Name, Email) VALUES (@id, @name, @email)
                             ON CONFLICT(Id) DO UPDATE SET Name = @name, Email = @email
@@ -404,7 +419,9 @@ public sealed class EndToEndSyncTests : IDisposable
                         break;
 
                     case SyncOperation.Delete:
-                        var pk = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(entry.PkValue);
+                        var pk = System.Text.Json.JsonSerializer.Deserialize<
+                            Dictionary<string, string>
+                        >(entry.PkValue);
                         cmd.CommandText = "DELETE FROM Person WHERE Id = @id";
                         cmd.Parameters.AddWithValue("@id", pk!["Id"]);
                         break;
@@ -413,15 +430,17 @@ public sealed class EndToEndSyncTests : IDisposable
                 cmd.ExecuteNonQuery();
             }
 
-            return new Result<bool, SyncError>.Success(true);
+            return new BoolSyncOk(true);
         }
         catch (SqliteException ex)
         {
             if (ChangeApplier.IsForeignKeyViolation(ex.Message))
             {
-                return new Result<bool, SyncError>.Success(false);
+                return new BoolSyncOk(false);
             }
-            return new Result<bool, SyncError>.Failure(new SyncErrorDatabase(ex.Message));
+            return new BoolSyncError(
+                new SyncErrorDatabase(ex.Message)
+            );
         }
     }
 

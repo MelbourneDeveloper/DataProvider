@@ -1,7 +1,7 @@
 using System.Collections.Frozen;
 using DataProvider.CodeGeneration;
 using DataProvider.SQLite;
-using Results;
+using Outcome;
 using Selecta;
 using Xunit;
 
@@ -59,7 +59,7 @@ public class CustomCodeGenerationTests
         IEnumerable<ParameterInfo> parameters
     ) =>
         Task.FromResult<Result<IReadOnlyList<DatabaseColumn>, SqlError>>(
-            new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Success(TestColumns)
+            new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Ok<IReadOnlyList<DatabaseColumn>, SqlError>(TestColumns)
         );
 
     [Fact]
@@ -86,7 +86,7 @@ public class {typeName}Data
 {string.Join(",\n", columns.Select(c => $"        {c.Name} = this.{c.Name}"))}
     }};
 }}";
-            return new Result<string, SqlError>.Success(code);
+            return new Result<string, SqlError>.Ok<string, SqlError>(code);
         }
 
         var config = new CodeGenerationConfig(MockGetColumnMetadata)
@@ -106,8 +106,8 @@ public class {typeName}Data
             config
         );
 
-        Assert.True(result is Result<string, SqlError>.Success);
-        var generatedCode = (result as Result<string, SqlError>.Success)!.Value;
+        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
+        var generatedCode = (result as Result<string, SqlError>.Ok<string, SqlError>)!.Value;
 
         var expectedCode =
             @"using System;
@@ -115,7 +115,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
 
 namespace CustomGenerated;
 
@@ -156,11 +156,11 @@ public static partial class UserExtensions
                 }
             }
 
-            return new Result<ImmutableList<User>, SqlError>.Success(results.ToImmutable());
+            return new Result<ImmutableList<User>, SqlError>.Ok(results.ToImmutable());
         }
         catch (Exception ex)
         {
-            return new Result<ImmutableList<User>, SqlError>.Failure(new SqlError(""Database error"", ex));
+            return new Result<ImmutableList<User>, SqlError>.Error(new SqlError(""Database error"", ex));
         }
     }
 }
@@ -191,7 +191,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
 
 namespace CustomGenerated;
 
@@ -232,11 +232,11 @@ public static partial class UserExtensions
                 }
             }
 
-            return new Result<ImmutableList<User>, SqlError>.Success(results.ToImmutable());
+            return new Result<ImmutableList<User>, SqlError>.Ok(results.ToImmutable());
         }
         catch (Exception ex)
         {
-            return new Result<ImmutableList<User>, SqlError>.Failure(new SqlError(""Database error"", ex));
+            return new Result<ImmutableList<User>, SqlError>.Error(new SqlError(""Database error"", ex));
         }
     }
 }
@@ -322,14 +322,14 @@ public class {methodName}Query
     }}
 }}
 ";
-            return new Result<string, SqlError>.Success(code);
+            return new Result<string, SqlError>.Ok<string, SqlError>(code);
         }
 
         var config = new CodeGenerationConfig(MockGetColumnMetadata)
         {
             GenerateDataAccessMethod = CustomDataAccessGenerator,
             GenerateModelType = (typeName, columns) =>
-                new Result<string, SqlError>.Success($"// Model for {typeName} would be here"),
+                new Result<string, SqlError>.Ok<string, SqlError>($"// Model for {typeName} would be here"),
             TargetNamespace = "FluentGenerated",
         };
 
@@ -344,8 +344,8 @@ public class {methodName}Query
             config
         );
 
-        Assert.True(result is Result<string, SqlError>.Success);
-        var generatedCode = (result as Result<string, SqlError>.Success)!.Value;
+        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
+        var generatedCode = (result as Result<string, SqlError>.Ok<string, SqlError>)!.Value;
 
         var expectedCode =
             @"using System;
@@ -353,7 +353,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
 
 namespace FluentGenerated;
 
@@ -438,7 +438,7 @@ public class DataController : ControllerBase
 
 // Data Transfer Objects
 {modelCode}";
-            return new Result<string, SqlError>.Success(code);
+            return new Result<string, SqlError>.Ok<string, SqlError>(code);
         }
 
         static Result<string, SqlError> ApiModelGenerator(
@@ -452,7 +452,7 @@ public class DataController : ControllerBase
 
 public record Create{typeName}Request(
 {string.Join(",\n", columns.Where(c => !c.IsIdentity).Select(c => $"    {c.CSharpType} {c.Name}"))});";
-            return new Result<string, SqlError>.Success(code);
+            return new Result<string, SqlError>.Ok<string, SqlError>(code);
         }
 
         static Result<string, SqlError> ApiDataAccessGenerator(
@@ -492,7 +492,7 @@ public record Create{typeName}Request(
         
         return Ok(results);
     }}";
-            return new Result<string, SqlError>.Success(code);
+            return new Result<string, SqlError>.Ok<string, SqlError>(code);
         }
 
         var config = new CodeGenerationConfig(MockGetColumnMetadata)
@@ -514,8 +514,8 @@ public record Create{typeName}Request(
             config
         );
 
-        Assert.True(result is Result<string, SqlError>.Success);
-        var generatedCode = (result as Result<string, SqlError>.Success)!.Value;
+        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
+        var generatedCode = (result as Result<string, SqlError>.Ok<string, SqlError>)!.Value;
 
         var expectedCode =
             @"// <auto-generated />
@@ -586,8 +586,8 @@ public record CreateUserRequest(
 
         var result = customTableGenerator.GenerateTableOperations(table, config);
 
-        Assert.True(result is Result<string, SqlError>.Success);
-        var generatedCode = (result as Result<string, SqlError>.Success)!.Value;
+        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
+        var generatedCode = (result as Result<string, SqlError>.Ok<string, SqlError>)!.Value;
 
         var expectedCode =
             @"using Microsoft.Data.Sqlite;
@@ -698,10 +698,10 @@ internal sealed class RepositoryPatternTableOperationGenerator : ITableOperation
     public Result<string, SqlError> GenerateTableOperations(DatabaseTable table, TableConfig config)
     {
         if (table == null)
-            return new Result<string, SqlError>.Failure(new SqlError("table cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(new SqlError("table cannot be null"));
 
         if (config == null)
-            return new Result<string, SqlError>.Failure(new SqlError("config cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(new SqlError("config cannot be null"));
 
         var entityName = $"{table.Name.TrimEnd('s')}Entity";
         var repositoryInterface = $"I{table.Name}Repository";
@@ -773,14 +773,14 @@ public class {repositoryClass} : {repositoryInterface}
 public record {entityName}(
 {string.Join(",\n", table.Columns.Select(c => $"    {c.CSharpType} {c.Name}"))});";
 
-        return new Result<string, SqlError>.Success(code);
+        return new Result<string, SqlError>.Ok<string, SqlError>(code);
     }
 
     public Result<string, SqlError> GenerateInsertMethod(DatabaseTable table) =>
-        new Result<string, SqlError>.Success("// Insert handled by repository pattern");
+        new Result<string, SqlError>.Ok<string, SqlError>("// Insert handled by repository pattern");
 
     public Result<string, SqlError> GenerateUpdateMethod(DatabaseTable table) =>
-        new Result<string, SqlError>.Success("// Update handled by repository pattern");
+        new Result<string, SqlError>.Ok<string, SqlError>("// Update handled by repository pattern");
 
     private static string GenerateRepositoryInsertMethod(DatabaseTable table, string entityName)
     {

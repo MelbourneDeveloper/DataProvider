@@ -1,5 +1,3 @@
-using Results;
-
 namespace Sync;
 
 /// <summary>
@@ -17,11 +15,11 @@ public static class ChangeApplier
     /// <param name="maxRetryPasses">Maximum retry passes for deferred changes.</param>
     /// <param name="applyChange">Function to apply a single change. Returns true on success, false on FK violation.</param>
     /// <returns>Result of applying the batch.</returns>
-    public static Result<BatchApplyResult, SyncError> ApplyBatch(
+    public static BatchApplyResultResult ApplyBatch(
         SyncBatch batch,
         string myOriginId,
         int maxRetryPasses,
-        Func<SyncLogEntry, Result<bool, SyncError>> applyChange
+        Func<SyncLogEntry, BoolSyncResult> applyChange
     )
     {
         var deferred = new List<SyncLogEntry>();
@@ -40,15 +38,15 @@ public static class ChangeApplier
 
             switch (result)
             {
-                case Result<bool, SyncError>.Success s when s.Value:
+                case BoolSyncOk s when s.Value:
                     appliedCount++;
                     break;
-                case Result<bool, SyncError>.Success s when !s.Value:
+                case BoolSyncOk s when !s.Value:
                     // FK violation - defer for retry
                     deferred.Add(entry);
                     break;
-                case Result<bool, SyncError>.Failure f:
-                    return new Result<BatchApplyResult, SyncError>.Failure(f.ErrorValue);
+                case BoolSyncError f:
+                    return new BatchApplyResultError(f.Value);
             }
         }
 
@@ -63,14 +61,14 @@ public static class ChangeApplier
 
                 switch (result)
                 {
-                    case Result<bool, SyncError>.Success s when s.Value:
+                    case BoolSyncOk s when s.Value:
                         appliedCount++;
                         break;
-                    case Result<bool, SyncError>.Success s when !s.Value:
+                    case BoolSyncOk s when !s.Value:
                         stillDeferred.Add(entry);
                         break;
-                    case Result<bool, SyncError>.Failure f:
-                        return new Result<BatchApplyResult, SyncError>.Failure(f.ErrorValue);
+                    case BoolSyncError f:
+                        return new BatchApplyResultError(f.Value);
                 }
             }
 
@@ -80,7 +78,7 @@ public static class ChangeApplier
         // If any changes still deferred after all retries, fail
         if (deferred.Count > 0)
         {
-            return new Result<BatchApplyResult, SyncError>.Failure(
+            return new BatchApplyResultError(
                 new SyncErrorDeferredChangeFailed(
                     deferred[0],
                     $"{deferred.Count} changes could not be applied after {maxRetryPasses} retry passes"
@@ -88,9 +86,7 @@ public static class ChangeApplier
             );
         }
 
-        return new Result<BatchApplyResult, SyncError>.Success(
-            new BatchApplyResult(appliedCount, 0, batch.ToVersion)
-        );
+        return new BatchApplyResultOk(new BatchApplyResult(appliedCount, 0, batch.ToVersion));
     }
 
     /// <summary>

@@ -1,4 +1,3 @@
-using Results;
 using Xunit;
 
 namespace Sync.Tests;
@@ -142,14 +141,10 @@ public sealed class ConflictResolverTests
         var local = CreateEntry(1, "Person", "pk-1", "origin-A", "2025-01-01T00:00:00.000Z");
         var remote = CreateEntry(2, "Person", "pk-1", "origin-B", "2025-01-01T00:00:01.000Z");
 
-        var result = ConflictResolver.ResolveCustom(
-            local,
-            remote,
-            (l, r) => new Result<SyncLogEntry, SyncError>.Success(l)
-        );
+        var result = ConflictResolver.ResolveCustom(local, remote, (l, r) => new SyncLogEntryOk(l));
 
-        Assert.IsType<Result<ConflictResolution, SyncError>.Success>(result);
-        var success = (Result<ConflictResolution, SyncError>.Success)result;
+        Assert.IsType<ConflictResolutionOk>(result);
+        var success = (ConflictResolutionOk)result;
         Assert.Equal(local, success.Value.Winner);
     }
 
@@ -163,11 +158,11 @@ public sealed class ConflictResolverTests
         var result = ConflictResolver.ResolveCustom(
             local,
             remote,
-            (l, r) => new Result<SyncLogEntry, SyncError>.Failure(error)
+            (l, r) => new SyncLogEntryError(error)
         );
 
-        Assert.IsType<Result<ConflictResolution, SyncError>.Failure>(result);
-        var failure = (Result<ConflictResolution, SyncError>.Failure)result;
-        Assert.Equal(error, failure.ErrorValue);
+        Assert.IsType<ConflictResolutionError>(result);
+        var failure = (ConflictResolutionError)result;
+        Assert.Equal(error, failure.Value);
     }
 }

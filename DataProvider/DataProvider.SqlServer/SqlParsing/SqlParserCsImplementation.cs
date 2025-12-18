@@ -1,4 +1,4 @@
-using Results;
+using Outcome;
 using Selecta;
 using SqlParser;
 using SqlParser.Ast;
@@ -33,11 +33,11 @@ public sealed class SqlParserCsImplementation : ISqlParser
                 Parameters = parameterInfos.ToFrozenSet(),
             };
             
-            return new Result<SelectStatement, string>.Success(selectStatement);
+            return new Result<SelectStatement, string>.Ok<SelectStatement, string>(selectStatement);
         }
         catch (Exception ex)
         {
-            return new Result<SelectStatement, string>.Failure(ex.Message);
+            return new Result<SelectStatement, string>.Error<SelectStatement, string>(ex.Message);
         }
     }
 

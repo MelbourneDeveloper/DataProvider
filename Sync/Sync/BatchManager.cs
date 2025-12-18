@@ -1,4 +1,4 @@
-using Results;
+#pragma warning disable CS8509 // Exhaustive switch - Exhaustion analyzer handles this
 
 namespace Sync;
 
@@ -11,49 +11,29 @@ public static class BatchManager
     /// <summary>
     /// Fetches a batch of changes from the sync log.
     /// </summary>
-    /// <param name="fromVersion">Fetch changes with version greater than this.</param>
-    /// <param name="batchSize">Maximum number of changes to fetch.</param>
-    /// <param name="fetchChanges">Function to fetch changes from database.</param>
-    /// <returns>A batch of changes or an error.</returns>
-    public static Result<SyncBatch, SyncError> FetchBatch(
+    public static SyncBatchResult FetchBatch(
         long fromVersion,
         int batchSize,
-        Func<long, int, Result<IReadOnlyList<SyncLogEntry>, SyncError>> fetchChanges
+        Func<long, int, SyncLogListResult> fetchChanges
     )
     {
         var fetchResult = fetchChanges(fromVersion, batchSize + 1);
 
         return fetchResult switch
         {
-            Result<IReadOnlyList<SyncLogEntry>, SyncError>.Success s => CreateBatchFromChanges(
-                s.Value,
-                fromVersion,
-                batchSize
-            ),
-            Result<IReadOnlyList<SyncLogEntry>, SyncError>.Failure f => new Result<
-                SyncBatch,
-                SyncError
-            >.Failure(f.ErrorValue),
-            _ => new Result<SyncBatch, SyncError>.Failure(
-                new SyncErrorDatabase("Unexpected result type")
-            ),
+            SyncLogListOk(var changes) => CreateBatchFromChanges(changes, fromVersion, batchSize),
+            SyncLogListError(var error) => new SyncBatchError(error),
         };
     }
 
     /// <summary>
     /// Processes all batches in a pull phase until no more changes are available.
     /// </summary>
-    /// <param name="startVersion">Starting version for the pull.</param>
-    /// <param name="config">Batch configuration.</param>
-    /// <param name="fetchChanges">Function to fetch changes from server.</param>
-    /// <param name="applyBatch">Function to apply a batch of changes.</param>
-    /// <param name="updateVersion">Function to persist the last applied version.</param>
-    /// <returns>Total number of changes applied or an error.</returns>
-    public static Result<int, SyncError> ProcessAllBatches(
+    public static IntSyncResult ProcessAllBatches(
         long startVersion,
         BatchConfig config,
-        Func<long, int, Result<IReadOnlyList<SyncLogEntry>, SyncError>> fetchChanges,
-        Func<SyncBatch, Result<BatchApplyResult, SyncError>> applyBatch,
+        Func<long, int, SyncLogListResult> fetchChanges,
+        Func<SyncBatch, BatchApplyResultResult> applyBatch,
         Action<long> updateVersion
     )
     {
@@ -66,64 +46,50 @@ public static class BatchManager
 
             switch (batchResult)
             {
-                case Result<SyncBatch, SyncError>.Success batchSuccess:
-                    var batch = batchSuccess.Value;
-
+                case SyncBatchOk(var batch):
                     if (batch.Changes.Count == 0)
                     {
-                        return new Result<int, SyncError>.Success(totalApplied);
+                        return new IntSyncOk(totalApplied);
                     }
 
                     var applyResult = applyBatch(batch);
 
                     switch (applyResult)
                     {
-                        case Result<BatchApplyResult, SyncError>.Success applySuccess:
-                            totalApplied += applySuccess.Value.AppliedCount;
-                            currentVersion = applySuccess.Value.ToVersion;
+                        case BatchApplyResultOk(var applied):
+                            totalApplied += applied.AppliedCount;
+                            currentVersion = applied.ToVersion;
                             updateVersion(currentVersion);
 
                             if (!batch.HasMore)
                             {
-                                return new Result<int, SyncError>.Success(totalApplied);
+                                return new IntSyncOk(totalApplied);
                             }
 
                             break;
 
-                        case Result<BatchApplyResult, SyncError>.Failure applyFailure:
-                            return new Result<int, SyncError>.Failure(applyFailure.ErrorValue);
-
-                        default:
-                            return new Result<int, SyncError>.Failure(
-                                new SyncErrorDatabase("Unexpected apply result type")
-                            );
+                        case BatchApplyResultError(var applyError):
+                            return new IntSyncError(applyError);
                     }
 
                     break;
 
-                case Result<SyncBatch, SyncError>.Failure batchFailure:
-                    return new Result<int, SyncError>.Failure(batchFailure.ErrorValue);
-
-                default:
-                    return new Result<int, SyncError>.Failure(
-                        new SyncErrorDatabase("Unexpected batch result type")
-                    );
+                case SyncBatchError(var batchError):
+                    return new IntSyncError(batchError);
             }
         }
     }
 
-    private static Result<SyncBatch, SyncError> CreateBatchFromChanges(
+    private static SyncBatchResult CreateBatchFromChanges(
         IReadOnlyList<SyncLogEntry> changes,
         long fromVersion,
         int batchSize
     )
     {
         var hasMore = changes.Count > batchSize;
-        var batchChanges = hasMore ? changes.Take(batchSize).ToList() : changes.ToList();
+        var batchChanges = hasMore ? changes.Take(batchSize).ToList() : [.. changes];
         var toVersion = batchChanges.Count > 0 ? batchChanges[^1].Version : fromVersion;
 
-        return new Result<SyncBatch, SyncError>.Success(
-            new SyncBatch(batchChanges, fromVersion, toVersion, hasMore)
-        );
+        return new SyncBatchOk(new SyncBatch(batchChanges, fromVersion, toVersion, hasMore));
     }
 }

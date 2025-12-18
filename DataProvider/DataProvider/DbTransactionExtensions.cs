@@ -1,5 +1,6 @@
 using System.Data;
-using Results;
+using Outcome;
+using Selecta;
 
 namespace DataProvider;
 
@@ -25,12 +26,12 @@ public static class DbTransactionExtensions
     )
     {
         if (transaction?.Connection == null)
-            return new Result<IReadOnlyList<T>, SqlError>.Failure(
+            return new Result<IReadOnlyList<T>, SqlError>.Error<IReadOnlyList<T>, SqlError>(
                 SqlError.Create("Transaction or connection is null")
             );
 
         if (string.IsNullOrWhiteSpace(sql))
-            return new Result<IReadOnlyList<T>, SqlError>.Failure(
+            return new Result<IReadOnlyList<T>, SqlError>.Error<IReadOnlyList<T>, SqlError>(
                 SqlError.Create("SQL is null or empty")
             );
 
@@ -59,11 +60,11 @@ public static class DbTransactionExtensions
                 }
             }
 
-            return new Result<IReadOnlyList<T>, SqlError>.Success(results.AsReadOnly());
+            return new Result<IReadOnlyList<T>, SqlError>.Ok<IReadOnlyList<T>, SqlError>(results.AsReadOnly());
         }
         catch (Exception ex)
         {
-            return new Result<IReadOnlyList<T>, SqlError>.Failure(SqlError.FromException(ex));
+            return new Result<IReadOnlyList<T>, SqlError>.Error<IReadOnlyList<T>, SqlError>(SqlError.FromException(ex));
         }
     }
 
@@ -81,12 +82,12 @@ public static class DbTransactionExtensions
     )
     {
         if (transaction?.Connection == null)
-            return new Result<int, SqlError>.Failure(
+            return new Result<int, SqlError>.Error<int, SqlError>(
                 SqlError.Create("Transaction or connection is null")
             );
 
         if (string.IsNullOrWhiteSpace(sql))
-            return new Result<int, SqlError>.Failure(SqlError.Create("SQL is null or empty"));
+            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.Create("SQL is null or empty"));
 
         try
         {
@@ -103,11 +104,11 @@ public static class DbTransactionExtensions
             }
 
             var rowsAffected = command.ExecuteNonQuery();
-            return new Result<int, SqlError>.Success(rowsAffected);
+            return new Result<int, SqlError>.Ok<int, SqlError>(rowsAffected);
         }
         catch (Exception ex)
         {
-            return new Result<int, SqlError>.Failure(SqlError.FromException(ex));
+            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.FromException(ex));
         }
     }
 
@@ -126,12 +127,12 @@ public static class DbTransactionExtensions
     )
     {
         if (transaction?.Connection == null)
-            return new Result<T?, SqlError>.Failure(
+            return new Result<T?, SqlError>.Error<T?, SqlError>(
                 SqlError.Create("Transaction or connection is null")
             );
 
         if (string.IsNullOrWhiteSpace(sql))
-            return new Result<T?, SqlError>.Failure(SqlError.Create("SQL is null or empty"));
+            return new Result<T?, SqlError>.Error<T?, SqlError>(SqlError.Create("SQL is null or empty"));
 
         try
         {
@@ -148,11 +149,11 @@ public static class DbTransactionExtensions
             }
 
             var result = command.ExecuteScalar();
-            return new Result<T?, SqlError>.Success(result is T value ? value : default);
+            return new Result<T?, SqlError>.Ok<T?, SqlError>(result is T value ? value : default);
         }
         catch (Exception ex)
         {
-            return new Result<T?, SqlError>.Failure(SqlError.FromException(ex));
+            return new Result<T?, SqlError>.Error<T?, SqlError>(SqlError.FromException(ex));
         }
     }
 }

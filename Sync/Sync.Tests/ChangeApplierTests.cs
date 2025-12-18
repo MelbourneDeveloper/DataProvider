@@ -1,5 +1,5 @@
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
 using Xunit;
 
 namespace Sync.Tests;
@@ -47,7 +47,7 @@ public sealed class ChangeApplierTests : IDisposable
             entry =>
             {
                 appliedEntries.Add(entry);
-                return new Result<bool, SyncError>.Success(true);
+                return new BoolSyncOk(true);
             }
         );
 
@@ -101,10 +101,10 @@ public sealed class ChangeApplierTests : IDisposable
                 // Child fails first time (FK violation), succeeds after Parent is inserted
                 if (entry.TableName == "Child" && count == 0)
                 {
-                    return new Result<bool, SyncError>.Success(false); // FK violation
+                    return new BoolSyncOk(false); // FK violation
                 }
 
-                return new Result<bool, SyncError>.Success(true);
+                return new BoolSyncOk(true);
             }
         );
 
@@ -134,16 +134,11 @@ public sealed class ChangeApplierTests : IDisposable
             false
         );
 
-        var result = ChangeApplier.ApplyBatch(
-            batch,
-            "my-origin",
-            3,
-            _ => new Result<bool, SyncError>.Success(false)
-        ); // Always FK violation
+        var result = ChangeApplier.ApplyBatch(batch, "my-origin", 3, _ => new BoolSyncOk(false)); // Always FK violation
 
-        Assert.IsType<Result<BatchApplyResult, SyncError>.Failure>(result);
-        var failure = (Result<BatchApplyResult, SyncError>.Failure)result;
-        Assert.IsType<SyncErrorDeferredChangeFailed>(failure.ErrorValue);
+        Assert.IsType<BatchApplyResultError>(result);
+        var failure = (BatchApplyResultError)result;
+        Assert.IsType<SyncErrorDeferredChangeFailed>(failure.Value);
     }
 
     [Fact]
@@ -214,7 +209,7 @@ public sealed class ChangeApplierTests : IDisposable
         return cmd.ExecuteScalar() as string;
     }
 
-    private Result<bool, SyncError> ApplyToDb(SyncLogEntry entry)
+    private BoolSyncResult ApplyToDb(SyncLogEntry entry)
     {
         try
         {
@@ -250,26 +245,26 @@ public sealed class ChangeApplierTests : IDisposable
             }
             else
             {
-                return new Result<bool, SyncError>.Success(true);
+                return new BoolSyncOk(true);
             }
 
             cmd.ExecuteNonQuery();
-            return new Result<bool, SyncError>.Success(true);
+            return new BoolSyncOk(true);
         }
         catch (SqliteException ex) when (ChangeApplier.IsForeignKeyViolation(ex.Message))
         {
-            return new Result<bool, SyncError>.Success(false);
+            return new BoolSyncOk(false);
         }
         catch (Exception ex)
         {
-            return new Result<bool, SyncError>.Failure(new SyncErrorDatabase(ex.Message));
+            return new BoolSyncError(new SyncErrorDatabase(ex.Message));
         }
     }
 
     private static T AssertSuccess<T>(Result<T, SyncError> result)
     {
-        Assert.IsType<Result<T, SyncError>.Success>(result);
-        return ((Result<T, SyncError>.Success)result).Value;
+        Assert.IsType<Result<T, SyncError>.Ok<T, SyncError>>(result);
+        return ((Result<T, SyncError>.Ok<T, SyncError>)result).Value;
     }
 
     public void Dispose() => _db.Dispose();

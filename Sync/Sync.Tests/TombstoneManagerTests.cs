@@ -1,4 +1,3 @@
-using Results;
 using Xunit;
 
 namespace Sync.Tests;
@@ -129,11 +128,11 @@ public sealed class TombstoneManagerTests
             version =>
             {
                 purgedVersion = version;
-                return new Result<int, SyncError>.Success(0);
+                return new IntSyncOk(0);
             }
         );
 
-        Assert.IsType<Result<int, SyncError>.Success>(result);
+        Assert.IsType<IntSyncOk>(result);
         Assert.Equal(-1, purgedVersion); // Never called
     }
 
@@ -152,13 +151,13 @@ public sealed class TombstoneManagerTests
             version =>
             {
                 purgedVersion = version;
-                return new Result<int, SyncError>.Success(50);
+                return new IntSyncOk(50);
             }
         );
 
-        Assert.IsType<Result<int, SyncError>.Success>(result);
+        Assert.IsType<IntSyncOk>(result);
         Assert.Equal(100, purgedVersion);
-        Assert.Equal(50, ((Result<int, SyncError>.Success)result).Value);
+        Assert.Equal(50, ((IntSyncOk)result).Value);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
-using Results;
+using Outcome;
+using Selecta;
 using Xunit;
 
 namespace Lql.Tests;
@@ -24,9 +25,9 @@ public class LqlErrorHandlingTests
         var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<LqlStatement, SqlError>.Failure>(result);
-        var failure = (Result<LqlStatement, SqlError>.Failure)result;
-        Assert.Contains("Empty LQL input", failure.ErrorValue.Message, StringComparison.Ordinal);
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
+        Assert.Contains("Empty LQL input", failure.Value.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -39,9 +40,9 @@ public class LqlErrorHandlingTests
         var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<LqlStatement, SqlError>.Failure>(result);
-        var failure = (Result<LqlStatement, SqlError>.Failure)result;
-        Assert.Contains("whitespace", failure.ErrorValue.Message, StringComparison.Ordinal);
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
+        Assert.Contains("whitespace", failure.Value.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -56,12 +57,12 @@ public class LqlErrorHandlingTests
         var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<LqlStatement, SqlError>.Failure>(result);
-        var failure = (Result<LqlStatement, SqlError>.Failure)result;
-        Assert.Contains("Syntax error", failure.ErrorValue.Message, StringComparison.Ordinal);
-        Assert.NotNull(failure.ErrorValue.Position);
-        Assert.True(failure.ErrorValue.Position!.Line > 0);
-        Assert.True(failure.ErrorValue.Position.Column >= 0);
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
+        Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
+        Assert.NotNull(failure.Value.Position);
+        Assert.True(failure.Value.Position!.Line > 0);
+        Assert.True(failure.Value.Position.Column >= 0);
     }
 
     [Fact]
@@ -76,10 +77,10 @@ public class LqlErrorHandlingTests
         var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<LqlStatement, SqlError>.Failure>(result);
-        var failure = (Result<LqlStatement, SqlError>.Failure)result;
-        Assert.Contains("Syntax error", failure.ErrorValue.Message, StringComparison.Ordinal);
-        Assert.NotNull(failure.ErrorValue.Position);
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
+        Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
+        Assert.NotNull(failure.Value.Position);
     }
 
     [Fact]
@@ -94,10 +95,10 @@ public class LqlErrorHandlingTests
         var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<LqlStatement, SqlError>.Failure>(result);
-        var failure = (Result<LqlStatement, SqlError>.Failure)result;
-        Assert.Contains("Syntax error", failure.ErrorValue.Message, StringComparison.Ordinal);
-        Assert.NotNull(failure.ErrorValue.Position);
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
+        Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
+        Assert.NotNull(failure.Value.Position);
     }
 
     [Fact]
@@ -112,10 +113,10 @@ public class LqlErrorHandlingTests
         var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<LqlStatement, SqlError>.Failure>(result);
-        var failure = (Result<LqlStatement, SqlError>.Failure)result;
-        Assert.Contains("Syntax error", failure.ErrorValue.Message, StringComparison.Ordinal);
-        Assert.NotNull(failure.ErrorValue.Position);
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
+        Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
+        Assert.NotNull(failure.Value.Position);
     }
 
     [Fact]
@@ -130,10 +131,10 @@ public class LqlErrorHandlingTests
         var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<LqlStatement, SqlError>.Failure>(result);
-        var failure = (Result<LqlStatement, SqlError>.Failure)result;
-        Assert.Contains("Syntax error", failure.ErrorValue.Message, StringComparison.Ordinal);
-        Assert.NotNull(failure.ErrorValue.Position);
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
+        Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
+        Assert.NotNull(failure.Value.Position);
     }
 
     [Fact]
@@ -148,10 +149,10 @@ public class LqlErrorHandlingTests
         var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<LqlStatement, SqlError>.Failure>(result);
-        var failure = (Result<LqlStatement, SqlError>.Failure)result;
-        Assert.Contains("Syntax error", failure.ErrorValue.Message, StringComparison.Ordinal);
-        Assert.NotNull(failure.ErrorValue.Position);
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
+        Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
+        Assert.NotNull(failure.Value.Position);
     }
 
     [Fact]
@@ -166,10 +167,10 @@ public class LqlErrorHandlingTests
         var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<LqlStatement, SqlError>.Failure>(result);
-        var failure = (Result<LqlStatement, SqlError>.Failure)result;
-        Assert.Contains("Syntax error", failure.ErrorValue.Message, StringComparison.Ordinal);
-        Assert.NotNull(failure.ErrorValue.Position);
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
+        Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
+        Assert.NotNull(failure.Value.Position);
     }
 
     [Fact]
@@ -184,10 +185,10 @@ public class LqlErrorHandlingTests
         var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<LqlStatement, SqlError>.Failure>(result);
-        var failure = (Result<LqlStatement, SqlError>.Failure)result;
-        Assert.Contains("Syntax error", failure.ErrorValue.Message, StringComparison.Ordinal);
-        Assert.NotNull(failure.ErrorValue.Position);
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
+        Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
+        Assert.NotNull(failure.Value.Position);
     }
 
     [Fact]
@@ -204,10 +205,10 @@ public class LqlErrorHandlingTests
         var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<LqlStatement, SqlError>.Failure>(result);
-        var failure = (Result<LqlStatement, SqlError>.Failure)result;
-        Assert.Contains("Syntax error", failure.ErrorValue.Message, StringComparison.Ordinal);
-        Assert.NotNull(failure.ErrorValue.Position);
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
+        Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
+        Assert.NotNull(failure.Value.Position);
     }
 
     /*
@@ -224,10 +225,10 @@ public class LqlErrorHandlingTests
         var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<LqlStatement, SqlError>.Failure>(result);
-        var failure = (Result<LqlStatement, SqlError>.Failure)result;
-        Assert.Contains("Syntax error", failure.ErrorValue.Message, StringComparison.Ordinal);
-        Assert.NotNull(failure.ErrorValue.Position);
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
+        Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
+        Assert.NotNull(failure.Value.Position);
     }
     */
 
@@ -246,17 +247,17 @@ public class LqlErrorHandlingTests
         var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<LqlStatement, SqlError>.Failure>(result);
-        var failure = (Result<LqlStatement, SqlError>.Failure)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
 
         // Check that the error message includes position information
-        Assert.Contains("line", failure.ErrorValue.FormattedMessage, StringComparison.Ordinal);
-        Assert.Contains("column", failure.ErrorValue.FormattedMessage, StringComparison.Ordinal);
+        Assert.Contains("line", failure.Value.FormattedMessage, StringComparison.Ordinal);
+        Assert.Contains("column", failure.Value.FormattedMessage, StringComparison.Ordinal);
 
         // Check that position information is available
-        Assert.NotNull(failure.ErrorValue.Position);
-        Assert.True(failure.ErrorValue.Position!.Line > 0);
-        Assert.True(failure.ErrorValue.Position.Column >= 0);
+        Assert.NotNull(failure.Value.Position);
+        Assert.True(failure.Value.Position!.Line > 0);
+        Assert.True(failure.Value.Position.Column >= 0);
     }
 
     [Fact]
@@ -271,8 +272,8 @@ public class LqlErrorHandlingTests
         var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<LqlStatement, SqlError>.Success>(result);
-        var success = (Result<LqlStatement, SqlError>.Success)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(result);
+        var success = (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)result;
         Assert.NotNull(success.Value);
     }
 }
