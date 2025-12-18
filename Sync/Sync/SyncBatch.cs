@@ -7,11 +7,13 @@ namespace Sync;
 /// <param name="FromVersion">The starting version (exclusive) for this batch.</param>
 /// <param name="ToVersion">The ending version (inclusive) for this batch.</param>
 /// <param name="HasMore">True if more batches are available after this one.</param>
+/// <param name="Hash">Optional SHA-256 hash of batch contents for verification (spec S15.4).</param>
 public sealed record SyncBatch(
     IReadOnlyList<SyncLogEntry> Changes,
     long FromVersion,
     long ToVersion,
-    bool HasMore
+    bool HasMore,
+    string? Hash = null
 );
 
 /// <summary>

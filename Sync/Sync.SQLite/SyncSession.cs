@@ -1,5 +1,4 @@
 using Microsoft.Data.Sqlite;
-using Outcome;
 
 namespace Sync.SQLite;
 
@@ -14,18 +13,18 @@ public static class SyncSessionManager
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
     /// <returns>Success or database error.</returns>
-    public static Result<bool, SyncError> EnableSuppression(SqliteConnection connection)
+    public static BoolSyncResult EnableSuppression(SqliteConnection connection)
     {
         try
         {
             using var cmd = connection.CreateCommand();
             cmd.CommandText = "UPDATE _sync_session SET sync_active = 1";
             cmd.ExecuteNonQuery();
-            return new Result<bool, SyncError>.Ok<bool, SyncError>(true);
+            return new BoolSyncOk(true);
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Error<bool, SyncError>(
+            return new BoolSyncError(
                 new SyncErrorDatabase($"Failed to enable trigger suppression: {ex.Message}")
             );
         }
@@ -36,18 +35,18 @@ public static class SyncSessionManager
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
     /// <returns>Success or database error.</returns>
-    public static Result<bool, SyncError> DisableSuppression(SqliteConnection connection)
+    public static BoolSyncResult DisableSuppression(SqliteConnection connection)
     {
         try
         {
             using var cmd = connection.CreateCommand();
             cmd.CommandText = "UPDATE _sync_session SET sync_active = 0";
             cmd.ExecuteNonQuery();
-            return new Result<bool, SyncError>.Ok<bool, SyncError>(true);
+            return new BoolSyncOk(true);
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Error<bool, SyncError>(
+            return new BoolSyncError(
                 new SyncErrorDatabase($"Failed to disable trigger suppression: {ex.Message}")
             );
         }
@@ -58,20 +57,18 @@ public static class SyncSessionManager
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
     /// <returns>True if suppression active, or database error.</returns>
-    public static Result<bool, SyncError> IsSuppressionActive(SqliteConnection connection)
+    public static BoolSyncResult IsSuppressionActive(SqliteConnection connection)
     {
         try
         {
             using var cmd = connection.CreateCommand();
             cmd.CommandText = "SELECT sync_active FROM _sync_session LIMIT 1";
             var result = cmd.ExecuteScalar();
-            return new Result<bool, SyncError>.Ok<bool, SyncError>(
-                result is long value && value == 1
-            );
+            return new BoolSyncOk(result is long value && value == 1);
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Error<bool, SyncError>(
+            return new BoolSyncError(
                 new SyncErrorDatabase($"Failed to check suppression state: {ex.Message}")
             );
         }

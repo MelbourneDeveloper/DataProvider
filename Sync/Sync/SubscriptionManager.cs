@@ -212,8 +212,44 @@ public static class SubscriptionManager
             return false;
         }
 
-        // Simple containment check - filter is JSON array of PK values
-        // Real implementation would parse JSON properly
-        return filter.Contains(pkValue, StringComparison.Ordinal);
+        // Extract actual PK value from JSON pkValue
+        // pkValue format: {"Id":"p1"} or {"Id":"uuid-here"}
+        // filter format: ["p1", "p2"] (JSON array of raw PK values)
+        var actualPkValue = ExtractPkValue(pkValue);
+        if (actualPkValue is null)
+        {
+            // Fallback to simple containment if JSON parsing fails
+            return filter.Contains(pkValue, StringComparison.Ordinal);
+        }
+
+        // Check if filter contains this PK value
+        // Filter is typically a JSON array like ["p1", "p2"]
+        return filter.Contains($"\"{actualPkValue}\"", StringComparison.Ordinal);
+    }
+
+    private static string? ExtractPkValue(string pkValue)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(pkValue);
+            var root = doc.RootElement;
+
+            if (root.ValueKind != System.Text.Json.JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            // Get the first property value (single-column PK)
+            foreach (var prop in root.EnumerateObject())
+            {
+                return prop.Value.GetString();
+            }
+
+            return null;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;
+        }
     }
 }

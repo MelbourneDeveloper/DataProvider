@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
-using Outcome;
 
 namespace Sync.SQLite;
 
@@ -18,10 +17,7 @@ public static class ChangeApplierSQLite
     /// <param name="connection">SQLite connection.</param>
     /// <param name="entry">The sync log entry to apply.</param>
     /// <returns>True if applied, false if FK violation, or error.</returns>
-    public static Result<bool, SyncError> ApplyChange(
-        SqliteConnection connection,
-        SyncLogEntry entry
-    )
+    public static BoolSyncResult ApplyChange(SqliteConnection connection, SyncLogEntry entry)
     {
         try
         {
@@ -30,7 +26,7 @@ public static class ChangeApplierSQLite
                 SyncOperation.Insert => ApplyInsert(connection, entry),
                 SyncOperation.Update => ApplyUpdate(connection, entry),
                 SyncOperation.Delete => ApplyDelete(connection, entry),
-                _ => new Result<bool, SyncError>.Error<bool, SyncError>(
+                _ => new BoolSyncError(
                     new SyncErrorDatabase($"Unknown operation: {entry.Operation}")
                 ),
             };
@@ -38,11 +34,11 @@ public static class ChangeApplierSQLite
         catch (SqliteException ex) when (IsForeignKeyViolation(ex))
         {
             // FK violation - return false to defer for retry
-            return new Result<bool, SyncError>.Ok<bool, SyncError>(false);
+            return new BoolSyncOk(false);
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Error<bool, SyncError>(
+            return new BoolSyncError(
                 new SyncErrorDatabase($"Failed to apply change: {ex.Message}")
             );
         }
@@ -53,24 +49,17 @@ public static class ChangeApplierSQLite
         "CA2100:Review SQL queries for security vulnerabilities",
         Justification = "Table names come from internal sync log, not user input"
     )]
-    private static Result<bool, SyncError> ApplyInsert(
-        SqliteConnection connection,
-        SyncLogEntry entry
-    )
+    private static BoolSyncResult ApplyInsert(SqliteConnection connection, SyncLogEntry entry)
     {
         if (string.IsNullOrEmpty(entry.Payload))
         {
-            return new Result<bool, SyncError>.Error<bool, SyncError>(
-                new SyncErrorDatabase("Insert requires payload")
-            );
+            return new BoolSyncError(new SyncErrorDatabase("Insert requires payload"));
         }
 
         var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(entry.Payload);
         if (data == null || data.Count == 0)
         {
-            return new Result<bool, SyncError>.Error<bool, SyncError>(
-                new SyncErrorDatabase("Invalid payload JSON")
-            );
+            return new BoolSyncError(new SyncErrorDatabase("Invalid payload JSON"));
         }
 
         var columns = string.Join(", ", data.Keys);
@@ -86,13 +75,10 @@ public static class ChangeApplierSQLite
         }
 
         cmd.ExecuteNonQuery();
-        return new Result<bool, SyncError>.Ok<bool, SyncError>(true);
+        return new BoolSyncOk(true);
     }
 
-    private static Result<bool, SyncError> ApplyUpdate(
-        SqliteConnection connection,
-        SyncLogEntry entry
-    ) =>
+    private static BoolSyncResult ApplyUpdate(SqliteConnection connection, SyncLogEntry entry) =>
         // For simplicity, UPDATE uses same UPSERT logic as INSERT
         ApplyInsert(connection, entry);
 
@@ -101,17 +87,12 @@ public static class ChangeApplierSQLite
         "CA2100:Review SQL queries for security vulnerabilities",
         Justification = "Table names come from internal sync log, not user input"
     )]
-    private static Result<bool, SyncError> ApplyDelete(
-        SqliteConnection connection,
-        SyncLogEntry entry
-    )
+    private static BoolSyncResult ApplyDelete(SqliteConnection connection, SyncLogEntry entry)
     {
         var pkData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(entry.PkValue);
         if (pkData == null || pkData.Count == 0)
         {
-            return new Result<bool, SyncError>.Error<bool, SyncError>(
-                new SyncErrorDatabase("Invalid pk_value JSON")
-            );
+            return new BoolSyncError(new SyncErrorDatabase("Invalid pk_value JSON"));
         }
 
         var pkColumn = pkData.Keys.First();
@@ -122,7 +103,7 @@ public static class ChangeApplierSQLite
         cmd.Parameters.AddWithValue("@pk", pkValue);
         cmd.ExecuteNonQuery();
 
-        return new Result<bool, SyncError>.Ok<bool, SyncError>(true);
+        return new BoolSyncOk(true);
     }
 
     private static object JsonElementToValue(JsonElement element) =>

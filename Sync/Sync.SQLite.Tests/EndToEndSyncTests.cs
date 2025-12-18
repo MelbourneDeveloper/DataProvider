@@ -185,7 +185,8 @@ public sealed class EndToEndSyncTests : IDisposable
             new SyncBatch([fakeEntry], 0, 1, false),
             _targetOrigin,
             3,
-            entry => ApplySingleChange(_targetDb, entry)
+            entry => ApplySingleChange(_targetDb, entry),
+            NullLogger.Instance
         );
 
         // Assert: No error, but nothing applied
@@ -231,7 +232,7 @@ public sealed class EndToEndSyncTests : IDisposable
         SyncSchema.CreateSchema(connection);
         SyncSchema.SetOriginId(connection, originId);
 
-        // Create Person table with sync triggers
+        // Create Person table
         using var cmd = connection.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE Person (
@@ -239,53 +240,15 @@ public sealed class EndToEndSyncTests : IDisposable
                 Name TEXT NOT NULL,
                 Email TEXT NOT NULL
             );
-
-            CREATE TRIGGER Person_sync_insert
-            AFTER INSERT ON Person
-            WHEN (SELECT sync_active FROM _sync_session) = 0
-            BEGIN
-                INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
-                VALUES (
-                    'Person',
-                    json_object('Id', NEW.Id),
-                    'insert',
-                    json_object('Id', NEW.Id, 'Name', NEW.Name, 'Email', NEW.Email),
-                    (SELECT value FROM _sync_state WHERE key = 'origin_id'),
-                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-                );
-            END;
-
-            CREATE TRIGGER Person_sync_update
-            AFTER UPDATE ON Person
-            WHEN (SELECT sync_active FROM _sync_session) = 0
-            BEGIN
-                INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
-                VALUES (
-                    'Person',
-                    json_object('Id', NEW.Id),
-                    'update',
-                    json_object('Id', NEW.Id, 'Name', NEW.Name, 'Email', NEW.Email),
-                    (SELECT value FROM _sync_state WHERE key = 'origin_id'),
-                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-                );
-            END;
-
-            CREATE TRIGGER Person_sync_delete
-            AFTER DELETE ON Person
-            WHEN (SELECT sync_active FROM _sync_session) = 0
-            BEGIN
-                INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
-                VALUES (
-                    'Person',
-                    json_object('Id', OLD.Id),
-                    'delete',
-                    NULL,
-                    (SELECT value FROM _sync_state WHERE key = 'origin_id'),
-                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-                );
-            END;
             """;
         cmd.ExecuteNonQuery();
+
+        // Use TriggerGenerator to create sync triggers (spec Section 9)
+        var triggerResult = TriggerGenerator.CreateTriggers(connection, "Person");
+        if (triggerResult is BoolSyncError { Value: SyncErrorDatabase dbError })
+        {
+            throw new InvalidOperationException($"Failed to create triggers: {dbError.Message}");
+        }
     }
 
     private static void InsertPerson(SqliteConnection db, string id, string name, string email)
@@ -378,7 +341,8 @@ public sealed class EndToEndSyncTests : IDisposable
                 batch,
                 myOrigin,
                 3,
-                entry => ApplySingleChange(db, entry)
+                entry => ApplySingleChange(db, entry),
+                NullLogger.Instance
             );
 
             Assert.IsType<BatchApplyResultOk>(result);

@@ -1,21 +1,19 @@
 using Microsoft.Data.Sqlite;
-using Outcome;
 
 namespace Sync.SQLite;
 
 /// <summary>
-/// Repository for CRUD operations on _sync_clients table.
-/// Server-side tracking of client sync state for tombstone retention.
-/// Implements spec Section 13.3.
+/// Repository for managing sync clients in SQLite.
+/// Implements spec Section 13 (Tombstone Retention) client tracking.
 /// </summary>
 public static class SyncClientRepository
 {
     /// <summary>
-    /// Gets all tracked clients.
+    /// Gets all sync clients from _sync_clients table.
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
-    /// <returns>List of all clients or database error.</returns>
-    public static Result<IReadOnlyList<SyncClient>, SyncError> GetAll(SqliteConnection connection)
+    /// <returns>List of sync clients or database error.</returns>
+    public static SyncClientListResult GetAll(SqliteConnection connection)
     {
         try
         {
@@ -41,30 +39,23 @@ public static class SyncClientRepository
                 );
             }
 
-            return new Result<IReadOnlyList<SyncClient>, SyncError>.Ok<
-                IReadOnlyList<SyncClient>,
-                SyncError
-            >(clients);
+            return new SyncClientListOk(clients);
         }
         catch (SqliteException ex)
         {
-            return new Result<IReadOnlyList<SyncClient>, SyncError>.Error<
-                IReadOnlyList<SyncClient>,
-                SyncError
-            >(new SyncErrorDatabase($"Failed to get clients: {ex.Message}"));
+            return new SyncClientListError(
+                new SyncErrorDatabase($"Failed to get sync clients: {ex.Message}")
+            );
         }
     }
 
     /// <summary>
-    /// Gets a client by origin ID.
+    /// Gets a sync client by origin ID.
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
-    /// <param name="originId">The client's origin ID.</param>
-    /// <returns>Client if found, null if not found, or database error.</returns>
-    public static Result<SyncClient?, SyncError> GetByOrigin(
-        SqliteConnection connection,
-        string originId
-    )
+    /// <param name="originId">Origin ID to look up.</param>
+    /// <returns>Sync client if found, null if not found, or database error.</returns>
+    public static SyncClientResult GetByOrigin(SqliteConnection connection, string originId)
     {
         try
         {
@@ -77,35 +68,37 @@ public static class SyncClientRepository
             cmd.Parameters.AddWithValue("@originId", originId);
 
             using var reader = cmd.ExecuteReader();
-            if (reader.Read())
+
+            if (!reader.Read())
             {
-                return new Result<SyncClient?, SyncError>.Ok<SyncClient?, SyncError>(
-                    new SyncClient(
-                        OriginId: reader.GetString(0),
-                        LastSyncVersion: reader.GetInt64(1),
-                        LastSyncTimestamp: reader.GetString(2),
-                        CreatedAt: reader.GetString(3)
-                    )
-                );
+                return new SyncClientOk(null);
             }
 
-            return new Result<SyncClient?, SyncError>.Ok<SyncClient?, SyncError>(null);
+            var client = new SyncClient(
+                OriginId: reader.GetString(0),
+                LastSyncVersion: reader.GetInt64(1),
+                LastSyncTimestamp: reader.GetString(2),
+                CreatedAt: reader.GetString(3)
+            );
+
+            return new SyncClientOk(client);
         }
         catch (SqliteException ex)
         {
-            return new Result<SyncClient?, SyncError>.Error<SyncClient?, SyncError>(
-                new SyncErrorDatabase($"Failed to get client: {ex.Message}")
+            return new SyncClientError(
+                new SyncErrorDatabase($"Failed to get sync client: {ex.Message}")
             );
         }
     }
 
     /// <summary>
-    /// Inserts or updates a client record.
+    /// Upserts a sync client record.
+    /// Inserts if not exists, updates if exists.
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
-    /// <param name="client">The client to upsert.</param>
+    /// <param name="client">Client to upsert.</param>
     /// <returns>Success or database error.</returns>
-    public static Result<bool, SyncError> Upsert(SqliteConnection connection, SyncClient client)
+    public static BoolSyncResult Upsert(SqliteConnection connection, SyncClient client)
     {
         try
         {
@@ -123,48 +116,47 @@ public static class SyncClientRepository
             cmd.Parameters.AddWithValue("@createdAt", client.CreatedAt);
 
             cmd.ExecuteNonQuery();
-            return new Result<bool, SyncError>.Ok<bool, SyncError>(true);
+            return new BoolSyncOk(true);
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Error<bool, SyncError>(
-                new SyncErrorDatabase($"Failed to upsert client: {ex.Message}")
+            return new BoolSyncError(
+                new SyncErrorDatabase($"Failed to upsert sync client: {ex.Message}")
             );
         }
     }
 
     /// <summary>
-    /// Deletes a client by origin ID.
+    /// Deletes a sync client by origin ID.
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
-    /// <param name="originId">The client's origin ID.</param>
+    /// <param name="originId">Origin ID to delete.</param>
     /// <returns>Success or database error.</returns>
-    public static Result<bool, SyncError> Delete(SqliteConnection connection, string originId)
+    public static BoolSyncResult Delete(SqliteConnection connection, string originId)
     {
         try
         {
             using var cmd = connection.CreateCommand();
             cmd.CommandText = "DELETE FROM _sync_clients WHERE origin_id = @originId";
             cmd.Parameters.AddWithValue("@originId", originId);
-
             cmd.ExecuteNonQuery();
-            return new Result<bool, SyncError>.Ok<bool, SyncError>(true);
+            return new BoolSyncOk(true);
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Error<bool, SyncError>(
-                new SyncErrorDatabase($"Failed to delete client: {ex.Message}")
+            return new BoolSyncError(
+                new SyncErrorDatabase($"Failed to delete sync client: {ex.Message}")
             );
         }
     }
 
     /// <summary>
     /// Gets the minimum sync version across all clients.
-    /// This is the safe purge version for tombstones.
+    /// Used for tombstone retention calculation (spec Section 13.4).
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
     /// <returns>Minimum version or 0 if no clients, or database error.</returns>
-    public static Result<long, SyncError> GetMinVersion(SqliteConnection connection)
+    public static LongSyncResult GetMinVersion(SqliteConnection connection)
     {
         try
         {
@@ -172,25 +164,26 @@ public static class SyncClientRepository
             cmd.CommandText = "SELECT MIN(last_sync_version) FROM _sync_clients";
 
             var result = cmd.ExecuteScalar();
-            var minVersion = result is long v ? v : 0;
+            var version = result is long v ? v : 0;
 
-            return new Result<long, SyncError>.Ok<long, SyncError>(minVersion);
+            return new LongSyncOk(version);
         }
         catch (SqliteException ex)
         {
-            return new Result<long, SyncError>.Error<long, SyncError>(
-                new SyncErrorDatabase($"Failed to get min version: {ex.Message}")
+            return new LongSyncError(
+                new SyncErrorDatabase($"Failed to get minimum sync version: {ex.Message}")
             );
         }
     }
 
     /// <summary>
-    /// Deletes stale clients (those inactive for too long).
+    /// Deletes multiple sync clients by origin IDs.
+    /// Used to clean up stale clients (spec Section 13.5).
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
-    /// <param name="originIds">List of origin IDs to delete.</param>
-    /// <returns>Number of clients deleted or database error.</returns>
-    public static Result<int, SyncError> DeleteStaleClients(
+    /// <param name="originIds">Origin IDs to delete.</param>
+    /// <returns>Number of deleted clients or database error.</returns>
+    public static IntSyncResult DeleteMultiple(
         SqliteConnection connection,
         IEnumerable<string> originIds
     )
@@ -206,12 +199,12 @@ public static class SyncClientRepository
                 deleted += cmd.ExecuteNonQuery();
             }
 
-            return new Result<int, SyncError>.Ok<int, SyncError>(deleted);
+            return new IntSyncOk(deleted);
         }
         catch (SqliteException ex)
         {
-            return new Result<int, SyncError>.Error<int, SyncError>(
-                new SyncErrorDatabase($"Failed to delete stale clients: {ex.Message}")
+            return new IntSyncError(
+                new SyncErrorDatabase($"Failed to delete sync clients: {ex.Message}")
             );
         }
     }

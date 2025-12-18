@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Logging.Abstractions;
 using Outcome;
 using Xunit;
 
@@ -6,6 +7,7 @@ namespace Sync.Tests;
 
 public sealed class ChangeApplierTests : IDisposable
 {
+    private static readonly NullLogger Logger = NullLogger.Instance;
     private readonly TestDb _db = new();
 
     [Fact]
@@ -48,7 +50,8 @@ public sealed class ChangeApplierTests : IDisposable
             {
                 appliedEntries.Add(entry);
                 return new BoolSyncOk(true);
-            }
+            },
+            Logger
         );
 
         var applyResult = AssertSuccess(result);
@@ -105,7 +108,8 @@ public sealed class ChangeApplierTests : IDisposable
                 }
 
                 return new BoolSyncOk(true);
-            }
+            },
+            Logger
         );
 
         var applyResult = AssertSuccess(result);
@@ -134,7 +138,7 @@ public sealed class ChangeApplierTests : IDisposable
             false
         );
 
-        var result = ChangeApplier.ApplyBatch(batch, "my-origin", 3, _ => new BoolSyncOk(false)); // Always FK violation
+        var result = ChangeApplier.ApplyBatch(batch, "my-origin", 3, _ => new BoolSyncOk(false), Logger); // Always FK violation
 
         Assert.IsType<BatchApplyResultError>(result);
         var failure = (BatchApplyResultError)result;

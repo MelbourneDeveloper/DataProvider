@@ -46,6 +46,7 @@ This repository contains two complementary projects:
 
 - **NEVER THROW EXCEPTIONS** - Always return `Result<T>` for fallible operations. Wrap anything that can fail in try/catch
 - **NO CLASSES** - Use records and static methods. FP style with pure static methods
+- **Copious logging with ILogger** - Especially in the sync projects
 - **NO INTERFACES** - Use `Action<T>` or `Func<T>` for abstractions
 - **AVOID ASSIGNMENTS** - Use expressions where possible
 - **Static extension methods on IDbConnection and IDbTransaction only** - No classes for data access

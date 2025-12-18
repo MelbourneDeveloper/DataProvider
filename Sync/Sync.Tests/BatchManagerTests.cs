@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Outcome;
 using Xunit;
 
@@ -6,6 +7,7 @@ namespace Sync.Tests;
 public sealed class BatchManagerTests : IDisposable
 {
     private readonly TestDb _db = new();
+    private readonly NullLogger _logger = NullLogger.Instance;
 
     [Fact]
     public void FetchBatch_EmptyLog_ReturnsEmptyBatch()
@@ -13,7 +15,8 @@ public sealed class BatchManagerTests : IDisposable
         var result = BatchManager.FetchBatch(
             0,
             100,
-            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit))
+            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit)),
+            _logger
         );
 
         var batch = AssertSuccess(result);
@@ -46,7 +49,8 @@ public sealed class BatchManagerTests : IDisposable
         var result = BatchManager.FetchBatch(
             0,
             100,
-            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit))
+            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit)),
+            _logger
         );
 
         var batch = AssertSuccess(result);
@@ -74,7 +78,8 @@ public sealed class BatchManagerTests : IDisposable
         var result = BatchManager.FetchBatch(
             0,
             3,
-            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit))
+            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit)),
+            _logger
         );
 
         var batch = AssertSuccess(result);
@@ -101,7 +106,8 @@ public sealed class BatchManagerTests : IDisposable
         var result = BatchManager.FetchBatch(
             3,
             100,
-            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit))
+            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit)),
+            _logger
         );
 
         var batch = AssertSuccess(result);
@@ -139,7 +145,8 @@ public sealed class BatchManagerTests : IDisposable
                     new BatchApplyResult(batch.Changes.Count, 0, batch.ToVersion)
                 );
             },
-            version => lastVersion = version
+            version => lastVersion = version,
+            _logger
         );
 
         var totalApplied = AssertSuccess(result);

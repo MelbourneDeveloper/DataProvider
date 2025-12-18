@@ -1,5 +1,4 @@
 using Microsoft.Data.Sqlite;
-using Outcome;
 
 namespace Sync.SQLite;
 
@@ -100,7 +99,7 @@ public static class SyncSchema
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
     /// <returns>Success or database error.</returns>
-    public static Result<bool, SyncError> CreateSchema(SqliteConnection connection)
+    public static BoolSyncResult CreateSchema(SqliteConnection connection)
     {
         try
         {
@@ -108,11 +107,11 @@ public static class SyncSchema
             cmd.CommandText =
                 $"{CreateSyncStateTable}\n{CreateSyncSessionTable}\n{CreateSyncLogTable}\n{CreateSyncClientsTable}\n{CreateSyncSubscriptionsTable}\n{InitializeSyncState}";
             cmd.ExecuteNonQuery();
-            return new Result<bool, SyncError>.Ok<bool, SyncError>(true);
+            return new BoolSyncOk(true);
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Error<bool, SyncError>(
+            return new BoolSyncError(
                 new SyncErrorDatabase($"Failed to create sync schema: {ex.Message}")
             );
         }
@@ -124,7 +123,7 @@ public static class SyncSchema
     /// <param name="connection">SQLite connection.</param>
     /// <param name="originId">UUID v4 origin ID.</param>
     /// <returns>Success or database error.</returns>
-    public static Result<bool, SyncError> SetOriginId(SqliteConnection connection, string originId)
+    public static BoolSyncResult SetOriginId(SqliteConnection connection, string originId)
     {
         try
         {
@@ -132,11 +131,11 @@ public static class SyncSchema
             cmd.CommandText = "UPDATE _sync_state SET value = @origin WHERE key = 'origin_id'";
             cmd.Parameters.AddWithValue("@origin", originId);
             cmd.ExecuteNonQuery();
-            return new Result<bool, SyncError>.Ok<bool, SyncError>(true);
+            return new BoolSyncOk(true);
         }
         catch (SqliteException ex)
         {
-            return new Result<bool, SyncError>.Error<bool, SyncError>(
+            return new BoolSyncError(
                 new SyncErrorDatabase($"Failed to set origin ID: {ex.Message}")
             );
         }
@@ -147,7 +146,7 @@ public static class SyncSchema
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
     /// <returns>Origin ID or database error.</returns>
-    public static Result<string, SyncError> GetOriginId(SqliteConnection connection)
+    public static StringSyncResult GetOriginId(SqliteConnection connection)
     {
         try
         {
@@ -155,14 +154,12 @@ public static class SyncSchema
             cmd.CommandText = "SELECT value FROM _sync_state WHERE key = 'origin_id'";
             var result = cmd.ExecuteScalar();
             return result is string originId
-                ? new Result<string, SyncError>.Ok<string, SyncError>(originId)
-                : new Result<string, SyncError>.Error<string, SyncError>(
-                    new SyncErrorDatabase("Origin ID not found")
-                );
+                ? new StringSyncOk(originId)
+                : new StringSyncError(new SyncErrorDatabase("Origin ID not found"));
         }
         catch (SqliteException ex)
         {
-            return new Result<string, SyncError>.Error<string, SyncError>(
+            return new StringSyncError(
                 new SyncErrorDatabase($"Failed to get origin ID: {ex.Message}")
             );
         }
