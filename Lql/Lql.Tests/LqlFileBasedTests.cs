@@ -52,7 +52,9 @@ public partial class LqlFileBasedTests
             );
         }
         Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(statementResult);
-        var statement = ((Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)statementResult).Value;
+        var statement = (
+            (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)statementResult
+        ).Value;
 
         Result<string, SqlError> sqlResult = dialect switch
         {
@@ -164,7 +166,9 @@ public partial class LqlFileBasedTests
 
         var statementResult = LqlStatementConverter.ToStatement(largeLqlCode);
         Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(statementResult);
-        var statement = ((Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)statementResult).Value;
+        var statement = (
+            (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)statementResult
+        ).Value;
 
         var sqlResult = statement.ToPostgreSql();
         Assert.IsType<Result<string, SqlError>.Ok<string, SqlError>>(sqlResult);
@@ -188,8 +192,12 @@ public partial class LqlFileBasedTests
         for (int i = 0; i < 1000; i++)
         {
             var statementResult = LqlStatementConverter.ToStatement(lqlCode);
-            Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(statementResult);
-            var statement = ((Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)statementResult).Value;
+            Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(
+                statementResult
+            );
+            var statement = (
+                (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)statementResult
+            ).Value;
 
             var sqlResult = statement.ToPostgreSql();
             Assert.IsType<Result<string, SqlError>.Ok<string, SqlError>>(sqlResult);

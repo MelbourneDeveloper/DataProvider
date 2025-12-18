@@ -434,7 +434,11 @@ public sealed class SyncIntegrationTests : IDisposable
             _ => throw new ArgumentException($"Unknown operation: {op}"),
         };
 
-    private int PullChanges(SqliteConnection source, SqliteConnection target, string targetOrigin) => PullChangesWithBatchSize(source, target, targetOrigin, 1000);
+    private int PullChanges(
+        SqliteConnection source,
+        SqliteConnection target,
+        string targetOrigin
+    ) => PullChangesWithBatchSize(source, target, targetOrigin, 1000);
 
     private int PullChangesWithBatchSize(
         SqliteConnection source,
@@ -481,7 +485,11 @@ public sealed class SyncIntegrationTests : IDisposable
         return totalApplied;
     }
 
-    private int PushChanges(SqliteConnection source, SqliteConnection target, string targetOrigin) =>
+    private int PushChanges(
+        SqliteConnection source,
+        SqliteConnection target,
+        string targetOrigin
+    ) =>
         // For push, we read from source's log and apply to target
         // This is similar to pull but in reverse direction
         PullChanges(source, target, targetOrigin);

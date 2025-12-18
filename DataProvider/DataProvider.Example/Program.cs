@@ -4,6 +4,7 @@ using DataProvider.Example.Model;
 using Generated;
 using Lql.SQLite;
 using Microsoft.Data.Sqlite;
+using Selecta;
 using static DataProvider.Example.MapFunctions;
 
 namespace DataProvider.Example;
@@ -315,9 +316,7 @@ internal static class Program
                 }
                 break;
             case BasicOrderListError premiumErr:
-                Console.WriteLine(
-                    $"❌ Error loading premium orders: {premiumErr.Value.Message}"
-                );
+                Console.WriteLine($"❌ Error loading premium orders: {premiumErr.Value.Message}");
                 break;
         }
     }

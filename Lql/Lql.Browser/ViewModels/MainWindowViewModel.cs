@@ -510,7 +510,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 Console.WriteLine("Converting LQL to SQL...");
                 MessagesPanelViewModel.AddInfo("Converting LQL to SQL...");
                 var lqlStatement = LqlStatementConverter.ToStatement(ActiveTab.Content);
-                if (lqlStatement is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> lqlSuccess)
+                if (
+                    lqlStatement
+                    is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> lqlSuccess
+                )
                 {
                     Console.WriteLine("LQL parsed successfully");
                     var sqlResult = lqlSuccess.Value.ToSQLite();
@@ -521,7 +524,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                         MessagesPanelViewModel.SetTranspiledSql(sqlToExecute);
                         StatusBarViewModel.StatusMessage = $"LQL converted to SQL: {sqlToExecute}";
                     }
-                    else if (sqlResult is Result<string, SqlError>.Error<string, SqlError> sqlFailure)
+                    else if (
+                        sqlResult is Result<string, SqlError>.Error<string, SqlError> sqlFailure
+                    )
                     {
                         Console.WriteLine($"LQL conversion error: {sqlFailure.Value.Message}");
                         MessagesPanelViewModel.AddError(
@@ -539,12 +544,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                         return;
                     }
                 }
-                else if (lqlStatement is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> lqlFailure)
+                else if (
+                    lqlStatement
+                    is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> lqlFailure
+                )
                 {
                     Console.WriteLine($"LQL parse error: {lqlFailure.Value.Message}");
-                    MessagesPanelViewModel.AddError(
-                        $"LQL parse error: {lqlFailure.Value.Message}"
-                    );
+                    MessagesPanelViewModel.AddError($"LQL parse error: {lqlFailure.Value.Message}");
                     StatusBarViewModel.StatusMessage =
                         $"LQL parse error: {lqlFailure.Value.Message}";
                     return;

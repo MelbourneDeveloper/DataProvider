@@ -42,7 +42,9 @@ public static class QueryExecutionService
 
             if (sqlToExecute is Result<string, string>.Error<string, string> sqlFailure)
             {
-                return new Result<QueryExecutionResult, string>.Error<QueryExecutionResult, string>(sqlFailure.Value);
+                return new Result<QueryExecutionResult, string>.Error<QueryExecutionResult, string>(
+                    sqlFailure.Value
+                );
             }
 
             var sql = ((Result<string, string>.Ok<string, string>)sqlToExecute).Value;
@@ -89,7 +91,9 @@ public static class QueryExecutionService
             };
 
             Console.WriteLine("=== ExecuteQueryAsync Completed Successfully ===");
-            return new Result<QueryExecutionResult, string>.Ok<QueryExecutionResult, string>(executionResult);
+            return new Result<QueryExecutionResult, string>.Ok<QueryExecutionResult, string>(
+                executionResult
+            );
         }
         catch (Exception ex)
         {
@@ -108,7 +112,9 @@ public static class QueryExecutionService
             Console.WriteLine("Converting LQL to SQL...");
             var lqlStatement = LqlStatementConverter.ToStatement(lqlQuery);
 
-            if (lqlStatement is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> lqlSuccess)
+            if (
+                lqlStatement is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> lqlSuccess
+            )
             {
                 Console.WriteLine("LQL parsed successfully");
                 var sqlResult = lqlSuccess.Value.ToSQLite();
@@ -128,10 +134,15 @@ public static class QueryExecutionService
                 else
                 {
                     Console.WriteLine("Unknown LQL conversion result");
-                    return new Result<string, string>.Error<string, string>("Unknown LQL conversion result");
+                    return new Result<string, string>.Error<string, string>(
+                        "Unknown LQL conversion result"
+                    );
                 }
             }
-            else if (lqlStatement is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> lqlFailure)
+            else if (
+                lqlStatement
+                is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> lqlFailure
+            )
             {
                 Console.WriteLine($"LQL parse error: {lqlFailure.Value.Message}");
                 return new Result<string, string>.Error<string, string>(
@@ -146,7 +157,9 @@ public static class QueryExecutionService
         }
         catch (Exception ex)
         {
-            return new Result<string, string>.Error<string, string>($"LQL processing error: {ex.Message}");
+            return new Result<string, string>.Error<string, string>(
+                $"LQL processing error: {ex.Message}"
+            );
         }
     }
 }

@@ -28,11 +28,8 @@ public sealed class SqlParserCsImplementation : ISqlParser
             // Determine query type from the first statement
             var queryType = DetermineQueryType(statements);
 
-            var selectStatement = new SelectStatement
-            {
-                Parameters = parameterInfos.ToFrozenSet(),
-            };
-            
+            var selectStatement = new SelectStatement { Parameters = parameterInfos.ToFrozenSet() };
+
             return new Result<SelectStatement, string>.Ok<SelectStatement, string>(selectStatement);
         }
         catch (Exception ex)

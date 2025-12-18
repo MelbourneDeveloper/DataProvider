@@ -41,7 +41,7 @@ internal static class DatabaseManager
             .Transact(
                 async (transaction) =>
                 {
-                    (bool flowControl, Result<string, SqlError> value) = await SampleDataSeeder
+                    (bool flowControl, StringSqlResult value) = await SampleDataSeeder
                         .SeedDataAsync(transaction)
                         .ConfigureAwait(false);
                     if (!flowControl)
@@ -49,9 +49,7 @@ internal static class DatabaseManager
                         return value;
                     }
 
-                    return new Result<string, SqlError>.Ok<string, SqlError>(
-                        "Data inserted successfully using generated methods"
-                    );
+                    return new StringSqlOk("Data inserted successfully using generated methods");
                 }
             )
             .ConfigureAwait(false);

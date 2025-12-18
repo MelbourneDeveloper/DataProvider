@@ -46,7 +46,9 @@ public static class DataExport
         }
         catch (Exception ex)
         {
-            return new Result<Unit, string>.Error<Unit, string>($"Error exporting CSV: {ex.Message}");
+            return new Result<Unit, string>.Error<Unit, string>(
+                $"Error exporting CSV: {ex.Message}"
+            );
         }
     }
 
@@ -82,7 +84,9 @@ public static class DataExport
         }
         catch (Exception ex)
         {
-            return new Result<Unit, string>.Error<Unit, string>($"Error exporting JSON: {ex.Message}");
+            return new Result<Unit, string>.Error<Unit, string>(
+                $"Error exporting JSON: {ex.Message}"
+            );
         }
     }
 }

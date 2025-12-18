@@ -347,7 +347,8 @@ public sealed class EndToEndSyncTests : IDisposable
         return [.. ((SyncLogListOk)result).Value];
     }
 
-    private void ApplyChangesToTarget(List<SyncLogEntry> changes, bool skipSuppression = false) => ApplyChanges(_targetDb, changes, _targetOrigin, skipSuppression);
+    private void ApplyChangesToTarget(List<SyncLogEntry> changes, bool skipSuppression = false) =>
+        ApplyChanges(_targetDb, changes, _targetOrigin, skipSuppression);
 
     private static void ApplyChanges(
         SqliteConnection db,
@@ -391,10 +392,7 @@ public sealed class EndToEndSyncTests : IDisposable
         }
     }
 
-    private static BoolSyncResult ApplySingleChange(
-        SqliteConnection db,
-        SyncLogEntry entry
-    )
+    private static BoolSyncResult ApplySingleChange(SqliteConnection db, SyncLogEntry entry)
     {
         try
         {
@@ -438,9 +436,7 @@ public sealed class EndToEndSyncTests : IDisposable
             {
                 return new BoolSyncOk(false);
             }
-            return new BoolSyncError(
-                new SyncErrorDatabase(ex.Message)
-            );
+            return new BoolSyncError(new SyncErrorDatabase(ex.Message));
         }
     }
 

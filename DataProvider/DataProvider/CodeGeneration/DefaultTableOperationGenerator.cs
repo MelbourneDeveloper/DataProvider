@@ -30,10 +30,14 @@ public class DefaultTableOperationGenerator : ITableOperationGenerator
     )
     {
         if (table == null)
-            return new Result<string, SqlError>.Error<string, SqlError>(new SqlError("table cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("table cannot be null")
+            );
 
         if (config == null)
-            return new Result<string, SqlError>.Error<string, SqlError>(new SqlError("config cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("config cannot be null")
+            );
 
         var sb = new StringBuilder();
         sb.AppendLine("using System;");

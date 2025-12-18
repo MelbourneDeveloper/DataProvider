@@ -1,9 +1,9 @@
 using System.Collections.Frozen;
+using System.Diagnostics.CodeAnalysis;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Outcome;
 using Selecta;
-using System.Diagnostics.CodeAnalysis;
 
 namespace DataProvider.SQLite.Parsing;
 
@@ -43,7 +43,9 @@ public sealed class SqliteAntlrParser : ISqlParser
         }
         catch (Exception ex)
         {
-            return new Result<SelectStatement, string>.Error<SelectStatement, string>($"Failed to parse SQL: {ex}");
+            return new Result<SelectStatement, string>.Error<SelectStatement, string>(
+                $"Failed to parse SQL: {ex}"
+            );
         }
     }
 

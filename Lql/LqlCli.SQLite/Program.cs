@@ -102,16 +102,16 @@ internal static class Program
 #pragma warning disable EXHAUSTION001
             return parseResult switch
             {
-                Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> success => await ProcessSuccessfulParse(
-                        success.Value,
-                        outputFile,
-                        validate,
-                        inputFile.FullName
-                    )
-                    .ConfigureAwait(false),
-                Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> failure => HandleParseError(
-                    failure.Value
-                ),
+                Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> success =>
+                    await ProcessSuccessfulParse(
+                            success.Value,
+                            outputFile,
+                            validate,
+                            inputFile.FullName
+                        )
+                        .ConfigureAwait(false),
+                Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> failure =>
+                    HandleParseError(failure.Value),
                 _ => HandleUnknownError(),
             };
 #pragma warning restore EXHAUSTION001
@@ -150,7 +150,10 @@ internal static class Program
 #pragma warning disable EXHAUSTION001
         return sqliteResult switch
         {
-            Result<string, SqlError>.Ok<string, SqlError> success => await OutputSql(success.Value, outputFile)
+            Result<string, SqlError>.Ok<string, SqlError> success => await OutputSql(
+                    success.Value,
+                    outputFile
+                )
                 .ConfigureAwait(false),
             Result<string, SqlError>.Error<string, SqlError> failure => HandleTranspilationError(
                 failure.Value

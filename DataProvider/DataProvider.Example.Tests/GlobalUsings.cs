@@ -1,24 +1,6 @@
 #pragma warning disable IDE0005 // Using directive is unnecessary - these are used for pattern matching
 
-// Type aliases for Result types to reduce verbosity in DataProvider.Example
-global using BasicOrderListError = Outcome.Result<
-    System.Collections.Generic.IReadOnlyList<DataProvider.Example.Model.BasicOrder>,
-    Selecta.SqlError
->.Error<
-    System.Collections.Generic.IReadOnlyList<DataProvider.Example.Model.BasicOrder>,
-    Selecta.SqlError
->;
-global using BasicOrderListOk = Outcome.Result<
-    System.Collections.Generic.IReadOnlyList<DataProvider.Example.Model.BasicOrder>,
-    Selecta.SqlError
->.Ok<
-    System.Collections.Generic.IReadOnlyList<DataProvider.Example.Model.BasicOrder>,
-    Selecta.SqlError
->;
-global using BasicOrderListResult = Outcome.Result<
-    System.Collections.Generic.IReadOnlyList<DataProvider.Example.Model.BasicOrder>,
-    Selecta.SqlError
->;
+// Type aliases for Result types to reduce verbosity in DataProvider.Example.Tests
 global using CustomerListError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.Customer>,
     Selecta.SqlError
@@ -55,9 +37,6 @@ global using InvoiceListResult = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.Invoice>,
     Selecta.SqlError
 >;
-global using LongSqlError = Outcome.Result<long, Selecta.SqlError>.Error<long, Selecta.SqlError>;
-global using LongSqlOk = Outcome.Result<long, Selecta.SqlError>.Ok<long, Selecta.SqlError>;
-global using LongSqlResult = Outcome.Result<long, Selecta.SqlError>;
 global using OrderListError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.Order>,
     Selecta.SqlError

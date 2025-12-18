@@ -42,7 +42,9 @@ public static class FileDialogService
         }
         catch (Exception ex)
         {
-            return new Result<string, string>.Error<string, string>($"Error selecting database: {ex.Message}");
+            return new Result<string, string>.Error<string, string>(
+                $"Error selecting database: {ex.Message}"
+            );
         }
     }
 
@@ -78,7 +80,9 @@ public static class FileDialogService
         }
         catch (Exception ex)
         {
-            return new Result<string, string>.Error<string, string>($"Error opening file: {ex.Message}");
+            return new Result<string, string>.Error<string, string>(
+                $"Error opening file: {ex.Message}"
+            );
         }
     }
 
@@ -116,7 +120,9 @@ public static class FileDialogService
         }
         catch (Exception ex)
         {
-            return new Result<string, string>.Error<string, string>($"Error saving file: {ex.Message}");
+            return new Result<string, string>.Error<string, string>(
+                $"Error saving file: {ex.Message}"
+            );
         }
     }
 
@@ -148,7 +154,9 @@ public static class FileDialogService
         }
         catch (Exception ex)
         {
-            return new Result<string, string>.Error<string, string>($"Error selecting export file: {ex.Message}");
+            return new Result<string, string>.Error<string, string>(
+                $"Error selecting export file: {ex.Message}"
+            );
         }
     }
 
@@ -180,7 +188,9 @@ public static class FileDialogService
         }
         catch (Exception ex)
         {
-            return new Result<string, string>.Error<string, string>($"Error selecting export file: {ex.Message}");
+            return new Result<string, string>.Error<string, string>(
+                $"Error selecting export file: {ex.Message}"
+            );
         }
     }
 }

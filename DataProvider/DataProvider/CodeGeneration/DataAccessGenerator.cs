@@ -200,7 +200,9 @@ public static class DataAccessGenerator
     )
     {
         if (table == null)
-            return new Result<string, SqlError>.Error<string, SqlError>(new SqlError("table cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("table cannot be null")
+            );
 
         var insertableColumns = table.InsertableColumns;
         if (insertableColumns.Count == 0)
@@ -285,7 +287,9 @@ public static class DataAccessGenerator
         sb.AppendLine(
             "                var newId = Convert.ToInt64(result, CultureInfo.InvariantCulture);"
         );
-        sb.AppendLine("                return new Result<long, SqlError>.Ok<long, SqlError>(newId);");
+        sb.AppendLine(
+            "                return new Result<long, SqlError>.Ok<long, SqlError>(newId);"
+        );
         sb.AppendLine("            }");
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");
@@ -311,7 +315,9 @@ public static class DataAccessGenerator
     )
     {
         if (table == null)
-            return new Result<string, SqlError>.Error<string, SqlError>(new SqlError("table cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("table cannot be null")
+            );
 
         var updateableColumns = table.UpdateableColumns;
         var primaryKeyColumns = table.PrimaryKeyColumns;
@@ -384,7 +390,9 @@ public static class DataAccessGenerator
         sb.AppendLine(
             "                var rowsAffected = await command.ExecuteNonQueryAsync().ConfigureAwait(false);"
         );
-        sb.AppendLine("                return new Result<int, SqlError>.Ok<int, SqlError>(rowsAffected);");
+        sb.AppendLine(
+            "                return new Result<int, SqlError>.Ok<int, SqlError>(rowsAffected);"
+        );
         sb.AppendLine("            }");
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");

@@ -35,27 +35,15 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = await _connection.GetInvoicesAsync("Acme Corp", "2024-01-01", "2024-12-31");
 
         // Assert
-        if (
-            result
-            is Result<ImmutableList<Invoice>, SqlError>.Error<
-                ImmutableList<Invoice>,
-                SqlError
-            > failure
-        )
+        if (result is InvoiceListError failure)
         {
             throw new InvalidOperationException(
                 $"GetInvoicesAsync failed: {failure.Value.Message}"
             );
         }
-        Assert.True(
-            result is Result<ImmutableList<Invoice>, SqlError>.Ok<ImmutableList<Invoice>, SqlError>,
-            $"Expected Success but got {result.GetType()}"
-        );
+        Assert.True(result is InvoiceListOk, $"Expected Success but got {result.GetType()}");
 
-        var success = (Result<ImmutableList<Invoice>, SqlError>.Ok<
-            ImmutableList<Invoice>,
-            SqlError
-        >)result;
+        var success = (InvoiceListOk)result;
         var invoices = success.Value;
 
         Assert.NotEmpty(invoices);
@@ -91,13 +79,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = await _connection.GetCustomersLqlAsync(null);
 
         // Assert
-        if (
-            result
-            is Result<ImmutableList<Customer>, SqlError>.Error<
-                ImmutableList<Customer>,
-                SqlError
-            > failure
-        )
+        if (result is CustomerListError failure)
         {
             // Log the error but continue the test to see what happens
             Console.WriteLine($"GetCustomersLqlAsync failed: {failure.Value.Message}");
@@ -106,12 +88,11 @@ public sealed class DataProviderIntegrationTests : IDisposable
             );
         }
         Assert.True(
-            result
-                is Result<ImmutableList<Customer>, SqlError>.Ok<ImmutableList<Invoice>, SqlError>,
-            $"Expected Success but got {result.GetType()}, Error: {(result as Result<ImmutableList<Customer>, SqlError>.Error)?.Value.Message ?? "No error message"}"
+            result is CustomerListOk,
+            $"Expected Success but got {result.GetType()}, Error: {(result as CustomerListError)?.Value.Message ?? "No error message"}"
         );
 
-        var success = (Result<ImmutableList<Customer>, SqlError>.Ok)result;
+        var success = (CustomerListOk)result;
         var customers = success.Value;
 
         Assert.NotEmpty(customers);
@@ -148,12 +129,9 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = await _connection.GetOrdersAsync(1, "Completed", "2024-01-01", "2024-12-31");
 
         // Assert
-        Assert.True(
-            result is Result<ImmutableList<Order>, SqlError>.Ok<ImmutableList<Invoice>, SqlError>,
-            $"Expected Success but got {result.GetType()}"
-        );
+        Assert.True(result is OrderListOk, $"Expected Success but got {result.GetType()}");
 
-        var success = (Result<ImmutableList<Order>, SqlError>.Ok)result;
+        var success = (OrderListOk)result;
         var orders = success.Value;
 
         Assert.NotEmpty(orders);
@@ -193,25 +171,22 @@ public sealed class DataProviderIntegrationTests : IDisposable
 
         // All should succeed (this proves the extension methods were generated)
         Assert.True(
-            invoiceResult
-                is Result<ImmutableList<Invoice>, SqlError>.Ok<ImmutableList<Invoice>, SqlError>,
+            invoiceResult is InvoiceListOk,
             $"Expected Invoice Success but got {invoiceResult.GetType()}"
         );
         Assert.True(
-            customerResult
-                is Result<ImmutableList<Customer>, SqlError>.Ok<ImmutableList<Invoice>, SqlError>,
+            customerResult is CustomerListOk,
             $"Expected Customer Success but got {customerResult.GetType()}"
         );
         Assert.True(
-            orderResult
-                is Result<ImmutableList<Order>, SqlError>.Ok<ImmutableList<Invoice>, SqlError>,
+            orderResult is OrderListOk,
             $"Expected Order Success but got {orderResult.GetType()}"
         );
 
         // Verify different table names were used (not hard-coded)
-        var invoices = ((Result<ImmutableList<Invoice>, SqlError>.Ok)invoiceResult).Value;
-        var customers = ((Result<ImmutableList<Customer>, SqlError>.Ok)customerResult).Value;
-        var orders = ((Result<ImmutableList<Order>, SqlError>.Ok)orderResult).Value;
+        var invoices = ((InvoiceListOk)invoiceResult).Value;
+        var customers = ((CustomerListOk)customerResult).Value;
+        var orders = ((OrderListOk)orderResult).Value;
 
         //TODO: Assert these!!!
 
@@ -235,12 +210,9 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = await _connection.GetInvoicesAsync("Acme Corp", "2024-01-01", "2024-12-31");
 
         // Assert
-        Assert.True(
-            result is Result<ImmutableList<Invoice>, SqlError>.Ok<ImmutableList<Invoice>, SqlError>,
-            $"Expected Success but got {result.GetType()}"
-        );
+        Assert.True(result is InvoiceListOk, $"Expected Success but got {result.GetType()}");
 
-        var success = (Result<ImmutableList<Invoice>, SqlError>.Ok)result;
+        var success = (InvoiceListOk)result;
         var invoices = success.Value;
 
         Assert.Equal(3, invoices.Count);
@@ -266,13 +238,9 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = await _connection.GetCustomersLqlAsync(null);
 
         // Assert
-        Assert.True(
-            result
-                is Result<ImmutableList<Customer>, SqlError>.Ok<ImmutableList<Invoice>, SqlError>,
-            $"Expected Success but got {result.GetType()}"
-        );
+        Assert.True(result is CustomerListOk, $"Expected Success but got {result.GetType()}");
 
-        var success = (Result<ImmutableList<Customer>, SqlError>.Ok)result;
+        var success = (CustomerListOk)result;
         var customers = success.Value;
 
         Assert.Equal(2, customers.Count);
@@ -296,12 +264,9 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = await _connection.GetOrdersAsync(null, null, "2024-01-01", "2024-12-31");
 
         // Assert
-        Assert.True(
-            result is Result<ImmutableList<Order>, SqlError>.Ok<ImmutableList<Invoice>, SqlError>,
-            $"Expected Success but got {result.GetType()}"
-        );
+        Assert.True(result is OrderListOk, $"Expected Success but got {result.GetType()}");
 
-        var success = (Result<ImmutableList<Order>, SqlError>.Ok)result;
+        var success = (OrderListOk)result;
         var orders = success.Value;
 
         Assert.Equal(2, orders.Count);
@@ -324,12 +289,9 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = await _connection.GetInvoicesAsync("Acme Corp", "2024-01-01", "2024-12-31");
 
         // Assert
-        Assert.True(
-            result is Result<ImmutableList<Invoice>, SqlError>.Ok<ImmutableList<Invoice>, SqlError>,
-            $"Expected Success but got {result.GetType()}"
-        );
+        Assert.True(result is InvoiceListOk, $"Expected Success but got {result.GetType()}");
 
-        var success = (Result<ImmutableList<Invoice>, SqlError>.Ok)result;
+        var success = (InvoiceListOk)result;
         var invoices = success.Value;
 
         Assert.Empty(invoices);
@@ -345,13 +307,9 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = await _connection.GetCustomersLqlAsync(null);
 
         // Assert
-        Assert.True(
-            result
-                is Result<ImmutableList<Customer>, SqlError>.Ok<ImmutableList<Invoice>, SqlError>,
-            $"Expected Success but got {result.GetType()}"
-        );
+        Assert.True(result is CustomerListOk, $"Expected Success but got {result.GetType()}");
 
-        var success = (Result<ImmutableList<Customer>, SqlError>.Ok)result;
+        var success = (CustomerListOk)result;
         var customers = success.Value;
 
         Assert.Empty(customers);
@@ -367,12 +325,9 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = await _connection.GetOrdersAsync(1, "Completed", "2024-01-01", "2024-12-31");
 
         // Assert
-        Assert.True(
-            result is Result<ImmutableList<Order>, SqlError>.Ok<ImmutableList<Invoice>, SqlError>,
-            $"Expected Success but got {result.GetType()}"
-        );
+        Assert.True(result is OrderListOk, $"Expected Success but got {result.GetType()}");
 
-        var success = (Result<ImmutableList<Order>, SqlError>.Ok)result;
+        var success = (OrderListOk)result;
         var orders = success.Value;
 
         Assert.Empty(orders);
@@ -401,11 +356,11 @@ public sealed class DataProviderIntegrationTests : IDisposable
 
         // Assert
         Assert.True(
-            sqlResult is Result<string, SqlError>.Ok<ImmutableList<Invoice>, SqlError>,
-            $"SQL generation should succeed, got: {(sqlResult as Result<string, SqlError>.Error)?.Value.Message}"
+            sqlResult is StringSqlOk,
+            $"SQL generation should succeed, got: {(sqlResult as StringSqlError)?.Value.Message}"
         );
 
-        var sql = ((Result<string, SqlError>.Ok)sqlResult).Value;
+        var sql = ((StringSqlOk)sqlResult).Value;
 
         // Verify JOIN is included
         Assert.Contains("INNER JOIN", sql);
@@ -439,8 +394,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var sqlResult = query.ToSQLite();
 
         // Assert
-        Assert.True(sqlResult is Result<string, SqlError>.Ok<string, SqlError>);
-        var sql = ((Result<string, SqlError>.Ok)sqlResult).Value;
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
 
         Assert.Contains("LEFT JOIN", sql);
         Assert.Contains("Customer cust", sql);
@@ -462,8 +417,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var sqlResult = query.ToSQLite();
 
         // Assert
-        Assert.True(sqlResult is Result<string, SqlError>.Ok<string, SqlError>);
-        var sql = ((Result<string, SqlError>.Ok)sqlResult).Value;
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
 
         // Verify both JOINs are present
         Assert.Contains("INNER JOIN Customer c", sql);
@@ -488,8 +443,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var sqlResult = query.ToSQLite();
 
         // Assert
-        Assert.True(sqlResult is Result<string, SqlError>.Ok<string, SqlError>);
-        var sql = ((Result<string, SqlError>.Ok)sqlResult).Value;
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
 
         // Test that all parts of the fluent API are preserved in the generated SQL
         Assert.Contains(
@@ -710,8 +665,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
 
         // Assert
-        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Ok);
-        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Ok)result).Value;
+        Assert.True(result is CustomerReadOnlyListOk);
+        var customers = ((CustomerReadOnlyListOk)result).Value;
         Assert.Equal(2, customers.Count);
     }
 
@@ -731,8 +686,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
 
         // Assert
-        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Ok);
-        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Ok)result).Value;
+        Assert.True(result is CustomerReadOnlyListOk);
+        var customers = ((CustomerReadOnlyListOk)result).Value;
         Assert.Empty(customers);
     }
 
@@ -754,8 +709,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
 
         // Assert
-        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Ok);
-        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Ok)result).Value;
+        Assert.True(result is CustomerReadOnlyListOk);
+        var customers = ((CustomerReadOnlyListOk)result).Value;
         Assert.Equal(2, customers.Count);
         Assert.Equal(1, customers[0].Id);
         Assert.Equal(2, customers[1].Id);
@@ -779,8 +734,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
 
         // Assert
-        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Ok);
-        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Ok)result).Value;
+        Assert.True(result is CustomerReadOnlyListOk);
+        var customers = ((CustomerReadOnlyListOk)result).Value;
         Assert.Single(customers);
         Assert.Equal(1, customers[0].Id);
     }
@@ -803,8 +758,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
 
         // Assert
-        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Ok);
-        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Ok)result).Value;
+        Assert.True(result is CustomerReadOnlyListOk);
+        var customers = ((CustomerReadOnlyListOk)result).Value;
         Assert.Single(customers);
         Assert.Equal(2, customers[0].Id);
     }
@@ -832,8 +787,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
 
         // Assert
-        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Ok);
-        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Ok)result).Value;
+        Assert.True(result is CustomerReadOnlyListOk);
+        var customers = ((CustomerReadOnlyListOk)result).Value;
         Assert.Single(customers); // Only customer with ID 1 exists
         Assert.Equal(1, customers[0].Id);
     }
@@ -858,8 +813,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
 
         // Assert
-        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Ok);
-        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Ok)result).Value;
+        Assert.True(result is CustomerReadOnlyListOk);
+        var customers = ((CustomerReadOnlyListOk)result).Value;
         Assert.Equal(2, customers.Count); // Both customers have email and are in range
     }
 
@@ -889,8 +844,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
 
         // Assert
-        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Ok);
-        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Ok)result).Value;
+        Assert.True(result is CustomerReadOnlyListOk);
+        var customers = ((CustomerReadOnlyListOk)result).Value;
         Assert.Single(customers); // Only "Acme Corp" exists and has email
         Assert.Equal("Acme Corp", customers[0].CustomerName);
     }
@@ -924,8 +879,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
 
         // Assert
-        Assert.True(result is Result<IReadOnlyList<Customer>, SqlError>.Ok);
-        var customers = ((Result<IReadOnlyList<Customer>, SqlError>.Ok)result).Value;
+        Assert.True(result is CustomerReadOnlyListOk);
+        var customers = ((CustomerReadOnlyListOk)result).Value;
         Assert.Single(customers);
         Assert.Equal("Tech Solutions", customers[0].CustomerName);
     }
@@ -956,8 +911,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapOrder);
 
         // Assert
-        Assert.True(result is Result<IReadOnlyList<Order>, SqlError>.Ok);
-        var orders = ((Result<IReadOnlyList<Order>, SqlError>.Ok)result).Value;
+        Assert.True(result is OrderReadOnlyListOk);
+        var orders = ((OrderReadOnlyListOk)result).Value;
         Assert.Equal(2, orders.Count); // Both orders match the criteria
         Assert.Equal("Completed", orders[0].Status);
         Assert.Equal("Processing", orders[1].Status);

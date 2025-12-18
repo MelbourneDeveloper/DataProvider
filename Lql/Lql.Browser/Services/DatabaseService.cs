@@ -41,7 +41,9 @@ public static class DatabaseService
         {
             Console.WriteLine($"=== Database connection failed ===");
             Console.WriteLine($"Exception: {ex}");
-            return new Result<SqliteConnection, string>.Error<SqliteConnection, string>($"Connection failed: {ex.Message}");
+            return new Result<SqliteConnection, string>.Error<SqliteConnection, string>(
+                $"Connection failed: {ex.Message}"
+            );
         }
     }
 
@@ -80,14 +82,18 @@ public static class DatabaseService
             return new Result<
                 (ObservableCollection<string>, ObservableCollection<string>),
                 string
-            >.Ok<(ObservableCollection<string>, ObservableCollection<string>), string>((tables, views));
+            >.Ok<(ObservableCollection<string>, ObservableCollection<string>), string>(
+                (tables, views)
+            );
         }
         catch (Exception ex)
         {
             return new Result<
                 (ObservableCollection<string>, ObservableCollection<string>),
                 string
-            >.Error<(ObservableCollection<string>, ObservableCollection<string>), string>($"Error loading schema: {ex.Message}");
+            >.Error<(ObservableCollection<string>, ObservableCollection<string>), string>(
+                $"Error loading schema: {ex.Message}"
+            );
         }
     }
 }

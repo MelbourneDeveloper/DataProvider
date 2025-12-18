@@ -66,13 +66,17 @@ public static class LqlCodeParser
             // Check for lexer errors
             if (lexerErrorListener.Errors.Count > 0)
             {
-                return new Result<INode, SqlError>.Error<INode, SqlError>(lexerErrorListener.Errors[0]);
+                return new Result<INode, SqlError>.Error<INode, SqlError>(
+                    lexerErrorListener.Errors[0]
+                );
             }
 
             // Check for parser errors
             if (parserErrorListener.Errors.Count > 0)
             {
-                return new Result<INode, SqlError>.Error<INode, SqlError>(parserErrorListener.Errors[0]);
+                return new Result<INode, SqlError>.Error<INode, SqlError>(
+                    parserErrorListener.Errors[0]
+                );
             }
 
             // Create visitor and visit the parse tree
@@ -85,7 +89,9 @@ public static class LqlCodeParser
         }
         catch (SqlErrorException ex)
         {
-            return new Result<INode, SqlError>.Error<INode, SqlError>(ex.SqlError ?? SqlError.FromException(ex));
+            return new Result<INode, SqlError>.Error<INode, SqlError>(
+                ex.SqlError ?? SqlError.FromException(ex)
+            );
         }
         catch (Exception ex)
         {

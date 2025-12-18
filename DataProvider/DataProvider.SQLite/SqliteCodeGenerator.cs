@@ -55,7 +55,9 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
             );
 
         if (statement == null)
-            return new Result<string, SqlError>.Error<string, SqlError>(new SqlError("statement cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("statement cannot be null")
+            );
 
         if (string.IsNullOrWhiteSpace(connectionString))
             return new Result<string, SqlError>.Error<string, SqlError>(
@@ -463,7 +465,10 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
 
                 // Parse SQL (attach any unexpected parser errors to the SQL file)
                 var parseResult = parser.ParseSql(sqlText);
-                if (parseResult is Result<SelectStatement, string>.Error<SelectStatement, string> parseFailure)
+                if (
+                    parseResult
+                    is Result<SelectStatement, string>.Error<SelectStatement, string> parseFailure
+                )
                 {
                     context.ReportDiagnostic(
                         Diagnostic.Create(
@@ -480,7 +485,9 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                     );
                     continue;
                 }
-                var statement = ((Result<SelectStatement, string>.Ok<SelectStatement, string>)parseResult).Value;
+                var statement = (
+                    (Result<SelectStatement, string>.Ok<SelectStatement, string>)parseResult
+                ).Value;
 
                 // Discover real column metadata by executing the SQL against the DB
                 var columnsResult = GetColumnMetadataFromSqlAsync(
@@ -493,11 +500,18 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
 
                 if (
                     columnsResult
-                    is not Result<IReadOnlyList<DatabaseColumn>, SqlError>.Ok<IReadOnlyList<DatabaseColumn>, SqlError> colSuccess
+                    is not Result<IReadOnlyList<DatabaseColumn>, SqlError>.Ok<
+                        IReadOnlyList<DatabaseColumn>,
+                        SqlError
+                    > colSuccess
                 )
                 {
                     var err = (
-                        columnsResult as Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error<IReadOnlyList<DatabaseColumn>, SqlError>
+                        columnsResult
+                        as Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error<
+                            IReadOnlyList<DatabaseColumn>,
+                            SqlError
+                        >
                     )!.Value;
 
                     // Attach the diagnostic to the start of the SQL file so IDEs show it inline
@@ -666,10 +680,14 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                         config.ConnectionString,
                         tableConfigItem.Name
                     );
-                    if (tableMetadataResult is not Result<DatabaseTable, SqlError>.Ok<DatabaseTable, SqlError> tableOk)
+                    if (
+                        tableMetadataResult
+                        is not Result<DatabaseTable, SqlError>.Ok<DatabaseTable, SqlError> tableOk
+                    )
                     {
                         var err = (
-                            tableMetadataResult as Result<DatabaseTable, SqlError>.Error<DatabaseTable, SqlError>
+                            tableMetadataResult
+                            as Result<DatabaseTable, SqlError>.Error<DatabaseTable, SqlError>
                         )!.Value;
                         var tableDiag = Diagnostic.Create(
                             new DiagnosticDescriptor(
@@ -705,14 +723,20 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                         tableOk.Value,
                         tableConfig
                     );
-                    if (operationsResult is Result<string, SqlError>.Ok<string, SqlError> operationsSuccess)
+                    if (
+                        operationsResult
+                        is Result<string, SqlError>.Ok<string, SqlError> operationsSuccess
+                    )
                     {
                         context.AddSource(
                             tableConfigItem.Name + "Operations.g.cs",
                             SourceText.From(operationsSuccess.Value, Encoding.UTF8)
                         );
                     }
-                    else if (operationsResult is Result<string, SqlError>.Error<string, SqlError> operationsFailure)
+                    else if (
+                        operationsResult
+                        is Result<string, SqlError>.Error<string, SqlError> operationsFailure
+                    )
                     {
                         var opsDiag = Diagnostic.Create(
                             new DiagnosticDescriptor(

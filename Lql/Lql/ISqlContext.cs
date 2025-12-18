@@ -65,7 +65,6 @@ public interface ISqlContext
     /// <param name="count">The offset count</param>
     void SetOffset(string count);
 
-
     /// <summary>
     /// Adds a UNION or UNION ALL
     /// </summary>

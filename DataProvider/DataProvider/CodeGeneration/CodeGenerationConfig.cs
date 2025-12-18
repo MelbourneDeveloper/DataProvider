@@ -15,8 +15,7 @@ public record CodeGenerationConfig
         string,
         IReadOnlyList<DatabaseColumn>,
         Result<string, SqlError>
-    > GenerateModelType
-    { get; init; } = ModelGenerator.GenerateRecordType;
+    > GenerateModelType { get; init; } = ModelGenerator.GenerateRecordType;
 
     /// <summary>
     /// Function to generate data access methods
@@ -29,8 +28,7 @@ public record CodeGenerationConfig
         IReadOnlyList<DatabaseColumn>,
         string,
         Result<string, SqlError>
-    > GenerateDataAccessMethod
-    { get; init; } =
+    > GenerateDataAccessMethod { get; init; } =
         (className, methodName, sql, parameters, columns, connectionType) =>
             DataAccessGenerator.GenerateQueryMethod(
                 className,
@@ -50,8 +48,7 @@ public record CodeGenerationConfig
         string,
         string,
         Result<string, SqlError>
-    > GenerateSourceFile
-    { get; init; } = GenerateDefaultSourceFile;
+    > GenerateSourceFile { get; init; } = GenerateDefaultSourceFile;
 
     /// <summary>
     /// Function to generate grouped model types
@@ -63,8 +60,7 @@ public record CodeGenerationConfig
         IReadOnlyList<string>,
         IReadOnlyList<DatabaseColumn>,
         Result<string, SqlError>
-    > GenerateGroupedModels
-    { get; init; } = ModelGenerator.GenerateGroupedRecordTypes;
+    > GenerateGroupedModels { get; init; } = ModelGenerator.GenerateGroupedRecordTypes;
 
     /// <summary>
     /// Function to generate raw record types for grouping
@@ -73,8 +69,7 @@ public record CodeGenerationConfig
         string,
         IReadOnlyList<DatabaseColumn>,
         Result<string, SqlError>
-    > GenerateRawRecordType
-    { get; init; } = ModelGenerator.GenerateRawRecordType;
+    > GenerateRawRecordType { get; init; } = ModelGenerator.GenerateRawRecordType;
 
     /// <summary>
     /// Function to generate grouped query methods
@@ -88,8 +83,7 @@ public record CodeGenerationConfig
         GroupingConfig,
         string,
         Result<string, SqlError>
-    > GenerateGroupedQueryMethod
-    { get; init; } =
+    > GenerateGroupedQueryMethod { get; init; } =
         GroupingTransformations.GenerateGroupedQueryMethod;
 
     /// <summary>
@@ -100,8 +94,7 @@ public record CodeGenerationConfig
         string,
         IEnumerable<ParameterInfo>,
         Task<Result<IReadOnlyList<DatabaseColumn>, SqlError>>
-    > GetColumnMetadata
-    { get; init; }
+    > GetColumnMetadata { get; init; }
 
     /// <summary>
     /// Table operation generator

@@ -173,7 +173,7 @@ public sealed class ChangeApplierTests : IDisposable
             false
         );
 
-        var result = ChangeApplier.ApplyBatch(batch, "my-origin", 3, entry => ApplyToDb(entry));
+        var result = ChangeApplier.ApplyBatch(batch, "my-origin", 3, ApplyToDb);
 
         var applyResult = AssertSuccess(result);
         Assert.Equal(2, applyResult.AppliedCount);

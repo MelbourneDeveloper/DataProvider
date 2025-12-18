@@ -19,6 +19,8 @@ dotnet test --filter "FullyQualifiedName~MethodName" # Run single test
 dotnet csharpier .                     # Format all code (run periodically)
 ```
 
+DO NOT USE GIT
+
 ## Architecture Overview
 
 This repository contains two complementary projects:

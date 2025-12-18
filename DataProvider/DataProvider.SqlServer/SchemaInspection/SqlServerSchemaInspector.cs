@@ -149,9 +149,10 @@ public sealed class SqlServerSchemaInspector : ISchemaInspector
     )
     {
         if (string.IsNullOrWhiteSpace(sqlQuery))
-            return new Result<SqlQueryMetadata, Selecta.SqlError>.Error<SqlQueryMetadata, Selecta.SqlError>(
-                new Selecta.SqlError("SQL query cannot be null or empty")
-            );
+            return new Result<SqlQueryMetadata, Selecta.SqlError>.Error<
+                SqlQueryMetadata,
+                Selecta.SqlError
+            >(new Selecta.SqlError("SQL query cannot be null or empty"));
 
         try
         {
@@ -223,19 +224,24 @@ public sealed class SqlServerSchemaInspector : ISchemaInspector
                 SqlText = sqlQuery,
             };
 
-            return new Result<SqlQueryMetadata, Selecta.SqlError>.Ok<SqlQueryMetadata, Selecta.SqlError>(metadata);
+            return new Result<SqlQueryMetadata, Selecta.SqlError>.Ok<
+                SqlQueryMetadata,
+                Selecta.SqlError
+            >(metadata);
         }
         catch (SqlException ex)
         {
-            return new Result<SqlQueryMetadata, Selecta.SqlError>.Error<SqlQueryMetadata, Selecta.SqlError>(
-                new Selecta.SqlError("SQL Server error during schema inspection", ex)
-            );
+            return new Result<SqlQueryMetadata, Selecta.SqlError>.Error<
+                SqlQueryMetadata,
+                Selecta.SqlError
+            >(new Selecta.SqlError("SQL Server error during schema inspection", ex));
         }
         catch (Exception ex)
         {
-            return new Result<SqlQueryMetadata, Selecta.SqlError>.Error<SqlQueryMetadata, Selecta.SqlError>(
-                new Selecta.SqlError("Error analyzing SQL query", ex)
-            );
+            return new Result<SqlQueryMetadata, Selecta.SqlError>.Error<
+                SqlQueryMetadata,
+                Selecta.SqlError
+            >(new Selecta.SqlError("Error analyzing SQL query", ex));
         }
     }
 

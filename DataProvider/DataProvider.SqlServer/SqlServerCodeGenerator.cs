@@ -244,10 +244,14 @@ public static class SqlServerCodeGenerator
     )
     {
         if (table == null)
-            return new Result<string, SqlError>.Error<string, SqlError>(SqlError.Create("table cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                SqlError.Create("table cannot be null")
+            );
 
         if (config == null)
-            return new Result<string, SqlError>.Error<string, SqlError>(SqlError.Create("config cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                SqlError.Create("config cannot be null")
+            );
 
         try
         {
@@ -345,7 +349,9 @@ public static class SqlServerCodeGenerator
         sb.AppendLine(
             "                    var newId = Convert.ToInt32(result, CultureInfo.InvariantCulture);"
         );
-        sb.AppendLine("                    return new Result<int, SqlError>.Ok<int, SqlError>(newId);");
+        sb.AppendLine(
+            "                    return new Result<int, SqlError>.Ok<int, SqlError>(newId);"
+        );
         sb.AppendLine("                }");
         sb.AppendLine("            }");
         sb.AppendLine("            catch (Exception ex)");

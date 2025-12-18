@@ -48,7 +48,10 @@ public static class QueryExecutor
             {
                 Console.WriteLine("Converting LQL to SQL...");
                 var lqlStatement = LqlStatementConverter.ToStatement(activeTab.Content);
-                if (lqlStatement is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> lqlSuccess)
+                if (
+                    lqlStatement
+                    is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> lqlSuccess
+                )
                 {
                     Console.WriteLine("LQL parsed successfully");
                     var sqlResult = lqlSuccess.Value.ToSQLite();
@@ -58,7 +61,9 @@ public static class QueryExecutor
                         Console.WriteLine($"LQL converted to SQL: {sqlToExecute}");
                         statusBarViewModel.StatusMessage = $"LQL converted to SQL: {sqlToExecute}";
                     }
-                    else if (sqlResult is Result<string, SqlError>.Error<string, SqlError> sqlFailure)
+                    else if (
+                        sqlResult is Result<string, SqlError>.Error<string, SqlError> sqlFailure
+                    )
                     {
                         Console.WriteLine($"LQL conversion error: {sqlFailure.Value.Message}");
                         statusBarViewModel.StatusMessage =
@@ -72,7 +77,10 @@ public static class QueryExecutor
                         return null;
                     }
                 }
-                else if (lqlStatement is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> lqlFailure)
+                else if (
+                    lqlStatement
+                    is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> lqlFailure
+                )
                 {
                     Console.WriteLine($"LQL parse error: {lqlFailure.Value.Message}");
                     statusBarViewModel.StatusMessage =

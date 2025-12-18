@@ -60,11 +60,15 @@ public static class DbTransactionExtensions
                 }
             }
 
-            return new Result<IReadOnlyList<T>, SqlError>.Ok<IReadOnlyList<T>, SqlError>(results.AsReadOnly());
+            return new Result<IReadOnlyList<T>, SqlError>.Ok<IReadOnlyList<T>, SqlError>(
+                results.AsReadOnly()
+            );
         }
         catch (Exception ex)
         {
-            return new Result<IReadOnlyList<T>, SqlError>.Error<IReadOnlyList<T>, SqlError>(SqlError.FromException(ex));
+            return new Result<IReadOnlyList<T>, SqlError>.Error<IReadOnlyList<T>, SqlError>(
+                SqlError.FromException(ex)
+            );
         }
     }
 
@@ -87,7 +91,9 @@ public static class DbTransactionExtensions
             );
 
         if (string.IsNullOrWhiteSpace(sql))
-            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.Create("SQL is null or empty"));
+            return new Result<int, SqlError>.Error<int, SqlError>(
+                SqlError.Create("SQL is null or empty")
+            );
 
         try
         {
@@ -132,7 +138,9 @@ public static class DbTransactionExtensions
             );
 
         if (string.IsNullOrWhiteSpace(sql))
-            return new Result<T?, SqlError>.Error<T?, SqlError>(SqlError.Create("SQL is null or empty"));
+            return new Result<T?, SqlError>.Error<T?, SqlError>(
+                SqlError.Create("SQL is null or empty")
+            );
 
         try
         {

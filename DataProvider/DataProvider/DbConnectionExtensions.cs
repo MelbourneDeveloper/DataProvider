@@ -59,11 +59,15 @@ public static class DbConnectionExtensions
                 }
             }
 
-            return new Result<IReadOnlyList<T>, SqlError>.Ok<IReadOnlyList<T>, SqlError>(results.AsReadOnly());
+            return new Result<IReadOnlyList<T>, SqlError>.Ok<IReadOnlyList<T>, SqlError>(
+                results.AsReadOnly()
+            );
         }
         catch (Exception ex)
         {
-            return new Result<IReadOnlyList<T>, SqlError>.Error<IReadOnlyList<T>, SqlError>(SqlError.FromException(ex));
+            return new Result<IReadOnlyList<T>, SqlError>.Error<IReadOnlyList<T>, SqlError>(
+                SqlError.FromException(ex)
+            );
         }
     }
 
@@ -81,10 +85,14 @@ public static class DbConnectionExtensions
     )
     {
         if (connection == null)
-            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.Create("Connection is null"));
+            return new Result<int, SqlError>.Error<int, SqlError>(
+                SqlError.Create("Connection is null")
+            );
 
         if (string.IsNullOrWhiteSpace(sql))
-            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.Create("SQL is null or empty"));
+            return new Result<int, SqlError>.Error<int, SqlError>(
+                SqlError.Create("SQL is null or empty")
+            );
 
         try
         {
@@ -123,10 +131,14 @@ public static class DbConnectionExtensions
     )
     {
         if (connection == null)
-            return new Result<T?, SqlError>.Error<T?, SqlError>(SqlError.Create("Connection is null"));
+            return new Result<T?, SqlError>.Error<T?, SqlError>(
+                SqlError.Create("Connection is null")
+            );
 
         if (string.IsNullOrWhiteSpace(sql))
-            return new Result<T?, SqlError>.Error<T?, SqlError>(SqlError.Create("SQL is null or empty"));
+            return new Result<T?, SqlError>.Error<T?, SqlError>(
+                SqlError.Create("SQL is null or empty")
+            );
 
         try
         {
@@ -188,7 +200,9 @@ public static class DbConnectionExtensions
         var sqlResult = sqlGenerator(statement);
         if (sqlResult is Result<string, SqlError>.Error<string, SqlError> sqlFail)
         {
-            return new Result<IReadOnlyList<T>, SqlError>.Error<IReadOnlyList<T>, SqlError>(sqlFail.Value);
+            return new Result<IReadOnlyList<T>, SqlError>.Error<IReadOnlyList<T>, SqlError>(
+                sqlFail.Value
+            );
         }
 
         var sql = ((Result<string, SqlError>.Ok<string, SqlError>)sqlResult).Value;

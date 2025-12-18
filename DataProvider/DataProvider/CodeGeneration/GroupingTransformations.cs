@@ -283,7 +283,9 @@ public static class GroupingTransformations
         {
             sb.Append(groupingSuccess.Value);
         }
-        else if (groupingMethodResult is Result<string, SqlError>.Error<string, SqlError> groupingFailure)
+        else if (
+            groupingMethodResult is Result<string, SqlError>.Error<string, SqlError> groupingFailure
+        )
         {
             return groupingFailure;
         }

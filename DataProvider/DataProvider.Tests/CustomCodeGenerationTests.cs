@@ -59,7 +59,10 @@ public class CustomCodeGenerationTests
         IEnumerable<ParameterInfo> parameters
     ) =>
         Task.FromResult<Result<IReadOnlyList<DatabaseColumn>, SqlError>>(
-            new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Ok<IReadOnlyList<DatabaseColumn>, SqlError>(TestColumns)
+            new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Ok<
+                IReadOnlyList<DatabaseColumn>,
+                SqlError
+            >(TestColumns)
         );
 
     [Fact]
@@ -329,7 +332,9 @@ public class {methodName}Query
         {
             GenerateDataAccessMethod = CustomDataAccessGenerator,
             GenerateModelType = (typeName, columns) =>
-                new Result<string, SqlError>.Ok<string, SqlError>($"// Model for {typeName} would be here"),
+                new Result<string, SqlError>.Ok<string, SqlError>(
+                    $"// Model for {typeName} would be here"
+                ),
             TargetNamespace = "FluentGenerated",
         };
 
@@ -698,10 +703,14 @@ internal sealed class RepositoryPatternTableOperationGenerator : ITableOperation
     public Result<string, SqlError> GenerateTableOperations(DatabaseTable table, TableConfig config)
     {
         if (table == null)
-            return new Result<string, SqlError>.Error<string, SqlError>(new SqlError("table cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("table cannot be null")
+            );
 
         if (config == null)
-            return new Result<string, SqlError>.Error<string, SqlError>(new SqlError("config cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("config cannot be null")
+            );
 
         var entityName = $"{table.Name.TrimEnd('s')}Entity";
         var repositoryInterface = $"I{table.Name}Repository";
@@ -777,10 +786,14 @@ public record {entityName}(
     }
 
     public Result<string, SqlError> GenerateInsertMethod(DatabaseTable table) =>
-        new Result<string, SqlError>.Ok<string, SqlError>("// Insert handled by repository pattern");
+        new Result<string, SqlError>.Ok<string, SqlError>(
+            "// Insert handled by repository pattern"
+        );
 
     public Result<string, SqlError> GenerateUpdateMethod(DatabaseTable table) =>
-        new Result<string, SqlError>.Ok<string, SqlError>("// Update handled by repository pattern");
+        new Result<string, SqlError>.Ok<string, SqlError>(
+            "// Update handled by repository pattern"
+        );
 
     private static string GenerateRepositoryInsertMethod(DatabaseTable table, string entityName)
     {

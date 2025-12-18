@@ -21,13 +21,15 @@ public static class LqlStatementConverter
 #pragma warning disable EXHAUSTION001 // Result type is exhaustive
         return parseResult switch
         {
-            Result<INode, SqlError>.Ok<INode, SqlError> success => new Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>(
-                new LqlStatement { AstNode = success.Value }
-            ),
-            Result<INode, SqlError>.Error<INode, SqlError> failure => new Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>(
-                failure.Value
-            ),
-            _ => throw new InvalidOperationException("Unexpected Result type")
+            Result<INode, SqlError>.Ok<INode, SqlError> success => new Result<
+                LqlStatement,
+                SqlError
+            >.Ok<LqlStatement, SqlError>(new LqlStatement { AstNode = success.Value }),
+            Result<INode, SqlError>.Error<INode, SqlError> failure => new Result<
+                LqlStatement,
+                SqlError
+            >.Error<LqlStatement, SqlError>(failure.Value),
+            _ => throw new InvalidOperationException("Unexpected Result type"),
         };
 #pragma warning restore EXHAUSTION001
     }

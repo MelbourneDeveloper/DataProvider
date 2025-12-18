@@ -10,17 +10,28 @@ global using BatchApplyResultOk = Outcome.Result<Sync.BatchApplyResult, Sync.Syn
     Sync.SyncError
 >;
 global using BatchApplyResultResult = Outcome.Result<Sync.BatchApplyResult, Sync.SyncError>;
-global using BoolSyncResult = Outcome.Result<bool, Sync.SyncError>;
-global using BoolSyncOk = Outcome.Result<bool, Sync.SyncError>.Ok<bool, Sync.SyncError>;
 global using BoolSyncError = Outcome.Result<bool, Sync.SyncError>.Error<bool, Sync.SyncError>;
-
-global using IntSyncOk = Outcome.Result<int, Sync.SyncError>.Ok<int, Sync.SyncError>;
+global using BoolSyncOk = Outcome.Result<bool, Sync.SyncError>.Ok<bool, Sync.SyncError>;
+global using BoolSyncResult = Outcome.Result<bool, Sync.SyncError>;
+global using ConflictResolutionError = Outcome.Result<
+    Sync.ConflictResolution,
+    Sync.SyncError
+>.Error<Sync.ConflictResolution, Sync.SyncError>;
+global using ConflictResolutionOk = Outcome.Result<Sync.ConflictResolution, Sync.SyncError>.Ok<
+    Sync.ConflictResolution,
+    Sync.SyncError
+>;
 global using IntSyncError = Outcome.Result<int, Sync.SyncError>.Error<int, Sync.SyncError>;
-
-global using SyncLogListOk = Outcome.Result<System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>, Sync.SyncError>.Ok<System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>, Sync.SyncError>;
-
-global using SyncLogEntryOk = Outcome.Result<Sync.SyncLogEntry, Sync.SyncError>.Ok<Sync.SyncLogEntry, Sync.SyncError>;
-global using SyncLogEntryError = Outcome.Result<Sync.SyncLogEntry, Sync.SyncError>.Error<Sync.SyncLogEntry, Sync.SyncError>;
-
-global using ConflictResolutionOk = Outcome.Result<Sync.ConflictResolution, Sync.SyncError>.Ok<Sync.ConflictResolution, Sync.SyncError>;
-global using ConflictResolutionError = Outcome.Result<Sync.ConflictResolution, Sync.SyncError>.Error<Sync.ConflictResolution, Sync.SyncError>;
+global using IntSyncOk = Outcome.Result<int, Sync.SyncError>.Ok<int, Sync.SyncError>;
+global using SyncLogEntryError = Outcome.Result<Sync.SyncLogEntry, Sync.SyncError>.Error<
+    Sync.SyncLogEntry,
+    Sync.SyncError
+>;
+global using SyncLogEntryOk = Outcome.Result<Sync.SyncLogEntry, Sync.SyncError>.Ok<
+    Sync.SyncLogEntry,
+    Sync.SyncError
+>;
+global using SyncLogListOk = Outcome.Result<
+    System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>,
+    Sync.SyncError
+>.Ok<System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>, Sync.SyncError>;
