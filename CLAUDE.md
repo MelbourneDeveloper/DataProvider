@@ -28,6 +28,7 @@ This repository contains two complementary projects:
 - Database-specific implementations: `DataProvider.SQLite/`, `DataProvider.SqlServer/`
 - Uses ANTLR grammars for SQL parsing (`Parsing/*.g4` files)
 - Generates extension methods on `IDbConnection` and `IDbTransaction`
+- Routinely format all C# code with `dotnet csharpier .`
 
 **LQL (Lambda Query Language)** - Functional DSL that transpiles to SQL
 - Core transpiler in `Lql/Lql/` - ANTLR grammar, pipeline steps, AST
@@ -46,6 +47,7 @@ This repository contains two complementary projects:
 - **NO INTERFACES** - Use `Action<T>` or `Func<T>` for abstractions
 - **AVOID ASSIGNMENTS** - Use expressions where possible
 - **Static extension methods on IDbConnection and IDbTransaction only** - No classes for data access
+- **Test at the highest level** - Avoid mocks. Only full integration testing
 - **No singletons** - Inject `Func` into static methods
 - **NO REGEX** - Parse SQL with ANTLR .g4 grammars or SqlParserCS library
 - **All public members require XMLDOC** - Except in test projects
