@@ -48,8 +48,11 @@ public static class ChangeApplierSQLite
         }
     }
 
-    [SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities",
-        Justification = "Table names come from internal sync log, not user input")]
+    [SuppressMessage(
+        "Security",
+        "CA2100:Review SQL queries for security vulnerabilities",
+        Justification = "Table names come from internal sync log, not user input"
+    )]
     private static Result<bool, SyncError> ApplyInsert(
         SqliteConnection connection,
         SyncLogEntry entry
@@ -74,7 +77,8 @@ public static class ChangeApplierSQLite
         var parameters = string.Join(", ", data.Keys.Select(k => $"@{k}"));
 
         using var cmd = connection.CreateCommand();
-        cmd.CommandText = $"INSERT OR REPLACE INTO {entry.TableName} ({columns}) VALUES ({parameters})";
+        cmd.CommandText =
+            $"INSERT OR REPLACE INTO {entry.TableName} ({columns}) VALUES ({parameters})";
 
         foreach (var kvp in data)
         {
@@ -94,8 +98,11 @@ public static class ChangeApplierSQLite
         return ApplyInsert(connection, entry);
     }
 
-    [SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities",
-        Justification = "Table names come from internal sync log, not user input")]
+    [SuppressMessage(
+        "Security",
+        "CA2100:Review SQL queries for security vulnerabilities",
+        Justification = "Table names come from internal sync log, not user input"
+    )]
     private static Result<bool, SyncError> ApplyDelete(
         SqliteConnection connection,
         SyncLogEntry entry
@@ -133,6 +140,7 @@ public static class ChangeApplierSQLite
         };
 
     private static bool IsForeignKeyViolation(SqliteException ex) =>
-        ex.SqliteErrorCode == 19 && // SQLITE_CONSTRAINT
+        ex.SqliteErrorCode == 19
+        && // SQLITE_CONSTRAINT
         ex.Message.Contains("FOREIGN KEY", StringComparison.OrdinalIgnoreCase);
 }

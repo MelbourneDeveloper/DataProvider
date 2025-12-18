@@ -44,7 +44,8 @@ public static class TombstoneManager
     public static IReadOnlyList<string> FindStaleClients(
         IEnumerable<SyncClient> clients,
         DateTime now,
-        TimeSpan inactivityLimit)
+        TimeSpan inactivityLimit
+    )
     {
         var stale = new List<string>();
 
@@ -70,7 +71,8 @@ public static class TombstoneManager
     /// <returns>Number of tombstones purged or error.</returns>
     public static Result<int, SyncError> PurgeTombstones(
         IEnumerable<SyncClient> clients,
-        Func<long, Result<int, SyncError>> purgeTombstones)
+        Func<long, Result<int, SyncError>> purgeTombstones
+    )
     {
         var safeVersion = CalculateSafePurgeVersion(clients);
 
@@ -94,13 +96,14 @@ public static class TombstoneManager
         string originId,
         long syncedToVersion,
         string timestamp,
-        SyncClient? existingClient) =>
+        SyncClient? existingClient
+    ) =>
         existingClient is null
             ? new SyncClient(originId, syncedToVersion, timestamp, timestamp)
             : existingClient with
             {
                 LastSyncVersion = syncedToVersion,
-                LastSyncTimestamp = timestamp
+                LastSyncTimestamp = timestamp,
             };
 
     /// <summary>
@@ -111,6 +114,6 @@ public static class TombstoneManager
     /// <returns>FullResyncRequired error.</returns>
     public static SyncErrorFullResyncRequired CreateFullResyncError(
         long clientVersion,
-        long oldestVersion) =>
-        new(clientVersion, oldestVersion);
+        long oldestVersion
+    ) => new(clientVersion, oldestVersion);
 }

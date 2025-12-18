@@ -20,10 +20,24 @@ public sealed class HashVerifierTests
     {
         var entries = new[]
         {
-            new SyncLogEntry(1, "Person", "{\"Id\":\"1\"}", SyncOperation.Insert,
-                "{\"Id\":\"1\",\"Name\":\"Alice\"}", "origin-1", "2025-01-01T00:00:00.000Z"),
-            new SyncLogEntry(2, "Person", "{\"Id\":\"2\"}", SyncOperation.Insert,
-                "{\"Id\":\"2\",\"Name\":\"Bob\"}", "origin-1", "2025-01-01T00:00:01.000Z")
+            new SyncLogEntry(
+                1,
+                "Person",
+                "{\"Id\":\"1\"}",
+                SyncOperation.Insert,
+                "{\"Id\":\"1\",\"Name\":\"Alice\"}",
+                "origin-1",
+                "2025-01-01T00:00:00.000Z"
+            ),
+            new SyncLogEntry(
+                2,
+                "Person",
+                "{\"Id\":\"2\"}",
+                SyncOperation.Insert,
+                "{\"Id\":\"2\",\"Name\":\"Bob\"}",
+                "origin-1",
+                "2025-01-01T00:00:01.000Z"
+            ),
         };
 
         var hash1 = HashVerifier.ComputeBatchHash(entries);
@@ -37,14 +51,28 @@ public sealed class HashVerifierTests
     {
         var entries1 = new[]
         {
-            new SyncLogEntry(1, "Person", "{\"Id\":\"1\"}", SyncOperation.Insert,
-                "{\"Id\":\"1\",\"Name\":\"Alice\"}", "origin-1", "2025-01-01T00:00:00.000Z")
+            new SyncLogEntry(
+                1,
+                "Person",
+                "{\"Id\":\"1\"}",
+                SyncOperation.Insert,
+                "{\"Id\":\"1\",\"Name\":\"Alice\"}",
+                "origin-1",
+                "2025-01-01T00:00:00.000Z"
+            ),
         };
 
         var entries2 = new[]
         {
-            new SyncLogEntry(1, "Person", "{\"Id\":\"1\"}", SyncOperation.Insert,
-                "{\"Id\":\"1\",\"Name\":\"Bob\"}", "origin-1", "2025-01-01T00:00:00.000Z")
+            new SyncLogEntry(
+                1,
+                "Person",
+                "{\"Id\":\"1\"}",
+                SyncOperation.Insert,
+                "{\"Id\":\"1\",\"Name\":\"Bob\"}",
+                "origin-1",
+                "2025-01-01T00:00:00.000Z"
+            ),
         };
 
         var hash1 = HashVerifier.ComputeBatchHash(entries1);
@@ -58,8 +86,15 @@ public sealed class HashVerifierTests
     {
         var entries = new[]
         {
-            new SyncLogEntry(1, "Person", "{\"Id\":\"1\"}", SyncOperation.Delete,
-                null, "origin-1", "2025-01-01T00:00:00.000Z")
+            new SyncLogEntry(
+                1,
+                "Person",
+                "{\"Id\":\"1\"}",
+                SyncOperation.Delete,
+                null,
+                "origin-1",
+                "2025-01-01T00:00:00.000Z"
+            ),
         };
 
         var hash = HashVerifier.ComputeBatchHash(entries);
@@ -75,7 +110,7 @@ public sealed class HashVerifierTests
         {
             ["Zebra"] = "last",
             ["Apple"] = "first",
-            ["Mango"] = "middle"
+            ["Mango"] = "middle",
         };
 
         var json = HashVerifier.ToCanonicalJson(data);
@@ -88,11 +123,7 @@ public sealed class HashVerifierTests
     [Fact]
     public void ToCanonicalJson_NoWhitespace()
     {
-        var data = new Dictionary<string, object?>
-        {
-            ["Name"] = "Alice",
-            ["Age"] = 30
-        };
+        var data = new Dictionary<string, object?> { ["Name"] = "Alice", ["Age"] = 30 };
 
         var json = HashVerifier.ToCanonicalJson(data);
 
@@ -103,11 +134,7 @@ public sealed class HashVerifierTests
     [Fact]
     public void ToCanonicalJson_HandlesNullValues()
     {
-        var data = new Dictionary<string, object?>
-        {
-            ["Name"] = "Alice",
-            ["Email"] = null
-        };
+        var data = new Dictionary<string, object?> { ["Name"] = "Alice", ["Email"] = null };
 
         var json = HashVerifier.ToCanonicalJson(data);
 
@@ -164,7 +191,7 @@ public sealed class HashVerifierTests
         var rows = new Dictionary<string, List<Dictionary<string, object?>>>
         {
             ["Order"] = [new() { ["Id"] = "1", ["Total"] = 100 }],
-            ["Person"] = [new() { ["Id"] = "1", ["Name"] = "Alice" }]
+            ["Person"] = [new() { ["Id"] = "1", ["Name"] = "Alice" }],
         };
 
         var hash1 = HashVerifier.ComputeDatabaseHash(tables, t => rows[t]);
@@ -180,7 +207,7 @@ public sealed class HashVerifierTests
         var rows = new Dictionary<string, List<Dictionary<string, object?>>>
         {
             ["Zebra"] = [new() { ["Id"] = "z1" }],
-            ["Apple"] = [new() { ["Id"] = "a1" }]
+            ["Apple"] = [new() { ["Id"] = "a1" }],
         };
 
         var hash1 = HashVerifier.ComputeDatabaseHash(["Zebra", "Apple"], t => rows[t]);

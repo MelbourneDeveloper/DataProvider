@@ -14,12 +14,29 @@ public sealed class ChangeApplierTests : IDisposable
         var myOrigin = "my-origin";
         var batch = new SyncBatch(
             [
-                new SyncLogEntry(1, "Person", "{\"Id\":\"1\"}", SyncOperation.Insert,
-                    "{\"Id\":\"1\",\"Name\":\"Alice\"}", myOrigin, "2025-01-01T00:00:00.000Z"),
-                new SyncLogEntry(2, "Person", "{\"Id\":\"2\"}", SyncOperation.Insert,
-                    "{\"Id\":\"2\",\"Name\":\"Bob\"}", "other-origin", "2025-01-01T00:00:01.000Z")
+                new SyncLogEntry(
+                    1,
+                    "Person",
+                    "{\"Id\":\"1\"}",
+                    SyncOperation.Insert,
+                    "{\"Id\":\"1\",\"Name\":\"Alice\"}",
+                    myOrigin,
+                    "2025-01-01T00:00:00.000Z"
+                ),
+                new SyncLogEntry(
+                    2,
+                    "Person",
+                    "{\"Id\":\"2\"}",
+                    SyncOperation.Insert,
+                    "{\"Id\":\"2\",\"Name\":\"Bob\"}",
+                    "other-origin",
+                    "2025-01-01T00:00:01.000Z"
+                ),
             ],
-            0, 2, false);
+            0,
+            2,
+            false
+        );
 
         var appliedEntries = new List<SyncLogEntry>();
 
@@ -31,7 +48,8 @@ public sealed class ChangeApplierTests : IDisposable
             {
                 appliedEntries.Add(entry);
                 return new Result<bool, SyncError>.Success(true);
-            });
+            }
+        );
 
         var applyResult = AssertSuccess(result);
         Assert.Single(appliedEntries);
@@ -45,12 +63,29 @@ public sealed class ChangeApplierTests : IDisposable
         // Simulate: Child insert comes before Parent insert (FK violation on first try)
         var batch = new SyncBatch(
             [
-                new SyncLogEntry(1, "Child", "{\"Id\":\"c1\"}", SyncOperation.Insert,
-                    "{\"Id\":\"c1\",\"ParentId\":\"p1\",\"Name\":\"Child1\"}", "other", "2025-01-01T00:00:00.000Z"),
-                new SyncLogEntry(2, "Parent", "{\"Id\":\"p1\"}", SyncOperation.Insert,
-                    "{\"Id\":\"p1\",\"Name\":\"Parent1\"}", "other", "2025-01-01T00:00:01.000Z")
+                new SyncLogEntry(
+                    1,
+                    "Child",
+                    "{\"Id\":\"c1\"}",
+                    SyncOperation.Insert,
+                    "{\"Id\":\"c1\",\"ParentId\":\"p1\",\"Name\":\"Child1\"}",
+                    "other",
+                    "2025-01-01T00:00:00.000Z"
+                ),
+                new SyncLogEntry(
+                    2,
+                    "Parent",
+                    "{\"Id\":\"p1\"}",
+                    SyncOperation.Insert,
+                    "{\"Id\":\"p1\",\"Name\":\"Parent1\"}",
+                    "other",
+                    "2025-01-01T00:00:01.000Z"
+                ),
             ],
-            0, 2, false);
+            0,
+            2,
+            false
+        );
 
         var attemptCounts = new Dictionary<long, int>();
 
@@ -70,7 +105,8 @@ public sealed class ChangeApplierTests : IDisposable
                 }
 
                 return new Result<bool, SyncError>.Success(true);
-            });
+            }
+        );
 
         var applyResult = AssertSuccess(result);
         Assert.Equal(2, applyResult.AppliedCount);
@@ -83,16 +119,27 @@ public sealed class ChangeApplierTests : IDisposable
     {
         var batch = new SyncBatch(
             [
-                new SyncLogEntry(1, "Child", "{\"Id\":\"c1\"}", SyncOperation.Insert,
-                    "{\"Id\":\"c1\",\"ParentId\":\"missing\"}", "other", "2025-01-01T00:00:00.000Z")
+                new SyncLogEntry(
+                    1,
+                    "Child",
+                    "{\"Id\":\"c1\"}",
+                    SyncOperation.Insert,
+                    "{\"Id\":\"c1\",\"ParentId\":\"missing\"}",
+                    "other",
+                    "2025-01-01T00:00:00.000Z"
+                ),
             ],
-            0, 1, false);
+            0,
+            1,
+            false
+        );
 
         var result = ChangeApplier.ApplyBatch(
             batch,
             "my-origin",
             3,
-            _ => new Result<bool, SyncError>.Success(false)); // Always FK violation
+            _ => new Result<bool, SyncError>.Success(false)
+        ); // Always FK violation
 
         Assert.IsType<Result<BatchApplyResult, SyncError>.Failure>(result);
         var failure = (Result<BatchApplyResult, SyncError>.Failure)result;
@@ -107,18 +154,31 @@ public sealed class ChangeApplierTests : IDisposable
 
         var batch = new SyncBatch(
             [
-                new SyncLogEntry(1, "Child", "{\"Id\":\"c1\"}", SyncOperation.Insert,
-                    "{\"Id\":\"c1\",\"ParentId\":\"p1\",\"Name\":\"Child1\"}", "other", "2025-01-01T00:00:00.000Z"),
-                new SyncLogEntry(2, "Child", "{\"Id\":\"c1\"}", SyncOperation.Update,
-                    "{\"Id\":\"c1\",\"ParentId\":\"p1\",\"Name\":\"UpdatedChild\"}", "other", "2025-01-01T00:00:01.000Z"),
+                new SyncLogEntry(
+                    1,
+                    "Child",
+                    "{\"Id\":\"c1\"}",
+                    SyncOperation.Insert,
+                    "{\"Id\":\"c1\",\"ParentId\":\"p1\",\"Name\":\"Child1\"}",
+                    "other",
+                    "2025-01-01T00:00:00.000Z"
+                ),
+                new SyncLogEntry(
+                    2,
+                    "Child",
+                    "{\"Id\":\"c1\"}",
+                    SyncOperation.Update,
+                    "{\"Id\":\"c1\",\"ParentId\":\"p1\",\"Name\":\"UpdatedChild\"}",
+                    "other",
+                    "2025-01-01T00:00:01.000Z"
+                ),
             ],
-            0, 2, false);
+            0,
+            2,
+            false
+        );
 
-        var result = ChangeApplier.ApplyBatch(
-            batch,
-            "my-origin",
-            3,
-            entry => ApplyToDb(entry));
+        var result = ChangeApplier.ApplyBatch(batch, "my-origin", 3, entry => ApplyToDb(entry));
 
         var applyResult = AssertSuccess(result);
         Assert.Equal(2, applyResult.AppliedCount);
@@ -162,22 +222,29 @@ public sealed class ChangeApplierTests : IDisposable
 
             if (entry.Operation == SyncOperation.Insert && entry.TableName == "Child")
             {
-                var payload = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(entry.Payload!);
-                cmd.CommandText = "INSERT INTO Child (Id, ParentId, Name) VALUES ($id, $parentId, $name)";
+                var payload = System.Text.Json.JsonSerializer.Deserialize<
+                    Dictionary<string, string>
+                >(entry.Payload!);
+                cmd.CommandText =
+                    "INSERT INTO Child (Id, ParentId, Name) VALUES ($id, $parentId, $name)";
                 cmd.Parameters.AddWithValue("$id", payload!["Id"]);
                 cmd.Parameters.AddWithValue("$parentId", payload["ParentId"]);
                 cmd.Parameters.AddWithValue("$name", payload["Name"]);
             }
             else if (entry.Operation == SyncOperation.Update && entry.TableName == "Child")
             {
-                var payload = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(entry.Payload!);
+                var payload = System.Text.Json.JsonSerializer.Deserialize<
+                    Dictionary<string, string>
+                >(entry.Payload!);
                 cmd.CommandText = "UPDATE Child SET Name = $name WHERE Id = $id";
                 cmd.Parameters.AddWithValue("$id", payload!["Id"]);
                 cmd.Parameters.AddWithValue("$name", payload["Name"]);
             }
             else if (entry.Operation == SyncOperation.Delete && entry.TableName == "Child")
             {
-                var pk = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(entry.PkValue);
+                var pk = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(
+                    entry.PkValue
+                );
                 cmd.CommandText = "DELETE FROM Child WHERE Id = $id";
                 cmd.Parameters.AddWithValue("$id", pk!["Id"]);
             }

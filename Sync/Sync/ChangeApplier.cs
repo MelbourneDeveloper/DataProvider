@@ -21,7 +21,8 @@ public static class ChangeApplier
         SyncBatch batch,
         string myOriginId,
         int maxRetryPasses,
-        Func<SyncLogEntry, Result<bool, SyncError>> applyChange)
+        Func<SyncLogEntry, Result<bool, SyncError>> applyChange
+    )
     {
         var deferred = new List<SyncLogEntry>();
         var appliedCount = 0;
@@ -82,11 +83,14 @@ public static class ChangeApplier
             return new Result<BatchApplyResult, SyncError>.Failure(
                 new SyncErrorDeferredChangeFailed(
                     deferred[0],
-                    $"{deferred.Count} changes could not be applied after {maxRetryPasses} retry passes"));
+                    $"{deferred.Count} changes could not be applied after {maxRetryPasses} retry passes"
+                )
+            );
         }
 
         return new Result<BatchApplyResult, SyncError>.Success(
-            new BatchApplyResult(appliedCount, 0, batch.ToVersion));
+            new BatchApplyResult(appliedCount, 0, batch.ToVersion)
+        );
     }
 
     /// <summary>
@@ -96,7 +100,7 @@ public static class ChangeApplier
     /// <param name="message">Exception message to check.</param>
     /// <returns>True if this is an FK violation.</returns>
     public static bool IsForeignKeyViolation(string message) =>
-        message.Contains("FOREIGN KEY", StringComparison.OrdinalIgnoreCase) ||
-        message.Contains("FK_", StringComparison.OrdinalIgnoreCase) ||
-        message.Contains("foreign key constraint", StringComparison.OrdinalIgnoreCase);
+        message.Contains("FOREIGN KEY", StringComparison.OrdinalIgnoreCase)
+        || message.Contains("FK_", StringComparison.OrdinalIgnoreCase)
+        || message.Contains("foreign key constraint", StringComparison.OrdinalIgnoreCase);
 }

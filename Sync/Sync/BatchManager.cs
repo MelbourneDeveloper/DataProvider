@@ -30,8 +30,10 @@ public static class BatchManager
                 fromVersion,
                 batchSize
             ),
-            Result<IReadOnlyList<SyncLogEntry>, SyncError>.Failure f =>
-                new Result<SyncBatch, SyncError>.Failure(f.ErrorValue),
+            Result<IReadOnlyList<SyncLogEntry>, SyncError>.Failure f => new Result<
+                SyncBatch,
+                SyncError
+            >.Failure(f.ErrorValue),
             _ => new Result<SyncBatch, SyncError>.Failure(
                 new SyncErrorDatabase("Unexpected result type")
             ),

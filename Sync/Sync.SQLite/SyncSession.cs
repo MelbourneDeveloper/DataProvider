@@ -65,9 +65,7 @@ public static class SyncSessionManager
             using var cmd = connection.CreateCommand();
             cmd.CommandText = "SELECT sync_active FROM _sync_session LIMIT 1";
             var result = cmd.ExecuteScalar();
-            return new Result<bool, SyncError>.Success(
-                result is long value && value == 1
-            );
+            return new Result<bool, SyncError>.Success(result is long value && value == 1);
         }
         catch (SqliteException ex)
         {

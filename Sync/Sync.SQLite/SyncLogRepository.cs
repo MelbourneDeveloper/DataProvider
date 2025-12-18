@@ -101,7 +101,8 @@ public static class SyncLogRepository
         try
         {
             using var cmd = connection.CreateCommand();
-            cmd.CommandText = "UPDATE _sync_state SET value = @version WHERE key = 'last_server_version'";
+            cmd.CommandText =
+                "UPDATE _sync_state SET value = @version WHERE key = 'last_server_version'";
             cmd.Parameters.AddWithValue("@version", version.ToString(CultureInfo.InvariantCulture));
             cmd.ExecuteNonQuery();
             return new Result<bool, SyncError>.Success(true);

@@ -50,6 +50,42 @@ public static class SyncSchema
         """;
 
     /// <summary>
+    /// SQL to create sync clients table (_sync_clients).
+    /// Server-side tracking of client sync state for tombstone retention.
+    /// Maps to spec Section 13.3 / Appendix B.
+    /// </summary>
+    public const string CreateSyncClientsTable = """
+        CREATE TABLE IF NOT EXISTS _sync_clients (
+            origin_id TEXT PRIMARY KEY,
+            last_sync_version INTEGER NOT NULL DEFAULT 0,
+            last_sync_timestamp TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_sync_clients_version ON _sync_clients(last_sync_version);
+        """;
+
+    /// <summary>
+    /// SQL to create sync subscriptions table (_sync_subscriptions).
+    /// Server-side tracking of real-time subscriptions.
+    /// Maps to spec Section 10.6.
+    /// </summary>
+    public const string CreateSyncSubscriptionsTable = """
+        CREATE TABLE IF NOT EXISTS _sync_subscriptions (
+            subscription_id TEXT PRIMARY KEY,
+            origin_id TEXT NOT NULL,
+            subscription_type TEXT NOT NULL CHECK (subscription_type IN ('record', 'table', 'query')),
+            table_name TEXT NOT NULL,
+            filter TEXT,
+            created_at TEXT NOT NULL,
+            expires_at TEXT
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_subscriptions_table ON _sync_subscriptions(table_name);
+        CREATE INDEX IF NOT EXISTS idx_subscriptions_origin ON _sync_subscriptions(origin_id);
+        """;
+
+    /// <summary>
     /// SQL to initialize sync state with default values.
     /// </summary>
     public const string InitializeSyncState = """
@@ -69,7 +105,8 @@ public static class SyncSchema
         try
         {
             using var cmd = connection.CreateCommand();
-            cmd.CommandText = $"{CreateSyncStateTable}\n{CreateSyncSessionTable}\n{CreateSyncLogTable}\n{InitializeSyncState}";
+            cmd.CommandText =
+                $"{CreateSyncStateTable}\n{CreateSyncSessionTable}\n{CreateSyncLogTable}\n{CreateSyncClientsTable}\n{CreateSyncSubscriptionsTable}\n{InitializeSyncState}";
             cmd.ExecuteNonQuery();
             return new Result<bool, SyncError>.Success(true);
         }

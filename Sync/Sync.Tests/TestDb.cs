@@ -72,7 +72,8 @@ public sealed class TestDb : IDisposable
         string operation,
         string? payload,
         string origin,
-        string timestamp)
+        string timestamp
+    )
     {
         using var cmd = Connection.CreateCommand();
         cmd.CommandText = """
@@ -105,14 +106,17 @@ public sealed class TestDb : IDisposable
         using var reader = cmd.ExecuteReader();
         while (reader.Read())
         {
-            entries.Add(new SyncLogEntry(
-                reader.GetInt64(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                ParseOperation(reader.GetString(3)),
-                reader.IsDBNull(4) ? null : reader.GetString(4),
-                reader.GetString(5),
-                reader.GetString(6)));
+            entries.Add(
+                new SyncLogEntry(
+                    reader.GetInt64(0),
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    ParseOperation(reader.GetString(3)),
+                    reader.IsDBNull(4) ? null : reader.GetString(4),
+                    reader.GetString(5),
+                    reader.GetString(6)
+                )
+            );
         }
 
         return entries;
@@ -124,7 +128,7 @@ public sealed class TestDb : IDisposable
             "insert" => SyncOperation.Insert,
             "update" => SyncOperation.Update,
             "delete" => SyncOperation.Delete,
-            _ => throw new ArgumentException($"Unknown operation: {op}")
+            _ => throw new ArgumentException($"Unknown operation: {op}"),
         };
 
     public void Dispose() => Connection.Dispose();
