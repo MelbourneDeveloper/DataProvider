@@ -1,7 +1,10 @@
+#pragma warning disable CA1848 // Use LoggerMessage delegates for performance
+
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Logging;
 
 namespace Sync.SQLite;
 
@@ -49,6 +52,7 @@ public static class TriggerGenerator
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
     /// <param name="tableName">Table to generate triggers for.</param>
+    /// <param name="logger">Logger for trigger generation.</param>
     /// <returns>Trigger SQL or database error.</returns>
     [SuppressMessage(
         "Security",
@@ -57,13 +61,21 @@ public static class TriggerGenerator
     )]
     public static StringSyncResult GenerateTriggersFromSchema(
         SqliteConnection connection,
-        string tableName
+        string tableName,
+        ILogger logger
     )
     {
+        logger.LogDebug("TRIGGER: Generating triggers from schema for table {Table}", tableName);
+
         var columnsResult = GetTableColumns(connection, tableName);
 
         if (columnsResult is ColumnInfoListError error)
         {
+            logger.LogError(
+                "TRIGGER: Failed to get columns for {Table}: {Error}",
+                tableName,
+                error.Value
+            );
             return new StringSyncError(error.Value);
         }
 
@@ -71,6 +83,7 @@ public static class TriggerGenerator
 
         if (columns.Count == 0)
         {
+            logger.LogError("TRIGGER: Table {Table} not found or has no columns", tableName);
             return new StringSyncError(
                 new SyncErrorDatabase($"Table '{tableName}' not found or has no columns")
             );
@@ -79,13 +92,26 @@ public static class TriggerGenerator
         var pkColumn = columns.FirstOrDefault(c => c.IsPrimaryKey);
         if (pkColumn is null)
         {
+            logger.LogError("TRIGGER: Table {Table} has no primary key", tableName);
             return new StringSyncError(
                 new SyncErrorDatabase($"Table '{tableName}' has no primary key")
             );
         }
 
+        logger.LogDebug(
+            "TRIGGER: Table {Table} has {ColumnCount} columns, PK={PK}",
+            tableName,
+            columns.Count,
+            pkColumn.Name
+        );
+
         var columnNames = columns.Select(c => c.Name).ToList();
         var triggers = GenerateTriggers(tableName, columnNames, pkColumn.Name);
+
+        logger.LogInformation(
+            "TRIGGER: Generated INSERT/UPDATE/DELETE triggers for table {Table}",
+            tableName
+        );
 
         return new StringSyncOk(triggers);
     }
@@ -95,15 +121,22 @@ public static class TriggerGenerator
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
     /// <param name="tableName">Table to create triggers for.</param>
+    /// <param name="logger">Logger for trigger creation.</param>
     /// <returns>Success or database error.</returns>
     [SuppressMessage(
         "Security",
         "CA2100:Review SQL queries for security vulnerabilities",
         Justification = "Trigger DDL is generated from trusted schema metadata"
     )]
-    public static BoolSyncResult CreateTriggers(SqliteConnection connection, string tableName)
+    public static BoolSyncResult CreateTriggers(
+        SqliteConnection connection,
+        string tableName,
+        ILogger logger
+    )
     {
-        var triggersResult = GenerateTriggersFromSchema(connection, tableName);
+        logger.LogDebug("TRIGGER: Creating triggers for table {Table}", tableName);
+
+        var triggersResult = GenerateTriggersFromSchema(connection, tableName, logger);
 
         if (triggersResult is StringSyncError error)
         {
@@ -117,10 +150,13 @@ public static class TriggerGenerator
             using var cmd = connection.CreateCommand();
             cmd.CommandText = triggers;
             cmd.ExecuteNonQuery();
+
+            logger.LogInformation("TRIGGER: Created triggers for table {Table}", tableName);
             return new BoolSyncOk(true);
         }
         catch (SqliteException ex)
         {
+            logger.LogError(ex, "TRIGGER: Failed to create triggers for {Table}", tableName);
             return new BoolSyncError(
                 new SyncErrorDatabase($"Failed to create triggers: {ex.Message}")
             );
@@ -132,14 +168,21 @@ public static class TriggerGenerator
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
     /// <param name="tableName">Table to drop triggers for.</param>
+    /// <param name="logger">Logger for trigger operations.</param>
     /// <returns>Success or database error.</returns>
     [SuppressMessage(
         "Security",
         "CA2100:Review SQL queries for security vulnerabilities",
         Justification = "Table name is used for DROP TRIGGER IF EXISTS which is safe"
     )]
-    public static BoolSyncResult DropTriggers(SqliteConnection connection, string tableName)
+    public static BoolSyncResult DropTriggers(
+        SqliteConnection connection,
+        string tableName,
+        ILogger logger
+    )
     {
+        logger.LogDebug("TRIGGER: Dropping triggers for table {Table}", tableName);
+
         try
         {
             using var cmd = connection.CreateCommand();
@@ -153,10 +196,13 @@ public static class TriggerGenerator
                 tableName
             );
             cmd.ExecuteNonQuery();
+
+            logger.LogInformation("TRIGGER: Dropped triggers for table {Table}", tableName);
             return new BoolSyncOk(true);
         }
         catch (SqliteException ex)
         {
+            logger.LogError(ex, "TRIGGER: Failed to drop triggers for {Table}", tableName);
             return new BoolSyncError(
                 new SyncErrorDatabase($"Failed to drop triggers: {ex.Message}")
             );

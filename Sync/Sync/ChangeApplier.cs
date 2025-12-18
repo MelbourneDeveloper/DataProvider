@@ -183,7 +183,9 @@ public static class ChangeApplier
             batch.ToVersion
         );
 
-        return new BatchApplyResultOk(new BatchApplyResult(appliedCount, skippedCount, batch.ToVersion));
+        return new BatchApplyResultOk(
+            new BatchApplyResult(appliedCount, skippedCount, batch.ToVersion)
+        );
     }
 
     /// <summary>

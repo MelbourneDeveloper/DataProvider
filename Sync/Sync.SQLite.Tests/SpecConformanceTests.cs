@@ -45,7 +45,7 @@ public sealed partial class SpecConformanceTests : IDisposable
             );
             """
         );
-        var triggerResult = TriggerGenerator.CreateTriggers(_db, "UuidTable");
+        var triggerResult = TriggerGenerator.CreateTriggers(_db, "UuidTable", TestLogger.L);
         Assert.IsType<BoolSyncOk>(triggerResult);
 
         // Act: Insert with UUID
@@ -65,7 +65,7 @@ public sealed partial class SpecConformanceTests : IDisposable
     public void Spec4_3_PkValue_IsJsonObject()
     {
         // Arrange
-        TriggerGenerator.CreateTriggers(_db, "Person");
+        TriggerGenerator.CreateTriggers(_db, "Person", TestLogger.L);
 
         // Act
         ExecuteSql("INSERT INTO Person (Id, Name, Email) VALUES ('pk-123', 'Alice', 'a@b.com')");
@@ -116,7 +116,7 @@ public sealed partial class SpecConformanceTests : IDisposable
     public void Spec5_5_OriginId_IncludedInEveryChangeLogEntry()
     {
         // Arrange
-        TriggerGenerator.CreateTriggers(_db, "Person");
+        TriggerGenerator.CreateTriggers(_db, "Person", TestLogger.L);
 
         // Act: Insert, update, delete
         ExecuteSql("INSERT INTO Person (Id, Name, Email) VALUES ('p1', 'Alice', 'a@b.com')");
@@ -141,7 +141,7 @@ public sealed partial class SpecConformanceTests : IDisposable
     public void Spec6_1_Timestamps_AreIso8601UtcWithMilliseconds()
     {
         // Arrange
-        TriggerGenerator.CreateTriggers(_db, "Person");
+        TriggerGenerator.CreateTriggers(_db, "Person", TestLogger.L);
 
         // Act
         ExecuteSql("INSERT INTO Person (Id, Name, Email) VALUES ('p1', 'Alice', 'a@b.com')");
@@ -162,7 +162,7 @@ public sealed partial class SpecConformanceTests : IDisposable
     public void Spec6_2_Timestamps_EndWithZ()
     {
         // Arrange
-        TriggerGenerator.CreateTriggers(_db, "Person");
+        TriggerGenerator.CreateTriggers(_db, "Person", TestLogger.L);
         ExecuteSql("INSERT INTO Person (Id, Name, Email) VALUES ('p1', 'Alice', 'a@b.com')");
 
         // Assert
@@ -207,7 +207,7 @@ public sealed partial class SpecConformanceTests : IDisposable
     public void Spec7_2_Operation_OnlyAllowedValues()
     {
         // Arrange
-        TriggerGenerator.CreateTriggers(_db, "Person");
+        TriggerGenerator.CreateTriggers(_db, "Person", TestLogger.L);
 
         // Act
         ExecuteSql("INSERT INTO Person (Id, Name, Email) VALUES ('p1', 'Alice', 'a@b.com')");
@@ -229,7 +229,7 @@ public sealed partial class SpecConformanceTests : IDisposable
     public void Spec7_3_Payload_IsValidJsonWithAllColumns()
     {
         // Arrange
-        TriggerGenerator.CreateTriggers(_db, "Person");
+        TriggerGenerator.CreateTriggers(_db, "Person", TestLogger.L);
 
         // Act
         ExecuteSql("INSERT INTO Person (Id, Name, Email) VALUES ('p1', 'Alice', 'alice@test.com')");
@@ -250,7 +250,7 @@ public sealed partial class SpecConformanceTests : IDisposable
     public void Spec7_3_DeletePayload_IsNull()
     {
         // Arrange
-        TriggerGenerator.CreateTriggers(_db, "Person");
+        TriggerGenerator.CreateTriggers(_db, "Person", TestLogger.L);
         ExecuteSql("INSERT INTO Person (Id, Name, Email) VALUES ('p1', 'Alice', 'a@b.com')");
 
         // Act
@@ -273,7 +273,7 @@ public sealed partial class SpecConformanceTests : IDisposable
     public void Spec8_3_TriggerSuppression_PreventsLogging()
     {
         // Arrange
-        TriggerGenerator.CreateTriggers(_db, "Person");
+        TriggerGenerator.CreateTriggers(_db, "Person", TestLogger.L);
 
         // Act: Enable suppression and insert
         SyncSessionManager.EnableSuppression(_db);
@@ -297,14 +297,14 @@ public sealed partial class SpecConformanceTests : IDisposable
     public void Spec8_4_SyncSession_ControlsTriggers()
     {
         // Arrange
-        TriggerGenerator.CreateTriggers(_db, "Person");
+        TriggerGenerator.CreateTriggers(_db, "Person", TestLogger.L);
 
         // Act: Check initial state
         using var cmd = _db.CreateCommand();
         cmd.CommandText = "SELECT sync_active FROM _sync_session";
         var initial = Convert.ToInt32(
             cmd.ExecuteScalar(),
-            System.Globalization.CultureInfo.InvariantCulture
+            CultureInfo.InvariantCulture
         );
         Assert.Equal(0, initial);
 
@@ -313,7 +313,7 @@ public sealed partial class SpecConformanceTests : IDisposable
         cmd.CommandText = "SELECT sync_active FROM _sync_session";
         var active = Convert.ToInt32(
             cmd.ExecuteScalar(),
-            System.Globalization.CultureInfo.InvariantCulture
+            CultureInfo.InvariantCulture
         );
         Assert.Equal(1, active);
 
@@ -322,7 +322,7 @@ public sealed partial class SpecConformanceTests : IDisposable
         cmd.CommandText = "SELECT sync_active FROM _sync_session";
         var disabled = Convert.ToInt32(
             cmd.ExecuteScalar(),
-            System.Globalization.CultureInfo.InvariantCulture
+            CultureInfo.InvariantCulture
         );
         Assert.Equal(0, disabled);
     }
@@ -338,7 +338,11 @@ public sealed partial class SpecConformanceTests : IDisposable
     public void Spec9_4_SQLiteTriggers_UseStrftime()
     {
         // Act
-        var triggersResult = TriggerGenerator.GenerateTriggersFromSchema(_db, "Person");
+        var triggersResult = TriggerGenerator.GenerateTriggersFromSchema(
+            _db,
+            "Person",
+            TestLogger.L
+        );
 
         // Assert
         Assert.IsType<StringSyncOk>(triggersResult);
@@ -353,7 +357,7 @@ public sealed partial class SpecConformanceTests : IDisposable
     public void Spec9_5_AllThreeTriggerTypes_Generated()
     {
         // Act
-        TriggerGenerator.CreateTriggers(_db, "Person");
+        TriggerGenerator.CreateTriggers(_db, "Person", TestLogger.L);
 
         // Assert: Query triggers
         using var cmd = _db.CreateCommand();
@@ -382,7 +386,7 @@ public sealed partial class SpecConformanceTests : IDisposable
     public void Spec11_3_Changes_OrderedByVersionAscending()
     {
         // Arrange
-        TriggerGenerator.CreateTriggers(_db, "Person");
+        TriggerGenerator.CreateTriggers(_db, "Person", TestLogger.L);
         ExecuteSql("INSERT INTO Person (Id, Name, Email) VALUES ('p1', 'First', 'a@b.com')");
         ExecuteSql("INSERT INTO Person (Id, Name, Email) VALUES ('p2', 'Second', 'b@c.com')");
         ExecuteSql("INSERT INTO Person (Id, Name, Email) VALUES ('p3', 'Third', 'c@d.com')");
@@ -407,7 +411,7 @@ public sealed partial class SpecConformanceTests : IDisposable
     public void Spec12_2_BatchQuery_RespectsVersionAndLimit()
     {
         // Arrange
-        TriggerGenerator.CreateTriggers(_db, "Person");
+        TriggerGenerator.CreateTriggers(_db, "Person", TestLogger.L);
         for (var i = 1; i <= 10; i++)
         {
             ExecuteSql(
@@ -628,7 +632,7 @@ public sealed partial class SpecConformanceTests : IDisposable
     public void Spec17_3_Timestamps_AreUtcIso8601WithMilliseconds()
     {
         // Arrange
-        TriggerGenerator.CreateTriggers(_db, "Person");
+        TriggerGenerator.CreateTriggers(_db, "Person", TestLogger.L);
         ExecuteSql("INSERT INTO Person (Id, Name, Email) VALUES ('p1', 'Test', 'test@test.com')");
 
         // Act

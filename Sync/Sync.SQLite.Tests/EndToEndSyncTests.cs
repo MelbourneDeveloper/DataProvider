@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Logging.Abstractions;
 using Outcome;
 using Sync;
 using Sync.SQLite;
@@ -244,7 +245,7 @@ public sealed class EndToEndSyncTests : IDisposable
         cmd.ExecuteNonQuery();
 
         // Use TriggerGenerator to create sync triggers (spec Section 9)
-        var triggerResult = TriggerGenerator.CreateTriggers(connection, "Person");
+        var triggerResult = TriggerGenerator.CreateTriggers(connection, "Person", TestLogger.L);
         if (triggerResult is BoolSyncError { Value: SyncErrorDatabase dbError })
         {
             throw new InvalidOperationException($"Failed to create triggers: {dbError.Message}");

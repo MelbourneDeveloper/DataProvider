@@ -182,7 +182,10 @@ public static class BatchManager
             return new BoolSyncOk(true);
         }
 
-        logger.LogDebug("BATCH: Verifying hash for batch with {Count} changes", batch.Changes.Count);
+        logger.LogDebug(
+            "BATCH: Verifying hash for batch with {Count} changes",
+            batch.Changes.Count
+        );
         var computedHash = HashVerifier.ComputeBatchHash(batch.Changes);
         var result = HashVerifier.VerifyHash(batch.Hash, computedHash);
 

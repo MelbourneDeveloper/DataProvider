@@ -1,4 +1,6 @@
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Sync.Tests;
@@ -9,6 +11,7 @@ namespace Sync.Tests;
 /// </summary>
 public sealed class SyncIntegrationTests : IDisposable
 {
+    private static readonly ILogger Logger = NullLogger.Instance;
     private readonly SqliteConnection _serverDb;
     private readonly SqliteConnection _clientDb;
     private const string ServerOrigin = "server-origin-001";
@@ -465,11 +468,13 @@ public sealed class SyncIntegrationTests : IDisposable
                         batch,
                         targetOrigin,
                         3,
-                        entry => ApplyChange(target, entry)
+                        entry => ApplyChange(target, entry),
+                        Logger
                     );
                     return applyResult;
                 },
-                version => SetLastSyncVersion(target, version)
+                version => SetLastSyncVersion(target, version),
+                Logger
             );
 
             if (result is IntSyncOk success)

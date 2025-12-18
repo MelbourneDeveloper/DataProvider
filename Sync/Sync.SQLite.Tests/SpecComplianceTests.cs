@@ -185,7 +185,7 @@ public sealed class SpecComplianceTests : IDisposable
             "CREATE TABLE Product (Id TEXT PRIMARY KEY, Name TEXT NOT NULL, Price REAL)";
         cmd.ExecuteNonQuery();
 
-        var result = TriggerGenerator.CreateTriggers(_db, "Product");
+        var result = TriggerGenerator.CreateTriggers(_db, "Product", TestLogger.L);
         Assert.IsType<BoolSyncOk>(result);
 
         // Verify triggers work by inserting/updating/deleting
@@ -217,7 +217,7 @@ public sealed class SpecComplianceTests : IDisposable
         cmd.CommandText = "CREATE TABLE Category (Id TEXT PRIMARY KEY, Name TEXT NOT NULL)";
         cmd.ExecuteNonQuery();
 
-        TriggerGenerator.CreateTriggers(_db, "Category");
+        TriggerGenerator.CreateTriggers(_db, "Category", TestLogger.L);
 
         // Enable suppression
         SyncSessionManager.EnableSuppression(_db);

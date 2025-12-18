@@ -204,7 +204,8 @@ public static class SubscriptionRepository
         try
         {
             using var cmd = connection.CreateCommand();
-            cmd.CommandText = "DELETE FROM _sync_subscriptions WHERE subscription_id = @subscriptionId";
+            cmd.CommandText =
+                "DELETE FROM _sync_subscriptions WHERE subscription_id = @subscriptionId";
             cmd.Parameters.AddWithValue("@subscriptionId", subscriptionId);
             cmd.ExecuteNonQuery();
             return new BoolSyncOk(true);

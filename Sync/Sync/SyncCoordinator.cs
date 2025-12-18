@@ -360,7 +360,10 @@ public static class SyncCoordinator
         }
 
         var push = ((PushResultOk)pushResult).Value;
-        logger.LogInformation("SYNC: Push phase complete. Pushed {Count} changes", push.ChangesPushed);
+        logger.LogInformation(
+            "SYNC: Push phase complete. Pushed {Count} changes",
+            push.ChangesPushed
+        );
 
         logger.LogInformation(
             "SYNC: Bidirectional sync complete. Pulled {PullCount}, pushed {PushCount}",

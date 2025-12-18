@@ -225,7 +225,7 @@ public sealed class TombstoneIntegrationTests : IDisposable
     {
         // Arrange: Server has data, some tombstones purged
         CreatePersonTable(_serverDb);
-        TriggerGenerator.CreateTriggers(_serverDb, "Person");
+        TriggerGenerator.CreateTriggers(_serverDb, "Person", TestLogger.L);
 
         // Insert then delete to create tombstone
         ExecuteSql(_serverDb, "INSERT INTO Person (Id, Name) VALUES ('p1', 'Alice')");
@@ -276,10 +276,7 @@ public sealed class TombstoneIntegrationTests : IDisposable
         using var cmd = _serverDb.CreateCommand();
         cmd.CommandText = "SELECT last_sync_version FROM _sync_clients WHERE origin_id = $origin";
         cmd.Parameters.AddWithValue("$origin", _clientOrigin);
-        var storedVersion = Convert.ToInt64(
-            cmd.ExecuteScalar(),
-            CultureInfo.InvariantCulture
-        );
+        var storedVersion = Convert.ToInt64(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
 
         // Assert
         Assert.Equal(100, storedVersion);

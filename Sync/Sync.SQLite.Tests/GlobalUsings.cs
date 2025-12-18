@@ -2,7 +2,7 @@
 
 global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.Logging.Abstractions;
-
+global using Sync.SQLite.Tests;
 // Type aliases for Result types in tests
 global using BatchApplyResultError = Outcome.Result<Sync.BatchApplyResult, Sync.SyncError>.Error<
     Sync.BatchApplyResult,

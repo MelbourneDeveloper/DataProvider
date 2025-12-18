@@ -138,7 +138,13 @@ public sealed class ChangeApplierTests : IDisposable
             false
         );
 
-        var result = ChangeApplier.ApplyBatch(batch, "my-origin", 3, _ => new BoolSyncOk(false), Logger); // Always FK violation
+        var result = ChangeApplier.ApplyBatch(
+            batch,
+            "my-origin",
+            3,
+            _ => new BoolSyncOk(false),
+            Logger
+        ); // Always FK violation
 
         Assert.IsType<BatchApplyResultError>(result);
         var failure = (BatchApplyResultError)result;
@@ -177,7 +183,7 @@ public sealed class ChangeApplierTests : IDisposable
             false
         );
 
-        var result = ChangeApplier.ApplyBatch(batch, "my-origin", 3, ApplyToDb);
+        var result = ChangeApplier.ApplyBatch(batch, "my-origin", 3, ApplyToDb, Logger);
 
         var applyResult = AssertSuccess(result);
         Assert.Equal(2, applyResult.AppliedCount);
