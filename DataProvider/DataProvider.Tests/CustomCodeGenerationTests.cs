@@ -179,7 +179,7 @@ public class UserData
     public string? Email { get; set; }
 
     public UserData() { }
-
+    
     public UserData Clone() => new UserData
     {
         Id = this.Id,
@@ -256,7 +256,7 @@ public class UserData
     public string? Email { get; set; }
 
     public UserData() { }
-
+    
     public UserData Clone() => new UserData
     {
         Id = this.Id,

@@ -33,3 +33,42 @@ global using SyncLogListOk = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>,
     Sync.SyncError
 >.Ok<System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>, Sync.SyncError>;
+global using SyncLogListError = Outcome.Result<
+    System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>,
+    Sync.SyncError
+>.Error<System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>, Sync.SyncError>;
+global using SyncLogListResult = Outcome.Result<
+    System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>,
+    Sync.SyncError
+>;
+
+// SyncCoordinator result types
+global using PullResultOk = Outcome.Result<Sync.PullResult, Sync.SyncError>.Ok<
+    Sync.PullResult,
+    Sync.SyncError
+>;
+global using PullResultError = Outcome.Result<Sync.PullResult, Sync.SyncError>.Error<
+    Sync.PullResult,
+    Sync.SyncError
+>;
+global using PullResultResult = Outcome.Result<Sync.PullResult, Sync.SyncError>;
+
+global using PushResultOk = Outcome.Result<Sync.PushResult, Sync.SyncError>.Ok<
+    Sync.PushResult,
+    Sync.SyncError
+>;
+global using PushResultError = Outcome.Result<Sync.PushResult, Sync.SyncError>.Error<
+    Sync.PushResult,
+    Sync.SyncError
+>;
+global using PushResultResult = Outcome.Result<Sync.PushResult, Sync.SyncError>;
+
+global using SyncResultOk = Outcome.Result<Sync.SyncResult, Sync.SyncError>.Ok<
+    Sync.SyncResult,
+    Sync.SyncError
+>;
+global using SyncResultError = Outcome.Result<Sync.SyncResult, Sync.SyncError>.Error<
+    Sync.SyncResult,
+    Sync.SyncError
+>;
+global using SyncResultResult = Outcome.Result<Sync.SyncResult, Sync.SyncError>;
