@@ -93,7 +93,10 @@ public static class PostgresChangeApplier
         // PostgreSQL lowercases unquoted identifiers, so we lowercase column and table names
         var columns = string.Join(", ", payload.Keys.Select(k => k.ToLowerInvariant()));
         var paramNames = string.Join(", ", payload.Keys.Select((_, i) => $"@p{i}"));
-        var updateCols = string.Join(", ", payload.Keys.Select(k => $"{k.ToLowerInvariant()} = EXCLUDED.{k.ToLowerInvariant()}"));
+        var updateCols = string.Join(
+            ", ",
+            payload.Keys.Select(k => $"{k.ToLowerInvariant()} = EXCLUDED.{k.ToLowerInvariant()}")
+        );
 
         // Get PK column for conflict clause
         var pkJson = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(entry.PkValue);

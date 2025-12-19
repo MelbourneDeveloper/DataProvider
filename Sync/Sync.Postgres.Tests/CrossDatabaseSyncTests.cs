@@ -49,8 +49,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         SyncSchema.SetOriginId(_sqliteConn, _sqliteOrigin);
 
         // Create test table in both databases
-        CreateTestTable(_pgConn, "postgres");
-        CreateTestTable(_sqliteConn, "sqlite");
+        CreateTestTable(_pgConn);
+        CreateTestTable(_sqliteConn);
 
         // Create triggers
         PostgresTriggerGenerator.CreateTriggers(_pgConn, "person", Logger);
@@ -65,7 +65,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         await _postgres.DisposeAsync();
     }
 
-    private static void CreateTestTable(NpgsqlConnection conn, string dbType)
+    private static void CreateTestTable(NpgsqlConnection conn)
     {
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
@@ -78,7 +78,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         cmd.ExecuteNonQuery();
     }
 
-    private static void CreateTestTable(SqliteConnection conn, string dbType)
+    private static void CreateTestTable(SqliteConnection conn)
     {
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
@@ -349,7 +349,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
                 break;
 
             var hasMore = changes.Count > batchSize;
-            var batch = hasMore ? changes.Take(batchSize).ToList() : changes.ToList();
+            var batch = hasMore ? changes.Take(batchSize).ToList() : [.. changes];
 
             PostgresSyncSession.EnableSuppression(_pgConn);
             foreach (var entry in batch)

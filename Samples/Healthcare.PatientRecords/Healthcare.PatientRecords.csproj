@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../DataProvider/DataProvider.SQLite/DataProvider.SQLite.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../Sync/Sync/Sync.csproj" />
+    <ProjectReference Include="../../Sync/Sync.SQLite/Sync.SQLite.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="DataProvider.json" />
+    <AdditionalFiles Include="**/*.sql" />
+    <AdditionalFiles Include="**/*.grouping.json" />
+  </ItemGroup>
+
+</Project>

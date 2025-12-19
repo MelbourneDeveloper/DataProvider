@@ -8,20 +8,21 @@
 4. [Primary Key Requirements](#4-primary-key-requirements)
 5. [Origin Identification](#5-origin-identification)
 6. [Timestamps](#6-timestamps)
-7. [Unified Change Log](#7-unified-change-log)
-8. [Trigger Suppression](#8-trigger-suppression)
-9. [LQL Trigger Generation](#9-lql-trigger-generation)
-10. [Real-Time Subscriptions](#10-real-time-subscriptions)
-11. [Bi-Directional Sync Protocol](#11-bi-directional-sync-protocol)
-12. [Batching](#12-batching)
-13. [Tombstone Retention](#13-tombstone-retention)
-14. [Conflict Resolution](#14-conflict-resolution)
-15. [Hash Verification](#15-hash-verification)
-16. [Security Considerations](#16-security-considerations)
-17. [Schema Metadata](#17-schema-metadata)
-18. [Conformance Requirements](#18-conformance-requirements)
-19. [Appendices](#19-appendices)
-20. [References](#20-references)
+7. [Data Mapping](#7-data-mapping)
+8. [Unified Change Log](#8-unified-change-log)
+9. [Trigger Suppression](#9-trigger-suppression)
+10. [LQL Trigger Generation](#10-lql-trigger-generation)
+11. [Real-Time Subscriptions](#11-real-time-subscriptions)
+12. [Bi-Directional Sync Protocol](#12-bi-directional-sync-protocol)
+13. [Batching](#13-batching)
+14. [Tombstone Retention](#14-tombstone-retention)
+15. [Conflict Resolution](#15-conflict-resolution)
+16. [Hash Verification](#16-hash-verification)
+17. [Security Considerations](#17-security-considerations)
+18. [Schema Metadata](#18-schema-metadata)
+19. [Conformance Requirements](#19-conformance-requirements)
+20. [Appendices](#20-appendices)
+21. [References](#21-references)
 
 ---
 
@@ -35,17 +36,20 @@ This specification covers:
 
 - Row-level change capture via triggers
 - Unified change log with JSON payloads
+- **Data mapping between heterogeneous schemas** (source→target table/column transforms)
 - Version-based change enumeration with batching
 - Tombstone management for deletions
 - Hash-based database verification
 - Bi-directional sync ordering
 - Trigger suppression during sync
+- Sync state tracking (which records have been synced)
 
 This specification does **not** cover:
 
 - Network transport protocols
 - Authentication/authorization
 - Specific conflict resolution algorithms (pluggable)
+- Complex ETL transformations (mapping is row-level, not aggregation)
 
 ### 1.2 Target Platforms
 
@@ -66,11 +70,14 @@ This specification does **not** cover:
 - **Extensible conflict handling**: Pluggable resolution strategies
 - **Hash-based verification**: Every sync produces a verifiable hash
 - **Efficient batching**: Handle millions of records for long-offline scenarios
+- **Heterogeneous schema sync**: Map source tables/columns to different target structures (microservices, data lakes)
+- **Selective sync**: Choose which tables, columns, and records to sync per direction
 
 ### 2.2 Non-Goals
 
 - CRDT-based automatic merge (out of scope, but extensible)
 - Binary blob or file system synchronization
+- Complex ETL (aggregations, joins across tables) - this is row-level mapping only
 
 ---
 
@@ -226,9 +233,309 @@ to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
 
 ---
 
-## 7. Unified Change Log
+## 7. Data Mapping
 
-### 7.1 Design Rationale
+### 7.1 The Problem
+
+In microservices and heterogeneous database scenarios, source and target schemas differ:
+
+- One source table may map to multiple target tables (or none)
+- Column names differ between systems
+- Data types require transformation
+- Some fields should be excluded or computed
+- Records need tracking to know if they've already been synced
+
+Simply dumping data from database A to database B is **not sync** - it's replication. True sync requires **mapping**.
+
+### 7.2 Mapping Architecture
+
+Data mapping is defined using two complementary approaches:
+
+| Approach | Use Case | UI-Friendly |
+|----------|----------|-------------|
+| **JSON Configuration** | Simple 1:1 table/column mappings, field exclusions | ✅ Yes |
+| **LQL Expressions** | Complex transformations, computed fields, conditionals | ❌ No (code) |
+
+This dual approach enables:
+- Building configuration UIs for simple mappings
+- Powerful LQL expressions for complex transformations
+- Storing mapping definitions alongside sync configuration
+
+### 7.3 Mapping Configuration Schema
+
+```json
+{
+    "version": "1.0",
+    "mappings": [
+        {
+            "id": "user-to-customer",
+            "source_table": "User",
+            "target_table": "Customer",
+            "direction": "push",
+            "enabled": true,
+            "pk_mapping": {
+                "source_column": "Id",
+                "target_column": "CustomerId"
+            },
+            "column_mappings": [
+                {
+                    "source": "FullName",
+                    "target": "Name",
+                    "transform": null
+                },
+                {
+                    "source": "EmailAddress",
+                    "target": "Email",
+                    "transform": null
+                },
+                {
+                    "source": null,
+                    "target": "Source",
+                    "transform": "constant",
+                    "value": "mobile-app"
+                },
+                {
+                    "source": "CreatedAt",
+                    "target": "RegisteredDate",
+                    "transform": "lql",
+                    "lql": "CreatedAt |> dateFormat('yyyy-MM-dd')"
+                }
+            ],
+            "excluded_columns": ["PasswordHash", "SecurityStamp"],
+            "filter": {
+                "lql": "IsActive = true AND DeletedAt IS NULL"
+            },
+            "sync_tracking": {
+                "enabled": true,
+                "tracking_column": "_synced_version",
+                "strategy": "version"
+            }
+        },
+        {
+            "id": "order-split",
+            "source_table": "Order",
+            "target_tables": ["OrderHeader", "OrderAudit"],
+            "direction": "push",
+            "enabled": true,
+            "multi_target": true,
+            "targets": [
+                {
+                    "table": "OrderHeader",
+                    "column_mappings": [
+                        {"source": "Id", "target": "OrderId"},
+                        {"source": "CustomerId", "target": "CustomerId"},
+                        {"source": "Total", "target": "Amount"}
+                    ]
+                },
+                {
+                    "table": "OrderAudit",
+                    "column_mappings": [
+                        {"source": "Id", "target": "OrderId"},
+                        {"source": "CreatedAt", "target": "EventTime"},
+                        {"source": null, "target": "EventType", "value": "created"}
+                    ]
+                }
+            ]
+        }
+    ]
+}
+```
+
+### 7.4 LQL Mapping Expressions
+
+For complex transformations, use LQL's `syncMap` operator:
+
+```lql
+-- Simple column rename
+User
+|> syncMap({
+    targetTable: "Customer",
+    columns: {
+        "Id": "CustomerId",
+        "FullName": "Name",
+        "EmailAddress": "Email"
+    }
+})
+
+-- With transformations
+Order
+|> syncMap({
+    targetTable: "OrderSummary",
+    columns: {
+        "Id": "OrderId",
+        "Total": "Amount |> round(2)",
+        "CreatedAt": "OrderDate |> dateFormat('yyyy-MM-dd')",
+        "_computed": "Status |> upper()"
+    },
+    filter: "Status != 'cancelled'"
+})
+
+-- One-to-many: split one source into multiple targets
+Order
+|> syncMapMulti([
+    {
+        targetTable: "OrderHeader",
+        columns: {"Id": "OrderId", "CustomerId": "CustId", "Total": "Amount"}
+    },
+    {
+        targetTable: "OrderLine",
+        columns: {"Id": "OrderId", "LineItems": "Items |> jsonExpand()"}
+    }
+])
+
+-- Conditional mapping
+Product
+|> syncMap({
+    targetTable: "InventoryItem",
+    columns: {
+        "Id": "ItemId",
+        "Name": "Description",
+        "Price": "UnitPrice"
+    },
+    when: "Category = 'physical' AND Stock > 0"
+})
+```
+
+### 7.5 Sync Tracking
+
+To know which records have been synced (preventing re-sync of unchanged data):
+
+#### 7.5.1 Tracking Strategies
+
+| Strategy | Description | Storage |
+|----------|-------------|---------|
+| **version** | Track last synced `_sync_log` version per mapping | `_sync_mapping_state` |
+| **hash** | Store hash of synced payload, resync on change | `_sync_record_hashes` |
+| **timestamp** | Track last sync timestamp per record | Column on source table |
+| **external** | Application manages tracking externally | None |
+
+#### 7.5.2 Tracking Tables
+
+```sql
+-- Per-mapping sync state (version strategy)
+CREATE TABLE _sync_mapping_state (
+    mapping_id TEXT PRIMARY KEY,
+    last_synced_version INTEGER NOT NULL DEFAULT 0,
+    last_sync_timestamp TEXT NOT NULL,
+    records_synced INTEGER NOT NULL DEFAULT 0
+);
+
+-- Per-record hash tracking (hash strategy)
+CREATE TABLE _sync_record_hashes (
+    mapping_id TEXT NOT NULL,
+    source_pk TEXT NOT NULL,           -- JSON pk_value
+    payload_hash TEXT NOT NULL,        -- SHA-256 of canonical JSON
+    synced_at TEXT NOT NULL,
+    PRIMARY KEY (mapping_id, source_pk)
+);
+```
+
+#### 7.5.3 Sync Decision Logic
+
+```
+For each change in batch:
+1. Look up mapping for source table
+2. If no mapping exists: skip (table not configured for sync)
+3. If mapping.filter exists: evaluate LQL filter, skip if false
+4. Check sync tracking:
+   - version: compare change.version > mapping_state.last_synced_version
+   - hash: compare payload_hash != stored_hash
+   - timestamp: compare change.timestamp > record.last_synced_at
+5. If already synced: skip
+6. Apply column mappings and transformations
+7. Apply to target table(s)
+8. Update sync tracking state
+```
+
+### 7.6 Direction Control
+
+Mappings are **directional** - a mapping for push may differ from pull:
+
+```json
+{
+    "mappings": [
+        {
+            "id": "user-push",
+            "source_table": "User",
+            "target_table": "Customer",
+            "direction": "push"
+        },
+        {
+            "id": "user-pull",
+            "source_table": "Customer",
+            "target_table": "User",
+            "direction": "pull",
+            "column_mappings": [
+                {"source": "CustomerId", "target": "Id"},
+                {"source": "Name", "target": "FullName"},
+                {"source": "Email", "target": "EmailAddress"}
+            ]
+        }
+    ]
+}
+```
+
+### 7.7 Unmapped Tables
+
+Tables without mappings have two behaviors:
+
+| Mode | Behavior |
+|------|----------|
+| **strict** | Unmapped tables are NOT synced (explicit opt-in) |
+| **passthrough** | Unmapped tables sync with identity mapping (same schema) |
+
+Configure via:
+```json
+{
+    "unmapped_table_behavior": "strict",
+    "mappings": [...]
+}
+```
+
+### 7.8 Integration with Sync Protocol
+
+The mapping layer integrates at these points:
+
+1. **Change Capture** (Section 8): Triggers capture raw changes with source schema
+2. **Pull Phase** (Section 12):
+   - Fetch changes from server
+   - Apply pull mappings to transform server→local schema
+   - Track sync state per mapping
+3. **Push Phase** (Section 12):
+   - Collect local changes
+   - Apply push mappings to transform local→server schema
+   - Track sync state per mapping
+4. **Conflict Resolution** (Section 15): Conflicts detected on **target** pk after mapping
+
+### 7.9 LQL Mapping Operators
+
+The following LQL operators support mapping:
+
+| Operator | Purpose |
+|----------|---------|
+| `syncMap` | Map columns from source to single target table |
+| `syncMapMulti` | Map source to multiple target tables |
+| `syncFilter` | Filter which records to sync |
+| `syncTransform` | Apply transformations to column values |
+| `syncExclude` | Exclude columns from sync |
+| `syncComputed` | Add computed columns to target |
+
+### 7.10 Requirements
+
+- Mappings MUST be defined via JSON configuration OR LQL expressions
+- JSON configuration MUST support simple 1:1 column mappings (UI-friendly)
+- LQL MUST be used for complex transformations (computed fields, conditionals)
+- Each mapping MUST specify direction (push, pull, or both)
+- Sync tracking MUST prevent re-syncing unchanged records
+- Mappings MUST be evaluated at sync time, not trigger time
+- Multi-target mappings MUST be atomic (all targets or none)
+- Unmapped tables MUST follow configured behavior (strict or passthrough)
+
+---
+
+## 8. Unified Change Log
+
+### 8.1 Design Rationale
 
 All changes are stored in a **single unified table** with JSON payloads:
 
@@ -237,7 +544,7 @@ All changes are stored in a **single unified table** with JSON payloads:
 - Enables efficient batched enumeration across all tables
 - Stores tombstones naturally alongside other changes
 
-### 7.2 Schema
+### 8.2 Schema
 
 ```sql
 CREATE TABLE _sync_log (
@@ -257,7 +564,7 @@ CREATE INDEX idx_sync_log_version ON _sync_log(version);
 CREATE INDEX idx_sync_log_table ON _sync_log(table_name, version);
 ```
 
-### 7.3 JSON Payload Serialization
+### 8.3 JSON Payload Serialization
 
 Payloads are generated by triggers using the database's native JSON functions. The trigger generator MUST enumerate all columns at generation time.
 
@@ -275,109 +582,26 @@ This is acceptable because:
 
 ---
 
-## 8. Trigger Suppression
+## 9. Trigger Suppression
 
-### 8.1 The Problem
+### 9.1 The Problem
 
 When applying incoming changes, local triggers fire and log those changes again. This creates:
 - Duplicate entries in the log
 - Infinite sync loops
 - Wasted storage and bandwidth
 
-### 8.2 Solution: Sync Session Flag
-
-A session-scoped flag disables trigger logging during sync application.
+### 9.2 Solution: Sync Session Flag
 
 ```sql
--- Add to _sync_state or use a temp table
 CREATE TABLE _sync_session (
     sync_active INTEGER DEFAULT 0
 );
 INSERT INTO _sync_session VALUES (0);
 ```
 
-### 8.3 Modified Triggers
+Triggers check suppression and apply data mapping (Section 7) during sync:
 
-All triggers MUST check the suppression flag:
-
-```sql
-CREATE TRIGGER Person_sync_insert
-AFTER INSERT ON Person
-WHEN (SELECT sync_active FROM _sync_session) = 0
-BEGIN
-    INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
-    VALUES (
-        'Person',
-        json_object('Id', NEW.Id),
-        'insert',
-        json_object('Id', NEW.Id, 'Name', NEW.Name, 'Email', NEW.Email),
-        (SELECT value FROM _sync_state WHERE key = 'origin_id'),
-        strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-    );
-END;
-```
-
-### 8.4 Sync Application Pattern
-
-```sql
--- 1. Enable suppression
-UPDATE _sync_session SET sync_active = 1;
-
--- 2. Apply all incoming changes in transaction
-BEGIN TRANSACTION;
--- ... apply changes ...
-COMMIT;
-
--- 3. Disable suppression
-UPDATE _sync_session SET sync_active = 0;
-```
-
-### 8.5 Requirements
-
-- Trigger suppression MUST be enabled before applying ANY incoming changes
-- Trigger suppression MUST be disabled after sync completes (success or failure)
-- Local changes made while sync_active = 1 will NOT be tracked (this is intentional)
-
----
-
-## 9. LQL Trigger Generation
-
-### 9.1 Overview
-
-Triggers are defined in LQL (Lambda Query Language) and transpiled to platform-specific SQL. This enables a single trigger definition to work across SQLite, SQL Server, and PostgreSQL.
-
-### 9.2 LQL Trigger Syntax
-
-```lql
--- Define sync triggers for a table
-Person
-|> syncTriggers({
-    columns: ["Id", "Name", "Email"],
-    pkColumn: "Id"
-   })
-```
-
-The `syncTriggers` operator generates INSERT, UPDATE, and DELETE triggers that:
-- Check the suppression flag before logging
-- Serialize specified columns to JSON payload
-- Include origin ID from `_sync_state`
-- Format timestamps per platform
-
-### 9.3 Column Enumeration
-
-The LQL transpiler queries schema metadata to enumerate columns:
-
-| Platform | Metadata Source |
-|----------|-----------------|
-| SQLite | `PRAGMA table_info(TableName)` |
-| SQL Server | `INFORMATION_SCHEMA.COLUMNS` |
-| PostgreSQL | `information_schema.columns` |
-
-Columns can be explicitly listed (recommended for excluding sensitive data) or auto-discovered from schema.
-
-### 9.4 Transpilation Output
-
-**SQLite:**
 ```sql
 CREATE TRIGGER Person_sync_insert
 AFTER INSERT ON Person
@@ -391,96 +615,72 @@ BEGIN
 END;
 ```
 
-**SQL Server:**
+### 9.3 Sync Application Pattern
+
 ```sql
-CREATE TRIGGER Person_sync_insert ON Person AFTER INSERT AS
-BEGIN
-    IF (SELECT sync_active FROM _sync_session) = 0
-    INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
-    SELECT 'Person', (SELECT i.Id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER), 'insert',
-           (SELECT i.Id, i.Name, i.Email FOR JSON PATH, WITHOUT_ARRAY_WRAPPER),
-           (SELECT value FROM _sync_state WHERE [key] = 'origin_id'),
-           FORMAT(SYSUTCDATETIME(), 'yyyy-MM-ddTHH:mm:ss.fffZ')
-    FROM inserted i;
-END;
+UPDATE _sync_session SET sync_active = 1;  -- Enable suppression
+BEGIN TRANSACTION;
+-- Apply changes with mapping transforms (Section 7)
+COMMIT;
+UPDATE _sync_session SET sync_active = 0;  -- Disable suppression
 ```
 
-**PostgreSQL:**
-```sql
-CREATE OR REPLACE FUNCTION person_sync_insert() RETURNS TRIGGER AS $$
-BEGIN
-    IF (SELECT sync_active FROM _sync_session) = 0 THEN
-        INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
-        VALUES ('Person', jsonb_build_object('Id', NEW.Id), 'insert',
-                jsonb_build_object('Id', NEW.Id, 'Name', NEW.Name, 'Email', NEW.Email),
-                (SELECT value FROM _sync_state WHERE key = 'origin_id'),
-                to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'));
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+### 9.4 Requirements
 
-CREATE TRIGGER Person_sync_insert AFTER INSERT ON Person
-FOR EACH ROW EXECUTE FUNCTION person_sync_insert();
-```
-
-### 9.5 Requirements
-
-- Triggers MUST be generated via LQL transpilation, not hand-written SQL
-- Each tracked table MUST have INSERT, UPDATE, and DELETE triggers
-- Triggers MUST be regenerated when table schema changes
-- LQL trigger definitions SHOULD be stored alongside table definitions
+- Trigger suppression MUST be enabled before applying incoming changes
+- Data mapping (Section 7) executes AFTER suppression enabled, BEFORE writes
 
 ---
 
-## 10. Real-Time Subscriptions
+## 10. LQL Trigger Generation
 
 ### 10.1 Overview
 
+Triggers are defined in LQL (Lambda Query Language) and transpiled to platform-specific SQL. This enables a single trigger definition to work across SQLite, SQL Server, and PostgreSQL.
+
+### 10.2 LQL Trigger Syntax
+
+```lql
+Person
+|> syncTriggers({ columns: ["Id", "Name", "Email"], pkColumn: "Id" })
+```
+
+Generates INSERT, UPDATE, DELETE triggers that check suppression, serialize to JSON, include origin ID.
+
+### 10.3 Column Enumeration
+
+| Platform | Metadata Source |
+|----------|-----------------|
+| SQLite | `PRAGMA table_info(TableName)` |
+| SQL Server | `INFORMATION_SCHEMA.COLUMNS` |
+| PostgreSQL | `information_schema.columns` |
+
+### 10.4 Requirements
+
+- Triggers MUST be generated via LQL transpilation
+- Each tracked table MUST have INSERT, UPDATE, DELETE triggers
+- Triggers MUST be regenerated when schema changes
+- Data mapping (Section 7) is applied at sync time, NOT trigger time
+
+---
+
+## 11. Real-Time Subscriptions
+
+### 11.1 Overview
+
 Clients can subscribe to real-time change notifications from the server. This complements batch sync with immediate push notifications for active clients.
 
-### 10.2 Subscription Types
+### 11.2 Subscription Types
 
-| Type | Description | Use Case |
-|------|-------------|----------|
-| **Record** | Subscribe to specific PK(s) | Editing a document, watching an order |
-| **Table** | Subscribe to all changes in a table | Dashboard, admin panel |
-| **Query** | Subscribe to records matching criteria | "My orders", "Assigned tasks" |
+| Type | Description |
+|------|-------------|
+| **Record** | Subscribe to specific PK(s) |
+| **Table** | Subscribe to all changes in a table |
+| **Query** | Subscribe to records matching criteria |
 
-### 10.3 Subscription Protocol
+### 11.3 Notifications
 
-**Subscribe:**
-```json
-{
-    "action": "subscribe",
-    "subscription_id": "sub-uuid-123",
-    "type": "record",
-    "table": "Orders",
-    "pk_values": ["order-uuid-456", "order-uuid-789"]
-}
-```
-
-**Table subscription:**
-```json
-{
-    "action": "subscribe",
-    "subscription_id": "sub-uuid-124",
-    "type": "table",
-    "table": "Products"
-}
-```
-
-**Unsubscribe:**
-```json
-{
-    "action": "unsubscribe",
-    "subscription_id": "sub-uuid-123"
-}
-```
-
-### 10.4 Server Notifications
-
-When a subscribed record changes, the server pushes:
+Notifications include **mapped** payloads (per Section 7) if mapping is configured:
 
 ```json
 {
@@ -498,119 +698,53 @@ When a subscribed record changes, the server pushes:
 }
 ```
 
-### 10.5 Delivery Guarantees
+### 11.4 Requirements
 
-- **At-least-once**: Notifications may be delivered multiple times; clients must handle idempotently
-- **Client acknowledgment**: Clients SHOULD acknowledge received notifications
-- **Missed notifications**: If connection drops, client resumes via batch sync from last known version
-
-### 10.6 Server-Side Tracking
-
-```sql
-CREATE TABLE _sync_subscriptions (
-    subscription_id TEXT PRIMARY KEY,
-    origin_id TEXT NOT NULL,
-    subscription_type TEXT NOT NULL CHECK (subscription_type IN ('record', 'table', 'query')),
-    table_name TEXT NOT NULL,
-    filter TEXT,                    -- JSON: pk_values for record, query criteria for query
-    created_at TEXT NOT NULL,
-    expires_at TEXT                 -- Optional TTL
-);
-
-CREATE INDEX idx_subscriptions_table ON _sync_subscriptions(table_name);
-CREATE INDEX idx_subscriptions_origin ON _sync_subscriptions(origin_id);
-```
-
-### 10.7 Requirements
-
-- Server MUST support record-level and table-level subscriptions
-- Subscriptions MUST be scoped to authenticated origin
-- Server MUST clean up subscriptions when client disconnects or subscription expires
-- Notifications MUST include full change payload (same format as `_sync_log` entries)
-- Clients MUST NOT rely solely on subscriptions; batch sync remains the source of truth
+- At-least-once delivery; clients handle idempotently
+- Missed notifications recovered via batch sync
+- Mapping (Section 7) applies to notification payloads
 
 ---
 
-## 11. Bi-Directional Sync Protocol
+## 12. Bi-Directional Sync Protocol
 
-### 11.1 The Problem
+### 12.1 Sync Phases
 
-Tables have foreign key relationships. Syncing in wrong order causes:
-- FK constraint violations
-- Failed inserts
-- Orphaned records
+1. **Pull**: Get changes from server, **apply mapping** (Section 7), write locally
+2. **Push**: Collect local changes, **apply mapping**, send to server
 
-### 11.2 Sync Direction
-
-Bi-directional sync has two phases:
-
-1. **Pull**: Get changes from server, apply locally
-2. **Push**: Send local changes to server
-
-### 11.3 Change Ordering
-
-Changes are applied in **global version order** (ascending). This is the natural order from `_sync_log` and ensures causal consistency.
-
-FK violations are handled via defer/retry, not pre-computed table ordering. This is simpler and handles all cases including circular references.
-
-### 11.4 Handling FK Violations
-
-When a change references a row that doesn't exist yet:
-
-1. **Defer**: Queue the change, continue with others, retry deferred changes
-2. **Retry Loop**: After each batch, retry deferred changes up to N times
-3. **Fail**: If deferred changes cannot be applied after all batches, fail the sync
-
-```
-Batch 1: Applied 950/1000, deferred 50 (missing FK targets)
-Batch 2: Applied 1000/1000
-Retry deferred: Applied 48/50
-Retry deferred: Applied 2/2
-Sync complete.
-```
-
-### 11.5 Sync Session Protocol
+### 12.2 Sync Session Protocol
 
 ```
 PULL PHASE:
-1. Enable trigger suppression
-2. For each batch (in version order):
-   a. Begin transaction
-   b. Fetch batch from server (version > last_server_version, LIMIT batch_size)
-   c. Apply changes in version order, deferring FK violations
-   d. Retry deferred changes (max 3 passes)
-   e. Update last_server_version to batch's max version
-   f. Commit transaction
-3. Repeat until server returns empty batch
-4. Disable trigger suppression
+1. Enable trigger suppression (Section 9)
+2. For each batch:
+   a. Fetch batch from server
+   b. Apply data mapping (Section 7) to each change
+   c. Apply mapped changes, deferring FK violations
+   d. Retry deferred (max 3 passes)
+   e. Update sync tracking state
+3. Disable trigger suppression
 
 PUSH PHASE:
-1. Begin transaction
-2. Collect local changes since last push (version order)
-3. Send to server in batches
-4. Update last_push_version on success
-5. Commit transaction
+1. Collect local changes since last push
+2. Apply push mapping (Section 7)
+3. Send mapped changes to server in batches
+4. Update sync tracking
 ```
 
-**Per-batch transactions** ensure million-record syncs don't hold locks forever or blow memory. Each batch is independently resumable from `last_server_version`.
+### 12.3 Requirements
 
-### 11.6 Requirements
-
-- Changes MUST be applied in global version order
-- FK violations during apply MUST be deferred, not failed immediately
-- Deferred changes MUST be retried after each batch
-- Each batch MUST be applied in its own transaction
-- Sync MUST fail if deferred changes cannot be resolved after all retries
+- Changes applied in global version order
+- FK violations deferred, not failed
+- **Mapping (Section 7) applied per-change before write**
+- Per-batch transactions for million-record syncs
 
 ---
 
-## 12. Batching
+## 13. Batching
 
-### 12.1 The Problem
-
-A device offline for weeks may need to sync millions of records. Loading all changes into memory is not feasible.
-
-### 12.2 Batch Query
+### 13.1 Batch Query
 
 ```sql
 SELECT version, table_name, pk_value, operation, payload, origin, timestamp
@@ -620,42 +754,30 @@ ORDER BY version ASC
 LIMIT @batch_size;
 ```
 
-### 12.3 Batch Processing Requirements
+### 13.2 Batch Processing with Mapping
 
-- Batches MUST be processed in order (ascending version)
-- Client MUST persist `to_version` after successfully applying each batch
-- On failure, client retries from last successful `to_version`
-- Batch size SHOULD be configurable (default: 1000-5000 records)
-- Trigger suppression MUST be active for entire pull phase, not per-batch
+For each change in batch:
 
-### 12.4 Batch Application
-
-For each batch:
-
-1. Trigger suppression already active (set at start of pull phase)
-2. For each change in order:
+1. **Look up mapping** (Section 7) for source table
+2. **Apply mapping transforms** (LQL or config)
+3. Execute operation on **mapped target table(s)**:
    - `insert`: INSERT or UPSERT
    - `update`: UPDATE (or UPSERT)
    - `delete`: DELETE
-   - On FK violation: defer to retry queue
-3. After batch: retry deferred changes
-4. Update local sync state with `to_version`
+4. On FK violation: defer to retry queue
+5. Update sync tracking per mapping
 
 ---
 
-## 13. Tombstone Retention
+## 14. Tombstone Retention
 
-### 13.1 The Problem
+### 14.1 The Problem
 
 Deleted records must be tracked so replicas know to delete them too. But keeping tombstones forever wastes storage.
 
-### 13.2 Retention Strategy
+### 14.2 Retention Strategy
 
-Tombstones are retained based on **time since last successful sync from any replica**, not just calendar time.
-
-### 13.3 Server Tracking
-
-The server tracks the last sync version for each known origin:
+Tombstones retained until all active clients have synced past them.
 
 ```sql
 CREATE TABLE _sync_clients (
@@ -663,201 +785,118 @@ CREATE TABLE _sync_clients (
     last_sync_version INTEGER NOT NULL,
     last_sync_timestamp TEXT NOT NULL
 );
-```
 
-### 13.4 Safe Purge Calculation
-
-Tombstones can be purged when:
-
-```sql
--- Find the minimum version that ALL known clients have synced past
+-- Safe purge: minimum version all clients have synced past
 SELECT MIN(last_sync_version) AS safe_purge_version FROM _sync_clients;
-
--- Purge tombstones older than that version
-DELETE FROM _sync_log
-WHERE operation = 'delete'
-  AND version < @safe_purge_version;
 ```
 
-### 13.5 Stale Client Handling
+### 14.3 Requirements
 
-Clients that haven't synced for extended periods:
-
-| Scenario | Action |
-|----------|--------|
-| Client syncs within retention window | Normal sync |
-| Client missed purged tombstones | Full resync required |
-| Client inactive > 90 days | Remove from `_sync_clients`, require re-registration |
-
-### 13.6 Full Resync Protocol
-
-When a client has fallen too far behind:
-
-1. Server detects: client's `last_sync_version` < oldest available version
-2. Server responds with `requires_full_resync: true`
-3. Client wipes local data (or specific tables)
-4. Client downloads full current state
-5. Client resumes incremental sync
-
-### 13.7 Requirements
-
-- Server MUST track last sync version per origin
-- Tombstones MUST NOT be purged until all active clients have synced past them
-- Clients that miss tombstones MUST perform full resync
-- Retention policy SHOULD be configurable (default: purge when all clients synced, max 90 days)
+- Tombstones MUST NOT be purged until all clients synced past
+- Clients missing tombstones MUST perform full resync
+- Mapping (Section 7) applies to delete operations too
 
 ---
 
-## 14. Conflict Resolution
+## 15. Conflict Resolution
 
-### 14.1 Conflict Detection
+### 15.1 Conflict Detection
 
-Two changes conflict when:
+Conflicts occur on same **mapped target** table/pk with different origins.
 
-- Same `table_name` and `pk_value`
-- Different `origin` values
-- Both changes occurred since last sync
-
-### 14.2 Resolution Strategies (Pluggable)
+### 15.2 Resolution Strategies
 
 | Strategy | Description |
 |----------|-------------|
-| **Last-Write-Wins (LWW)** | Highest timestamp wins (default) |
+| **Last-Write-Wins** | Highest timestamp wins (default) |
 | **Server Wins** | Server version always wins |
 | **Client Wins** | Client version always wins |
-| **Application Logic** | Custom merge function per table |
+| **Custom** | LQL expression per mapping |
 
-### 14.3 Echo Prevention
+### 15.3 Requirements
 
-Changes MUST NOT be re-applied to their origin:
-
-```sql
--- Skip changes from self
-WHERE origin != @my_origin_id
-```
+- Conflicts detected on **target** pk after mapping (Section 7)
+- Echo prevention: `WHERE origin != @my_origin_id`
 
 ---
 
-## 15. Hash Verification
+## 16. Hash Verification
 
-### 15.1 Purpose
+### 16.1 Purpose
 
 Hash verification ensures database consistency. If two replicas have the same data, they produce the same hash.
 
-### 15.2 Canonical JSON Specification
+### 16.2 Canonical JSON
 
-To ensure identical hashes across implementations, JSON MUST be serialized canonically:
+Keys sorted alphabetically, no whitespace, UTF-8 encoded.
 
-1. **Keys**: Sorted alphabetically (Unicode code point order)
-2. **Whitespace**: None (no spaces, no newlines)
-3. **Numbers**: No leading zeros, no trailing zeros after decimal, no positive sign
-4. **Strings**: Minimal escaping (only `"`, `\`, and control characters)
-5. **Unicode**: UTF-8 encoded, no escaping of non-ASCII characters
-6. **Null**: Literal `null`, not omitted
-
-**Example:**
 ```json
 {"Email":"alice@example.com","Id":"550e8400-e29b-41d4-a716-446655440000","Name":"Alice"}
 ```
 
-### 15.3 Full Database Hash Algorithm
+### 16.3 Hash Algorithms
 
-```
-1. Initialize SHA-256 hasher
-2. For each tracked table (sorted alphabetically by name):
-   a. Append table name + newline to hasher
-   b. Select all rows ordered by primary key ASC
-   c. For each row:
-      - Serialize to canonical JSON
-      - Append JSON + newline to hasher
-3. Return hex-encoded SHA-256 digest (lowercase)
-```
+**Full Database Hash**: SHA-256 of all tables/rows in sorted order.
 
-### 15.4 Batch Hash
-
-Each batch includes a hash of its contents:
-
-```
-1. Initialize SHA-256 hasher
-2. For each change in batch (in version order):
-   a. Append: "{version}:{table_name}:{pk_value}:{operation}:{payload}\n"
-3. Return hex-encoded SHA-256 digest
-```
-
-### 15.5 Verification
-
-After sync, client and server can compare full database hashes. Mismatch indicates:
-- Sync bug
-- Data corruption
-- Unauthorized modification
+**Batch Hash**: SHA-256 of `{version}:{table_name}:{pk_value}:{operation}:{payload}\n` per change.
 
 ---
 
-## 16. Security Considerations
+## 17. Security Considerations
 
-- Change log MUST NOT store secrets beyond what base tables contain
-- Origin IDs are identifiers, NOT authentication tokens
-- Sync endpoints MUST authenticate before accepting/sending changes
-- Hash verification provides integrity checking, not authentication
-- Consider encrypting payloads for sensitive data
+- Mapping (Section 7) `excluded_columns` enforces sensitive data exclusion
+- Change log MUST NOT store secrets beyond base tables
+- Sync endpoints MUST authenticate before accepting changes
 
 ---
 
-## 17. Schema Metadata
+## 18. Schema Metadata
 
-### 17.1 Overview
+### 18.1 Overview
 
-Schema metadata enables sync participants to share table structure information in a standardized JSON format. This is essential for:
+Schema metadata describes **both source and target** schemas for mapping validation.
 
-- Validating incoming changes match expected schema
-- Generating triggers dynamically
-- Schema migration coordination
-- Client-server schema negotiation
-
-### 17.2 Schema Metadata JSON Format
+### 18.2 Schema JSON Format
 
 ```json
 {
     "version": "1.0",
-    "generated_at": "2025-12-18T10:30:00.000Z",
-    "tables": [
+    "source_schema": {
+        "tables": [
+            {
+                "name": "User",
+                "pk_column": "Id",
+                "columns": [
+                    {"name": "Id", "type": "uuid"},
+                    {"name": "FullName", "type": "string"},
+                    {"name": "PasswordHash", "type": "string"}
+                ]
+            }
+        ]
+    },
+    "target_schema": {
+        "tables": [
+            {
+                "name": "Customer",
+                "pk_column": "CustomerId",
+                "columns": [
+                    {"name": "CustomerId", "type": "uuid"},
+                    {"name": "Name", "type": "string"}
+                ]
+            }
+        ]
+    },
+    "mappings": [
         {
-            "name": "Person",
-            "pk_column": "Id",
-            "pk_type": "uuid",
-            "columns": [
-                {
-                    "name": "Id",
-                    "type": "uuid",
-                    "nullable": false,
-                    "is_pk": true
-                },
-                {
-                    "name": "Name",
-                    "type": "string",
-                    "nullable": false,
-                    "max_length": 255
-                },
-                {
-                    "name": "Email",
-                    "type": "string",
-                    "nullable": true,
-                    "max_length": 255
-                },
-                {
-                    "name": "CreatedAt",
-                    "type": "datetime",
-                    "nullable": false
-                }
-            ],
-            "sync_enabled": true,
-            "excluded_columns": []
+            "source_table": "User",
+            "target_table": "Customer",
+            "excluded_columns": ["PasswordHash"]
         }
     ]
 }
 ```
 
-### 17.3 Column Type Mappings
+### 18.3 Column Type Mappings
 
 Portable type identifiers map to platform-specific types:
 
@@ -872,57 +911,16 @@ Portable type identifiers map to platform-specific types:
 | `datetime` | TEXT | DATETIME2 | TIMESTAMPTZ |
 | `blob` | BLOB | VARBINARY(MAX) | BYTEA |
 
-### 17.4 Schema Exchange Protocol
+### 18.4 Requirements
 
-**Request schema from server:**
-```json
-{
-    "action": "get_schema",
-    "tables": ["Person", "Order"]  // null = all tables
-}
-```
-
-**Server response:**
-```json
-{
-    "schema": { /* Schema metadata JSON */ },
-    "schema_hash": "abc123...",  // SHA-256 of canonical schema JSON
-    "sync_tables": ["Person", "Order"]
-}
-```
-
-### 17.5 Schema Validation
-
-Before applying changes, implementations SHOULD validate:
-
-1. **Table exists**: `table_name` in change exists in schema
-2. **PK matches**: `pk_value` key matches `pk_column` in schema
-3. **Payload columns**: All payload keys exist in table's columns
-4. **Type compatibility**: Payload values are compatible with column types
-
-### 17.6 Schema Hash
-
-Schema hash enables quick compatibility checks:
-
-```
-1. Serialize schema metadata to canonical JSON (per Section 15.2)
-2. Compute SHA-256 hash
-3. Return lowercase hex digest
-```
-
-Clients can cache schema and only re-fetch when hash changes.
-
-### 17.7 Requirements
-
-- Schema metadata MUST include all sync-enabled tables
-- Column metadata MUST include type, nullability, and PK indicator
-- Schema hash MUST be computed using canonical JSON serialization
-- Implementations SHOULD validate incoming changes against schema
-- Schema changes MUST trigger trigger regeneration
+- Schema metadata MUST include **source and target** table definitions
+- Mapping config MUST be included in schema exchange
+- Schema changes trigger mapping and trigger regeneration
+- Validate mapped column types are compatible
 
 ---
 
-## 18. Conformance Requirements
+## 19. Conformance Requirements
 
 An implementation is **conformant** if:
 
@@ -938,10 +936,13 @@ An implementation is **conformant** if:
 10. Triggers are generated via LQL transpilation
 11. Server supports real-time subscriptions (record and table level)
 12. Schema metadata is available in standard JSON format
+13. **Data mappings defined via JSON config (simple) or LQL (complex)**
+14. **Sync tracking prevents re-syncing unchanged records**
+15. **Mappings support directional control (push/pull/both)**
 
 ---
 
-## 19. Appendices
+## 20. Appendices
 
 ### Appendix A: Complete Schema
 
@@ -976,6 +977,23 @@ CREATE INDEX idx_sync_log_table ON _sync_log(table_name, version);
 INSERT INTO _sync_state VALUES ('origin_id', '');  -- Set on first sync init
 INSERT INTO _sync_state VALUES ('last_server_version', '0');
 INSERT INTO _sync_state VALUES ('last_push_version', '0');
+
+-- Mapping sync state (Section 7)
+CREATE TABLE _sync_mapping_state (
+    mapping_id TEXT PRIMARY KEY,
+    last_synced_version INTEGER NOT NULL DEFAULT 0,
+    last_sync_timestamp TEXT NOT NULL,
+    records_synced INTEGER NOT NULL DEFAULT 0
+);
+
+-- Per-record hash tracking (Section 7)
+CREATE TABLE _sync_record_hashes (
+    mapping_id TEXT NOT NULL,
+    source_pk TEXT NOT NULL,
+    payload_hash TEXT NOT NULL,
+    synced_at TEXT NOT NULL,
+    PRIMARY KEY (mapping_id, source_pk)
+);
 ```
 
 ### Appendix B: Server Client Tracking (for tombstone retention)
@@ -1008,7 +1026,7 @@ CREATE TABLE _sync_clients (
 
 ---
 
-## 20. References
+## 21. References
 
 - [SQLite CREATE TRIGGER](https://sqlite.org/lang_createtrigger.html)
 - [SQLite JSON Functions](https://sqlite.org/json1.html)

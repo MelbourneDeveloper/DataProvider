@@ -1,7 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging.Abstractions;
 using Outcome;
-using Xunit;
 
 namespace Sync.Tests;
 

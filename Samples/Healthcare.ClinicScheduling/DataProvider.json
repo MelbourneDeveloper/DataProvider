@@ -1,0 +1,45 @@
+{
+  "ConnectionString": "Data Source=clinicscheduling.db",
+  "Tables": [
+    {
+      "Name": "ScheduledPatient",
+      "GenerateInsert": true,
+      "GenerateUpdate": true
+    },
+    {
+      "Name": "Provider",
+      "GenerateInsert": true,
+      "GenerateUpdate": true
+    },
+    {
+      "Name": "ExamRoom",
+      "GenerateInsert": true,
+      "GenerateUpdate": true
+    },
+    {
+      "Name": "Appointment",
+      "GenerateInsert": true,
+      "GenerateUpdate": true
+    },
+    {
+      "Name": "ProviderSchedule",
+      "GenerateInsert": true,
+      "GenerateUpdate": true
+    },
+    {
+      "Name": "ProviderTimeOff",
+      "GenerateInsert": true,
+      "GenerateUpdate": true
+    },
+    {
+      "Name": "WaitlistEntry",
+      "GenerateInsert": true,
+      "GenerateUpdate": true
+    },
+    {
+      "Name": "AppointmentReminder",
+      "GenerateInsert": true,
+      "GenerateUpdate": true
+    }
+  ]
+}

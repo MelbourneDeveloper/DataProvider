@@ -1,0 +1,65 @@
+{
+    "queries": [
+        {
+            "name": "GetPatientWithEncounters",
+            "sqlFile": "Queries/GetPatientWithEncounters.sql",
+            "groupingFile": "Queries/GetPatientWithEncounters.grouping.json"
+        },
+        {
+            "name": "GetEncountersForClaims",
+            "sqlFile": "Queries/GetEncountersForClaims.sql"
+        },
+        {
+            "name": "GetPatientsForSync",
+            "sqlFile": "Queries/GetPatientsForSync.sql"
+        }
+    ],
+    "tables": [
+        {
+            "schema": "main",
+            "name": "Patient",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "excludeColumns": [],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "Encounter",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "excludeColumns": [],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "MedicationRequest",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "excludeColumns": [],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "Practitioner",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "excludeColumns": [],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "Organization",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "excludeColumns": [],
+            "primaryKeyColumns": ["Id"]
+        }
+    ],
+    "connectionString": "Data Source=healthcare.db"
+}

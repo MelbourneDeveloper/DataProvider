@@ -1,0 +1,40 @@
+{
+  "ConnectionString": "Data Source=patientrecords.db",
+  "Tables": [
+    {
+      "Name": "Patient",
+      "GenerateInsert": true,
+      "GenerateUpdate": true
+    },
+    {
+      "Name": "Physician",
+      "GenerateInsert": true,
+      "GenerateUpdate": true
+    },
+    {
+      "Name": "Department",
+      "GenerateInsert": true,
+      "GenerateUpdate": true
+    },
+    {
+      "Name": "MedicalCondition",
+      "GenerateInsert": true,
+      "GenerateUpdate": true
+    },
+    {
+      "Name": "Medication",
+      "GenerateInsert": true,
+      "GenerateUpdate": true
+    },
+    {
+      "Name": "Allergy",
+      "GenerateInsert": true,
+      "GenerateUpdate": true
+    },
+    {
+      "Name": "LabResult",
+      "GenerateInsert": true,
+      "GenerateUpdate": true
+    }
+  ]
+}

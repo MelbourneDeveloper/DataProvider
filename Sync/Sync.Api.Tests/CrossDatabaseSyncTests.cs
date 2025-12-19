@@ -24,10 +24,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         _postgresConnectionString = _postgresContainer.GetConnectionString();
     }
 
-    public async Task DisposeAsync()
-    {
+    public async Task DisposeAsync() =>
         await _postgresContainer.DisposeAsync().ConfigureAwait(false);
-    }
 
     /// <summary>
     /// Creates a fresh SQLite in-memory database with sync schema and triggers.
@@ -70,7 +68,9 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         var schemaResult = PostgresSyncSchema.CreateSchema(conn);
         if (schemaResult is not BoolSyncOk)
         {
-            throw new InvalidOperationException($"Failed to create Postgres schema: {schemaResult}");
+            throw new InvalidOperationException(
+                $"Failed to create Postgres schema: {schemaResult}"
+            );
         }
 
         var originResult = PostgresSyncSchema.SetOriginId(conn, originId);
@@ -107,7 +107,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         // Act - Insert in SQLite
         using (var cmd = sqlite.CreateCommand())
         {
-            cmd.CommandText = "INSERT INTO Person (Id, Name, Email) VALUES ('p1', 'Alice', 'alice@example.com')";
+            cmd.CommandText =
+                "INSERT INTO Person (Id, Name, Email) VALUES ('p1', 'Alice', 'alice@example.com')";
             cmd.ExecuteNonQuery();
         }
 
@@ -150,7 +151,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         // Act - Insert in Postgres
         using (var cmd = postgres.CreateCommand())
         {
-            cmd.CommandText = "INSERT INTO person (id, name, email) VALUES ('p2', 'Bob', 'bob@example.com')";
+            cmd.CommandText =
+                "INSERT INTO person (id, name, email) VALUES ('p2', 'Bob', 'bob@example.com')";
             cmd.ExecuteNonQuery();
         }
 
@@ -193,14 +195,16 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         // Insert in SQLite
         using (var cmd = sqlite.CreateCommand())
         {
-            cmd.CommandText = "INSERT INTO Person (Id, Name, Email) VALUES ('s1', 'SQLite User', 'sqlite@example.com')";
+            cmd.CommandText =
+                "INSERT INTO Person (Id, Name, Email) VALUES ('s1', 'SQLite User', 'sqlite@example.com')";
             cmd.ExecuteNonQuery();
         }
 
         // Insert in Postgres
         using (var cmd = postgres.CreateCommand())
         {
-            cmd.CommandText = "INSERT INTO person (id, name, email) VALUES ('p1', 'Postgres User', 'postgres@example.com')";
+            cmd.CommandText =
+                "INSERT INTO person (id, name, email) VALUES ('p1', 'Postgres User', 'postgres@example.com')";
             cmd.ExecuteNonQuery();
         }
 
@@ -254,7 +258,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         // Insert in SQLite
         using (var cmd = sqlite.CreateCommand())
         {
-            cmd.CommandText = "INSERT INTO Person (Id, Name, Email) VALUES ('u1', 'Original', 'original@example.com')";
+            cmd.CommandText =
+                "INSERT INTO Person (Id, Name, Email) VALUES ('u1', 'Original', 'original@example.com')";
             cmd.ExecuteNonQuery();
         }
 
@@ -272,7 +277,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         // Act - Update in SQLite
         using (var cmd = sqlite.CreateCommand())
         {
-            cmd.CommandText = "UPDATE Person SET Name = 'Updated', Email = 'updated@example.com' WHERE Id = 'u1'";
+            cmd.CommandText =
+                "UPDATE Person SET Name = 'Updated', Email = 'updated@example.com' WHERE Id = 'u1'";
             cmd.ExecuteNonQuery();
         }
 
@@ -310,7 +316,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         // Insert and sync
         using (var cmd = sqlite.CreateCommand())
         {
-            cmd.CommandText = "INSERT INTO Person (Id, Name, Email) VALUES ('d1', 'ToDelete', 'delete@example.com')";
+            cmd.CommandText =
+                "INSERT INTO Person (Id, Name, Email) VALUES ('d1', 'ToDelete', 'delete@example.com')";
             cmd.ExecuteNonQuery();
         }
 
@@ -363,7 +370,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         SyncSessionManager.EnableSuppression(sqlite);
         using (var cmd = sqlite.CreateCommand())
         {
-            cmd.CommandText = "INSERT INTO Person (Id, Name, Email) VALUES ('s1', 'Suppressed', 'suppressed@example.com')";
+            cmd.CommandText =
+                "INSERT INTO Person (Id, Name, Email) VALUES ('s1', 'Suppressed', 'suppressed@example.com')";
             cmd.ExecuteNonQuery();
         }
         SyncSessionManager.DisableSuppression(sqlite);
@@ -376,7 +384,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         // Insert WITHOUT suppression - should log
         using (var cmd = sqlite.CreateCommand())
         {
-            cmd.CommandText = "INSERT INTO Person (Id, Name, Email) VALUES ('n1', 'Normal', 'normal@example.com')";
+            cmd.CommandText =
+                "INSERT INTO Person (Id, Name, Email) VALUES ('n1', 'Normal', 'normal@example.com')";
             cmd.ExecuteNonQuery();
         }
 
@@ -401,7 +410,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         for (var i = 0; i < recordCount; i++)
         {
             using var cmd = sqlite.CreateCommand();
-            cmd.CommandText = $"INSERT INTO Person (Id, Name, Email) VALUES ('batch{i}', 'Person {i}', 'p{i}@example.com')";
+            cmd.CommandText =
+                $"INSERT INTO Person (Id, Name, Email) VALUES ('batch{i}', 'Person {i}', 'p{i}@example.com')";
             cmd.ExecuteNonQuery();
         }
 
@@ -448,7 +458,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         // Insert data
         using (var cmd = sqlite.CreateCommand())
         {
-            cmd.CommandText = "INSERT INTO Person (Id, Name, Email) VALUES ('h1', 'HashTest', 'hash@example.com')";
+            cmd.CommandText =
+                "INSERT INTO Person (Id, Name, Email) VALUES ('h1', 'HashTest', 'hash@example.com')";
             cmd.ExecuteNonQuery();
         }
 

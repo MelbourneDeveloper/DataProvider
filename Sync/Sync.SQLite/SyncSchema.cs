@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Data.Sqlite;
 
 namespace Sync.SQLite;
@@ -85,6 +86,37 @@ public static class SyncSchema
         """;
 
     /// <summary>
+    /// SQL to create mapping state table (_sync_mapping_state).
+    /// Per-mapping sync state for version-based tracking.
+    /// Maps to spec Section 7.5.2.
+    /// </summary>
+    public const string CreateMappingStateTable = """
+        CREATE TABLE IF NOT EXISTS _sync_mapping_state (
+            mapping_id TEXT PRIMARY KEY,
+            last_synced_version INTEGER NOT NULL DEFAULT 0,
+            last_sync_timestamp TEXT NOT NULL,
+            records_synced INTEGER NOT NULL DEFAULT 0
+        );
+        """;
+
+    /// <summary>
+    /// SQL to create record hashes table (_sync_record_hashes).
+    /// Per-record hash tracking for hash-based sync strategy.
+    /// Maps to spec Section 7.5.2.
+    /// </summary>
+    public const string CreateRecordHashesTable = """
+        CREATE TABLE IF NOT EXISTS _sync_record_hashes (
+            mapping_id TEXT NOT NULL,
+            source_pk TEXT NOT NULL,
+            payload_hash TEXT NOT NULL,
+            synced_at TEXT NOT NULL,
+            PRIMARY KEY (mapping_id, source_pk)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_record_hashes_mapping ON _sync_record_hashes(mapping_id);
+        """;
+
+    /// <summary>
     /// SQL to initialize sync state with default values.
     /// </summary>
     public const string InitializeSyncState = """
@@ -99,13 +131,27 @@ public static class SyncSchema
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
     /// <returns>Success or database error.</returns>
+    [SuppressMessage(
+        "Security",
+        "CA2100:Review SQL queries for security vulnerabilities",
+        Justification = "SQL is composed from const strings only"
+    )]
     public static BoolSyncResult CreateSchema(SqliteConnection connection)
     {
         try
         {
             using var cmd = connection.CreateCommand();
-            cmd.CommandText =
-                $"{CreateSyncStateTable}\n{CreateSyncSessionTable}\n{CreateSyncLogTable}\n{CreateSyncClientsTable}\n{CreateSyncSubscriptionsTable}\n{InitializeSyncState}";
+            cmd.CommandText = string.Join(
+                "\n",
+                CreateSyncStateTable,
+                CreateSyncSessionTable,
+                CreateSyncLogTable,
+                CreateSyncClientsTable,
+                CreateSyncSubscriptionsTable,
+                CreateMappingStateTable,
+                CreateRecordHashesTable,
+                InitializeSyncState
+            );
             cmd.ExecuteNonQuery();
             return new BoolSyncOk(true);
         }

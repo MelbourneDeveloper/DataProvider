@@ -18,36 +18,12 @@ global using ColumnInfoListResult = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<Sync.Postgres.TriggerColumnInfo>,
     Sync.SyncError
 >;
-global using IntSyncError = Outcome.Result<int, Sync.SyncError>.Error<int, Sync.SyncError>;
-global using IntSyncOk = Outcome.Result<int, Sync.SyncError>.Ok<int, Sync.SyncError>;
-global using IntSyncResult = Outcome.Result<int, Sync.SyncError>;
 global using LongSyncError = Outcome.Result<long, Sync.SyncError>.Error<long, Sync.SyncError>;
 global using LongSyncOk = Outcome.Result<long, Sync.SyncError>.Ok<long, Sync.SyncError>;
 global using LongSyncResult = Outcome.Result<long, Sync.SyncError>;
 global using StringSyncError = Outcome.Result<string, Sync.SyncError>.Error<string, Sync.SyncError>;
 global using StringSyncOk = Outcome.Result<string, Sync.SyncError>.Ok<string, Sync.SyncError>;
 global using StringSyncResult = Outcome.Result<string, Sync.SyncError>;
-global using SubscriptionError = Outcome.Result<Sync.SyncSubscription?, Sync.SyncError>.Error<
-    Sync.SyncSubscription?,
-    Sync.SyncError
->;
-global using SubscriptionListError = Outcome.Result<
-    System.Collections.Generic.IReadOnlyList<Sync.SyncSubscription>,
-    Sync.SyncError
->.Error<System.Collections.Generic.IReadOnlyList<Sync.SyncSubscription>, Sync.SyncError>;
-global using SubscriptionListOk = Outcome.Result<
-    System.Collections.Generic.IReadOnlyList<Sync.SyncSubscription>,
-    Sync.SyncError
->.Ok<System.Collections.Generic.IReadOnlyList<Sync.SyncSubscription>, Sync.SyncError>;
-global using SubscriptionListResult = Outcome.Result<
-    System.Collections.Generic.IReadOnlyList<Sync.SyncSubscription>,
-    Sync.SyncError
->;
-global using SubscriptionOk = Outcome.Result<Sync.SyncSubscription?, Sync.SyncError>.Ok<
-    Sync.SyncSubscription?,
-    Sync.SyncError
->;
-global using SubscriptionResult = Outcome.Result<Sync.SyncSubscription?, Sync.SyncError>;
 global using SyncClientError = Outcome.Result<Sync.SyncClient?, Sync.SyncError>.Error<
     Sync.SyncClient?,
     Sync.SyncError

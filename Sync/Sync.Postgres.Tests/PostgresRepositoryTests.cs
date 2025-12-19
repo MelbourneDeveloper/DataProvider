@@ -20,9 +20,23 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        await _postgres.StartAsync();
+        await _postgres.StartAsync().ConfigureAwait(false);
         _conn = new NpgsqlConnection(_postgres.GetConnectionString());
-        _conn.Open();
+
+        // Retry connection with backoff - container may not be immediately ready
+        var maxRetries = 5;
+        for (var i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                await _conn.OpenAsync().ConfigureAwait(false);
+                break;
+            }
+            catch (NpgsqlException) when (i < maxRetries - 1)
+            {
+                await Task.Delay(500 * (i + 1)).ConfigureAwait(false);
+            }
+        }
 
         // Create schema
         var schemaResult = PostgresSyncSchema.CreateSchema(_conn);
@@ -466,6 +480,56 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         }
     }
 
+    [Fact]
+    public void GetOriginId_AfterSet_ReturnsValue()
+    {
+        PostgresSyncSchema.SetOriginId(_conn, "test-origin-id");
+
+        var result = PostgresSyncSchema.GetOriginId(_conn);
+
+        Assert.IsType<StringSyncOk>(result);
+        Assert.Equal("test-origin-id", ((StringSyncOk)result).Value);
+    }
+
+    [Fact]
+    public void GetOriginId_NotSet_ReturnsEmpty()
+    {
+        // Origin is empty by default from schema initialization
+        var result = PostgresSyncSchema.GetOriginId(_conn);
+
+        Assert.IsType<StringSyncOk>(result);
+        Assert.Equal("", ((StringSyncOk)result).Value);
+    }
+
+    [Fact]
+    public void InitializeOriginId_WhenEmpty_GeneratesNew()
+    {
+        var originId = PostgresSyncSchema.InitializeOriginId(_conn);
+
+        Assert.NotEmpty(originId);
+        Assert.True(Guid.TryParse(originId, out _));
+    }
+
+    [Fact]
+    public void InitializeOriginId_WhenSet_ReturnsExisting()
+    {
+        PostgresSyncSchema.SetOriginId(_conn, "existing-origin");
+
+        var originId = PostgresSyncSchema.InitializeOriginId(_conn);
+
+        Assert.Equal("existing-origin", originId);
+    }
+
+    [Fact]
+    public void CreateSchema_Idempotent()
+    {
+        // Schema already created in InitializeAsync
+        // Call again should succeed
+        var result = PostgresSyncSchema.CreateSchema(_conn);
+
+        Assert.IsType<BoolSyncOk>(result);
+    }
+
     #endregion
 
     #region PostgresChangeApplier Tests
@@ -688,8 +752,7 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         foreach (var triggerType in triggerTypes)
         {
             using var checkCmd = _conn.CreateCommand();
-            checkCmd.CommandText =
-                "SELECT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = @name)";
+            checkCmd.CommandText = "SELECT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = @name)";
             checkCmd.Parameters.AddWithValue("@name", $"test_trigger_table_sync_{triggerType}");
             var exists = (bool)checkCmd.ExecuteScalar()!;
             Assert.True(exists, $"Trigger for {triggerType} should exist");
@@ -717,7 +780,8 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
 
         // Insert a record
         using var insertCmd = _conn.CreateCommand();
-        insertCmd.CommandText = "INSERT INTO test_log_insert (id, name) VALUES ('ti1', 'TriggerTest')";
+        insertCmd.CommandText =
+            "INSERT INTO test_log_insert (id, name) VALUES ('ti1', 'TriggerTest')";
         insertCmd.ExecuteNonQuery();
 
         // Check sync log

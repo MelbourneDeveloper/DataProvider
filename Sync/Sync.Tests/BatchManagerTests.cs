@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Outcome;
-using Xunit;
 
 namespace Sync.Tests;
 

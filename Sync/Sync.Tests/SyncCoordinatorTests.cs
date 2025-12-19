@@ -3,7 +3,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
 
 namespace Sync.Tests;
 
@@ -202,8 +201,7 @@ public sealed class SyncCoordinatorTests : IDisposable
             ClientOrigin,
             0,
             new BatchConfig(100),
-            (from, limit) =>
-                new SyncLogListError(new SyncErrorDatabase("Fetch failed")),
+            (from, limit) => new SyncLogListError(new SyncErrorDatabase("Fetch failed")),
             entry => ApplyChange(_clientDb, entry),
             () => EnableSuppression(_clientDb),
             () => DisableSuppression(_clientDb),
@@ -369,8 +367,7 @@ public sealed class SyncCoordinatorTests : IDisposable
             0,
             0,
             new BatchConfig(100),
-            (from, limit) =>
-                new SyncLogListError(new SyncErrorDatabase("Pull failed")),
+            (from, limit) => new SyncLogListError(new SyncErrorDatabase("Pull failed")),
             entry => ApplyChange(_clientDb, entry),
             () => EnableSuppression(_clientDb),
             () => DisableSuppression(_clientDb),
@@ -560,11 +557,7 @@ public sealed class SyncCoordinatorTests : IDisposable
         return conn;
     }
 
-    private static SyncLogListResult FetchChanges(
-        SqliteConnection db,
-        long fromVersion,
-        int limit
-    )
+    private static SyncLogListResult FetchChanges(SqliteConnection db, long fromVersion, int limit)
     {
         try
         {
@@ -680,14 +673,12 @@ public sealed class SyncCoordinatorTests : IDisposable
         switch (entry.TableName)
         {
             case "Person":
-                cmd.CommandText =
-                    "INSERT OR REPLACE INTO Person (Id, Name) VALUES ($id, $name)";
+                cmd.CommandText = "INSERT OR REPLACE INTO Person (Id, Name) VALUES ($id, $name)";
                 cmd.Parameters.AddWithValue("$id", payload!["Id"].GetString());
                 cmd.Parameters.AddWithValue("$name", payload["Name"].GetString());
                 break;
             case "Parent":
-                cmd.CommandText =
-                    "INSERT OR REPLACE INTO Parent (Id, Name) VALUES ($id, $name)";
+                cmd.CommandText = "INSERT OR REPLACE INTO Parent (Id, Name) VALUES ($id, $name)";
                 cmd.Parameters.AddWithValue("$id", payload!["Id"].GetString());
                 cmd.Parameters.AddWithValue("$name", payload["Name"].GetString());
                 break;
@@ -735,8 +726,7 @@ public sealed class SyncCoordinatorTests : IDisposable
     private static void InsertChild(SqliteConnection db, string id, string parentId, string name)
     {
         using var cmd = db.CreateCommand();
-        cmd.CommandText =
-            "INSERT INTO Child (Id, ParentId, Name) VALUES ($id, $parentId, $name)";
+        cmd.CommandText = "INSERT INTO Child (Id, ParentId, Name) VALUES ($id, $parentId, $name)";
         cmd.Parameters.AddWithValue("$id", id);
         cmd.Parameters.AddWithValue("$parentId", parentId);
         cmd.Parameters.AddWithValue("$name", name);
@@ -792,8 +782,7 @@ public sealed class SyncCoordinatorTests : IDisposable
     private static void SetLastSyncVersion(SqliteConnection db, long version)
     {
         using var cmd = db.CreateCommand();
-        cmd.CommandText =
-            "UPDATE _sync_state SET value = $v WHERE key = 'last_server_version'";
+        cmd.CommandText = "UPDATE _sync_state SET value = $v WHERE key = 'last_server_version'";
         cmd.Parameters.AddWithValue("$v", version.ToString());
         cmd.ExecuteNonQuery();
     }
@@ -801,8 +790,7 @@ public sealed class SyncCoordinatorTests : IDisposable
     private static void SetLastPushVersion(SqliteConnection db, long version)
     {
         using var cmd = db.CreateCommand();
-        cmd.CommandText =
-            "UPDATE _sync_state SET value = $v WHERE key = 'last_push_version'";
+        cmd.CommandText = "UPDATE _sync_state SET value = $v WHERE key = 'last_push_version'";
         cmd.Parameters.AddWithValue("$v", version.ToString());
         cmd.ExecuteNonQuery();
     }

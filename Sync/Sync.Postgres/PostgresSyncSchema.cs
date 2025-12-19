@@ -64,6 +64,25 @@ public static class PostgresSyncSchema
                 CREATE INDEX IF NOT EXISTS idx_subs_table ON _sync_subscriptions(table_name);
                 CREATE INDEX IF NOT EXISTS idx_subs_origin ON _sync_subscriptions(origin_id);
 
+                -- Mapping sync state (Section 7.5.2)
+                CREATE TABLE IF NOT EXISTS _sync_mapping_state (
+                    mapping_id TEXT PRIMARY KEY,
+                    last_synced_version BIGINT NOT NULL DEFAULT 0,
+                    last_sync_timestamp TEXT NOT NULL,
+                    records_synced BIGINT NOT NULL DEFAULT 0
+                );
+
+                -- Record hash tracking (Section 7.5.2)
+                CREATE TABLE IF NOT EXISTS _sync_record_hashes (
+                    mapping_id TEXT NOT NULL,
+                    source_pk TEXT NOT NULL,
+                    payload_hash TEXT NOT NULL,
+                    synced_at TEXT NOT NULL,
+                    PRIMARY KEY (mapping_id, source_pk)
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_record_hashes_mapping ON _sync_record_hashes(mapping_id);
+
                 -- Initialize session
                 INSERT INTO _sync_session VALUES (0) ON CONFLICT DO NOTHING;
 

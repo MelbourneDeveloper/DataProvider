@@ -407,3 +407,5 @@ invoices.db
 coverage_report/
 
 final_coverage_report/
+
+coverage-report/

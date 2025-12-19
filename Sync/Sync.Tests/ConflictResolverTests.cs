@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace Sync.Tests;
 
 public sealed class ConflictResolverTests
