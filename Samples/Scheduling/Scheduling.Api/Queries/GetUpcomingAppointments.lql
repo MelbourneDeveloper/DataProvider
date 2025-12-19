@@ -1,0 +1,6 @@
+fhir_Appointment
+|> select(id, status, start_time, end_time, patient_reference, practitioner_reference, service_type, reason_code)
+|> where(status = 'booked')
+|> where(start_time >= @now)
+|> orderBy(start_time)
+|> limit(50)

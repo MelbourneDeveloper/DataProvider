@@ -4,7 +4,13 @@ namespace Migration;
 /// Base type for schema migration operations.
 /// Pattern match to get specific operation details.
 /// </summary>
-public abstract record SchemaOperation;
+public abstract record SchemaOperation
+{
+    /// <summary>
+    /// Prevents external inheritance - this makes the type hierarchy "closed".
+    /// </summary>
+    private protected SchemaOperation() { }
+}
 
 /// <summary>
 /// Create a new table.

@@ -3,7 +3,13 @@ namespace Sync;
 /// <summary>
 /// Base type for sync errors. Use pattern matching on derived types.
 /// </summary>
-public abstract record SyncError;
+public abstract record SyncError
+{
+    /// <summary>
+    /// Prevents external inheritance - this makes the type hierarchy "closed".
+    /// </summary>
+    private protected SyncError() { }
+}
 
 /// <summary>
 /// A foreign key constraint was violated.

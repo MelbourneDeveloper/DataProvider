@@ -1,9 +1,0 @@
-global using System.Data;
-global using Npgsql;
-global using Microsoft.Extensions.Logging;
-global using Sync;
-global using Sync.Postgres;
-global using Lql;
-global using Lql.Postgres;
-global using DataProvider;
-global using Outcome;

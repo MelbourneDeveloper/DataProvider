@@ -69,15 +69,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Migration.Tests", "Migratio
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{5D20AA90-6969-D8BD-9DCD-8634F4692FDA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Healthcare.PatientService", "Samples\Healthcare.PatientService\Healthcare.PatientService.csproj", "{D53426B7-469F-4FBB-9935-4AA3C303DE8D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Clinical.Api", "Samples\Clinical\Clinical.Api\Clinical.Api.csproj", "{D53426B7-469F-4FBB-9935-4AA3C303DE8D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Healthcare.AppointmentService", "Samples\Healthcare.AppointmentService\Healthcare.AppointmentService.csproj", "{4189D963-E5AA-4782-AD78-72FBA9536B59}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Clinical.Sync", "Samples\Clinical\Clinical.Sync\Clinical.Sync.csproj", "{4189D963-E5AA-4782-AD78-72FBA9536B59}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Healthcare.ClinicScheduling", "Samples\Healthcare.ClinicScheduling\Healthcare.ClinicScheduling.csproj", "{0F990389-7C88-4C7A-99F8-60E5243216FF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scheduling.Api", "Samples\Scheduling\Scheduling.Api\Scheduling.Api.csproj", "{0F990389-7C88-4C7A-99F8-60E5243216FF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Healthcare.PatientRecords", "Samples\Healthcare.PatientRecords\Healthcare.PatientRecords.csproj", "{7782890E-712E-4658-8BF2-0DC5794A87AC}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Healthcare.Api", "Samples\Healthcare.Api\Healthcare.Api.csproj", "{B5B6B5B1-CB4A-4164-A3F1-88B258D7D2D3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scheduling.Sync", "Samples\Scheduling\Scheduling.Sync\Scheduling.Sync.csproj", "{7782890E-712E-4658-8BF2-0DC5794A87AC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -473,18 +471,6 @@ Global
 		{7782890E-712E-4658-8BF2-0DC5794A87AC}.Release|x64.Build.0 = Release|Any CPU
 		{7782890E-712E-4658-8BF2-0DC5794A87AC}.Release|x86.ActiveCfg = Release|Any CPU
 		{7782890E-712E-4658-8BF2-0DC5794A87AC}.Release|x86.Build.0 = Release|Any CPU
-		{B5B6B5B1-CB4A-4164-A3F1-88B258D7D2D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B5B6B5B1-CB4A-4164-A3F1-88B258D7D2D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B5B6B5B1-CB4A-4164-A3F1-88B258D7D2D3}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{B5B6B5B1-CB4A-4164-A3F1-88B258D7D2D3}.Debug|x64.Build.0 = Debug|Any CPU
-		{B5B6B5B1-CB4A-4164-A3F1-88B258D7D2D3}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{B5B6B5B1-CB4A-4164-A3F1-88B258D7D2D3}.Debug|x86.Build.0 = Debug|Any CPU
-		{B5B6B5B1-CB4A-4164-A3F1-88B258D7D2D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B5B6B5B1-CB4A-4164-A3F1-88B258D7D2D3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B5B6B5B1-CB4A-4164-A3F1-88B258D7D2D3}.Release|x64.ActiveCfg = Release|Any CPU
-		{B5B6B5B1-CB4A-4164-A3F1-88B258D7D2D3}.Release|x64.Build.0 = Release|Any CPU
-		{B5B6B5B1-CB4A-4164-A3F1-88B258D7D2D3}.Release|x86.ActiveCfg = Release|Any CPU
-		{B5B6B5B1-CB4A-4164-A3F1-88B258D7D2D3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -521,7 +507,6 @@ Global
 		{4189D963-E5AA-4782-AD78-72FBA9536B59} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
 		{0F990389-7C88-4C7A-99F8-60E5243216FF} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
 		{7782890E-712E-4658-8BF2-0DC5794A87AC} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
-		{B5B6B5B1-CB4A-4164-A3F1-88B258D7D2D3} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {53128A75-E7B6-4B83-B079-A309FCC2AD9C}

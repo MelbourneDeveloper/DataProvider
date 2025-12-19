@@ -1,0 +1,67 @@
+{
+    "queries": [
+        {
+            "name": "GetPatients",
+            "sqlFile": "Queries/GetPatients.sql"
+        },
+        {
+            "name": "GetPatientById",
+            "sqlFile": "Queries/GetPatientById.sql"
+        },
+        {
+            "name": "SearchPatients",
+            "sqlFile": "Queries/SearchPatients.sql"
+        },
+        {
+            "name": "GetEncountersByPatient",
+            "sqlFile": "Queries/GetEncountersByPatient.sql"
+        },
+        {
+            "name": "GetConditionsByPatient",
+            "sqlFile": "Queries/GetConditionsByPatient.sql"
+        },
+        {
+            "name": "GetMedicationsByPatient",
+            "sqlFile": "Queries/GetMedicationsByPatient.sql"
+        }
+    ],
+    "tables": [
+        {
+            "schema": "main",
+            "name": "fhir_Patient",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "fhir_Encounter",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "fhir_Condition",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "fhir_MedicationRequest",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        }
+    ],
+    "connectionString": "Data Source=clinical.db"
+}

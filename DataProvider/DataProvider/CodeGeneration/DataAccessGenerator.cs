@@ -11,6 +11,104 @@ namespace DataProvider.CodeGeneration;
 public static class DataAccessGenerator
 {
     /// <summary>
+    /// C# reserved keywords that need to be escaped when used as parameter names
+    /// </summary>
+    private static readonly HashSet<string> CSharpReservedKeywords =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            "abstract",
+            "as",
+            "base",
+            "bool",
+            "break",
+            "byte",
+            "case",
+            "catch",
+            "char",
+            "checked",
+            "class",
+            "const",
+            "continue",
+            "decimal",
+            "default",
+            "delegate",
+            "do",
+            "double",
+            "else",
+            "enum",
+            "event",
+            "explicit",
+            "extern",
+            "false",
+            "finally",
+            "fixed",
+            "float",
+            "for",
+            "foreach",
+            "goto",
+            "if",
+            "implicit",
+            "in",
+            "int",
+            "interface",
+            "internal",
+            "is",
+            "lock",
+            "long",
+            "namespace",
+            "new",
+            "null",
+            "object",
+            "operator",
+            "out",
+            "override",
+            "params",
+            "private",
+            "protected",
+            "public",
+            "readonly",
+            "ref",
+            "return",
+            "sbyte",
+            "sealed",
+            "short",
+            "sizeof",
+            "stackalloc",
+            "static",
+            "string",
+            "struct",
+            "switch",
+            "this",
+            "throw",
+            "true",
+            "try",
+            "typeof",
+            "uint",
+            "ulong",
+            "unchecked",
+            "unsafe",
+            "ushort",
+            "using",
+            "virtual",
+            "void",
+            "volatile",
+            "while",
+        };
+
+    /// <summary>
+    /// Escapes C# reserved keywords by prefixing with @
+    /// </summary>
+    /// <param name="identifier">The identifier to potentially escape</param>
+    /// <returns>The escaped identifier if it's a reserved keyword, otherwise the original</returns>
+    private static string EscapeReservedKeyword(string identifier)
+    {
+        var lowerIdentifier = identifier.ToLowerInvariant();
+        return CSharpReservedKeywords.Contains(lowerIdentifier)
+            ? $"@{lowerIdentifier}"
+            : lowerIdentifier;
+    }
+
+    /// <summary>
     /// Generates parameter list string for method signatures
     /// </summary>
     /// <param name="parameters">SQL parameters</param>
@@ -214,7 +312,7 @@ public static class DataAccessGenerator
             insertableColumns.Select(c =>
                 string.Create(
                     CultureInfo.InvariantCulture,
-                    $"{c.CSharpType} {c.Name.ToLowerInvariant()}"
+                    $"{c.CSharpType} {EscapeReservedKeyword(c.Name)}"
                 )
             )
         );
@@ -259,7 +357,7 @@ public static class DataAccessGenerator
         // Add parameters
         foreach (var column in insertableColumns)
         {
-            var paramName = column.Name.ToLowerInvariant();
+            var paramName = EscapeReservedKeyword(column.Name);
             if (column.IsNullable)
             {
                 sb.AppendLine(
@@ -332,7 +430,7 @@ public static class DataAccessGenerator
             allColumns.Select(c =>
                 string.Create(
                     CultureInfo.InvariantCulture,
-                    $"{c.CSharpType} {c.Name.ToLowerInvariant()}"
+                    $"{c.CSharpType} {EscapeReservedKeyword(c.Name)}"
                 )
             )
         );
@@ -382,7 +480,7 @@ public static class DataAccessGenerator
         {
             sb.AppendLine(
                 CultureInfo.InvariantCulture,
-                $"                command.Parameters.AddWithValue(\"@{column.Name}\", {column.Name.ToLowerInvariant()});"
+                $"                command.Parameters.AddWithValue(\"@{column.Name}\", {EscapeReservedKeyword(column.Name)});"
             );
         }
 

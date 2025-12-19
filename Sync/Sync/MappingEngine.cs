@@ -20,7 +20,13 @@ public sealed record MappedEntry(
 /// <summary>
 /// Mapping result - either mapped entries or skip reason.
 /// </summary>
-public abstract record MappingResult;
+public abstract record MappingResult
+{
+    /// <summary>
+    /// Prevents external inheritance - this makes the type hierarchy "closed".
+    /// </summary>
+    private protected MappingResult() { }
+}
 
 /// <summary>
 /// Entry was mapped successfully to one or more targets.

@@ -4,7 +4,13 @@ namespace Migration;
 /// Database-agnostic type definition. Base sealed type for discriminated union.
 /// Pattern match on derived types to extract type-specific metadata.
 /// </summary>
-public abstract record PortableType;
+public abstract record PortableType
+{
+    /// <summary>
+    /// Prevents external inheritance - this makes the type hierarchy "closed".
+    /// </summary>
+    private protected PortableType() { }
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // INTEGER TYPES - No parameters needed (bit size is implicit in type)

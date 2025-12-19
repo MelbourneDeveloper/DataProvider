@@ -51,6 +51,16 @@ This repository contains two complementary projects:
 - **Copious logging with ILogger** - Especially in the sync projects
 - **NO INTERFACES** - Use `Action<T>` or `Func<T>` for abstractions
 - **AVOID ASSIGNMENTS** - Use expressions where possible
+- **You MUST close type hierarchies** - Make the constructor restricted so it is not possible to create new implementations from the base type. Eg:
+```csharp
+public abstract partial record Result<TSuccess, TFailure>
+{
+    // [...]
+    /// </summary>
+    private Result() { }
+    // [...]
+}
+``
 - **Static extension methods on IDbConnection and IDbTransaction only** - No classes for data access
 - **Test at the highest level** - Avoid mocks. Only full integration testing
 - **Always use type aliases (using) for result types** - Don't write like this: `new Result<string, SqlError>.Ok`
@@ -64,6 +74,8 @@ This repository contains two complementary projects:
 - **No consecutive Console.WriteLine** - Use single string interpolation
 - **No placeholders** - If incomplete, leave LOUD compilation error with TODO
 - **Never use Fluent Assertions**
+
+
 
 ## Project Configuration
 

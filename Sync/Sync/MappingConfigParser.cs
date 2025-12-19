@@ -351,7 +351,13 @@ public static class MappingConfigParser
 /// <summary>
 /// Result type for mapping config parsing.
 /// </summary>
-public abstract record MappingConfigParseResult;
+public abstract record MappingConfigParseResult
+{
+    /// <summary>
+    /// Prevents external inheritance - this makes the type hierarchy "closed".
+    /// </summary>
+    private protected MappingConfigParseResult() { }
+}
 
 /// <summary>
 /// Successful parse result.

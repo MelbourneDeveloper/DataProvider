@@ -1,0 +1,53 @@
+{
+    "queries": [
+        {
+            "name": "GetUpcomingAppointments",
+            "sqlFile": "Queries/GetUpcomingAppointments.sql"
+        },
+        {
+            "name": "GetAppointmentById",
+            "sqlFile": "Queries/GetAppointmentById.sql"
+        },
+        {
+            "name": "GetAppointmentsByPatient",
+            "sqlFile": "Queries/GetAppointmentsByPatient.sql"
+        },
+        {
+            "name": "GetAppointmentsByPractitioner",
+            "sqlFile": "Queries/GetAppointmentsByPractitioner.sql"
+        },
+        {
+            "name": "GetAllPractitioners",
+            "sqlFile": "Queries/GetAllPractitioners.sql"
+        },
+        {
+            "name": "GetPractitionerById",
+            "sqlFile": "Queries/GetPractitionerById.sql"
+        },
+        {
+            "name": "SearchPractitionersBySpecialty",
+            "sqlFile": "Queries/SearchPractitionersBySpecialty.sql"
+        }
+    ],
+    "tables": [
+        {
+            "schema": "main",
+            "name": "fhir_Practitioner",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "fhir_Appointment",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        }
+    ],
+    "connectionString": "Data Source=scheduling.db"
+}
