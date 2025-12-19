@@ -13,7 +13,7 @@ internal static class DatabaseSetup
         var schemaResult = SyncSchema.CreateSchema(connection);
         var originResult = SyncSchema.SetOriginId(connection, Guid.NewGuid().ToString());
 
-        if (schemaResult is Result<bool, Sync.SyncError>.Error<bool, Sync.SyncError> schemaErr)
+        if (schemaResult is Result<bool, SyncError>.Error<bool, SyncError> schemaErr)
         {
             logger.Log(
                 LogLevel.Error,
@@ -23,7 +23,7 @@ internal static class DatabaseSetup
             return;
         }
 
-        if (originResult is Result<bool, Sync.SyncError>.Error<bool, Sync.SyncError> originErr)
+        if (originResult is Result<bool, SyncError>.Error<bool, SyncError> originErr)
         {
             logger.Log(
                 LogLevel.Error,
@@ -34,10 +34,10 @@ internal static class DatabaseSetup
         }
 
         var schemaPath = Path.Combine(AppContext.BaseDirectory, "schema.sql");
-        if (System.IO.File.Exists(schemaPath))
+        if (File.Exists(schemaPath))
         {
             using var cmd = connection.CreateCommand();
-            cmd.CommandText = System.IO.File.ReadAllText(schemaPath);
+            cmd.CommandText = File.ReadAllText(schemaPath);
             cmd.ExecuteNonQuery();
             logger.Log(LogLevel.Information, "Executed schema.sql for Clinical.Api setup");
         }
@@ -58,7 +58,7 @@ internal static class DatabaseSetup
         {
             var triggerResult = TriggerGenerator.CreateTriggers(connection, table, logger);
             if (
-                triggerResult is Result<bool, Sync.SyncError>.Error<bool, Sync.SyncError> triggerErr
+                triggerResult is Result<bool, SyncError>.Error<bool, SyncError> triggerErr
             )
             {
                 logger.Log(

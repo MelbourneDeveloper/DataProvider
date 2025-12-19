@@ -1,14 +1,11 @@
-using System.Collections.Immutable;
 using System.Globalization;
-using Generated;
 using Scheduling.Api;
-using Selecta;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var dbPath = Path.Combine(AppContext.BaseDirectory, "scheduling.db");
 var connectionString = new SqliteConnectionStringBuilder { DataSource = dbPath }.ToString();
-builder.Services.AddSingleton<Func<SqliteConnection>>(() =>
+builder.Services.AddSingleton(() =>
 {
     var conn = new SqliteConnection(connectionString);
     conn.Open();
@@ -33,14 +30,8 @@ app.MapGet(
         var result = await conn.GetAllPractitionersAsync().ConfigureAwait(false);
         return result switch
         {
-            Result<ImmutableList<GetAllPractitioners>, SqlError>.Ok<
-                ImmutableList<GetAllPractitioners>,
-                SqlError
-            > ok => Results.Ok(ok.Value),
-            Result<ImmutableList<GetAllPractitioners>, SqlError>.Error<
-                ImmutableList<GetAllPractitioners>,
-                SqlError
-            > err => Results.Problem(err.Value.Message),
+            GetAllPractitionersOk ok => Results.Ok(ok.Value),
+            GetAllPractitionersError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -54,18 +45,9 @@ app.MapGet(
         var result = await conn.GetPractitionerByIdAsync(id).ConfigureAwait(false);
         return result switch
         {
-            Result<ImmutableList<GetPractitionerById>, SqlError>.Ok<
-                ImmutableList<GetPractitionerById>,
-                SqlError
-            > ok when ok.Value.Count > 0 => Results.Ok(ok.Value[0]),
-            Result<ImmutableList<GetPractitionerById>, SqlError>.Ok<
-                ImmutableList<GetPractitionerById>,
-                SqlError
-            > => Results.NotFound(),
-            Result<ImmutableList<GetPractitionerById>, SqlError>.Error<
-                ImmutableList<GetPractitionerById>,
-                SqlError
-            > err => Results.Problem(err.Value.Message),
+            GetPractitionerByIdOk ok when ok.Value.Count > 0 => Results.Ok(ok.Value[0]),
+            GetPractitionerByIdOk => Results.NotFound(),
+            GetPractitionerByIdError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -94,7 +76,7 @@ app.MapPost(
             )
             .ConfigureAwait(false);
 
-        if (result is Result<long, SqlError>.Ok<long, SqlError>)
+        if (result is InsertOk)
         {
             await transaction.CommitAsync().ConfigureAwait(false);
             return Results.Created(
@@ -116,7 +98,7 @@ app.MapPost(
 
         return result switch
         {
-            Result<long, SqlError>.Error<long, SqlError> err => Results.Problem(err.Value.Message),
+            InsertError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -134,14 +116,8 @@ app.MapGet(
                 .ConfigureAwait(false);
             return result switch
             {
-                Result<ImmutableList<SearchPractitionersBySpecialty>, SqlError>.Ok<
-                    ImmutableList<SearchPractitionersBySpecialty>,
-                    SqlError
-                > ok => Results.Ok(ok.Value),
-                Result<ImmutableList<SearchPractitionersBySpecialty>, SqlError>.Error<
-                    ImmutableList<SearchPractitionersBySpecialty>,
-                    SqlError
-                > err => Results.Problem(err.Value.Message),
+                SearchPractitionersOk ok => Results.Ok(ok.Value),
+                SearchPractitionersError err => Results.Problem(err.Value.Message),
                 _ => Results.Problem("Unknown error"),
             };
         }
@@ -150,14 +126,8 @@ app.MapGet(
             var result = await conn.GetAllPractitionersAsync().ConfigureAwait(false);
             return result switch
             {
-                Result<ImmutableList<GetAllPractitioners>, SqlError>.Ok<
-                    ImmutableList<GetAllPractitioners>,
-                    SqlError
-                > ok => Results.Ok(ok.Value),
-                Result<ImmutableList<GetAllPractitioners>, SqlError>.Error<
-                    ImmutableList<GetAllPractitioners>,
-                    SqlError
-                > err => Results.Problem(err.Value.Message),
+                GetAllPractitionersOk ok => Results.Ok(ok.Value),
+                GetAllPractitionersError err => Results.Problem(err.Value.Message),
                 _ => Results.Problem("Unknown error"),
             };
         }
@@ -174,14 +144,8 @@ app.MapGet(
         var result = await conn.GetUpcomingAppointmentsAsync().ConfigureAwait(false);
         return result switch
         {
-            Result<ImmutableList<GetUpcomingAppointments>, SqlError>.Ok<
-                ImmutableList<GetUpcomingAppointments>,
-                SqlError
-            > ok => Results.Ok(ok.Value),
-            Result<ImmutableList<GetUpcomingAppointments>, SqlError>.Error<
-                ImmutableList<GetUpcomingAppointments>,
-                SqlError
-            > err => Results.Problem(err.Value.Message),
+            GetUpcomingAppointmentsOk ok => Results.Ok(ok.Value),
+            GetUpcomingAppointmentsError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -195,18 +159,9 @@ app.MapGet(
         var result = await conn.GetAppointmentByIdAsync(id).ConfigureAwait(false);
         return result switch
         {
-            Result<ImmutableList<GetAppointmentById>, SqlError>.Ok<
-                ImmutableList<GetAppointmentById>,
-                SqlError
-            > ok when ok.Value.Count > 0 => Results.Ok(ok.Value[0]),
-            Result<ImmutableList<GetAppointmentById>, SqlError>.Ok<
-                ImmutableList<GetAppointmentById>,
-                SqlError
-            > => Results.NotFound(),
-            Result<ImmutableList<GetAppointmentById>, SqlError>.Error<
-                ImmutableList<GetAppointmentById>,
-                SqlError
-            > err => Results.Problem(err.Value.Message),
+            GetAppointmentByIdOk ok when ok.Value.Count > 0 => Results.Ok(ok.Value[0]),
+            GetAppointmentByIdOk => Results.NotFound(),
+            GetAppointmentByIdError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -247,33 +202,34 @@ app.MapPost(
             )
             .ConfigureAwait(false);
 
-        if (result is Result<long, SqlError>.Ok<long, SqlError>)
+        if (result is InsertOk)
         {
             await transaction.CommitAsync().ConfigureAwait(false);
             return Results.Created(
                 $"/Appointment/{id}",
-                new Appointment(
-                    id,
-                    "booked",
-                    request.ServiceCategory,
-                    request.ServiceType,
-                    request.ReasonCode,
-                    request.Priority,
-                    request.Description,
-                    request.Start,
-                    request.End,
-                    durationMinutes,
-                    request.PatientReference,
-                    request.PractitionerReference,
-                    now,
-                    request.Comment
-                )
+                new
+                {
+                    Id = id,
+                    Status = "booked",
+                    ServiceCategory = request.ServiceCategory,
+                    ServiceType = request.ServiceType,
+                    ReasonCode = request.ReasonCode,
+                    Priority = request.Priority,
+                    Description = request.Description,
+                    Start = request.Start,
+                    End = request.End,
+                    MinutesDuration = durationMinutes,
+                    PatientReference = request.PatientReference,
+                    PractitionerReference = request.PractitionerReference,
+                    Created = now,
+                    Comment = request.Comment
+                }
             );
         }
 
         return result switch
         {
-            Result<long, SqlError>.Error<long, SqlError> err => Results.Problem(err.Value.Message),
+            InsertError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -315,14 +271,8 @@ app.MapGet(
             .ConfigureAwait(false);
         return result switch
         {
-            Result<ImmutableList<GetAppointmentsByPatient>, SqlError>.Ok<
-                ImmutableList<GetAppointmentsByPatient>,
-                SqlError
-            > ok => Results.Ok(ok.Value),
-            Result<ImmutableList<GetAppointmentsByPatient>, SqlError>.Error<
-                ImmutableList<GetAppointmentsByPatient>,
-                SqlError
-            > err => Results.Problem(err.Value.Message),
+            GetAppointmentsByPatientOk ok => Results.Ok(ok.Value),
+            GetAppointmentsByPatientError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -337,14 +287,8 @@ app.MapGet(
             .ConfigureAwait(false);
         return result switch
         {
-            Result<ImmutableList<GetAppointmentsByPractitioner>, SqlError>.Ok<
-                ImmutableList<GetAppointmentsByPractitioner>,
-                SqlError
-            > ok => Results.Ok(ok.Value),
-            Result<ImmutableList<GetAppointmentsByPractitioner>, SqlError>.Error<
-                ImmutableList<GetAppointmentsByPractitioner>,
-                SqlError
-            > err => Results.Problem(err.Value.Message),
+            GetAppointmentsByPractitionerOk ok => Results.Ok(ok.Value),
+            GetAppointmentsByPractitionerError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }

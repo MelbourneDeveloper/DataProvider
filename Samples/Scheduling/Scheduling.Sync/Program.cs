@@ -5,7 +5,7 @@ var builder = Host.CreateApplicationBuilder(args);
 // Configure sync service
 builder.Services.AddHostedService<SchedulingSyncWorker>();
 
-builder.Services.AddSingleton<Func<NpgsqlConnection>>(() =>
+builder.Services.AddSingleton(() =>
 {
     var connectionString =
         Environment.GetEnvironmentVariable("SCHEDULING_DB")

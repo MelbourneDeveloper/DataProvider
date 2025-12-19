@@ -1,14 +1,11 @@
-using System.Collections.Immutable;
 using System.Globalization;
 using Clinical.Api;
-using Generated;
-using Selecta;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var dbPath = Path.Combine(AppContext.BaseDirectory, "clinical.db");
 var connectionString = new SqliteConnectionStringBuilder { DataSource = dbPath }.ToString();
-builder.Services.AddSingleton<Func<SqliteConnection>>(() =>
+builder.Services.AddSingleton(() =>
 {
     var conn = new SqliteConnection(connectionString);
     conn.Open();
@@ -45,14 +42,8 @@ patientGroup.MapGet(
             .ConfigureAwait(false);
         return result switch
         {
-            Result<ImmutableList<GetPatients>, SqlError>.Ok<
-                ImmutableList<GetPatients>,
-                SqlError
-            > ok => Results.Ok(ok.Value),
-            Result<ImmutableList<GetPatients>, SqlError>.Error<
-                ImmutableList<GetPatients>,
-                SqlError
-            > err => Results.Problem(err.Value.Message),
+            GetPatientsOk ok => Results.Ok(ok.Value),
+            GetPatientsError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -66,18 +57,9 @@ patientGroup.MapGet(
         var result = await conn.GetPatientByIdAsync(id).ConfigureAwait(false);
         return result switch
         {
-            Result<ImmutableList<GetPatientById>, SqlError>.Ok<
-                ImmutableList<GetPatientById>,
-                SqlError
-            > ok when ok.Value.Count > 0 => Results.Ok(ok.Value[0]),
-            Result<ImmutableList<GetPatientById>, SqlError>.Ok<
-                ImmutableList<GetPatientById>,
-                SqlError
-            > => Results.NotFound(),
-            Result<ImmutableList<GetPatientById>, SqlError>.Error<
-                ImmutableList<GetPatientById>,
-                SqlError
-            > err => Results.Problem(err.Value.Message),
+            GetPatientByIdOk ok when ok.Value.Count > 0 => Results.Ok(ok.Value[0]),
+            GetPatientByIdOk => Results.NotFound(),
+            GetPatientByIdError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -116,7 +98,7 @@ patientGroup.MapPost(
             )
             .ConfigureAwait(false);
 
-        if (result is Result<long, SqlError>.Ok<long, SqlError>)
+        if (result is InsertOk)
         {
             await transaction.CommitAsync().ConfigureAwait(false);
             return Results.Created(
@@ -144,7 +126,7 @@ patientGroup.MapPost(
 
         return result switch
         {
-            Result<long, SqlError>.Error<long, SqlError> err => Results.Problem(err.Value.Message),
+            InsertError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -158,14 +140,8 @@ patientGroup.MapGet(
         var result = await conn.SearchPatientsAsync($"%{q}%").ConfigureAwait(false);
         return result switch
         {
-            Result<ImmutableList<SearchPatients>, SqlError>.Ok<
-                ImmutableList<SearchPatients>,
-                SqlError
-            > ok => Results.Ok(ok.Value),
-            Result<ImmutableList<SearchPatients>, SqlError>.Error<
-                ImmutableList<SearchPatients>,
-                SqlError
-            > err => Results.Problem(err.Value.Message),
+            SearchPatientsOk ok => Results.Ok(ok.Value),
+            SearchPatientsError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -181,14 +157,8 @@ encounterGroup.MapGet(
         var result = await conn.GetEncountersByPatientAsync(patientId).ConfigureAwait(false);
         return result switch
         {
-            Result<ImmutableList<GetEncountersByPatient>, SqlError>.Ok<
-                ImmutableList<GetEncountersByPatient>,
-                SqlError
-            > ok => Results.Ok(ok.Value),
-            Result<ImmutableList<GetEncountersByPatient>, SqlError>.Error<
-                ImmutableList<GetEncountersByPatient>,
-                SqlError
-            > err => Results.Problem(err.Value.Message),
+            GetEncountersOk ok => Results.Ok(ok.Value),
+            GetEncountersError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -224,7 +194,7 @@ encounterGroup.MapPost(
             )
             .ConfigureAwait(false);
 
-        if (result is Result<long, SqlError>.Ok<long, SqlError>)
+        if (result is InsertOk)
         {
             await transaction.CommitAsync().ConfigureAwait(false);
             return Results.Created(
@@ -249,7 +219,7 @@ encounterGroup.MapPost(
 
         return result switch
         {
-            Result<long, SqlError>.Error<long, SqlError> err => Results.Problem(err.Value.Message),
+            InsertError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -265,14 +235,8 @@ conditionGroup.MapGet(
         var result = await conn.GetConditionsByPatientAsync(patientId).ConfigureAwait(false);
         return result switch
         {
-            Result<ImmutableList<GetConditionsByPatient>, SqlError>.Ok<
-                ImmutableList<GetConditionsByPatient>,
-                SqlError
-            > ok => Results.Ok(ok.Value),
-            Result<ImmutableList<GetConditionsByPatient>, SqlError>.Error<
-                ImmutableList<GetConditionsByPatient>,
-                SqlError
-            > err => Results.Problem(err.Value.Message),
+            GetConditionsOk ok => Results.Ok(ok.Value),
+            GetConditionsError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -313,7 +277,7 @@ conditionGroup.MapPost(
             )
             .ConfigureAwait(false);
 
-        if (result is Result<long, SqlError>.Ok<long, SqlError>)
+        if (result is InsertOk)
         {
             await transaction.CommitAsync().ConfigureAwait(false);
             return Results.Created(
@@ -342,7 +306,7 @@ conditionGroup.MapPost(
 
         return result switch
         {
-            Result<long, SqlError>.Error<long, SqlError> err => Results.Problem(err.Value.Message),
+            InsertError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -360,14 +324,8 @@ medicationGroup.MapGet(
         var result = await conn.GetMedicationsByPatientAsync(patientId).ConfigureAwait(false);
         return result switch
         {
-            Result<ImmutableList<GetMedicationsByPatient>, SqlError>.Ok<
-                ImmutableList<GetMedicationsByPatient>,
-                SqlError
-            > ok => Results.Ok(ok.Value),
-            Result<ImmutableList<GetMedicationsByPatient>, SqlError>.Error<
-                ImmutableList<GetMedicationsByPatient>,
-                SqlError
-            > err => Results.Problem(err.Value.Message),
+            GetMedicationsOk ok => Results.Ok(ok.Value),
+            GetMedicationsError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
@@ -410,7 +368,7 @@ medicationGroup.MapPost(
             )
             .ConfigureAwait(false);
 
-        if (result is Result<long, SqlError>.Ok<long, SqlError>)
+        if (result is InsertOk)
         {
             await transaction.CommitAsync().ConfigureAwait(false);
             return Results.Created(
@@ -438,7 +396,7 @@ medicationGroup.MapPost(
 
         return result switch
         {
-            Result<long, SqlError>.Error<long, SqlError> err => Results.Problem(err.Value.Message),
+            InsertError err => Results.Problem(err.Value.Message),
             _ => Results.Problem("Unknown error"),
         };
     }
