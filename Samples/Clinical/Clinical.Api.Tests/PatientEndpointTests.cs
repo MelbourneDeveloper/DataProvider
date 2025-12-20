@@ -65,10 +65,7 @@ public sealed class PatientEndpointTests
             $"Missing FamilyName in: {content}"
         );
         Assert.Equal("Doe", familyName.GetString());
-        Assert.True(
-            json.TryGetProperty("Gender", out var gender),
-            $"Missing Gender in: {content}"
-        );
+        Assert.True(json.TryGetProperty("Gender", out var gender), $"Missing Gender in: {content}");
         Assert.Equal("male", gender.GetString());
         Assert.True(json.TryGetProperty("Id", out var id), $"Missing Id in: {content}");
         Assert.NotNull(id.GetString());

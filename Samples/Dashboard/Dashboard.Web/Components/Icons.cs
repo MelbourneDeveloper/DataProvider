@@ -1,7 +1,6 @@
 namespace Dashboard.Components
 {
     using Dashboard.React;
-    using H5;
     using static Dashboard.React.Elements;
 
     /// <summary>
@@ -12,7 +11,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Home icon.
         /// </summary>
-        public static ReactElement Home() => Svg(
+        public static ReactElement Home() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -28,7 +28,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Users icon.
         /// </summary>
-        public static ReactElement Users() => Svg(
+        public static ReactElement Users() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -44,7 +45,8 @@ namespace Dashboard.Components
         /// <summary>
         /// User/Doctor icon.
         /// </summary>
-        public static ReactElement UserDoctor() => Svg(
+        public static ReactElement UserDoctor() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -60,7 +62,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Calendar icon.
         /// </summary>
-        public static ReactElement Calendar() => Svg(
+        public static ReactElement Calendar() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -76,7 +79,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Clipboard/Encounter icon.
         /// </summary>
-        public static ReactElement Clipboard() => Svg(
+        public static ReactElement Clipboard() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -92,7 +96,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Heart/Condition icon.
         /// </summary>
-        public static ReactElement Heart() => Svg(
+        public static ReactElement Heart() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -108,7 +113,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Pill/Medication icon.
         /// </summary>
-        public static ReactElement Pill() => Svg(
+        public static ReactElement Pill() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -124,7 +130,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Activity/Heartbeat icon.
         /// </summary>
-        public static ReactElement Activity() => Svg(
+        public static ReactElement Activity() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -140,7 +147,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Search icon.
         /// </summary>
-        public static ReactElement Search() => Svg(
+        public static ReactElement Search() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -156,7 +164,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Bell/Notification icon.
         /// </summary>
-        public static ReactElement Bell() => Svg(
+        public static ReactElement Bell() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -172,7 +181,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Settings icon.
         /// </summary>
-        public static ReactElement Settings() => Svg(
+        public static ReactElement Settings() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -188,7 +198,8 @@ namespace Dashboard.Components
         /// <summary>
         /// ChevronLeft icon.
         /// </summary>
-        public static ReactElement ChevronLeft() => Svg(
+        public static ReactElement ChevronLeft() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -200,7 +211,8 @@ namespace Dashboard.Components
         /// <summary>
         /// ChevronRight icon.
         /// </summary>
-        public static ReactElement ChevronRight() => Svg(
+        public static ReactElement ChevronRight() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -212,7 +224,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Plus icon.
         /// </summary>
-        public static ReactElement Plus() => Svg(
+        public static ReactElement Plus() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -224,7 +237,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Edit/Pencil icon.
         /// </summary>
-        public static ReactElement Edit() => Svg(
+        public static ReactElement Edit() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -240,7 +254,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Trash icon.
         /// </summary>
-        public static ReactElement Trash() => Svg(
+        public static ReactElement Trash() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -256,7 +271,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Eye icon.
         /// </summary>
-        public static ReactElement Eye() => Svg(
+        public static ReactElement Eye() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -272,7 +288,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Refresh icon.
         /// </summary>
-        public static ReactElement Refresh() => Svg(
+        public static ReactElement Refresh() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -288,7 +305,8 @@ namespace Dashboard.Components
         /// <summary>
         /// TrendUp icon.
         /// </summary>
-        public static ReactElement TrendUp() => Svg(
+        public static ReactElement TrendUp() =>
+            Svg(
                 className: "icon",
                 width: 16,
                 height: 16,
@@ -300,7 +318,8 @@ namespace Dashboard.Components
         /// <summary>
         /// TrendDown icon.
         /// </summary>
-        public static ReactElement TrendDown() => Svg(
+        public static ReactElement TrendDown() =>
+            Svg(
                 className: "icon",
                 width: 16,
                 height: 16,
@@ -312,7 +331,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Menu icon (hamburger).
         /// </summary>
-        public static ReactElement Menu() => Svg(
+        public static ReactElement Menu() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -324,7 +344,8 @@ namespace Dashboard.Components
         /// <summary>
         /// X/Close icon.
         /// </summary>
-        public static ReactElement X() => Svg(
+        public static ReactElement X() =>
+            Svg(
                 className: "icon",
                 width: 20,
                 height: 20,

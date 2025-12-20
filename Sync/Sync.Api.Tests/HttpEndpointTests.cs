@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.VisualStudio.TestPlatform.TestHost;
 
 namespace Sync.Api.Tests;
 

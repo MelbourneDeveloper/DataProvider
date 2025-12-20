@@ -77,7 +77,8 @@ namespace Dashboard.Components
             );
         }
 
-        private static NavSection[] GetNavSections() => new[]
+        private static NavSection[] GetNavSections() =>
+            new[]
             {
                 new NavSection
                 {
@@ -158,7 +159,8 @@ namespace Dashboard.Components
                 },
             };
 
-        private static ReactElement RenderHeader(bool collapsed) => Div(
+        private static ReactElement RenderHeader(bool collapsed) =>
+            Div(
                 className: "sidebar-header",
                 children: new[]
                 {
@@ -239,7 +241,8 @@ namespace Dashboard.Components
             );
         }
 
-        private static ReactElement RenderFooter(bool collapsed) => Div(
+        private static ReactElement RenderFooter(bool collapsed) =>
+            Div(
                 className: "sidebar-footer",
                 children: new[]
                 {

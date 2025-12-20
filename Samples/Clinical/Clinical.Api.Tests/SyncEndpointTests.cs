@@ -11,7 +11,6 @@ using System.Text.Json;
 /// </summary>
 public sealed class SyncEndpointTests
 {
-
     [Fact]
     public async Task GetSyncOrigin_ReturnsOriginId()
     {

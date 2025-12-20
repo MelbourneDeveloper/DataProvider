@@ -214,7 +214,8 @@ namespace Dashboard.Tests.TestData
         /// <summary>
         /// Gets mock responses for all API endpoints.
         /// </summary>
-        public static Dictionary<string, object> GetApiResponses() => new Dictionary<string, object>
+        public static Dictionary<string, object> GetApiResponses() =>
+            new Dictionary<string, object>
             {
                 { "/fhir/Patient", Patients },
                 { "/fhir/Patient/_search", Patients },

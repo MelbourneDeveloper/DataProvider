@@ -16,32 +16,38 @@ namespace Dashboard.Tests.TestLib
         /// </summary>
         public static Func<string, object, Task<object>> Create(
             Dictionary<string, object> responses
-        ) => (url, options) =>
-                      {
-                          var path = ExtractPath(url);
+        ) =>
+            (url, options) =>
+            {
+                var path = ExtractPath(url);
 
-                          if (responses.TryGetValue(path, out var response))
-                          {
-                              return CreateSuccessResponse(response);
-                          }
+                if (responses.TryGetValue(path, out var response))
+                {
+                    return CreateSuccessResponse(response);
+                }
 
-                          // Return 404 for unknown paths
-                          return CreateErrorResponse(404, "Not Found");
-                      };
+                // Return 404 for unknown paths
+                return CreateErrorResponse(404, "Not Found");
+            };
 
         /// <summary>
         /// Creates a mock fetch that tracks all calls made.
         /// </summary>
-        public static MockFetchWithHistory CreateWithHistory(
-            Dictionary<string, object> responses
-        )
+        public static MockFetchWithHistory CreateWithHistory(Dictionary<string, object> responses)
         {
             var history = new List<FetchCall>();
 
             Func<string, object, Task<object>> fetch = (url, options) =>
             {
                 var path = ExtractPath(url);
-                history.Add(new FetchCall { Url = url, Path = path, Options = options });
+                history.Add(
+                    new FetchCall
+                    {
+                        Url = url,
+                        Path = path,
+                        Options = options,
+                    }
+                );
 
                 if (responses.TryGetValue(path, out var response))
                 {
@@ -60,19 +66,20 @@ namespace Dashboard.Tests.TestLib
         public static Func<string, object, Task<object>> CreateWithDelay(
             Dictionary<string, object> responses,
             int delayMs
-        ) => async (url, options) =>
-                      {
-                          await Task.Delay(delayMs);
+        ) =>
+            async (url, options) =>
+            {
+                await Task.Delay(delayMs);
 
-                          var path = ExtractPath(url);
+                var path = ExtractPath(url);
 
-                          if (responses.TryGetValue(path, out var response))
-                          {
-                              return await CreateSuccessResponse(response);
-                          }
+                if (responses.TryGetValue(path, out var response))
+                {
+                    return await CreateSuccessResponse(response);
+                }
 
-                          return await CreateErrorResponse(404, "Not Found");
-                      };
+                return await CreateErrorResponse(404, "Not Found");
+            };
 
         /// <summary>
         /// Creates a mock fetch that fails for specific paths.
@@ -80,32 +87,35 @@ namespace Dashboard.Tests.TestLib
         public static Func<string, object, Task<object>> CreateWithErrors(
             Dictionary<string, object> responses,
             Dictionary<string, int> errors
-        ) => (url, options) =>
-                      {
-                          var path = ExtractPath(url);
+        ) =>
+            (url, options) =>
+            {
+                var path = ExtractPath(url);
 
-                          if (errors.TryGetValue(path, out var statusCode))
-                          {
-                              return CreateErrorResponse(statusCode, "Error");
-                          }
+                if (errors.TryGetValue(path, out var statusCode))
+                {
+                    return CreateErrorResponse(statusCode, "Error");
+                }
 
-                          if (responses.TryGetValue(path, out var response))
-                          {
-                              return CreateSuccessResponse(response);
-                          }
+                if (responses.TryGetValue(path, out var response))
+                {
+                    return CreateSuccessResponse(response);
+                }
 
-                          return CreateErrorResponse(404, "Not Found");
-                      };
+                return CreateErrorResponse(404, "Not Found");
+            };
 
         /// <summary>
         /// Installs mock fetch globally on window.
         /// </summary>
-        public static void Install(Func<string, object, Task<object>> mockFetch) => Script.Set("window", "fetch", mockFetch);
+        public static void Install(Func<string, object, Task<object>> mockFetch) =>
+            Script.Set("window", "fetch", mockFetch);
 
         /// <summary>
         /// Restores the original fetch function.
         /// </summary>
-        public static void Restore() => Script.Call<object>("window.fetch = window.originalFetch || window.fetch");
+        public static void Restore() =>
+            Script.Call<object>("window.fetch = window.originalFetch || window.fetch");
 
         private static string ExtractPath(string url)
         {
@@ -113,10 +123,12 @@ namespace Dashboard.Tests.TestLib
             // e.g., "http://localhost:5000/fhir/Patient" -> "/fhir/Patient"
             // Parse manually since H5 Uri doesn't have AbsolutePath
             var protocolEnd = url.IndexOf("://");
-            if (protocolEnd < 0) return url;
+            if (protocolEnd < 0)
+                return url;
             var hostStart = protocolEnd + 3;
             var pathStart = url.IndexOf("/", hostStart);
-            if (pathStart < 0) return "/";
+            if (pathStart < 0)
+                return "/";
             return url.Substring(pathStart);
         }
 
@@ -130,10 +142,7 @@ namespace Dashboard.Tests.TestLib
                     status = 200,
                     json = (Func<Task<object>>)(() => Task.FromResult(data)),
                     text = (Func<Task<string>>)(
-                        () =>
-                            Task.FromResult(
-                                Script.Call<string>("JSON.stringify", data)
-                            )
+                        () => Task.FromResult(Script.Call<string>("JSON.stringify", data))
                     ),
                 }
             );
@@ -147,9 +156,7 @@ namespace Dashboard.Tests.TestLib
                 ok = false,
                 status = status,
                 statusText = message,
-                json = (Func<Task<object>>)(
-                    () => Task.FromResult<object>(new { error = message })
-                ),
+                json = (Func<Task<object>>)(() => Task.FromResult<object>(new { error = message })),
                 text = (Func<Task<string>>)(() => Task.FromResult(message)),
             };
             return Script.Call<Task<object>>("Promise.resolve", response);

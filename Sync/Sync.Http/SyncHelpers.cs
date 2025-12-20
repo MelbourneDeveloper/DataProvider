@@ -1,8 +1,10 @@
 #pragma warning disable CA1848 // Use the LoggerMessage delegates for performance
 
 using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Logging;
 using Npgsql;
+
+// TODO: Logging!!
+#pragma warning disable IDE0060 // Remove unused parameter
 
 namespace Sync.Http;
 
@@ -25,7 +27,12 @@ public static class SyncHelpers
         dbType.ToLowerInvariant() switch
         {
             "sqlite" => FetchChangesFromSqlite(connectionString, fromVersion, batchSize, logger),
-            "postgres" => FetchChangesFromPostgres(connectionString, fromVersion, batchSize, logger),
+            "postgres" => FetchChangesFromPostgres(
+                connectionString,
+                fromVersion,
+                batchSize,
+                logger
+            ),
             _ => throw new ArgumentException($"Unknown database type: {dbType}"),
         };
 
@@ -82,7 +89,8 @@ public static class SyncHelpers
     {
         using var conn = new SqliteConnection(connectionString);
         conn.Open();
-        return SQLite.SyncLogRepository.FetchChanges(conn, fromVersion, batchSize)
+        return SQLite
+            .SyncLogRepository.FetchChanges(conn, fromVersion, batchSize)
             .Match<List<SyncLogEntry>>(ok => [.. ok], _ => []);
     }
 
@@ -95,7 +103,8 @@ public static class SyncHelpers
     {
         using var conn = new NpgsqlConnection(connectionString);
         conn.Open();
-        return Postgres.PostgresSyncLogRepository.FetchChanges(conn, fromVersion, batchSize)
+        return Postgres
+            .PostgresSyncLogRepository.FetchChanges(conn, fromVersion, batchSize)
             .Match<List<SyncLogEntry>>(ok => [.. ok], _ => []);
     }
 

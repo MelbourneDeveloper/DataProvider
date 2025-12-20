@@ -25,7 +25,12 @@ public static class SyncHelpers
         dbType.ToLowerInvariant() switch
         {
             "sqlite" => FetchChangesFromSqlite(connectionString, fromVersion, batchSize, logger),
-            "postgres" => FetchChangesFromPostgres(connectionString, fromVersion, batchSize, logger),
+            "postgres" => FetchChangesFromPostgres(
+                connectionString,
+                fromVersion,
+                batchSize,
+                logger
+            ),
             _ => throw new ArgumentException($"Unknown database type: {dbType}"),
         };
 
@@ -88,8 +93,7 @@ public static class SyncHelpers
             Outcome.Result<IReadOnlyList<SyncLogEntry>, SyncError>.Ok<
                 IReadOnlyList<SyncLogEntry>,
                 SyncError
-            > ok
-                => [.. ok.Value],
+            > ok => [.. ok.Value],
             _ => [],
         };
     }
@@ -109,8 +113,7 @@ public static class SyncHelpers
             Outcome.Result<IReadOnlyList<SyncLogEntry>, SyncError>.Ok<
                 IReadOnlyList<SyncLogEntry>,
                 SyncError
-            > ok
-                => [.. ok.Value],
+            > ok => [.. ok.Value],
             _ => [],
         };
     }

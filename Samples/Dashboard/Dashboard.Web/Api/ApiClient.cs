@@ -59,7 +59,9 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Encounter[]> GetEncountersAsync(string patientId)
         {
-            var response = await FetchAsync(_clinicalBaseUrl + "/fhir/Patient/" + patientId + "/Encounter");
+            var response = await FetchAsync(
+                _clinicalBaseUrl + "/fhir/Patient/" + patientId + "/Encounter"
+            );
             return ParseJson<Encounter[]>(response);
         }
 
@@ -68,7 +70,9 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Condition[]> GetConditionsAsync(string patientId)
         {
-            var response = await FetchAsync(_clinicalBaseUrl + "/fhir/Patient/" + patientId + "/Condition");
+            var response = await FetchAsync(
+                _clinicalBaseUrl + "/fhir/Patient/" + patientId + "/Condition"
+            );
             return ParseJson<Condition[]>(response);
         }
 
@@ -137,14 +141,18 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Appointment[]> GetPatientAppointmentsAsync(string patientId)
         {
-            var response = await FetchAsync(_schedulingBaseUrl + "/Patient/" + patientId + "/Appointment");
+            var response = await FetchAsync(
+                _schedulingBaseUrl + "/Patient/" + patientId + "/Appointment"
+            );
             return ParseJson<Appointment[]>(response);
         }
 
         /// <summary>
         /// Fetches appointments for a practitioner.
         /// </summary>
-        public static async Task<Appointment[]> GetPractitionerAppointmentsAsync(string practitionerId)
+        public static async Task<Appointment[]> GetPractitionerAppointmentsAsync(
+            string practitionerId
+        )
         {
             var response = await FetchAsync(
                 _schedulingBaseUrl + "/Practitioner/" + practitionerId + "/Appointment"
@@ -193,7 +201,8 @@ namespace Dashboard.Api
 
         private static T ParseJson<T>(string json) => Script.Call<T>("JSON.parse", json);
 
-        private static string EncodeUri(string value) => Script.Call<string>("encodeURIComponent", value);
+        private static string EncodeUri(string value) =>
+            Script.Call<string>("encodeURIComponent", value);
     }
 
     /// <summary>

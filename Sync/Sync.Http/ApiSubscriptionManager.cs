@@ -2,7 +2,6 @@
 
 using System.Collections.Concurrent;
 using System.Threading.Channels;
-using Microsoft.Extensions.Logging;
 
 namespace Sync.Http;
 
@@ -45,11 +44,7 @@ public sealed class ApiSubscriptionManager : IDisposable
     /// <param name="tableName">Table to subscribe to.</param>
     /// <param name="pkValue">Optional primary key for record-level subscription.</param>
     /// <returns>Channel to read changes from.</returns>
-    public Channel<SyncLogEntry> Subscribe(
-        string subscriptionId,
-        string tableName,
-        string? pkValue
-    )
+    public Channel<SyncLogEntry> Subscribe(string subscriptionId, string tableName, string? pkValue)
     {
         _logger.LogInformation(
             "SUBS: Creating subscription {Id} for {Table}/{Pk}",
@@ -59,18 +54,9 @@ public sealed class ApiSubscriptionManager : IDisposable
         );
 
         var channel = Channel.CreateBounded<SyncLogEntry>(
-            new BoundedChannelOptions(1000)
-            {
-                FullMode = BoundedChannelFullMode.DropOldest,
-            }
+            new BoundedChannelOptions(1000) { FullMode = BoundedChannelFullMode.DropOldest }
         );
-        var sub = new Subscription(
-            subscriptionId,
-            tableName,
-            pkValue,
-            channel,
-            DateTime.UtcNow
-        );
+        var sub = new Subscription(subscriptionId, tableName, pkValue, channel, DateTime.UtcNow);
         _subscriptions[subscriptionId] = sub;
 
         return channel;

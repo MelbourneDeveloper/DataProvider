@@ -16,12 +16,14 @@ namespace Dashboard.Tests.TestLib
         /// <summary>
         /// Registers a test case.
         /// </summary>
-        public static void Test(string name, Func<Task> testFn) => _tests.Add(new TestCase { Name = name, TestFn = testFn });
+        public static void Test(string name, Func<Task> testFn) =>
+            _tests.Add(new TestCase { Name = name, TestFn = testFn });
 
         /// <summary>
         /// Registers a synchronous test case.
         /// </summary>
-        public static void Test(string name, Action testFn) => _tests.Add(
+        public static void Test(string name, Action testFn) =>
+            _tests.Add(
                 new TestCase
                 {
                     Name = name,
@@ -58,13 +60,7 @@ namespace Dashboard.Tests.TestLib
                 try
                 {
                     await test.TestFn();
-                    _results.Add(
-                        new TestResult
-                        {
-                            Name = test.Name,
-                            Passed = true,
-                        }
-                    );
+                    _results.Add(new TestResult { Name = test.Name, Passed = true });
                     Log($"✅ {test.Name}");
                     passed++;
                 }

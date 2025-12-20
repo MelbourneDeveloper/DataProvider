@@ -1,6 +1,5 @@
 namespace Dashboard
 {
-    using System;
     using Dashboard.Components;
     using Dashboard.Pages;
     using Dashboard.React;
@@ -154,7 +153,8 @@ namespace Dashboard
             return RenderPlaceholderPage("Page Not Found", "The requested page does not exist");
         }
 
-        private static ReactElement RenderPlaceholderPage(string title, string description) => Div(
+        private static ReactElement RenderPlaceholderPage(string title, string description) =>
+            Div(
                 className: "page",
                 children: new[]
                 {

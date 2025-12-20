@@ -1,6 +1,5 @@
 namespace Dashboard
 {
-    using System;
     using Dashboard.Api;
     using Dashboard.React;
     using H5;
@@ -61,6 +60,7 @@ namespace Dashboard
             }
         }
 
-        private static void Log(string message) => Script.Call<object>("console.log", "[Dashboard] " + message);
+        private static void Log(string message) =>
+            Script.Call<object>("console.log", "[Dashboard] " + message);
     }
 }

@@ -1,7 +1,6 @@
 namespace Dashboard.Pages
 {
     using System;
-    using System.Linq;
     using Dashboard.Api;
     using Dashboard.Components;
     using Dashboard.Models;
@@ -16,12 +15,16 @@ namespace Dashboard.Pages
     {
         /// <summary>List of patients.</summary>
         public Patient[] Patients { get; set; }
+
         /// <summary>Whether loading.</summary>
         public bool Loading { get; set; }
+
         /// <summary>Error message if any.</summary>
         public string Error { get; set; }
+
         /// <summary>Current search query.</summary>
         public string SearchQuery { get; set; }
+
         /// <summary>Selected patient.</summary>
         public Patient SelectedPatient { get; set; }
     }
@@ -36,20 +39,25 @@ namespace Dashboard.Pages
         /// </summary>
         public static ReactElement Render()
         {
-            var stateResult = UseState(new PatientsState
-            {
-                Patients = new Patient[0],
-                Loading = true,
-                Error = null,
-                SearchQuery = "",
-                SelectedPatient = null
-            });
+            var stateResult = UseState(
+                new PatientsState
+                {
+                    Patients = new Patient[0],
+                    Loading = true,
+                    Error = null,
+                    SearchQuery = "",
+                    SelectedPatient = null,
+                }
+            );
 
             var state = stateResult.State;
             var setState = stateResult.SetState;
 
             UseEffect(
-                () => { LoadPatients(setState); },
+                () =>
+                {
+                    LoadPatients(setState);
+                },
                 new object[0]
             );
 
@@ -64,7 +72,9 @@ namespace Dashboard.Pages
             }
             else if (state.Patients.Length == 0)
             {
-                content = DataTable.RenderEmpty("No patients found. Start by adding a new patient.");
+                content = DataTable.RenderEmpty(
+                    "No patients found. Start by adding a new patient."
+                );
             }
             else
             {
@@ -83,7 +93,11 @@ namespace Dashboard.Pages
                             Div(
                                 children: new[]
                                 {
-                                    H(2, className: "page-title", children: new[] { Text("Patients") }),
+                                    H(
+                                        2,
+                                        className: "page-title",
+                                        children: new[] { Text("Patients") }
+                                    ),
                                     P(
                                         className: "page-description",
                                         children: new[]
@@ -145,25 +159,29 @@ namespace Dashboard.Pages
             try
             {
                 var patients = await ApiClient.GetPatientsAsync();
-                setState(new PatientsState
-                {
-                    Patients = patients,
-                    Loading = false,
-                    Error = null,
-                    SearchQuery = "",
-                    SelectedPatient = null
-                });
+                setState(
+                    new PatientsState
+                    {
+                        Patients = patients,
+                        Loading = false,
+                        Error = null,
+                        SearchQuery = "",
+                        SelectedPatient = null,
+                    }
+                );
             }
             catch (Exception ex)
             {
-                setState(new PatientsState
-                {
-                    Patients = new Patient[0],
-                    Loading = false,
-                    Error = ex.Message,
-                    SearchQuery = "",
-                    SelectedPatient = null
-                });
+                setState(
+                    new PatientsState
+                    {
+                        Patients = new Patient[0],
+                        Loading = false,
+                        Error = ex.Message,
+                        SearchQuery = "",
+                        SelectedPatient = null,
+                    }
+                );
             }
         }
 
@@ -178,25 +196,29 @@ namespace Dashboard.Pages
             try
             {
                 var patients = await ApiClient.SearchPatientsAsync(query);
-                setState(new PatientsState
-                {
-                    Patients = patients,
-                    Loading = false,
-                    Error = null,
-                    SearchQuery = query,
-                    SelectedPatient = null
-                });
+                setState(
+                    new PatientsState
+                    {
+                        Patients = patients,
+                        Loading = false,
+                        Error = null,
+                        SearchQuery = query,
+                        SelectedPatient = null,
+                    }
+                );
             }
             catch (Exception ex)
             {
-                setState(new PatientsState
-                {
-                    Patients = new Patient[0],
-                    Loading = false,
-                    Error = ex.Message,
-                    SearchQuery = query,
-                    SelectedPatient = null
-                });
+                setState(
+                    new PatientsState
+                    {
+                        Patients = new Patient[0],
+                        Loading = false,
+                        Error = ex.Message,
+                        SearchQuery = query,
+                        SelectedPatient = null,
+                    }
+                );
             }
         }
 
@@ -205,7 +227,8 @@ namespace Dashboard.Pages
             // TODO: Navigate to patient detail or open modal
         }
 
-        private static ReactElement RenderError(string message) => Div(
+        private static ReactElement RenderError(string message) =>
+            Div(
                 className: "card",
                 style: new { borderLeft = "4px solid var(--error)" },
                 children: new[]
@@ -226,7 +249,12 @@ namespace Dashboard.Pages
                 new Column { Key = "birthDate", Header = "Birth Date" },
                 new Column { Key = "contact", Header = "Contact" },
                 new Column { Key = "status", Header = "Status" },
-                new Column { Key = "actions", Header = "Actions", ClassName = "text-right" },
+                new Column
+                {
+                    Key = "actions",
+                    Header = "Actions",
+                    ClassName = "text-right",
+                },
             };
 
             return DataTable.Render(
@@ -238,14 +266,24 @@ namespace Dashboard.Pages
             );
         }
 
-        private static ReactElement RenderCell(Patient patient, string key, Action<Patient> onSelect)
+        private static ReactElement RenderCell(
+            Patient patient,
+            string key,
+            Action<Patient> onSelect
+        )
         {
-            if (key == "name") return RenderPatientName(patient);
-            if (key == "gender") return RenderGender(patient.Gender);
-            if (key == "birthDate") return Text(patient.BirthDate ?? "N/A");
-            if (key == "contact") return RenderContact(patient);
-            if (key == "status") return RenderStatus(patient.Active);
-            if (key == "actions") return RenderActions(patient, onSelect);
+            if (key == "name")
+                return RenderPatientName(patient);
+            if (key == "gender")
+                return RenderGender(patient.Gender);
+            if (key == "birthDate")
+                return Text(patient.BirthDate ?? "N/A");
+            if (key == "contact")
+                return RenderContact(patient);
+            if (key == "status")
+                return RenderStatus(patient.Active);
+            if (key == "actions")
+                return RenderActions(patient, onSelect);
             return Text("");
         }
 
@@ -256,13 +294,19 @@ namespace Dashboard.Pages
                 className: "flex items-center gap-3",
                 children: new[]
                 {
-                    Div(className: "avatar avatar-sm", children: new[] { Text(GetInitials(patient)) }),
+                    Div(
+                        className: "avatar avatar-sm",
+                        children: new[] { Text(GetInitials(patient)) }
+                    ),
                     Div(
                         children: new[]
                         {
                             Div(
                                 className: "font-medium",
-                                children: new[] { Text(patient.GivenName + " " + patient.FamilyName) }
+                                children: new[]
+                                {
+                                    Text(patient.GivenName + " " + patient.FamilyName),
+                                }
                             ),
                             Div(
                                 className: "text-sm text-gray-500",
@@ -274,15 +318,18 @@ namespace Dashboard.Pages
             );
         }
 
-        private static ReactElement RenderGender(string gender) => Span(
+        private static ReactElement RenderGender(string gender) =>
+            Span(
                 className: "badge " + GenderBadgeClass(gender),
                 children: new[] { Text(gender ?? "Unknown") }
             );
 
         private static string GenderBadgeClass(string gender)
         {
-            if (gender == "male") return "badge-primary";
-            if (gender == "female") return "badge-teal";
+            if (gender == "male")
+                return "badge-primary";
+            if (gender == "female")
+                return "badge-teal";
             return "badge-gray";
         }
 
@@ -292,7 +339,8 @@ namespace Dashboard.Pages
             return Text(contact);
         }
 
-        private static ReactElement RenderStatus(bool active) => Div(
+        private static ReactElement RenderStatus(bool active) =>
+            Div(
                 className: "flex items-center gap-2",
                 children: new[]
                 {
@@ -301,7 +349,8 @@ namespace Dashboard.Pages
                 }
             );
 
-        private static ReactElement RenderActions(Patient patient, Action<Patient> onSelect) => Div(
+        private static ReactElement RenderActions(Patient patient, Action<Patient> onSelect) =>
+            Div(
                 className: "table-action",
                 children: new[]
                 {
@@ -314,11 +363,13 @@ namespace Dashboard.Pages
                 }
             );
 
-        private static string GetInitials(Patient patient) => FirstChar(patient.GivenName) + FirstChar(patient.FamilyName);
+        private static string GetInitials(Patient patient) =>
+            FirstChar(patient.GivenName) + FirstChar(patient.FamilyName);
 
         private static string FirstChar(string s)
         {
-            if (string.IsNullOrEmpty(s)) return "";
+            if (string.IsNullOrEmpty(s))
+                return "";
             return s.Substring(0, 1).ToUpper();
         }
     }

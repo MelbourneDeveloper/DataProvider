@@ -40,11 +40,7 @@ public sealed class ApiSubscriptionManager : IDisposable
     /// Subscribe to changes for a table (and optionally specific record).
     /// Uses BOUNDED channel to prevent memory exhaustion.
     /// </summary>
-    public Channel<SyncLogEntry> Subscribe(
-        string subscriptionId,
-        string tableName,
-        string? pkValue
-    )
+    public Channel<SyncLogEntry> Subscribe(string subscriptionId, string tableName, string? pkValue)
     {
         _logger.LogInformation(
             "SUBS: Creating subscription {Id} for {Table}/{Pk}",
@@ -54,18 +50,9 @@ public sealed class ApiSubscriptionManager : IDisposable
         );
 
         var channel = Channel.CreateBounded<SyncLogEntry>(
-            new BoundedChannelOptions(1000)
-            {
-                FullMode = BoundedChannelFullMode.DropOldest,
-            }
+            new BoundedChannelOptions(1000) { FullMode = BoundedChannelFullMode.DropOldest }
         );
-        var sub = new Subscription(
-            subscriptionId,
-            tableName,
-            pkValue,
-            channel,
-            DateTime.UtcNow
-        );
+        var sub = new Subscription(subscriptionId, tableName, pkValue, channel, DateTime.UtcNow);
         _subscriptions[subscriptionId] = sub;
 
         return channel;

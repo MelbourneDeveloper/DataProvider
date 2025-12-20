@@ -16,10 +16,13 @@ namespace Dashboard.Pages
     {
         /// <summary>List of appointments.</summary>
         public Appointment[] Appointments { get; set; }
+
         /// <summary>Whether loading.</summary>
         public bool Loading { get; set; }
+
         /// <summary>Error message if any.</summary>
         public string Error { get; set; }
+
         /// <summary>Current status filter.</summary>
         public string StatusFilter { get; set; }
     }
@@ -34,19 +37,24 @@ namespace Dashboard.Pages
         /// </summary>
         public static ReactElement Render()
         {
-            var stateResult = UseState(new AppointmentsState
-            {
-                Appointments = new Appointment[0],
-                Loading = true,
-                Error = null,
-                StatusFilter = null
-            });
+            var stateResult = UseState(
+                new AppointmentsState
+                {
+                    Appointments = new Appointment[0],
+                    Loading = true,
+                    Error = null,
+                    StatusFilter = null,
+                }
+            );
 
             var state = stateResult.State;
             var setState = stateResult.SetState;
 
             UseEffect(
-                () => { LoadAppointments(setState); },
+                () =>
+                {
+                    LoadAppointments(setState);
+                },
                 new object[0]
             );
 
@@ -80,12 +88,18 @@ namespace Dashboard.Pages
                             Div(
                                 children: new[]
                                 {
-                                    H(2, className: "page-title", children: new[] { Text("Appointments") }),
+                                    H(
+                                        2,
+                                        className: "page-title",
+                                        children: new[] { Text("Appointments") }
+                                    ),
                                     P(
                                         className: "page-description",
                                         children: new[]
                                         {
-                                            Text("Manage scheduled appointments from the Scheduling domain"),
+                                            Text(
+                                                "Manage scheduled appointments from the Scheduling domain"
+                                            ),
                                         }
                                     ),
                                 }
@@ -105,11 +119,36 @@ namespace Dashboard.Pages
                                 className: "tabs",
                                 children: new[]
                                 {
-                                    RenderTab("All", null, state.StatusFilter, s => FilterByStatus(s, state, setState)),
-                                    RenderTab("Booked", "booked", state.StatusFilter, s => FilterByStatus(s, state, setState)),
-                                    RenderTab("Arrived", "arrived", state.StatusFilter, s => FilterByStatus(s, state, setState)),
-                                    RenderTab("Fulfilled", "fulfilled", state.StatusFilter, s => FilterByStatus(s, state, setState)),
-                                    RenderTab("Cancelled", "cancelled", state.StatusFilter, s => FilterByStatus(s, state, setState)),
+                                    RenderTab(
+                                        "All",
+                                        null,
+                                        state.StatusFilter,
+                                        s => FilterByStatus(s, state, setState)
+                                    ),
+                                    RenderTab(
+                                        "Booked",
+                                        "booked",
+                                        state.StatusFilter,
+                                        s => FilterByStatus(s, state, setState)
+                                    ),
+                                    RenderTab(
+                                        "Arrived",
+                                        "arrived",
+                                        state.StatusFilter,
+                                        s => FilterByStatus(s, state, setState)
+                                    ),
+                                    RenderTab(
+                                        "Fulfilled",
+                                        "fulfilled",
+                                        state.StatusFilter,
+                                        s => FilterByStatus(s, state, setState)
+                                    ),
+                                    RenderTab(
+                                        "Cancelled",
+                                        "cancelled",
+                                        state.StatusFilter,
+                                        s => FilterByStatus(s, state, setState)
+                                    ),
                                 }
                             ),
                         }
@@ -125,33 +164,44 @@ namespace Dashboard.Pages
             try
             {
                 var appointments = await ApiClient.GetAppointmentsAsync();
-                setState(new AppointmentsState
-                {
-                    Appointments = appointments,
-                    Loading = false,
-                    Error = null,
-                    StatusFilter = null
-                });
+                setState(
+                    new AppointmentsState
+                    {
+                        Appointments = appointments,
+                        Loading = false,
+                        Error = null,
+                        StatusFilter = null,
+                    }
+                );
             }
             catch (Exception ex)
             {
-                setState(new AppointmentsState
-                {
-                    Appointments = new Appointment[0],
-                    Loading = false,
-                    Error = ex.Message,
-                    StatusFilter = null
-                });
+                setState(
+                    new AppointmentsState
+                    {
+                        Appointments = new Appointment[0],
+                        Loading = false,
+                        Error = ex.Message,
+                        StatusFilter = null,
+                    }
+                );
             }
         }
 
-        private static void FilterByStatus(string status, AppointmentsState currentState, Action<AppointmentsState> setState) => setState(new AppointmentsState
-        {
-            Appointments = currentState.Appointments,
-            Loading = currentState.Loading,
-            Error = currentState.Error,
-            StatusFilter = status
-        });
+        private static void FilterByStatus(
+            string status,
+            AppointmentsState currentState,
+            Action<AppointmentsState> setState
+        ) =>
+            setState(
+                new AppointmentsState
+                {
+                    Appointments = currentState.Appointments,
+                    Loading = currentState.Loading,
+                    Error = currentState.Error,
+                    StatusFilter = status,
+                }
+            );
 
         private static ReactElement RenderTab(
             string label,
@@ -168,19 +218,25 @@ namespace Dashboard.Pages
             );
         }
 
-        private static ReactElement RenderError(string message) => Div(
+        private static ReactElement RenderError(string message) =>
+            Div(
                 className: "card",
                 style: new { borderLeft = "4px solid var(--error)" },
                 children: new[]
                 {
                     Div(
                         className: "flex items-center gap-3 p-4",
-                        children: new[] { Icons.X(), Text("Error loading appointments: " + message) }
+                        children: new[]
+                        {
+                            Icons.X(),
+                            Text("Error loading appointments: " + message),
+                        }
                     ),
                 }
             );
 
-        private static ReactElement RenderEmpty() => Div(
+        private static ReactElement RenderEmpty() =>
+            Div(
                 className: "card",
                 children: new[]
                 {
@@ -189,12 +245,18 @@ namespace Dashboard.Pages
                         children: new[]
                         {
                             Icons.Calendar(),
-                            H(4, className: "empty-state-title", children: new[] { Text("No Appointments") }),
+                            H(
+                                4,
+                                className: "empty-state-title",
+                                children: new[] { Text("No Appointments") }
+                            ),
                             P(
                                 className: "empty-state-description",
                                 children: new[]
                                 {
-                                    Text("No appointments scheduled. Create a new appointment to get started."),
+                                    Text(
+                                        "No appointments scheduled. Create a new appointment to get started."
+                                    ),
                                 }
                             ),
                             Button(
@@ -206,7 +268,8 @@ namespace Dashboard.Pages
                 }
             );
 
-        private static ReactElement RenderLoadingList() => Div(
+        private static ReactElement RenderLoadingList() =>
+            Div(
                 className: "data-list",
                 children: Enumerable
                     .Range(0, 5)
@@ -254,14 +317,21 @@ namespace Dashboard.Pages
                     .ToArray()
             );
 
-        private static ReactElement RenderAppointmentList(Appointment[] appointments) => Div(className: "data-list", children: appointments.Select(RenderAppointmentCard).ToArray());
+        private static ReactElement RenderAppointmentList(Appointment[] appointments) =>
+            Div(
+                className: "data-list",
+                children: appointments.Select(RenderAppointmentCard).ToArray()
+            );
 
         private static ReactElement RenderAppointmentCard(Appointment appointment)
         {
             ReactElement descElement;
             if (appointment.Description != null)
             {
-                descElement = P(className: "text-sm mt-2", children: new[] { Text(appointment.Description) });
+                descElement = P(
+                    className: "text-sm mt-2",
+                    children: new[] { Text(appointment.Description) }
+                );
             }
             else
             {
@@ -288,11 +358,17 @@ namespace Dashboard.Pages
                                         {
                                             Div(
                                                 className: "text-lg font-bold",
-                                                children: new[] { Text(FormatTime(appointment.StartTime)) }
+                                                children: new[]
+                                                {
+                                                    Text(FormatTime(appointment.StartTime)),
+                                                }
                                             ),
                                             Div(
                                                 className: "text-xs",
-                                                children: new[] { Text(appointment.MinutesDuration + "min") }
+                                                children: new[]
+                                                {
+                                                    Text(appointment.MinutesDuration + "min"),
+                                                }
                                             ),
                                         }
                                     ),
@@ -310,7 +386,10 @@ namespace Dashboard.Pages
                                             H(
                                                 4,
                                                 className: "font-semibold",
-                                                children: new[] { Text(appointment.ServiceType ?? "Appointment") }
+                                                children: new[]
+                                                {
+                                                    Text(appointment.ServiceType ?? "Appointment"),
+                                                }
                                             ),
                                             RenderStatusBadge(appointment.Status),
                                             RenderPriorityBadge(appointment.Priority),
@@ -321,7 +400,10 @@ namespace Dashboard.Pages
                                         children: new[]
                                         {
                                             Icons.Users(),
-                                            Text(" Patient: " + FormatReference(appointment.PatientReference)),
+                                            Text(
+                                                " Patient: "
+                                                    + FormatReference(appointment.PatientReference)
+                                            ),
                                         }
                                     ),
                                     Div(
@@ -329,7 +411,12 @@ namespace Dashboard.Pages
                                         children: new[]
                                         {
                                             Icons.UserDoctor(),
-                                            Text(" Provider: " + FormatReference(appointment.PractitionerReference)),
+                                            Text(
+                                                " Provider: "
+                                                    + FormatReference(
+                                                        appointment.PractitionerReference
+                                                    )
+                                            ),
                                         }
                                     ),
                                     descElement,
@@ -359,12 +446,18 @@ namespace Dashboard.Pages
         private static ReactElement RenderStatusBadge(string status)
         {
             string badgeClass;
-            if (status == "booked") badgeClass = "badge-primary";
-            else if (status == "arrived") badgeClass = "badge-teal";
-            else if (status == "fulfilled") badgeClass = "badge-success";
-            else if (status == "cancelled") badgeClass = "badge-error";
-            else if (status == "noshow") badgeClass = "badge-warning";
-            else badgeClass = "badge-gray";
+            if (status == "booked")
+                badgeClass = "badge-primary";
+            else if (status == "arrived")
+                badgeClass = "badge-teal";
+            else if (status == "fulfilled")
+                badgeClass = "badge-success";
+            else if (status == "cancelled")
+                badgeClass = "badge-error";
+            else if (status == "noshow")
+                badgeClass = "badge-warning";
+            else
+                badgeClass = "badge-gray";
 
             return Span(className: "badge " + badgeClass, children: new[] { Text(status) });
         }
@@ -375,12 +468,19 @@ namespace Dashboard.Pages
                 return Text("");
 
             string badgeClass;
-            if (priority == "urgent") badgeClass = "badge-warning";
-            else if (priority == "asap") badgeClass = "badge-error";
-            else if (priority == "stat") badgeClass = "badge-error";
-            else badgeClass = "badge-gray";
+            if (priority == "urgent")
+                badgeClass = "badge-warning";
+            else if (priority == "asap")
+                badgeClass = "badge-error";
+            else if (priority == "stat")
+                badgeClass = "badge-error";
+            else
+                badgeClass = "badge-gray";
 
-            return Span(className: "badge " + badgeClass, children: new[] { Text(priority.ToUpper()) });
+            return Span(
+                className: "badge " + badgeClass,
+                children: new[] { Text(priority.ToUpper()) }
+            );
         }
 
         private static string FormatTime(string dateTime)

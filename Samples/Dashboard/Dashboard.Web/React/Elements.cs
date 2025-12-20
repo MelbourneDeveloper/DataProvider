@@ -106,7 +106,8 @@ namespace Dashboard.React
         /// <summary>
         /// Creates a text node.
         /// </summary>
-        public static ReactElement Text(string content) => Script.Call<ReactElement>("React.createElement", "span", null, content);
+        public static ReactElement Text(string content) =>
+            Script.Call<ReactElement>("React.createElement", "span", null, content);
 
         /// <summary>
         /// Creates an image element.
@@ -161,52 +162,70 @@ namespace Dashboard.React
         /// <summary>
         /// Creates a nav element.
         /// </summary>
-        public static ReactElement Nav(string className = null, params ReactElement[] children) => CreateElement("nav", className, null, null, null, children);
+        public static ReactElement Nav(string className = null, params ReactElement[] children) =>
+            CreateElement("nav", className, null, null, null, children);
 
         /// <summary>
         /// Creates a header element.
         /// </summary>
-        public static ReactElement Header(string className = null, params ReactElement[] children) => CreateElement("header", className, null, null, null, children);
+        public static ReactElement Header(
+            string className = null,
+            params ReactElement[] children
+        ) => CreateElement("header", className, null, null, null, children);
 
         /// <summary>
         /// Creates a main element.
         /// </summary>
-        public static ReactElement Main(string className = null, params ReactElement[] children) => CreateElement("main", className, null, null, null, children);
+        public static ReactElement Main(string className = null, params ReactElement[] children) =>
+            CreateElement("main", className, null, null, null, children);
 
         /// <summary>
         /// Creates an aside element.
         /// </summary>
-        public static ReactElement Aside(string className = null, params ReactElement[] children) => CreateElement("aside", className, null, null, null, children);
+        public static ReactElement Aside(string className = null, params ReactElement[] children) =>
+            CreateElement("aside", className, null, null, null, children);
 
         /// <summary>
         /// Creates a section element.
         /// </summary>
-        public static ReactElement Section(string className = null, params ReactElement[] children) => CreateElement("section", className, null, null, null, children);
+        public static ReactElement Section(
+            string className = null,
+            params ReactElement[] children
+        ) => CreateElement("section", className, null, null, null, children);
 
         /// <summary>
         /// Creates an article element.
         /// </summary>
-        public static ReactElement Article(string className = null, params ReactElement[] children) => CreateElement("article", className, null, null, null, children);
+        public static ReactElement Article(
+            string className = null,
+            params ReactElement[] children
+        ) => CreateElement("article", className, null, null, null, children);
 
         /// <summary>
         /// Creates a footer element.
         /// </summary>
-        public static ReactElement Footer(string className = null, params ReactElement[] children) => CreateElement("footer", className, null, null, null, children);
+        public static ReactElement Footer(
+            string className = null,
+            params ReactElement[] children
+        ) => CreateElement("footer", className, null, null, null, children);
 
         /// <summary>
         /// Creates a table element.
         /// </summary>
-        public static ReactElement Table(string className = null, params ReactElement[] children) => CreateElement("table", className, null, null, null, children);
+        public static ReactElement Table(string className = null, params ReactElement[] children) =>
+            CreateElement("table", className, null, null, null, children);
 
         /// <summary>
         /// Creates a thead element.
         /// </summary>
-        public static ReactElement THead(params ReactElement[] children) => Script.Call<ReactElement>("React.createElement", "thead", null, children);
+        public static ReactElement THead(params ReactElement[] children) =>
+            Script.Call<ReactElement>("React.createElement", "thead", null, children);
 
         /// <summary>
         /// Creates a tbody element.
         /// </summary>
-        public static ReactElement TBody(params ReactElement[] children) => Script.Call<ReactElement>("React.createElement", "tbody", null, children);
+        public static ReactElement TBody(params ReactElement[] children) =>
+            Script.Call<ReactElement>("React.createElement", "tbody", null, children);
 
         /// <summary>
         /// Creates a tr element.
@@ -229,17 +248,20 @@ namespace Dashboard.React
         /// <summary>
         /// Creates a th element.
         /// </summary>
-        public static ReactElement Th(string className = null, params ReactElement[] children) => CreateElement("th", className, null, null, null, children);
+        public static ReactElement Th(string className = null, params ReactElement[] children) =>
+            CreateElement("th", className, null, null, null, children);
 
         /// <summary>
         /// Creates a td element.
         /// </summary>
-        public static ReactElement Td(string className = null, params ReactElement[] children) => CreateElement("td", className, null, null, null, children);
+        public static ReactElement Td(string className = null, params ReactElement[] children) =>
+            CreateElement("td", className, null, null, null, children);
 
         /// <summary>
         /// Creates an unordered list element.
         /// </summary>
-        public static ReactElement Ul(string className = null, params ReactElement[] children) => CreateElement("ul", className, null, null, null, children);
+        public static ReactElement Ul(string className = null, params ReactElement[] children) =>
+            CreateElement("ul", className, null, null, null, children);
 
         /// <summary>
         /// Creates a list item element.
@@ -393,7 +415,8 @@ namespace Dashboard.React
         /// <summary>
         /// Creates a React Fragment.
         /// </summary>
-        public static ReactElement Fragment(params ReactElement[] children) => Script.Call<ReactElement>(
+        public static ReactElement Fragment(params ReactElement[] children) =>
+            Script.Call<ReactElement>(
                 "React.createElement",
                 Script.Get<object>("React", "Fragment"),
                 null,

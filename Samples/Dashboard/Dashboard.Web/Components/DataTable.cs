@@ -34,7 +34,8 @@ namespace Dashboard.Components
             Func<T, string> getKey,
             Func<T, string, ReactElement> renderCell,
             Action<T> onRowClick = null
-        ) => Div(
+        ) =>
+            Div(
                 className: "table-container",
                 children: new[]
                 {
@@ -84,7 +85,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Renders an empty state for the table.
         /// </summary>
-        public static ReactElement RenderEmpty(string message = "No data available") => Div(
+        public static ReactElement RenderEmpty(string message = "No data available") =>
+            Div(
                 className: "empty-state",
                 children: new[]
                 {
@@ -97,7 +99,8 @@ namespace Dashboard.Components
         /// <summary>
         /// Renders a loading skeleton.
         /// </summary>
-        public static ReactElement RenderLoading(int rows = 5, int columns = 4) => Div(
+        public static ReactElement RenderLoading(int rows = 5, int columns = 4) =>
+            Div(
                 className: "table-container",
                 children: new[]
                 {

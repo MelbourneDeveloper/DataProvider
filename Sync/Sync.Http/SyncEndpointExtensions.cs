@@ -3,12 +3,6 @@
 
 using System.Text.Json;
 using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Sync.Http;
 
@@ -83,25 +77,25 @@ public static class SyncEndpointExtensions
     public static IApplicationBuilder UseSyncRequestTimeout(
         this IApplicationBuilder app,
         TimeSpan? timeout = null
-    )
-    {
-        var actualTimeout = timeout ?? TimeSpan.FromSeconds(30);
-        return app.Use(
+    ) =>
+        app.Use(
             async (context, next) =>
             {
-                using var cts = new CancellationTokenSource(actualTimeout);
+                using var cts = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(30));
                 context.RequestAborted = cts.Token;
                 await next();
             }
         );
-    }
 
     /// <summary>
     /// Maps all sync API endpoints to the endpoint route builder.
     /// </summary>
     public static IEndpointRouteBuilder MapSyncEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }))
+        app.MapGet(
+                "/health",
+                () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow })
+            )
             .AllowAnonymous();
 
         app.MapGet(
@@ -116,7 +110,9 @@ public static class SyncEndpointExtensions
                 ) =>
                 {
                     var connStr =
-                        connectionString ?? config.GetConnectionString(dbType.ToUpperInvariant()) ?? "";
+                        connectionString
+                        ?? config.GetConnectionString(dbType.ToUpperInvariant())
+                        ?? "";
 
                     if (string.IsNullOrEmpty(connStr))
                     {
@@ -135,14 +131,22 @@ public static class SyncEndpointExtensions
 
                     try
                     {
-                        var entries = SyncHelpers.FetchChanges(connStr, dbType, fromVersion, batchSize, logger);
+                        var entries = SyncHelpers.FetchChanges(
+                            connStr,
+                            dbType,
+                            fromVersion,
+                            batchSize,
+                            logger
+                        );
 
                         return Results.Ok(
                             new
                             {
                                 Changes = entries,
                                 FromVersion = fromVersion,
-                                ToVersion = entries.Count > 0 ? entries.Max(e => e.Version) : fromVersion,
+                                ToVersion = entries.Count > 0
+                                    ? entries.Max(e => e.Version)
+                                    : fromVersion,
                                 HasMore = entries.Count == batchSize,
                             }
                         );
@@ -168,7 +172,9 @@ public static class SyncEndpointExtensions
                 ) =>
                 {
                     var connStr =
-                        connectionString ?? config.GetConnectionString(dbType.ToUpperInvariant()) ?? "";
+                        connectionString
+                        ?? config.GetConnectionString(dbType.ToUpperInvariant())
+                        ?? "";
 
                     if (string.IsNullOrEmpty(connStr))
                     {
@@ -179,7 +185,9 @@ public static class SyncEndpointExtensions
 
                     try
                     {
-                        var body = await JsonSerializer.DeserializeAsync<PushChangesRequest>(request.Body);
+                        var body = await JsonSerializer.DeserializeAsync<PushChangesRequest>(
+                            request.Body
+                        );
                         if (body?.Changes is null)
                         {
                             return Results.BadRequest("Changes array required");
@@ -227,7 +235,9 @@ public static class SyncEndpointExtensions
                 ) =>
                 {
                     var connStr =
-                        connectionString ?? config.GetConnectionString(dbType.ToUpperInvariant()) ?? "";
+                        connectionString
+                        ?? config.GetConnectionString(dbType.ToUpperInvariant())
+                        ?? "";
 
                     if (string.IsNullOrEmpty(connStr))
                     {
@@ -276,7 +286,9 @@ public static class SyncEndpointExtensions
                 ) =>
                 {
                     var connStr =
-                        connectionString ?? config.GetConnectionString(dbType.ToUpperInvariant()) ?? "";
+                        connectionString
+                        ?? config.GetConnectionString(dbType.ToUpperInvariant())
+                        ?? "";
 
                     if (string.IsNullOrEmpty(connStr))
                     {
@@ -290,7 +302,11 @@ public static class SyncEndpointExtensions
                         var maxVersion = SyncHelpers.GetMaxVersion(connStr, dbType, logger);
 
                         return Results.Ok(
-                            new { MaxVersion = maxVersion, Timestamp = DateTime.UtcNow.ToString("O") }
+                            new
+                            {
+                                MaxVersion = maxVersion,
+                                Timestamp = DateTime.UtcNow.ToString("O"),
+                            }
                         );
                     }
                     catch (Exception ex)
@@ -337,13 +353,19 @@ public static class SyncEndpointExtensions
                         await foreach (var change in channel.Reader.ReadAllAsync(ct))
                         {
                             var json = JsonSerializer.Serialize(change);
-                            await context.Response.WriteAsync($"event: change\ndata: {json}\n\n", ct);
+                            await context.Response.WriteAsync(
+                                $"event: change\ndata: {json}\n\n",
+                                ct
+                            );
                             await context.Response.Body.FlushAsync(ct);
                         }
                     }
                     catch (OperationCanceledException)
                     {
-                        logger.LogInformation("API: SSE subscription {Id} disconnected", subscriptionId);
+                        logger.LogInformation(
+                            "API: SSE subscription {Id} disconnected",
+                            subscriptionId
+                        );
                     }
                     finally
                     {

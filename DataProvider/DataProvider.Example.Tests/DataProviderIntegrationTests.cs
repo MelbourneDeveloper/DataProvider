@@ -965,11 +965,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public void FluentQueryBuilder_Distinct_GeneratesCorrectSQL()
     {
         // Arrange & Act
-        var query = "Orders"
-            .From("o")
-            .Select(("o", "Status"))
-            .Distinct()
-            .ToSqlStatement();
+        var query = "Orders".From("o").Select(("o", "Status")).Distinct().ToSqlStatement();
 
         var sqlResult = query.ToSQLite();
 
@@ -984,12 +980,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public void FluentQueryBuilder_Skip_GeneratesCorrectSQL()
     {
         // Arrange & Act
-        var query = "Orders"
-            .From("o")
-            .SelectAll()
-            .Skip(10)
-            .Take(5)
-            .ToSqlStatement();
+        var query = "Orders".From("o").SelectAll().Skip(10).Take(5).ToSqlStatement();
 
         var sqlResult = query.ToSQLite();
 
@@ -1005,10 +996,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public void FluentQueryBuilder_SelectAll_GeneratesCorrectSQL()
     {
         // Arrange & Act
-        var query = "Orders"
-            .From("o")
-            .SelectAll("o")
-            .ToSqlStatement();
+        var query = "Orders".From("o").SelectAll("o").ToSqlStatement();
 
         var sqlResult = query.ToSQLite();
 
@@ -1023,11 +1011,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public void FluentQueryBuilder_GroupBy_GeneratesCorrectSQL()
     {
         // Arrange & Act
-        var query = "Orders"
-            .From("o")
-            .Select(("o", "Status"))
-            .GroupBy("o.Status")
-            .ToSqlStatement();
+        var query = "Orders".From("o").Select(("o", "Status")).GroupBy("o.Status").ToSqlStatement();
 
         var sqlResult = query.ToSQLite();
 
@@ -1103,11 +1087,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public void FluentQueryBuilder_WhereWithBoolValue_GeneratesCorrectSQL()
     {
         // Arrange & Act - tests FormatValue with bool
-        var query = "Orders"
-            .From("o")
-            .SelectAll()
-            .Where("o.IsActive", true)
-            .ToSqlStatement();
+        var query = "Orders".From("o").SelectAll().Where("o.IsActive", true).ToSqlStatement();
 
         var sqlResult = query.ToSQLite();
 
@@ -1123,11 +1103,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     {
         // Arrange & Act - tests FormatValue with DateTime
         var testDate = new DateTime(2024, 6, 15, 10, 30, 0, DateTimeKind.Utc);
-        var query = "Orders"
-            .From("o")
-            .SelectAll()
-            .Where("o.OrderDate", testDate)
-            .ToSqlStatement();
+        var query = "Orders".From("o").SelectAll().Where("o.OrderDate", testDate).ToSqlStatement();
 
         var sqlResult = query.ToSQLite();
 
@@ -1142,11 +1118,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public void FluentQueryBuilder_WhereWithIntValue_GeneratesCorrectSQL()
     {
         // Arrange & Act - tests FormatValue with numeric
-        var query = "Orders"
-            .From("o")
-            .SelectAll()
-            .Where("o.CustomerId", 42)
-            .ToSqlStatement();
+        var query = "Orders".From("o").SelectAll().Where("o.CustomerId", 42).ToSqlStatement();
 
         var sqlResult = query.ToSQLite();
 
@@ -1199,19 +1171,35 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public void FluentQueryBuilder_AllComparisonOperators_GenerateCorrectSQL()
     {
         // Test Less Than
-        var ltQuery = "Orders".From().Select(("", "Id")).Where("Id", ComparisonOperator.LessThan, 10).ToSqlStatement();
+        var ltQuery = "Orders"
+            .From()
+            .Select(("", "Id"))
+            .Where("Id", ComparisonOperator.LessThan, 10)
+            .ToSqlStatement();
         Assert.Contains("Id < ", ((StringSqlOk)ltQuery.ToSQLite()).Value);
 
         // Test Less Than or Equal
-        var leQuery = "Orders".From().Select(("", "Id")).Where("Id", ComparisonOperator.LessOrEq, 10).ToSqlStatement();
+        var leQuery = "Orders"
+            .From()
+            .Select(("", "Id"))
+            .Where("Id", ComparisonOperator.LessOrEq, 10)
+            .ToSqlStatement();
         Assert.Contains("Id <= ", ((StringSqlOk)leQuery.ToSQLite()).Value);
 
         // Test Greater Than
-        var gtQuery = "Orders".From().Select(("", "Id")).Where("Id", ComparisonOperator.GreaterThan, 10).ToSqlStatement();
+        var gtQuery = "Orders"
+            .From()
+            .Select(("", "Id"))
+            .Where("Id", ComparisonOperator.GreaterThan, 10)
+            .ToSqlStatement();
         Assert.Contains("Id > ", ((StringSqlOk)gtQuery.ToSQLite()).Value);
 
         // Test Not Equal
-        var neQuery = "Orders".From().Select(("", "Id")).Where("Id", ComparisonOperator.NotEq, 10).ToSqlStatement();
+        var neQuery = "Orders"
+            .From()
+            .Select(("", "Id"))
+            .Where("Id", ComparisonOperator.NotEq, 10)
+            .ToSqlStatement();
         var neSql = ((StringSqlOk)neQuery.ToSQLite()).Value;
         Assert.True(neSql.Contains("Id <> ") || neSql.Contains("Id != "));
     }

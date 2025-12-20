@@ -176,7 +176,13 @@ namespace Dashboard.Tests.TestLib
             {
                 throw new AssertionException(
                     message
-                        ?? "Expected attribute '" + attributeName + "' to be '" + expectedValue + "' but was '" + actualValue + "'"
+                        ?? "Expected attribute '"
+                            + attributeName
+                            + "' to be '"
+                            + expectedValue
+                            + "' but was '"
+                            + actualValue
+                            + "'"
                 );
             }
         }
@@ -189,8 +195,7 @@ namespace Dashboard.Tests.TestLib
             if (collection.Length != expected)
             {
                 throw new AssertionException(
-                    message
-                        ?? $"Expected collection count {expected} but was {collection.Length}"
+                    message ?? $"Expected collection count {expected} but was {collection.Length}"
                 );
             }
         }

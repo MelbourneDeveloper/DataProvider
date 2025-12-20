@@ -16,10 +16,13 @@ namespace Dashboard.Pages
     {
         /// <summary>List of practitioners.</summary>
         public Practitioner[] Practitioners { get; set; }
+
         /// <summary>Whether loading.</summary>
         public bool Loading { get; set; }
+
         /// <summary>Error message if any.</summary>
         public string Error { get; set; }
+
         /// <summary>Current specialty filter.</summary>
         public string SpecialtyFilter { get; set; }
     }
@@ -34,19 +37,24 @@ namespace Dashboard.Pages
         /// </summary>
         public static ReactElement Render()
         {
-            var stateResult = UseState(new PractitionersState
-            {
-                Practitioners = new Practitioner[0],
-                Loading = true,
-                Error = null,
-                SpecialtyFilter = null
-            });
+            var stateResult = UseState(
+                new PractitionersState
+                {
+                    Practitioners = new Practitioner[0],
+                    Loading = true,
+                    Error = null,
+                    SpecialtyFilter = null,
+                }
+            );
 
             var state = stateResult.State;
             var setState = stateResult.SetState;
 
             UseEffect(
-                () => { LoadPractitioners(setState); },
+                () =>
+                {
+                    LoadPractitioners(setState);
+                },
                 new object[0]
             );
 
@@ -80,12 +88,18 @@ namespace Dashboard.Pages
                             Div(
                                 children: new[]
                                 {
-                                    H(2, className: "page-title", children: new[] { Text("Practitioners") }),
+                                    H(
+                                        2,
+                                        className: "page-title",
+                                        children: new[] { Text("Practitioners") }
+                                    ),
                                     P(
                                         className: "page-description",
                                         children: new[]
                                         {
-                                            Text("Manage healthcare providers from the Scheduling domain"),
+                                            Text(
+                                                "Manage healthcare providers from the Scheduling domain"
+                                            ),
                                         }
                                     ),
                                 }
@@ -116,14 +130,18 @@ namespace Dashboard.Pages
                                             Select(
                                                 className: "input",
                                                 value: state.SpecialtyFilter ?? "",
-                                                onChange: specialty => FilterBySpecialty(specialty, setState),
+                                                onChange: specialty =>
+                                                    FilterBySpecialty(specialty, setState),
                                                 children: new[]
                                                 {
                                                     Option("", "All Specialties"),
                                                     Option("Cardiology", "Cardiology"),
                                                     Option("Dermatology", "Dermatology"),
                                                     Option("Family Medicine", "Family Medicine"),
-                                                    Option("Internal Medicine", "Internal Medicine"),
+                                                    Option(
+                                                        "Internal Medicine",
+                                                        "Internal Medicine"
+                                                    ),
                                                     Option("Neurology", "Neurology"),
                                                     Option("Oncology", "Oncology"),
                                                     Option("Pediatrics", "Pediatrics"),
@@ -154,27 +172,34 @@ namespace Dashboard.Pages
             try
             {
                 var practitioners = await ApiClient.GetPractitionersAsync();
-                setState(new PractitionersState
-                {
-                    Practitioners = practitioners,
-                    Loading = false,
-                    Error = null,
-                    SpecialtyFilter = null
-                });
+                setState(
+                    new PractitionersState
+                    {
+                        Practitioners = practitioners,
+                        Loading = false,
+                        Error = null,
+                        SpecialtyFilter = null,
+                    }
+                );
             }
             catch (Exception ex)
             {
-                setState(new PractitionersState
-                {
-                    Practitioners = new Practitioner[0],
-                    Loading = false,
-                    Error = ex.Message,
-                    SpecialtyFilter = null
-                });
+                setState(
+                    new PractitionersState
+                    {
+                        Practitioners = new Practitioner[0],
+                        Loading = false,
+                        Error = ex.Message,
+                        SpecialtyFilter = null,
+                    }
+                );
             }
         }
 
-        private static async void FilterBySpecialty(string specialty, Action<PractitionersState> setState)
+        private static async void FilterBySpecialty(
+            string specialty,
+            Action<PractitionersState> setState
+        )
         {
             if (string.IsNullOrEmpty(specialty))
             {
@@ -185,39 +210,49 @@ namespace Dashboard.Pages
             try
             {
                 var practitioners = await ApiClient.SearchPractitionersAsync(specialty);
-                setState(new PractitionersState
-                {
-                    Practitioners = practitioners,
-                    Loading = false,
-                    Error = null,
-                    SpecialtyFilter = specialty
-                });
+                setState(
+                    new PractitionersState
+                    {
+                        Practitioners = practitioners,
+                        Loading = false,
+                        Error = null,
+                        SpecialtyFilter = specialty,
+                    }
+                );
             }
             catch (Exception ex)
             {
-                setState(new PractitionersState
-                {
-                    Practitioners = new Practitioner[0],
-                    Loading = false,
-                    Error = ex.Message,
-                    SpecialtyFilter = specialty
-                });
+                setState(
+                    new PractitionersState
+                    {
+                        Practitioners = new Practitioner[0],
+                        Loading = false,
+                        Error = ex.Message,
+                        SpecialtyFilter = specialty,
+                    }
+                );
             }
         }
 
-        private static ReactElement RenderError(string message) => Div(
+        private static ReactElement RenderError(string message) =>
+            Div(
                 className: "card",
                 style: new { borderLeft = "4px solid var(--error)" },
                 children: new[]
                 {
                     Div(
                         className: "flex items-center gap-3 p-4",
-                        children: new[] { Icons.X(), Text("Error loading practitioners: " + message) }
+                        children: new[]
+                        {
+                            Icons.X(),
+                            Text("Error loading practitioners: " + message),
+                        }
                     ),
                 }
             );
 
-        private static ReactElement RenderEmpty() => Div(
+        private static ReactElement RenderEmpty() =>
+            Div(
                 className: "card",
                 children: new[]
                 {
@@ -226,12 +261,18 @@ namespace Dashboard.Pages
                         children: new[]
                         {
                             Icons.UserDoctor(),
-                            H(4, className: "empty-state-title", children: new[] { Text("No Practitioners") }),
+                            H(
+                                4,
+                                className: "empty-state-title",
+                                children: new[] { Text("No Practitioners") }
+                            ),
                             P(
                                 className: "empty-state-description",
                                 children: new[]
                                 {
-                                    Text("No practitioners found. Add a new practitioner to get started."),
+                                    Text(
+                                        "No practitioners found. Add a new practitioner to get started."
+                                    ),
                                 }
                             ),
                             Button(
@@ -243,7 +284,8 @@ namespace Dashboard.Pages
                 }
             );
 
-        private static ReactElement RenderLoadingGrid() => Div(
+        private static ReactElement RenderLoadingGrid() =>
+            Div(
                 className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6",
                 children: Enumerable
                     .Range(0, 6)
@@ -279,12 +321,14 @@ namespace Dashboard.Pages
                     .ToArray()
             );
 
-        private static ReactElement RenderPractitionerGrid(Practitioner[] practitioners) => Div(
+        private static ReactElement RenderPractitionerGrid(Practitioner[] practitioners) =>
+            Div(
                 className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6",
                 children: practitioners.Select(RenderPractitionerCard).ToArray()
             );
 
-        private static ReactElement RenderPractitionerCard(Practitioner practitioner) => Div(
+        private static ReactElement RenderPractitionerCard(Practitioner practitioner) =>
+            Div(
                 className: "card",
                 children: new[]
                 {
@@ -306,18 +350,29 @@ namespace Dashboard.Pages
                                         className: "font-semibold",
                                         children: new[]
                                         {
-                                            Text("Dr. " + practitioner.NameGiven + " " + practitioner.NameFamily),
+                                            Text(
+                                                "Dr. "
+                                                    + practitioner.NameGiven
+                                                    + " "
+                                                    + practitioner.NameFamily
+                                            ),
                                         }
                                     ),
                                     Span(
                                         className: "badge badge-teal mt-1",
-                                        children: new[] { Text(practitioner.Specialty ?? "General") }
+                                        children: new[]
+                                        {
+                                            Text(practitioner.Specialty ?? "General"),
+                                        }
                                     ),
                                     Div(
                                         className: "flex items-center gap-2 mt-2",
                                         children: new[]
                                         {
-                                            Span(className: "status-dot " + (practitioner.Active ? "active" : "inactive")),
+                                            Span(
+                                                className: "status-dot "
+                                                    + (practitioner.Active ? "active" : "inactive")
+                                            ),
                                             Text(practitioner.Active ? "Available" : "Unavailable"),
                                         }
                                     ),
@@ -354,7 +409,8 @@ namespace Dashboard.Pages
                 }
             );
 
-        private static ReactElement RenderDetail(string label, string value) => Div(
+        private static ReactElement RenderDetail(string label, string value) =>
+            Div(
                 className: "flex justify-between py-1",
                 children: new[]
                 {
@@ -363,11 +419,13 @@ namespace Dashboard.Pages
                 }
             );
 
-        private static string GetInitials(Practitioner p) => FirstChar(p.NameGiven) + FirstChar(p.NameFamily);
+        private static string GetInitials(Practitioner p) =>
+            FirstChar(p.NameGiven) + FirstChar(p.NameFamily);
 
         private static string FirstChar(string s)
         {
-            if (string.IsNullOrEmpty(s)) return "";
+            if (string.IsNullOrEmpty(s))
+                return "";
             return s.Substring(0, 1).ToUpper();
         }
     }

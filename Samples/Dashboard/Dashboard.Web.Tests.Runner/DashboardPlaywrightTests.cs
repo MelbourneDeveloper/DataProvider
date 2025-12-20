@@ -20,10 +20,9 @@ public sealed class DashboardPlaywrightTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         _playwright = await Playwright.CreateAsync();
-        _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
-        {
-            Headless = true,
-        });
+        _browser = await _playwright.Chromium.LaunchAsync(
+            new BrowserTypeLaunchOptions { Headless = true }
+        );
     }
 
     /// <summary>
@@ -186,9 +185,36 @@ public sealed class DashboardPlaywrightTests : IAsyncLifetime
         {
             Path.Combine(currentDir, "wwwroot", "test.html"),
             Path.Combine(currentDir, "..", "Dashboard.Web.Tests", "wwwroot", "test.html"),
-            Path.Combine(currentDir, "..", "..", "..", "Dashboard.Web.Tests", "wwwroot", "test.html"),
-            Path.Combine(currentDir, "..", "..", "..", "..", "Dashboard.Web.Tests", "wwwroot", "test.html"),
-            Path.Combine(currentDir, "..", "..", "..", "..", "..", "Dashboard.Web.Tests", "wwwroot", "test.html"),
+            Path.Combine(
+                currentDir,
+                "..",
+                "..",
+                "..",
+                "Dashboard.Web.Tests",
+                "wwwroot",
+                "test.html"
+            ),
+            Path.Combine(
+                currentDir,
+                "..",
+                "..",
+                "..",
+                "..",
+                "Dashboard.Web.Tests",
+                "wwwroot",
+                "test.html"
+            ),
+            Path.Combine(
+                currentDir,
+                "..",
+                "..",
+                "..",
+                "..",
+                "..",
+                "Dashboard.Web.Tests",
+                "wwwroot",
+                "test.html"
+            ),
         };
 
         foreach (var path in searchPaths)

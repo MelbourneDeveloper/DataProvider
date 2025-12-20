@@ -213,10 +213,7 @@ public sealed class ClinicalToSchedulingSyncTests : IDisposable
         var changes = await changesResponse.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(changes);
-        Assert.Contains(
-            changes,
-            c => c.GetProperty("TableName").GetString() == "fhir_Appointment"
-        );
+        Assert.Contains(changes, c => c.GetProperty("TableName").GetString() == "fhir_Appointment");
     }
 
     /// <summary>

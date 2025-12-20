@@ -101,7 +101,10 @@ public static class SyncEndpointExtensions
     /// </summary>
     public static IEndpointRouteBuilder MapSyncEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }))
+        app.MapGet(
+                "/health",
+                () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow })
+            )
             .AllowAnonymous();
 
         app.MapGet(
@@ -116,7 +119,9 @@ public static class SyncEndpointExtensions
                 ) =>
                 {
                     var connStr =
-                        connectionString ?? config.GetConnectionString(dbType.ToUpperInvariant()) ?? "";
+                        connectionString
+                        ?? config.GetConnectionString(dbType.ToUpperInvariant())
+                        ?? "";
 
                     if (string.IsNullOrEmpty(connStr))
                     {
@@ -135,14 +140,22 @@ public static class SyncEndpointExtensions
 
                     try
                     {
-                        var entries = SyncHelpers.FetchChanges(connStr, dbType, fromVersion, batchSize, logger);
+                        var entries = SyncHelpers.FetchChanges(
+                            connStr,
+                            dbType,
+                            fromVersion,
+                            batchSize,
+                            logger
+                        );
 
                         return Results.Ok(
                             new
                             {
                                 Changes = entries,
                                 FromVersion = fromVersion,
-                                ToVersion = entries.Count > 0 ? entries.Max(e => e.Version) : fromVersion,
+                                ToVersion = entries.Count > 0
+                                    ? entries.Max(e => e.Version)
+                                    : fromVersion,
                                 HasMore = entries.Count == batchSize,
                             }
                         );
@@ -168,7 +181,9 @@ public static class SyncEndpointExtensions
                 ) =>
                 {
                     var connStr =
-                        connectionString ?? config.GetConnectionString(dbType.ToUpperInvariant()) ?? "";
+                        connectionString
+                        ?? config.GetConnectionString(dbType.ToUpperInvariant())
+                        ?? "";
 
                     if (string.IsNullOrEmpty(connStr))
                     {
@@ -179,7 +194,9 @@ public static class SyncEndpointExtensions
 
                     try
                     {
-                        var body = await JsonSerializer.DeserializeAsync<PushChangesRequest>(request.Body);
+                        var body = await JsonSerializer.DeserializeAsync<PushChangesRequest>(
+                            request.Body
+                        );
                         if (body?.Changes is null)
                         {
                             return Results.BadRequest("Changes array required");
@@ -227,7 +244,9 @@ public static class SyncEndpointExtensions
                 ) =>
                 {
                     var connStr =
-                        connectionString ?? config.GetConnectionString(dbType.ToUpperInvariant()) ?? "";
+                        connectionString
+                        ?? config.GetConnectionString(dbType.ToUpperInvariant())
+                        ?? "";
 
                     if (string.IsNullOrEmpty(connStr))
                     {
@@ -276,7 +295,9 @@ public static class SyncEndpointExtensions
                 ) =>
                 {
                     var connStr =
-                        connectionString ?? config.GetConnectionString(dbType.ToUpperInvariant()) ?? "";
+                        connectionString
+                        ?? config.GetConnectionString(dbType.ToUpperInvariant())
+                        ?? "";
 
                     if (string.IsNullOrEmpty(connStr))
                     {
@@ -290,7 +311,11 @@ public static class SyncEndpointExtensions
                         var maxVersion = SyncHelpers.GetMaxVersion(connStr, dbType, logger);
 
                         return Results.Ok(
-                            new { MaxVersion = maxVersion, Timestamp = DateTime.UtcNow.ToString("O") }
+                            new
+                            {
+                                MaxVersion = maxVersion,
+                                Timestamp = DateTime.UtcNow.ToString("O"),
+                            }
                         );
                     }
                     catch (Exception ex)
@@ -337,13 +362,19 @@ public static class SyncEndpointExtensions
                         await foreach (var change in channel.Reader.ReadAllAsync(ct))
                         {
                             var json = JsonSerializer.Serialize(change);
-                            await context.Response.WriteAsync($"event: change\ndata: {json}\n\n", ct);
+                            await context.Response.WriteAsync(
+                                $"event: change\ndata: {json}\n\n",
+                                ct
+                            );
                             await context.Response.Body.FlushAsync(ct);
                         }
                     }
                     catch (OperationCanceledException)
                     {
-                        logger.LogInformation("API: SSE subscription {Id} disconnected", subscriptionId);
+                        logger.LogInformation(
+                            "API: SSE subscription {Id} disconnected",
+                            subscriptionId
+                        );
                     }
                     finally
                     {

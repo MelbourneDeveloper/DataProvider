@@ -3,7 +3,6 @@ namespace Dashboard.Pages
     using System;
     using Dashboard.Api;
     using Dashboard.Components;
-    using Dashboard.Models;
     using Dashboard.React;
     using static Dashboard.React.Elements;
     using static Dashboard.React.Hooks;
@@ -15,14 +14,19 @@ namespace Dashboard.Pages
     {
         /// <summary>Patient count.</summary>
         public int PatientCount { get; set; }
+
         /// <summary>Practitioner count.</summary>
         public int PractitionerCount { get; set; }
+
         /// <summary>Appointment count.</summary>
         public int AppointmentCount { get; set; }
+
         /// <summary>Encounter count.</summary>
         public int EncounterCount { get; set; }
+
         /// <summary>Whether loading.</summary>
         public bool Loading { get; set; }
+
         /// <summary>Error message if any.</summary>
         public string Error { get; set; }
     }
@@ -37,21 +41,26 @@ namespace Dashboard.Pages
         /// </summary>
         public static ReactElement Render()
         {
-            var stateResult = UseState(new DashboardState
-            {
-                PatientCount = 0,
-                PractitionerCount = 0,
-                AppointmentCount = 0,
-                EncounterCount = 0,
-                Loading = true,
-                Error = null
-            });
+            var stateResult = UseState(
+                new DashboardState
+                {
+                    PatientCount = 0,
+                    PractitionerCount = 0,
+                    AppointmentCount = 0,
+                    EncounterCount = 0,
+                    Loading = true,
+                    Error = null,
+                }
+            );
 
             var state = stateResult.State;
             var setState = stateResult.SetState;
 
             UseEffect(
-                () => { LoadData(setState); },
+                () =>
+                {
+                    LoadData(setState);
+                },
                 new object[0]
             );
 
@@ -88,40 +97,50 @@ namespace Dashboard.Pages
                         className: "dashboard-grid metrics mb-6",
                         children: new[]
                         {
-                            MetricCard.Render(new MetricCardProps
-                            {
-                                Label = "Total Patients",
-                                Value = state.Loading ? "-" : state.PatientCount.ToString(),
-                                Icon = Icons.Users,
-                                IconColor = "blue",
-                                TrendValue = "+12%",
-                                Trend = TrendDirection.Up
-                            }),
-                            MetricCard.Render(new MetricCardProps
-                            {
-                                Label = "Practitioners",
-                                Value = state.Loading ? "-" : state.PractitionerCount.ToString(),
-                                Icon = Icons.UserDoctor,
-                                IconColor = "teal"
-                            }),
-                            MetricCard.Render(new MetricCardProps
-                            {
-                                Label = "Appointments",
-                                Value = state.Loading ? "-" : state.AppointmentCount.ToString(),
-                                Icon = Icons.Calendar,
-                                IconColor = "success",
-                                TrendValue = "+8%",
-                                Trend = TrendDirection.Up
-                            }),
-                            MetricCard.Render(new MetricCardProps
-                            {
-                                Label = "Encounters",
-                                Value = state.Loading ? "-" : state.EncounterCount.ToString(),
-                                Icon = Icons.Clipboard,
-                                IconColor = "warning",
-                                TrendValue = "-3%",
-                                Trend = TrendDirection.Down
-                            }),
+                            MetricCard.Render(
+                                new MetricCardProps
+                                {
+                                    Label = "Total Patients",
+                                    Value = state.Loading ? "-" : state.PatientCount.ToString(),
+                                    Icon = Icons.Users,
+                                    IconColor = "blue",
+                                    TrendValue = "+12%",
+                                    Trend = TrendDirection.Up,
+                                }
+                            ),
+                            MetricCard.Render(
+                                new MetricCardProps
+                                {
+                                    Label = "Practitioners",
+                                    Value = state.Loading
+                                        ? "-"
+                                        : state.PractitionerCount.ToString(),
+                                    Icon = Icons.UserDoctor,
+                                    IconColor = "teal",
+                                }
+                            ),
+                            MetricCard.Render(
+                                new MetricCardProps
+                                {
+                                    Label = "Appointments",
+                                    Value = state.Loading ? "-" : state.AppointmentCount.ToString(),
+                                    Icon = Icons.Calendar,
+                                    IconColor = "success",
+                                    TrendValue = "+8%",
+                                    Trend = TrendDirection.Up,
+                                }
+                            ),
+                            MetricCard.Render(
+                                new MetricCardProps
+                                {
+                                    Label = "Encounters",
+                                    Value = state.Loading ? "-" : state.EncounterCount.ToString(),
+                                    Icon = Icons.Clipboard,
+                                    IconColor = "warning",
+                                    TrendValue = "-3%",
+                                    Trend = TrendDirection.Down,
+                                }
+                            ),
                         }
                     ),
                     // Quick actions and activity
@@ -141,31 +160,36 @@ namespace Dashboard.Pages
                 var practitioners = await ApiClient.GetPractitionersAsync();
                 var appointments = await ApiClient.GetAppointmentsAsync();
 
-                setState(new DashboardState
-                {
-                    PatientCount = patients.Length,
-                    PractitionerCount = practitioners.Length,
-                    AppointmentCount = appointments.Length,
-                    EncounterCount = 0,
-                    Loading = false,
-                    Error = null
-                });
+                setState(
+                    new DashboardState
+                    {
+                        PatientCount = patients.Length,
+                        PractitionerCount = practitioners.Length,
+                        AppointmentCount = appointments.Length,
+                        EncounterCount = 0,
+                        Loading = false,
+                        Error = null,
+                    }
+                );
             }
             catch (Exception ex)
             {
-                setState(new DashboardState
-                {
-                    PatientCount = 0,
-                    PractitionerCount = 0,
-                    AppointmentCount = 0,
-                    EncounterCount = 0,
-                    Loading = false,
-                    Error = ex.Message
-                });
+                setState(
+                    new DashboardState
+                    {
+                        PatientCount = 0,
+                        PractitionerCount = 0,
+                        AppointmentCount = 0,
+                        EncounterCount = 0,
+                        Loading = false,
+                        Error = ex.Message,
+                    }
+                );
             }
         }
 
-        private static ReactElement RenderError(string message) => Div(
+        private static ReactElement RenderError(string message) =>
+            Div(
                 className: "card mb-6",
                 style: new { borderLeft = "4px solid var(--warning)" },
                 children: new[]
@@ -185,7 +209,10 @@ namespace Dashboard.Pages
                                     ),
                                     P(
                                         className: "text-sm text-gray-600",
-                                        children: new[] { Text("Could not connect to API: " + message) }
+                                        children: new[]
+                                        {
+                                            Text("Could not connect to API: " + message),
+                                        }
                                     ),
                                     P(
                                         className: "text-sm text-gray-500",
@@ -203,7 +230,8 @@ namespace Dashboard.Pages
                 }
             );
 
-        private static ReactElement RenderQuickActions() => Div(
+        private static ReactElement RenderQuickActions() =>
+            Div(
                 className: "card",
                 children: new[]
                 {
@@ -211,7 +239,11 @@ namespace Dashboard.Pages
                         className: "card-header",
                         children: new[]
                         {
-                            H(3, className: "card-title", children: new[] { Text("Quick Actions") }),
+                            H(
+                                3,
+                                className: "card-title",
+                                children: new[] { Text("Quick Actions") }
+                            ),
                         }
                     ),
                     Div(
@@ -223,8 +255,16 @@ namespace Dashboard.Pages
                                 children: new[]
                                 {
                                     RenderActionButton("New Patient", Icons.Plus, "primary"),
-                                    RenderActionButton("New Appointment", Icons.Calendar, "secondary"),
-                                    RenderActionButton("View Schedule", Icons.Calendar, "secondary"),
+                                    RenderActionButton(
+                                        "New Appointment",
+                                        Icons.Calendar,
+                                        "secondary"
+                                    ),
+                                    RenderActionButton(
+                                        "View Schedule",
+                                        Icons.Calendar,
+                                        "secondary"
+                                    ),
                                     RenderActionButton("Patient Search", Icons.Search, "secondary"),
                                 }
                             ),
@@ -237,9 +277,14 @@ namespace Dashboard.Pages
             string label,
             Func<ReactElement> icon,
             string variant
-        ) => Button(className: "btn btn-" + variant + " w-full", children: new[] { icon(), Text(label) });
+        ) =>
+            Button(
+                className: "btn btn-" + variant + " w-full",
+                children: new[] { icon(), Text(label) }
+            );
 
-        private static ReactElement RenderRecentActivity() => Div(
+        private static ReactElement RenderRecentActivity() =>
+            Div(
                 className: "card",
                 children: new[]
                 {
@@ -247,7 +292,11 @@ namespace Dashboard.Pages
                         className: "card-header",
                         children: new[]
                         {
-                            H(3, className: "card-title", children: new[] { Text("Recent Activity") }),
+                            H(
+                                3,
+                                className: "card-title",
+                                children: new[] { Text("Recent Activity") }
+                            ),
                             Button(
                                 className: "btn btn-ghost btn-sm",
                                 children: new[] { Text("View All") }
@@ -284,7 +333,12 @@ namespace Dashboard.Pages
                 }
             );
 
-        private static ReactElement RenderActivityItem(string title, string subtitle, string time) => Div(
+        private static ReactElement RenderActivityItem(
+            string title,
+            string subtitle,
+            string time
+        ) =>
+            Div(
                 className: "data-list-item",
                 children: new[]
                 {

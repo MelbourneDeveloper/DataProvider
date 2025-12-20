@@ -10,7 +10,6 @@ using System.Text.Json;
 /// </summary>
 public sealed class EncounterEndpointTests
 {
-
     private static async Task<string> CreateTestPatientAsync(HttpClient client)
     {
         var patient = new
