@@ -434,6 +434,4 @@ app.Run();
 /// <summary>
 /// Program entry point marker for WebApplicationFactory.
 /// </summary>
-public partial class Program
-{
-}
+public partial class Program { }

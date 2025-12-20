@@ -62,8 +62,9 @@ public sealed class ClinicalApiFactory : WebApplicationFactory<Program>
     {
         builder.ConfigureServices(services =>
         {
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(Func<SqliteConnection>));
+            var descriptor = services.SingleOrDefault(d =>
+                d.ServiceType == typeof(Func<SqliteConnection>)
+            );
 
             if (descriptor is not null)
             {

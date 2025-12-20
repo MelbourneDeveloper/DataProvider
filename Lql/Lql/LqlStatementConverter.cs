@@ -3,14 +3,13 @@
 using Lql.Parsing;
 using Outcome;
 using Selecta;
-
-using ParseOk = Outcome.Result<Lql.INode, Selecta.SqlError>.Ok<Lql.INode, Selecta.SqlError>;
 using ParseError = Outcome.Result<Lql.INode, Selecta.SqlError>.Error<Lql.INode, Selecta.SqlError>;
-using StatementOk = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Ok<
+using ParseOk = Outcome.Result<Lql.INode, Selecta.SqlError>.Ok<Lql.INode, Selecta.SqlError>;
+using StatementError = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Error<
     Lql.LqlStatement,
     Selecta.SqlError
 >;
-using StatementError = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Error<
+using StatementOk = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Ok<
     Lql.LqlStatement,
     Selecta.SqlError
 >;

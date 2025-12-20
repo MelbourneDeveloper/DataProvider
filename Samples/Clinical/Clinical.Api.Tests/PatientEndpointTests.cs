@@ -44,7 +44,7 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             City = "Springfield",
             State = "IL",
             PostalCode = "62701",
-            Country = "USA"
+            Country = "USA",
         };
 
         var response = await _client.PostAsJsonAsync("/fhir/Patient/", request);
@@ -66,7 +66,7 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             GivenName = "Jane",
             FamilyName = "Smith",
             BirthDate = "1985-06-20",
-            Gender = "female"
+            Gender = "female",
         };
 
         var createResponse = await _client.PostAsJsonAsync("/fhir/Patient/", createRequest);
@@ -97,7 +97,7 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Active = true,
             GivenName = "SearchTest",
             FamilyName = "UniqueLastName",
-            Gender = "other"
+            Gender = "other",
         };
 
         await _client.PostAsJsonAsync("/fhir/Patient/", request);
@@ -118,7 +118,7 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Active = true,
             GivenName = "Active",
             FamilyName = "Patient",
-            Gender = "male"
+            Gender = "male",
         };
 
         var inactivePatient = new
@@ -126,7 +126,7 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Active = false,
             GivenName = "Inactive",
             FamilyName = "Patient",
-            Gender = "female"
+            Gender = "female",
         };
 
         await _client.PostAsJsonAsync("/fhir/Patient/", activePatient);
@@ -147,7 +147,7 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Active = true,
             GivenName = "FilterTest",
             FamilyName = "FilterFamilyName",
-            Gender = "unknown"
+            Gender = "unknown",
         };
 
         await _client.PostAsJsonAsync("/fhir/Patient/", patient);
@@ -157,7 +157,10 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var patients = await response.Content.ReadFromJsonAsync<JsonElement[]>();
         Assert.NotNull(patients);
-        Assert.Contains(patients, p => p.GetProperty("FamilyName").GetString() == "FilterFamilyName");
+        Assert.Contains(
+            patients,
+            p => p.GetProperty("FamilyName").GetString() == "FilterFamilyName"
+        );
     }
 
     [Fact]
@@ -168,7 +171,7 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Active = true,
             GivenName = "UniqueGivenName",
             FamilyName = "TestFamily",
-            Gender = "male"
+            Gender = "male",
         };
 
         await _client.PostAsJsonAsync("/fhir/Patient/", patient);
@@ -189,7 +192,7 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Active = true,
             GivenName = "GenderTest",
             FamilyName = "Male",
-            Gender = "male"
+            Gender = "male",
         };
 
         await _client.PostAsJsonAsync("/fhir/Patient/", malePatient);
@@ -210,7 +213,7 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Active = true,
             GivenName = "IdTest",
             FamilyName = "Patient",
-            Gender = "other"
+            Gender = "other",
         };
 
         var response1 = await _client.PostAsJsonAsync("/fhir/Patient/", request);
@@ -233,7 +236,7 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Active = true,
             GivenName = "Version",
             FamilyName = "Test",
-            Gender = "male"
+            Gender = "male",
         };
 
         var response = await _client.PostAsJsonAsync("/fhir/Patient/", request);
@@ -250,7 +253,7 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Active = true,
             GivenName = "Timestamp",
             FamilyName = "Test",
-            Gender = "female"
+            Gender = "female",
         };
 
         var response = await _client.PostAsJsonAsync("/fhir/Patient/", request);

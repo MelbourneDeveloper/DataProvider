@@ -4,17 +4,16 @@ using System.CommandLine;
 using Lql;
 using Lql.SQLite;
 using Selecta;
-
-using LqlStatementOk = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Ok<
-    Lql.LqlStatement,
-    Selecta.SqlError
->;
 using LqlStatementError = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Error<
     Lql.LqlStatement,
     Selecta.SqlError
 >;
-using StringSqlOk = Outcome.Result<string, Selecta.SqlError>.Ok<string, Selecta.SqlError>;
+using LqlStatementOk = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Ok<
+    Lql.LqlStatement,
+    Selecta.SqlError
+>;
 using StringSqlError = Outcome.Result<string, Selecta.SqlError>.Error<string, Selecta.SqlError>;
+using StringSqlOk = Outcome.Result<string, Selecta.SqlError>.Ok<string, Selecta.SqlError>;
 
 namespace LqlCli;
 
@@ -229,5 +228,4 @@ internal static class Program
         }
         return 1;
     }
-
 }
