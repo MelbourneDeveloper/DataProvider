@@ -6,22 +6,17 @@ using System.Text.Json;
 
 /// <summary>
 /// E2E tests for Patient FHIR endpoints - REAL database, NO mocks.
+/// Each test creates its own isolated factory and database.
 /// </summary>
-public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
+public sealed class PatientEndpointTests
 {
-    private readonly HttpClient _client;
-    private readonly ClinicalApiFactory _factory;
-
-    public PatientEndpointTests(ClinicalApiFactory factory)
-    {
-        _factory = factory;
-        _client = factory.CreateClient();
-    }
-
     [Fact]
     public async Task GetPatients_ReturnsEmptyList_WhenNoPatients()
     {
-        var response = await _client.GetAsync("/fhir/Patient/");
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/fhir/Patient/");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
@@ -31,6 +26,9 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task CreatePatient_ReturnsCreated_WithValidData()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+
         var request = new
         {
             Active = true,
@@ -47,19 +45,41 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Country = "USA",
         };
 
-        var response = await _client.PostAsJsonAsync("/fhir/Patient/", request);
+        var response = await client.PostAsJsonAsync("/fhir/Patient/", request);
+        var content = await response.Content.ReadAsStringAsync();
 
+        Assert.True(
+            response.IsSuccessStatusCode,
+            $"Expected success. Got {response.StatusCode}: {content}"
+        );
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal("John", json.GetProperty("GivenName").GetString());
-        Assert.Equal("Doe", json.GetProperty("FamilyName").GetString());
-        Assert.Equal("male", json.GetProperty("Gender").GetString());
-        Assert.NotNull(json.GetProperty("Id").GetString());
+
+        var json = JsonSerializer.Deserialize<JsonElement>(content);
+        Assert.True(
+            json.TryGetProperty("GivenName", out var givenName),
+            $"Missing GivenName in: {content}"
+        );
+        Assert.Equal("John", givenName.GetString());
+        Assert.True(
+            json.TryGetProperty("FamilyName", out var familyName),
+            $"Missing FamilyName in: {content}"
+        );
+        Assert.Equal("Doe", familyName.GetString());
+        Assert.True(
+            json.TryGetProperty("Gender", out var gender),
+            $"Missing Gender in: {content}"
+        );
+        Assert.Equal("male", gender.GetString());
+        Assert.True(json.TryGetProperty("Id", out var id), $"Missing Id in: {content}");
+        Assert.NotNull(id.GetString());
     }
 
     [Fact]
     public async Task GetPatientById_ReturnsPatient_WhenExists()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+
         var createRequest = new
         {
             Active = true,
@@ -69,11 +89,11 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Gender = "female",
         };
 
-        var createResponse = await _client.PostAsJsonAsync("/fhir/Patient/", createRequest);
+        var createResponse = await client.PostAsJsonAsync("/fhir/Patient/", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
         var patientId = created.GetProperty("Id").GetString();
 
-        var response = await _client.GetAsync($"/fhir/Patient/{patientId}");
+        var response = await client.GetAsync($"/fhir/Patient/{patientId}");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var patient = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -84,7 +104,10 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task GetPatientById_ReturnsNotFound_WhenNotExists()
     {
-        var response = await _client.GetAsync("/fhir/Patient/nonexistent-id-12345");
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/fhir/Patient/nonexistent-id-12345");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -92,6 +115,9 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task SearchPatients_FindsPatientsByName()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+
         var request = new
         {
             Active = true,
@@ -100,9 +126,9 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Gender = "other",
         };
 
-        await _client.PostAsJsonAsync("/fhir/Patient/", request);
+        await client.PostAsJsonAsync("/fhir/Patient/", request);
 
-        var response = await _client.GetAsync("/fhir/Patient/_search?q=UniqueLastName");
+        var response = await client.GetAsync("/fhir/Patient/_search?q=UniqueLastName");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var patients = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -113,6 +139,9 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task GetPatients_FiltersByActiveStatus()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+
         var activePatient = new
         {
             Active = true,
@@ -129,10 +158,10 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Gender = "female",
         };
 
-        await _client.PostAsJsonAsync("/fhir/Patient/", activePatient);
-        await _client.PostAsJsonAsync("/fhir/Patient/", inactivePatient);
+        await client.PostAsJsonAsync("/fhir/Patient/", activePatient);
+        await client.PostAsJsonAsync("/fhir/Patient/", inactivePatient);
 
-        var activeResponse = await _client.GetAsync("/fhir/Patient/?active=true");
+        var activeResponse = await client.GetAsync("/fhir/Patient/?active=true");
         Assert.Equal(HttpStatusCode.OK, activeResponse.StatusCode);
         var activePatients = await activeResponse.Content.ReadFromJsonAsync<JsonElement[]>();
         Assert.NotNull(activePatients);
@@ -142,6 +171,9 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task GetPatients_FiltersByFamilyName()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+
         var patient = new
         {
             Active = true,
@@ -150,9 +182,9 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Gender = "unknown",
         };
 
-        await _client.PostAsJsonAsync("/fhir/Patient/", patient);
+        await client.PostAsJsonAsync("/fhir/Patient/", patient);
 
-        var response = await _client.GetAsync("/fhir/Patient/?familyName=FilterFamilyName");
+        var response = await client.GetAsync("/fhir/Patient/?familyName=FilterFamilyName");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var patients = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -166,6 +198,9 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task GetPatients_FiltersByGivenName()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+
         var patient = new
         {
             Active = true,
@@ -174,9 +209,9 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Gender = "male",
         };
 
-        await _client.PostAsJsonAsync("/fhir/Patient/", patient);
+        await client.PostAsJsonAsync("/fhir/Patient/", patient);
 
-        var response = await _client.GetAsync("/fhir/Patient/?givenName=UniqueGivenName");
+        var response = await client.GetAsync("/fhir/Patient/?givenName=UniqueGivenName");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var patients = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -187,6 +222,9 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task GetPatients_FiltersByGender()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+
         var malePatient = new
         {
             Active = true,
@@ -195,9 +233,9 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Gender = "male",
         };
 
-        await _client.PostAsJsonAsync("/fhir/Patient/", malePatient);
+        await client.PostAsJsonAsync("/fhir/Patient/", malePatient);
 
-        var response = await _client.GetAsync("/fhir/Patient/?gender=male");
+        var response = await client.GetAsync("/fhir/Patient/?gender=male");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var patients = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -208,6 +246,9 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task CreatePatient_GeneratesUniqueIds()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+
         var request = new
         {
             Active = true,
@@ -216,8 +257,8 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Gender = "other",
         };
 
-        var response1 = await _client.PostAsJsonAsync("/fhir/Patient/", request);
-        var response2 = await _client.PostAsJsonAsync("/fhir/Patient/", request);
+        var response1 = await client.PostAsJsonAsync("/fhir/Patient/", request);
+        var response2 = await client.PostAsJsonAsync("/fhir/Patient/", request);
 
         var patient1 = await response1.Content.ReadFromJsonAsync<JsonElement>();
         var patient2 = await response2.Content.ReadFromJsonAsync<JsonElement>();
@@ -231,6 +272,9 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task CreatePatient_SetsVersionIdToOne()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+
         var request = new
         {
             Active = true,
@@ -239,7 +283,7 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Gender = "male",
         };
 
-        var response = await _client.PostAsJsonAsync("/fhir/Patient/", request);
+        var response = await client.PostAsJsonAsync("/fhir/Patient/", request);
         var patient = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         Assert.Equal(1L, patient.GetProperty("VersionId").GetInt64());
@@ -248,6 +292,9 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task CreatePatient_SetsLastUpdatedTimestamp()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+
         var request = new
         {
             Active = true,
@@ -256,7 +303,7 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
             Gender = "female",
         };
 
-        var response = await _client.PostAsJsonAsync("/fhir/Patient/", request);
+        var response = await client.PostAsJsonAsync("/fhir/Patient/", request);
         var patient = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         var lastUpdated = patient.GetProperty("LastUpdated").GetString();

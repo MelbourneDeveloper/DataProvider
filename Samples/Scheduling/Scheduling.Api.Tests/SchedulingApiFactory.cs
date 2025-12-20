@@ -1,22 +1,22 @@
-namespace Clinical.Api.Tests;
+namespace Scheduling.Api.Tests;
 
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 /// <summary>
-/// WebApplicationFactory for Clinical.Api e2e testing.
+/// WebApplicationFactory for Scheduling.Api e2e testing.
 /// Just configures a temp database path - Program.cs does ALL initialization.
 /// </summary>
-public sealed class ClinicalApiFactory : WebApplicationFactory<Clinical.Api.Program>
+public sealed class SchedulingApiFactory : WebApplicationFactory<Scheduling.Api.Program>
 {
     private readonly string _dbPath;
 
     /// <summary>
     /// Creates a new instance with an isolated temp database.
     /// </summary>
-    public ClinicalApiFactory()
+    public SchedulingApiFactory()
     {
-        _dbPath = Path.Combine(Path.GetTempPath(), $"clinical_test_{Guid.NewGuid()}.db");
+        _dbPath = Path.Combine(Path.GetTempPath(), $"scheduling_test_{Guid.NewGuid()}.db");
     }
 
     /// <summary>

@@ -7,13 +7,21 @@ using System.Text.Json;
 /// <summary>
 /// E2E tests for MedicationRequest FHIR endpoints - REAL database, NO mocks.
 /// </summary>
-public sealed class MedicationRequestEndpointTests : IClassFixture<ClinicalApiFactory>
+public sealed class MedicationRequestEndpointTests : IDisposable
 {
+    private readonly ClinicalApiFactory _factory;
     private readonly HttpClient _client;
 
-    public MedicationRequestEndpointTests(ClinicalApiFactory factory)
+    public MedicationRequestEndpointTests()
     {
-        _client = factory.CreateClient();
+        _factory = new ClinicalApiFactory();
+        _client = _factory.CreateClient();
+    }
+
+    public void Dispose()
+    {
+        _client.Dispose();
+        _factory.Dispose();
     }
 
     private async Task<string> CreateTestPatientAsync()

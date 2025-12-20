@@ -14,7 +14,7 @@
 
   <!-- Disable problematic analyzer rules for generated code -->
   <PropertyGroup>
-    <NoWarn>$(NoWarn);EPC13;EPS06;CA1017;CA1002;CA1822;CA1859</NoWarn>
+    <NoWarn>$(NoWarn);EPC13;EPS06;CA1002;CA1822;CA1859</NoWarn>
   </PropertyGroup>
 
 </Project>

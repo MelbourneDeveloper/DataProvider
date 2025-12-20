@@ -6,17 +6,18 @@ using System.Text.Json;
 
 /// <summary>
 /// E2E tests for Encounter FHIR endpoints - REAL database, NO mocks.
+/// Each test creates its own isolated factory and database.
 /// </summary>
-public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
+public sealed class EncounterEndpointTests
 {
-    private readonly HttpClient _client;
-
-    public EncounterEndpointTests(ClinicalApiFactory factory)
+    private static (ClinicalApiFactory Factory, HttpClient Client) CreateTestContext()
     {
-        _client = factory.CreateClient();
+        var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        return (factory, client);
     }
 
-    private async Task<string> CreateTestPatientAsync()
+    private static async Task<string> CreateTestPatientAsync(HttpClient client)
     {
         var patient = new
         {
@@ -26,7 +27,7 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
             Gender = "male",
         };
 
-        var response = await _client.PostAsJsonAsync("/fhir/Patient/", patient);
+        var response = await client.PostAsJsonAsync("/fhir/Patient/", patient);
         var created = await response.Content.ReadFromJsonAsync<JsonElement>();
         return created.GetProperty("Id").GetString()!;
     }
@@ -34,9 +35,10 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task GetEncountersByPatient_ReturnsEmptyList_WhenNoEncounters()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var (factory, client) = CreateTestContext();
+        var patientId = await CreateTestPatientAsync(client);
 
-        var response = await _client.GetAsync($"/fhir/Patient/{patientId}/Encounter/");
+        var response = await client.GetAsync($"/fhir/Patient/{patientId}/Encounter/");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
@@ -46,7 +48,8 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task CreateEncounter_ReturnsCreated_WithValidData()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var (factory, client) = CreateTestContext();
+        var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
             Status = "planned",
@@ -59,7 +62,7 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
             Notes = "Routine visit",
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/Encounter/",
             request
         );
@@ -75,6 +78,7 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task CreateEncounter_WithAllStatuses()
     {
+        using var (factory, client) = CreateTestContext();
         var statuses = new[]
         {
             "planned",
@@ -88,7 +92,7 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
 
         foreach (var status in statuses)
         {
-            var patientId = await CreateTestPatientAsync();
+            var patientId = await CreateTestPatientAsync(client);
             var request = new
             {
                 Status = status,
@@ -96,7 +100,7 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
                 PeriodStart = "2024-01-15T09:00:00Z",
             };
 
-            var response = await _client.PostAsJsonAsync(
+            var response = await client.PostAsJsonAsync(
                 $"/fhir/Patient/{patientId}/Encounter/",
                 request
             );
@@ -110,11 +114,12 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task CreateEncounter_WithAllClasses()
     {
+        using var (factory, client) = CreateTestContext();
         var classes = new[] { "ambulatory", "emergency", "inpatient", "observation", "virtual" };
 
         foreach (var encounterClass in classes)
         {
-            var patientId = await CreateTestPatientAsync();
+            var patientId = await CreateTestPatientAsync(client);
             var request = new
             {
                 Status = "planned",
@@ -122,7 +127,7 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
                 PeriodStart = "2024-01-15T09:00:00Z",
             };
 
-            var response = await _client.PostAsJsonAsync(
+            var response = await client.PostAsJsonAsync(
                 $"/fhir/Patient/{patientId}/Encounter/",
                 request
             );
@@ -136,7 +141,8 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task GetEncountersByPatient_ReturnsEncounters_WhenExist()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var (factory, client) = CreateTestContext();
+        var patientId = await CreateTestPatientAsync(client);
         var request1 = new
         {
             Status = "planned",
@@ -150,10 +156,10 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
             PeriodStart = "2024-01-16T10:00:00Z",
         };
 
-        await _client.PostAsJsonAsync($"/fhir/Patient/{patientId}/Encounter/", request1);
-        await _client.PostAsJsonAsync($"/fhir/Patient/{patientId}/Encounter/", request2);
+        await client.PostAsJsonAsync($"/fhir/Patient/{patientId}/Encounter/", request1);
+        await client.PostAsJsonAsync($"/fhir/Patient/{patientId}/Encounter/", request2);
 
-        var response = await _client.GetAsync($"/fhir/Patient/{patientId}/Encounter/");
+        var response = await client.GetAsync($"/fhir/Patient/{patientId}/Encounter/");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var encounters = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -164,7 +170,8 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task CreateEncounter_SetsVersionIdToOne()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var (factory, client) = CreateTestContext();
+        var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
             Status = "planned",
@@ -172,7 +179,7 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
             PeriodStart = "2024-01-15T09:00:00Z",
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/Encounter/",
             request
         );
@@ -184,7 +191,8 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task CreateEncounter_SetsLastUpdatedTimestamp()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var (factory, client) = CreateTestContext();
+        var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
             Status = "planned",
@@ -192,7 +200,7 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
             PeriodStart = "2024-01-15T09:00:00Z",
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/Encounter/",
             request
         );
@@ -206,7 +214,8 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task CreateEncounter_WithNotes()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var (factory, client) = CreateTestContext();
+        var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
             Status = "planned",
@@ -215,7 +224,7 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
             Notes = "Patient reported mild headache. Follow up in 2 weeks.",
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/Encounter/",
             request
         );
@@ -230,7 +239,8 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
     [Fact]
     public async Task CreateEncounter_WithPeriodEndTime()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var (factory, client) = CreateTestContext();
+        var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
             Status = "finished",
@@ -239,7 +249,7 @@ public sealed class EncounterEndpointTests : IClassFixture<ClinicalApiFactory>
             PeriodEnd = "2024-01-15T09:45:00Z",
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/Encounter/",
             request
         );

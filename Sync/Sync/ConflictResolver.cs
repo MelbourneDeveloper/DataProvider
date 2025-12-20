@@ -1,5 +1,3 @@
-#pragma warning disable CS8509 // Exhaustive switch - Exhaustion analyzer handles this
-
 namespace Sync;
 
 /// <summary>
@@ -94,12 +92,11 @@ public static class ConflictResolver
     {
         var result = resolver(local, remote);
 
-        return result switch
-        {
-            SyncLogEntryOk(var entry) => new ConflictResolutionOk(
+        return result.Match<ConflictResolutionResult>(
+            entry => new ConflictResolutionOk(
                 new ConflictResolution(entry, ConflictStrategy.LastWriteWins)
             ),
-            SyncLogEntryError(var error) => new ConflictResolutionError(error),
-        };
+            error => new ConflictResolutionError(error)
+        );
     }
 }

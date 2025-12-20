@@ -9,3 +9,4 @@ dotnet_diagnostic.RS1035.severity = none
 dotnet_diagnostic.IDE0005.severity = none
 dotnet_diagnostic.CA1508.severity = none
 dotnet_diagnostic.CA2234.severity = none
+dotnet_diagnostic.IDE0037.severity = none

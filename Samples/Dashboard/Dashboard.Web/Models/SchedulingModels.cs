@@ -1,140 +1,141 @@
-namespace Dashboard.Models;
-
-using H5;
-
-/// <summary>
-/// FHIR Practitioner resource model.
-/// </summary>
-[External]
-[Name("Object")]
-public record Practitioner
+namespace Dashboard.Models
 {
-    /// <summary>Practitioner unique identifier.</summary>
-    public extern string Id { get; init; }
+    using H5;
 
-    /// <summary>Practitioner identifier (NPI).</summary>
-    public extern string Identifier { get; init; }
+    /// <summary>
+    /// FHIR Practitioner resource model.
+    /// </summary>
+    [External]
+    [Name("Object")]
+    public class Practitioner
+    {
+        /// <summary>Practitioner unique identifier.</summary>
+        public extern string Id { get; set; }
 
-    /// <summary>Whether practitioner is active.</summary>
-    public extern bool Active { get; init; }
+        /// <summary>Practitioner identifier (NPI).</summary>
+        public extern string Identifier { get; set; }
 
-    /// <summary>Family name.</summary>
-    public extern string NameFamily { get; init; }
+        /// <summary>Whether practitioner is active.</summary>
+        public extern bool Active { get; set; }
 
-    /// <summary>Given name.</summary>
-    public extern string NameGiven { get; init; }
+        /// <summary>Family name.</summary>
+        public extern string NameFamily { get; set; }
 
-    /// <summary>Qualification.</summary>
-    public extern string? Qualification { get; init; }
+        /// <summary>Given name.</summary>
+        public extern string NameGiven { get; set; }
 
-    /// <summary>Specialty.</summary>
-    public extern string? Specialty { get; init; }
+        /// <summary>Qualification.</summary>
+        public extern string Qualification { get; set; }
 
-    /// <summary>Email.</summary>
-    public extern string? TelecomEmail { get; init; }
+        /// <summary>Specialty.</summary>
+        public extern string Specialty { get; set; }
 
-    /// <summary>Phone.</summary>
-    public extern string? TelecomPhone { get; init; }
-}
+        /// <summary>Email.</summary>
+        public extern string TelecomEmail { get; set; }
 
-/// <summary>
-/// FHIR Appointment resource model.
-/// </summary>
-[External]
-[Name("Object")]
-public record Appointment
-{
-    /// <summary>Appointment unique identifier.</summary>
-    public extern string Id { get; init; }
+        /// <summary>Phone.</summary>
+        public extern string TelecomPhone { get; set; }
+    }
 
-    /// <summary>Appointment status.</summary>
-    public extern string Status { get; init; }
+    /// <summary>
+    /// FHIR Appointment resource model.
+    /// </summary>
+    [External]
+    [Name("Object")]
+    public class Appointment
+    {
+        /// <summary>Appointment unique identifier.</summary>
+        public extern string Id { get; set; }
 
-    /// <summary>Service category.</summary>
-    public extern string? ServiceCategory { get; init; }
+        /// <summary>Appointment status.</summary>
+        public extern string Status { get; set; }
 
-    /// <summary>Service type.</summary>
-    public extern string? ServiceType { get; init; }
+        /// <summary>Service category.</summary>
+        public extern string ServiceCategory { get; set; }
 
-    /// <summary>Reason code.</summary>
-    public extern string? ReasonCode { get; init; }
+        /// <summary>Service type.</summary>
+        public extern string ServiceType { get; set; }
 
-    /// <summary>Priority.</summary>
-    public extern string Priority { get; init; }
+        /// <summary>Reason code.</summary>
+        public extern string ReasonCode { get; set; }
 
-    /// <summary>Description.</summary>
-    public extern string? Description { get; init; }
+        /// <summary>Priority.</summary>
+        public extern string Priority { get; set; }
 
-    /// <summary>Start time.</summary>
-    public extern string StartTime { get; init; }
+        /// <summary>Description.</summary>
+        public extern string Description { get; set; }
 
-    /// <summary>End time.</summary>
-    public extern string EndTime { get; init; }
+        /// <summary>Start time.</summary>
+        public extern string StartTime { get; set; }
 
-    /// <summary>Duration in minutes.</summary>
-    public extern int MinutesDuration { get; init; }
+        /// <summary>End time.</summary>
+        public extern string EndTime { get; set; }
 
-    /// <summary>Patient reference.</summary>
-    public extern string PatientReference { get; init; }
+        /// <summary>Duration in minutes.</summary>
+        public extern int MinutesDuration { get; set; }
 
-    /// <summary>Practitioner reference.</summary>
-    public extern string PractitionerReference { get; init; }
+        /// <summary>Patient reference.</summary>
+        public extern string PatientReference { get; set; }
 
-    /// <summary>Created timestamp.</summary>
-    public extern string Created { get; init; }
+        /// <summary>Practitioner reference.</summary>
+        public extern string PractitionerReference { get; set; }
 
-    /// <summary>Comment.</summary>
-    public extern string? Comment { get; init; }
-}
+        /// <summary>Created timestamp.</summary>
+        public extern string Created { get; set; }
 
-/// <summary>
-/// FHIR Schedule resource model.
-/// </summary>
-[External]
-[Name("Object")]
-public record Schedule
-{
-    /// <summary>Schedule unique identifier.</summary>
-    public extern string Id { get; init; }
+        /// <summary>Comment.</summary>
+        public extern string Comment { get; set; }
+    }
 
-    /// <summary>Whether schedule is active.</summary>
-    public extern bool Active { get; init; }
+    /// <summary>
+    /// FHIR Schedule resource model.
+    /// </summary>
+    [External]
+    [Name("Object")]
+    public class Schedule
+    {
+        /// <summary>Schedule unique identifier.</summary>
+        public extern string Id { get; set; }
 
-    /// <summary>Practitioner reference.</summary>
-    public extern string PractitionerReference { get; init; }
+        /// <summary>Whether schedule is active.</summary>
+        public extern bool Active { get; set; }
 
-    /// <summary>Planning horizon in days.</summary>
-    public extern int PlanningHorizon { get; init; }
+        /// <summary>Practitioner reference.</summary>
+        public extern string PractitionerReference { get; set; }
 
-    /// <summary>Comment.</summary>
-    public extern string? Comment { get; init; }
-}
+        /// <summary>Planning horizon in days.</summary>
+        public extern int PlanningHorizon { get; set; }
 
-/// <summary>
-/// FHIR Slot resource model.
-/// </summary>
-[External]
-[Name("Object")]
-public record Slot
-{
-    /// <summary>Slot unique identifier.</summary>
-    public extern string Id { get; init; }
+        /// <summary>Comment.</summary>
+        public extern string Comment { get; set; }
+    }
 
-    /// <summary>Schedule reference.</summary>
-    public extern string ScheduleReference { get; init; }
+    /// <summary>
+    /// FHIR Slot resource model.
+    /// </summary>
+    [External]
+    [Name("Object")]
+    public class Slot
+    {
+        /// <summary>Slot unique identifier.</summary>
+        public extern string Id { get; set; }
 
-    /// <summary>Slot status.</summary>
-    public extern string Status { get; init; }
+        /// <summary>Schedule reference.</summary>
+        public extern string ScheduleReference { get; set; }
 
-    /// <summary>Start time.</summary>
-    public extern string StartTime { get; init; }
+        /// <summary>Slot status.</summary>
+        public extern string Status { get; set; }
 
-    /// <summary>End time.</summary>
-    public extern string EndTime { get; init; }
+        /// <summary>Start time.</summary>
+        public extern string StartTime { get; set; }
 
-    /// <summary>Whether overbooked.</summary>
-    public extern bool Overbooked { get; init; }
+        /// <summary>End time.</summary>
+        public extern string EndTime { get; set; }
 
-    /// <summary>Comment.</summary>
-    public extern string? Comment { get; init; }
+        /// <summary>Whether overbooked.</summary>
+        public extern bool Overbooked { get; set; }
+
+        /// <summary>Comment.</summary>
+        public extern string Comment { get; set; }
+    }
 }

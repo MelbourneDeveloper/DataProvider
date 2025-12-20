@@ -1,9 +1,17 @@
 #pragma warning disable CS8509 // Exhaustive switch - Exhaustion analyzer handles this
+#pragma warning disable IDE0037 // Use inferred member name - prefer explicit for clarity in API responses
 
 using System.Globalization;
+using Microsoft.AspNetCore.Http.Json;
 using Scheduling.Api;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure JSON to use PascalCase property names
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.SerializerOptions.PropertyNamingPolicy = null;
+});
 
 // Add CORS for dashboard
 builder.Services.AddCors(options =>
@@ -26,7 +34,8 @@ builder.Services.AddCors(options =>
     );
 });
 
-var dbPath = Path.Combine(AppContext.BaseDirectory, "scheduling.db");
+var dbPath =
+    builder.Configuration["DbPath"] ?? Path.Combine(AppContext.BaseDirectory, "scheduling.db");
 var connectionString = new SqliteConnectionStringBuilder { DataSource = dbPath }.ToString();
 builder.Services.AddSingleton(() =>
 {
@@ -343,3 +352,11 @@ app.MapGet(
 );
 
 app.Run();
+
+namespace Scheduling.Api
+{
+    /// <summary>
+    /// Program entry point marker for WebApplicationFactory.
+    /// </summary>
+    public partial class Program { }
+}

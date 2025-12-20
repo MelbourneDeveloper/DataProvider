@@ -1,5 +1,3 @@
-#pragma warning disable CS8509 // Exhaustive switch - Exhaustion analyzer handles this
-
 using Microsoft.Extensions.Logging;
 
 namespace Sync;

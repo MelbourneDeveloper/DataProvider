@@ -249,13 +249,9 @@ Dashboard/
 
 ### Running the Dashboard
 
-1. **Build the H5 project** (compiles C# to JavaScript):
-   ```bash
-   cd Samples/Dashboard/Dashboard.Web
-   dotnet build
-   ```
+The dashboard uses pure React 18 loaded from CDN with a complete JavaScript implementation in `index.html`. No build step required.
 
-2. **Start the microservices** (in separate terminals):
+1. **Start the microservices** (in separate terminals):
    ```bash
    # Terminal 1: Clinical API
    cd Samples/Clinical/Clinical.Api
@@ -266,7 +262,7 @@ Dashboard/
    dotnet run
    ```
 
-3. **Serve the dashboard** (using any static file server):
+2. **Serve the dashboard** (using any static file server):
    ```bash
    # Using Python
    cd Samples/Dashboard/Dashboard.Web/wwwroot
@@ -276,7 +272,7 @@ Dashboard/
    dotnet serve -p 8080 -d wwwroot
    ```
 
-4. **Open in browser**: http://localhost:8080
+3. **Open in browser**: http://localhost:8080
 
 ### Configuration
 
