@@ -236,7 +236,7 @@
             React.createElement('tbody', null,
               data.map((row, i) =>
                 React.createElement('tr', {
-                  key: row.id || i,
+                  key: row.Id || row.id || i,
                   className: onRowClick ? 'cursor-pointer' : '',
                   onClick: onRowClick ? () => onRowClick(row) : undefined
                 },
@@ -424,18 +424,18 @@
         const filteredData = React.useMemo(() => {
           if (!data) return [];
           if (filter === 'all') return data;
-          return data.filter(a => a.status?.toLowerCase() === filter);
+          return data.filter(a => a.Status?.toLowerCase() === filter);
         }, [data, filter]);
 
         const columns = [
-          { key: 'id', header: 'ID', render: a => a.id || '-' },
-          { key: 'serviceType', header: 'Type', render: a => a.serviceType || a.serviceCategory || '-' },
-          { key: 'patient', header: 'Patient', render: a => a.patientReference || '-' },
-          { key: 'practitioner', header: 'Practitioner', render: a => a.practitionerReference || '-' },
-          { key: 'date', header: 'Date/Time', render: a => a.startTime || '-' },
+          { key: 'Id', header: 'ID', render: a => a.Id || '-' },
+          { key: 'ServiceType', header: 'Type', render: a => a.ServiceType || a.ServiceCategory || '-' },
+          { key: 'patient', header: 'Patient', render: a => a.PatientReference || '-' },
+          { key: 'practitioner', header: 'Practitioner', render: a => a.PractitionerReference || '-' },
+          { key: 'date', header: 'Date/Time', render: a => a.Start || a.StartTime || '-' },
           { key: 'status', header: 'Status', render: a => React.createElement('span', {
-            className: `badge ${a.status === 'booked' ? 'badge-primary' : a.status === 'fulfilled' ? 'badge-success' : a.status === 'cancelled' ? 'badge-danger' : 'badge-secondary'}`
-          }, a.status || 'pending') }
+            className: `badge ${a.Status === 'booked' ? 'badge-primary' : a.Status === 'fulfilled' ? 'badge-success' : a.Status === 'cancelled' ? 'badge-danger' : 'badge-secondary'}`
+          }, a.Status || 'pending') }
         ];
 
         return React.createElement('div', { className: 'page' },
