@@ -1,31 +1,29 @@
-namespace Samples.Sync.Tests;
+namespace Scheduling.Api.Tests;
 
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 /// <summary>
-/// Cross-domain sync tests - verifies sync functionality works across both domains.
-/// Note: Individual domain sync tests are in Clinical.Api.Tests and Scheduling.Api.Tests.
-/// These tests focus on inter-domain scenarios using Scheduling.Api (which works reliably).
+/// Sync tests for Scheduling domain.
 /// </summary>
-public sealed class ClinicalToSchedulingSyncTests : IDisposable
+public sealed class SchedulingSyncTests : IDisposable
 {
-    private readonly WebApplicationFactory<Scheduling.Api.Program> _schedulingFactory;
+    private readonly WebApplicationFactory<Program> _schedulingFactory;
     private readonly HttpClient _schedulingClient;
     private readonly string _schedulingDbPath;
 
     /// <summary>
     /// Creates test instance with Scheduling API running.
     /// </summary>
-    public ClinicalToSchedulingSyncTests()
+    public SchedulingSyncTests()
     {
         _schedulingDbPath = Path.Combine(
             Path.GetTempPath(),
             $"scheduling_sync_test_{Guid.NewGuid()}.db"
         );
 
-        _schedulingFactory = new WebApplicationFactory<Scheduling.Api.Program>().WithWebHostBuilder(
+        _schedulingFactory = new WebApplicationFactory<Program>().WithWebHostBuilder(
             builder => builder.UseSetting("DbPath", _schedulingDbPath)
         );
 

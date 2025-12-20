@@ -10,6 +10,88 @@ using System.Text.Json;
 /// </summary>
 public sealed class PractitionerEndpointTests
 {
+    #region CORS Tests - Dashboard Integration
+
+    [Fact]
+    public async Task GetPractitioners_WithDashboardOrigin_ReturnsCorsHeaders()
+    {
+        // This test verifies the Dashboard (localhost:5173) can hit the Scheduling API
+        // If this fails, the browser will block the request with a CORS error
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "/Practitioner");
+        request.Headers.Add("Origin", "http://localhost:5173");
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        // CRITICAL: These headers MUST be present for browser requests to work
+        Assert.True(
+            response.Headers.Contains("Access-Control-Allow-Origin"),
+            "Missing Access-Control-Allow-Origin header - Dashboard cannot fetch from Scheduling API!"
+        );
+
+        var allowOrigin = response.Headers.GetValues("Access-Control-Allow-Origin").FirstOrDefault();
+        Assert.True(
+            allowOrigin == "http://localhost:5173" || allowOrigin == "*",
+            $"Access-Control-Allow-Origin must allow Dashboard origin. Got: {allowOrigin}"
+        );
+    }
+
+    [Fact]
+    public async Task PreflightRequest_WithDashboardOrigin_ReturnsCorrectCorsHeaders()
+    {
+        // Browsers send OPTIONS preflight before actual requests with custom headers
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
+        var request = new HttpRequestMessage(HttpMethod.Options, "/Practitioner");
+        request.Headers.Add("Origin", "http://localhost:5173");
+        request.Headers.Add("Access-Control-Request-Method", "GET");
+        request.Headers.Add("Access-Control-Request-Headers", "Content-Type");
+
+        var response = await client.SendAsync(request);
+
+        // Preflight should return 200 or 204
+        Assert.True(
+            response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent,
+            $"Preflight request failed with {response.StatusCode}"
+        );
+
+        Assert.True(
+            response.Headers.Contains("Access-Control-Allow-Origin"),
+            "Missing Access-Control-Allow-Origin on preflight - Dashboard cannot make requests!"
+        );
+
+        Assert.True(
+            response.Headers.Contains("Access-Control-Allow-Methods"),
+            "Missing Access-Control-Allow-Methods on preflight"
+        );
+    }
+
+    [Fact]
+    public async Task GetAppointments_WithDashboardOrigin_ReturnsCorsHeaders()
+    {
+        // Appointments endpoint also needs CORS for Dashboard
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "/Appointment");
+        request.Headers.Add("Origin", "http://localhost:5173");
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(
+            response.Headers.Contains("Access-Control-Allow-Origin"),
+            "Missing Access-Control-Allow-Origin on /Appointment - Dashboard cannot fetch appointments!"
+        );
+    }
+
+    #endregion
+
     [Fact]
     public async Task GetAllPractitioners_ReturnsEmptyList_WhenNoPractitioners()
     {
