@@ -15,14 +15,9 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/layout.css">
 
-  <!-- React CDN (Development) -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-
-  <!-- For production, use:
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  -->
+  <!-- React (local bundle for offline/test support) -->
+  <script src="js/vendor/react.development.js"></script>
+  <script src="js/vendor/react-dom.development.js"></script>
 
   <style>
     /* Loading screen */
@@ -92,19 +87,18 @@
   <!-- React Root -->
   <div id="root"></div>
 
-  <!-- H5 Generated JavaScript -->
-  <script src="js/Dashboard.Web.js"></script>
+  <!-- H5 Generated JavaScript - DISABLED: has broken React hooks (calls useState from static method) -->
+  <!-- <script src="js/Dashboard.js"></script> -->
 
-  <!-- Fallback: Pure JS Dashboard if H5 not loaded -->
+  <!-- Pure JS React Dashboard -->
   <script>
     // Hide loading screen after a delay
     setTimeout(function() {
       document.getElementById('loading-screen').classList.add('hidden');
     }, 1500);
 
-    // If H5 hasn't initialized the app, use fallback
-    if (typeof Dashboard === 'undefined') {
-      console.log('[Dashboard] Loading React fallback dashboard...');
+    // Load the React dashboard
+    console.log('[Dashboard] Loading React dashboard...');
 
       // API Configuration
       const CLINICAL_API = window.dashboardConfig?.CLINICAL_API_URL || 'http://localhost:5080';
@@ -338,17 +332,17 @@
           if (!data || !searchQuery) return data || [];
           const q = searchQuery.toLowerCase();
           return data.filter(p =>
-            (p.given_name && p.given_name.toLowerCase().includes(q)) ||
-            (p.family_name && p.family_name.toLowerCase().includes(q)) ||
-            (p.identifier && p.identifier.toLowerCase().includes(q))
+            (p.GivenName && p.GivenName.toLowerCase().includes(q)) ||
+            (p.FamilyName && p.FamilyName.toLowerCase().includes(q)) ||
+            (p.Id && p.Id.toString().toLowerCase().includes(q))
           );
         }, [data, searchQuery]);
 
         const columns = [
-          { key: 'identifier', header: 'ID' },
-          { key: 'name', header: 'Name', render: p => `${p.given_name || ''} ${p.family_name || ''}`.trim() || '-' },
-          { key: 'birth_date', header: 'Birth Date', render: p => p.birth_date || '-' },
-          { key: 'gender', header: 'Gender', render: p => p.gender ? p.gender.charAt(0).toUpperCase() + p.gender.slice(1) : '-' },
+          { key: 'Id', header: 'ID', render: p => p.Id || '-' },
+          { key: 'name', header: 'Name', render: p => `${p.GivenName || ''} ${p.FamilyName || ''}`.trim() || '-' },
+          { key: 'BirthDate', header: 'Birth Date', render: p => p.BirthDate || '-' },
+          { key: 'Gender', header: 'Gender', render: p => p.Gender ? p.Gender.charAt(0).toUpperCase() + p.Gender.slice(1) : '-' },
           { key: 'status', header: 'Status', render: () => React.createElement('span', { className: 'badge badge-success' }, 'Active') }
         ];
 
@@ -403,18 +397,18 @@
             ))
           ) : React.createElement('div', { className: 'dashboard-grid practitioners' },
             (data || []).map(p =>
-              React.createElement('div', { key: p.id || p.identifier, className: 'card practitioner-card' },
+              React.createElement('div', { key: p.Id || p.Identifier, className: 'card practitioner-card' },
                 React.createElement('div', { className: 'practitioner-avatar' },
                   React.createElement('div', { className: 'avatar avatar-lg' },
-                    (p.given_name?.[0] || '') + (p.family_name?.[0] || '')
+                    (p.NameGiven?.[0] || '') + (p.NameFamily?.[0] || '')
                   )
                 ),
                 React.createElement('h4', { className: 'practitioner-name' },
-                  `${p.given_name || ''} ${p.family_name || ''}`.trim() || 'Unknown'
+                  `${p.NameGiven || ''} ${p.NameFamily || ''}`.trim() || 'Unknown'
                 ),
-                React.createElement('p', { className: 'practitioner-specialty' }, p.specialty || 'General'),
+                React.createElement('p', { className: 'practitioner-specialty' }, p.Specialty || 'General'),
                 React.createElement('div', { className: 'practitioner-meta' },
-                  React.createElement('span', { className: 'badge badge-info' }, p.qualification || 'MD')
+                  React.createElement('span', { className: 'badge badge-info' }, p.Qualification || 'MD')
                 )
               )
             )
@@ -434,10 +428,11 @@
         }, [data, filter]);
 
         const columns = [
-          { key: 'id', header: 'ID' },
-          { key: 'patient', header: 'Patient', render: a => a.patient_name || a.patient_id || '-' },
-          { key: 'practitioner', header: 'Practitioner', render: a => a.practitioner_name || a.practitioner_id || '-' },
-          { key: 'date', header: 'Date/Time', render: a => a.start_time || a.appointment_date || '-' },
+          { key: 'id', header: 'ID', render: a => a.id || '-' },
+          { key: 'serviceType', header: 'Type', render: a => a.serviceType || a.serviceCategory || '-' },
+          { key: 'patient', header: 'Patient', render: a => a.patientReference || '-' },
+          { key: 'practitioner', header: 'Practitioner', render: a => a.practitionerReference || '-' },
+          { key: 'date', header: 'Date/Time', render: a => a.startTime || '-' },
           { key: 'status', header: 'Status', render: a => React.createElement('span', {
             className: `badge ${a.status === 'booked' ? 'badge-primary' : a.status === 'fulfilled' ? 'badge-success' : a.status === 'cancelled' ? 'badge-danger' : 'badge-secondary'}`
           }, a.status || 'pending') }
@@ -622,12 +617,11 @@
       // Export App for testing
       window.App = App;
 
-      // Render the app
-      console.log('[Dashboard] Mounting React application...');
-      const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(React.createElement(App));
-      console.log('[Dashboard] Application ready!');
-    }
+    // Render the app
+    console.log('[Dashboard] Mounting React application...');
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(App));
+    console.log('[Dashboard] Application ready!');
   </script>
 </body>
 </html>

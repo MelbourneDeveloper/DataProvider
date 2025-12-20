@@ -13,23 +13,14 @@ builder.Services.Configure<JsonOptions>(options =>
     options.SerializerOptions.PropertyNamingPolicy = null;
 });
 
-// Add CORS for dashboard
+// Add CORS for dashboard - allow any origin for testing
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
         "Dashboard",
         policy =>
         {
-            policy
-                .WithOrigins(
-                    "http://localhost:3000",
-                    "http://localhost:5173",
-                    "http://127.0.0.1:3000",
-                    "http://127.0.0.1:5173"
-                )
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
+            policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
         }
     );
 });

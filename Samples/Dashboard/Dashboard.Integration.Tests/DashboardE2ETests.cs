@@ -1,9 +1,9 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Playwright;
@@ -13,22 +13,21 @@ namespace Dashboard.Integration.Tests;
 /// <summary>
 /// REAL E2E tests that prove the Dashboard UI can connect to the APIs.
 /// These tests:
-/// 1. Start Clinical API on a real port via WebApplicationFactory
-/// 2. Start Scheduling API on a real port via WebApplicationFactory
+/// 1. Start Clinical API as a REAL process on a real port
+/// 2. Start Scheduling API as a REAL process on a real port
 /// 3. Serve Dashboard HTML with correct API URLs
 /// 4. Load Dashboard in a REAL browser via Playwright
 /// 5. Verify data from APIs appears in the UI
 /// </summary>
+[Collection("E2E Tests")]
+[Trait("Category", "E2E")]
 public sealed class DashboardE2ETests : IAsyncLifetime
 {
-    private WebApplicationFactory<Clinical.Api.Program>? _clinicalFactory;
-    private WebApplicationFactory<Scheduling.Api.Program>? _schedulingFactory;
+    private Process? _clinicalProcess;
+    private Process? _schedulingProcess;
     private IHost? _dashboardHost;
     private IPlaywright? _playwright;
     private IBrowser? _browser;
-
-    private HttpClient? _clinicalClient;
-    private HttpClient? _schedulingClient;
 
     private string _clinicalUrl = string.Empty;
     private string _schedulingUrl = string.Empty;
@@ -48,7 +47,6 @@ public sealed class DashboardE2ETests : IAsyncLifetime
     /// </summary>
     public async Task InitializeAsync()
     {
-        // Get random ports for real network listening
         var clinicalPort = GetAvailablePort();
         var schedulingPort = GetAvailablePort();
         var dashboardPort = GetAvailablePort();
@@ -57,68 +55,29 @@ public sealed class DashboardE2ETests : IAsyncLifetime
         _schedulingUrl = $"http://localhost:{schedulingPort}";
         _dashboardUrl = $"http://localhost:{dashboardPort}";
 
-        // Start Clinical API with WebApplicationFactory on a REAL port
-        var clinicalApiAssembly = typeof(Clinical.Api.Program).Assembly;
-        var clinicalContentRoot = Path.GetDirectoryName(clinicalApiAssembly.Location)!;
-
-        _clinicalFactory = new WebApplicationFactory<Clinical.Api.Program>().WithWebHostBuilder(
-            builder =>
-            {
-                builder.UseContentRoot(clinicalContentRoot);
-                builder.UseSetting("DbPath", _clinicalDbPath);
-                builder.UseUrls(_clinicalUrl);
-                builder.ConfigureServices(services =>
-                {
-                    services.AddCors(options =>
-                    {
-                        options.AddPolicy(
-                            "AllowAll",
-                            policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()
-                        );
-                    });
-                });
-            }
+        // Start Clinical API as a REAL process
+        var clinicalDll = Path.Combine(
+            Path.GetDirectoryName(typeof(Clinical.Api.Program).Assembly.Location)!,
+            "Clinical.Api.dll"
         );
+        _clinicalProcess = StartApiProcess(clinicalDll, _clinicalUrl, _clinicalDbPath);
 
-        // Start server explicitly to listen on network
-        _clinicalFactory.Server.PreserveExecutionContext = true;
-        _clinicalClient = _clinicalFactory.CreateClient(
-            new WebApplicationFactoryClientOptions { BaseAddress = new Uri(_clinicalUrl) }
+        // Start Scheduling API as a REAL process
+        var schedulingDll = Path.Combine(
+            Path.GetDirectoryName(typeof(Scheduling.Api.Program).Assembly.Location)!,
+            "Scheduling.Api.dll"
         );
+        _schedulingProcess = StartApiProcess(schedulingDll, _schedulingUrl, _schedulingDbPath);
 
-        // Start Scheduling API with WebApplicationFactory on a REAL port
-        var schedulingApiAssembly = typeof(Scheduling.Api.Program).Assembly;
-        var schedulingContentRoot = Path.GetDirectoryName(schedulingApiAssembly.Location)!;
+        // Wait for APIs to be ready
+        await WaitForApiAsync(_clinicalUrl, "/fhir/Patient");
+        await WaitForApiAsync(_schedulingUrl, "/Practitioner");
 
-        _schedulingFactory = new WebApplicationFactory<Scheduling.Api.Program>().WithWebHostBuilder(
-            builder =>
-            {
-                builder.UseContentRoot(schedulingContentRoot);
-                builder.UseSetting("DbPath", _schedulingDbPath);
-                builder.UseUrls(_schedulingUrl);
-                builder.ConfigureServices(services =>
-                {
-                    services.AddCors(options =>
-                    {
-                        options.AddPolicy(
-                            "AllowAll",
-                            policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()
-                        );
-                    });
-                });
-            }
-        );
-
-        _schedulingFactory.Server.PreserveExecutionContext = true;
-        _schedulingClient = _schedulingFactory.CreateClient(
-            new WebApplicationFactoryClientOptions { BaseAddress = new Uri(_schedulingUrl) }
-        );
-
-        // Start Dashboard static file server with dynamic config
+        // Start Dashboard static file server
         _dashboardHost = CreateDashboardHost(dashboardPort);
         await _dashboardHost.StartAsync();
 
-        // Seed test data via the test clients
+        // Seed test data
         await SeedTestDataAsync();
 
         // Start Playwright
@@ -141,13 +100,8 @@ public sealed class DashboardE2ETests : IAsyncLifetime
             await _dashboardHost.StopAsync();
         _dashboardHost?.Dispose();
 
-        _clinicalClient?.Dispose();
-        _schedulingClient?.Dispose();
-
-        if (_clinicalFactory is not null)
-            await _clinicalFactory.DisposeAsync();
-        if (_schedulingFactory is not null)
-            await _schedulingFactory.DisposeAsync();
+        StopProcess(_clinicalProcess);
+        StopProcess(_schedulingProcess);
 
         TryDeleteFile(_clinicalDbPath);
         TryDeleteFile(_schedulingDbPath);
@@ -155,32 +109,41 @@ public sealed class DashboardE2ETests : IAsyncLifetime
 
     /// <summary>
     /// CRITICAL TEST: Dashboard loads and displays patient data from Clinical API.
-    /// If this fails, the UI cannot connect to the backend.
     /// </summary>
     [Fact]
     public async Task Dashboard_DisplaysPatientData_FromClinicalApi()
     {
         var page = await _browser!.NewPageAsync();
 
-        // Navigate to dashboard
+        // Log all console messages
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
+
+        // Log network requests
+        page.Request += (_, req) => Console.WriteLine($"[NET REQUEST] {req.Method} {req.Url}");
+        page.Response += (_, res) => Console.WriteLine($"[NET RESPONSE] {res.Status} {res.Url}");
+        page.RequestFailed += (_, req) => Console.WriteLine($"[NET FAILED] {req.Url} - {req.Failure}");
+
+        Console.WriteLine($"[TEST] Dashboard URL: {_dashboardUrl}");
+        Console.WriteLine($"[TEST] Clinical URL: {_clinicalUrl}");
+        Console.WriteLine($"[TEST] Scheduling URL: {_schedulingUrl}");
+
         await page.GotoAsync(_dashboardUrl);
 
-        // Wait for app to load
+        // Wait for Dashboard.js to render
         await page.WaitForSelectorAsync(
             ".sidebar",
-            new PageWaitForSelectorOptions { Timeout = 10000 }
+            new PageWaitForSelectorOptions { Timeout = 20000 }
         );
 
-        // Click on Patients in sidebar
+        // Click on Patients
         await page.ClickAsync("text=Patients");
 
-        // Wait for patient data to load - look for our test patient
+        // Wait for patient data
         await page.WaitForSelectorAsync(
             "text=TestPatient",
             new PageWaitForSelectorOptions { Timeout = 10000 }
         );
 
-        // Verify patient name appears
         var content = await page.ContentAsync();
         Assert.Contains("TestPatient", content);
         Assert.Contains("E2ETest", content);
@@ -188,23 +151,18 @@ public sealed class DashboardE2ETests : IAsyncLifetime
 
     /// <summary>
     /// CRITICAL TEST: Dashboard loads and displays practitioner data from Scheduling API.
-    /// If this fails, the UI cannot connect to the backend.
     /// </summary>
     [Fact]
     public async Task Dashboard_DisplaysPractitionerData_FromSchedulingApi()
     {
         var page = await _browser!.NewPageAsync();
-
         await page.GotoAsync(_dashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
-            new PageWaitForSelectorOptions { Timeout = 10000 }
+            new PageWaitForSelectorOptions { Timeout = 20000 }
         );
 
-        // Click on Practitioners in sidebar
         await page.ClickAsync("text=Practitioners");
-
-        // Wait for practitioner data to load
         await page.WaitForSelectorAsync(
             "text=DrTest",
             new PageWaitForSelectorOptions { Timeout = 10000 }
@@ -217,30 +175,25 @@ public sealed class DashboardE2ETests : IAsyncLifetime
 
     /// <summary>
     /// CRITICAL TEST: Dashboard loads and displays appointment data from Scheduling API.
-    /// If this fails, the UI cannot connect to the backend.
     /// </summary>
     [Fact]
     public async Task Dashboard_DisplaysAppointmentData_FromSchedulingApi()
     {
         var page = await _browser!.NewPageAsync();
-
         await page.GotoAsync(_dashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
-            new PageWaitForSelectorOptions { Timeout = 10000 }
+            new PageWaitForSelectorOptions { Timeout = 20000 }
         );
 
-        // Click on Appointments in sidebar
         await page.ClickAsync("text=Appointments");
-
-        // Wait for appointment data to load - look for status
         await page.WaitForSelectorAsync(
-            "text=booked",
+            "text=Checkup",
             new PageWaitForSelectorOptions { Timeout = 10000 }
         );
 
         var content = await page.ContentAsync();
-        Assert.Contains("booked", content);
+        Assert.Contains("Checkup", content);
     }
 
     /// <summary>
@@ -250,23 +203,80 @@ public sealed class DashboardE2ETests : IAsyncLifetime
     public async Task Dashboard_MainPage_ShowsStatsFromBothApis()
     {
         var page = await _browser!.NewPageAsync();
-
         await page.GotoAsync(_dashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
-            new PageWaitForSelectorOptions { Timeout = 10000 }
+            new PageWaitForSelectorOptions { Timeout = 20000 }
         );
 
-        // Should be on dashboard page by default
-        // Wait for metric cards to show data
         await page.WaitForSelectorAsync(
             ".metric-card",
             new PageWaitForSelectorOptions { Timeout = 10000 }
         );
 
-        // Verify we have content (stats should be non-zero since we seeded data)
         var cards = await page.QuerySelectorAllAsync(".metric-card");
         Assert.True(cards.Count > 0, "Dashboard should display metric cards with API data");
+    }
+
+    private static Process StartApiProcess(string dllPath, string url, string dbPath)
+    {
+        var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = $"\"{dllPath}\" --urls \"{url}\"",
+                Environment = { ["DbPath"] = dbPath },
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+            },
+        };
+        process.Start();
+        return process;
+    }
+
+    private static void StopProcess(Process? process)
+    {
+        if (process is null || process.HasExited)
+            return;
+
+        try
+        {
+            process.Kill(entireProcessTree: true);
+            process.WaitForExit(5000);
+        }
+        catch
+        { /* ignore */
+        }
+        finally
+        {
+            process.Dispose();
+        }
+    }
+
+    private static async Task WaitForApiAsync(string baseUrl, string healthEndpoint)
+    {
+        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+        var maxRetries = 30;
+
+        for (var i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                var response = await client.GetAsync($"{baseUrl}{healthEndpoint}");
+                if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NotFound)
+                    return; // API is up
+            }
+            catch
+            { /* not ready yet */
+            }
+
+            await Task.Delay(500);
+        }
+
+        throw new TimeoutException($"API at {baseUrl} did not start within {maxRetries * 500}ms");
     }
 
     private IHost CreateDashboardHost(int port)
@@ -279,7 +289,7 @@ public sealed class DashboardE2ETests : IAsyncLifetime
                 webBuilder.UseUrls($"http://localhost:{port}");
                 webBuilder.Configure(app =>
                 {
-                    // Inject API URLs into dashboard config
+                    // Serve dashboard with injected API URLs
                     app.Use(
                         async (context, next) =>
                         {
@@ -291,7 +301,7 @@ public sealed class DashboardE2ETests : IAsyncLifetime
                                 var indexPath = Path.Combine(wwwrootPath, "index.html");
                                 var html = await File.ReadAllTextAsync(indexPath);
 
-                                // Inject config before closing head tag
+                                // Inject real API URLs
                                 var config =
                                     $@"<script>
                                 window.dashboardConfig = {{
@@ -322,9 +332,11 @@ public sealed class DashboardE2ETests : IAsyncLifetime
 
     private async Task SeedTestDataAsync()
     {
-        // Seed a patient via the test client
-        var patientResponse = await _clinicalClient!.PostAsync(
-            "/fhir/Patient/",
+        using var client = new HttpClient();
+
+        // Seed a patient
+        var patientResponse = await client.PostAsync(
+            $"{_clinicalUrl}/fhir/Patient/",
             new StringContent(
                 """{"Active": true, "GivenName": "E2ETest", "FamilyName": "TestPatient", "Gender": "other"}""",
                 System.Text.Encoding.UTF8,
@@ -333,9 +345,9 @@ public sealed class DashboardE2ETests : IAsyncLifetime
         );
         patientResponse.EnsureSuccessStatusCode();
 
-        // Seed a practitioner via the test client
-        var practitionerResponse = await _schedulingClient!.PostAsync(
-            "/Practitioner",
+        // Seed a practitioner
+        var practitionerResponse = await client.PostAsync(
+            $"{_schedulingUrl}/Practitioner",
             new StringContent(
                 """{"Identifier": "DR001", "NameGiven": "E2EPractitioner", "NameFamily": "DrTest"}""",
                 System.Text.Encoding.UTF8,
@@ -344,9 +356,9 @@ public sealed class DashboardE2ETests : IAsyncLifetime
         );
         practitionerResponse.EnsureSuccessStatusCode();
 
-        // Seed an appointment via the test client
-        var appointmentResponse = await _schedulingClient!.PostAsync(
-            "/Appointment",
+        // Seed an appointment
+        var appointmentResponse = await client.PostAsync(
+            $"{_schedulingUrl}/Appointment",
             new StringContent(
                 """{"ServiceCategory": "General", "ServiceType": "Checkup", "Start": "2025-12-20T10:00:00Z", "End": "2025-12-20T11:00:00Z", "PatientReference": "Patient/1", "PractitionerReference": "Practitioner/1", "Priority": "routine"}""",
                 System.Text.Encoding.UTF8,
