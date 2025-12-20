@@ -6,25 +6,12 @@ using System.Text.Json;
 
 /// <summary>
 /// E2E tests for Condition FHIR endpoints - REAL database, NO mocks.
+/// Each test creates its own isolated factory and database.
 /// </summary>
-public sealed class ConditionEndpointTests : IDisposable
+public sealed class ConditionEndpointTests
 {
-    private readonly ClinicalApiFactory _factory;
-    private readonly HttpClient _client;
 
-    public ConditionEndpointTests()
-    {
-        _factory = new ClinicalApiFactory();
-        _client = _factory.CreateClient();
-    }
-
-    public void Dispose()
-    {
-        _client.Dispose();
-        _factory.Dispose();
-    }
-
-    private async Task<string> CreateTestPatientAsync()
+    private static async Task<string> CreateTestPatientAsync(HttpClient client)
     {
         var patient = new
         {
@@ -34,7 +21,7 @@ public sealed class ConditionEndpointTests : IDisposable
             Gender = "female",
         };
 
-        var response = await _client.PostAsJsonAsync("/fhir/Patient/", patient);
+        var response = await client.PostAsJsonAsync("/fhir/Patient/", patient);
         var created = await response.Content.ReadFromJsonAsync<JsonElement>();
         return created.GetProperty("Id").GetString()!;
     }
@@ -42,9 +29,11 @@ public sealed class ConditionEndpointTests : IDisposable
     [Fact]
     public async Task GetConditionsByPatient_ReturnsEmptyList_WhenNoConditions()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
 
-        var response = await _client.GetAsync($"/fhir/Patient/{patientId}/Condition/");
+        var response = await client.GetAsync($"/fhir/Patient/{patientId}/Condition/");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
@@ -54,7 +43,9 @@ public sealed class ConditionEndpointTests : IDisposable
     [Fact]
     public async Task CreateCondition_ReturnsCreated_WithValidData()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
             ClinicalStatus = "active",
@@ -68,7 +59,7 @@ public sealed class ConditionEndpointTests : IDisposable
             NoteText = "Patient presents with cold symptoms",
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/Condition/",
             request
         );
@@ -84,6 +75,8 @@ public sealed class ConditionEndpointTests : IDisposable
     [Fact]
     public async Task CreateCondition_WithAllClinicalStatuses()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var statuses = new[]
         {
             "active",
@@ -96,7 +89,7 @@ public sealed class ConditionEndpointTests : IDisposable
 
         foreach (var status in statuses)
         {
-            var patientId = await CreateTestPatientAsync();
+            var patientId = await CreateTestPatientAsync(client);
             var request = new
             {
                 ClinicalStatus = status,
@@ -105,7 +98,7 @@ public sealed class ConditionEndpointTests : IDisposable
                 CodeDisplay = "General examination",
             };
 
-            var response = await _client.PostAsJsonAsync(
+            var response = await client.PostAsJsonAsync(
                 $"/fhir/Patient/{patientId}/Condition/",
                 request
             );
@@ -119,11 +112,13 @@ public sealed class ConditionEndpointTests : IDisposable
     [Fact]
     public async Task CreateCondition_WithAllSeverities()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var severities = new[] { "mild", "moderate", "severe" };
 
         foreach (var severity in severities)
         {
-            var patientId = await CreateTestPatientAsync();
+            var patientId = await CreateTestPatientAsync(client);
             var request = new
             {
                 ClinicalStatus = "active",
@@ -133,7 +128,7 @@ public sealed class ConditionEndpointTests : IDisposable
                 CodeDisplay = "Headache",
             };
 
-            var response = await _client.PostAsJsonAsync(
+            var response = await client.PostAsJsonAsync(
                 $"/fhir/Patient/{patientId}/Condition/",
                 request
             );
@@ -147,6 +142,8 @@ public sealed class ConditionEndpointTests : IDisposable
     [Fact]
     public async Task CreateCondition_WithVerificationStatuses()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var statuses = new[]
         {
             "unconfirmed",
@@ -158,7 +155,7 @@ public sealed class ConditionEndpointTests : IDisposable
 
         foreach (var status in statuses)
         {
-            var patientId = await CreateTestPatientAsync();
+            var patientId = await CreateTestPatientAsync(client);
             var request = new
             {
                 ClinicalStatus = "active",
@@ -168,7 +165,7 @@ public sealed class ConditionEndpointTests : IDisposable
                 CodeDisplay = "Low back pain",
             };
 
-            var response = await _client.PostAsJsonAsync(
+            var response = await client.PostAsJsonAsync(
                 $"/fhir/Patient/{patientId}/Condition/",
                 request
             );
@@ -182,7 +179,9 @@ public sealed class ConditionEndpointTests : IDisposable
     [Fact]
     public async Task GetConditionsByPatient_ReturnsConditions_WhenExist()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
         var request1 = new
         {
             ClinicalStatus = "active",
@@ -198,10 +197,10 @@ public sealed class ConditionEndpointTests : IDisposable
             CodeDisplay = "Acute pharyngitis, unspecified",
         };
 
-        await _client.PostAsJsonAsync($"/fhir/Patient/{patientId}/Condition/", request1);
-        await _client.PostAsJsonAsync($"/fhir/Patient/{patientId}/Condition/", request2);
+        await client.PostAsJsonAsync($"/fhir/Patient/{patientId}/Condition/", request1);
+        await client.PostAsJsonAsync($"/fhir/Patient/{patientId}/Condition/", request2);
 
-        var response = await _client.GetAsync($"/fhir/Patient/{patientId}/Condition/");
+        var response = await client.GetAsync($"/fhir/Patient/{patientId}/Condition/");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var conditions = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -212,7 +211,9 @@ public sealed class ConditionEndpointTests : IDisposable
     [Fact]
     public async Task CreateCondition_SetsRecordedDate()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
             ClinicalStatus = "active",
@@ -221,7 +222,7 @@ public sealed class ConditionEndpointTests : IDisposable
             CodeDisplay = "Essential hypertension",
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/Condition/",
             request
         );
@@ -235,7 +236,9 @@ public sealed class ConditionEndpointTests : IDisposable
     [Fact]
     public async Task CreateCondition_SetsVersionIdToOne()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
             ClinicalStatus = "active",
@@ -244,7 +247,7 @@ public sealed class ConditionEndpointTests : IDisposable
             CodeDisplay = "GERD",
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/Condition/",
             request
         );
@@ -256,7 +259,9 @@ public sealed class ConditionEndpointTests : IDisposable
     [Fact]
     public async Task CreateCondition_WithEncounterReference()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
 
         var encounterRequest = new
         {
@@ -264,7 +269,7 @@ public sealed class ConditionEndpointTests : IDisposable
             Class = "ambulatory",
             PeriodStart = "2024-01-15T09:00:00Z",
         };
-        var encounterResponse = await _client.PostAsJsonAsync(
+        var encounterResponse = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/Encounter/",
             encounterRequest
         );
@@ -280,7 +285,7 @@ public sealed class ConditionEndpointTests : IDisposable
             EncounterReference = encounterId,
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/Condition/",
             conditionRequest
         );
@@ -292,7 +297,9 @@ public sealed class ConditionEndpointTests : IDisposable
     [Fact]
     public async Task CreateCondition_WithNotes()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
             ClinicalStatus = "active",
@@ -302,7 +309,7 @@ public sealed class ConditionEndpointTests : IDisposable
             NoteText = "Patient started on SSRI therapy. Follow up in 4 weeks.",
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/Condition/",
             request
         );

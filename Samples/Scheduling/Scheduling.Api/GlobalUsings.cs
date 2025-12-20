@@ -1,8 +1,6 @@
 global using System;
-global using System.Collections.Generic;
 global using System.Collections.Immutable;
 global using System.Data;
-global using DataProvider;
 global using Generated;
 global using Microsoft.Data.Sqlite;
 global using Microsoft.Extensions.Logging;
@@ -10,10 +8,8 @@ global using Outcome;
 global using Selecta;
 global using Sync;
 global using Sync.SQLite;
-#pragma warning disable IDE0005
 // Sync result type aliases
 global using BoolSyncError = Outcome.Result<bool, Sync.SyncError>.Error<bool, Sync.SyncError>;
-global using BoolSyncOk = Outcome.Result<bool, Sync.SyncError>.Ok<bool, Sync.SyncError>;
 global using GetAllPractitionersError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetAllPractitioners>,
     Selecta.SqlError
@@ -120,4 +116,3 @@ global using SyncLogListOk = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>,
     Sync.SyncError
 >.Ok<System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>, Sync.SyncError>;
-#pragma warning restore IDE0005

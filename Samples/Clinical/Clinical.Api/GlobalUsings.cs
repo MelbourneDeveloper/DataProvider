@@ -1,8 +1,6 @@
 global using System;
-global using System.Collections.Generic;
 global using System.Collections.Immutable;
 global using System.Data;
-global using DataProvider;
 global using Generated;
 global using Microsoft.Data.Sqlite;
 global using Microsoft.Extensions.Logging;
@@ -85,7 +83,6 @@ global using SearchPatientsOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.SearchPatients>,
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.SearchPatients>, Selecta.SqlError>;
-#pragma warning disable IDE0005
 // Sync result type aliases
 global using StringSyncError = Outcome.Result<string, Sync.SyncError>.Error<string, Sync.SyncError>;
 global using StringSyncOk = Outcome.Result<string, Sync.SyncError>.Ok<string, Sync.SyncError>;
@@ -97,4 +94,3 @@ global using SyncLogListOk = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>,
     Sync.SyncError
 >.Ok<System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>, Sync.SyncError>;
-#pragma warning restore IDE0005

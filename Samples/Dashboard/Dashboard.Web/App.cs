@@ -85,7 +85,7 @@ namespace Dashboard
                         children: new[]
                         {
                             // Header
-                            Header.Render(
+                            Components.Header.Render(
                                 title: GetPageTitle(state.ActiveView),
                                 searchQuery: state.SearchQuery,
                                 onSearchChange: query =>

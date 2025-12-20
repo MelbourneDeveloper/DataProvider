@@ -4,7 +4,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Migration</RootNamespace>
     <!-- Disable warnings that are not relevant -->
-    <NoWarn>$(NoWarn);CA1848;CA2254;CA1720;CA1724;IDE0005</NoWarn>
+    <NoWarn>$(NoWarn);CA1848;CA2254;CA1720;CA1724</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

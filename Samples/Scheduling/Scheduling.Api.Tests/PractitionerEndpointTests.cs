@@ -6,28 +6,17 @@ using System.Text.Json;
 
 /// <summary>
 /// E2E tests for Practitioner FHIR endpoints - REAL database, NO mocks.
+/// Each test creates its own isolated factory and database.
 /// </summary>
-public sealed class PractitionerEndpointTests : IDisposable
+public sealed class PractitionerEndpointTests
 {
-    private readonly SchedulingApiFactory _factory;
-    private readonly HttpClient _client;
-
-    public PractitionerEndpointTests()
-    {
-        _factory = new SchedulingApiFactory();
-        _client = _factory.CreateClient();
-    }
-
-    public void Dispose()
-    {
-        _client.Dispose();
-        _factory.Dispose();
-    }
-
     [Fact]
     public async Task GetAllPractitioners_ReturnsEmptyList_WhenNoPractitioners()
     {
-        var response = await _client.GetAsync("/Practitioner");
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/Practitioner");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
@@ -37,6 +26,9 @@ public sealed class PractitionerEndpointTests : IDisposable
     [Fact]
     public async Task CreatePractitioner_ReturnsCreated_WithValidData()
     {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
         var request = new
         {
             Identifier = "NPI-12345",
@@ -48,7 +40,7 @@ public sealed class PractitionerEndpointTests : IDisposable
             TelecomPhone = "555-1234",
         };
 
-        var response = await _client.PostAsJsonAsync("/Practitioner", request);
+        var response = await client.PostAsJsonAsync("/Practitioner", request);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var practitioner = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -61,6 +53,9 @@ public sealed class PractitionerEndpointTests : IDisposable
     [Fact]
     public async Task GetPractitionerById_ReturnsPractitioner_WhenExists()
     {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
         var createRequest = new
         {
             Identifier = "NPI-GetById",
@@ -69,11 +64,11 @@ public sealed class PractitionerEndpointTests : IDisposable
             Specialty = "Pediatrics",
         };
 
-        var createResponse = await _client.PostAsJsonAsync("/Practitioner", createRequest);
+        var createResponse = await client.PostAsJsonAsync("/Practitioner", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
         var practitionerId = created.GetProperty("Id").GetString();
 
-        var response = await _client.GetAsync($"/Practitioner/{practitionerId}");
+        var response = await client.GetAsync($"/Practitioner/{practitionerId}");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var practitioner = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -84,7 +79,10 @@ public sealed class PractitionerEndpointTests : IDisposable
     [Fact]
     public async Task GetPractitionerById_ReturnsNotFound_WhenNotExists()
     {
-        var response = await _client.GetAsync("/Practitioner/nonexistent-id-12345");
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/Practitioner/nonexistent-id-12345");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -92,6 +90,9 @@ public sealed class PractitionerEndpointTests : IDisposable
     [Fact]
     public async Task SearchPractitionersBySpecialty_FindsPractitioners()
     {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
         var request = new
         {
             Identifier = "NPI-Search",
@@ -100,9 +101,9 @@ public sealed class PractitionerEndpointTests : IDisposable
             Specialty = "Orthopedics",
         };
 
-        await _client.PostAsJsonAsync("/Practitioner", request);
+        await client.PostAsJsonAsync("/Practitioner", request);
 
-        var response = await _client.GetAsync("/Practitioner/_search?specialty=Orthopedics");
+        var response = await client.GetAsync("/Practitioner/_search?specialty=Orthopedics");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var practitioners = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -116,6 +117,9 @@ public sealed class PractitionerEndpointTests : IDisposable
     [Fact]
     public async Task SearchPractitioners_WithoutSpecialty_ReturnsAll()
     {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
         var request = new
         {
             Identifier = "NPI-All",
@@ -124,9 +128,9 @@ public sealed class PractitionerEndpointTests : IDisposable
             Specialty = "Dermatology",
         };
 
-        await _client.PostAsJsonAsync("/Practitioner", request);
+        await client.PostAsJsonAsync("/Practitioner", request);
 
-        var response = await _client.GetAsync("/Practitioner/_search");
+        var response = await client.GetAsync("/Practitioner/_search");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var practitioners = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -137,6 +141,9 @@ public sealed class PractitionerEndpointTests : IDisposable
     [Fact]
     public async Task CreatePractitioner_SetsActiveToTrue()
     {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
         var request = new
         {
             Identifier = "NPI-Active",
@@ -144,7 +151,7 @@ public sealed class PractitionerEndpointTests : IDisposable
             NameGiven = "Michael",
         };
 
-        var response = await _client.PostAsJsonAsync("/Practitioner", request);
+        var response = await client.PostAsJsonAsync("/Practitioner", request);
         var practitioner = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         Assert.True(practitioner.GetProperty("Active").GetBoolean());
@@ -153,6 +160,9 @@ public sealed class PractitionerEndpointTests : IDisposable
     [Fact]
     public async Task CreatePractitioner_GeneratesUniqueIds()
     {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
         var request = new
         {
             Identifier = "NPI-UniqueId",
@@ -160,8 +170,8 @@ public sealed class PractitionerEndpointTests : IDisposable
             NameGiven = "Emily",
         };
 
-        var response1 = await _client.PostAsJsonAsync("/Practitioner", request);
-        var response2 = await _client.PostAsJsonAsync("/Practitioner", request);
+        var response1 = await client.PostAsJsonAsync("/Practitioner", request);
+        var response2 = await client.PostAsJsonAsync("/Practitioner", request);
 
         var practitioner1 = await response1.Content.ReadFromJsonAsync<JsonElement>();
         var practitioner2 = await response2.Content.ReadFromJsonAsync<JsonElement>();
@@ -175,6 +185,9 @@ public sealed class PractitionerEndpointTests : IDisposable
     [Fact]
     public async Task CreatePractitioner_WithQualification()
     {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
         var request = new
         {
             Identifier = "NPI-Qual",
@@ -183,7 +196,7 @@ public sealed class PractitionerEndpointTests : IDisposable
             Qualification = "MD, PhD, FACC",
         };
 
-        var response = await _client.PostAsJsonAsync("/Practitioner", request);
+        var response = await client.PostAsJsonAsync("/Practitioner", request);
         var practitioner = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         Assert.Equal("MD, PhD, FACC", practitioner.GetProperty("Qualification").GetString());
@@ -192,6 +205,9 @@ public sealed class PractitionerEndpointTests : IDisposable
     [Fact]
     public async Task CreatePractitioner_WithContactInfo()
     {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
         var request = new
         {
             Identifier = "NPI-Contact",
@@ -201,7 +217,7 @@ public sealed class PractitionerEndpointTests : IDisposable
             TelecomPhone = "555-9876",
         };
 
-        var response = await _client.PostAsJsonAsync("/Practitioner", request);
+        var response = await client.PostAsJsonAsync("/Practitioner", request);
         var practitioner = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         Assert.Equal(
@@ -214,6 +230,9 @@ public sealed class PractitionerEndpointTests : IDisposable
     [Fact]
     public async Task GetAllPractitioners_ReturnsPractitioners_WhenExist()
     {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
         var request1 = new
         {
             Identifier = "NPI-All1",
@@ -229,10 +248,10 @@ public sealed class PractitionerEndpointTests : IDisposable
             Specialty = "Psychiatry",
         };
 
-        await _client.PostAsJsonAsync("/Practitioner", request1);
-        await _client.PostAsJsonAsync("/Practitioner", request2);
+        await client.PostAsJsonAsync("/Practitioner", request1);
+        await client.PostAsJsonAsync("/Practitioner", request2);
 
-        var response = await _client.GetAsync("/Practitioner");
+        var response = await client.GetAsync("/Practitioner");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var practitioners = await response.Content.ReadFromJsonAsync<JsonElement[]>();

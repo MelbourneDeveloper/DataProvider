@@ -1,5 +1,3 @@
-#pragma warning disable IDE0005 // Using directive is unnecessary - these are used for pattern matching
-
 // Type aliases for Result types to reduce verbosity in DataProvider.Example.Tests
 global using CustomerListError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.Customer>,

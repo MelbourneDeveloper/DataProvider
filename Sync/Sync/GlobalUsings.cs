@@ -1,5 +1,3 @@
-#pragma warning disable IDE0005 // Using directive is unnecessary - these are used for pattern matching
-
 // Type aliases for Result types to reduce verbosity
 global using BatchApplyResultError = Outcome.Result<Sync.BatchApplyResult, Sync.SyncError>.Error<
     Sync.BatchApplyResult,
@@ -52,14 +50,6 @@ global using SyncBatchOk = Outcome.Result<Sync.SyncBatch, Sync.SyncError>.Ok<
     Sync.SyncError
 >;
 global using SyncBatchResult = Outcome.Result<Sync.SyncBatch, Sync.SyncError>;
-global using SyncLogEntryError = Outcome.Result<Sync.SyncLogEntry, Sync.SyncError>.Error<
-    Sync.SyncLogEntry,
-    Sync.SyncError
->;
-global using SyncLogEntryOk = Outcome.Result<Sync.SyncLogEntry, Sync.SyncError>.Ok<
-    Sync.SyncLogEntry,
-    Sync.SyncError
->;
 global using SyncLogEntryResult = Outcome.Result<Sync.SyncLogEntry, Sync.SyncError>;
 global using SyncLogListError = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>,

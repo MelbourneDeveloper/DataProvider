@@ -57,15 +57,7 @@ namespace Dashboard
             var loadingScreen = Script.Call<object>("document.getElementById", "loading-screen");
             if (loadingScreen != null)
             {
-                Script.Set(
-                    loadingScreen,
-                    "classList",
-                    Script.Call<object>(
-                        Script.Get<object>(loadingScreen, "classList"),
-                        "add",
-                        "hidden"
-                    )
-                );
+                Script.Write("loadingScreen.classList.add('hidden')");
             }
         }
 

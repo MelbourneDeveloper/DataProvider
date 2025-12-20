@@ -3,7 +3,6 @@ namespace Clinical.Sync;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Sync;
 
 internal static class Program
 {

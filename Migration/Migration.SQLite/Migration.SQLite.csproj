@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Migration.SQLite</RootNamespace>
-    <NoWarn>$(NoWarn);CA1848;CA2254;CA1305;CA2100;IDE0005</NoWarn>
+    <NoWarn>$(NoWarn);CA1848;CA2254;CA1305;CA2100</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

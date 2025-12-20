@@ -7,28 +7,17 @@ using System.Text.Json;
 /// <summary>
 /// E2E tests for Sync endpoints - REAL database, NO mocks.
 /// Tests sync log generation and origin tracking.
+/// Each test creates its own isolated factory and database.
 /// </summary>
-public sealed class SyncEndpointTests : IDisposable
+public sealed class SyncEndpointTests
 {
-    private readonly SchedulingApiFactory _factory;
-    private readonly HttpClient _client;
-
-    public SyncEndpointTests()
-    {
-        _factory = new SchedulingApiFactory();
-        _client = _factory.CreateClient();
-    }
-
-    public void Dispose()
-    {
-        _client.Dispose();
-        _factory.Dispose();
-    }
-
     [Fact]
     public async Task GetSyncOrigin_ReturnsOriginId()
     {
-        var response = await _client.GetAsync("/sync/origin");
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/sync/origin");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -40,7 +29,10 @@ public sealed class SyncEndpointTests : IDisposable
     [Fact]
     public async Task GetSyncChanges_ReturnsEmptyList_WhenNoChanges()
     {
-        var response = await _client.GetAsync("/sync/changes?fromVersion=999999");
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/sync/changes?fromVersion=999999");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
@@ -50,6 +42,8 @@ public sealed class SyncEndpointTests : IDisposable
     [Fact]
     public async Task GetSyncChanges_ReturnChanges_AfterPractitionerCreated()
     {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
         var practitionerRequest = new
         {
             Identifier = "NPI-Sync",
@@ -58,9 +52,9 @@ public sealed class SyncEndpointTests : IDisposable
             Specialty = "Internal Medicine",
         };
 
-        await _client.PostAsJsonAsync("/Practitioner", practitionerRequest);
+        await client.PostAsJsonAsync("/Practitioner", practitionerRequest);
 
-        var response = await _client.GetAsync("/sync/changes?fromVersion=0");
+        var response = await client.GetAsync("/sync/changes?fromVersion=0");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -71,6 +65,8 @@ public sealed class SyncEndpointTests : IDisposable
     [Fact]
     public async Task GetSyncChanges_RespectsLimitParameter()
     {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
         for (var i = 0; i < 5; i++)
         {
             var practitionerRequest = new
@@ -79,10 +75,10 @@ public sealed class SyncEndpointTests : IDisposable
                 NameFamily = $"LimitTest{i}",
                 NameGiven = "Doctor",
             };
-            await _client.PostAsJsonAsync("/Practitioner", practitionerRequest);
+            await client.PostAsJsonAsync("/Practitioner", practitionerRequest);
         }
 
-        var response = await _client.GetAsync("/sync/changes?fromVersion=0&limit=2");
+        var response = await client.GetAsync("/sync/changes?fromVersion=0&limit=2");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -93,15 +89,17 @@ public sealed class SyncEndpointTests : IDisposable
     [Fact]
     public async Task GetSyncChanges_TracksPractitionerChanges()
     {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
         var practitionerRequest = new
         {
             Identifier = "NPI-TrackPrac",
             NameFamily = "TrackTest",
             NameGiven = "Doctor",
         };
-        await _client.PostAsJsonAsync("/Practitioner", practitionerRequest);
+        await client.PostAsJsonAsync("/Practitioner", practitionerRequest);
 
-        var response = await _client.GetAsync("/sync/changes?fromVersion=0");
+        var response = await client.GetAsync("/sync/changes?fromVersion=0");
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(changes);
@@ -114,13 +112,15 @@ public sealed class SyncEndpointTests : IDisposable
     [Fact]
     public async Task GetSyncChanges_TracksAppointmentChanges()
     {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
         var practitionerRequest = new
         {
             Identifier = "NPI-TrackAppt",
             NameFamily = "TrackApptTest",
             NameGiven = "Doctor",
         };
-        var pracResponse = await _client.PostAsJsonAsync("/Practitioner", practitionerRequest);
+        var pracResponse = await client.PostAsJsonAsync("/Practitioner", practitionerRequest);
         var practitioner = await pracResponse.Content.ReadFromJsonAsync<JsonElement>();
         var practitionerId = practitioner.GetProperty("Id").GetString();
 
@@ -134,9 +134,9 @@ public sealed class SyncEndpointTests : IDisposable
             PatientReference = "Patient/patient-sync",
             PractitionerReference = $"Practitioner/{practitionerId}",
         };
-        await _client.PostAsJsonAsync("/Appointment", appointmentRequest);
+        await client.PostAsJsonAsync("/Appointment", appointmentRequest);
 
-        var response = await _client.GetAsync("/sync/changes?fromVersion=0");
+        var response = await client.GetAsync("/sync/changes?fromVersion=0");
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(changes);
@@ -146,15 +146,17 @@ public sealed class SyncEndpointTests : IDisposable
     [Fact]
     public async Task GetSyncChanges_ContainsOperation()
     {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
         var practitionerRequest = new
         {
             Identifier = "NPI-Op",
             NameFamily = "OperationTest",
             NameGiven = "Doctor",
         };
-        await _client.PostAsJsonAsync("/Practitioner", practitionerRequest);
+        await client.PostAsJsonAsync("/Practitioner", practitionerRequest);
 
-        var response = await _client.GetAsync("/sync/changes?fromVersion=0");
+        var response = await client.GetAsync("/sync/changes?fromVersion=0");
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(changes);
@@ -162,8 +164,9 @@ public sealed class SyncEndpointTests : IDisposable
             changes,
             c =>
             {
-                var op = c.GetProperty("Operation").GetString();
-                return op == "INSERT" || op == "UPDATE" || op == "DELETE";
+                // Operation is serialized as integer (0=Insert, 1=Update, 2=Delete)
+                var opValue = c.GetProperty("Operation").GetInt32();
+                return opValue >= 0 && opValue <= 2;
             }
         );
     }

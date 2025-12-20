@@ -108,9 +108,9 @@ namespace Dashboard.React
 
         /// <summary>
         /// React useCallback hook - memoizes callback functions.
+        /// Note: In C# 7.2, we cannot use Delegate constraint, so callback must be cast appropriately.
         /// </summary>
         public static T UseCallback<T>(T callback, object[] deps)
-            where T : Delegate
         {
             return Script.Call<T>("React.useCallback", callback, deps);
         }

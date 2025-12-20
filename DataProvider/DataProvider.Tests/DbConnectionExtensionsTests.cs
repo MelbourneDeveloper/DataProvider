@@ -1,6 +1,5 @@
 using Microsoft.Data.Sqlite;
 using Outcome;
-using Selecta;
 using Xunit;
 
 namespace DataProvider.Tests;

@@ -1,5 +1,3 @@
-#pragma warning disable IDE0005 // Using directive is unnecessary - these are used for pattern matching
-
 global using Microsoft.Data.Sqlite;
 global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.Logging.Abstractions;

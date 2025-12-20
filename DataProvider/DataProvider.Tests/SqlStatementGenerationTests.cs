@@ -1,5 +1,4 @@
 using Lql.SQLite;
-using Outcome;
 using Selecta;
 using Xunit;
 

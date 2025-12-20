@@ -1,5 +1,3 @@
-#pragma warning disable IDE0005 // Using directive is unnecessary - these are used for pattern matching
-
 global using Xunit;
 // Type aliases for Outcome Result types to simplify test assertions
 global using BatchApplyResultError = Outcome.Result<Sync.BatchApplyResult, Sync.SyncError>.Error<

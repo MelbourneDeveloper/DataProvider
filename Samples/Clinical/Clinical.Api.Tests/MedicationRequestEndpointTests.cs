@@ -6,25 +6,12 @@ using System.Text.Json;
 
 /// <summary>
 /// E2E tests for MedicationRequest FHIR endpoints - REAL database, NO mocks.
+/// Each test creates its own isolated factory and database.
 /// </summary>
-public sealed class MedicationRequestEndpointTests : IDisposable
+public sealed class MedicationRequestEndpointTests
 {
-    private readonly ClinicalApiFactory _factory;
-    private readonly HttpClient _client;
 
-    public MedicationRequestEndpointTests()
-    {
-        _factory = new ClinicalApiFactory();
-        _client = _factory.CreateClient();
-    }
-
-    public void Dispose()
-    {
-        _client.Dispose();
-        _factory.Dispose();
-    }
-
-    private async Task<string> CreateTestPatientAsync()
+    private static async Task<string> CreateTestPatientAsync(HttpClient client)
     {
         var patient = new
         {
@@ -34,7 +21,7 @@ public sealed class MedicationRequestEndpointTests : IDisposable
             Gender = "male",
         };
 
-        var response = await _client.PostAsJsonAsync("/fhir/Patient/", patient);
+        var response = await client.PostAsJsonAsync("/fhir/Patient/", patient);
         var created = await response.Content.ReadFromJsonAsync<JsonElement>();
         return created.GetProperty("Id").GetString()!;
     }
@@ -42,9 +29,11 @@ public sealed class MedicationRequestEndpointTests : IDisposable
     [Fact]
     public async Task GetMedicationsByPatient_ReturnsEmptyList_WhenNoMedications()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
 
-        var response = await _client.GetAsync($"/fhir/Patient/{patientId}/MedicationRequest/");
+        var response = await client.GetAsync($"/fhir/Patient/{patientId}/MedicationRequest/");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
@@ -54,7 +43,9 @@ public sealed class MedicationRequestEndpointTests : IDisposable
     [Fact]
     public async Task CreateMedicationRequest_ReturnsCreated_WithValidData()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
             Status = "active",
@@ -68,7 +59,7 @@ public sealed class MedicationRequestEndpointTests : IDisposable
             Refills = 3,
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/MedicationRequest/",
             request
         );
@@ -88,11 +79,13 @@ public sealed class MedicationRequestEndpointTests : IDisposable
     [Fact]
     public async Task CreateMedicationRequest_WithAllStatuses()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var statuses = new[] { "active", "on-hold", "cancelled", "completed", "stopped", "draft" };
 
         foreach (var status in statuses)
         {
-            var patientId = await CreateTestPatientAsync();
+            var patientId = await CreateTestPatientAsync(client);
             var request = new
             {
                 Status = status,
@@ -103,7 +96,7 @@ public sealed class MedicationRequestEndpointTests : IDisposable
                 Refills = 0,
             };
 
-            var response = await _client.PostAsJsonAsync(
+            var response = await client.PostAsJsonAsync(
                 $"/fhir/Patient/{patientId}/MedicationRequest/",
                 request
             );
@@ -117,6 +110,8 @@ public sealed class MedicationRequestEndpointTests : IDisposable
     [Fact]
     public async Task CreateMedicationRequest_WithAllIntents()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var intents = new[]
         {
             "proposal",
@@ -131,7 +126,7 @@ public sealed class MedicationRequestEndpointTests : IDisposable
 
         foreach (var intent in intents)
         {
-            var patientId = await CreateTestPatientAsync();
+            var patientId = await CreateTestPatientAsync(client);
             var request = new
             {
                 Status = "active",
@@ -142,7 +137,7 @@ public sealed class MedicationRequestEndpointTests : IDisposable
                 Refills = 1,
             };
 
-            var response = await _client.PostAsJsonAsync(
+            var response = await client.PostAsJsonAsync(
                 $"/fhir/Patient/{patientId}/MedicationRequest/",
                 request
             );
@@ -156,7 +151,9 @@ public sealed class MedicationRequestEndpointTests : IDisposable
     [Fact]
     public async Task GetMedicationsByPatient_ReturnsMedications_WhenExist()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
         var request1 = new
         {
             Status = "active",
@@ -176,10 +173,10 @@ public sealed class MedicationRequestEndpointTests : IDisposable
             Refills = 3,
         };
 
-        await _client.PostAsJsonAsync($"/fhir/Patient/{patientId}/MedicationRequest/", request1);
-        await _client.PostAsJsonAsync($"/fhir/Patient/{patientId}/MedicationRequest/", request2);
+        await client.PostAsJsonAsync($"/fhir/Patient/{patientId}/MedicationRequest/", request1);
+        await client.PostAsJsonAsync($"/fhir/Patient/{patientId}/MedicationRequest/", request2);
 
-        var response = await _client.GetAsync($"/fhir/Patient/{patientId}/MedicationRequest/");
+        var response = await client.GetAsync($"/fhir/Patient/{patientId}/MedicationRequest/");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var medications = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -190,7 +187,9 @@ public sealed class MedicationRequestEndpointTests : IDisposable
     [Fact]
     public async Task CreateMedicationRequest_SetsVersionIdToOne()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
             Status = "active",
@@ -201,7 +200,7 @@ public sealed class MedicationRequestEndpointTests : IDisposable
             Refills = 6,
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/MedicationRequest/",
             request
         );
@@ -213,7 +212,9 @@ public sealed class MedicationRequestEndpointTests : IDisposable
     [Fact]
     public async Task CreateMedicationRequest_SetsAuthoredOn()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
             Status = "active",
@@ -224,7 +225,7 @@ public sealed class MedicationRequestEndpointTests : IDisposable
             Refills = 3,
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/MedicationRequest/",
             request
         );
@@ -238,7 +239,9 @@ public sealed class MedicationRequestEndpointTests : IDisposable
     [Fact]
     public async Task CreateMedicationRequest_WithQuantityAndUnit()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
             Status = "active",
@@ -251,7 +254,7 @@ public sealed class MedicationRequestEndpointTests : IDisposable
             Refills = 2,
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/MedicationRequest/",
             request
         );
@@ -264,7 +267,9 @@ public sealed class MedicationRequestEndpointTests : IDisposable
     [Fact]
     public async Task CreateMedicationRequest_WithDosageInstruction()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
             Status = "active",
@@ -276,7 +281,7 @@ public sealed class MedicationRequestEndpointTests : IDisposable
             Refills = 2,
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/MedicationRequest/",
             request
         );
@@ -291,7 +296,9 @@ public sealed class MedicationRequestEndpointTests : IDisposable
     [Fact]
     public async Task CreateMedicationRequest_WithEncounterId()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
 
         var encounterRequest = new
         {
@@ -299,7 +306,7 @@ public sealed class MedicationRequestEndpointTests : IDisposable
             Class = "ambulatory",
             PeriodStart = "2024-01-15T09:00:00Z",
         };
-        var encounterResponse = await _client.PostAsJsonAsync(
+        var encounterResponse = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/Encounter/",
             encounterRequest
         );
@@ -320,7 +327,7 @@ public sealed class MedicationRequestEndpointTests : IDisposable
             Refills = 0,
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/MedicationRequest/",
             medicationRequest
         );
@@ -332,7 +339,9 @@ public sealed class MedicationRequestEndpointTests : IDisposable
     [Fact]
     public async Task CreateMedicationRequest_WithZeroRefills()
     {
-        var patientId = await CreateTestPatientAsync();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+        var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
             Status = "active",
@@ -344,7 +353,7 @@ public sealed class MedicationRequestEndpointTests : IDisposable
             Refills = 0,
         };
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/MedicationRequest/",
             request
         );

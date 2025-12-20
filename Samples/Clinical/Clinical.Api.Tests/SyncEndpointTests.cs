@@ -7,28 +7,18 @@ using System.Text.Json;
 /// <summary>
 /// E2E tests for Sync endpoints - REAL database, NO mocks.
 /// Tests sync log generation and origin tracking.
+/// Each test creates its own isolated factory and database.
 /// </summary>
-public sealed class SyncEndpointTests : IDisposable
+public sealed class SyncEndpointTests
 {
-    private readonly ClinicalApiFactory _factory;
-    private readonly HttpClient _client;
-
-    public SyncEndpointTests()
-    {
-        _factory = new ClinicalApiFactory();
-        _client = _factory.CreateClient();
-    }
-
-    public void Dispose()
-    {
-        _client.Dispose();
-        _factory.Dispose();
-    }
 
     [Fact]
     public async Task GetSyncOrigin_ReturnsOriginId()
     {
-        var response = await _client.GetAsync("/sync/origin");
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/sync/origin");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -40,7 +30,10 @@ public sealed class SyncEndpointTests : IDisposable
     [Fact]
     public async Task GetSyncChanges_ReturnsEmptyList_WhenNoChanges()
     {
-        var response = await _client.GetAsync("/sync/changes?fromVersion=999999");
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/sync/changes?fromVersion=999999");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
@@ -50,6 +43,8 @@ public sealed class SyncEndpointTests : IDisposable
     [Fact]
     public async Task GetSyncChanges_ReturnChanges_AfterPatientCreated()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var patientRequest = new
         {
             Active = true,
@@ -58,9 +53,9 @@ public sealed class SyncEndpointTests : IDisposable
             Gender = "male",
         };
 
-        await _client.PostAsJsonAsync("/fhir/Patient/", patientRequest);
+        await client.PostAsJsonAsync("/fhir/Patient/", patientRequest);
 
-        var response = await _client.GetAsync("/sync/changes?fromVersion=0");
+        var response = await client.GetAsync("/sync/changes?fromVersion=0");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -71,6 +66,8 @@ public sealed class SyncEndpointTests : IDisposable
     [Fact]
     public async Task GetSyncChanges_RespectsLimitParameter()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         for (var i = 0; i < 5; i++)
         {
             var patientRequest = new
@@ -80,10 +77,10 @@ public sealed class SyncEndpointTests : IDisposable
                 FamilyName = "TestPatient",
                 Gender = "other",
             };
-            await _client.PostAsJsonAsync("/fhir/Patient/", patientRequest);
+            await client.PostAsJsonAsync("/fhir/Patient/", patientRequest);
         }
 
-        var response = await _client.GetAsync("/sync/changes?fromVersion=0&limit=2");
+        var response = await client.GetAsync("/sync/changes?fromVersion=0&limit=2");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -94,6 +91,8 @@ public sealed class SyncEndpointTests : IDisposable
     [Fact]
     public async Task GetSyncChanges_ContainsTableName()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var patientRequest = new
         {
             Active = true,
@@ -101,9 +100,9 @@ public sealed class SyncEndpointTests : IDisposable
             FamilyName = "TestPatient",
             Gender = "male",
         };
-        await _client.PostAsJsonAsync("/fhir/Patient/", patientRequest);
+        await client.PostAsJsonAsync("/fhir/Patient/", patientRequest);
 
-        var response = await _client.GetAsync("/sync/changes?fromVersion=0");
+        var response = await client.GetAsync("/sync/changes?fromVersion=0");
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(changes);
@@ -113,6 +112,8 @@ public sealed class SyncEndpointTests : IDisposable
     [Fact]
     public async Task GetSyncChanges_ContainsOperation()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var patientRequest = new
         {
             Active = true,
@@ -120,9 +121,9 @@ public sealed class SyncEndpointTests : IDisposable
             FamilyName = "TestPatient",
             Gender = "female",
         };
-        await _client.PostAsJsonAsync("/fhir/Patient/", patientRequest);
+        await client.PostAsJsonAsync("/fhir/Patient/", patientRequest);
 
-        var response = await _client.GetAsync("/sync/changes?fromVersion=0");
+        var response = await client.GetAsync("/sync/changes?fromVersion=0");
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(changes);
@@ -130,8 +131,9 @@ public sealed class SyncEndpointTests : IDisposable
             changes,
             c =>
             {
-                var op = c.GetProperty("Operation").GetString();
-                return op == "INSERT" || op == "UPDATE" || op == "DELETE";
+                // Operation is serialized as integer (0=Insert, 1=Update, 2=Delete)
+                var opValue = c.GetProperty("Operation").GetInt32();
+                return opValue >= 0 && opValue <= 2;
             }
         );
     }
@@ -139,6 +141,8 @@ public sealed class SyncEndpointTests : IDisposable
     [Fact]
     public async Task GetSyncChanges_TracksEncounterChanges()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var patientRequest = new
         {
             Active = true,
@@ -146,7 +150,7 @@ public sealed class SyncEndpointTests : IDisposable
             FamilyName = "TestPatient",
             Gender = "male",
         };
-        var patientResponse = await _client.PostAsJsonAsync("/fhir/Patient/", patientRequest);
+        var patientResponse = await client.PostAsJsonAsync("/fhir/Patient/", patientRequest);
         var patient = await patientResponse.Content.ReadFromJsonAsync<JsonElement>();
         var patientId = patient.GetProperty("Id").GetString();
 
@@ -156,9 +160,9 @@ public sealed class SyncEndpointTests : IDisposable
             Class = "ambulatory",
             PeriodStart = "2024-02-01T10:00:00Z",
         };
-        await _client.PostAsJsonAsync($"/fhir/Patient/{patientId}/Encounter/", encounterRequest);
+        await client.PostAsJsonAsync($"/fhir/Patient/{patientId}/Encounter/", encounterRequest);
 
-        var response = await _client.GetAsync("/sync/changes?fromVersion=0");
+        var response = await client.GetAsync("/sync/changes?fromVersion=0");
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(changes);
@@ -168,6 +172,8 @@ public sealed class SyncEndpointTests : IDisposable
     [Fact]
     public async Task GetSyncChanges_TracksConditionChanges()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var patientRequest = new
         {
             Active = true,
@@ -175,7 +181,7 @@ public sealed class SyncEndpointTests : IDisposable
             FamilyName = "TestPatient",
             Gender = "female",
         };
-        var patientResponse = await _client.PostAsJsonAsync("/fhir/Patient/", patientRequest);
+        var patientResponse = await client.PostAsJsonAsync("/fhir/Patient/", patientRequest);
         var patient = await patientResponse.Content.ReadFromJsonAsync<JsonElement>();
         var patientId = patient.GetProperty("Id").GetString();
 
@@ -186,9 +192,9 @@ public sealed class SyncEndpointTests : IDisposable
             CodeValue = "J06.9",
             CodeDisplay = "URI",
         };
-        await _client.PostAsJsonAsync($"/fhir/Patient/{patientId}/Condition/", conditionRequest);
+        await client.PostAsJsonAsync($"/fhir/Patient/{patientId}/Condition/", conditionRequest);
 
-        var response = await _client.GetAsync("/sync/changes?fromVersion=0");
+        var response = await client.GetAsync("/sync/changes?fromVersion=0");
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(changes);
@@ -198,6 +204,8 @@ public sealed class SyncEndpointTests : IDisposable
     [Fact]
     public async Task GetSyncChanges_TracksMedicationRequestChanges()
     {
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var patientRequest = new
         {
             Active = true,
@@ -205,7 +213,7 @@ public sealed class SyncEndpointTests : IDisposable
             FamilyName = "TestPatient",
             Gender = "male",
         };
-        var patientResponse = await _client.PostAsJsonAsync("/fhir/Patient/", patientRequest);
+        var patientResponse = await client.PostAsJsonAsync("/fhir/Patient/", patientRequest);
         var patient = await patientResponse.Content.ReadFromJsonAsync<JsonElement>();
         var patientId = patient.GetProperty("Id").GetString();
 
@@ -218,12 +226,12 @@ public sealed class SyncEndpointTests : IDisposable
             MedicationDisplay = "Test Med",
             Refills = 0,
         };
-        await _client.PostAsJsonAsync(
+        await client.PostAsJsonAsync(
             $"/fhir/Patient/{patientId}/MedicationRequest/",
             medicationRequest
         );
 
-        var response = await _client.GetAsync("/sync/changes?fromVersion=0");
+        var response = await client.GetAsync("/sync/changes?fromVersion=0");
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(changes);

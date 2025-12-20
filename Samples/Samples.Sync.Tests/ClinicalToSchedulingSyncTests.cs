@@ -467,7 +467,8 @@ public sealed class ClinicalToSchedulingSyncTests : IDisposable
         var patientChange = changes.First(c =>
             c.GetProperty("TableName").GetString() == "fhir_Patient"
         );
-        Assert.Equal("INSERT", patientChange.GetProperty("Operation").GetString());
+        // Operation is serialized as integer (0=Insert, 1=Update, 2=Delete)
+        Assert.Equal(0, patientChange.GetProperty("Operation").GetInt32());
     }
 
     /// <summary>

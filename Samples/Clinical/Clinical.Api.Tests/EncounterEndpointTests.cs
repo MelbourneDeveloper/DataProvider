@@ -10,12 +10,6 @@ using System.Text.Json;
 /// </summary>
 public sealed class EncounterEndpointTests
 {
-    private static (ClinicalApiFactory Factory, HttpClient Client) CreateTestContext()
-    {
-        var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
-        return (factory, client);
-    }
 
     private static async Task<string> CreateTestPatientAsync(HttpClient client)
     {
@@ -35,7 +29,8 @@ public sealed class EncounterEndpointTests
     [Fact]
     public async Task GetEncountersByPatient_ReturnsEmptyList_WhenNoEncounters()
     {
-        using var (factory, client) = CreateTestContext();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var patientId = await CreateTestPatientAsync(client);
 
         var response = await client.GetAsync($"/fhir/Patient/{patientId}/Encounter/");
@@ -48,7 +43,8 @@ public sealed class EncounterEndpointTests
     [Fact]
     public async Task CreateEncounter_ReturnsCreated_WithValidData()
     {
-        using var (factory, client) = CreateTestContext();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -78,7 +74,8 @@ public sealed class EncounterEndpointTests
     [Fact]
     public async Task CreateEncounter_WithAllStatuses()
     {
-        using var (factory, client) = CreateTestContext();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var statuses = new[]
         {
             "planned",
@@ -114,7 +111,8 @@ public sealed class EncounterEndpointTests
     [Fact]
     public async Task CreateEncounter_WithAllClasses()
     {
-        using var (factory, client) = CreateTestContext();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var classes = new[] { "ambulatory", "emergency", "inpatient", "observation", "virtual" };
 
         foreach (var encounterClass in classes)
@@ -141,7 +139,8 @@ public sealed class EncounterEndpointTests
     [Fact]
     public async Task GetEncountersByPatient_ReturnsEncounters_WhenExist()
     {
-        using var (factory, client) = CreateTestContext();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var patientId = await CreateTestPatientAsync(client);
         var request1 = new
         {
@@ -170,7 +169,8 @@ public sealed class EncounterEndpointTests
     [Fact]
     public async Task CreateEncounter_SetsVersionIdToOne()
     {
-        using var (factory, client) = CreateTestContext();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -191,7 +191,8 @@ public sealed class EncounterEndpointTests
     [Fact]
     public async Task CreateEncounter_SetsLastUpdatedTimestamp()
     {
-        using var (factory, client) = CreateTestContext();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -214,7 +215,8 @@ public sealed class EncounterEndpointTests
     [Fact]
     public async Task CreateEncounter_WithNotes()
     {
-        using var (factory, client) = CreateTestContext();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -239,7 +241,8 @@ public sealed class EncounterEndpointTests
     [Fact]
     public async Task CreateEncounter_WithPeriodEndTime()
     {
-        using var (factory, client) = CreateTestContext();
+        using var factory = new ClinicalApiFactory();
+        var client = factory.CreateClient();
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {

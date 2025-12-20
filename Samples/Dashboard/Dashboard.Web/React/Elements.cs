@@ -159,7 +159,7 @@ namespace Dashboard.React
             {
                 clickHandler = e =>
                 {
-                    Script.Call<object>(e, "preventDefault");
+                    Script.Write("e.preventDefault()");
                     onClick();
                 };
             }
@@ -321,7 +321,7 @@ namespace Dashboard.React
             {
                 submitHandler = e =>
                 {
-                    Script.Call<object>(e, "preventDefault");
+                    Script.Write("e.preventDefault()");
                     onSubmit();
                 };
             }

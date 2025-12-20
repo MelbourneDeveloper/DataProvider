@@ -1,5 +1,3 @@
-#pragma warning disable IDE0005 // Using directive is unnecessary - these are used for pattern matching
-
 global using Microsoft.Extensions.Logging;
 global using Npgsql;
 // Type aliases for Result types - matching Sync.SQLite patterns using Outcome package

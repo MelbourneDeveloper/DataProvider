@@ -15,7 +15,6 @@ using System.Diagnostics.CodeAnalysis;
     "CA1822:Mark members as static",
     Justification = "Instance methods preferred"
 )]
-[assembly: SuppressMessage("Style", "IDE0005:Using directive is unnecessary")]
 [assembly: SuppressMessage(
     "Design",
     "CA1050:Declare types in namespaces",

@@ -35,7 +35,6 @@ using System.Diagnostics.CodeAnalysis;
     Target = "~T:Scheduling.Api.CreateAppointmentRequest",
     Justification = "Used by minimal API model binding"
 )]
-[assembly: SuppressMessage("Style", "IDE0005:Using directive is unnecessary")]
 [assembly: SuppressMessage(
     "Performance",
     "CA1848:Use LoggerMessage delegates",

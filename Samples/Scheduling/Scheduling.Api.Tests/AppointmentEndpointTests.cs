@@ -6,25 +6,11 @@ using System.Text.Json;
 
 /// <summary>
 /// E2E tests for Appointment FHIR endpoints - REAL database, NO mocks.
+/// Each test creates its own isolated factory and database.
 /// </summary>
-public sealed class AppointmentEndpointTests : IDisposable
+public sealed class AppointmentEndpointTests
 {
-    private readonly SchedulingApiFactory _factory;
-    private readonly HttpClient _client;
-
-    public AppointmentEndpointTests()
-    {
-        _factory = new SchedulingApiFactory();
-        _client = _factory.CreateClient();
-    }
-
-    public void Dispose()
-    {
-        _client.Dispose();
-        _factory.Dispose();
-    }
-
-    private async Task<string> CreateTestPractitionerAsync()
+    private static async Task<string> CreateTestPractitionerAsync(HttpClient client)
     {
         var request = new
         {
@@ -34,7 +20,7 @@ public sealed class AppointmentEndpointTests : IDisposable
             Specialty = "General Practice",
         };
 
-        var response = await _client.PostAsJsonAsync("/Practitioner", request);
+        var response = await client.PostAsJsonAsync("/Practitioner", request);
         var created = await response.Content.ReadFromJsonAsync<JsonElement>();
         return created.GetProperty("Id").GetString()!;
     }
@@ -42,7 +28,10 @@ public sealed class AppointmentEndpointTests : IDisposable
     [Fact]
     public async Task GetUpcomingAppointments_ReturnsEmptyList_WhenNoAppointments()
     {
-        var response = await _client.GetAsync("/Appointment");
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/Appointment");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
@@ -52,7 +41,9 @@ public sealed class AppointmentEndpointTests : IDisposable
     [Fact]
     public async Task CreateAppointment_ReturnsCreated_WithValidData()
     {
-        var practitionerId = await CreateTestPractitionerAsync();
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+        var practitionerId = await CreateTestPractitionerAsync(client);
         var request = new
         {
             ServiceCategory = "General Practice",
@@ -67,7 +58,7 @@ public sealed class AppointmentEndpointTests : IDisposable
             Comment = "Please bring insurance card",
         };
 
-        var response = await _client.PostAsJsonAsync("/Appointment", request);
+        var response = await client.PostAsJsonAsync("/Appointment", request);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var appointment = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -80,7 +71,9 @@ public sealed class AppointmentEndpointTests : IDisposable
     [Fact]
     public async Task CreateAppointment_CalculatesDuration()
     {
-        var practitionerId = await CreateTestPractitionerAsync();
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+        var practitionerId = await CreateTestPractitionerAsync(client);
         var request = new
         {
             ServiceCategory = "Specialty",
@@ -92,7 +85,7 @@ public sealed class AppointmentEndpointTests : IDisposable
             PractitionerReference = $"Practitioner/{practitionerId}",
         };
 
-        var response = await _client.PostAsJsonAsync("/Appointment", request);
+        var response = await client.PostAsJsonAsync("/Appointment", request);
         var appointment = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         Assert.Equal(60, appointment.GetProperty("MinutesDuration").GetInt32());
@@ -101,11 +94,13 @@ public sealed class AppointmentEndpointTests : IDisposable
     [Fact]
     public async Task CreateAppointment_WithAllPriorities()
     {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
         var priorities = new[] { "routine", "urgent", "asap", "stat" };
 
         foreach (var priority in priorities)
         {
-            var practitionerId = await CreateTestPractitionerAsync();
+            var practitionerId = await CreateTestPractitionerAsync(client);
             var request = new
             {
                 ServiceCategory = "Test",
@@ -117,7 +112,7 @@ public sealed class AppointmentEndpointTests : IDisposable
                 PractitionerReference = $"Practitioner/{practitionerId}",
             };
 
-            var response = await _client.PostAsJsonAsync("/Appointment", request);
+            var response = await client.PostAsJsonAsync("/Appointment", request);
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
             var appointment = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -128,7 +123,9 @@ public sealed class AppointmentEndpointTests : IDisposable
     [Fact]
     public async Task GetAppointmentById_ReturnsAppointment_WhenExists()
     {
-        var practitionerId = await CreateTestPractitionerAsync();
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+        var practitionerId = await CreateTestPractitionerAsync(client);
         var createRequest = new
         {
             ServiceCategory = "Test",
@@ -140,11 +137,11 @@ public sealed class AppointmentEndpointTests : IDisposable
             PractitionerReference = $"Practitioner/{practitionerId}",
         };
 
-        var createResponse = await _client.PostAsJsonAsync("/Appointment", createRequest);
+        var createResponse = await client.PostAsJsonAsync("/Appointment", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
         var appointmentId = created.GetProperty("Id").GetString();
 
-        var response = await _client.GetAsync($"/Appointment/{appointmentId}");
+        var response = await client.GetAsync($"/Appointment/{appointmentId}");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var appointment = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -154,7 +151,10 @@ public sealed class AppointmentEndpointTests : IDisposable
     [Fact]
     public async Task GetAppointmentById_ReturnsNotFound_WhenNotExists()
     {
-        var response = await _client.GetAsync("/Appointment/nonexistent-id-12345");
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/Appointment/nonexistent-id-12345");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -162,7 +162,9 @@ public sealed class AppointmentEndpointTests : IDisposable
     [Fact]
     public async Task UpdateAppointmentStatus_UpdatesStatus()
     {
-        var practitionerId = await CreateTestPractitionerAsync();
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+        var practitionerId = await CreateTestPractitionerAsync(client);
         var createRequest = new
         {
             ServiceCategory = "Test",
@@ -174,11 +176,11 @@ public sealed class AppointmentEndpointTests : IDisposable
             PractitionerReference = $"Practitioner/{practitionerId}",
         };
 
-        var createResponse = await _client.PostAsJsonAsync("/Appointment", createRequest);
+        var createResponse = await client.PostAsJsonAsync("/Appointment", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
         var appointmentId = created.GetProperty("Id").GetString();
 
-        var response = await _client.PatchAsync(
+        var response = await client.PatchAsync(
             $"/Appointment/{appointmentId}/status?status=arrived",
             null
         );
@@ -191,7 +193,10 @@ public sealed class AppointmentEndpointTests : IDisposable
     [Fact]
     public async Task UpdateAppointmentStatus_ReturnsNotFound_WhenNotExists()
     {
-        var response = await _client.PatchAsync(
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.PatchAsync(
             "/Appointment/nonexistent-id/status?status=cancelled",
             null
         );
@@ -202,7 +207,9 @@ public sealed class AppointmentEndpointTests : IDisposable
     [Fact]
     public async Task GetAppointmentsByPatient_ReturnsPatientAppointments()
     {
-        var practitionerId = await CreateTestPractitionerAsync();
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+        var practitionerId = await CreateTestPractitionerAsync(client);
         var patientId = Guid.NewGuid().ToString();
         var request = new
         {
@@ -215,9 +222,9 @@ public sealed class AppointmentEndpointTests : IDisposable
             PractitionerReference = $"Practitioner/{practitionerId}",
         };
 
-        await _client.PostAsJsonAsync("/Appointment", request);
+        await client.PostAsJsonAsync("/Appointment", request);
 
-        var response = await _client.GetAsync($"/Patient/{patientId}/Appointment");
+        var response = await client.GetAsync($"/Patient/{patientId}/Appointment");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var appointments = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -228,7 +235,9 @@ public sealed class AppointmentEndpointTests : IDisposable
     [Fact]
     public async Task GetAppointmentsByPractitioner_ReturnsPractitionerAppointments()
     {
-        var practitionerId = await CreateTestPractitionerAsync();
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+        var practitionerId = await CreateTestPractitionerAsync(client);
         var request = new
         {
             ServiceCategory = "Test",
@@ -240,9 +249,9 @@ public sealed class AppointmentEndpointTests : IDisposable
             PractitionerReference = $"Practitioner/{practitionerId}",
         };
 
-        await _client.PostAsJsonAsync("/Appointment", request);
+        await client.PostAsJsonAsync("/Appointment", request);
 
-        var response = await _client.GetAsync($"/Practitioner/{practitionerId}/Appointment");
+        var response = await client.GetAsync($"/Practitioner/{practitionerId}/Appointment");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var appointments = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -253,7 +262,9 @@ public sealed class AppointmentEndpointTests : IDisposable
     [Fact]
     public async Task CreateAppointment_SetsCreatedTimestamp()
     {
-        var practitionerId = await CreateTestPractitionerAsync();
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+        var practitionerId = await CreateTestPractitionerAsync(client);
         var request = new
         {
             ServiceCategory = "Test",
@@ -265,7 +276,7 @@ public sealed class AppointmentEndpointTests : IDisposable
             PractitionerReference = $"Practitioner/{practitionerId}",
         };
 
-        var response = await _client.PostAsJsonAsync("/Appointment", request);
+        var response = await client.PostAsJsonAsync("/Appointment", request);
         var appointment = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         var created = appointment.GetProperty("Created").GetString();
@@ -276,7 +287,9 @@ public sealed class AppointmentEndpointTests : IDisposable
     [Fact]
     public async Task CreateAppointment_WithComment()
     {
-        var practitionerId = await CreateTestPractitionerAsync();
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+        var practitionerId = await CreateTestPractitionerAsync(client);
         var request = new
         {
             ServiceCategory = "Test",
@@ -289,7 +302,7 @@ public sealed class AppointmentEndpointTests : IDisposable
             Comment = "Patient has mobility issues, needs wheelchair accessible room",
         };
 
-        var response = await _client.PostAsJsonAsync("/Appointment", request);
+        var response = await client.PostAsJsonAsync("/Appointment", request);
         var appointment = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         Assert.Equal(
@@ -301,7 +314,9 @@ public sealed class AppointmentEndpointTests : IDisposable
     [Fact]
     public async Task CreateAppointment_GeneratesUniqueIds()
     {
-        var practitionerId = await CreateTestPractitionerAsync();
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+        var practitionerId = await CreateTestPractitionerAsync(client);
         var request = new
         {
             ServiceCategory = "Test",
@@ -313,8 +328,8 @@ public sealed class AppointmentEndpointTests : IDisposable
             PractitionerReference = $"Practitioner/{practitionerId}",
         };
 
-        var response1 = await _client.PostAsJsonAsync("/Appointment", request);
-        var response2 = await _client.PostAsJsonAsync("/Appointment", request);
+        var response1 = await client.PostAsJsonAsync("/Appointment", request);
+        var response2 = await client.PostAsJsonAsync("/Appointment", request);
 
         var appointment1 = await response1.Content.ReadFromJsonAsync<JsonElement>();
         var appointment2 = await response2.Content.ReadFromJsonAsync<JsonElement>();
