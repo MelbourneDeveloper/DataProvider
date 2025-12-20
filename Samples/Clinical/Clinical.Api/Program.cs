@@ -44,7 +44,6 @@ patientGroup.MapGet(
         {
             GetPatientsOk ok => Results.Ok(ok.Value),
             GetPatientsError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -60,7 +59,6 @@ patientGroup.MapGet(
             GetPatientByIdOk ok when ok.Value.Count > 0 => Results.Ok(ok.Value[0]),
             GetPatientByIdOk => Results.NotFound(),
             GetPatientByIdError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -126,8 +124,8 @@ patientGroup.MapPost(
 
         return result switch
         {
+            InsertOk => Results.Problem("Unexpected state"),
             InsertError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -142,7 +140,6 @@ patientGroup.MapGet(
         {
             SearchPatientsOk ok => Results.Ok(ok.Value),
             SearchPatientsError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -159,7 +156,6 @@ encounterGroup.MapGet(
         {
             GetEncountersOk ok => Results.Ok(ok.Value),
             GetEncountersError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -219,8 +215,8 @@ encounterGroup.MapPost(
 
         return result switch
         {
+            InsertOk => Results.Problem("Unexpected state"),
             InsertError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -237,7 +233,6 @@ conditionGroup.MapGet(
         {
             GetConditionsOk ok => Results.Ok(ok.Value),
             GetConditionsError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -306,8 +301,8 @@ conditionGroup.MapPost(
 
         return result switch
         {
+            InsertOk => Results.Problem("Unexpected state"),
             InsertError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -326,7 +321,6 @@ medicationGroup.MapGet(
         {
             GetMedicationsOk ok => Results.Ok(ok.Value),
             GetMedicationsError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -396,8 +390,8 @@ medicationGroup.MapPost(
 
         return result switch
         {
+            InsertOk => Results.Problem("Unexpected state"),
             InsertError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -412,7 +406,6 @@ app.MapGet(
         {
             SyncLogListOk ok => Results.Ok(ok.Value),
             SyncLogListError err => Results.Problem(SyncHelpers.ToMessage(err.Value)),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -427,7 +420,6 @@ app.MapGet(
         {
             StringSyncOk ok => Results.Ok(new { originId = ok.Value }),
             StringSyncError err => Results.Problem(SyncHelpers.ToMessage(err.Value)),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );

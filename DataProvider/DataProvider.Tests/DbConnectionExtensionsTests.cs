@@ -263,7 +263,7 @@ public sealed class DbConnectionExtensionsTests : IDisposable
 
         var result = nullConnection!.Scalar<string>("SELECT Name FROM TestTable LIMIT 1");
 
-        Assert.False(result is StringOk);
+        Assert.False(result is NullableStringOk);
     }
 
     [Fact]
@@ -271,7 +271,7 @@ public sealed class DbConnectionExtensionsTests : IDisposable
     {
         var result = _connection.Scalar<string>(null!);
 
-        Assert.False(result is StringOk);
+        Assert.False(result is NullableStringOk);
     }
 
     [Fact]
@@ -279,7 +279,7 @@ public sealed class DbConnectionExtensionsTests : IDisposable
     {
         var result = _connection.Scalar<string>("   ");
 
-        Assert.False(result is StringOk);
+        Assert.False(result is NullableStringOk);
     }
 
     [Fact]
@@ -287,9 +287,11 @@ public sealed class DbConnectionExtensionsTests : IDisposable
     {
         var result = _connection.Scalar<string>("SELECT Name FROM TestTable ORDER BY Name LIMIT 1");
 
-        Assert.True(result is StringOk);
-        var name = ((StringOk)result).Value;
-        Assert.Equal("Alpha", name);
+        Assert.True(result is NullableStringOk);
+        if (result is NullableStringOk ok)
+        {
+            Assert.Equal("Alpha", ok.Value);
+        }
     }
 
     [Fact]
@@ -300,9 +302,11 @@ public sealed class DbConnectionExtensionsTests : IDisposable
             [new SqliteParameter("@minValue", 15)]
         );
 
-        Assert.True(result is StringOk);
-        var name = ((StringOk)result).Value;
-        Assert.Equal("Beta", name);
+        Assert.True(result is NullableStringOk);
+        if (result is NullableStringOk ok)
+        {
+            Assert.Equal("Beta", ok.Value);
+        }
     }
 
     [Fact]
@@ -310,7 +314,7 @@ public sealed class DbConnectionExtensionsTests : IDisposable
     {
         var result = _connection.Scalar<string>("SELECT Name FROM NonExistentTable");
 
-        Assert.False(result is StringOk);
+        Assert.False(result is NullableStringOk);
     }
 
     public void Dispose() => _connection?.Dispose();

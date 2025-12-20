@@ -1,8 +1,20 @@
+#pragma warning disable CS8509 // Exhaustive switch - Exhaustion analyzer handles this
+
 using System.CommandLine;
 using Lql;
 using Lql.SQLite;
-using Outcome;
 using Selecta;
+
+using LqlStatementOk = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Ok<
+    Lql.LqlStatement,
+    Selecta.SqlError
+>;
+using LqlStatementError = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Error<
+    Lql.LqlStatement,
+    Selecta.SqlError
+>;
+using StringSqlOk = Outcome.Result<string, Selecta.SqlError>.Ok<string, Selecta.SqlError>;
+using StringSqlError = Outcome.Result<string, Selecta.SqlError>.Error<string, Selecta.SqlError>;
 
 namespace LqlCli;
 
@@ -101,16 +113,14 @@ internal static class Program
 
             return parseResult switch
             {
-                Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> success =>
-                    await ProcessSuccessfulParse(
-                            success.Value,
-                            outputFile,
-                            validate,
-                            inputFile.FullName
-                        )
-                        .ConfigureAwait(false),
-                Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> failure =>
-                    HandleParseError(failure.Value),
+                LqlStatementOk success => await ProcessSuccessfulParse(
+                        success.Value,
+                        outputFile,
+                        validate,
+                        inputFile.FullName
+                    )
+                    .ConfigureAwait(false),
+                LqlStatementError failure => HandleParseError(failure.Value),
             };
         }
         catch (Exception ex)
@@ -146,14 +156,8 @@ internal static class Program
 
         return sqliteResult switch
         {
-            Result<string, SqlError>.Ok<string, SqlError> success => await OutputSql(
-                    success.Value,
-                    outputFile
-                )
-                .ConfigureAwait(false),
-            Result<string, SqlError>.Error<string, SqlError> failure => HandleTranspilationError(
-                failure.Value
-            ),
+            StringSqlOk success => await OutputSql(success.Value, outputFile).ConfigureAwait(false),
+            StringSqlError failure => HandleTranspilationError(failure.Value),
         };
     }
 

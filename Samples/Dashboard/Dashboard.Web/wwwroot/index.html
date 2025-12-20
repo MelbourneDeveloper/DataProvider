@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Healthcare Dashboard - Clinical and Scheduling Management">
+  <title>Healthcare Dashboard</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%232ca3fa' width='100' height='100' rx='20'/%3E%3Cpath fill='white' d='M50 20v60M20 50h60' stroke='white' stroke-width='12' stroke-linecap='round'/%3E%3C/svg%3E">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+
+  <!-- React CDN (Development) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- For production, use:
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  -->
+
+  <style>
+    /* Loading screen */
+    .loading-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--primary-blue-subtle) 0%, var(--teal-soft) 50%, var(--white) 100%);
+      z-index: 9999;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .loading-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .loading-logo {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--primary-blue) 0%, var(--teal-bold) 100%);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .loading-logo svg {
+      width: 48px;
+      height: 48px;
+    }
+
+    .loading-text {
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--gray-700);
+    }
+
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--gray-200);
+      border-top-color: var(--primary-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div class="loading-screen" id="loading-screen">
+    <div class="loading-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+      </svg>
+    </div>
+    <div class="loading-text">Healthcare Dashboard</div>
+    <div class="loading-spinner"></div>
+  </div>
+
+  <!-- React Root -->
+  <div id="root"></div>
+
+  <!-- H5 Generated JavaScript -->
+  <script src="js/Dashboard.Web.js"></script>
+
+  <!-- Fallback: Pure JS Dashboard if H5 not loaded -->
+  <script>
+    // Hide loading screen after a delay
+    setTimeout(function() {
+      document.getElementById('loading-screen').classList.add('hidden');
+    }, 1500);
+
+    // If H5 hasn't initialized the app, use fallback
+    if (typeof Dashboard === 'undefined') {
+      console.log('Loading fallback dashboard...');
+
+      // Fallback React app
+      const App = () => {
+        const [activeView, setActiveView] = React.useState('dashboard');
+        const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+
+        return React.createElement('div', { className: 'app' },
+          // Sidebar
+          React.createElement('aside', { className: `sidebar ${sidebarCollapsed ? 'collapsed' : ''}` },
+            // Header
+            React.createElement('div', { className: 'sidebar-header' },
+              React.createElement('a', { className: 'sidebar-logo', href: '#' },
+                React.createElement('div', { className: 'sidebar-logo-icon' }, 'H'),
+                React.createElement('span', { className: 'sidebar-logo-text' }, 'Healthcare')
+              )
+            ),
+            // Navigation
+            React.createElement('nav', { className: 'sidebar-nav' },
+              React.createElement('div', { className: 'nav-section' },
+                React.createElement('div', { className: 'nav-section-title' }, 'Overview'),
+                React.createElement('a', {
+                  className: `nav-item ${activeView === 'dashboard' ? 'active' : ''}`,
+                  onClick: () => setActiveView('dashboard')
+                },
+                  React.createElement('span', { className: 'nav-item-icon' }, '\u{1F3E0}'),
+                  React.createElement('span', { className: 'nav-item-text' }, 'Dashboard')
+                )
+              ),
+              React.createElement('div', { className: 'nav-section' },
+                React.createElement('div', { className: 'nav-section-title' }, 'Clinical'),
+                React.createElement('a', {
+                  className: `nav-item ${activeView === 'patients' ? 'active' : ''}`,
+                  onClick: () => setActiveView('patients')
+                },
+                  React.createElement('span', { className: 'nav-item-icon' }, '\u{1F465}'),
+                  React.createElement('span', { className: 'nav-item-text' }, 'Patients')
+                ),
+                React.createElement('a', {
+                  className: `nav-item ${activeView === 'encounters' ? 'active' : ''}`,
+                  onClick: () => setActiveView('encounters')
+                },
+                  React.createElement('span', { className: 'nav-item-icon' }, '\u{1F4CB}'),
+                  React.createElement('span', { className: 'nav-item-text' }, 'Encounters')
+                ),
+                React.createElement('a', {
+                  className: `nav-item ${activeView === 'conditions' ? 'active' : ''}`,
+                  onClick: () => setActiveView('conditions')
+                },
+                  React.createElement('span', { className: 'nav-item-icon' }, '\u{1FA7A}'),
+                  React.createElement('span', { className: 'nav-item-text' }, 'Conditions')
+                )
+              ),
+              React.createElement('div', { className: 'nav-section' },
+                React.createElement('div', { className: 'nav-section-title' }, 'Scheduling'),
+                React.createElement('a', {
+                  className: `nav-item ${activeView === 'practitioners' ? 'active' : ''}`,
+                  onClick: () => setActiveView('practitioners')
+                },
+                  React.createElement('span', { className: 'nav-item-icon' }, '\u{1F468}\u{200D}\u{2695}\u{FE0F}'),
+                  React.createElement('span', { className: 'nav-item-text' }, 'Practitioners')
+                ),
+                React.createElement('a', {
+                  className: `nav-item ${activeView === 'appointments' ? 'active' : ''}`,
+                  onClick: () => setActiveView('appointments')
+                },
+                  React.createElement('span', { className: 'nav-item-icon' }, '\u{1F4C5}'),
+                  React.createElement('span', { className: 'nav-item-text' }, 'Appointments')
+                )
+              )
+            ),
+            // Toggle
+            React.createElement('button', {
+              className: 'sidebar-toggle',
+              onClick: () => setSidebarCollapsed(!sidebarCollapsed)
+            }, sidebarCollapsed ? '\u{25B6}' : '\u{25C0}')
+          ),
+          // Main wrapper
+          React.createElement('div', { className: 'main-wrapper' },
+            // Header
+            React.createElement('header', { className: 'header' },
+              React.createElement('div', { className: 'header-left' },
+                React.createElement('h1', { className: 'header-title' },
+                  activeView.charAt(0).toUpperCase() + activeView.slice(1)
+                )
+              ),
+              React.createElement('div', { className: 'header-right' },
+                React.createElement('div', { className: 'header-search' },
+                  React.createElement('span', { className: 'header-search-icon' }, '\u{1F50D}'),
+                  React.createElement('input', {
+                    type: 'text',
+                    className: 'input',
+                    placeholder: 'Search...'
+                  })
+                ),
+                React.createElement('div', { className: 'header-actions' },
+                  React.createElement('button', { className: 'header-action-btn' },
+                    '\u{1F514}',
+                    React.createElement('span', { className: 'header-action-badge' })
+                  ),
+                  React.createElement('div', { className: 'avatar avatar-md' }, 'JD')
+                )
+              )
+            ),
+            // Content
+            React.createElement('main', { className: 'main-content' },
+              React.createElement('div', { className: 'page-header' },
+                React.createElement('h2', { className: 'page-title' },
+                  activeView === 'dashboard' ? 'Welcome Back' :
+                  activeView.charAt(0).toUpperCase() + activeView.slice(1)
+                ),
+                React.createElement('p', { className: 'page-description' },
+                  activeView === 'dashboard' ? 'Here\'s an overview of your healthcare system' :
+                  `Manage ${activeView} in the system`
+                )
+              ),
+              // Metrics Grid
+              activeView === 'dashboard' && React.createElement('div', { className: 'dashboard-grid metrics mb-6' },
+                ['Patients', 'Practitioners', 'Appointments', 'Encounters'].map((metric, i) =>
+                  React.createElement('div', { key: metric, className: 'metric-card' },
+                    React.createElement('div', {
+                      className: `metric-icon ${['blue', 'teal', 'success', 'warning'][i]}`
+                    }, ['\u{1F465}', '\u{1F468}\u{200D}\u{2695}\u{FE0F}', '\u{1F4C5}', '\u{1F4CB}'][i]),
+                    React.createElement('div', { className: 'metric-value' },
+                      [1247, 48, 156, 892][i]
+                    ),
+                    React.createElement('div', { className: 'metric-label' }, metric),
+                    React.createElement('div', {
+                      className: `metric-trend ${['up', 'neutral', 'up', 'down'][i]}`
+                    }, ['+12%', '0%', '+8%', '-3%'][i])
+                  )
+                )
+              ),
+              // Content area
+              React.createElement('div', { className: 'card' },
+                React.createElement('div', { className: 'card-header' },
+                  React.createElement('h3', { className: 'card-title' },
+                    activeView === 'dashboard' ? 'Recent Activity' : 'Data'
+                  ),
+                  React.createElement('button', { className: 'btn btn-primary btn-sm' }, '+ Add New')
+                ),
+                React.createElement('div', { className: 'card-body' },
+                  React.createElement('div', { className: 'empty-state' },
+                    React.createElement('div', { className: 'empty-state-icon' }, '\u{1F4C1}'),
+                    React.createElement('h4', { className: 'empty-state-title' }, 'Connect to APIs'),
+                    React.createElement('p', { className: 'empty-state-description' },
+                      'Start the Clinical API on port 5000 and Scheduling API on port 5001 to see data.'
+                    )
+                  )
+                )
+              )
+            )
+          )
+        );
+      };
+
+      // Render the app
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(React.createElement(App));
+    }
+  </script>
+</body>
+</html>
