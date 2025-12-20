@@ -136,6 +136,62 @@ app.MapPost(
     }
 );
 
+app.MapPut(
+    "/Practitioner/{id}",
+    async (string id, UpdatePractitionerRequest request, Func<SqliteConnection> getConn) =>
+    {
+        using var conn = getConn();
+        var transaction = (SqliteTransaction)
+            await conn.BeginTransactionAsync().ConfigureAwait(false);
+        await using var _ = transaction.ConfigureAwait(false);
+
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = transaction;
+        cmd.CommandText = """
+            UPDATE fhir_Practitioner
+            SET NameFamily = @nameFamily,
+                NameGiven = @nameGiven,
+                Qualification = @qualification,
+                Specialty = @specialty,
+                TelecomEmail = @telecomEmail,
+                TelecomPhone = @telecomPhone,
+                Active = @active
+            WHERE Id = @id
+            """;
+        cmd.Parameters.AddWithValue("@id", id);
+        cmd.Parameters.AddWithValue("@nameFamily", request.NameFamily);
+        cmd.Parameters.AddWithValue("@nameGiven", request.NameGiven);
+        cmd.Parameters.AddWithValue("@qualification", request.Qualification ?? string.Empty);
+        cmd.Parameters.AddWithValue("@specialty", request.Specialty ?? string.Empty);
+        cmd.Parameters.AddWithValue("@telecomEmail", request.TelecomEmail ?? string.Empty);
+        cmd.Parameters.AddWithValue("@telecomPhone", request.TelecomPhone ?? string.Empty);
+        cmd.Parameters.AddWithValue("@active", request.Active ? 1 : 0);
+
+        var rowsAffected = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+
+        if (rowsAffected > 0)
+        {
+            await transaction.CommitAsync().ConfigureAwait(false);
+            return Results.Ok(
+                new
+                {
+                    Id = id,
+                    Identifier = request.Identifier,
+                    Active = request.Active,
+                    NameFamily = request.NameFamily,
+                    NameGiven = request.NameGiven,
+                    Qualification = request.Qualification,
+                    Specialty = request.Specialty,
+                    TelecomEmail = request.TelecomEmail,
+                    TelecomPhone = request.TelecomPhone,
+                }
+            );
+        }
+
+        return Results.NotFound();
+    }
+);
+
 app.MapGet(
     "/Practitioner/_search",
     async (string? specialty, Func<SqliteConnection> getConn) =>

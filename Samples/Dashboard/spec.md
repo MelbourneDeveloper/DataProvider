@@ -1,244 +1,115 @@
-# Medical Dashboard Implementation Plan
+# Medical Dashboard Spec
 
 ## Overview
 
-Build a modern medical dashboard using **H5 (C# to JavaScript transpiler)** with **React via JS interop**. The dashboard will connect to both Clinical.Api and Scheduling.Api microservices.
+Medical dashboard using React (vanilla JS, no JSX) served by ASP.NET Core. Connects to Clinical.Api and Scheduling.Api microservices.
 
-### Design Inspiration
-Based on Behance healthcare dashboards (Wellmetrix, Mediso) and healthcare color research:
-- **Primary**: Teal/Cyan (`#00BCD4`, `#26C6DA`)
-- **Secondary**: Deep blue (`#10217D`, `#2E4450`)
-- **Accent**: Coral/warm (`#FF6B6B`) for alerts/actions
-- **Neutrals**: Slate grays + clean whites
-- **Style**: Modern glassmorphic cards, clean typography, ample whitespace
+**Future**: Offline-first sync client using IndexedDB for occasionally-connected mode.
 
-## Project Structure
+## Architecture
 
 ```
-Samples/
-├── Dashboard/
-│   ├── Dashboard.Web/              # H5 SPA project
-│   │   ├── Dashboard.Web.csproj    # H5 project targeting netstandard2.1
-│   │   ├── h5.json                 # H5 compiler config
-│   │   ├── wwwroot/
-│   │   │   ├── index.html          # Entry HTML with React CDN
-│   │   │   └── styles/
-│   │   │       └── main.css        # Glassmorphic styles
-│   │   ├── React/                  # React JS interop bindings
-│   │   │   ├── React.cs            # Core React bindings
-│   │   │   ├── ReactDOM.cs         # ReactDOM bindings
-│   │   │   ├── Hooks.cs            # useState, useEffect, etc.
-│   │   │   └── Elements.cs         # DOM element factories
-│   │   ├── Components/             # React components in C#
-│   │   │   ├── App.cs              # Root application component
-│   │   │   ├── Layout/
-│   │   │   │   ├── Sidebar.cs      # Navigation sidebar
-│   │   │   │   ├── Header.cs       # Top header with search
-│   │   │   │   └── MainContent.cs  # Content area wrapper
-│   │   │   ├── Patients/
-│   │   │   │   ├── PatientList.cs  # Patient search/list view
-│   │   │   │   └── PatientDetail.cs # Full patient record
-│   │   │   ├── Appointments/
-│   │   │   │   └── AppointmentCalendar.cs
-│   │   │   └── Practitioners/
-│   │   │       └── PractitionerDirectory.cs
-│   │   ├── Api/                    # API client layer
-│   │   │   ├── HttpClient.cs       # Fetch API wrapper
-│   │   │   ├── ClinicalApi.cs      # Clinical.Api client
-│   │   │   └── SchedulingApi.cs    # Scheduling.Api client
-│   │   ├── State/                  # Application state
-│   │   │   └── AppState.cs         # Global state management
-│   │   └── Program.cs              # Entry point
-│   └── Dashboard.Web.Tests/        # Test project
+Dashboard.Web/
+├── wwwroot/
+│   ├── index.html              # React app (vanilla JS)
+│   ├── js/vendor/              # Bundled React 18
+│   └── css/                    # Styles
+├── App.cs                      # ASP.NET Core host
+└── Program.cs                  # Entry point
+
+Dashboard.Integration.Tests/    # Playwright E2E tests
 ```
 
-## Implementation Steps
+## React Loading: Bundled Vendor Files (NOT CDN)
 
-### Phase 1: Project Setup & React Bindings
+**Decision**: React loaded from `wwwroot/js/vendor/`, not CDN.
 
-1. **Create H5 project structure**
-   - Create `Dashboard.Web.csproj` with H5 SDK
-   - Configure `h5.json` for output settings
-   - Create `wwwroot/index.html` with React 18 CDN links
+**Why**:
+1. **Offline/occasionally-connected**: Medical facilities have restricted networks. Future sync client will use IndexedDB for offline operation - can't depend on CDN.
+2. **Deterministic E2E testing**: Playwright tests work reliably without network.
+3. **HIPAA**: Minimize external network calls.
+4. **Version pinning**: Exact version in source control.
 
-2. **Build React JS interop layer** (inspired by Bridge.React + dart_node patterns)
-   - `React.cs` - Core React API bindings using `[External]` attributes
-   - `ReactDOM.cs` - createRoot, render bindings
-   - `Hooks.cs` - useState, useEffect, useMemo, useCallback
-   - `Elements.cs` - div, span, button, input, etc. factory methods
+**Why NOT npm/bundler**: Sample project. No webpack complexity needed.
 
-### Phase 2: Core Infrastructure
-
-3. **HTTP client layer**
-   - Wrap browser Fetch API for API calls
-   - Create typed clients for Clinical.Api and Scheduling.Api
-   - Handle CORS configuration (APIs need CORS headers)
-
-4. **State management**
-   - Simple observable state pattern
-   - Props/State immutability using records
-
-### Phase 3: Layout Components
-
-5. **Create layout shell**
-   - Sidebar with navigation (Patients, Appointments, Practitioners)
-   - Header with search and user info
-   - Main content area with routing
-
-6. **Apply glassmorphic styling**
-   - CSS with backdrop-filter, gradients
-   - Teal/cyan primary palette
-   - Card components with glass effect
-
-### Phase 4: Feature Views
-
-7. **Patient List/Search view**
-   - Search input with debounce
-   - Table/card list of patients
-   - Pagination
-   - Click to detail view
-
-8. **Patient Detail view**
-   - Demographics card
-   - Encounters list
-   - Conditions list
-   - Medications list
-   - Edit capabilities
-
-9. **Appointments Calendar view**
-   - Calendar grid or list view
-   - Filter by practitioner/patient
-   - Create/edit appointment modal
-   - Status indicators
-
-10. **Practitioner Directory view**
-    - Grid of practitioner cards
-    - Filter by specialty
-    - Search functionality
-
-### Phase 5: API Integration & CORS
-
-11. **Configure CORS on APIs**
-    - Add CORS middleware to Clinical.Api
-    - Add CORS middleware to Scheduling.Api
-    - Allow dashboard origin
-
-12. **Connect all views to APIs**
-    - Wire up data fetching
-    - Handle loading/error states
-    - Implement create/update operations
-
-## Critical Files to Create/Modify
-
-### New Files
-| File | Purpose |
-|------|---------|
-| `Samples/Dashboard/Dashboard.Web/Dashboard.Web.csproj` | H5 project |
-| `Samples/Dashboard/Dashboard.Web/h5.json` | H5 config |
-| `Samples/Dashboard/Dashboard.Web/wwwroot/index.html` | HTML entry |
-| `Samples/Dashboard/Dashboard.Web/wwwroot/styles/main.css` | Styles |
-| `Samples/Dashboard/Dashboard.Web/React/*.cs` | React bindings |
-| `Samples/Dashboard/Dashboard.Web/Components/**/*.cs` | UI components |
-| `Samples/Dashboard/Dashboard.Web/Api/*.cs` | API clients |
-| `Samples/Dashboard/Dashboard.Web/Program.cs` | Entry point |
-
-### Modified Files
-| File | Change |
-|------|--------|
-| `Samples/Clinical/Clinical.Api/Program.cs` | Add CORS |
-| `Samples/Scheduling/Scheduling.Api/Program.cs` | Add CORS |
-| `DataProvider.sln` | Add Dashboard project |
-
-## Technical Approach: React Bindings
-
-The React bindings will use H5's `[External]` and JS interop capabilities:
-
-```csharp
-// Example pattern for React bindings
-[External]
-[Name("React")]
-public static class React
-{
-    [Template("React.createElement({type}, {props}, ...{children})")]
-    public static extern ReactElement CreateElement(
-        Union<string, Func<object, ReactElement>> type,
-        object props,
-        params ReactElement[] children);
-}
-
-// Functional component pattern
-public static ReactElement PatientCard(PatientCardProps props) =>
-    Div(new { className = "patient-card" },
-        H3(null, props.Patient.GivenName + " " + props.Patient.FamilyName),
-        P(null, "DOB: " + props.Patient.BirthDate)
-    );
+**Update React**:
+```bash
+curl -o wwwroot/js/vendor/react.development.js https://unpkg.com/react@18/umd/react.development.js
+curl -o wwwroot/js/vendor/react-dom.development.js https://unpkg.com/react-dom@18/umd/react-dom.development.js
 ```
 
-## Color Palette (NO PURPLE)
+## Color Palette
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `--primary-500` | `#00BCD4` | Primary teal |
-| `--primary-400` | `#26C6DA` | Primary light |
-| `--primary-600` | `#00ACC1` | Primary dark |
-| `--secondary-500` | `#2E4450` | Deep slate blue |
+| `--primary-500` | `#00BCD4` | Teal primary |
+| `--secondary-500` | `#2E4450` | Deep slate |
 | `--accent-500` | `#FF6B6B` | Actions/alerts |
-| `--success` | `#4CAF50` | Success states |
-| `--warning` | `#FF9800` | Warnings |
+| `--success` | `#4CAF50` | Success |
 | `--error` | `#F44336` | Errors |
-| `--neutral-100` | `#F5F7FA` | Background |
-| `--neutral-800` | `#1E293B` | Text |
 
-## Dependencies
+**NO PURPLE.**
 
-- **h5** - C# to JS transpiler
-- **h5.Core** - DOM/ES5 type definitions
-- **React 18** - Via CDN (not NuGet)
-- **React DOM 18** - Via CDN
+## APIs
 
-## Build & Run
+- Clinical.Api: `http://localhost:5080` - Patients, Encounters, Conditions
+- Scheduling.Api: `http://localhost:5001` - Practitioners, Appointments
 
-```bash
-# Build dashboard
-cd Samples/Dashboard/Dashboard.Web
-dotnet build
+## Navigation: Hash-Based Routing with Browser History Integration
 
-# Serve with dotnet-serve or similar
-dotnet serve -p 3000 -d wwwroot
+**Decision**: Full browser history integration via hash-based routing (`#view` or `#view/edit/id`).
 
-# APIs run on separate ports
-cd Samples/Clinical/Clinical.Api && dotnet run  # Port 5000
-cd Samples/Scheduling/Scheduling.Api && dotnet run  # Port 5001
-```
+**Implementation**:
+1. **URL reflects state**: Navigating updates `window.location.hash` (e.g., `#patients`, `#patients/edit/123`)
+2. **Browser back/forward work**: `history.pushState` on navigate, `popstate` listener restores state
+3. **Deep linking works**: Opening `#patients/edit/123` directly loads that view
+4. **Cancel buttons use `history.back()`**: In-app cancel mirrors browser back button behavior
 
-## Success Criteria
+**Why**:
+1. **UX expectation**: Users expect browser back to work in web apps
+2. **Deep linking**: Bookmarkable URLs to specific views
+3. **Testable**: E2E tests can verify navigation via URL changes
 
-- [ ] H5 project compiles C# to JavaScript
-- [ ] React components render via JS interop
-- [ ] Dashboard displays patient list from Clinical.Api
-- [ ] Dashboard displays appointments from Scheduling.Api
-- [ ] Dashboard displays practitioners from Scheduling.Api
-- [ ] Patient detail view shows encounters, conditions, medications
-- [ ] Create/edit operations work
-- [ ] Glassmorphic UI matches healthcare design standards
-- [ ] No purple in color scheme
+**Route Format**:
+- `#dashboard` - Dashboard view
+- `#patients` - Patient list
+- `#patients/edit/{id}` - Edit specific patient
+- `#appointments` - Appointments list
+- `#practitioners` - Practitioners list
 
-## KNOWN LIMITATION: H5 Transpiler Uses C# 7.2
+**Cancel/Back Button Behavior**:
+In-app "Cancel" buttons call `window.history.back()` so they behave identically to the browser back button. This ensures consistent navigation regardless of how the user chooses to go back.
 
-**CRITICAL FUTURE WORK**: The H5 transpiler internally uses Roslyn with C# 7.2, regardless of the `LangVersion` setting in the csproj. This means:
+## Sync Dashboard
 
-- No records (use classes instead)
-- No file-scoped namespaces
-- No global usings
-- No range operators (`..`)
-- No recursive patterns
-- No nullable reference type syntax
-- No target-typed new expressions
+Administrative dashboard for monitoring and managing sync operations across microservices.
 
-**TODO**: Fork and rewrite the H5 transpiler to use modern Roslyn (C# 12+). This would involve:
-1. Forking https://github.com/aspect-build/aspect-dotnet/tree/master/src/aspect.h5 (or similar H5 fork)
-2. Updating the embedded Roslyn compiler to latest
-3. Adding transpilation support for modern C# features
-4. Publishing as a new NuGet package
+**Permission Required**: `sync:admin` - Only users with this permission can access sync dashboard features.
 
-For now, all Dashboard.Web code must be written in C# 7.2 compatible syntax.
+**Features**:
+1. **Sync Status Overview**: Real-time status of sync operations per microservice (Clinical.Api, Scheduling.Api)
+2. **Sync Records Browser**: View, filter, and search sync records by:
+   - Microservice (source system)
+   - Sync record ID
+   - Status (pending, synced, failed, conflict)
+   - Date range
+3. **Error Investigation**: Drill into failed sync records to see error details
+4. **Manual Retry**: Trigger retry of failed sync operations
+
+**Route**: `#sync` (requires `sync:admin` permission)
+
+**API Endpoints** (to be implemented in each microservice):
+- `GET /sync/status` - Current sync state
+- `GET /sync/records?service={}&status={}&search={}` - Paginated sync records
+- `POST /sync/records/{id}/retry` - Retry failed record
+
+## Future: Offline Sync Client
+
+The dashboard will implement a sync client for occasionally-connected operation:
+
+1. **IndexedDB storage**: Local patient/appointment cache
+2. **Change tracking**: Queue mutations when offline
+3. **Sync protocol**: Reconcile with server when connected
+4. **Conflict resolution**: Last-write-wins or manual merge
+
+This is why bundled vendor files matter - the app must work without any network.

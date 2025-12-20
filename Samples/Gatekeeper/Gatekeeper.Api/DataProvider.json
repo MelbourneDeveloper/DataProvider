@@ -1,0 +1,21 @@
+{
+  "queries": [
+    { "name": "GetUserByEmail", "sqlFile": "Sql/GetUserByEmail.sql" },
+    { "name": "GetUserById", "sqlFile": "Sql/GetUserById.sql" },
+    { "name": "GetUserCredentials", "sqlFile": "Sql/GetUserCredentials.sql" },
+    { "name": "GetCredentialById", "sqlFile": "Sql/GetCredentialById.sql" },
+    { "name": "GetSessionById", "sqlFile": "Sql/GetSessionById.sql" },
+    { "name": "GetChallengeById", "sqlFile": "Sql/GetChallengeById.sql" },
+    { "name": "GetUserRoles", "sqlFile": "Sql/GetUserRoles.sql" },
+    { "name": "GetUserPermissions", "sqlFile": "Sql/GetUserPermissions.sql" },
+    { "name": "CheckResourceGrant", "sqlFile": "Sql/CheckResourceGrant.sql" },
+    { "name": "GetActivePolicies", "sqlFile": "Sql/GetActivePolicies.sql" }
+  ],
+  "tables": [
+    { "schema": "main", "name": "gk_user", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
+    { "schema": "main", "name": "gk_credential", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
+    { "schema": "main", "name": "gk_session", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
+    { "schema": "main", "name": "gk_challenge", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] }
+  ],
+  "connectionString": "Data Source=gatekeeper.db"
+}

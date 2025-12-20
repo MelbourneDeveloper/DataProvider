@@ -1268,6 +1268,34 @@
   justify-content: center;
 }
 
+.practitioner-edit-btn {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  color: var(--gray-500);
+  transition: all var(--transition-fast);
+  opacity: 0;
+}
+
+.practitioner-card:hover .practitioner-edit-btn {
+  opacity: 1;
+}
+
+.practitioner-edit-btn:hover {
+  background: var(--primary-blue-subtle);
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
+}
+
 /* === RESPONSIVE === */
 @media (max-width: 1440px) {
   .dashboard-metrics-row {

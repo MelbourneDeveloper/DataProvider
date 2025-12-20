@@ -1,0 +1,11 @@
+global using System;
+global using System.Collections.Immutable;
+global using System.Globalization;
+global using System.Text.Json;
+global using Fido2NetLib;
+global using Fido2NetLib.Objects;
+global using Generated;
+global using Microsoft.Data.Sqlite;
+global using Microsoft.Extensions.Logging;
+global using Outcome;
+global using Selecta;

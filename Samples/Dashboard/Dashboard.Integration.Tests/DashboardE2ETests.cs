@@ -818,6 +818,317 @@ public sealed class DashboardE2ETests
     }
 
     /// <summary>
+    /// CRITICAL TEST: Browser back button navigates to previous view.
+    /// Proves history.pushState/popstate integration works correctly.
+    /// </summary>
+    [Fact]
+    public async Task BrowserBackButton_NavigatesToPreviousView()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Start on dashboard (default)
+        Assert.Contains("#dashboard", page.Url);
+
+        // Navigate to Patients
+        await page.ClickAsync("text=Patients");
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        Assert.Contains("#patients", page.Url);
+
+        // Navigate to Appointments
+        await page.ClickAsync("text=Appointments");
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-appointment-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        Assert.Contains("#appointments", page.Url);
+
+        // Press browser back - should go to Patients
+        await page.GoBackAsync();
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        Assert.Contains("#patients", page.Url);
+
+        // Press browser back again - should go to Dashboard
+        await page.GoBackAsync();
+        await page.WaitForSelectorAsync(
+            ".metric-card",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        Assert.Contains("#dashboard", page.Url);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Deep linking works - navigating directly to a hash URL loads correct view.
+    /// </summary>
+    [Fact]
+    public async Task DeepLinking_LoadsCorrectView()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        // Navigate directly to patients page via hash
+        await page.GotoAsync($"{E2EFixture.DashboardUrl}#patients");
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Verify we're on patients page
+        var content = await page.ContentAsync();
+        Assert.Contains("Patients", content);
+
+        // Navigate directly to appointments via hash
+        await page.GotoAsync($"{E2EFixture.DashboardUrl}#appointments");
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-appointment-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        content = await page.ContentAsync();
+        Assert.Contains("Appointments", content);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Cancel button on edit page uses history.back() - same behavior as browser back.
+    /// </summary>
+    [Fact]
+    public async Task EditPatientCancelButton_UsesHistoryBack()
+    {
+        using var client = new HttpClient();
+
+        // Create a patient to edit
+        var uniqueName = $"CancelTest{DateTime.UtcNow.Ticks % 100000}";
+        var createResponse = await client.PostAsync(
+            $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
+            new StringContent(
+                $$$"""{"Active": true, "GivenName": "{{{uniqueName}}}", "FamilyName": "CancelTestPatient", "Gender": "male"}""",
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
+        createResponse.EnsureSuccessStatusCode();
+        var createdJson = await createResponse.Content.ReadAsStringAsync();
+        var patientIdMatch = System.Text.RegularExpressions.Regex.Match(
+            createdJson,
+            "\"Id\"\\s*:\\s*\"([^\"]+)\""
+        );
+        var patientId = patientIdMatch.Groups[1].Value;
+
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Navigate to Patients
+        await page.ClickAsync("text=Patients");
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        Assert.Contains("#patients", page.Url);
+
+        // Search for and click edit on the patient
+        await page.FillAsync("input[placeholder*='Search']", uniqueName);
+        await page.WaitForSelectorAsync(
+            $"text={uniqueName}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        await page.ClickAsync($"[data-testid='edit-patient-{patientId}']");
+
+        // Wait for edit page
+        await page.WaitForSelectorAsync(
+            "[data-testid='edit-patient-page']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+        Assert.Contains($"#patients/edit/{patientId}", page.Url);
+
+        // Click Cancel button - should use history.back() and return to patients list
+        await page.ClickAsync("button:has-text('Cancel')");
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Should be back on patients page
+        Assert.Contains("#patients", page.Url);
+        Assert.DoesNotContain("/edit/", page.Url);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Browser back button works from Edit Patient page.
+    /// This is THE test that proves the original bug is fixed - pressing browser back
+    /// from an edit page should return to patients list, NOT show a blank page.
+    /// </summary>
+    [Fact]
+    public async Task BrowserBackButton_FromEditPage_ReturnsToPatientsPage()
+    {
+        using var client = new HttpClient();
+
+        // Create a patient to edit
+        var uniqueName = $"BackBtnTest{DateTime.UtcNow.Ticks % 100000}";
+        var createResponse = await client.PostAsync(
+            $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
+            new StringContent(
+                $$$"""{"Active": true, "GivenName": "{{{uniqueName}}}", "FamilyName": "BackButtonTest", "Gender": "female"}""",
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
+        createResponse.EnsureSuccessStatusCode();
+        var createdJson = await createResponse.Content.ReadAsStringAsync();
+        var patientIdMatch = System.Text.RegularExpressions.Regex.Match(
+            createdJson,
+            "\"Id\"\\s*:\\s*\"([^\"]+)\""
+        );
+        var patientId = patientIdMatch.Groups[1].Value;
+
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        // Start at dashboard
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+        Assert.Contains("#dashboard", page.Url);
+
+        // Navigate to Patients
+        await page.ClickAsync("text=Patients");
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        Assert.Contains("#patients", page.Url);
+
+        // Search for the patient
+        await page.FillAsync("input[placeholder*='Search']", uniqueName);
+        await page.WaitForSelectorAsync(
+            $"text={uniqueName}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Click edit to go to edit page
+        await page.ClickAsync($"[data-testid='edit-patient-{patientId}']");
+        await page.WaitForSelectorAsync(
+            "[data-testid='edit-patient-page']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+        Assert.Contains($"#patients/edit/{patientId}", page.Url);
+
+        // THE CRITICAL TEST: Press browser back button
+        // Before the fix, this would show a blank "Guest browsing" page
+        // After the fix, it should return to the patients list
+        await page.GoBackAsync();
+
+        // Should be back on patients page with sidebar visible (NOT a blank page)
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        Assert.Contains("#patients", page.Url);
+        Assert.DoesNotContain("/edit/", page.Url);
+
+        // Verify the page content is actually the patients page, not blank
+        var content = await page.ContentAsync();
+        Assert.Contains("Patients", content);
+        Assert.Contains("Add Patient", content);
+
+        // Press back again - should go to dashboard
+        await page.GoBackAsync();
+        await page.WaitForSelectorAsync(
+            ".metric-card",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        Assert.Contains("#dashboard", page.Url);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Forward button works after going back.
+    /// Proves full history navigation (back AND forward) works correctly.
+    /// </summary>
+    [Fact]
+    public async Task BrowserForwardButton_WorksAfterGoingBack()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Navigate: Dashboard -> Patients -> Practitioners
+        await page.ClickAsync("text=Patients");
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        await page.ClickAsync("text=Practitioners");
+        await page.WaitForSelectorAsync(
+            ".practitioner-card, .empty-state",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        Assert.Contains("#practitioners", page.Url);
+
+        // Go back to Patients
+        await page.GoBackAsync();
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        Assert.Contains("#patients", page.Url);
+
+        // Go forward to Practitioners
+        await page.GoForwardAsync();
+        await page.WaitForSelectorAsync(
+            ".practitioner-card, .empty-state",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        Assert.Contains("#practitioners", page.Url);
+
+        // Verify page content is actually practitioners page
+        var content = await page.ContentAsync();
+        Assert.Contains("Practitioners", content);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
     /// CRITICAL TEST: Proves patient update API works end-to-end.
     /// This test hits the real Clinical API directly without Playwright.
     /// </summary>
@@ -865,5 +1176,292 @@ public sealed class DashboardE2ETests
         );
         Assert.Contains(updatedFamilyName, getResponse);
         Assert.Contains("updated@test.com", getResponse);
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Add Practitioner button opens modal and creates practitioner via API.
+    /// Uses Playwright to load REAL Dashboard, click Add Practitioner, fill form, and POST to REAL API.
+    /// </summary>
+    [Fact]
+    public async Task AddPractitionerButton_OpensModal_AndCreatesPractitioner()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Navigate to Practitioners page
+        await page.ClickAsync("text=Practitioners");
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-practitioner-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Click Add Practitioner button
+        await page.ClickAsync("[data-testid='add-practitioner-btn']");
+
+        // Wait for modal to appear
+        await page.WaitForSelectorAsync(
+            ".modal",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+
+        // Fill in practitioner details
+        var uniqueIdentifier = $"DR{DateTime.UtcNow.Ticks % 100000}";
+        var uniqueGivenName = $"E2EDoc{DateTime.UtcNow.Ticks % 100000}";
+        await page.FillAsync("[data-testid='practitioner-identifier']", uniqueIdentifier);
+        await page.FillAsync("[data-testid='practitioner-given-name']", uniqueGivenName);
+        await page.FillAsync("[data-testid='practitioner-family-name']", "TestCreated");
+        await page.FillAsync("[data-testid='practitioner-specialty']", "E2E Testing");
+
+        // Submit the form
+        await page.ClickAsync("[data-testid='submit-practitioner']");
+
+        // Wait for modal to close and practitioner to appear in list
+        await page.WaitForSelectorAsync(
+            $"text={uniqueGivenName}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Verify via API that practitioner was actually created
+        using var client = new HttpClient();
+        var response = await client.GetStringAsync($"{E2EFixture.SchedulingUrl}/Practitioner");
+        Assert.Contains(uniqueIdentifier, response);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Edit Practitioner button navigates to edit page and updates practitioner.
+    /// Uses Playwright to load REAL Dashboard, click Edit, modify data, and PUT to REAL API.
+    /// </summary>
+    [Fact]
+    public async Task EditPractitionerButton_OpensEditPage_AndUpdatesPractitioner()
+    {
+        using var client = new HttpClient();
+
+        // Create a practitioner to edit
+        var uniqueIdentifier = $"DREdit{DateTime.UtcNow.Ticks % 100000}";
+        var uniqueGivenName = $"EditTest{DateTime.UtcNow.Ticks % 100000}";
+        var createResponse = await client.PostAsync(
+            $"{E2EFixture.SchedulingUrl}/Practitioner",
+            new StringContent(
+                $$$"""{"Identifier": "{{{uniqueIdentifier}}}", "NameFamily": "OriginalFamily", "NameGiven": "{{{uniqueGivenName}}}", "Qualification": "MD", "Specialty": "Original Specialty"}""",
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
+        createResponse.EnsureSuccessStatusCode();
+        var createdJson = await createResponse.Content.ReadAsStringAsync();
+        var practitionerIdMatch = System.Text.RegularExpressions.Regex.Match(
+            createdJson,
+            "\"Id\"\\s*:\\s*\"([^\"]+)\""
+        );
+        var practitionerId = practitionerIdMatch.Groups[1].Value;
+
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Navigate to Practitioners page
+        await page.ClickAsync("text=Practitioners");
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-practitioner-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Wait for our practitioner to appear
+        await page.WaitForSelectorAsync(
+            $"text={uniqueGivenName}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Hover over the card to show the edit button, then click it
+        var editButton = page.Locator($"[data-testid='edit-practitioner-{practitionerId}']");
+        await editButton.HoverAsync();
+        await editButton.ClickAsync();
+
+        // Wait for edit page
+        await page.WaitForSelectorAsync(
+            "[data-testid='edit-practitioner-page']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+        Assert.Contains($"#practitioners/edit/{practitionerId}", page.Url);
+
+        // Update the practitioner's specialty
+        var newSpecialty = $"Updated Specialty {DateTime.UtcNow.Ticks % 100000}";
+        await page.FillAsync("[data-testid='edit-practitioner-specialty']", newSpecialty);
+
+        // Save changes
+        await page.ClickAsync("[data-testid='save-practitioner']");
+
+        // Wait for success message
+        await page.WaitForSelectorAsync(
+            "[data-testid='edit-practitioner-success']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Verify via API that practitioner was actually updated
+        var updatedPractitionerJson = await client.GetStringAsync(
+            $"{E2EFixture.SchedulingUrl}/Practitioner/{practitionerId}"
+        );
+        Assert.Contains(newSpecialty, updatedPractitionerJson);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Proves practitioner update API works end-to-end.
+    /// This test hits the real Scheduling API directly without Playwright.
+    /// </summary>
+    [Fact]
+    public async Task PractitionerUpdateApi_WorksEndToEnd()
+    {
+        using var client = new HttpClient();
+
+        // Create a practitioner first
+        var uniqueIdentifier = $"DRApi{DateTime.UtcNow.Ticks % 100000}";
+        var createResponse = await client.PostAsync(
+            $"{E2EFixture.SchedulingUrl}/Practitioner",
+            new StringContent(
+                $$$"""{"Identifier": "{{{uniqueIdentifier}}}", "NameFamily": "ApiOriginal", "NameGiven": "TestDoc", "Qualification": "MD", "Specialty": "Original"}""",
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
+        createResponse.EnsureSuccessStatusCode();
+        var createdPractitionerJson = await createResponse.Content.ReadAsStringAsync();
+
+        // Extract practitioner ID
+        var practitionerIdMatch = System.Text.RegularExpressions.Regex.Match(
+            createdPractitionerJson,
+            "\"Id\"\\s*:\\s*\"([^\"]+)\""
+        );
+        Assert.True(practitionerIdMatch.Success, "Should get practitioner ID from creation response");
+        var practitionerId = practitionerIdMatch.Groups[1].Value;
+
+        // Update the practitioner
+        var updatedSpecialty = $"ApiUpdated{DateTime.UtcNow.Ticks % 100000}";
+        var updateResponse = await client.PutAsync(
+            $"{E2EFixture.SchedulingUrl}/Practitioner/{practitionerId}",
+            new StringContent(
+                $$$"""{"Identifier": "{{{uniqueIdentifier}}}", "Active": true, "NameFamily": "ApiUpdated", "NameGiven": "TestDoc", "Qualification": "DO", "Specialty": "{{{updatedSpecialty}}}", "TelecomEmail": "updated@hospital.com", "TelecomPhone": "555-1234"}""",
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
+        updateResponse.EnsureSuccessStatusCode();
+
+        // Verify practitioner was updated
+        var getResponse = await client.GetStringAsync(
+            $"{E2EFixture.SchedulingUrl}/Practitioner/{practitionerId}"
+        );
+        Assert.Contains(updatedSpecialty, getResponse);
+        Assert.Contains("ApiUpdated", getResponse);
+        Assert.Contains("DO", getResponse);
+        Assert.Contains("updated@hospital.com", getResponse);
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Browser back button works from Edit Practitioner page.
+    /// Proves navigation between practitioners list and edit page works correctly.
+    /// </summary>
+    [Fact]
+    public async Task BrowserBackButton_FromEditPractitionerPage_ReturnsToPractitionersPage()
+    {
+        using var client = new HttpClient();
+
+        // Create a practitioner to edit
+        var uniqueIdentifier = $"DRBack{DateTime.UtcNow.Ticks % 100000}";
+        var uniqueGivenName = $"BackTest{DateTime.UtcNow.Ticks % 100000}";
+        var createResponse = await client.PostAsync(
+            $"{E2EFixture.SchedulingUrl}/Practitioner",
+            new StringContent(
+                $$$"""{"Identifier": "{{{uniqueIdentifier}}}", "NameFamily": "BackButtonTest", "NameGiven": "{{{uniqueGivenName}}}", "Qualification": "MD", "Specialty": "Testing"}""",
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
+        createResponse.EnsureSuccessStatusCode();
+        var createdJson = await createResponse.Content.ReadAsStringAsync();
+        var practitionerIdMatch = System.Text.RegularExpressions.Regex.Match(
+            createdJson,
+            "\"Id\"\\s*:\\s*\"([^\"]+)\""
+        );
+        var practitionerId = practitionerIdMatch.Groups[1].Value;
+
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        // Start at dashboard
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+        Assert.Contains("#dashboard", page.Url);
+
+        // Navigate to Practitioners
+        await page.ClickAsync("text=Practitioners");
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-practitioner-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        Assert.Contains("#practitioners", page.Url);
+
+        // Wait for our practitioner to appear
+        await page.WaitForSelectorAsync(
+            $"text={uniqueGivenName}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Click edit to go to edit page
+        var editButton = page.Locator($"[data-testid='edit-practitioner-{practitionerId}']");
+        await editButton.HoverAsync();
+        await editButton.ClickAsync();
+        await page.WaitForSelectorAsync(
+            "[data-testid='edit-practitioner-page']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+        Assert.Contains($"#practitioners/edit/{practitionerId}", page.Url);
+
+        // Press browser back button
+        await page.GoBackAsync();
+
+        // Should be back on practitioners page with sidebar visible
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-practitioner-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        Assert.Contains("#practitioners", page.Url);
+        Assert.DoesNotContain("/edit/", page.Url);
+
+        // Verify the page content is actually the practitioners page
+        var content = await page.ContentAsync();
+        Assert.Contains("Practitioners", content);
+        Assert.Contains("Add Practitioner", content);
+
+        // Press back again - should go to dashboard
+        await page.GoBackAsync();
+        await page.WaitForSelectorAsync(
+            ".metric-card",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        Assert.Contains("#dashboard", page.Url);
+
+        await page.CloseAsync();
     }
 }

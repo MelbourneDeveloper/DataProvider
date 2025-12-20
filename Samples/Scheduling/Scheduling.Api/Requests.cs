@@ -14,6 +14,20 @@ internal sealed record CreatePractitionerRequest(
 );
 
 /// <summary>
+/// Update practitioner request.
+/// </summary>
+internal sealed record UpdatePractitionerRequest(
+    string Identifier,
+    bool Active,
+    string NameFamily,
+    string NameGiven,
+    string? Qualification,
+    string? Specialty,
+    string? TelecomEmail,
+    string? TelecomPhone
+);
+
+/// <summary>
 /// Create appointment request.
 /// </summary>
 internal sealed record CreateAppointmentRequest(

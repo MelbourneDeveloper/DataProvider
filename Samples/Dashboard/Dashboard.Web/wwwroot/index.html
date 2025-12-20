@@ -441,6 +441,143 @@
         );
       };
 
+      // Add Practitioner Modal Component
+      const AddPractitionerModal = ({ isOpen, onClose, onSuccess }) => {
+        const [formData, setFormData] = React.useState({
+          Identifier: '',
+          NameGiven: '',
+          NameFamily: '',
+          Qualification: 'MD',
+          Specialty: '',
+          TelecomEmail: '',
+          TelecomPhone: ''
+        });
+        const [submitting, setSubmitting] = React.useState(false);
+        const [error, setError] = React.useState(null);
+
+        const handleSubmit = async (e) => {
+          e.preventDefault();
+          setSubmitting(true);
+          setError(null);
+          try {
+            await postApi(`${SCHEDULING_API}/Practitioner`, formData);
+            setFormData({
+              Identifier: '',
+              NameGiven: '',
+              NameFamily: '',
+              Qualification: 'MD',
+              Specialty: '',
+              TelecomEmail: '',
+              TelecomPhone: ''
+            });
+            onSuccess();
+            onClose();
+          } catch (err) {
+            setError(err.message);
+          } finally {
+            setSubmitting(false);
+          }
+        };
+
+        return React.createElement(Modal, { isOpen, onClose, title: 'Add New Practitioner' },
+          React.createElement('form', { onSubmit: handleSubmit },
+            React.createElement('div', { className: 'modal-body' },
+              error && React.createElement('div', { className: 'alert alert-error mb-4' }, error),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'Identifier (e.g. DR001)'),
+                React.createElement('input', {
+                  type: 'text',
+                  className: 'input',
+                  placeholder: 'Enter identifier',
+                  value: formData.Identifier,
+                  onChange: e => setFormData({ ...formData, Identifier: e.target.value }),
+                  required: true,
+                  'data-testid': 'practitioner-identifier'
+                })
+              ),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'Given Name'),
+                React.createElement('input', {
+                  type: 'text',
+                  className: 'input',
+                  placeholder: 'Enter given name',
+                  value: formData.NameGiven,
+                  onChange: e => setFormData({ ...formData, NameGiven: e.target.value }),
+                  required: true,
+                  'data-testid': 'practitioner-given-name'
+                })
+              ),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'Family Name'),
+                React.createElement('input', {
+                  type: 'text',
+                  className: 'input',
+                  placeholder: 'Enter family name',
+                  value: formData.NameFamily,
+                  onChange: e => setFormData({ ...formData, NameFamily: e.target.value }),
+                  required: true,
+                  'data-testid': 'practitioner-family-name'
+                })
+              ),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'Qualification'),
+                React.createElement('select', {
+                  className: 'input',
+                  value: formData.Qualification,
+                  onChange: e => setFormData({ ...formData, Qualification: e.target.value }),
+                  'data-testid': 'practitioner-qualification'
+                },
+                  React.createElement('option', { value: 'MD' }, 'MD - Doctor of Medicine'),
+                  React.createElement('option', { value: 'DO' }, 'DO - Doctor of Osteopathy'),
+                  React.createElement('option', { value: 'NP' }, 'NP - Nurse Practitioner'),
+                  React.createElement('option', { value: 'PA' }, 'PA - Physician Assistant'),
+                  React.createElement('option', { value: 'RN' }, 'RN - Registered Nurse')
+                )
+              ),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'Specialty'),
+                React.createElement('input', {
+                  type: 'text',
+                  className: 'input',
+                  placeholder: 'e.g. Cardiology, General Practice',
+                  value: formData.Specialty,
+                  onChange: e => setFormData({ ...formData, Specialty: e.target.value }),
+                  'data-testid': 'practitioner-specialty'
+                })
+              ),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'Email'),
+                React.createElement('input', {
+                  type: 'email',
+                  className: 'input',
+                  placeholder: 'doctor@hospital.com',
+                  value: formData.TelecomEmail,
+                  onChange: e => setFormData({ ...formData, TelecomEmail: e.target.value }),
+                  'data-testid': 'practitioner-email'
+                })
+              ),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'Phone'),
+                React.createElement('input', {
+                  type: 'tel',
+                  className: 'input',
+                  placeholder: '+1-555-0100',
+                  value: formData.TelecomPhone,
+                  onChange: e => setFormData({ ...formData, TelecomPhone: e.target.value }),
+                  'data-testid': 'practitioner-phone'
+                })
+              )
+            ),
+            React.createElement('div', { className: 'modal-footer' },
+              React.createElement('button', { type: 'button', className: 'btn btn-secondary', onClick: onClose }, 'Cancel'),
+              React.createElement('button', { type: 'submit', className: 'btn btn-primary', disabled: submitting, 'data-testid': 'submit-practitioner' },
+                submitting ? 'Saving...' : 'Add Practitioner'
+              )
+            )
+          )
+        );
+      };
+
       // Metric Card Component
       const MetricCard = ({ label, value, icon, iconColor, trend, trendValue, loading }) => (
         React.createElement('div', { className: 'metric-card' },
@@ -1120,38 +1257,69 @@
       };
 
       // Practitioners Page
-      const PractitionersPage = () => {
-        const { data, loading, error } = useFetch(`${SCHEDULING_API}/Practitioner`);
+      const PractitionersPage = ({ openAddModal: initialOpenModal, onEditPractitioner }) => {
+        const [showAddModal, setShowAddModal] = React.useState(false);
+        const [refreshKey, setRefreshKey] = React.useState(0);
+        const { data, loading, error } = useFetch(`${SCHEDULING_API}/Practitioner`, [refreshKey]);
+
+        // Open modal when navigated with openAddModal option
+        React.useEffect(() => {
+          if (initialOpenModal) setShowAddModal(true);
+        }, [initialOpenModal]);
 
         return React.createElement('div', { className: 'page' },
+          React.createElement(AddPractitionerModal, {
+            isOpen: showAddModal,
+            onClose: () => setShowAddModal(false),
+            onSuccess: () => setRefreshKey(k => k + 1)
+          }),
           React.createElement('div', { className: 'page-header' },
             React.createElement('h2', { className: 'page-title' }, 'Practitioners'),
             React.createElement('p', { className: 'page-description' }, 'Manage healthcare providers')
           ),
-          error ? React.createElement('div', { className: 'card' },
-            React.createElement('div', { className: 'empty-state' },
-              React.createElement('div', { className: 'empty-state-icon' }, React.createElement(Icons.AlertCircle)),
-              React.createElement('h4', { className: 'empty-state-title' }, 'Could not load practitioners'),
-              React.createElement('p', { className: 'empty-state-description' }, 'Make sure the Scheduling API is running on port 5001')
-            )
-          ) : loading ? React.createElement('div', { className: 'dashboard-grid practitioners' },
-            [...Array(6)].map((_, i) => React.createElement('div', { key: i, className: 'card' },
-              React.createElement('div', { className: 'skeleton', style: { height: '200px' } })
-            ))
-          ) : React.createElement('div', { className: 'dashboard-grid practitioners' },
-            (data || []).map(p =>
-              React.createElement('div', { key: p.Id || p.Identifier, className: 'card practitioner-card' },
-                React.createElement('div', { className: 'practitioner-avatar' },
-                  React.createElement('div', { className: 'avatar avatar-lg' },
-                    (p.NameGiven?.[0] || '') + (p.NameFamily?.[0] || '')
+          React.createElement('div', { className: 'card' },
+            React.createElement('div', { className: 'card-header' },
+              React.createElement('button', {
+                className: 'btn btn-primary',
+                onClick: () => setShowAddModal(true),
+                'data-testid': 'add-practitioner-btn'
+              }, '+ Add Practitioner')
+            ),
+            React.createElement('div', { className: 'card-body' },
+              error ? React.createElement('div', { className: 'empty-state' },
+                React.createElement('div', { className: 'empty-state-icon' }, React.createElement(Icons.AlertCircle)),
+                React.createElement('h4', { className: 'empty-state-title' }, 'Could not load practitioners'),
+                React.createElement('p', { className: 'empty-state-description' }, 'Make sure the Scheduling API is running on port 5001')
+              ) : loading ? React.createElement('div', { className: 'dashboard-grid practitioners' },
+                [...Array(6)].map((_, i) => React.createElement('div', { key: i, className: 'card' },
+                  React.createElement('div', { className: 'skeleton', style: { height: '200px' } })
+                ))
+              ) : (data || []).length === 0 ? React.createElement('div', { className: 'empty-state' },
+                React.createElement('div', { className: 'empty-state-icon' }, React.createElement(Icons.UserDoctor)),
+                React.createElement('h4', { className: 'empty-state-title' }, 'No practitioners yet'),
+                React.createElement('p', { className: 'empty-state-description' }, 'Add your first practitioner to get started')
+              ) : React.createElement('div', { className: 'dashboard-grid practitioners' },
+                (data || []).map(p =>
+                  React.createElement('div', { key: p.Id || p.Identifier, className: 'card practitioner-card' },
+                    React.createElement('button', {
+                      className: 'practitioner-edit-btn',
+                      onClick: () => onEditPractitioner && onEditPractitioner(p.Id),
+                      'data-testid': `edit-practitioner-${p.Id}`,
+                      title: 'Edit Practitioner'
+                    }, React.createElement(Icons.Edit)),
+                    React.createElement('div', { className: 'practitioner-avatar' },
+                      React.createElement('div', { className: 'avatar avatar-lg' },
+                        (p.NameGiven?.[0] || '') + (p.NameFamily?.[0] || '')
+                      )
+                    ),
+                    React.createElement('h4', { className: 'practitioner-name' },
+                      `${p.NameGiven || ''} ${p.NameFamily || ''}`.trim() || 'Unknown'
+                    ),
+                    React.createElement('p', { className: 'practitioner-specialty' }, p.Specialty || 'General'),
+                    React.createElement('div', { className: 'practitioner-meta' },
+                      React.createElement('span', { className: 'badge badge-info' }, p.Qualification || 'MD')
+                    )
                   )
-                ),
-                React.createElement('h4', { className: 'practitioner-name' },
-                  `${p.NameGiven || ''} ${p.NameFamily || ''}`.trim() || 'Unknown'
-                ),
-                React.createElement('p', { className: 'practitioner-specialty' }, p.Specialty || 'General'),
-                React.createElement('div', { className: 'practitioner-meta' },
-                  React.createElement('span', { className: 'badge badge-info' }, p.Qualification || 'MD')
                 )
               )
             )
@@ -1328,7 +1496,7 @@
       );
 
       // Edit Patient Page
-      const EditPatientPage = ({ patientId, onBack }) => {
+      const EditPatientPage = ({ patientId, onCancel }) => {
         const [patient, setPatient] = React.useState(null);
         const [loading, setLoading] = React.useState(true);
         const [saving, setSaving] = React.useState(false);
@@ -1421,19 +1589,14 @@
 
         if (error && !patient) {
           return React.createElement('div', { className: 'page' },
-            React.createElement('div', { className: 'page-header flex justify-between items-center' },
-              React.createElement('div', null,
-                React.createElement('h2', { className: 'page-title' }, 'Edit Patient'),
-                React.createElement('p', { className: 'page-description' }, 'Error loading patient')
-              ),
-              React.createElement('button', { className: 'btn btn-secondary', onClick: onBack },
-                React.createElement(Icons.ChevronLeft), ' Back to Patients'
-              )
+            React.createElement('div', { className: 'page-header' },
+              React.createElement('h2', { className: 'page-title' }, 'Edit Patient'),
+              React.createElement('p', { className: 'page-description' }, 'Error loading patient')
             ),
             React.createElement('div', { className: 'card', style: { borderLeft: '4px solid var(--error)' } },
               React.createElement('div', { className: 'flex items-center gap-3 p-4' },
                 React.createElement(Icons.AlertCircle),
-                `Error loading patient: ${error}`
+                `Error loading patient: ${error}. Use the sidebar to navigate.`
               )
             )
           );
@@ -1442,14 +1605,9 @@
         const fullName = `${formData.GivenName} ${formData.FamilyName}`.trim();
 
         return React.createElement('div', { className: 'page', 'data-testid': 'edit-patient-page' },
-          React.createElement('div', { className: 'page-header flex justify-between items-center' },
-            React.createElement('div', null,
-              React.createElement('h2', { className: 'page-title' }, 'Edit Patient'),
-              React.createElement('p', { className: 'page-description' }, `Update information for ${fullName || 'patient'}`)
-            ),
-            React.createElement('button', { className: 'btn btn-secondary', onClick: onBack, 'data-testid': 'back-to-patients' },
-              React.createElement(Icons.ChevronLeft), ' Back to Patients'
-            )
+          React.createElement('div', { className: 'page-header' },
+            React.createElement('h2', { className: 'page-title' }, 'Edit Patient'),
+            React.createElement('p', { className: 'page-description' }, `Update information for ${fullName || 'patient'}`)
           ),
           React.createElement('div', { className: 'card' },
             error && React.createElement('div', { className: 'alert alert-error mb-4', 'data-testid': 'edit-error' },
@@ -1597,7 +1755,7 @@
                 React.createElement('button', {
                   type: 'button',
                   className: 'btn btn-secondary',
-                  onClick: onBack,
+                  onClick: onCancel,
                   disabled: saving
                 }, 'Cancel'),
                 React.createElement('button', {
@@ -1612,19 +1770,327 @@
         );
       };
 
+      // Edit Practitioner Page
+      const EditPractitionerPage = ({ practitionerId, onCancel }) => {
+        const [practitioner, setPractitioner] = React.useState(null);
+        const [loading, setLoading] = React.useState(true);
+        const [saving, setSaving] = React.useState(false);
+        const [error, setError] = React.useState(null);
+        const [success, setSuccess] = React.useState(null);
+        const [formData, setFormData] = React.useState({
+          Identifier: '',
+          Active: true,
+          NameGiven: '',
+          NameFamily: '',
+          Qualification: 'MD',
+          Specialty: '',
+          TelecomEmail: '',
+          TelecomPhone: ''
+        });
+
+        React.useEffect(() => {
+          const fetchPractitioner = async () => {
+            try {
+              const response = await fetch(`${SCHEDULING_API}/Practitioner/${practitionerId}`);
+              if (!response.ok) throw new Error('Failed to load practitioner');
+              const data = await response.json();
+              setPractitioner(data);
+              setFormData({
+                Identifier: data.Identifier || '',
+                Active: data.Active !== false && data.Active !== 0,
+                NameGiven: data.NameGiven || '',
+                NameFamily: data.NameFamily || '',
+                Qualification: data.Qualification || 'MD',
+                Specialty: data.Specialty || '',
+                TelecomEmail: data.TelecomEmail || '',
+                TelecomPhone: data.TelecomPhone || ''
+              });
+            } catch (err) {
+              setError(err.message);
+            } finally {
+              setLoading(false);
+            }
+          };
+          fetchPractitioner();
+        }, [practitionerId]);
+
+        const handleSubmit = async (e) => {
+          e.preventDefault();
+          setSaving(true);
+          setError(null);
+          setSuccess(null);
+          try {
+            const response = await fetch(`${SCHEDULING_API}/Practitioner/${practitionerId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(formData)
+            });
+            if (!response.ok) throw new Error('Failed to update practitioner');
+            const updated = await response.json();
+            setPractitioner(updated);
+            setSuccess('Practitioner updated successfully!');
+          } catch (err) {
+            setError(err.message);
+          } finally {
+            setSaving(false);
+          }
+        };
+
+        const handleChange = (field, value) => {
+          setFormData(prev => ({ ...prev, [field]: value }));
+          setError(null);
+          setSuccess(null);
+        };
+
+        if (loading) {
+          return React.createElement('div', { className: 'page' },
+            React.createElement('div', { className: 'page-header' },
+              React.createElement('h2', { className: 'page-title' }, 'Edit Practitioner'),
+              React.createElement('p', { className: 'page-description' }, 'Loading practitioner data...')
+            ),
+            React.createElement('div', { className: 'card' },
+              React.createElement('div', { className: 'flex items-center justify-center p-8' }, 'Loading...')
+            )
+          );
+        }
+
+        if (error && !practitioner) {
+          return React.createElement('div', { className: 'page' },
+            React.createElement('div', { className: 'page-header' },
+              React.createElement('h2', { className: 'page-title' }, 'Edit Practitioner'),
+              React.createElement('p', { className: 'page-description' }, 'Error loading practitioner')
+            ),
+            React.createElement('div', { className: 'card', style: { borderLeft: '4px solid var(--error)' } },
+              React.createElement('div', { className: 'flex items-center gap-3 p-4' },
+                React.createElement(Icons.AlertCircle),
+                `Error loading practitioner: ${error}. Use the sidebar to navigate.`
+              )
+            )
+          );
+        }
+
+        const fullName = `${formData.NameGiven} ${formData.NameFamily}`.trim();
+
+        return React.createElement('div', { className: 'page', 'data-testid': 'edit-practitioner-page' },
+          React.createElement('div', { className: 'page-header' },
+            React.createElement('h2', { className: 'page-title' }, 'Edit Practitioner'),
+            React.createElement('p', { className: 'page-description' }, `Update information for ${fullName || 'practitioner'}`)
+          ),
+          React.createElement('div', { className: 'card' },
+            error && React.createElement('div', { className: 'alert alert-error mb-4', 'data-testid': 'edit-practitioner-error' },
+              React.createElement(Icons.AlertCircle), ` ${error}`
+            ),
+            success && React.createElement('div', { className: 'alert alert-success mb-4', 'data-testid': 'edit-practitioner-success' },
+              success
+            ),
+            React.createElement('form', { className: 'form', onSubmit: handleSubmit },
+              // Basic Information Section
+              React.createElement('div', { className: 'form-section mb-6' },
+                React.createElement('h4', { className: 'form-section-title mb-4' }, 'Basic Information'),
+                React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Identifier'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'input',
+                      value: formData.Identifier,
+                      onChange: e => handleChange('Identifier', e.target.value),
+                      'data-testid': 'edit-practitioner-identifier'
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Active'),
+                    React.createElement('select', {
+                      className: 'input',
+                      value: formData.Active ? 'true' : 'false',
+                      onChange: e => handleChange('Active', e.target.value === 'true'),
+                      'data-testid': 'edit-practitioner-active'
+                    },
+                      React.createElement('option', { value: 'true' }, 'Active'),
+                      React.createElement('option', { value: 'false' }, 'Inactive')
+                    )
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Given Name'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'input',
+                      value: formData.NameGiven,
+                      onChange: e => handleChange('NameGiven', e.target.value),
+                      'data-testid': 'edit-practitioner-given-name'
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Family Name'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'input',
+                      value: formData.NameFamily,
+                      onChange: e => handleChange('NameFamily', e.target.value),
+                      'data-testid': 'edit-practitioner-family-name'
+                    })
+                  )
+                )
+              ),
+              // Professional Information Section
+              React.createElement('div', { className: 'form-section mb-6' },
+                React.createElement('h4', { className: 'form-section-title mb-4' }, 'Professional Information'),
+                React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Qualification'),
+                    React.createElement('select', {
+                      className: 'input',
+                      value: formData.Qualification,
+                      onChange: e => handleChange('Qualification', e.target.value),
+                      'data-testid': 'edit-practitioner-qualification'
+                    },
+                      React.createElement('option', { value: 'MD' }, 'MD - Doctor of Medicine'),
+                      React.createElement('option', { value: 'DO' }, 'DO - Doctor of Osteopathy'),
+                      React.createElement('option', { value: 'NP' }, 'NP - Nurse Practitioner'),
+                      React.createElement('option', { value: 'PA' }, 'PA - Physician Assistant'),
+                      React.createElement('option', { value: 'RN' }, 'RN - Registered Nurse')
+                    )
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Specialty'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'input',
+                      value: formData.Specialty,
+                      onChange: e => handleChange('Specialty', e.target.value),
+                      'data-testid': 'edit-practitioner-specialty'
+                    })
+                  )
+                )
+              ),
+              // Contact Information Section
+              React.createElement('div', { className: 'form-section mb-6' },
+                React.createElement('h4', { className: 'form-section-title mb-4' }, 'Contact Information'),
+                React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Email'),
+                    React.createElement('input', {
+                      type: 'email',
+                      className: 'input',
+                      value: formData.TelecomEmail,
+                      onChange: e => handleChange('TelecomEmail', e.target.value),
+                      'data-testid': 'edit-practitioner-email'
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Phone'),
+                    React.createElement('input', {
+                      type: 'tel',
+                      className: 'input',
+                      value: formData.TelecomPhone,
+                      onChange: e => handleChange('TelecomPhone', e.target.value),
+                      'data-testid': 'edit-practitioner-phone'
+                    })
+                  )
+                )
+              ),
+              // Form Actions
+              React.createElement('div', { className: 'form-actions flex justify-end gap-4 mt-6' },
+                React.createElement('button', {
+                  type: 'button',
+                  className: 'btn btn-secondary',
+                  onClick: onCancel,
+                  disabled: saving
+                }, 'Cancel'),
+                React.createElement('button', {
+                  type: 'submit',
+                  className: 'btn btn-primary',
+                  disabled: saving,
+                  'data-testid': 'save-practitioner'
+                }, saving ? 'Saving...' : 'Save Changes')
+              )
+            )
+          )
+        );
+      };
+
       // Main App Component
       const App = () => {
-        const [activeView, setActiveView] = React.useState('dashboard');
+        // Parse initial state from URL hash for deep linking support
+        const parseHashRoute = () => {
+          const hash = window.location.hash.slice(1); // Remove #
+          if (!hash) return { view: 'dashboard', patientId: null, practitionerId: null };
+          const parts = hash.split('/');
+          if (parts[0] === 'patients' && parts[1] === 'edit' && parts[2]) {
+            return { view: 'patients', patientId: parts[2], practitionerId: null };
+          }
+          if (parts[0] === 'practitioners' && parts[1] === 'edit' && parts[2]) {
+            return { view: 'practitioners', patientId: null, practitionerId: parts[2] };
+          }
+          return { view: parts[0] || 'dashboard', patientId: null, practitionerId: null };
+        };
+
+        const initialRoute = parseHashRoute();
+        const [activeView, setActiveViewState] = React.useState(initialRoute.view);
         const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
         const [searchQuery, setSearchQuery] = React.useState('');
         const [navigationOptions, setNavigationOptions] = React.useState({});
-        const [editingPatientId, setEditingPatientId] = React.useState(null);
+        const [editingPatientId, setEditingPatientIdState] = React.useState(initialRoute.patientId);
+        const [editingPractitionerId, setEditingPractitionerIdState] = React.useState(initialRoute.practitionerId);
+
+        // Update URL hash when navigation changes (pushes to browser history)
+        const updateUrlHash = (view, editId = null, editType = null) => {
+          const newHash = editId ? `#${view}/edit/${editId}` : `#${view}`;
+          if (window.location.hash !== newHash) {
+            window.history.pushState({ view, patientId: editType === 'patient' ? editId : null, practitionerId: editType === 'practitioner' ? editId : null }, '', newHash);
+          }
+        };
+
+        // Wrapper to update state AND URL hash together
+        const setActiveView = (view) => {
+          setActiveViewState(view);
+          updateUrlHash(view);
+        };
+
+        const setEditingPatientId = (patientId) => {
+          setEditingPatientIdState(patientId);
+          if (patientId) {
+            updateUrlHash('patients', patientId, 'patient');
+          }
+        };
+
+        const setEditingPractitionerId = (practitionerId) => {
+          setEditingPractitionerIdState(practitionerId);
+          if (practitionerId) {
+            updateUrlHash('practitioners', practitionerId, 'practitioner');
+          }
+        };
+
+        // Listen for browser back/forward buttons (popstate event)
+        React.useEffect(() => {
+          const handlePopState = (event) => {
+            if (event.state) {
+              setActiveViewState(event.state.view || 'dashboard');
+              setEditingPatientIdState(event.state.patientId || null);
+              setEditingPractitionerIdState(event.state.practitionerId || null);
+            } else {
+              // No state - parse from hash (handles direct URL entry)
+              const route = parseHashRoute();
+              setActiveViewState(route.view);
+              setEditingPatientIdState(route.patientId);
+              setEditingPractitionerIdState(route.practitionerId);
+            }
+          };
+          window.addEventListener('popstate', handlePopState);
+          // Set initial state in history
+          if (!window.history.state) {
+            window.history.replaceState(initialRoute, '', window.location.hash || '#dashboard');
+          }
+          return () => window.removeEventListener('popstate', handlePopState);
+        }, []);
 
         // Navigation handler that supports options
         const handleNavigate = (view, options = {}) => {
-          setActiveView(view);
+          setActiveViewState(view);
           setNavigationOptions(options);
-          setEditingPatientId(null); // Clear editing state when navigating
+          setEditingPatientIdState(null); // Clear editing state when navigating
+          setEditingPractitionerIdState(null);
+          updateUrlHash(view);
         };
 
         // Clear navigation options after page renders
@@ -1637,6 +2103,7 @@
 
         const getPageTitle = () => {
           if (editingPatientId) return 'Edit Patient';
+          if (editingPractitionerId) return 'Edit Practitioner';
           return {
             dashboard: 'Dashboard',
             patients: 'Patients',
@@ -1649,11 +2116,18 @@
         };
 
         const handleEditPatient = (patientId) => {
-          setEditingPatientId(patientId);
+          setEditingPatientIdState(patientId);
+          updateUrlHash('patients', patientId, 'patient');
         };
 
-        const handleBackFromEdit = () => {
-          setEditingPatientId(null);
+        const handleEditPractitioner = (practitionerId) => {
+          setEditingPractitionerIdState(practitionerId);
+          updateUrlHash('practitioners', practitionerId, 'practitioner');
+        };
+
+        // Use history.back() so browser back button and in-app cancel behave the same
+        const handleCancelEdit = () => {
+          window.history.back();
         };
 
         const renderPage = () => {
@@ -1661,7 +2135,15 @@
           if (activeView === 'patients' && editingPatientId) {
             return React.createElement(EditPatientPage, {
               patientId: editingPatientId,
-              onBack: handleBackFromEdit
+              onCancel: handleCancelEdit
+            });
+          }
+
+          // Handle editing practitioner
+          if (activeView === 'practitioners' && editingPractitionerId) {
+            return React.createElement(EditPractitionerPage, {
+              practitionerId: editingPractitionerId,
+              onCancel: handleCancelEdit
             });
           }
 
@@ -1671,7 +2153,10 @@
               openAddModal: navigationOptions.openAddModal,
               onEditPatient: handleEditPatient
             });
-            case 'practitioners': return React.createElement(PractitionersPage);
+            case 'practitioners': return React.createElement(PractitionersPage, {
+              openAddModal: navigationOptions.openAddModal,
+              onEditPractitioner: handleEditPractitioner
+            });
             case 'appointments': return React.createElement(AppointmentsPage, { openAddModal: navigationOptions.openAddModal });
             case 'encounters': return React.createElement(PlaceholderPage, { title: 'Encounters', description: 'Manage patient encounters and visits' });
             case 'conditions': return React.createElement(PlaceholderPage, { title: 'Conditions', description: 'View and manage patient conditions' });
