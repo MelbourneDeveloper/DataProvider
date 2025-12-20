@@ -16,7 +16,7 @@ public sealed class AuthorizationTests : IClassFixture<WebApplicationFactory<Pro
     public async Task Check_WithoutToken_ReturnsUnauthorized()
     {
         var response = await _client.GetAsync("/authz/check?permission=patient:read");
-        
+
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -24,23 +24,28 @@ public sealed class AuthorizationTests : IClassFixture<WebApplicationFactory<Pro
     public async Task Permissions_WithoutToken_ReturnsUnauthorized()
     {
         var response = await _client.GetAsync("/authz/permissions");
-        
+
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
     public async Task Evaluate_WithoutToken_ReturnsUnauthorized()
     {
-        var request = new 
-        { 
-            Checks = new[] 
-            { 
-                new { Permission = "patient:read", ResourceType = (string?)null, ResourceId = (string?)null } 
-            } 
+        var request = new
+        {
+            Checks = new[]
+            {
+                new
+                {
+                    Permission = "patient:read",
+                    ResourceType = (string?)null,
+                    ResourceId = (string?)null,
+                },
+            },
         };
-        
+
         var response = await _client.PostAsJsonAsync("/authz/evaluate", request);
-        
+
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }

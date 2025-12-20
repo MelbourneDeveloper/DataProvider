@@ -83,8 +83,6 @@ global using SearchPatientsOk = Outcome.Result<
 // Sync result type aliases
 global using StringSyncError = Outcome.Result<string, Sync.SyncError>.Error<string, Sync.SyncError>;
 global using StringSyncOk = Outcome.Result<string, Sync.SyncError>.Ok<string, Sync.SyncError>;
-// Update result type aliases
-global using UpdateOk = Outcome.Result<int, Selecta.SqlError>.Ok<int, Selecta.SqlError>;
 global using SyncLogListError = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>,
     Sync.SyncError
@@ -93,3 +91,5 @@ global using SyncLogListOk = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>,
     Sync.SyncError
 >.Ok<System.Collections.Generic.IReadOnlyList<Sync.SyncLogEntry>, Sync.SyncError>;
+// Update result type aliases
+global using UpdateOk = Outcome.Result<int, Selecta.SqlError>.Ok<int, Selecta.SqlError>;

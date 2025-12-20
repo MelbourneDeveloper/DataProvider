@@ -228,6 +228,37 @@
         Edit: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
           React.createElement('path', { d: 'M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7' }),
           React.createElement('path', { d: 'M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z' })
+        ),
+        Sync: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+          React.createElement('path', { d: 'M23 4v6h-6' }),
+          React.createElement('path', { d: 'M1 20v-6h6' }),
+          React.createElement('path', { d: 'M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15' })
+        ),
+        Filter: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+          React.createElement('polygon', { points: '22,3 2,3 10,12.46 10,19 14,21 14,12.46 22,3' })
+        ),
+        RefreshCw: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+          React.createElement('polyline', { points: '23,4 23,10 17,10' }),
+          React.createElement('polyline', { points: '1,20 1,14 7,14' }),
+          React.createElement('path', { d: 'M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15' })
+        ),
+        CheckCircle: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+          React.createElement('path', { d: 'M22 11.08V12a10 10 0 11-5.93-9.14' }),
+          React.createElement('polyline', { points: '22,4 12,14.01 9,11.01' })
+        ),
+        XCircle: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+          React.createElement('circle', { cx: 12, cy: 12, r: 10 }),
+          React.createElement('line', { x1: 15, y1: 9, x2: 9, y2: 15 }),
+          React.createElement('line', { x1: 9, y1: 9, x2: 15, y2: 15 })
+        ),
+        Clock: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+          React.createElement('circle', { cx: 12, cy: 12, r: 10 }),
+          React.createElement('polyline', { points: '12,6 12,12 16,14' })
+        ),
+        Database: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+          React.createElement('ellipse', { cx: 12, cy: 5, rx: 9, ry: 3 }),
+          React.createElement('path', { d: 'M21 12c0 1.66-4 3-9 3s-9-1.34-9-3' }),
+          React.createElement('path', { d: 'M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5' })
         )
       };
 
@@ -1411,6 +1442,233 @@
         )
       );
 
+      // Sync Dashboard Page - requires sync:admin permission
+      const SyncPage = () => {
+        const [statusFilter, setStatusFilter] = React.useState('all');
+        const [serviceFilter, setServiceFilter] = React.useState('all');
+        const [searchQuery, setSearchQuery] = React.useState('');
+        const [refreshKey, setRefreshKey] = React.useState(0);
+
+        // Mock sync status data - will be replaced with real API calls
+        const syncServices = [
+          { id: 'clinical', name: 'Clinical.Api', url: CLINICAL_API, status: 'healthy', lastSync: new Date().toISOString(), recordCount: 1247 },
+          { id: 'scheduling', name: 'Scheduling.Api', url: SCHEDULING_API, status: 'healthy', lastSync: new Date().toISOString(), recordCount: 892 }
+        ];
+
+        // Mock sync records - will be replaced with real API calls to /sync/records
+        const [syncRecords] = React.useState([
+          { id: 'sync-001', service: 'clinical', entityType: 'Patient', entityId: 'patient-123', status: 'synced', lastAttempt: new Date(Date.now() - 60000).toISOString(), error: null },
+          { id: 'sync-002', service: 'clinical', entityType: 'Patient', entityId: 'patient-456', status: 'synced', lastAttempt: new Date(Date.now() - 120000).toISOString(), error: null },
+          { id: 'sync-003', service: 'scheduling', entityType: 'Appointment', entityId: 'appt-789', status: 'pending', lastAttempt: new Date(Date.now() - 180000).toISOString(), error: null },
+          { id: 'sync-004', service: 'clinical', entityType: 'Encounter', entityId: 'enc-101', status: 'failed', lastAttempt: new Date(Date.now() - 240000).toISOString(), error: 'Connection timeout after 30s' },
+          { id: 'sync-005', service: 'scheduling', entityType: 'Practitioner', entityId: 'pract-202', status: 'conflict', lastAttempt: new Date(Date.now() - 300000).toISOString(), error: 'Version mismatch: local v3, remote v5' }
+        ]);
+
+        const filteredRecords = syncRecords.filter(record => {
+          const matchesStatus = statusFilter === 'all' || record.status === statusFilter;
+          const matchesService = serviceFilter === 'all' || record.service === serviceFilter;
+          const matchesSearch = searchQuery === '' ||
+            record.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            record.entityId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            record.entityType.toLowerCase().includes(searchQuery.toLowerCase());
+          return matchesStatus && matchesService && matchesSearch;
+        });
+
+        const getStatusIcon = (status) => {
+          switch (status) {
+            case 'synced': return React.createElement(Icons.CheckCircle);
+            case 'pending': return React.createElement(Icons.Clock);
+            case 'failed': return React.createElement(Icons.XCircle);
+            case 'conflict': return React.createElement(Icons.AlertCircle);
+            default: return React.createElement(Icons.Clock);
+          }
+        };
+
+        const getStatusClass = (status) => {
+          switch (status) {
+            case 'synced': return 'status-success';
+            case 'pending': return 'status-warning';
+            case 'failed': return 'status-error';
+            case 'conflict': return 'status-error';
+            default: return '';
+          }
+        };
+
+        const handleRetry = (recordId) => {
+          console.log('[Sync] Retry requested for record:', recordId);
+          // TODO: Call POST /sync/records/{id}/retry
+          alert('Retry triggered for ' + recordId);
+        };
+
+        const handleRefresh = () => {
+          setRefreshKey(prev => prev + 1);
+          console.log('[Sync] Refreshing sync status...');
+        };
+
+        const formatTime = (isoString) => {
+          const date = new Date(isoString);
+          return date.toLocaleTimeString();
+        };
+
+        return React.createElement('div', { className: 'page', 'data-testid': 'sync-page' },
+          React.createElement('div', { className: 'page-header' },
+            React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' } },
+              React.createElement('div', null,
+                React.createElement('h2', { className: 'page-title' }, 'Sync Dashboard'),
+                React.createElement('p', { className: 'page-description' }, 'Monitor and manage sync operations across microservices')
+              ),
+              React.createElement('button', {
+                className: 'btn btn-primary',
+                onClick: handleRefresh,
+                'data-testid': 'refresh-sync-btn'
+              },
+                React.createElement(Icons.RefreshCw),
+                ' Refresh'
+              )
+            )
+          ),
+
+          // Service Status Cards
+          React.createElement('div', { className: 'metrics-grid', style: { marginBottom: '24px' } },
+            syncServices.map(service =>
+              React.createElement('div', {
+                key: service.id,
+                className: 'metric-card',
+                'data-testid': `service-status-${service.id}`
+              },
+                React.createElement('div', { className: 'metric-header' },
+                  React.createElement('div', { className: 'metric-icon' },
+                    React.createElement(Icons.Database)
+                  ),
+                  React.createElement('span', {
+                    className: `status-badge ${service.status === 'healthy' ? 'status-success' : 'status-error'}`
+                  }, service.status)
+                ),
+                React.createElement('div', { className: 'metric-value' }, service.name),
+                React.createElement('div', { className: 'metric-label' },
+                  `${service.recordCount.toLocaleString()} records • Last sync: ${formatTime(service.lastSync)}`
+                )
+              )
+            )
+          ),
+
+          // Filters
+          React.createElement('div', { className: 'card', style: { marginBottom: '24px' } },
+            React.createElement('div', { className: 'card-header' },
+              React.createElement('h3', { className: 'card-title' },
+                React.createElement(Icons.Filter),
+                ' Filters'
+              )
+            ),
+            React.createElement('div', { className: 'card-body', style: { display: 'flex', gap: '16px', flexWrap: 'wrap' } },
+              React.createElement('div', { className: 'form-group', style: { minWidth: '200px' } },
+                React.createElement('label', { className: 'form-label' }, 'Status'),
+                React.createElement('select', {
+                  className: 'input',
+                  value: statusFilter,
+                  onChange: e => setStatusFilter(e.target.value),
+                  'data-testid': 'status-filter'
+                },
+                  React.createElement('option', { value: 'all' }, 'All Statuses'),
+                  React.createElement('option', { value: 'synced' }, 'Synced'),
+                  React.createElement('option', { value: 'pending' }, 'Pending'),
+                  React.createElement('option', { value: 'failed' }, 'Failed'),
+                  React.createElement('option', { value: 'conflict' }, 'Conflict')
+                )
+              ),
+              React.createElement('div', { className: 'form-group', style: { minWidth: '200px' } },
+                React.createElement('label', { className: 'form-label' }, 'Service'),
+                React.createElement('select', {
+                  className: 'input',
+                  value: serviceFilter,
+                  onChange: e => setServiceFilter(e.target.value),
+                  'data-testid': 'service-filter'
+                },
+                  React.createElement('option', { value: 'all' }, 'All Services'),
+                  React.createElement('option', { value: 'clinical' }, 'Clinical.Api'),
+                  React.createElement('option', { value: 'scheduling' }, 'Scheduling.Api')
+                )
+              ),
+              React.createElement('div', { className: 'form-group', style: { minWidth: '300px', flex: 1 } },
+                React.createElement('label', { className: 'form-label' }, 'Search'),
+                React.createElement('input', {
+                  type: 'text',
+                  className: 'input',
+                  placeholder: 'Search by ID, entity type...',
+                  value: searchQuery,
+                  onChange: e => setSearchQuery(e.target.value),
+                  'data-testid': 'sync-search'
+                })
+              )
+            )
+          ),
+
+          // Sync Records Table
+          React.createElement('div', { className: 'card' },
+            React.createElement('div', { className: 'card-header' },
+              React.createElement('h3', { className: 'card-title' },
+                React.createElement(Icons.Sync),
+                ' Sync Records'
+              ),
+              React.createElement('span', { className: 'badge' }, `${filteredRecords.length} records`)
+            ),
+            React.createElement('div', { className: 'table-container' },
+              React.createElement('table', { className: 'table', 'data-testid': 'sync-records-table' },
+                React.createElement('thead', null,
+                  React.createElement('tr', null,
+                    React.createElement('th', null, 'Status'),
+                    React.createElement('th', null, 'Record ID'),
+                    React.createElement('th', null, 'Service'),
+                    React.createElement('th', null, 'Entity'),
+                    React.createElement('th', null, 'Last Attempt'),
+                    React.createElement('th', null, 'Error'),
+                    React.createElement('th', null, 'Actions')
+                  )
+                ),
+                React.createElement('tbody', null,
+                  filteredRecords.map(record =>
+                    React.createElement('tr', { key: record.id, 'data-testid': `sync-record-${record.id}` },
+                      React.createElement('td', null,
+                        React.createElement('span', { className: `status-indicator ${getStatusClass(record.status)}` },
+                          getStatusIcon(record.status),
+                          ' ',
+                          record.status
+                        )
+                      ),
+                      React.createElement('td', null, record.id),
+                      React.createElement('td', null, record.service === 'clinical' ? 'Clinical.Api' : 'Scheduling.Api'),
+                      React.createElement('td', null, `${record.entityType} (${record.entityId})`),
+                      React.createElement('td', null, formatTime(record.lastAttempt)),
+                      React.createElement('td', null,
+                        record.error ? React.createElement('span', { className: 'text-error', title: record.error },
+                          record.error.substring(0, 30) + (record.error.length > 30 ? '...' : '')
+                        ) : '-'
+                      ),
+                      React.createElement('td', null,
+                        (record.status === 'failed' || record.status === 'conflict') &&
+                          React.createElement('button', {
+                            className: 'btn btn-sm btn-secondary',
+                            onClick: () => handleRetry(record.id),
+                            'data-testid': `retry-${record.id}`
+                          },
+                            React.createElement(Icons.RefreshCw),
+                            ' Retry'
+                          )
+                      )
+                    )
+                  )
+                )
+              )
+            ),
+            filteredRecords.length === 0 && React.createElement('div', { className: 'empty-state' },
+              React.createElement('div', { className: 'empty-state-icon' }, React.createElement(Icons.CheckCircle)),
+              React.createElement('h4', { className: 'empty-state-title' }, 'No matching records'),
+              React.createElement('p', { className: 'empty-state-description' }, 'Adjust your filters to see sync records.')
+            )
+          )
+        );
+      };
+
       // Sidebar Component
       const Sidebar = ({ activeView, onNavigate, collapsed, onToggle }) => {
         const navSections = [
@@ -1423,6 +1681,9 @@
           { title: 'Scheduling', items: [
             { id: 'practitioners', label: 'Practitioners', icon: Icons.UserDoctor },
             { id: 'appointments', label: 'Appointments', icon: Icons.Calendar }
+          ]},
+          { title: 'Administration', items: [
+            { id: 'sync', label: 'Sync Dashboard', icon: Icons.Sync }
           ]}
         ];
 
@@ -2111,6 +2372,7 @@
             conditions: 'Conditions',
             practitioners: 'Practitioners',
             appointments: 'Appointments',
+            sync: 'Sync Dashboard',
             settings: 'Settings'
           }[activeView] || 'Healthcare';
         };
@@ -2160,6 +2422,7 @@
             case 'appointments': return React.createElement(AppointmentsPage, { openAddModal: navigationOptions.openAddModal });
             case 'encounters': return React.createElement(PlaceholderPage, { title: 'Encounters', description: 'Manage patient encounters and visits' });
             case 'conditions': return React.createElement(PlaceholderPage, { title: 'Conditions', description: 'View and manage patient conditions' });
+            case 'sync': return React.createElement(SyncPage);
             default: return React.createElement(PlaceholderPage, { title: 'Page Not Found', description: 'The requested page does not exist' });
           }
         };

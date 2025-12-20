@@ -1,7 +1,6 @@
 global using Generated;
 global using Outcome;
 global using Selecta;
-
 // Type aliases for Result types to reduce verbosity in DataProvider.Example
 global using BasicOrderListError = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<DataProvider.Example.Model.BasicOrder>,

@@ -1,7 +1,8 @@
+#pragma warning disable CS8509 // Non-exhaustive switch
+
 namespace Gatekeeper.Api;
 
-using Microsoft.Data.Sqlite;
-using Outcome;
+using System.Text;
 
 /// <summary>
 /// Service for evaluating authorization decisions.
@@ -17,26 +18,22 @@ public static class AuthorizationService
         string permissionCode,
         string? resourceType,
         string? resourceId,
-        string now)
+        string now
+    )
     {
         // Step 1: Check resource-level grants first (most specific)
         if (!string.IsNullOrEmpty(resourceType) && !string.IsNullOrEmpty(resourceId))
         {
             var grantResult = await conn.CheckResourceGrantAsync(
-                userId,
-                resourceType,
-                resourceId,
-                permissionCode,
-                now
-            ).ConfigureAwait(false);
+                    userId,
+                    resourceType,
+                    resourceId,
+                    permissionCode,
+                    now
+                )
+                .ConfigureAwait(false);
 
-            var hasGrant = grantResult switch
-            {
-                Result<ImmutableList<Generated.CheckResourceGrant>, SqlError>.Ok(var grants) when grants.Count > 0 => true,
-                _ => false
-            };
-
-            if (hasGrant)
+            if (grantResult is CheckResourceGrantOk { Value.Count: > 0 })
             {
                 return (true, $"resource-grant:{resourceType}/{resourceId}");
             }
@@ -44,42 +41,57 @@ public static class AuthorizationService
 
         // Step 2: Check user permissions (direct grants and role-based)
         var permResult = await conn.GetUserPermissionsAsync(userId, now).ConfigureAwait(false);
-        var permissions = permResult switch
-        {
-            Result<ImmutableList<Generated.GetUserPermissions>, SqlError>.Ok(var perms) => perms,
-            _ => ImmutableList<Generated.GetUserPermissions>.Empty
-        };
+        var permissions = permResult is GetUserPermissionsOk ok
+            ? ok.Value
+            : ImmutableList<GetUserPermissions>.Empty;
 
         foreach (var perm in permissions)
         {
-            var matches = PermissionMatches(perm.Code, permissionCode);
+            var matches = PermissionMatches(perm.code, permissionCode);
             if (!matches)
             {
                 continue;
             }
 
-            // Check scope
-            var scopeMatches = perm.ScopeType switch
+            // Check scope - handle both string and byte[] types from generated code
+            var scopeType = ToStringValue(perm.scope_type);
+            var scopeValue = ToStringValue(perm.scope_value);
+
+            var scopeMatches = scopeType switch
             {
-                null or "all" => true,
-                "record" => perm.ScopeValue == resourceId,
-                _ => false
+                null or "" or "all" => true,
+                "record" => scopeValue == resourceId,
+                _ => false,
             };
 
             if (scopeMatches)
             {
-                var source = perm.Source switch
+                var sourceStr = ToStringValue(perm.source);
+                var sourceNameStr = perm.source_name;
+                var source = sourceStr switch
                 {
-                    "role" => $"role:{perm.SourceName}",
+                    "role" => $"role:{sourceNameStr}",
                     "direct" => "direct-grant",
-                    _ => perm.Source
+                    _ => sourceStr ?? "unknown",
                 };
-                return (true, $"{source} grants {perm.Code}");
+                return (true, $"{source} grants {perm.code}");
             }
         }
 
         return (false, "no matching permission");
     }
+
+    /// <summary>
+    /// Converts a value to string, handling byte[] from SQLite.
+    /// </summary>
+    private static string? ToStringValue(object? value) =>
+        value switch
+        {
+            null => null,
+            string s => s,
+            byte[] bytes => Encoding.UTF8.GetString(bytes),
+            _ => value.ToString(),
+        };
 
     /// <summary>
     /// Checks if a permission code matches a target, supporting wildcards.

@@ -167,20 +167,18 @@ namespace Dashboard
                 return DashboardPage.Render();
             if (view == "patients")
             {
-                return PatientsPage.Render(
-                    patientId =>
+                return PatientsPage.Render(patientId =>
+                {
+                    var newState = new AppState
                     {
-                        var newState = new AppState
-                        {
-                            ActiveView = "patients",
-                            SidebarCollapsed = state.SidebarCollapsed,
-                            SearchQuery = state.SearchQuery,
-                            NotificationCount = state.NotificationCount,
-                            EditingPatientId = patientId,
-                        };
-                        setState(newState);
-                    }
-                );
+                        ActiveView = "patients",
+                        SidebarCollapsed = state.SidebarCollapsed,
+                        SearchQuery = state.SearchQuery,
+                        NotificationCount = state.NotificationCount,
+                        EditingPatientId = patientId,
+                    };
+                    setState(newState);
+                });
             }
             if (view == "practitioners")
                 return PractitionersPage.Render();

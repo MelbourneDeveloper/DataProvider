@@ -441,7 +441,8 @@ public sealed class HttpSyncE2ETests : IClassFixture<SyncApiWebApplicationFactor
         // Arrange - insert data on client
         using (var cmd = _clientConn.CreateCommand())
         {
-            cmd.CommandText = "INSERT INTO Person (Id, Name, Email) VALUES ('http1', 'HTTP Test', 'http@test.com')";
+            cmd.CommandText =
+                "INSERT INTO Person (Id, Name, Email) VALUES ('http1', 'HTTP Test', 'http@test.com')";
             cmd.ExecuteNonQuery();
         }
 
@@ -455,17 +456,19 @@ public sealed class HttpSyncE2ETests : IClassFixture<SyncApiWebApplicationFactor
         // We're pushing FROM client, so server should NOT skip client's changes
         var pushRequest = new
         {
-            Changes = changesList.Select(c => new
-            {
-                c.Version,
-                c.TableName,
-                c.PkValue,
-                Operation = c.Operation.ToString().ToLowerInvariant(),
-                c.Payload,
-                c.Origin,
-                c.Timestamp
-            }).ToList(),
-            OriginId = _serverOriginId
+            Changes = changesList
+                .Select(c => new
+                {
+                    c.Version,
+                    c.TableName,
+                    c.PkValue,
+                    Operation = c.Operation.ToString().ToLowerInvariant(),
+                    c.Payload,
+                    c.Origin,
+                    c.Timestamp,
+                })
+                .ToList(),
+            OriginId = _serverOriginId,
         };
 
         var content = new StringContent(
@@ -502,7 +505,8 @@ public sealed class HttpSyncE2ETests : IClassFixture<SyncApiWebApplicationFactor
         // Arrange - insert data on server
         using (var cmd = _serverConn.CreateCommand())
         {
-            cmd.CommandText = "INSERT INTO Person (Id, Name, Email) VALUES ('pull1', 'Pull Test', 'pull@test.com')";
+            cmd.CommandText =
+                "INSERT INTO Person (Id, Name, Email) VALUES ('pull1', 'Pull Test', 'pull@test.com')";
             cmd.ExecuteNonQuery();
         }
 
@@ -557,13 +561,15 @@ public sealed class HttpSyncE2ETests : IClassFixture<SyncApiWebApplicationFactor
         // Arrange - insert different data on each side
         using (var cmd = _serverConn.CreateCommand())
         {
-            cmd.CommandText = "INSERT INTO Person (Id, Name, Email) VALUES ('bidir_server', 'Server Record', 'server@test.com')";
+            cmd.CommandText =
+                "INSERT INTO Person (Id, Name, Email) VALUES ('bidir_server', 'Server Record', 'server@test.com')";
             cmd.ExecuteNonQuery();
         }
 
         using (var cmd = _clientConn.CreateCommand())
         {
-            cmd.CommandText = "INSERT INTO Person (Id, Name, Email) VALUES ('bidir_client', 'Client Record', 'client@test.com')";
+            cmd.CommandText =
+                "INSERT INTO Person (Id, Name, Email) VALUES ('bidir_client', 'Client Record', 'client@test.com')";
             cmd.ExecuteNonQuery();
         }
 
@@ -605,17 +611,19 @@ public sealed class HttpSyncE2ETests : IClassFixture<SyncApiWebApplicationFactor
 
         var pushRequest = new
         {
-            Changes = clientChangesList.Select(c => new
-            {
-                c.Version,
-                c.TableName,
-                c.PkValue,
-                Operation = c.Operation.ToString().ToLowerInvariant(),
-                c.Payload,
-                c.Origin,
-                c.Timestamp
-            }).ToList(),
-            OriginId = _serverOriginId
+            Changes = clientChangesList
+                .Select(c => new
+                {
+                    c.Version,
+                    c.TableName,
+                    c.PkValue,
+                    Operation = c.Operation.ToString().ToLowerInvariant(),
+                    c.Payload,
+                    c.Origin,
+                    c.Timestamp,
+                })
+                .ToList(),
+            OriginId = _serverOriginId,
         };
 
         var content = new StringContent(
@@ -650,7 +658,8 @@ public sealed class HttpSyncE2ETests : IClassFixture<SyncApiWebApplicationFactor
         for (var i = 0; i < 5; i++)
         {
             using var cmd = _serverConn.CreateCommand();
-            cmd.CommandText = $"INSERT INTO Person (Id, Name, Email) VALUES ('state{i}', 'Person {i}', 'p{i}@test.com')";
+            cmd.CommandText =
+                $"INSERT INTO Person (Id, Name, Email) VALUES ('state{i}', 'Person {i}', 'p{i}@test.com')";
             cmd.ExecuteNonQuery();
         }
 

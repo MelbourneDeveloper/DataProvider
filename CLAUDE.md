@@ -38,6 +38,7 @@ public abstract partial record Result<TSuccess, TFailure>
 ```csharp
 if (triggerResult is Result<bool, SyncError>.Error<bool, SyncError> triggerErr)
 ```
+- **Skipping tests = ⛔️ ILLEGAL** - Failing tests = OK. Aggressively unskip tests
 - **Test at the highest level** - Avoid mocks. Only full integration testing
 - **Always use type aliases (using) for result types** - Don't write like this: `new Result<string, SqlError>.Ok`
 - **No singletons** - Inject `Func` into static methods

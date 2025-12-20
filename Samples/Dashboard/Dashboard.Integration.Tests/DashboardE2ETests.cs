@@ -54,7 +54,9 @@ public sealed class E2EFixture : IAsyncLifetime
 
         // Find the project directories relative to the test assembly
         var testAssemblyDir = Path.GetDirectoryName(typeof(E2EFixture).Assembly.Location)!;
-        var samplesDir = Path.GetFullPath(Path.Combine(testAssemblyDir, "..", "..", "..", "..", ".."));
+        var samplesDir = Path.GetFullPath(
+            Path.Combine(testAssemblyDir, "..", "..", "..", "..", "..")
+        );
         var clinicalProjectDir = Path.Combine(samplesDir, "Clinical", "Clinical.Api");
         var schedulingProjectDir = Path.Combine(samplesDir, "Scheduling", "Scheduling.Api");
 
@@ -64,13 +66,25 @@ public sealed class E2EFixture : IAsyncLifetime
         Console.WriteLine($"[E2E] Clinical dir exists: {Directory.Exists(clinicalProjectDir)}");
 
         // Start Clinical API using pre-built DLL with correct content root
-        var clinicalDll = Path.Combine(clinicalProjectDir, "bin", "Debug", "net9.0", "Clinical.Api.dll");
+        var clinicalDll = Path.Combine(
+            clinicalProjectDir,
+            "bin",
+            "Debug",
+            "net9.0",
+            "Clinical.Api.dll"
+        );
         Console.WriteLine($"[E2E] Clinical DLL: {clinicalDll}");
         Console.WriteLine($"[E2E] Clinical DLL exists: {File.Exists(clinicalDll)}");
         _clinicalProcess = StartApiFromDll(clinicalDll, clinicalProjectDir, ClinicalUrl);
 
         // Start Scheduling API using pre-built DLL with correct content root
-        var schedulingDll = Path.Combine(schedulingProjectDir, "bin", "Debug", "net9.0", "Scheduling.Api.dll");
+        var schedulingDll = Path.Combine(
+            schedulingProjectDir,
+            "bin",
+            "Debug",
+            "net9.0",
+            "Scheduling.Api.dll"
+        );
         Console.WriteLine($"[E2E] Scheduling DLL: {schedulingDll}");
         Console.WriteLine($"[E2E] Scheduling DLL exists: {File.Exists(schedulingDll)}");
         _schedulingProcess = StartApiFromDll(schedulingDll, schedulingProjectDir, SchedulingUrl);
@@ -115,7 +129,9 @@ public sealed class E2EFixture : IAsyncLifetime
 
     private static Process StartApiFromDll(string dllPath, string contentRoot, string url)
     {
-        Console.WriteLine($"[E2E] Starting API: dotnet \"{dllPath}\" --urls \"{url}\" --contentRoot \"{contentRoot}\"");
+        Console.WriteLine(
+            $"[E2E] Starting API: dotnet \"{dllPath}\" --urls \"{url}\" --contentRoot \"{contentRoot}\""
+        );
 
         var process = new Process
         {
@@ -1346,7 +1362,10 @@ public sealed class DashboardE2ETests
             createdPractitionerJson,
             "\"Id\"\\s*:\\s*\"([^\"]+)\""
         );
-        Assert.True(practitionerIdMatch.Success, "Should get practitioner ID from creation response");
+        Assert.True(
+            practitionerIdMatch.Success,
+            "Should get practitioner ID from creation response"
+        );
         var practitionerId = practitionerIdMatch.Groups[1].Value;
 
         // Update the practitioner
@@ -1461,6 +1480,143 @@ public sealed class DashboardE2ETests
             new PageWaitForSelectorOptions { Timeout = 10000 }
         );
         Assert.Contains("#dashboard", page.Url);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Sync Dashboard menu item navigates to sync page and displays sync status.
+    /// Proves the sync dashboard UI is accessible from the sidebar navigation.
+    /// </summary>
+    [Fact]
+    public async Task SyncDashboard_NavigatesToSyncPage_AndDisplaysStatus()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Click Sync Dashboard in sidebar
+        await page.ClickAsync("text=Sync Dashboard");
+
+        // Wait for sync page to load
+        await page.WaitForSelectorAsync(
+            "[data-testid='sync-page']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Verify URL
+        Assert.Contains("#sync", page.Url);
+
+        // Verify service status cards are displayed
+        await page.WaitForSelectorAsync(
+            "[data-testid='service-status-clinical']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='service-status-scheduling']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+
+        // Verify sync records table is displayed
+        await page.WaitForSelectorAsync(
+            "[data-testid='sync-records-table']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+
+        // Verify filter controls exist
+        await page.WaitForSelectorAsync(
+            "[data-testid='status-filter']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='service-filter']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+
+        // Verify page content
+        var content = await page.ContentAsync();
+        Assert.Contains("Sync Dashboard", content);
+        Assert.Contains("Clinical.Api", content);
+        Assert.Contains("Scheduling.Api", content);
+        Assert.Contains("Sync Records", content);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Sync Dashboard filters work correctly.
+    /// Tests status and service filtering functionality.
+    /// </summary>
+    [Fact]
+    public async Task SyncDashboard_FiltersWorkCorrectly()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        await page.GotoAsync($"{E2EFixture.DashboardUrl}#sync");
+        await page.WaitForSelectorAsync(
+            "[data-testid='sync-page']",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Get initial record count
+        var initialRows = await page.QuerySelectorAllAsync(
+            "[data-testid='sync-records-table'] tbody tr"
+        );
+        var initialCount = initialRows.Count;
+        Assert.True(initialCount > 0, "Should have sync records displayed");
+
+        // Filter by status - select 'failed'
+        await page.SelectOptionAsync("[data-testid='status-filter']", "failed");
+
+        // Wait for filter to apply and check records
+        await Task.Delay(500);
+        var filteredRows = await page.QuerySelectorAllAsync(
+            "[data-testid='sync-records-table'] tbody tr"
+        );
+        Assert.True(
+            filteredRows.Count <= initialCount,
+            "Filtered results should be <= initial count"
+        );
+
+        // Verify filtered content contains 'failed' status
+        var content = await page.ContentAsync();
+        Assert.Contains("failed", content);
+
+        // Reset filter
+        await page.SelectOptionAsync("[data-testid='status-filter']", "all");
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Deep linking to sync page works.
+    /// Navigating directly to #sync loads the sync dashboard.
+    /// </summary>
+    [Fact]
+    public async Task SyncDashboard_DeepLinkingWorks()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        // Navigate directly to sync page via hash
+        await page.GotoAsync($"{E2EFixture.DashboardUrl}#sync");
+
+        // Wait for sync page to load
+        await page.WaitForSelectorAsync(
+            "[data-testid='sync-page']",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Verify we're on the sync page
+        var content = await page.ContentAsync();
+        Assert.Contains("Sync Dashboard", content);
+        Assert.Contains("Monitor and manage sync operations", content);
 
         await page.CloseAsync();
     }

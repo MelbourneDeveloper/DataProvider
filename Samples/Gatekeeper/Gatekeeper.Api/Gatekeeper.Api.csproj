@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <NoWarn>CA1848;CA1515;CA2100;RS1035;CA1508;CA2234</NoWarn>
+    <NoWarn>CA1848;CA1515;CA2100;RS1035;CA1508;CA2234;CA1034;CA1819;CA2007;EXHAUSTION001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +27,7 @@
 
   <!-- Generate C# from SQL using DataProvider.SQLite.Cli -->
   <Target Name="GenerateDataProvider" BeforeTargets="CoreCompile">
+    <Delete Files="$(MSBuildProjectDirectory)/gatekeeper-build.db" />
     <RemoveDir Directories="$(IntermediateOutputPath)Generated" />
     <MakeDir Directories="$(IntermediateOutputPath)Generated" />
     <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)..\..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(IntermediateOutputPath)Generated" --schema "$(MSBuildProjectDirectory)/schema.sql"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />

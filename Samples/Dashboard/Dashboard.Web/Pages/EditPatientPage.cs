@@ -378,11 +378,7 @@ namespace Dashboard.Pages
                     Div(
                         children: new[]
                         {
-                            H(
-                                2,
-                                className: "page-title",
-                                children: new[] { Text("Edit Patient") }
-                            ),
+                            H(2, className: "page-title", children: new[] { Text("Edit Patient") }),
                             P(
                                 className: "page-description",
                                 children: new[] { Text("Update information for " + fullName) }
@@ -618,9 +614,7 @@ namespace Dashboard.Pages
                         onClick: () => onChange(!value),
                         children: new[]
                         {
-                            Span(
-                                className: "status-dot " + (value ? "active" : "inactive")
-                            ),
+                            Span(className: "status-dot " + (value ? "active" : "inactive")),
                             Text(label + ": " + (value ? "Active" : "Inactive")),
                         }
                     ),
@@ -643,10 +637,7 @@ namespace Dashboard.Pages
                         className: "btn btn-primary",
                         type: "submit",
                         disabled: state.Saving,
-                        children: new[]
-                        {
-                            Text(state.Saving ? "Saving..." : "Save Changes"),
-                        }
+                        children: new[] { Text(state.Saving ? "Saving..." : "Save Changes") }
                     ),
                 }
             );

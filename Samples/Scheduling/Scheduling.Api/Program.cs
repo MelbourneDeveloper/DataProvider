@@ -148,16 +148,16 @@ app.MapPut(
         using var cmd = conn.CreateCommand();
         cmd.Transaction = transaction;
         cmd.CommandText = """
-            UPDATE fhir_Practitioner
-            SET NameFamily = @nameFamily,
-                NameGiven = @nameGiven,
-                Qualification = @qualification,
-                Specialty = @specialty,
-                TelecomEmail = @telecomEmail,
-                TelecomPhone = @telecomPhone,
-                Active = @active
-            WHERE Id = @id
-            """;
+        UPDATE fhir_Practitioner
+        SET NameFamily = @nameFamily,
+            NameGiven = @nameGiven,
+            Qualification = @qualification,
+            Specialty = @specialty,
+            TelecomEmail = @telecomEmail,
+            TelecomPhone = @telecomPhone,
+            Active = @active
+        WHERE Id = @id
+        """;
         cmd.Parameters.AddWithValue("@id", id);
         cmd.Parameters.AddWithValue("@nameFamily", request.NameFamily);
         cmd.Parameters.AddWithValue("@nameGiven", request.NameGiven);

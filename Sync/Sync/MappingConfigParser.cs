@@ -81,8 +81,10 @@ public static class MappingConfigParser
 
         var direction = dto.Direction switch
         {
-            { } s when s.Equals("pull", StringComparison.OrdinalIgnoreCase) => MappingDirection.Pull,
-            { } s when s.Equals("both", StringComparison.OrdinalIgnoreCase) => MappingDirection.Both,
+            { } s when s.Equals("pull", StringComparison.OrdinalIgnoreCase) =>
+                MappingDirection.Pull,
+            { } s when s.Equals("both", StringComparison.OrdinalIgnoreCase) =>
+                MappingDirection.Both,
             _ => MappingDirection.Push,
         };
 
@@ -237,8 +239,7 @@ public static class MappingConfigParser
                 {
                     Source = c.Source,
                     Target = c.Target,
-                    Transform =
-                        c.Transform == TransformType.None ? null : ToLowerCase(c.Transform),
+                    Transform = c.Transform == TransformType.None ? null : ToLowerCase(c.Transform),
                     Value = c.Value,
                     Lql = c.Lql,
                 }),
@@ -262,9 +263,7 @@ public static class MappingConfigParser
                             Source = c.Source,
                             Target = c.Target,
                             Transform =
-                                c.Transform == TransformType.None
-                                    ? null
-                                    : ToLowerCase(c.Transform),
+                                c.Transform == TransformType.None ? null : ToLowerCase(c.Transform),
                             Value = c.Value,
                             Lql = c.Lql,
                         }),
