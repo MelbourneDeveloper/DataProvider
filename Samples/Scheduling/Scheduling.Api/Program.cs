@@ -91,7 +91,7 @@ app.MapPost(
                     Qualification = request.Qualification,
                     Specialty = request.Specialty,
                     TelecomEmail = request.TelecomEmail,
-                    TelecomPhone = request.TelecomPhone
+                    TelecomPhone = request.TelecomPhone,
                 }
             );
         }
@@ -222,7 +222,7 @@ app.MapPost(
                     PatientReference = request.PatientReference,
                     PractitionerReference = request.PractitionerReference,
                     Created = now,
-                    Comment = request.Comment
+                    Comment = request.Comment,
                 }
             );
         }

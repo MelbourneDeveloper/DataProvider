@@ -79,8 +79,3 @@ using System.Diagnostics.CodeAnalysis;
     Justification = "Sample code - not an analyzer"
 )]
 [assembly: SuppressMessage("Reliability", "EPC12", Justification = "Sample code")]
-[assembly: SuppressMessage(
-    "Design",
-    "EXHAUSTION001",
-    Justification = "Conflicts with C# compiler exhaustiveness checks"
-)]

@@ -4,6 +4,15 @@ using Xunit;
 
 namespace DataProvider.Tests;
 
+using TestRecordListError = Result<
+    IReadOnlyList<DbTransactionExtensionsTests.TestRecord>,
+    SqlError
+>.Error<IReadOnlyList<DbTransactionExtensionsTests.TestRecord>, SqlError>;
+using TestRecordListOk = Result<
+    IReadOnlyList<DbTransactionExtensionsTests.TestRecord>,
+    SqlError
+>.Ok<IReadOnlyList<DbTransactionExtensionsTests.TestRecord>, SqlError>;
+
 /// <summary>
 /// Tests for DbTransactionExtensions Query method to improve coverage
 /// </summary>
@@ -12,6 +21,9 @@ public sealed class DbTransactionExtensionsTests : IDisposable
     private readonly SqliteConnection _connection;
     private readonly SqliteTransaction _transaction;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="DbTransactionExtensionsTests"/>.
+    /// </summary>
     public DbTransactionExtensionsTests()
     {
         _connection = new SqliteConnection("Data Source=:memory:");
@@ -51,27 +63,18 @@ public sealed class DbTransactionExtensionsTests : IDisposable
         var result = _transaction.Query(
             "SELECT Name, Value FROM TestTable ORDER BY Name",
             [],
-            reader => new TestRecord { Name = reader.GetString(0), Value = reader.GetInt32(1) }
+            reader => new TestRecord(reader.GetString(0), reader.GetInt32(1))
         );
 
-        Assert.True(
-            result
-                is Result<IReadOnlyList<TestRecord>, SqlError>.Ok<
-                    IReadOnlyList<TestRecord>,
-                    SqlError
-                >
-        );
-        var records = (
-            (Result<IReadOnlyList<TestRecord>, SqlError>.Ok<
-                IReadOnlyList<TestRecord>,
-                SqlError
-            >)result
-        ).Value;
-        Assert.Equal(2, records.Count);
-        Assert.Equal("Test1", records[0].Name);
-        Assert.Equal(100, records[0].Value);
-        Assert.Equal("Test2", records[1].Name);
-        Assert.Equal(200, records[1].Value);
+        Assert.True(result is TestRecordListOk);
+        if (result is TestRecordListOk ok)
+        {
+            Assert.Equal(2, ok.Value.Count);
+            Assert.Equal("Test1", ok.Value[0].Name);
+            Assert.Equal(100, ok.Value[0].Value);
+            Assert.Equal("Test2", ok.Value[1].Name);
+            Assert.Equal(200, ok.Value[1].Value);
+        }
     }
 
     [Fact]
@@ -92,27 +95,18 @@ public sealed class DbTransactionExtensionsTests : IDisposable
         var result = _transaction.Query(
             "SELECT Name, Value FROM TestTable WHERE Value > @minValue ORDER BY Value",
             [new SqliteParameter("@minValue", 15)],
-            reader => new TestRecord { Name = reader.GetString(0), Value = reader.GetInt32(1) }
+            reader => new TestRecord(reader.GetString(0), reader.GetInt32(1))
         );
 
-        Assert.True(
-            result
-                is Result<IReadOnlyList<TestRecord>, SqlError>.Ok<
-                    IReadOnlyList<TestRecord>,
-                    SqlError
-                >
-        );
-        var records = (
-            (Result<IReadOnlyList<TestRecord>, SqlError>.Ok<
-                IReadOnlyList<TestRecord>,
-                SqlError
-            >)result
-        ).Value;
-        Assert.Equal(2, records.Count);
-        Assert.Equal("Beta", records[0].Name);
-        Assert.Equal(20, records[0].Value);
-        Assert.Equal("Gamma", records[1].Name);
-        Assert.Equal(30, records[1].Value);
+        Assert.True(result is TestRecordListOk);
+        if (result is TestRecordListOk ok)
+        {
+            Assert.Equal(2, ok.Value.Count);
+            Assert.Equal("Beta", ok.Value[0].Name);
+            Assert.Equal(20, ok.Value[0].Value);
+            Assert.Equal("Gamma", ok.Value[1].Name);
+            Assert.Equal(30, ok.Value[1].Value);
+        }
     }
 
     [Fact]
@@ -121,23 +115,14 @@ public sealed class DbTransactionExtensionsTests : IDisposable
         var result = _transaction.Query(
             "SELECT Name, Value FROM TestTable WHERE 1=0",
             [],
-            reader => new TestRecord { Name = reader.GetString(0), Value = reader.GetInt32(1) }
+            reader => new TestRecord(reader.GetString(0), reader.GetInt32(1))
         );
 
-        Assert.True(
-            result
-                is Result<IReadOnlyList<TestRecord>, SqlError>.Ok<
-                    IReadOnlyList<TestRecord>,
-                    SqlError
-                >
-        );
-        var records = (
-            (Result<IReadOnlyList<TestRecord>, SqlError>.Ok<
-                IReadOnlyList<TestRecord>,
-                SqlError
-            >)result
-        ).Value;
-        Assert.Empty(records);
+        Assert.True(result is TestRecordListOk);
+        if (result is TestRecordListOk ok)
+        {
+            Assert.Empty(ok.Value);
+        }
     }
 
     [Fact]
@@ -146,33 +131,227 @@ public sealed class DbTransactionExtensionsTests : IDisposable
         var result = _transaction.Query(
             "SELECT InvalidColumn FROM NonExistentTable",
             [],
-            reader => new TestRecord { Name = reader.GetString(0), Value = reader.GetInt32(1) }
+            reader => new TestRecord(reader.GetString(0), reader.GetInt32(1))
         );
 
-        Assert.True(
-            result
-                is Result<IReadOnlyList<TestRecord>, SqlError>.Error<
-                    IReadOnlyList<TestRecord>,
-                    SqlError
-                >
-        );
-        var failure = (Result<IReadOnlyList<TestRecord>, SqlError>.Error<
-            IReadOnlyList<TestRecord>,
-            SqlError
-        >)result;
-        Assert.NotNull(failure.Value.Message);
-        Assert.Contains("no such table", failure.Value.Message);
+        Assert.True(result is TestRecordListError);
+        if (result is TestRecordListError err)
+        {
+            Assert.NotNull(err.Value.Message);
+            Assert.Contains("no such table", err.Value.Message);
+        }
     }
 
+    /// <inheritdoc/>
     public void Dispose()
     {
         _transaction?.Dispose();
         _connection?.Dispose();
     }
 
-    private sealed record TestRecord
+    [Fact]
+    public void Query_WithNullTransaction_ReturnsError()
     {
-        public string Name { get; init; } = "";
-        public int Value { get; init; }
+        SqliteTransaction? nullTransaction = null;
+
+        var result = nullTransaction!.Query(
+            "SELECT * FROM TestTable",
+            null,
+            reader => new TestRecord(reader.GetString(0), reader.GetInt32(1))
+        );
+
+        Assert.True(result is TestRecordListError);
+        if (result is TestRecordListError err)
+        {
+            Assert.Contains("null", err.Value.Message, StringComparison.OrdinalIgnoreCase);
+        }
     }
+
+    [Fact]
+    public void Query_WithNullSql_ReturnsError()
+    {
+        var result = _transaction.Query(
+            null!,
+            null,
+            reader => new TestRecord(reader.GetString(0), reader.GetInt32(1))
+        );
+
+        Assert.True(result is TestRecordListError);
+        if (result is TestRecordListError err)
+        {
+            Assert.Contains("null", err.Value.Message, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public void Query_WithEmptySql_ReturnsError()
+    {
+        var result = _transaction.Query(
+            "   ",
+            null,
+            reader => new TestRecord(reader.GetString(0), reader.GetInt32(1))
+        );
+
+        Assert.True(result is TestRecordListError);
+    }
+
+    [Fact]
+    public void Query_WithNullMapper_ReturnsEmptyResults()
+    {
+        _transaction.Execute(
+            "INSERT INTO TestTable (Name, Value) VALUES (@name, @value)",
+            [new SqliteParameter("@name", "Test"), new SqliteParameter("@value", 100)]
+        );
+
+        var result = _transaction.Query<TestRecord>(
+            "SELECT Name, Value FROM TestTable",
+            null,
+            null
+        );
+
+        Assert.True(result is TestRecordListOk);
+        if (result is TestRecordListOk ok)
+        {
+            Assert.Empty(ok.Value);
+        }
+    }
+
+    [Fact]
+    public void Execute_WithNullTransaction_ReturnsError()
+    {
+        SqliteTransaction? nullTransaction = null;
+
+        var result = nullTransaction!.Execute(
+            "INSERT INTO TestTable (Name, Value) VALUES ('Test', 100)"
+        );
+
+        Assert.True(result is IntError);
+        if (result is IntError err)
+        {
+            Assert.Contains("null", err.Value.Message, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public void Execute_WithNullSql_ReturnsError()
+    {
+        var result = _transaction.Execute(null!);
+
+        Assert.True(result is IntError);
+        if (result is IntError err)
+        {
+            Assert.Contains("null", err.Value.Message, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public void Execute_WithEmptySql_ReturnsError()
+    {
+        var result = _transaction.Execute("   ");
+
+        Assert.True(result is IntError);
+    }
+
+    [Fact]
+    public void Execute_WithValidSql_ReturnsRowsAffected()
+    {
+        var result = _transaction.Execute(
+            "INSERT INTO TestTable (Name, Value) VALUES (@name, @value)",
+            [new SqliteParameter("@name", "Delta"), new SqliteParameter("@value", 40)]
+        );
+
+        Assert.True(result is IntOk);
+        if (result is IntOk ok)
+        {
+            Assert.Equal(1, ok.Value);
+        }
+    }
+
+    [Fact]
+    public void Execute_WithInvalidSql_ReturnsError()
+    {
+        var result = _transaction.Execute("INSERT INTO NonExistentTable (Name) VALUES ('Test')");
+
+        Assert.True(result is IntError);
+    }
+
+    [Fact]
+    public void Scalar_WithNullTransaction_ReturnsError()
+    {
+        SqliteTransaction? nullTransaction = null;
+
+        var result = nullTransaction!.Scalar<string>("SELECT Name FROM TestTable LIMIT 1");
+
+        Assert.False(result is NullableStringOk);
+    }
+
+    [Fact]
+    public void Scalar_WithNullSql_ReturnsError()
+    {
+        var result = _transaction.Scalar<string>(null!);
+
+        Assert.False(result is NullableStringOk);
+    }
+
+    [Fact]
+    public void Scalar_WithEmptySql_ReturnsError()
+    {
+        var result = _transaction.Scalar<string>("   ");
+
+        Assert.False(result is NullableStringOk);
+    }
+
+    [Fact]
+    public void Scalar_WithValidSql_ReturnsValue()
+    {
+        _transaction.Execute(
+            "INSERT INTO TestTable (Name, Value) VALUES ('Alpha', 1), ('Beta', 2), ('Gamma', 3)",
+            []
+        );
+
+        var result = _transaction.Scalar<string>(
+            "SELECT Name FROM TestTable ORDER BY Name LIMIT 1"
+        );
+
+        Assert.True(result is NullableStringOk);
+        if (result is NullableStringOk ok)
+        {
+            Assert.Equal("Alpha", ok.Value);
+        }
+    }
+
+    [Fact]
+    public void Scalar_WithParameters_ReturnsFilteredValue()
+    {
+        _transaction.Execute(
+            "INSERT INTO TestTable (Name, Value) VALUES ('Alpha', 10), ('Beta', 20), ('Gamma', 30)",
+            []
+        );
+
+        var result = _transaction.Scalar<string>(
+            "SELECT Name FROM TestTable WHERE Value > @minValue ORDER BY Value LIMIT 1",
+            [new SqliteParameter("@minValue", 15)]
+        );
+
+        Assert.True(result is NullableStringOk);
+        if (result is NullableStringOk ok)
+        {
+            Assert.Equal("Beta", ok.Value);
+        }
+    }
+
+    [Fact]
+    public void Scalar_WithInvalidSql_ReturnsError()
+    {
+        var result = _transaction.Scalar<string>("SELECT Name FROM NonExistentTable");
+
+        Assert.False(result is NullableStringOk);
+    }
+
+    /// <summary>
+    /// Test record for query results.
+    /// </summary>
+    /// <param name="Name">The name.</param>
+    /// <param name="Value">The value.</param>
+    internal sealed record TestRecord(string Name, int Value);
 }

@@ -182,3 +182,9 @@ fhir_Appointment
 | Query Language | SQL | SQL + LQL |
 | Sync Library | Sync.SQLite | Sync.Postgres |
 | Framework | ASP.NET Core Minimal API | ASP.NET Core Minimal API |
+
+## Web Dashboard
+
+- React app written in C# with Bridge.Net to transpile from C# to JavaScript
+- Design should follow standard medical dashboards
+- Talks to the Microservices

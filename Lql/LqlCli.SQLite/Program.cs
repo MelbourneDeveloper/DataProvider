@@ -99,7 +99,6 @@ internal static class Program
             // Parse the LQL using Lql
             var parseResult = LqlStatementConverter.ToStatement(lqlContent);
 
-#pragma warning disable EXHAUSTION001
             return parseResult switch
             {
                 Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> success =>
@@ -112,9 +111,7 @@ internal static class Program
                         .ConfigureAwait(false),
                 Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> failure =>
                     HandleParseError(failure.Value),
-                _ => HandleUnknownError(),
             };
-#pragma warning restore EXHAUSTION001
         }
         catch (Exception ex)
         {
@@ -147,7 +144,6 @@ internal static class Program
         // Convert to SQLite
         var sqliteResult = statement.ToSQLite();
 
-#pragma warning disable EXHAUSTION001
         return sqliteResult switch
         {
             Result<string, SqlError>.Ok<string, SqlError> success => await OutputSql(
@@ -158,9 +154,7 @@ internal static class Program
             Result<string, SqlError>.Error<string, SqlError> failure => HandleTranspilationError(
                 failure.Value
             ),
-            _ => HandleUnknownError(),
         };
-#pragma warning restore EXHAUSTION001
     }
 
     /// <summary>
@@ -232,13 +226,4 @@ internal static class Program
         return 1;
     }
 
-    /// <summary>
-    /// Handles unknown errors
-    /// </summary>
-    /// <returns>Exit code</returns>
-    private static int HandleUnknownError()
-    {
-        Console.WriteLine("❌ Unknown error occurred during processing.");
-        return 1;
-    }
 }

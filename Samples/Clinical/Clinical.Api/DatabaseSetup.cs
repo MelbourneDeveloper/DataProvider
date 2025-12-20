@@ -57,9 +57,7 @@ internal static class DatabaseSetup
         foreach (var table in triggerTables)
         {
             var triggerResult = TriggerGenerator.CreateTriggers(connection, table, logger);
-            if (
-                triggerResult is Result<bool, SyncError>.Error<bool, SyncError> triggerErr
-            )
+            if (triggerResult is Result<bool, SyncError>.Error<bool, SyncError> triggerErr)
             {
                 logger.Log(
                     LogLevel.Error,

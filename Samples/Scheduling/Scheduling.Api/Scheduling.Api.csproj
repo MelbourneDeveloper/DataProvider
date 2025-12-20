@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <NoWarn>CA1848;IDE0005;CA1515;CA2100;RS1035;EXHAUSTION001;CA1508;CA2234;CA1812</NoWarn>
+    <NoWarn>CA1848;IDE0005;CA1515;CA2100;RS1035;CA1508;CA2234;CA1812</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

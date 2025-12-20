@@ -47,6 +47,7 @@ This repository contains two complementary projects:
 ## Coding Rules (CRITICAL)
 
 - **NEVER THROW EXCEPTIONS** - Always return `Result<T>` for fallible operations. Wrap anything that can fail in try/catch
+- **No casting or using ! for nulls** - Only pattern matching on type
 - **NO CLASSES** - Use records and static methods. FP style with pure static methods
 - **Copious logging with ILogger** - Especially in the sync projects
 - **NO INTERFACES** - Use `Action<T>` or `Func<T>` for abstractions
@@ -62,6 +63,11 @@ public abstract partial record Result<TSuccess, TFailure>
 }
 ``
 - **Static extension methods on IDbConnection and IDbTransaction only** - No classes for data access
+- **Don't use statements like if** - use pattern matching switch expressions on type
+⛔️ wrong
+```csharp
+if (triggerResult is Result<bool, SyncError>.Error<bool, SyncError> triggerErr)
+```
 - **Test at the highest level** - Avoid mocks. Only full integration testing
 - **Always use type aliases (using) for result types** - Don't write like this: `new Result<string, SqlError>.Ok`
 - **No singletons** - Inject `Func` into static methods
@@ -75,7 +81,11 @@ public abstract partial record Result<TSuccess, TFailure>
 - **No placeholders** - If incomplete, leave LOUD compilation error with TODO
 - **Never use Fluent Assertions**
 
-
+## Testing
+- Use e2e tests with zero mocking where possible
+- Fall back on unit testing only when absolutely necessary
+- Create MEANINGFUL tests that test REAL WORLD use cases
+- All projects must have 100% test coverage and a Stryker Mutator testing score of 70% or above. Use [Stryker Mutator](https://stryker-mutator.io/docs/stryker-net/getting-started/) as the ultimate arbiter of test quality
 
 ## Project Configuration
 

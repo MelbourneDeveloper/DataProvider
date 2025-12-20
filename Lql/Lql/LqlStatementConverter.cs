@@ -18,7 +18,7 @@ public static class LqlStatementConverter
     {
         var parseResult = LqlCodeParser.Parse(lqlCode);
 
-#pragma warning disable EXHAUSTION001 // Result type is exhaustive
+#pragma warning disable EXHAUSTION001
         return parseResult switch
         {
             Result<INode, SqlError>.Ok<INode, SqlError> success => new Result<
