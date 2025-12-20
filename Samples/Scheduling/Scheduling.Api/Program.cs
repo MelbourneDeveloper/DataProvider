@@ -36,7 +36,7 @@ var connectionString = new SqliteConnectionStringBuilder
 }.ToString();
 
 // Register a FACTORY that creates new connections - NOT a singleton connection
-builder.Services.AddSingleton<Func<SqliteConnection>>(() =>
+builder.Services.AddSingleton(() =>
 {
     var conn = new SqliteConnection(connectionString);
     conn.Open();
