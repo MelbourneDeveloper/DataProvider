@@ -236,11 +236,11 @@
 
       <div class="test-stats">
         <div class="stat passed">
-          <div class="stat-value" id="passed">0</div>
+          <div class="stat-value" id="passed-count">0</div>
           <div class="stat-label">Passed</div>
         </div>
         <div class="stat failed">
-          <div class="stat-value" id="failed">0</div>
+          <div class="stat-value" id="failed-count">0</div>
           <div class="stat-label">Failed</div>
         </div>
         <div class="stat total">
@@ -346,8 +346,8 @@
 
     const output = document.getElementById('output');
     const runBtn = document.getElementById('run-btn');
-    const passedEl = document.getElementById('passed');
-    const failedEl = document.getElementById('failed');
+    const passedEl = document.getElementById('passed-count');
+    const failedEl = document.getElementById('failed-count');
     const totalEl = document.getElementById('total');
     const progressEl = document.getElementById('progress');
     const currentTestEl = document.getElementById('current-test');
