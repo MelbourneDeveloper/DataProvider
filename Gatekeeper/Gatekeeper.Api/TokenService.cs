@@ -78,7 +78,8 @@ public static class TokenService
         SqliteConnection conn,
         string token,
         byte[] signingKey,
-        bool checkRevocation
+        bool checkRevocation,
+        ILogger? logger = null
     )
     {
         try
@@ -142,7 +143,8 @@ public static class TokenService
         }
         catch (Exception ex)
         {
-            return new TokenValidationError($"Validation failed: {ex.Message}");
+            logger?.LogError(ex, "Token validation failed");
+            return new TokenValidationError("Token validation failed");
         }
     }
 

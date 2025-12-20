@@ -535,7 +535,117 @@ app.MapGet(
     }
 );
 
+app.MapGet(
+    "/sync/status",
+    (Func<SqliteConnection> getConn) =>
+    {
+        using var conn = getConn();
+        var changesResult = SyncLogRepository.FetchChanges(conn, 0, 1000);
+        var (pendingCount, failedCount, lastSyncTime) = changesResult switch
+        {
+            SyncLogListOk(var logs) => (
+                logs.Count(l => l.Operation == SyncOperation.Insert),
+                0,
+                logs.Count > 0
+                    ? logs.Max(l => l.Timestamp)
+                    : DateTime.UtcNow.ToString(
+                        "yyyy-MM-ddTHH:mm:ss.fffZ",
+                        CultureInfo.InvariantCulture
+                    )
+            ),
+            SyncLogListError => (
+                0,
+                0,
+                DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture)
+            ),
+        };
+
+        return Results.Ok(
+            new
+            {
+                service = "Clinical.Api",
+                status = "healthy",
+                lastSyncTime,
+                pendingCount,
+                failedCount,
+            }
+        );
+    }
+);
+
+app.MapGet(
+    "/sync/records",
+    (string? status, string? search, int? page, int? pageSize, Func<SqliteConnection> getConn) =>
+    {
+        using var conn = getConn();
+        var currentPage = page ?? 1;
+        var size = pageSize ?? 50;
+        var changesResult = SyncLogRepository.FetchChanges(conn, 0, 1000);
+
+        return changesResult switch
+        {
+            SyncLogListOk(var logs) => Results.Ok(
+                BuildSyncRecordsResponse(logs, status, search, currentPage, size)
+            ),
+            SyncLogListError(var err) => Results.Problem(SyncHelpers.ToMessage(err)),
+        };
+    }
+);
+
+app.MapPost(
+    "/sync/records/{id}/retry",
+    (string id) =>
+    {
+        // For now, just acknowledge the retry request
+        // Real implementation would mark the record for re-sync
+        return Results.Accepted();
+    }
+);
+
 app.Run();
+
+static object BuildSyncRecordsResponse(
+    IReadOnlyList<SyncLogEntry> logs,
+    string? statusFilter,
+    string? search,
+    int page,
+    int pageSize
+)
+{
+    var records = logs.Select(l => new
+    {
+        id = l.Version.ToString(CultureInfo.InvariantCulture),
+        entityType = l.TableName,
+        entityId = l.PkValue,
+        status = "pending",
+        lastAttempt = l.Timestamp,
+        operation = l.Operation,
+    });
+
+    if (!string.IsNullOrEmpty(statusFilter))
+    {
+        records = records.Where(r => r.status == statusFilter);
+    }
+
+    if (!string.IsNullOrEmpty(search))
+    {
+        records = records.Where(r =>
+            r.entityId.Contains(search, StringComparison.OrdinalIgnoreCase)
+        );
+    }
+
+    var recordList = records.ToList();
+    var total = recordList.Count;
+    var pagedRecords = recordList.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+    return new
+    {
+        records = pagedRecords,
+        total,
+        page,
+        pageSize,
+    };
+}
 
 namespace Clinical.Api
 {

@@ -132,7 +132,7 @@ namespace Dashboard.Tests.TestLib
         /// </summary>
         public static void HasClass(object element, string className, string message = null)
         {
-            var classList = Script.Get<object>(element, "classList");
+            _ = Script.Get<object>(element, "classList");
             var hasClass = Script.Write<bool>("classList.contains(className)");
             if (!hasClass)
             {

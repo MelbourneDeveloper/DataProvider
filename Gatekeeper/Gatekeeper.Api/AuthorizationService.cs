@@ -41,9 +41,7 @@ public static class AuthorizationService
 
         // Step 2: Check user permissions (direct grants and role-based)
         var permResult = await conn.GetUserPermissionsAsync(userId, now).ConfigureAwait(false);
-        var permissions = permResult is GetUserPermissionsOk ok
-            ? ok.Value
-            : ImmutableList<GetUserPermissions>.Empty;
+        var permissions = permResult is GetUserPermissionsOk ok ? ok.Value : [];
 
         foreach (var perm in permissions)
         {

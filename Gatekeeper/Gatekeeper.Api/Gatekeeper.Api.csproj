@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <NoWarn>CA1848;CA1515;CA2100;RS1035;CA1508;CA2234;CA1034;CA1819;CA2007;EXHAUSTION001</NoWarn>
+    <NoWarn>CA1848;CA1515;CA2100;RS1035;CA1508;CA2234;CA1034;CA1819;CA2007;EXHAUSTION001;EPC12</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,11 +12,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Sync\Sync.SQLite\Sync.SQLite.csproj" />
-    <ProjectReference Include="..\..\..\DataProvider\DataProvider\DataProvider.csproj" />
-    <ProjectReference Include="..\..\..\Other\Selecta\Selecta.csproj" />
-    <ProjectReference Include="..\..\..\Migration\Migration\Migration.csproj" />
-    <ProjectReference Include="..\..\..\Migration\Migration.SQLite\Migration.SQLite.csproj" />
+    <ProjectReference Include="..\..\Sync\Sync.SQLite\Sync.SQLite.csproj" />
+    <ProjectReference Include="..\..\DataProvider\DataProvider\DataProvider.csproj" />
+    <ProjectReference Include="..\..\Other\Selecta\Selecta.csproj" />
+    <ProjectReference Include="..\..\Migration\Migration\Migration.csproj" />
+    <ProjectReference Include="..\..\Migration\Migration.SQLite\Migration.SQLite.csproj" />
     <ProjectReference Include="..\Gatekeeper.Migration\Gatekeeper.Migration.csproj" />
   </ItemGroup>
 
@@ -30,7 +30,7 @@
     <Delete Files="$(MSBuildProjectDirectory)/gatekeeper-build.db" />
     <RemoveDir Directories="$(IntermediateOutputPath)Generated" />
     <MakeDir Directories="$(IntermediateOutputPath)Generated" />
-    <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)..\..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(IntermediateOutputPath)Generated" --schema "$(MSBuildProjectDirectory)/schema.sql"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
+    <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(IntermediateOutputPath)Generated" --schema "$(MSBuildProjectDirectory)/schema.sql"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
     <ItemGroup>
       <Compile Include="$(IntermediateOutputPath)Generated/**/*.g.cs" Visible="false" />
     </ItemGroup>

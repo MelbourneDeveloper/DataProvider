@@ -1,3 +1,4 @@
+global using Microsoft.AspNetCore.Hosting;
 global using Microsoft.AspNetCore.Mvc.Testing;
 global using Microsoft.Data.Sqlite;
 global using Microsoft.Extensions.Logging;

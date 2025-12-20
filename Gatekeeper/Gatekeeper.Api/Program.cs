@@ -70,7 +70,7 @@ var authGroup = app.MapGroup("/auth").WithTags("Authentication");
 
 authGroup.MapPost(
     "/register/begin",
-    async (RegisterBeginRequest request, IFido2 fido2, string connStr) =>
+    async (RegisterBeginRequest request, IFido2 fido2, string connStr, ILogger<Program> logger) =>
     {
         try
         {
@@ -154,14 +154,15 @@ authGroup.MapPost(
         }
         catch (Exception ex)
         {
-            return Results.Problem(ex.Message);
+            logger.LogError(ex, "Registration begin failed");
+            return Results.Problem("Registration failed");
         }
     }
 );
 
 authGroup.MapPost(
     "/login/begin",
-    async (LoginBeginRequest? request, IFido2 fido2, string connStr) =>
+    async (LoginBeginRequest? request, IFido2 fido2, string connStr, ILogger<Program> logger) =>
     {
         try
         {
@@ -218,7 +219,8 @@ authGroup.MapPost(
         }
         catch (Exception ex)
         {
-            return Results.Problem(ex.Message);
+            logger.LogError(ex, "Login begin failed");
+            return Results.Problem("Login failed");
         }
     }
 );

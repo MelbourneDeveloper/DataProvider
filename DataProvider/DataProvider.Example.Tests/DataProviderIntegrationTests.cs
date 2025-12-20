@@ -181,9 +181,9 @@ public sealed class DataProviderIntegrationTests : IDisposable
         );
 
         // Verify different table names were used (not hard-coded)
-        var invoices = ((InvoiceListOk)invoiceResult).Value;
-        var customers = ((CustomerListOk)customerResult).Value;
-        var orders = ((OrderListOk)orderResult).Value;
+        _ = ((InvoiceListOk)invoiceResult).Value;
+        _ = ((CustomerListOk)customerResult).Value;
+        _ = ((OrderListOk)orderResult).Value;
 
         //TODO: Assert these!!!
 

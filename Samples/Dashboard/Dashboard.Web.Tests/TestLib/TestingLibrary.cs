@@ -144,7 +144,7 @@ namespace Dashboard.Tests.TestLib
         /// </summary>
         public void Unmount()
         {
-            var unmount = Script.Get<object>(_result, "unmount");
+            _ = Script.Get<object>(_result, "unmount");
             Script.Write("unmount()");
         }
 
@@ -153,7 +153,7 @@ namespace Dashboard.Tests.TestLib
         /// </summary>
         public void Rerender(Dashboard.React.ReactElement element)
         {
-            var rerender = Script.Get<object>(_result, "rerender");
+            _ = Script.Get<object>(_result, "rerender");
             Script.Write("rerender(element)");
         }
 
@@ -288,7 +288,7 @@ namespace Dashboard.Tests.TestLib
         /// </summary>
         public object QuerySelector(string selector)
         {
-            var container = Container;
+            _ = Container;
             return Script.Write<object>("container.querySelector(selector)");
         }
 
@@ -297,7 +297,7 @@ namespace Dashboard.Tests.TestLib
         /// </summary>
         public object[] QuerySelectorAll(string selector)
         {
-            var container = Container;
+            _ = Container;
             var nodeList = Script.Write<object>("container.querySelectorAll(selector)");
             return Script.Call<object[]>("Array.from", nodeList);
         }
@@ -318,7 +318,7 @@ namespace Dashboard.Tests.TestLib
         /// </summary>
         public void ExpectToHaveTextContent(object element, string text)
         {
-            var expectResult = Script.Call<object>("expect", element);
+            _ = Script.Call<object>("expect", element);
             Script.Write("expectResult.toHaveTextContent(text)");
         }
     }
