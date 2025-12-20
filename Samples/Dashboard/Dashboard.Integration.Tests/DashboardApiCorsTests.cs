@@ -1,4 +1,62 @@
+using Microsoft.AspNetCore.Hosting;
+
 namespace Dashboard.Integration.Tests;
+
+/// <summary>
+/// WebApplicationFactory for Clinical.Api that configures a temp database.
+/// </summary>
+public sealed class ClinicalApiTestFactory : WebApplicationFactory<Clinical.Api.Program>
+{
+    private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"clinical_cors_test_{Guid.NewGuid()}.db");
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        // Set DbPath for the temp database
+        builder.UseSetting("DbPath", _dbPath);
+
+        // Set content root to Clinical.Api's output directory where schema.sql lives
+        var clinicalApiAssembly = typeof(Clinical.Api.Program).Assembly;
+        var contentRoot = Path.GetDirectoryName(clinicalApiAssembly.Location)!;
+        builder.UseContentRoot(contentRoot);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (disposing && File.Exists(_dbPath))
+        {
+            try { File.Delete(_dbPath); } catch { /* ignore */ }
+        }
+    }
+}
+
+/// <summary>
+/// WebApplicationFactory for Scheduling.Api that configures a temp database.
+/// </summary>
+public sealed class SchedulingApiTestFactory : WebApplicationFactory<Scheduling.Api.Program>
+{
+    private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"scheduling_cors_test_{Guid.NewGuid()}.db");
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        // Set DbPath for the temp database
+        builder.UseSetting("DbPath", _dbPath);
+
+        // Set content root to Scheduling.Api's output directory where schema.sql lives
+        var schedulingApiAssembly = typeof(Scheduling.Api.Program).Assembly;
+        var contentRoot = Path.GetDirectoryName(schedulingApiAssembly.Location)!;
+        builder.UseContentRoot(contentRoot);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (disposing && File.Exists(_dbPath))
+        {
+            try { File.Delete(_dbPath); } catch { /* ignore */ }
+        }
+    }
+}
 
 /// <summary>
 /// Tests that verify the Dashboard frontend can communicate with backend APIs.
@@ -7,8 +65,8 @@ namespace Dashboard.Integration.Tests;
 /// </summary>
 public sealed class DashboardApiCorsTests : IAsyncLifetime
 {
-    private readonly WebApplicationFactory<Clinical.Api.Program> _clinicalFactory;
-    private readonly WebApplicationFactory<Scheduling.Api.Program> _schedulingFactory;
+    private readonly ClinicalApiTestFactory _clinicalFactory;
+    private readonly SchedulingApiTestFactory _schedulingFactory;
     private HttpClient _clinicalClient = null!;
     private HttpClient _schedulingClient = null!;
 
@@ -17,8 +75,8 @@ public sealed class DashboardApiCorsTests : IAsyncLifetime
 
     public DashboardApiCorsTests()
     {
-        _clinicalFactory = new WebApplicationFactory<Clinical.Api.Program>();
-        _schedulingFactory = new WebApplicationFactory<Scheduling.Api.Program>();
+        _clinicalFactory = new ClinicalApiTestFactory();
+        _schedulingFactory = new SchedulingApiTestFactory();
     }
 
     public Task InitializeAsync()
@@ -68,23 +126,26 @@ public sealed class DashboardApiCorsTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// CRITICAL: Dashboard must be able to GET /fhir/Patient with CORS headers.
+    /// CRITICAL: Dashboard must be able to GET /fhir/Patient/ with CORS headers.
+    /// Note: Trailing slash is required for the Patient list endpoint.
     /// </summary>
     [Fact]
     public async Task ClinicalApi_GetPatients_ReturnsDataWithCorsHeaders()
     {
         // Arrange - simulate browser request with Origin header
-        var request = new HttpRequestMessage(HttpMethod.Get, "/fhir/Patient");
+        // Note: Clinical API uses /fhir/Patient/ (with trailing slash) for list
+        var request = new HttpRequestMessage(HttpMethod.Get, "/fhir/Patient/");
         request.Headers.Add("Origin", DashboardOrigin);
         request.Headers.Add("Accept", "application/json");
 
         // Act
         var response = await _clinicalClient.SendAsync(request);
+        var body = await response.Content.ReadAsStringAsync();
 
         // Assert - must succeed AND have CORS header
         Assert.True(
             response.IsSuccessStatusCode,
-            $"Clinical API GET /fhir/Patient failed with {response.StatusCode}"
+            $"Clinical API GET /fhir/Patient/ failed with {response.StatusCode}. Body: {body}"
         );
 
         Assert.True(
@@ -94,13 +155,26 @@ public sealed class DashboardApiCorsTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Dashboard fetches encounters - must work with CORS.
+    /// Dashboard fetches encounters for a patient - must work with CORS.
+    /// Note: Encounters are nested under Patient: /fhir/Patient/{patientId}/Encounter
     /// </summary>
     [Fact]
     public async Task ClinicalApi_GetEncounters_ReturnsDataWithCorsHeaders()
     {
-        // Arrange
-        var request = new HttpRequestMessage(HttpMethod.Get, "/fhir/Encounter");
+        // Arrange - First create a patient to get encounters for
+        var createRequest = new HttpRequestMessage(HttpMethod.Post, "/fhir/Patient/");
+        createRequest.Headers.Add("Origin", DashboardOrigin);
+        createRequest.Content = new StringContent(
+            """{"Active": true, "GivenName": "Test", "FamilyName": "Patient", "Gender": "other"}""",
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+        var createResponse = await _clinicalClient.SendAsync(createRequest);
+        var patientJson = await createResponse.Content.ReadAsStringAsync();
+        var patientId = System.Text.Json.JsonDocument.Parse(patientJson).RootElement.GetProperty("Id").GetString();
+
+        // Now test the encounters endpoint with CORS
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/fhir/Patient/{patientId}/Encounter");
         request.Headers.Add("Origin", DashboardOrigin);
         request.Headers.Add("Accept", "application/json");
 
@@ -110,7 +184,7 @@ public sealed class DashboardApiCorsTests : IAsyncLifetime
         // Assert
         Assert.True(
             response.IsSuccessStatusCode,
-            $"Clinical API GET /fhir/Encounter failed with {response.StatusCode}"
+            $"Clinical API GET /fhir/Patient/{{patientId}}/Encounter failed with {response.StatusCode}"
         );
 
         Assert.True(
@@ -125,12 +199,14 @@ public sealed class DashboardApiCorsTests : IAsyncLifetime
 
     /// <summary>
     /// CRITICAL: Dashboard must be able to fetch appointments from Scheduling API.
+    /// Note: Scheduling API uses /Appointment (no /fhir/ prefix).
     /// </summary>
     [Fact]
     public async Task SchedulingApi_AppointmentsEndpoint_AllowsCorsFromDashboard()
     {
         // Arrange - simulate browser preflight request
-        var request = new HttpRequestMessage(HttpMethod.Options, "/fhir/Appointment");
+        // Note: Scheduling API doesn't use /fhir/ prefix
+        var request = new HttpRequestMessage(HttpMethod.Options, "/Appointment");
         request.Headers.Add("Origin", DashboardOrigin);
         request.Headers.Add("Access-Control-Request-Method", "GET");
         request.Headers.Add("Access-Control-Request-Headers", "Accept");
@@ -152,13 +228,14 @@ public sealed class DashboardApiCorsTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// CRITICAL: Dashboard must be able to GET /fhir/Appointment with CORS headers.
+    /// CRITICAL: Dashboard must be able to GET /Appointment with CORS headers.
+    /// Note: Scheduling API uses /Appointment (no /fhir/ prefix).
     /// </summary>
     [Fact]
     public async Task SchedulingApi_GetAppointments_ReturnsDataWithCorsHeaders()
     {
-        // Arrange
-        var request = new HttpRequestMessage(HttpMethod.Get, "/fhir/Appointment");
+        // Arrange - Scheduling API doesn't use /fhir/ prefix
+        var request = new HttpRequestMessage(HttpMethod.Get, "/Appointment");
         request.Headers.Add("Origin", DashboardOrigin);
         request.Headers.Add("Accept", "application/json");
 
@@ -168,7 +245,7 @@ public sealed class DashboardApiCorsTests : IAsyncLifetime
         // Assert
         Assert.True(
             response.IsSuccessStatusCode,
-            $"Scheduling API GET /fhir/Appointment failed with {response.StatusCode}"
+            $"Scheduling API GET /Appointment failed with {response.StatusCode}"
         );
 
         Assert.True(
@@ -179,12 +256,13 @@ public sealed class DashboardApiCorsTests : IAsyncLifetime
 
     /// <summary>
     /// Dashboard fetches practitioners - must work with CORS.
+    /// Note: Scheduling API uses /Practitioner (no /fhir/ prefix).
     /// </summary>
     [Fact]
     public async Task SchedulingApi_GetPractitioners_ReturnsDataWithCorsHeaders()
     {
-        // Arrange
-        var request = new HttpRequestMessage(HttpMethod.Get, "/fhir/Practitioner");
+        // Arrange - Scheduling API doesn't use /fhir/ prefix
+        var request = new HttpRequestMessage(HttpMethod.Get, "/Practitioner");
         request.Headers.Add("Origin", DashboardOrigin);
         request.Headers.Add("Accept", "application/json");
 
@@ -194,7 +272,7 @@ public sealed class DashboardApiCorsTests : IAsyncLifetime
         // Assert
         Assert.True(
             response.IsSuccessStatusCode,
-            $"Scheduling API GET /fhir/Practitioner failed with {response.StatusCode}"
+            $"Scheduling API GET /Practitioner failed with {response.StatusCode}"
         );
 
         Assert.True(

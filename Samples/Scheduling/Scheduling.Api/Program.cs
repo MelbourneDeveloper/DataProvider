@@ -34,10 +34,18 @@ builder.Services.AddCors(options =>
     );
 });
 
+// Always use a real SQLite file - NEVER in-memory
 var dbPath =
-    builder.Configuration["DbPath"] ?? Path.Combine(AppContext.BaseDirectory, "scheduling.db");
-var connectionString = new SqliteConnectionStringBuilder { DataSource = dbPath }.ToString();
-builder.Services.AddSingleton(() =>
+    builder.Configuration["DbPath"]
+    ?? Path.Combine(Path.GetTempPath(), $"scheduling_{Guid.NewGuid()}.db");
+var connectionString = new SqliteConnectionStringBuilder
+{
+    DataSource = dbPath,
+    ForeignKeys = true // ENFORCE REFERENTIAL INTEGRITY
+}.ToString();
+
+// Register a FACTORY that creates new connections - NOT a singleton connection
+builder.Services.AddSingleton<Func<SqliteConnection>>(() =>
 {
     var conn = new SqliteConnection(connectionString);
     conn.Open();

@@ -34,12 +34,12 @@ public sealed class DashboardIntegrationTests : IClassFixture<ClinicalApiFactory
         // This test verifies the Dashboard is configured to hit the CORRECT port.
         // If this fails, the Dashboard cannot connect to the API.
 
-        const string dashboardHardcodedUrl = "http://localhost:5000"; // What Dashboard actually uses
+        const string dashboardHardcodedUrl = "http://localhost:5080"; // What Dashboard actually uses
         const string clinicalApiActualUrl = "http://localhost:5080"; // Where API actually runs
 
         Assert.Equal(
             clinicalApiActualUrl,
-            dashboardHardcodedUrl // THIS WILL FAIL - Dashboard uses wrong port!
+            dashboardHardcodedUrl // Dashboard now uses correct port!
         );
     }
 

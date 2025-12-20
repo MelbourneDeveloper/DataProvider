@@ -33,17 +33,19 @@ internal static class DatabaseSetup
             return;
         }
 
-        var schemaPath = Path.Combine(AppContext.BaseDirectory, "schema.sql");
+        // Use assembly location to find schema file (works with WebApplicationFactory)
+        var assemblyDir = Path.GetDirectoryName(typeof(DatabaseSetup).Assembly.Location)!;
+        var schemaPath = Path.Combine(assemblyDir, "clinical_schema.sql");
         if (File.Exists(schemaPath))
         {
             using var cmd = connection.CreateCommand();
             cmd.CommandText = File.ReadAllText(schemaPath);
             cmd.ExecuteNonQuery();
-            logger.Log(LogLevel.Information, "Executed schema.sql for Clinical.Api setup");
+            logger.Log(LogLevel.Information, "Executed clinical_schema.sql for Clinical.Api setup");
         }
         else
         {
-            logger.Log(LogLevel.Error, "schema.sql not found at {SchemaPath}", schemaPath);
+            logger.Log(LogLevel.Error, "clinical_schema.sql not found at {SchemaPath}", schemaPath);
             return;
         }
 

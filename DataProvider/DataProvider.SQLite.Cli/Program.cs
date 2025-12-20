@@ -154,9 +154,10 @@ internal static class Program
                     {
                         baseName = baseName[..^".generated".Length];
                     }
-                    if (string.Equals(baseName, "schema", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(baseName, "schema", StringComparison.OrdinalIgnoreCase)
+                        || baseName.EndsWith("_schema", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Skip schema file; it's only for DB initialization
+                        // Skip schema files; they're only for DB initialization
                         continue;
                     }
                     var parseResult = parser.ParseSql(sql);

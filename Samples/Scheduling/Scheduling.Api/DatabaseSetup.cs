@@ -27,9 +27,10 @@ internal static class DatabaseSetup
 
         _ = SyncSchema.SetOriginId(connection, Guid.NewGuid().ToString());
 
-        // Execute schema.sql
+        // Execute schema - use assembly location so each API finds its own schema
         using var cmd = connection.CreateCommand();
-        var schemaPath = Path.Combine(AppContext.BaseDirectory, "schema.sql");
+        var assemblyDir = Path.GetDirectoryName(typeof(DatabaseSetup).Assembly.Location)!;
+        var schemaPath = Path.Combine(assemblyDir, "scheduling_schema.sql");
 
         if (File.Exists(schemaPath))
         {
@@ -38,7 +39,7 @@ internal static class DatabaseSetup
         }
         else
         {
-            logger.Log(LogLevel.Warning, "schema.sql not found at {Path}", schemaPath);
+            logger.Log(LogLevel.Warning, "scheduling_schema.sql not found at {Path}", schemaPath);
         }
 
         // Create sync triggers for FHIR resources

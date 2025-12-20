@@ -25,9 +25,16 @@ public sealed class ClinicalApiFactory : WebApplicationFactory<Program>
     public string DbPath => _dbPath;
 
     /// <inheritdoc />
-    protected override void ConfigureWebHost(IWebHostBuilder builder) =>
-        // Just set configuration - Program.cs handles everything else
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        // Set DbPath for the temp database
         builder.UseSetting("DbPath", _dbPath);
+
+        // Set content root to Clinical.Api's output directory where clinical_schema.sql lives
+        var clinicalApiAssembly = typeof(Program).Assembly;
+        var contentRoot = Path.GetDirectoryName(clinicalApiAssembly.Location)!;
+        builder.UseContentRoot(contentRoot);
+    }
 
     /// <inheritdoc />
     protected override void Dispose(bool disposing)

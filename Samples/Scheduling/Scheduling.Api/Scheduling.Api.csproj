@@ -18,13 +18,13 @@
   <ItemGroup>
     <Content Include="schema.sql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>scheduling_schema.sql</Link>
     </Content>
   </ItemGroup>
 
   <ItemGroup>
     <AdditionalFiles Include="Queries/*.sql" />
     <AdditionalFiles Include="DataProvider.json" />
-    <AdditionalFiles Include="schema.sql" />
   </ItemGroup>
 
   <!-- Generate C# from SQL using DataProvider.SQLite.Cli -->

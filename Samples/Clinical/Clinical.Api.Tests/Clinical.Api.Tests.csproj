@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\Clinical.Api\schema.sql" Link="schema.sql">
+    <Content Include="..\Clinical.Api\schema.sql" Link="clinical_schema.sql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

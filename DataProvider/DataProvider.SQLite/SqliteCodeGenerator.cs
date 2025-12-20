@@ -335,10 +335,11 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
 
         var sqlFiles = additional.Where(at =>
             at.Path.EndsWith(".sql", StringComparison.OrdinalIgnoreCase)
-            && !Path.GetFileName(at.Path).Equals("schema.sql", StringComparison.OrdinalIgnoreCase)
+            && !Path.GetFileName(at.Path).Contains("schema", StringComparison.OrdinalIgnoreCase)
         );
         var schemaFiles = additional.Where(at =>
-            Path.GetFileName(at.Path).Equals("schema.sql", StringComparison.OrdinalIgnoreCase)
+            Path.GetFileName(at.Path).Contains("schema", StringComparison.OrdinalIgnoreCase)
+            && at.Path.EndsWith(".sql", StringComparison.OrdinalIgnoreCase)
         );
         var configFiles = additional.Where(at =>
             at.Path.EndsWith("DataProvider.json", StringComparison.OrdinalIgnoreCase)

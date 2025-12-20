@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\Scheduling.Api\schema.sql" Link="schema.sql">
+    <Content Include="..\Scheduling.Api\schema.sql" Link="scheduling_schema.sql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
