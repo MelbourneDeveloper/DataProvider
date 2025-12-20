@@ -2,52 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+# Rules
+
 ## Multi-Agent Coordination (Too Many Cooks)
 - Keep your key! It's critical. Do not lose it!
 - Check messages regularly, lock files before editing, unlock after
 - Don't edit locked files; signal intent via plans and messages
 - Coordinator: keep delegating via messages. Worker: keep asking for tasks via messages
 - Clean up expired locks routinely
-- Do not use Git unless asked by user
 
-Medical: All medical data MUST conform to the [FHIR spec](https://build.fhir.org/resourcelist.html).
-
-## Build Commands
-```bash
-dotnet build DataProvider.sln          # Build entire solution
-dotnet test                            # Run all tests
-dotnet test --filter "FullyQualifiedName~ClassName"  # Run specific test class
-dotnet test --filter "FullyQualifiedName~MethodName" # Run single test
-dotnet csharpier .                     # Format all code (run periodically)
-```
-
-DO NOT USE GIT!!! <-- ⛔️ Source control is illegal for you 🙅🏼
-
-## Architecture Overview
-
-This repository contains two complementary projects:
-
-**DataProvider** - Source generator creating compile-time safe extension methods from SQL files
-- Core library in `DataProvider/DataProvider/` - base types, config records, code generation
-- Database-specific implementations: `DataProvider.SQLite/`, `DataProvider.SqlServer/`
-- Uses ANTLR grammars for SQL parsing (`Parsing/*.g4` files)
-- Generates extension methods on `IDbConnection` and `IDbTransaction`
-- Routinely format all C# code with `dotnet csharpier .`
-
-**LQL (Lambda Query Language)** - Functional DSL that transpiles to SQL
-- Core transpiler in `Lql/Lql/` - ANTLR grammar, pipeline steps, AST
-- Database dialects: `Lql.SQLite/`, `Lql.SqlServer/`, `Lql.Postgres/`
-- CLI tool: `LqlCli.SQLite/`
-- Browser playground: `Lql.Browser/`
-
-**Shared Libraries** in `Other/`:
-- `Results/` - `Result<TValue, TError>` type for functional error handling
-- `Selecta/` - SQL parsing and AST utilities
-
-## Coding Rules (CRITICAL)
+## Coding Rules
 
 - **NEVER THROW EXCEPTIONS** - Always return `Result<T>` for fallible operations. Wrap anything that can fail in try/catch
 - **No casting or using ! for nulls** - Only pattern matching on type
+- **DO NOT USE GIT** <-- ⛔️ Source control is illegal for you 🙅🏼
 - **NO CLASSES** - Use records and static methods. FP style with pure static methods
 - **Copious logging with ILogger** - Especially in the sync projects
 - **NO INTERFACES** - Use `Action<T>` or `Func<T>` for abstractions
@@ -86,6 +54,30 @@ if (triggerResult is Result<bool, SyncError>.Error<bool, SyncError> triggerErr)
 - Fall back on unit testing only when absolutely necessary
 - Create MEANINGFUL tests that test REAL WORLD use cases
 - All projects must have 100% test coverage and a Stryker Mutator testing score of 70% or above. Use [Stryker Mutator](https://stryker-mutator.io/docs/stryker-net/getting-started/) as the ultimate arbiter of test quality
+
+## Architecture Overview
+
+This repository contains multiple related, but distinct suites:
+
+**DataProvider** - Source generator creating compile-time safe extension methods from SQL files
+- Core library in `DataProvider/DataProvider/` - base types, config records, code generation
+- Database-specific implementations: `DataProvider.SQLite/`, `DataProvider.SqlServer/`
+- Uses ANTLR grammars for SQL parsing (`Parsing/*.g4` files)
+- Generates extension methods on `IDbConnection` and `IDbTransaction`
+- Routinely format all C# code with `dotnet csharpier .`
+
+**LQL (Lambda Query Language)** - Functional DSL that transpiles to SQL
+- Core transpiler in `Lql/Lql/` - ANTLR grammar, pipeline steps, AST
+- Database dialects: `Lql.SQLite/`, `Lql.SqlServer/`, `Lql.Postgres/`
+- CLI tool: `LqlCli.SQLite/`
+- Browser playground: `Lql.Browser/`
+
+**Shared Libraries** in `Other/`:
+- `Results/` - `Result<TValue, TError>` type for functional error handling
+- `Selecta/` - SQL parsing and AST utilities
+
+**Samples**
+- Medical: All medical data MUST conform to the [FHIR spec](https://build.fhir.org/resourcelist.html).
 
 ## Project Configuration
 

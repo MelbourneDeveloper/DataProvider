@@ -14,8 +14,8 @@ public static class ReactInterop
     public static ReactElement CreateElement(
         string type,
         object? props = null,
-        params object[] children) =>
-        Script.Call<ReactElement>("React.createElement", type, props, children);
+        params object[] children
+    ) => Script.Call<ReactElement>("React.createElement", type, props, children);
 
     /// <summary>
     /// Creates a React element from a component function.
@@ -23,8 +23,8 @@ public static class ReactInterop
     public static ReactElement CreateElement(
         Func<object, ReactElement> component,
         object? props = null,
-        params object[] children) =>
-        Script.Call<ReactElement>("React.createElement", component, props, children);
+        params object[] children
+    ) => Script.Call<ReactElement>("React.createElement", component, props, children);
 
     /// <summary>
     /// Creates the React root and renders the application.
@@ -42,9 +42,7 @@ public static class ReactInterop
 /// </summary>
 [External]
 [Name("Object")]
-public class ReactElement
-{
-}
+public class ReactElement { }
 
 /// <summary>
 /// React root for concurrent rendering.

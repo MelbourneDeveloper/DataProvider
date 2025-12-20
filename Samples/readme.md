@@ -6,19 +6,26 @@ Two decoupled microservices demonstrating DataProvider, LQL, and domain-specific
 
 ```mermaid
 graph TB
+    subgraph Dashboard["Web Dashboard (H5/React)"]
+        DW[Dashboard.Web<br/>C# → JavaScript]
+    end
+
     subgraph Clinical["Clinical Domain (SQLite)"]
         CA[Clinical.Api<br/>fhir_Patient, fhir_Encounter]
         CS[Clinical.Sync<br/>sync_Provider]
     end
 
-    subgraph Scheduling["Scheduling Domain (PostgreSQL)"]
+    subgraph Scheduling["Scheduling Domain (SQLite)"]
         SA[Scheduling.Api<br/>fhir_Practitioner, fhir_Appointment]
         SS[Scheduling.Sync<br/>sync_ScheduledPatient]
     end
 
+    DW -->|REST API| CA
+    DW -->|REST API| SA
     CA -->|Patient data| SS
     SA -->|Practitioner data| CS
 
+    style Dashboard fill:#e8f5e9
     style Clinical fill:#e1f5fe
     style Scheduling fill:#fff3e0
 ```
@@ -58,23 +65,24 @@ Samples/
 ├── Clinical/
 │   ├── Clinical.Api/          # ASP.NET Core Minimal API (SQLite)
 │   │   ├── Program.cs
-│   │   ├── Models.cs          # FHIR R4 records
 │   │   ├── Queries/*.sql      # External SQL queries
 │   │   └── schema.sql         # fhir_* and sync_* tables
 │   └── Clinical.Sync/         # Incoming sync from Scheduling
 │       ├── Program.cs
 │       └── SyncMappings.json  # Practitioner → Provider mapping
 ├── Scheduling/
-│   ├── Scheduling.Api/        # ASP.NET Core Minimal API (PostgreSQL)
+│   ├── Scheduling.Api/        # ASP.NET Core Minimal API (SQLite)
 │   │   ├── Program.cs
-│   │   ├── Models.cs          # FHIR R4 records
 │   │   ├── Queries/*.sql      # External SQL queries
 │   │   ├── Queries/*.lql      # External LQL queries
 │   │   └── schema.sql         # fhir_* and sync_* tables
 │   └── Scheduling.Sync/       # Incoming sync from Clinical
 │       ├── Program.cs
 │       └── SyncMappings.json  # Patient → ScheduledPatient mapping
-└── Healthcare.Sync.http       # HTTP test collection
+└── Dashboard/
+    └── Dashboard.Web/         # React dashboard (H5 transpiler)
+        ├── wwwroot/           # Static HTML/CSS/JS
+        └── *.cs               # C# → JavaScript components
 ```
 
 ## Running the Services
@@ -185,6 +193,118 @@ fhir_Appointment
 
 ## Web Dashboard
 
-- React app written in C# with Bridge.Net to transpile from C# to JavaScript
-- Design should follow standard medical dashboards
-- Talks to the Microservices
+A modern React dashboard written in C# using the H5 transpiler (successor to Bridge.NET). The dashboard connects to both Clinical and Scheduling microservices.
+
+### Features
+
+- **Glassmorphic Design** - Modern, clean UI with blur effects and transparency
+- **FHIR Data Display** - View patients, practitioners, appointments, and more
+- **Real-time API Integration** - Connects to both Clinical and Scheduling APIs
+- **Responsive Layout** - Works on desktop and mobile devices
+- **Type-safe React** - React components written in C# with full type safety
+
+### Technology Stack
+
+- **H5 Transpiler** - Compiles C# to JavaScript
+- **React 18** - UI framework (loaded via CDN)
+- **Custom CSS** - Glassmorphism design system with no external dependencies
+
+### Project Structure
+
+```
+Dashboard/
+└── Dashboard.Web/
+    ├── Dashboard.Web.csproj    # H5 project configuration
+    ├── Program.cs              # Application entry point
+    ├── App.cs                  # Main React application component
+    ├── GlobalUsings.cs         # Global using directives
+    ├── React/                  # React interop layer
+    │   ├── ReactInterop.cs     # Core React bindings
+    │   ├── Hooks.cs            # React hooks (useState, useEffect)
+    │   └── Elements.cs         # HTML element factories
+    ├── Components/             # Reusable UI components
+    │   ├── Sidebar.cs          # Navigation sidebar
+    │   ├── Header.cs           # Top header with search
+    │   ├── MetricCard.cs       # KPI metric cards
+    │   ├── DataTable.cs        # Data table component
+    │   └── Icons.cs            # SVG icon components
+    ├── Pages/                  # Page components
+    │   ├── DashboardPage.cs    # Main overview dashboard
+    │   ├── PatientsPage.cs     # Patient management
+    │   ├── PractitionersPage.cs # Practitioner management
+    │   └── AppointmentsPage.cs # Appointment scheduling
+    ├── Models/                 # Data models
+    │   ├── ClinicalModels.cs   # Patient, Encounter, etc.
+    │   └── SchedulingModels.cs # Practitioner, Appointment
+    ├── Api/                    # API client
+    │   └── ApiClient.cs        # HTTP client for microservices
+    └── wwwroot/                # Static assets
+        ├── index.html          # HTML entry point
+        └── css/                # Stylesheets
+            ├── variables.css   # CSS custom properties
+            ├── base.css        # Base/reset styles
+            ├── components.css  # Component styles
+            └── layout.css      # Layout styles
+```
+
+### Running the Dashboard
+
+1. **Build the H5 project** (compiles C# to JavaScript):
+   ```bash
+   cd Samples/Dashboard/Dashboard.Web
+   dotnet build
+   ```
+
+2. **Start the microservices** (in separate terminals):
+   ```bash
+   # Terminal 1: Clinical API
+   cd Samples/Clinical/Clinical.Api
+   dotnet run
+
+   # Terminal 2: Scheduling API
+   cd Samples/Scheduling/Scheduling.Api
+   dotnet run
+   ```
+
+3. **Serve the dashboard** (using any static file server):
+   ```bash
+   # Using Python
+   cd Samples/Dashboard/Dashboard.Web/wwwroot
+   python3 -m http.server 8080
+
+   # Or using .NET
+   dotnet serve -p 8080 -d wwwroot
+   ```
+
+4. **Open in browser**: http://localhost:8080
+
+### Configuration
+
+The dashboard can be configured via a `window.dashboardConfig` object:
+
+```html
+<script>
+  window.dashboardConfig = {
+    CLINICAL_API_URL: 'http://localhost:5000',
+    SCHEDULING_API_URL: 'http://localhost:5001'
+  };
+</script>
+```
+
+### Design System
+
+The dashboard follows modern healthcare UI best practices:
+
+| Element | Color | Usage |
+|---------|-------|-------|
+| Primary | `#2ca3fa` (Blue) | Actions, links, active states |
+| Teal | `#00bcd4` | Accents, secondary indicators |
+| Success | `#10b981` | Positive trends, active status |
+| Warning | `#f59e0b` | Alerts, pending states |
+| Error | `#ef4444` | Errors, cancelled states |
+
+The design uses:
+- 8px spacing grid
+- Glassmorphic cards with blur effects
+- Clean sans-serif typography
+- Subtle shadows and rounded corners

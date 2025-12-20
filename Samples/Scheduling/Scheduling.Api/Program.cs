@@ -1,7 +1,30 @@
+#pragma warning disable CS8509 // Exhaustive switch - Exhaustion analyzer handles this
+
 using System.Globalization;
 using Scheduling.Api;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add CORS for dashboard
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "Dashboard",
+        policy =>
+        {
+            policy
+                .WithOrigins(
+                    "http://localhost:3000",
+                    "http://localhost:5173",
+                    "http://127.0.0.1:3000",
+                    "http://127.0.0.1:5173"
+                )
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        }
+    );
+});
 
 var dbPath = Path.Combine(AppContext.BaseDirectory, "scheduling.db");
 var connectionString = new SqliteConnectionStringBuilder { DataSource = dbPath }.ToString();
@@ -20,6 +43,9 @@ using (var conn = new SqliteConnection(connectionString))
     DatabaseSetup.Initialize(conn, app.Logger);
 }
 
+// Enable CORS
+app.UseCors("Dashboard");
+
 // === FHIR PRACTITIONER ENDPOINTS ===
 
 app.MapGet(
@@ -32,7 +58,6 @@ app.MapGet(
         {
             GetAllPractitionersOk ok => Results.Ok(ok.Value),
             GetAllPractitionersError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -48,7 +73,6 @@ app.MapGet(
             GetPractitionerByIdOk ok when ok.Value.Count > 0 => Results.Ok(ok.Value[0]),
             GetPractitionerByIdOk => Results.NotFound(),
             GetPractitionerByIdError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -98,8 +122,8 @@ app.MapPost(
 
         return result switch
         {
+            InsertOk => Results.Problem("Unexpected success after handling"),
             InsertError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -118,7 +142,6 @@ app.MapGet(
             {
                 SearchPractitionersOk ok => Results.Ok(ok.Value),
                 SearchPractitionersError err => Results.Problem(err.Value.Message),
-                _ => Results.Problem("Unknown error"),
             };
         }
         else
@@ -128,7 +151,6 @@ app.MapGet(
             {
                 GetAllPractitionersOk ok => Results.Ok(ok.Value),
                 GetAllPractitionersError err => Results.Problem(err.Value.Message),
-                _ => Results.Problem("Unknown error"),
             };
         }
     }
@@ -146,7 +168,6 @@ app.MapGet(
         {
             GetUpcomingAppointmentsOk ok => Results.Ok(ok.Value),
             GetUpcomingAppointmentsError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -162,7 +183,6 @@ app.MapGet(
             GetAppointmentByIdOk ok when ok.Value.Count > 0 => Results.Ok(ok.Value[0]),
             GetAppointmentByIdOk => Results.NotFound(),
             GetAppointmentByIdError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -229,8 +249,8 @@ app.MapPost(
 
         return result switch
         {
+            InsertOk => Results.Problem("Unexpected success after handling"),
             InsertError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -273,7 +293,6 @@ app.MapGet(
         {
             GetAppointmentsByPatientOk ok => Results.Ok(ok.Value),
             GetAppointmentsByPatientError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -289,7 +308,6 @@ app.MapGet(
         {
             GetAppointmentsByPractitionerOk ok => Results.Ok(ok.Value),
             GetAppointmentsByPractitionerError err => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -306,7 +324,6 @@ app.MapGet(
         {
             SyncLogListOk ok => Results.Ok(ok.Value),
             SyncLogListError err => Results.Problem(SyncHelpers.ToMessage(err.Value)),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );
@@ -321,7 +338,6 @@ app.MapGet(
         {
             StringSyncOk ok => Results.Ok(new { originId = ok.Value }),
             StringSyncError err => Results.Problem(SyncHelpers.ToMessage(err.Value)),
-            _ => Results.Problem("Unknown error"),
         };
     }
 );

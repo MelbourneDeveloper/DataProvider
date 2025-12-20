@@ -47,7 +47,9 @@ public static class ApiClient
     /// </summary>
     public static async Task<Patient[]> SearchPatientsAsync(string query)
     {
-        var response = await FetchAsync($"{_clinicalBaseUrl}/fhir/Patient/_search?q={EncodeUri(query)}");
+        var response = await FetchAsync(
+            $"{_clinicalBaseUrl}/fhir/Patient/_search?q={EncodeUri(query)}"
+        );
         return ParseJson<Patient[]>(response);
     }
 
@@ -74,7 +76,9 @@ public static class ApiClient
     /// </summary>
     public static async Task<MedicationRequest[]> GetMedicationsAsync(string patientId)
     {
-        var response = await FetchAsync($"{_clinicalBaseUrl}/fhir/Patient/{patientId}/MedicationRequest");
+        var response = await FetchAsync(
+            $"{_clinicalBaseUrl}/fhir/Patient/{patientId}/MedicationRequest"
+        );
         return ParseJson<MedicationRequest[]>(response);
     }
 
@@ -103,7 +107,9 @@ public static class ApiClient
     /// </summary>
     public static async Task<Practitioner[]> SearchPractitionersAsync(string specialty)
     {
-        var response = await FetchAsync($"{_schedulingBaseUrl}/Practitioner/_search?specialty={EncodeUri(specialty)}");
+        var response = await FetchAsync(
+            $"{_schedulingBaseUrl}/Practitioner/_search?specialty={EncodeUri(specialty)}"
+        );
         return ParseJson<Practitioner[]>(response);
     }
 
@@ -139,7 +145,9 @@ public static class ApiClient
     /// </summary>
     public static async Task<Appointment[]> GetPractitionerAppointmentsAsync(string practitionerId)
     {
-        var response = await FetchAsync($"{_schedulingBaseUrl}/Practitioner/{practitionerId}/Appointment");
+        var response = await FetchAsync(
+            $"{_schedulingBaseUrl}/Practitioner/{practitionerId}/Appointment"
+        );
         return ParseJson<Appointment[]>(response);
     }
 
@@ -147,14 +155,11 @@ public static class ApiClient
 
     private static async Task<string> FetchAsync(string url)
     {
-        var response = await Script.Call<Task<Response>>("fetch", url, new
-        {
-            method = "GET",
-            headers = new
-            {
-                Accept = "application/json"
-            }
-        });
+        var response = await Script.Call<Task<Response>>(
+            "fetch",
+            url,
+            new { method = "GET", headers = new { Accept = "application/json" } }
+        );
 
         if (!response.Ok)
         {
@@ -166,16 +171,16 @@ public static class ApiClient
 
     private static async Task<string> PostAsync(string url, object data)
     {
-        var response = await Script.Call<Task<Response>>("fetch", url, new
-        {
-            method = "POST",
-            headers = new
+        var response = await Script.Call<Task<Response>>(
+            "fetch",
+            url,
+            new
             {
-                Accept = "application/json",
-                ContentType = "application/json"
-            },
-            body = Script.Call<string>("JSON.stringify", data)
-        });
+                method = "POST",
+                headers = new { Accept = "application/json", ContentType = "application/json" },
+                body = Script.Call<string>("JSON.stringify", data),
+            }
+        );
 
         if (!response.Ok)
         {
@@ -185,8 +190,7 @@ public static class ApiClient
         return await response.Text();
     }
 
-    private static T ParseJson<T>(string json) =>
-        Script.Call<T>("JSON.parse", json);
+    private static T ParseJson<T>(string json) => Script.Call<T>("JSON.parse", json);
 
     private static string EncodeUri(string value) =>
         Script.Call<string>("encodeURIComponent", value);

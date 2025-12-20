@@ -3,6 +3,27 @@ using Clinical.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add CORS for dashboard
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "Dashboard",
+        policy =>
+        {
+            policy
+                .WithOrigins(
+                    "http://localhost:3000",
+                    "http://localhost:5173",
+                    "http://127.0.0.1:3000",
+                    "http://127.0.0.1:5173"
+                )
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        }
+    );
+});
+
 var dbPath = Path.Combine(AppContext.BaseDirectory, "clinical.db");
 var connectionString = new SqliteConnectionStringBuilder { DataSource = dbPath }.ToString();
 builder.Services.AddSingleton(() =>
@@ -19,6 +40,9 @@ using (var conn = new SqliteConnection(connectionString))
     conn.Open();
     DatabaseSetup.Initialize(conn, app.Logger);
 }
+
+// Enable CORS
+app.UseCors("Dashboard");
 
 var patientGroup = app.MapGroup("/fhir/Patient").WithTags("Patient");
 
@@ -40,11 +64,7 @@ patientGroup.MapGet(
                 gender ?? (object)DBNull.Value
             )
             .ConfigureAwait(false);
-        return result switch
-        {
-            GetPatientsOk ok => Results.Ok(ok.Value),
-            GetPatientsError err => Results.Problem(err.Value.Message),
-        };
+        return result.Match(patients => Results.Ok(patients), err => Results.Problem(err.Message));
     }
 );
 
@@ -54,12 +74,10 @@ patientGroup.MapGet(
     {
         using var conn = getConn();
         var result = await conn.GetPatientByIdAsync(id).ConfigureAwait(false);
-        return result switch
-        {
-            GetPatientByIdOk ok when ok.Value.Count > 0 => Results.Ok(ok.Value[0]),
-            GetPatientByIdOk => Results.NotFound(),
-            GetPatientByIdError err => Results.Problem(err.Value.Message),
-        };
+        return result.Match(
+            patients => patients.Count > 0 ? Results.Ok(patients[0]) : Results.NotFound(),
+            err => Results.Problem(err.Message)
+        );
     }
 );
 
@@ -122,11 +140,10 @@ patientGroup.MapPost(
             );
         }
 
-        return result switch
-        {
-            InsertOk => Results.Problem("Unexpected state"),
-            InsertError err => Results.Problem(err.Value.Message),
-        };
+        return result.Match<IResult>(
+            _ => Results.Problem("Unexpected state"),
+            err => Results.Problem(err.Message)
+        );
     }
 );
 
@@ -136,11 +153,7 @@ patientGroup.MapGet(
     {
         using var conn = getConn();
         var result = await conn.SearchPatientsAsync($"%{q}%").ConfigureAwait(false);
-        return result switch
-        {
-            SearchPatientsOk ok => Results.Ok(ok.Value),
-            SearchPatientsError err => Results.Problem(err.Value.Message),
-        };
+        return result.Match(patients => Results.Ok(patients), err => Results.Problem(err.Message));
     }
 );
 
@@ -152,11 +165,10 @@ encounterGroup.MapGet(
     {
         using var conn = getConn();
         var result = await conn.GetEncountersByPatientAsync(patientId).ConfigureAwait(false);
-        return result switch
-        {
-            GetEncountersOk ok => Results.Ok(ok.Value),
-            GetEncountersError err => Results.Problem(err.Value.Message),
-        };
+        return result.Match(
+            encounters => Results.Ok(encounters),
+            err => Results.Problem(err.Message)
+        );
     }
 );
 
@@ -213,11 +225,10 @@ encounterGroup.MapPost(
             );
         }
 
-        return result switch
-        {
-            InsertOk => Results.Problem("Unexpected state"),
-            InsertError err => Results.Problem(err.Value.Message),
-        };
+        return result.Match<IResult>(
+            _ => Results.Problem("Unexpected state"),
+            err => Results.Problem(err.Message)
+        );
     }
 );
 
@@ -229,11 +240,10 @@ conditionGroup.MapGet(
     {
         using var conn = getConn();
         var result = await conn.GetConditionsByPatientAsync(patientId).ConfigureAwait(false);
-        return result switch
-        {
-            GetConditionsOk ok => Results.Ok(ok.Value),
-            GetConditionsError err => Results.Problem(err.Value.Message),
-        };
+        return result.Match(
+            conditions => Results.Ok(conditions),
+            err => Results.Problem(err.Message)
+        );
     }
 );
 
@@ -299,11 +309,10 @@ conditionGroup.MapPost(
             );
         }
 
-        return result switch
-        {
-            InsertOk => Results.Problem("Unexpected state"),
-            InsertError err => Results.Problem(err.Value.Message),
-        };
+        return result.Match<IResult>(
+            _ => Results.Problem("Unexpected state"),
+            err => Results.Problem(err.Message)
+        );
     }
 );
 
@@ -317,11 +326,10 @@ medicationGroup.MapGet(
     {
         using var conn = getConn();
         var result = await conn.GetMedicationsByPatientAsync(patientId).ConfigureAwait(false);
-        return result switch
-        {
-            GetMedicationsOk ok => Results.Ok(ok.Value),
-            GetMedicationsError err => Results.Problem(err.Value.Message),
-        };
+        return result.Match(
+            medications => Results.Ok(medications),
+            err => Results.Problem(err.Message)
+        );
     }
 );
 
@@ -388,11 +396,10 @@ medicationGroup.MapPost(
             );
         }
 
-        return result switch
-        {
-            InsertOk => Results.Problem("Unexpected state"),
-            InsertError err => Results.Problem(err.Value.Message),
-        };
+        return result.Match<IResult>(
+            _ => Results.Problem("Unexpected state"),
+            err => Results.Problem(err.Message)
+        );
     }
 );
 
@@ -402,11 +409,10 @@ app.MapGet(
     {
         using var conn = getConn();
         var result = SyncLogRepository.FetchChanges(conn, fromVersion ?? 0, limit ?? 100);
-        return result switch
-        {
-            SyncLogListOk ok => Results.Ok(ok.Value),
-            SyncLogListError err => Results.Problem(SyncHelpers.ToMessage(err.Value)),
-        };
+        return result.Match(
+            logs => Results.Ok(logs),
+            err => Results.Problem(SyncHelpers.ToMessage(err))
+        );
     }
 );
 
@@ -416,12 +422,18 @@ app.MapGet(
     {
         using var conn = getConn();
         var result = SyncSchema.GetOriginId(conn);
-        return result switch
-        {
-            StringSyncOk ok => Results.Ok(new { originId = ok.Value }),
-            StringSyncError err => Results.Problem(SyncHelpers.ToMessage(err.Value)),
-        };
+        return result.Match(
+            originId => Results.Ok(new { originId }),
+            err => Results.Problem(SyncHelpers.ToMessage(err))
+        );
     }
 );
 
 app.Run();
+
+/// <summary>
+/// Program entry point marker for WebApplicationFactory.
+/// </summary>
+public partial class Program
+{
+}

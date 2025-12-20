@@ -1,0 +1,6 @@
+{
+  "output": "wwwroot/js",
+  "generateSourceMap": true,
+  "combineScripts": true,
+  "fileNameCasing": "CamelCase"
+}

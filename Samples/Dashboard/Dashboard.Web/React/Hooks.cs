@@ -34,11 +34,17 @@ public static class Hooks
     /// </summary>
     public static void UseEffect(Action effect, object[]? deps = null)
     {
-        Script.Call<object>("React.useEffect", (Func<object?>)(() =>
-        {
-            effect();
-            return null;
-        }), deps);
+        Script.Call<object>(
+            "React.useEffect",
+            (Func<object?>)(
+                () =>
+                {
+                    effect();
+                    return null;
+                }
+            ),
+            deps
+        );
     }
 
     /// <summary>
@@ -46,11 +52,17 @@ public static class Hooks
     /// </summary>
     public static void UseEffect(Action effect, Func<Action> cleanup, object[]? deps = null)
     {
-        Script.Call<object>("React.useEffect", (Func<Action>)(() =>
-        {
-            effect();
-            return cleanup();
-        }), deps);
+        Script.Call<object>(
+            "React.useEffect",
+            (Func<Action>)(
+                () =>
+                {
+                    effect();
+                    return cleanup();
+                }
+            ),
+            deps
+        );
     }
 
     /// <summary>
@@ -68,12 +80,11 @@ public static class Hooks
     /// <summary>
     /// React useCallback hook - memoizes callback functions.
     /// </summary>
-    public static T UseCallback<T>(T callback, object[] deps) where T : Delegate =>
-        Script.Call<T>("React.useCallback", callback, deps);
+    public static T UseCallback<T>(T callback, object[] deps)
+        where T : Delegate => Script.Call<T>("React.useCallback", callback, deps);
 
     /// <summary>
     /// React useContext hook - consumes a React context.
     /// </summary>
-    public static T UseContext<T>(object context) =>
-        Script.Call<T>("React.useContext", context);
+    public static T UseContext<T>(object context) => Script.Call<T>("React.useContext", context);
 }

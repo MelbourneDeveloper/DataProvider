@@ -1,0 +1,4 @@
+<Project>
+  <!-- This file stops H5 project from inheriting the main solution's Directory.Build.props -->
+  <!-- H5 uses netstandard2.0/2.1 and has its own package ecosystem -->
+</Project>

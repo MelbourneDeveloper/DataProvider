@@ -1,6 +1,19 @@
+#pragma warning disable CS8509 // Exhaustive switch - Exhaustion analyzer handles this
+
 using Lql.Parsing;
 using Outcome;
 using Selecta;
+
+using ParseOk = Outcome.Result<Lql.INode, Selecta.SqlError>.Ok<Lql.INode, Selecta.SqlError>;
+using ParseError = Outcome.Result<Lql.INode, Selecta.SqlError>.Error<Lql.INode, Selecta.SqlError>;
+using StatementOk = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Ok<
+    Lql.LqlStatement,
+    Selecta.SqlError
+>;
+using StatementError = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Error<
+    Lql.LqlStatement,
+    Selecta.SqlError
+>;
 
 namespace Lql;
 
@@ -18,19 +31,10 @@ public static class LqlStatementConverter
     {
         var parseResult = LqlCodeParser.Parse(lqlCode);
 
-#pragma warning disable EXHAUSTION001
         return parseResult switch
         {
-            Result<INode, SqlError>.Ok<INode, SqlError> success => new Result<
-                LqlStatement,
-                SqlError
-            >.Ok<LqlStatement, SqlError>(new LqlStatement { AstNode = success.Value }),
-            Result<INode, SqlError>.Error<INode, SqlError> failure => new Result<
-                LqlStatement,
-                SqlError
-            >.Error<LqlStatement, SqlError>(failure.Value),
-            _ => throw new InvalidOperationException("Unexpected Result type"),
+            ParseOk success => new StatementOk(new LqlStatement { AstNode = success.Value }),
+            ParseError failure => new StatementError(failure.Value),
         };
-#pragma warning restore EXHAUSTION001
     }
 }

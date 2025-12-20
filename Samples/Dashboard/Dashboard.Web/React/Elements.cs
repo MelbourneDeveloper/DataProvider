@@ -15,8 +15,8 @@ public static class Elements
         string? id = null,
         object? style = null,
         Action? onClick = null,
-        params ReactElement[] children) =>
-        CreateElement("div", className, id, style, onClick, children);
+        params ReactElement[] children
+    ) => CreateElement("div", className, id, style, onClick, children);
 
     /// <summary>
     /// Creates a span element.
@@ -25,8 +25,8 @@ public static class Elements
         string? className = null,
         string? id = null,
         object? style = null,
-        params ReactElement[] children) =>
-        CreateElement("span", className, id, style, null, children);
+        params ReactElement[] children
+    ) => CreateElement("span", className, id, style, null, children);
 
     /// <summary>
     /// Creates a paragraph element.
@@ -34,8 +34,8 @@ public static class Elements
     public static ReactElement P(
         string? className = null,
         object? style = null,
-        params ReactElement[] children) =>
-        CreateElement("p", className, null, style, null, children);
+        params ReactElement[] children
+    ) => CreateElement("p", className, null, style, null, children);
 
     /// <summary>
     /// Creates a heading element (h1-h6).
@@ -43,8 +43,8 @@ public static class Elements
     public static ReactElement H(
         int level,
         string? className = null,
-        params ReactElement[] children) =>
-        CreateElement($"h{level}", className, null, null, null, children);
+        params ReactElement[] children
+    ) => CreateElement($"h{level}", className, null, null, null, children);
 
     /// <summary>
     /// Creates a button element.
@@ -54,14 +54,15 @@ public static class Elements
         Action? onClick = null,
         bool disabled = false,
         string? type = "button",
-        params ReactElement[] children)
+        params ReactElement[] children
+    )
     {
         var props = new
         {
             className,
             onClick = (Action<object>?)(onClick != null ? _ => onClick() : null),
             disabled,
-            type
+            type,
         };
         return Script.Call<ReactElement>("React.createElement", "button", props, children);
     }
@@ -75,7 +76,8 @@ public static class Elements
         string? value = null,
         string? placeholder = null,
         Action<string>? onChange = null,
-        bool disabled = false)
+        bool disabled = false
+    )
     {
         var props = new
         {
@@ -83,10 +85,12 @@ public static class Elements
             type,
             value,
             placeholder,
-            onChange = (Action<object>?)(onChange != null
-                ? e => onChange(Script.Get<string>(Script.Get<object>(e, "target"), "value"))
-                : null),
-            disabled
+            onChange = (Action<object>?)(
+                onChange != null
+                    ? e => onChange(Script.Get<string>(Script.Get<object>(e, "target"), "value"))
+                    : null
+            ),
+            disabled,
         };
         return Script.Call<ReactElement>("React.createElement", "input", props);
     }
@@ -104,9 +108,16 @@ public static class Elements
         string src,
         string? alt = null,
         string? className = null,
-        object? style = null)
+        object? style = null
+    )
     {
-        var props = new { src, alt, className, style };
+        var props = new
+        {
+            src,
+            alt,
+            className,
+            style,
+        };
         return Script.Call<ReactElement>("React.createElement", "img", props);
     }
 
@@ -118,18 +129,23 @@ public static class Elements
         string? className = null,
         string? target = null,
         Action? onClick = null,
-        params ReactElement[] children)
+        params ReactElement[] children
+    )
     {
         var props = new
         {
             href,
             className,
             target,
-            onClick = (Action<object>?)(onClick != null ? e =>
-            {
-                Script.Call<object>(e, "preventDefault");
-                onClick();
-            } : null)
+            onClick = (Action<object>?)(
+                onClick != null
+                    ? e =>
+                    {
+                        Script.Call<object>(e, "preventDefault");
+                        onClick();
+                    }
+                    : null
+            ),
         };
         return Script.Call<ReactElement>("React.createElement", "a", props, children);
     }
@@ -137,65 +153,49 @@ public static class Elements
     /// <summary>
     /// Creates a nav element.
     /// </summary>
-    public static ReactElement Nav(
-        string? className = null,
-        params ReactElement[] children) =>
+    public static ReactElement Nav(string? className = null, params ReactElement[] children) =>
         CreateElement("nav", className, null, null, null, children);
 
     /// <summary>
     /// Creates a header element.
     /// </summary>
-    public static ReactElement Header(
-        string? className = null,
-        params ReactElement[] children) =>
+    public static ReactElement Header(string? className = null, params ReactElement[] children) =>
         CreateElement("header", className, null, null, null, children);
 
     /// <summary>
     /// Creates a main element.
     /// </summary>
-    public static ReactElement Main(
-        string? className = null,
-        params ReactElement[] children) =>
+    public static ReactElement Main(string? className = null, params ReactElement[] children) =>
         CreateElement("main", className, null, null, null, children);
 
     /// <summary>
     /// Creates an aside element.
     /// </summary>
-    public static ReactElement Aside(
-        string? className = null,
-        params ReactElement[] children) =>
+    public static ReactElement Aside(string? className = null, params ReactElement[] children) =>
         CreateElement("aside", className, null, null, null, children);
 
     /// <summary>
     /// Creates a section element.
     /// </summary>
-    public static ReactElement Section(
-        string? className = null,
-        params ReactElement[] children) =>
+    public static ReactElement Section(string? className = null, params ReactElement[] children) =>
         CreateElement("section", className, null, null, null, children);
 
     /// <summary>
     /// Creates an article element.
     /// </summary>
-    public static ReactElement Article(
-        string? className = null,
-        params ReactElement[] children) =>
+    public static ReactElement Article(string? className = null, params ReactElement[] children) =>
         CreateElement("article", className, null, null, null, children);
 
     /// <summary>
     /// Creates a footer element.
     /// </summary>
-    public static ReactElement Footer(
-        string? className = null,
-        params ReactElement[] children) =>
+    public static ReactElement Footer(string? className = null, params ReactElement[] children) =>
         CreateElement("footer", className, null, null, null, children);
 
     /// <summary>
     /// Creates a table element.
     /// </summary>
-    public static ReactElement Table(
-        string? className = null,
-        params ReactElement[] children) =>
+    public static ReactElement Table(string? className = null, params ReactElement[] children) =>
         CreateElement("table", className, null, null, null, children);
 
     /// <summary>
@@ -216,12 +216,13 @@ public static class Elements
     public static ReactElement Tr(
         string? className = null,
         Action? onClick = null,
-        params ReactElement[] children)
+        params ReactElement[] children
+    )
     {
         var props = new
         {
             className,
-            onClick = (Action<object>?)(onClick != null ? _ => onClick() : null)
+            onClick = (Action<object>?)(onClick != null ? _ => onClick() : null),
         };
         return Script.Call<ReactElement>("React.createElement", "tr", props, children);
     }
@@ -229,25 +230,19 @@ public static class Elements
     /// <summary>
     /// Creates a th element.
     /// </summary>
-    public static ReactElement Th(
-        string? className = null,
-        params ReactElement[] children) =>
+    public static ReactElement Th(string? className = null, params ReactElement[] children) =>
         CreateElement("th", className, null, null, null, children);
 
     /// <summary>
     /// Creates a td element.
     /// </summary>
-    public static ReactElement Td(
-        string? className = null,
-        params ReactElement[] children) =>
+    public static ReactElement Td(string? className = null, params ReactElement[] children) =>
         CreateElement("td", className, null, null, null, children);
 
     /// <summary>
     /// Creates an unordered list element.
     /// </summary>
-    public static ReactElement Ul(
-        string? className = null,
-        params ReactElement[] children) =>
+    public static ReactElement Ul(string? className = null, params ReactElement[] children) =>
         CreateElement("ul", className, null, null, null, children);
 
     /// <summary>
@@ -256,8 +251,8 @@ public static class Elements
     public static ReactElement Li(
         string? className = null,
         Action? onClick = null,
-        params ReactElement[] children) =>
-        CreateElement("li", className, null, null, onClick, children);
+        params ReactElement[] children
+    ) => CreateElement("li", className, null, null, onClick, children);
 
     /// <summary>
     /// Creates a form element.
@@ -265,16 +260,21 @@ public static class Elements
     public static ReactElement Form(
         string? className = null,
         Action? onSubmit = null,
-        params ReactElement[] children)
+        params ReactElement[] children
+    )
     {
         var props = new
         {
             className,
-            onSubmit = (Action<object>?)(onSubmit != null ? e =>
-            {
-                Script.Call<object>(e, "preventDefault");
-                onSubmit();
-            } : null)
+            onSubmit = (Action<object>?)(
+                onSubmit != null
+                    ? e =>
+                    {
+                        Script.Call<object>(e, "preventDefault");
+                        onSubmit();
+                    }
+                    : null
+            ),
         };
         return Script.Call<ReactElement>("React.createElement", "form", props, children);
     }
@@ -285,7 +285,8 @@ public static class Elements
     public static ReactElement Label(
         string? htmlFor = null,
         string? className = null,
-        params ReactElement[] children)
+        params ReactElement[] children
+    )
     {
         var props = new { htmlFor, className };
         return Script.Call<ReactElement>("React.createElement", "label", props, children);
@@ -298,15 +299,18 @@ public static class Elements
         string? className = null,
         string? value = null,
         Action<string>? onChange = null,
-        params ReactElement[] children)
+        params ReactElement[] children
+    )
     {
         var props = new
         {
             className,
             value,
-            onChange = (Action<object>?)(onChange != null
-                ? e => onChange(Script.Get<string>(Script.Get<object>(e, "target"), "value"))
-                : null)
+            onChange = (Action<object>?)(
+                onChange != null
+                    ? e => onChange(Script.Get<string>(Script.Get<object>(e, "target"), "value"))
+                    : null
+            ),
         };
         return Script.Call<ReactElement>("React.createElement", "select", props, children);
     }
@@ -328,7 +332,8 @@ public static class Elements
         string? value = null,
         string? placeholder = null,
         int? rows = null,
-        Action<string>? onChange = null)
+        Action<string>? onChange = null
+    )
     {
         var props = new
         {
@@ -336,9 +341,11 @@ public static class Elements
             value,
             placeholder,
             rows,
-            onChange = (Action<object>?)(onChange != null
-                ? e => onChange(Script.Get<string>(Script.Get<object>(e, "target"), "value"))
-                : null)
+            onChange = (Action<object>?)(
+                onChange != null
+                    ? e => onChange(Script.Get<string>(Script.Get<object>(e, "target"), "value"))
+                    : null
+            ),
         };
         return Script.Call<ReactElement>("React.createElement", "textarea", props);
     }
@@ -352,9 +359,17 @@ public static class Elements
         int? height = null,
         string? viewBox = null,
         string? fill = null,
-        params ReactElement[] children)
+        params ReactElement[] children
+    )
     {
-        var props = new { className, width, height, viewBox, fill };
+        var props = new
+        {
+            className,
+            width,
+            height,
+            viewBox,
+            fill,
+        };
         return Script.Call<ReactElement>("React.createElement", "svg", props, children);
     }
 
@@ -365,9 +380,16 @@ public static class Elements
         string d,
         string? fill = null,
         string? stroke = null,
-        int? strokeWidth = null)
+        int? strokeWidth = null
+    )
     {
-        var props = new { d, fill, stroke, strokeWidth };
+        var props = new
+        {
+            d,
+            fill,
+            stroke,
+            strokeWidth,
+        };
         return Script.Call<ReactElement>("React.createElement", "path", props);
     }
 
@@ -375,7 +397,12 @@ public static class Elements
     /// Creates a React Fragment.
     /// </summary>
     public static ReactElement Fragment(params ReactElement[] children) =>
-        Script.Call<ReactElement>("React.createElement", Script.Get<object>("React", "Fragment"), null, children);
+        Script.Call<ReactElement>(
+            "React.createElement",
+            Script.Get<object>("React", "Fragment"),
+            null,
+            children
+        );
 
     private static ReactElement CreateElement(
         string tag,
@@ -383,14 +410,15 @@ public static class Elements
         string? id,
         object? style,
         Action? onClick,
-        ReactElement[] children)
+        ReactElement[] children
+    )
     {
         var props = new
         {
             className,
             id,
             style,
-            onClick = (Action<object>?)(onClick != null ? _ => onClick() : null)
+            onClick = (Action<object>?)(onClick != null ? _ => onClick() : null),
         };
         return Script.Call<ReactElement>("React.createElement", tag, props, children);
     }
