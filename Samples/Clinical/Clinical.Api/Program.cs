@@ -161,6 +161,86 @@ patientGroup.MapPost(
     }
 );
 
+patientGroup.MapPut(
+    "/{id}",
+    async (string id, UpdatePatientRequest request, Func<SqliteConnection> getConn) =>
+    {
+        using var conn = getConn();
+
+        // First verify the patient exists
+        var existingResult = await conn.GetPatientByIdAsync(id).ConfigureAwait(false);
+        if (existingResult is GetPatientByIdOk(var patients) && patients.Count == 0)
+        {
+            return Results.NotFound();
+        }
+
+        if (existingResult is GetPatientByIdError(var fetchErr))
+        {
+            return Results.Problem(fetchErr.Message);
+        }
+
+        var existingPatient = ((GetPatientByIdOk)existingResult).Value[0];
+        var newVersionId = existingPatient.VersionId + 1;
+
+        var transaction = await conn.BeginTransactionAsync().ConfigureAwait(false);
+        await using var _ = transaction.ConfigureAwait(false);
+        var now = DateTime.UtcNow.ToString(
+            "yyyy-MM-ddTHH:mm:ss.fffZ",
+            CultureInfo.InvariantCulture
+        );
+
+        var result = await transaction
+            .Updatefhir_PatientAsync(
+                id,
+                request.Active ? 1L : 0L,
+                request.GivenName,
+                request.FamilyName,
+                request.BirthDate ?? string.Empty,
+                request.Gender ?? string.Empty,
+                request.Phone ?? string.Empty,
+                request.Email ?? string.Empty,
+                request.AddressLine ?? string.Empty,
+                request.City ?? string.Empty,
+                request.State ?? string.Empty,
+                request.PostalCode ?? string.Empty,
+                request.Country ?? string.Empty,
+                now,
+                newVersionId
+            )
+            .ConfigureAwait(false);
+
+        if (result is UpdateOk)
+        {
+            await transaction.CommitAsync().ConfigureAwait(false);
+            return Results.Ok(
+                new
+                {
+                    Id = id,
+                    Active = request.Active,
+                    GivenName = request.GivenName,
+                    FamilyName = request.FamilyName,
+                    BirthDate = request.BirthDate,
+                    Gender = request.Gender,
+                    Phone = request.Phone,
+                    Email = request.Email,
+                    AddressLine = request.AddressLine,
+                    City = request.City,
+                    State = request.State,
+                    PostalCode = request.PostalCode,
+                    Country = request.Country,
+                    LastUpdated = now,
+                    VersionId = newVersionId,
+                }
+            );
+        }
+
+        return result.Match(
+            _ => Results.Problem("Unexpected state"),
+            err => Results.Problem(err.Message)
+        );
+    }
+);
+
 patientGroup.MapGet(
     "/_search",
     async (string q, Func<SqliteConnection> getConn) =>

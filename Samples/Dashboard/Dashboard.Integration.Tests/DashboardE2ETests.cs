@@ -319,8 +319,9 @@ public sealed class DashboardE2ETests
 
     /// <summary>
     /// CRITICAL TEST: Dashboard loads and displays patient data from Clinical API.
+    /// Playwright browser loads Dashboard at localhost:5173 and verifies data from localhost:5080.
     /// </summary>
-    [Fact(Skip = "React CDN unreachable in headless browser - run manually")]
+    [Fact]
     public async Task Dashboard_DisplaysPatientData_FromClinicalApi()
     {
         var page = await _fixture.Browser!.NewPageAsync();
@@ -344,13 +345,15 @@ public sealed class DashboardE2ETests
         var content = await page.ContentAsync();
         Assert.Contains("TestPatient", content);
         Assert.Contains("E2ETest", content);
+
+        await page.CloseAsync();
     }
 
     /// <summary>
     /// CRITICAL TEST: Dashboard loads and displays practitioner data from Scheduling API.
     /// Verifies FHIR-compliant practitioner data including Qualification and Specialty.
     /// </summary>
-    [Fact(Skip = "React CDN unreachable in headless browser - run manually")]
+    [Fact]
     public async Task Dashboard_DisplaysPractitionerData_FromSchedulingApi()
     {
         var page = await _fixture.Browser!.NewPageAsync();
@@ -392,13 +395,15 @@ public sealed class DashboardE2ETests
 
         // Verify FHIR specialty data displays
         Assert.Contains("General Practice", content);
+
+        await page.CloseAsync();
     }
 
     /// <summary>
     /// CRITICAL TEST: Practitioners page data comes from REAL Scheduling API.
     /// Directly verifies the API returns FHIR-compliant data.
     /// </summary>
-    [Fact(Skip = "React CDN unreachable in headless browser - run manually")]
+    [Fact]
     public async Task PractitionersPage_LoadsFromSchedulingApi_WithFhirCompliantData()
     {
         // First verify the API directly returns FHIR data
@@ -431,12 +436,14 @@ public sealed class DashboardE2ETests
         // Count practitioner cards - should have at least 3 from seeded data
         var cards = await page.QuerySelectorAllAsync(".practitioner-card");
         Assert.True(cards.Count >= 3, $"Expected at least 3 practitioner cards, got {cards.Count}");
+
+        await page.CloseAsync();
     }
 
     /// <summary>
     /// CRITICAL TEST: Dashboard loads and displays appointment data from Scheduling API.
     /// </summary>
-    [Fact(Skip = "React CDN unreachable in headless browser - run manually")]
+    [Fact]
     public async Task Dashboard_DisplaysAppointmentData_FromSchedulingApi()
     {
         var page = await _fixture.Browser!.NewPageAsync();
@@ -454,12 +461,14 @@ public sealed class DashboardE2ETests
 
         var content = await page.ContentAsync();
         Assert.Contains("Checkup", content);
+
+        await page.CloseAsync();
     }
 
     /// <summary>
     /// CRITICAL TEST: Dashboard main page shows stats from both APIs.
     /// </summary>
-    [Fact(Skip = "React CDN unreachable in headless browser - run manually")]
+    [Fact]
     public async Task Dashboard_MainPage_ShowsStatsFromBothApis()
     {
         var page = await _fixture.Browser!.NewPageAsync();
@@ -475,12 +484,15 @@ public sealed class DashboardE2ETests
 
         var cards = await page.QuerySelectorAllAsync(".metric-card");
         Assert.True(cards.Count > 0, "Dashboard should display metric cards with API data");
+
+        await page.CloseAsync();
     }
 
     /// <summary>
     /// CRITICAL TEST: Add Patient button opens modal and creates patient via API.
+    /// Uses Playwright to load REAL Dashboard, click Add Patient, fill form, and POST to REAL API.
     /// </summary>
-    [Fact(Skip = "React CDN unreachable in headless browser - run manually")]
+    [Fact]
     public async Task AddPatientButton_OpensModal_AndCreatesPatient()
     {
         var page = await _fixture.Browser!.NewPageAsync();
@@ -527,12 +539,15 @@ public sealed class DashboardE2ETests
         using var client = new HttpClient();
         var response = await client.GetStringAsync($"{E2EFixture.ClinicalUrl}/fhir/Patient/");
         Assert.Contains(uniqueName, response);
+
+        await page.CloseAsync();
     }
 
     /// <summary>
     /// CRITICAL TEST: Add Appointment button opens modal and creates appointment via API.
+    /// Uses Playwright to load REAL Dashboard, click Add Appointment, fill form, and POST to REAL API.
     /// </summary>
-    [Fact(Skip = "React CDN unreachable in headless browser - run manually")]
+    [Fact]
     public async Task AddAppointmentButton_OpensModal_AndCreatesAppointment()
     {
         var page = await _fixture.Browser!.NewPageAsync();
@@ -577,12 +592,14 @@ public sealed class DashboardE2ETests
         using var client = new HttpClient();
         var response = await client.GetStringAsync($"{E2EFixture.SchedulingUrl}/Appointment");
         Assert.Contains(uniqueServiceType, response);
+
+        await page.CloseAsync();
     }
 
     /// <summary>
     /// CRITICAL TEST: Patient Search button navigates to search and finds patients.
     /// </summary>
-    [Fact(Skip = "React CDN unreachable in headless browser - run manually")]
+    [Fact]
     public async Task PatientSearchButton_NavigatesToSearch_AndFindsPatients()
     {
         var page = await _fixture.Browser!.NewPageAsync();
@@ -613,12 +630,14 @@ public sealed class DashboardE2ETests
 
         var content = await page.ContentAsync();
         Assert.Contains("TestPatient", content);
+
+        await page.CloseAsync();
     }
 
     /// <summary>
     /// CRITICAL TEST: View Schedule button navigates to appointments view.
     /// </summary>
-    [Fact(Skip = "React CDN unreachable in headless browser - run manually")]
+    [Fact]
     public async Task ViewScheduleButton_NavigatesToAppointments()
     {
         var page = await _fixture.Browser!.NewPageAsync();
@@ -646,6 +665,8 @@ public sealed class DashboardE2ETests
 
         var content = await page.ContentAsync();
         Assert.Contains("Checkup", content);
+
+        await page.CloseAsync();
     }
 
     /// <summary>
@@ -700,5 +721,149 @@ public sealed class DashboardE2ETests
         var listResponse = await client.GetStringAsync($"{E2EFixture.SchedulingUrl}/Practitioner");
         Assert.Contains(uniqueId, listResponse);
         Assert.Contains("ApiDoctor", listResponse);
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Edit Patient button opens edit page and updates patient via API.
+    /// Uses Playwright to load REAL Dashboard, click Edit, modify form, and PUT to REAL API.
+    /// </summary>
+    [Fact]
+    public async Task EditPatientButton_OpensEditPage_AndUpdatesPatient()
+    {
+        using var client = new HttpClient();
+
+        // First create a patient to edit
+        var uniqueName = $"EditTest{DateTime.UtcNow.Ticks % 100000}";
+        var createResponse = await client.PostAsync(
+            $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
+            new StringContent(
+                $$$"""{"Active": true, "GivenName": "{{{uniqueName}}}", "FamilyName": "ToBeEdited", "Gender": "female"}""",
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
+        createResponse.EnsureSuccessStatusCode();
+        var createdPatientJson = await createResponse.Content.ReadAsStringAsync();
+
+        // Extract patient ID from response
+        var patientIdMatch = System.Text.RegularExpressions.Regex.Match(
+            createdPatientJson,
+            "\"Id\"\\s*:\\s*\"([^\"]+)\""
+        );
+        Assert.True(patientIdMatch.Success, "Should get patient ID from creation response");
+        var patientId = patientIdMatch.Groups[1].Value;
+
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Navigate to Patients page
+        await page.ClickAsync("text=Patients");
+
+        // Wait for the page to load (add-patient-btn is a good indicator)
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Search for the patient to make sure it appears
+        await page.FillAsync("input[placeholder*='Search']", uniqueName);
+
+        // Wait for the patient to appear in filtered results
+        await page.WaitForSelectorAsync(
+            $"text={uniqueName}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Click Edit button for the created patient
+        await page.ClickAsync($"[data-testid='edit-patient-{patientId}']");
+
+        // Wait for edit page to load
+        await page.WaitForSelectorAsync(
+            "[data-testid='edit-patient-page']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+
+        // Verify we're on the edit page with the correct patient data
+        await page.WaitForSelectorAsync(
+            "[data-testid='edit-given-name']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+
+        // Modify the patient's name
+        var newFamilyName = $"Edited{DateTime.UtcNow.Ticks % 100000}";
+        await page.FillAsync("[data-testid='edit-family-name']", newFamilyName);
+
+        // Submit the form
+        await page.ClickAsync("[data-testid='save-patient']");
+
+        // Wait for success message
+        await page.WaitForSelectorAsync(
+            "[data-testid='edit-success']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Verify via API that patient was actually updated
+        var updatedPatientJson = await client.GetStringAsync(
+            $"{E2EFixture.ClinicalUrl}/fhir/Patient/{patientId}"
+        );
+        Assert.Contains(newFamilyName, updatedPatientJson);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Proves patient update API works end-to-end.
+    /// This test hits the real Clinical API directly without Playwright.
+    /// </summary>
+    [Fact]
+    public async Task PatientUpdateApi_WorksEndToEnd()
+    {
+        using var client = new HttpClient();
+
+        // Create a patient first
+        var uniqueName = $"UpdateApiTest{DateTime.UtcNow.Ticks % 100000}";
+        var createResponse = await client.PostAsync(
+            $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
+            new StringContent(
+                $$$"""{"Active": true, "GivenName": "{{{uniqueName}}}", "FamilyName": "Original", "Gender": "male"}""",
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
+        createResponse.EnsureSuccessStatusCode();
+        var createdPatientJson = await createResponse.Content.ReadAsStringAsync();
+
+        // Extract patient ID
+        var patientIdMatch = System.Text.RegularExpressions.Regex.Match(
+            createdPatientJson,
+            "\"Id\"\\s*:\\s*\"([^\"]+)\""
+        );
+        Assert.True(patientIdMatch.Success, "Should get patient ID from creation response");
+        var patientId = patientIdMatch.Groups[1].Value;
+
+        // Update the patient
+        var updatedFamilyName = $"Updated{DateTime.UtcNow.Ticks % 100000}";
+        var updateResponse = await client.PutAsync(
+            $"{E2EFixture.ClinicalUrl}/fhir/Patient/{patientId}",
+            new StringContent(
+                $$$"""{"Active": true, "GivenName": "{{{uniqueName}}}", "FamilyName": "{{{updatedFamilyName}}}", "Gender": "male", "Email": "updated@test.com"}""",
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
+        updateResponse.EnsureSuccessStatusCode();
+
+        // Verify patient was updated
+        var getResponse = await client.GetStringAsync(
+            $"{E2EFixture.ClinicalUrl}/fhir/Patient/{patientId}"
+        );
+        Assert.Contains(updatedFamilyName, getResponse);
+        Assert.Contains("updated@test.com", getResponse);
     }
 }

@@ -1,10 +1,12 @@
-namespace Sync.Api.Tests;
+namespace Sync.Http.Tests;
 
 /// <summary>
 /// E2E integration tests for cross-database sync between SQLite and PostgreSQL.
 /// These tests PROVE the spec is fully implemented across different database backends.
 /// Uses Testcontainers for real PostgreSQL instances.
+/// Requires Docker: run with --filter "Category!=Docker" to skip.
 /// </summary>
+[Trait("Category", "Docker")]
 public sealed class CrossDatabaseSyncTests : IAsyncLifetime
 {
     private PostgreSqlContainer _postgresContainer = null!;

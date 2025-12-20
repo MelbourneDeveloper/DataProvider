@@ -22,6 +22,9 @@ namespace Dashboard
 
         /// <summary>Notification count.</summary>
         public int NotificationCount { get; set; }
+
+        /// <summary>Patient ID being edited (null if not editing).</summary>
+        public string EditingPatientId { get; set; }
     }
 
     /// <summary>
@@ -41,6 +44,7 @@ namespace Dashboard
                     SidebarCollapsed = false,
                     SearchQuery = "",
                     NotificationCount = 3,
+                    EditingPatientId = null,
                 }
             );
 
@@ -62,6 +66,7 @@ namespace Dashboard
                                 SidebarCollapsed = state.SidebarCollapsed,
                                 SearchQuery = state.SearchQuery,
                                 NotificationCount = state.NotificationCount,
+                                EditingPatientId = null,
                             };
                             setState(newState);
                         },
@@ -74,6 +79,7 @@ namespace Dashboard
                                 SidebarCollapsed = !state.SidebarCollapsed,
                                 SearchQuery = state.SearchQuery,
                                 NotificationCount = state.NotificationCount,
+                                EditingPatientId = state.EditingPatientId,
                             };
                             setState(newState);
                         }
@@ -95,6 +101,7 @@ namespace Dashboard
                                         SidebarCollapsed = state.SidebarCollapsed,
                                         SearchQuery = query,
                                         NotificationCount = state.NotificationCount,
+                                        EditingPatientId = state.EditingPatientId,
                                     };
                                     setState(newState);
                                 },
@@ -103,7 +110,7 @@ namespace Dashboard
                             // Main content area
                             Main(
                                 className: "main-content",
-                                children: new[] { RenderPage(state.ActiveView) }
+                                children: new[] { RenderPage(state, setState) }
                             ),
                         }
                     ),
@@ -132,12 +139,49 @@ namespace Dashboard
             return "Healthcare";
         }
 
-        private static ReactElement RenderPage(string view)
+        private static ReactElement RenderPage(AppState state, System.Action<AppState> setState)
         {
+            var view = state.ActiveView;
+
+            // Handle editing patient
+            if (view == "patients" && state.EditingPatientId != null)
+            {
+                return EditPatientPage.Render(
+                    state.EditingPatientId,
+                    () =>
+                    {
+                        var newState = new AppState
+                        {
+                            ActiveView = "patients",
+                            SidebarCollapsed = state.SidebarCollapsed,
+                            SearchQuery = state.SearchQuery,
+                            NotificationCount = state.NotificationCount,
+                            EditingPatientId = null,
+                        };
+                        setState(newState);
+                    }
+                );
+            }
+
             if (view == "dashboard")
                 return DashboardPage.Render();
             if (view == "patients")
-                return PatientsPage.Render();
+            {
+                return PatientsPage.Render(
+                    patientId =>
+                    {
+                        var newState = new AppState
+                        {
+                            ActiveView = "patients",
+                            SidebarCollapsed = state.SidebarCollapsed,
+                            SearchQuery = state.SearchQuery,
+                            NotificationCount = state.NotificationCount,
+                            EditingPatientId = patientId,
+                        };
+                        setState(newState);
+                    }
+                );
+            }
             if (view == "practitioners")
                 return PractitionersPage.Render();
             if (view == "appointments")

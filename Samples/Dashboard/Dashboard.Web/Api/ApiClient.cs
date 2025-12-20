@@ -87,6 +87,24 @@ namespace Dashboard.Api
             return ParseJson<MedicationRequest[]>(response);
         }
 
+        /// <summary>
+        /// Creates a new patient.
+        /// </summary>
+        public static async Task<Patient> CreatePatientAsync(Patient patient)
+        {
+            var response = await PostAsync(_clinicalBaseUrl + "/fhir/Patient/", patient);
+            return ParseJson<Patient>(response);
+        }
+
+        /// <summary>
+        /// Updates an existing patient.
+        /// </summary>
+        public static async Task<Patient> UpdatePatientAsync(string id, Patient patient)
+        {
+            var response = await PutAsync(_clinicalBaseUrl + "/fhir/Patient/" + id, patient);
+            return ParseJson<Patient>(response);
+        }
+
         // === SCHEDULING API ===
 
         /// <summary>
@@ -186,6 +204,27 @@ namespace Dashboard.Api
                 new
                 {
                     method = "POST",
+                    headers = new { Accept = "application/json", ContentType = "application/json" },
+                    body = Script.Call<string>("JSON.stringify", data),
+                }
+            );
+
+            if (!response.Ok)
+            {
+                throw new Exception("HTTP " + response.Status + ": " + response.StatusText);
+            }
+
+            return await response.Text();
+        }
+
+        private static async Task<string> PutAsync(string url, object data)
+        {
+            var response = await Script.Call<Task<Response>>(
+                "fetch",
+                url,
+                new
+                {
+                    method = "PUT",
                     headers = new { Accept = "application/json", ContentType = "application/json" },
                     body = Script.Call<string>("JSON.stringify", data),
                 }

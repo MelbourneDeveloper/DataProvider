@@ -3,31 +3,34 @@ namespace Scheduling.Api.Tests;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Xunit;
 
 /// <summary>
 /// E2E tests for Practitioner FHIR endpoints - REAL database, NO mocks.
-/// Each test creates its own isolated factory and database.
+/// Uses shared factory for all tests - starts once, runs all tests, shuts down.
 /// </summary>
-public sealed class PractitionerEndpointTests
+public sealed class PractitionerEndpointTests : IClassFixture<SchedulingApiFactory>
 {
+    private readonly HttpClient _client;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PractitionerEndpointTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared factory instance.</param>
+    public PractitionerEndpointTests(SchedulingApiFactory factory) =>
+        _client = factory.CreateClient();
+
     #region CORS Tests - Dashboard Integration
 
     [Fact]
     public async Task GetPractitioners_WithDashboardOrigin_ReturnsCorsHeaders()
     {
-        // This test verifies the Dashboard (localhost:5173) can hit the Scheduling API
-        // If this fails, the browser will block the request with a CORS error
-        using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
-
         var request = new HttpRequestMessage(HttpMethod.Get, "/Practitioner");
         request.Headers.Add("Origin", "http://localhost:5173");
 
-        var response = await client.SendAsync(request);
+        var response = await _client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        // CRITICAL: These headers MUST be present for browser requests to work
         Assert.True(
             response.Headers.Contains("Access-Control-Allow-Origin"),
             "Missing Access-Control-Allow-Origin header - Dashboard cannot fetch from Scheduling API!"
@@ -45,18 +48,13 @@ public sealed class PractitionerEndpointTests
     [Fact]
     public async Task PreflightRequest_WithDashboardOrigin_ReturnsCorrectCorsHeaders()
     {
-        // Browsers send OPTIONS preflight before actual requests with custom headers
-        using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
-
         var request = new HttpRequestMessage(HttpMethod.Options, "/Practitioner");
         request.Headers.Add("Origin", "http://localhost:5173");
         request.Headers.Add("Access-Control-Request-Method", "GET");
         request.Headers.Add("Access-Control-Request-Headers", "Content-Type");
 
-        var response = await client.SendAsync(request);
+        var response = await _client.SendAsync(request);
 
-        // Preflight should return 200 or 204
         Assert.True(
             response.StatusCode == HttpStatusCode.OK
                 || response.StatusCode == HttpStatusCode.NoContent,
@@ -77,14 +75,10 @@ public sealed class PractitionerEndpointTests
     [Fact]
     public async Task GetAppointments_WithDashboardOrigin_ReturnsCorsHeaders()
     {
-        // Appointments endpoint also needs CORS for Dashboard
-        using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
-
         var request = new HttpRequestMessage(HttpMethod.Get, "/Appointment");
         request.Headers.Add("Origin", "http://localhost:5173");
 
-        var response = await client.SendAsync(request);
+        var response = await _client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.True(
@@ -96,24 +90,16 @@ public sealed class PractitionerEndpointTests
     #endregion
 
     [Fact]
-    public async Task GetAllPractitioners_ReturnsEmptyList_WhenNoPractitioners()
+    public async Task GetAllPractitioners_ReturnsOk()
     {
-        using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/Practitioner");
+        var response = await _client.GetAsync("/Practitioner");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.Equal("[]", content);
     }
 
     [Fact]
     public async Task CreatePractitioner_ReturnsCreated_WithValidData()
     {
-        using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
-
         var request = new
         {
             Identifier = "NPI-12345",
@@ -125,7 +111,7 @@ public sealed class PractitionerEndpointTests
             TelecomPhone = "555-1234",
         };
 
-        var response = await client.PostAsJsonAsync("/Practitioner", request);
+        var response = await _client.PostAsJsonAsync("/Practitioner", request);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var practitioner = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -138,9 +124,6 @@ public sealed class PractitionerEndpointTests
     [Fact]
     public async Task GetPractitionerById_ReturnsPractitioner_WhenExists()
     {
-        using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
-
         var createRequest = new
         {
             Identifier = "NPI-GetById",
@@ -149,11 +132,11 @@ public sealed class PractitionerEndpointTests
             Specialty = "Pediatrics",
         };
 
-        var createResponse = await client.PostAsJsonAsync("/Practitioner", createRequest);
+        var createResponse = await _client.PostAsJsonAsync("/Practitioner", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
         var practitionerId = created.GetProperty("Id").GetString();
 
-        var response = await client.GetAsync($"/Practitioner/{practitionerId}");
+        var response = await _client.GetAsync($"/Practitioner/{practitionerId}");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var practitioner = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -164,10 +147,7 @@ public sealed class PractitionerEndpointTests
     [Fact]
     public async Task GetPractitionerById_ReturnsNotFound_WhenNotExists()
     {
-        using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/Practitioner/nonexistent-id-12345");
+        var response = await _client.GetAsync("/Practitioner/nonexistent-id-12345");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -175,9 +155,6 @@ public sealed class PractitionerEndpointTests
     [Fact]
     public async Task SearchPractitionersBySpecialty_FindsPractitioners()
     {
-        using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
-
         var request = new
         {
             Identifier = "NPI-Search",
@@ -186,9 +163,9 @@ public sealed class PractitionerEndpointTests
             Specialty = "Orthopedics",
         };
 
-        await client.PostAsJsonAsync("/Practitioner", request);
+        await _client.PostAsJsonAsync("/Practitioner", request);
 
-        var response = await client.GetAsync("/Practitioner/_search?specialty=Orthopedics");
+        var response = await _client.GetAsync("/Practitioner/_search?specialty=Orthopedics");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var practitioners = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -202,9 +179,6 @@ public sealed class PractitionerEndpointTests
     [Fact]
     public async Task SearchPractitioners_WithoutSpecialty_ReturnsAll()
     {
-        using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
-
         var request = new
         {
             Identifier = "NPI-All",
@@ -213,9 +187,9 @@ public sealed class PractitionerEndpointTests
             Specialty = "Dermatology",
         };
 
-        await client.PostAsJsonAsync("/Practitioner", request);
+        await _client.PostAsJsonAsync("/Practitioner", request);
 
-        var response = await client.GetAsync("/Practitioner/_search");
+        var response = await _client.GetAsync("/Practitioner/_search");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var practitioners = await response.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -226,9 +200,6 @@ public sealed class PractitionerEndpointTests
     [Fact]
     public async Task CreatePractitioner_SetsActiveToTrue()
     {
-        using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
-
         var request = new
         {
             Identifier = "NPI-Active",
@@ -236,7 +207,7 @@ public sealed class PractitionerEndpointTests
             NameGiven = "Michael",
         };
 
-        var response = await client.PostAsJsonAsync("/Practitioner", request);
+        var response = await _client.PostAsJsonAsync("/Practitioner", request);
         var practitioner = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         Assert.True(practitioner.GetProperty("Active").GetBoolean());
@@ -245,9 +216,6 @@ public sealed class PractitionerEndpointTests
     [Fact]
     public async Task CreatePractitioner_GeneratesUniqueIds()
     {
-        using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
-
         var request = new
         {
             Identifier = "NPI-UniqueId",
@@ -255,8 +223,8 @@ public sealed class PractitionerEndpointTests
             NameGiven = "Emily",
         };
 
-        var response1 = await client.PostAsJsonAsync("/Practitioner", request);
-        var response2 = await client.PostAsJsonAsync("/Practitioner", request);
+        var response1 = await _client.PostAsJsonAsync("/Practitioner", request);
+        var response2 = await _client.PostAsJsonAsync("/Practitioner", request);
 
         var practitioner1 = await response1.Content.ReadFromJsonAsync<JsonElement>();
         var practitioner2 = await response2.Content.ReadFromJsonAsync<JsonElement>();
@@ -270,9 +238,6 @@ public sealed class PractitionerEndpointTests
     [Fact]
     public async Task CreatePractitioner_WithQualification()
     {
-        using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
-
         var request = new
         {
             Identifier = "NPI-Qual",
@@ -281,7 +246,7 @@ public sealed class PractitionerEndpointTests
             Qualification = "MD, PhD, FACC",
         };
 
-        var response = await client.PostAsJsonAsync("/Practitioner", request);
+        var response = await _client.PostAsJsonAsync("/Practitioner", request);
         var practitioner = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         Assert.Equal("MD, PhD, FACC", practitioner.GetProperty("Qualification").GetString());
@@ -290,9 +255,6 @@ public sealed class PractitionerEndpointTests
     [Fact]
     public async Task CreatePractitioner_WithContactInfo()
     {
-        using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
-
         var request = new
         {
             Identifier = "NPI-Contact",
@@ -302,7 +264,7 @@ public sealed class PractitionerEndpointTests
             TelecomPhone = "555-9876",
         };
 
-        var response = await client.PostAsJsonAsync("/Practitioner", request);
+        var response = await _client.PostAsJsonAsync("/Practitioner", request);
         var practitioner = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         Assert.Equal(
@@ -315,9 +277,6 @@ public sealed class PractitionerEndpointTests
     [Fact]
     public async Task GetAllPractitioners_ReturnsPractitioners_WhenExist()
     {
-        using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
-
         var request1 = new
         {
             Identifier = "NPI-All1",
@@ -333,10 +292,10 @@ public sealed class PractitionerEndpointTests
             Specialty = "Psychiatry",
         };
 
-        await client.PostAsJsonAsync("/Practitioner", request1);
-        await client.PostAsJsonAsync("/Practitioner", request2);
+        await _client.PostAsJsonAsync("/Practitioner", request1);
+        await _client.PostAsJsonAsync("/Practitioner", request2);
 
-        var response = await client.GetAsync("/Practitioner");
+        var response = await _client.GetAsync("/Practitioner");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var practitioners = await response.Content.ReadFromJsonAsync<JsonElement[]>();

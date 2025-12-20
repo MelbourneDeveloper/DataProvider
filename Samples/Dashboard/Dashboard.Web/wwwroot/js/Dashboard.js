@@ -52021,6 +52021,115 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                     return $tcs.task;
                 },
                 /**
+                 * Creates a new patient.
+                 *
+                 * @static
+                 * @public
+                 * @this Dashboard.Api.ApiClient
+                 * @memberof Dashboard.Api.ApiClient
+                 * @param   {Object}                           patient
+                 * @return  {System.Threading.Tasks.Task$1}
+                 */
+                CreatePatientAsync: function (patient) {
+                    var $s = 0,
+                        $t1, 
+                        $tr1, 
+                        $jff, 
+                        $tcs = new System.Threading.Tasks.TaskCompletionSource(), 
+                        $rv, 
+                        response, 
+                        $ae, 
+                        $asyncBody = H5.fn.bind(this, function () {
+                            try {
+                                for (;;) {
+                                    $s = System.Array.min([0,1], $s);
+                                    switch ($s) {
+                                        case 0: {
+                                            $t1 = Dashboard.Api.ApiClient.PostAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/", patient);
+                                            $s = 1;
+                                            if ($t1.isCompleted()) {
+                                                continue;
+                                            }
+                                            $t1.continue($asyncBody);
+                                            return;
+                                        }
+                                        case 1: {
+                                            $tr1 = $t1.getAwaitedResult();
+                                            response = $tr1;
+                                            $tcs.setResult(Dashboard.Api.ApiClient.ParseJson(Object, response));
+                                            return;
+                                        }
+                                        default: {
+                                            $tcs.setResult(null);
+                                            return;
+                                        }
+                                    }
+                                }
+                            } catch($ae1) {
+                                $ae = System.Exception.create($ae1);
+                                $tcs.setException($ae);
+                            }
+                        }, arguments);
+
+                    $asyncBody();
+                    return $tcs.task;
+                },
+                /**
+                 * Updates an existing patient.
+                 *
+                 * @static
+                 * @public
+                 * @this Dashboard.Api.ApiClient
+                 * @memberof Dashboard.Api.ApiClient
+                 * @param   {string}                           id         
+                 * @param   {Object}                           patient
+                 * @return  {System.Threading.Tasks.Task$1}
+                 */
+                UpdatePatientAsync: function (id, patient) {
+                    var $s = 0,
+                        $t1, 
+                        $tr1, 
+                        $jff, 
+                        $tcs = new System.Threading.Tasks.TaskCompletionSource(), 
+                        $rv, 
+                        response, 
+                        $ae, 
+                        $asyncBody = H5.fn.bind(this, function () {
+                            try {
+                                for (;;) {
+                                    $s = System.Array.min([0,1], $s);
+                                    switch ($s) {
+                                        case 0: {
+                                            $t1 = Dashboard.Api.ApiClient.PutAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/" + (id || ""), patient);
+                                            $s = 1;
+                                            if ($t1.isCompleted()) {
+                                                continue;
+                                            }
+                                            $t1.continue($asyncBody);
+                                            return;
+                                        }
+                                        case 1: {
+                                            $tr1 = $t1.getAwaitedResult();
+                                            response = $tr1;
+                                            $tcs.setResult(Dashboard.Api.ApiClient.ParseJson(Object, response));
+                                            return;
+                                        }
+                                        default: {
+                                            $tcs.setResult(null);
+                                            return;
+                                        }
+                                    }
+                                }
+                            } catch($ae1) {
+                                $ae = System.Exception.create($ae1);
+                                $tcs.setException($ae);
+                            }
+                        }, arguments);
+
+                    $asyncBody();
+                    return $tcs.task;
+                },
+                /**
                  * Fetches all practitioners from the Scheduling API.
                  *
                  * @static
@@ -52518,6 +52627,67 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                     $asyncBody();
                     return $tcs.task;
                 },
+                PutAsync: function (url, data) {
+                    var $s = 0,
+                        $t1, 
+                        $tr1, 
+                        $t2, 
+                        $tr2, 
+                        $jff, 
+                        $tcs = new System.Threading.Tasks.TaskCompletionSource(), 
+                        $rv, 
+                        response, 
+                        $ae, 
+                        $asyncBody = H5.fn.bind(this, function () {
+                            try {
+                                for (;;) {
+                                    $s = System.Array.min([0,1,2], $s);
+                                    switch ($s) {
+                                        case 0: {
+                                            $t1 = fetch(url, { method: "PUT", headers: { Accept: "application/json", ContentType: "application/json" }, body: JSON.stringify(H5.unbox(data)) });
+                                            $s = 1;
+                                            if ($t1.isCompleted()) {
+                                                continue;
+                                            }
+                                            $t1.continue($asyncBody);
+                                            return;
+                                        }
+                                        case 1: {
+                                            $tr1 = $t1.getAwaitedResult();
+                                            response = $tr1;
+
+                                            if (!response.Ok) {
+                                                throw new System.Exception("HTTP " + response.Status + ": " + (response.StatusText || ""));
+                                            }
+
+                                            $t2 = response.Text();
+                                            $s = 2;
+                                            if ($t2.isCompleted()) {
+                                                continue;
+                                            }
+                                            $t2.continue($asyncBody);
+                                            return;
+                                        }
+                                        case 2: {
+                                            $tr2 = $t2.getAwaitedResult();
+                                            $tcs.setResult($tr2);
+                                            return;
+                                        }
+                                        default: {
+                                            $tcs.setResult(null);
+                                            return;
+                                        }
+                                    }
+                                }
+                            } catch($ae1) {
+                                $ae = System.Exception.create($ae1);
+                                $tcs.setException($ae);
+                            }
+                        }, arguments);
+
+                    $asyncBody();
+                    return $tcs.task;
+                },
                 ParseJson: function (T, json) {
                     return JSON.parse(json);
                 },
@@ -52552,24 +52722,24 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                  */
                 Render: function () {
                     var $t;
-                    var stateResult = Dashboard.React.Hooks.UseState(Dashboard.AppState, ($t = new Dashboard.AppState(), $t.ActiveView = "dashboard", $t.SidebarCollapsed = false, $t.SearchQuery = "", $t.NotificationCount = 3, $t));
+                    var stateResult = Dashboard.React.Hooks.UseState(Dashboard.AppState, ($t = new Dashboard.AppState(), $t.ActiveView = "dashboard", $t.SidebarCollapsed = false, $t.SearchQuery = "", $t.NotificationCount = 3, $t.EditingPatientId = null, $t));
 
                     var state = stateResult.State;
                     var setState = stateResult.SetState;
 
                     return Dashboard.React.Elements.Div("app", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Sidebar.Render(state.ActiveView, function (view) {
                         var $t1;
-                        var newState = ($t1 = new Dashboard.AppState(), $t1.ActiveView = view, $t1.SidebarCollapsed = state.SidebarCollapsed, $t1.SearchQuery = state.SearchQuery, $t1.NotificationCount = state.NotificationCount, $t1);
+                        var newState = ($t1 = new Dashboard.AppState(), $t1.ActiveView = view, $t1.SidebarCollapsed = state.SidebarCollapsed, $t1.SearchQuery = state.SearchQuery, $t1.NotificationCount = state.NotificationCount, $t1.EditingPatientId = null, $t1);
                         setState(newState);
                     }, state.SidebarCollapsed, function () {
                         var $t1;
-                        var newState = ($t1 = new Dashboard.AppState(), $t1.ActiveView = state.ActiveView, $t1.SidebarCollapsed = !state.SidebarCollapsed, $t1.SearchQuery = state.SearchQuery, $t1.NotificationCount = state.NotificationCount, $t1);
+                        var newState = ($t1 = new Dashboard.AppState(), $t1.ActiveView = state.ActiveView, $t1.SidebarCollapsed = !state.SidebarCollapsed, $t1.SearchQuery = state.SearchQuery, $t1.NotificationCount = state.NotificationCount, $t1.EditingPatientId = state.EditingPatientId, $t1);
                         setState(newState);
                     }), Dashboard.React.Elements.Div("main-wrapper", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Header.Render(Dashboard.App.GetPageTitle(state.ActiveView), state.SearchQuery, function (query) {
                         var $t1;
-                        var newState = ($t1 = new Dashboard.AppState(), $t1.ActiveView = state.ActiveView, $t1.SidebarCollapsed = state.SidebarCollapsed, $t1.SearchQuery = query, $t1.NotificationCount = state.NotificationCount, $t1);
+                        var newState = ($t1 = new Dashboard.AppState(), $t1.ActiveView = state.ActiveView, $t1.SidebarCollapsed = state.SidebarCollapsed, $t1.SearchQuery = query, $t1.NotificationCount = state.NotificationCount, $t1.EditingPatientId = state.EditingPatientId, $t1);
                         setState(newState);
-                    }, state.NotificationCount), Dashboard.React.Elements.Main("main-content", System.Array.init([Dashboard.App.RenderPage(state.ActiveView)], Object))], Object))], Object));
+                    }, state.NotificationCount), Dashboard.React.Elements.Main("main-content", System.Array.init([Dashboard.App.RenderPage(state, setState)], Object))], Object))], Object));
                 },
                 GetPageTitle: function (view) {
                     if (H5.referenceEquals(view, "dashboard")) {
@@ -52598,12 +52768,26 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                     }
                     return "Healthcare";
                 },
-                RenderPage: function (view) {
+                RenderPage: function (state, setState) {
+                    var view = state.ActiveView;
+
+                    if (H5.referenceEquals(view, "patients") && state.EditingPatientId != null) {
+                        return Dashboard.Pages.EditPatientPage.Render(state.EditingPatientId, function () {
+                            var $t;
+                            var newState = ($t = new Dashboard.AppState(), $t.ActiveView = "patients", $t.SidebarCollapsed = state.SidebarCollapsed, $t.SearchQuery = state.SearchQuery, $t.NotificationCount = state.NotificationCount, $t.EditingPatientId = null, $t);
+                            setState(newState);
+                        });
+                    }
+
                     if (H5.referenceEquals(view, "dashboard")) {
                         return Dashboard.Pages.DashboardPage.Render();
                     }
                     if (H5.referenceEquals(view, "patients")) {
-                        return Dashboard.Pages.PatientsPage.Render();
+                        return Dashboard.Pages.PatientsPage.Render(function (patientId) {
+                            var $t;
+                            var newState = ($t = new Dashboard.AppState(), $t.ActiveView = "patients", $t.SidebarCollapsed = state.SidebarCollapsed, $t.SearchQuery = state.SearchQuery, $t.NotificationCount = state.NotificationCount, $t.EditingPatientId = patientId, $t);
+                            setState(newState);
+                        });
                     }
                     if (H5.referenceEquals(view, "practitioners")) {
                         return Dashboard.Pages.PractitionersPage.Render();
@@ -52679,7 +52863,17 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
              * @function NotificationCount
              * @type number
              */
-            NotificationCount: 0
+            NotificationCount: 0,
+            /**
+             * Patient ID being edited (null if not editing).
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.AppState
+             * @function EditingPatientId
+             * @type string
+             */
+            EditingPatientId: null
         }
     });
 
@@ -53964,6 +54158,500 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
     });
 
     /**
+     * Edit patient page component.
+     *
+     * @static
+     * @abstract
+     * @public
+     * @class Dashboard.Pages.EditPatientPage
+     */
+    H5.define("Dashboard.Pages.EditPatientPage", {
+        statics: {
+            methods: {
+                /**
+                 * Renders the edit patient page.
+                 *
+                 * @static
+                 * @public
+                 * @this Dashboard.Pages.EditPatientPage
+                 * @memberof Dashboard.Pages.EditPatientPage
+                 * @param   {string}           patientId    
+                 * @param   {System.Action}    onBack
+                 * @return  {Object}
+                 */
+                Render: function (patientId, onBack) {
+                    var $t;
+                    var stateResult = Dashboard.React.Hooks.UseState(Dashboard.Pages.EditPatientState, ($t = new Dashboard.Pages.EditPatientState(), $t.Patient = null, $t.Loading = true, $t.Saving = false, $t.Error = null, $t.Success = null, $t.Active = true, $t.GivenName = "", $t.FamilyName = "", $t.BirthDate = "", $t.Gender = "", $t.Phone = "", $t.Email = "", $t.AddressLine = "", $t.City = "", $t.State = "", $t.PostalCode = "", $t.Country = "", $t));
+
+                    var state = stateResult.State;
+                    var setState = stateResult.SetState;
+
+                    Dashboard.React.Hooks.UseEffect$1(function () {
+                        Dashboard.Pages.EditPatientPage.LoadPatient(patientId, setState);
+                    }, System.Array.init([patientId], System.Object));
+
+                    if (state.Loading) {
+                        return Dashboard.Pages.EditPatientPage.RenderLoadingState();
+                    }
+
+                    if (state.Error != null && state.Patient == null) {
+                        return Dashboard.Pages.EditPatientPage.RenderErrorState(state.Error, onBack);
+                    }
+
+                    return Dashboard.React.Elements.Div("page", void 0, void 0, void 0, System.Array.init([Dashboard.Pages.EditPatientPage.RenderHeader(state.Patient, onBack), Dashboard.Pages.EditPatientPage.RenderForm(state, setState, onBack)], Object));
+                },
+                LoadPatient: function (patientId, setState) {
+                    var $s = 0,
+                        $t1, 
+                        $tr1, 
+                        $jff, 
+                        $rv, 
+                        patient, 
+                        $t, 
+                        $t2, 
+                        $t3, 
+                        $t4, 
+                        $t5, 
+                        $t6, 
+                        $t7, 
+                        $t8, 
+                        $t9, 
+                        $t10, 
+                        $t11, 
+                        ex, 
+                        $ae, 
+                        $ae1, 
+                        $asyncBody = H5.fn.bind(this, function () {
+                            try {
+                                for (;;) {
+                                    $s = System.Array.min([1,2,3,4], $s);
+                                    switch ($s) {
+
+                                        case 1: {
+                                            $t1 = Dashboard.Api.ApiClient.GetPatientAsync(patientId);
+                                            $s = 2;
+                                            if ($t1.isCompleted()) {
+                                                continue;
+                                            }
+                                            $t1.continue($asyncBody);
+                                            return;
+                                        }
+                                        case 2: {
+                                            $tr1 = $t1.getAwaitedResult();
+                                            patient = $tr1;
+                                            setState(($t = new Dashboard.Pages.EditPatientState(), $t.Patient = patient, $t.Loading = false, $t.Saving = false, $t.Error = null, $t.Success = null, $t.Active = patient.Active, $t.GivenName = ($t1 = patient.GivenName, $t1 != null ? $t1 : ""), $t.FamilyName = ($t2 = patient.FamilyName, $t2 != null ? $t2 : ""), $t.BirthDate = ($t3 = patient.BirthDate, $t3 != null ? $t3 : ""), $t.Gender = ($t4 = patient.Gender, $t4 != null ? $t4 : ""), $t.Phone = ($t5 = patient.Phone, $t5 != null ? $t5 : ""), $t.Email = ($t6 = patient.Email, $t6 != null ? $t6 : ""), $t.AddressLine = ($t7 = patient.AddressLine, $t7 != null ? $t7 : ""), $t.City = ($t8 = patient.City, $t8 != null ? $t8 : ""), $t.State = ($t9 = patient.State, $t9 != null ? $t9 : ""), $t.PostalCode = ($t10 = patient.PostalCode, $t10 != null ? $t10 : ""), $t.Country = ($t11 = patient.Country, $t11 != null ? $t11 : ""), $t));
+                                            $s = 4;
+                                            continue;
+                                        }
+                                        case 3: {
+                                            setState(($t = new Dashboard.Pages.EditPatientState(), $t.Patient = null, $t.Loading = false, $t.Saving = false, $t.Error = ex.Message, $t.Success = null, $t.Active = true, $t.GivenName = "", $t.FamilyName = "", $t.BirthDate = "", $t.Gender = "", $t.Phone = "", $t.Email = "", $t.AddressLine = "", $t.City = "", $t.State = "", $t.PostalCode = "", $t.Country = "", $t));
+                                            $ae = null;
+                                            $s = 4;
+                                            continue;
+                                        }
+                                        case 4: {
+                                            return;
+                                        }
+                                        default: {
+                                            return;
+                                        }
+                                    }
+                                }
+                            } catch($ae1) {
+                                $ae = System.Exception.create($ae1);
+                                if ( $s >= 1 && $s <= 2 ) {
+                                    ex = $ae;
+                                    $s = 3;
+                                    $asyncBody();
+                                    return;
+                                }
+                                throw $ae;
+                            }
+                        }, arguments);
+
+                    $asyncBody();
+                },
+                SavePatient: function (state, setState, onBack) {
+                    var $s = 0,
+                        $t1, 
+                        $tr1, 
+                        $jff, 
+                        $rv, 
+                        $t, 
+                        updateData, 
+                        updatedPatient, 
+                        $t2, 
+                        $t3, 
+                        $t4, 
+                        $t5, 
+                        $t6, 
+                        $t7, 
+                        $t8, 
+                        $t9, 
+                        $t10, 
+                        $t11, 
+                        ex, 
+                        $ae, 
+                        $ae1, 
+                        $asyncBody = H5.fn.bind(this, function () {
+                            try {
+                                for (;;) {
+                                    $s = System.Array.min([0,1,2,3,4], $s);
+                                    switch ($s) {
+                                        case 0: {
+                                            setState(($t = new Dashboard.Pages.EditPatientState(), $t.Patient = state.Patient, $t.Loading = false, $t.Saving = true, $t.Error = null, $t.Success = null, $t.Active = state.Active, $t.GivenName = state.GivenName, $t.FamilyName = state.FamilyName, $t.BirthDate = state.BirthDate, $t.Gender = state.Gender, $t.Phone = state.Phone, $t.Email = state.Email, $t.AddressLine = state.AddressLine, $t.City = state.City, $t.State = state.State, $t.PostalCode = state.PostalCode, $t.Country = state.Country, $t));
+                                            $s = 1;
+                                            continue;
+                                        }
+                                        case 1: {
+                                            updateData = ($t = new Object(), $t.Id = state.Patient.Id, $t.Active = state.Active, $t.GivenName = state.GivenName, $t.FamilyName = state.FamilyName, $t.BirthDate = System.String.isNullOrWhiteSpace(state.BirthDate) ? null : state.BirthDate, $t.Gender = System.String.isNullOrWhiteSpace(state.Gender) ? null : state.Gender, $t.Phone = System.String.isNullOrWhiteSpace(state.Phone) ? null : state.Phone, $t.Email = System.String.isNullOrWhiteSpace(state.Email) ? null : state.Email, $t.AddressLine = System.String.isNullOrWhiteSpace(state.AddressLine) ? null : state.AddressLine, $t.City = System.String.isNullOrWhiteSpace(state.City) ? null : state.City, $t.State = System.String.isNullOrWhiteSpace(state.State) ? null : state.State, $t.PostalCode = System.String.isNullOrWhiteSpace(state.PostalCode) ? null : state.PostalCode, $t.Country = System.String.isNullOrWhiteSpace(state.Country) ? null : state.Country, $t);
+
+                                            $t1 = Dashboard.Api.ApiClient.UpdatePatientAsync(state.Patient.Id, updateData);
+                                            $s = 2;
+                                            if ($t1.isCompleted()) {
+                                                continue;
+                                            }
+                                            $t1.continue($asyncBody);
+                                            return;
+                                        }
+                                        case 2: {
+                                            $tr1 = $t1.getAwaitedResult();
+                                            updatedPatient = $tr1;
+
+                                            setState(($t = new Dashboard.Pages.EditPatientState(), $t.Patient = updatedPatient, $t.Loading = false, $t.Saving = false, $t.Error = null, $t.Success = "Patient updated successfully!", $t.Active = updatedPatient.Active, $t.GivenName = ($t1 = updatedPatient.GivenName, $t1 != null ? $t1 : ""), $t.FamilyName = ($t2 = updatedPatient.FamilyName, $t2 != null ? $t2 : ""), $t.BirthDate = ($t3 = updatedPatient.BirthDate, $t3 != null ? $t3 : ""), $t.Gender = ($t4 = updatedPatient.Gender, $t4 != null ? $t4 : ""), $t.Phone = ($t5 = updatedPatient.Phone, $t5 != null ? $t5 : ""), $t.Email = ($t6 = updatedPatient.Email, $t6 != null ? $t6 : ""), $t.AddressLine = ($t7 = updatedPatient.AddressLine, $t7 != null ? $t7 : ""), $t.City = ($t8 = updatedPatient.City, $t8 != null ? $t8 : ""), $t.State = ($t9 = updatedPatient.State, $t9 != null ? $t9 : ""), $t.PostalCode = ($t10 = updatedPatient.PostalCode, $t10 != null ? $t10 : ""), $t.Country = ($t11 = updatedPatient.Country, $t11 != null ? $t11 : ""), $t));
+                                            $s = 4;
+                                            continue;
+                                        }
+                                        case 3: {
+                                            setState(($t = new Dashboard.Pages.EditPatientState(), $t.Patient = state.Patient, $t.Loading = false, $t.Saving = false, $t.Error = ex.Message, $t.Success = null, $t.Active = state.Active, $t.GivenName = state.GivenName, $t.FamilyName = state.FamilyName, $t.BirthDate = state.BirthDate, $t.Gender = state.Gender, $t.Phone = state.Phone, $t.Email = state.Email, $t.AddressLine = state.AddressLine, $t.City = state.City, $t.State = state.State, $t.PostalCode = state.PostalCode, $t.Country = state.Country, $t));
+                                            $ae = null;
+                                            $s = 4;
+                                            continue;
+                                        }
+                                        case 4: {
+                                            return;
+                                        }
+                                        default: {
+                                            return;
+                                        }
+                                    }
+                                }
+                            } catch($ae1) {
+                                $ae = System.Exception.create($ae1);
+                                if ( $s >= 1 && $s <= 2 ) {
+                                    ex = $ae;
+                                    $s = 3;
+                                    $asyncBody();
+                                    return;
+                                }
+                                throw $ae;
+                            }
+                        }, arguments);
+
+                    $asyncBody();
+                },
+                RenderLoadingState: function () {
+                    return Dashboard.React.Elements.Div("page", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("page-header", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.H(2, "page-title", System.Array.init([Dashboard.React.Elements.Text("Edit Patient")], Object)), Dashboard.React.Elements.P("page-description", void 0, System.Array.init([Dashboard.React.Elements.Text("Loading patient data...")], Object))], Object)), Dashboard.React.Elements.Div("card", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("flex items-center justify-center p-8", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Text("Loading...")], Object))], Object))], Object));
+                },
+                RenderErrorState: function (error, onBack) {
+                    return Dashboard.React.Elements.Div("page", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("page-header flex justify-between items-center", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div(void 0, void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.H(2, "page-title", System.Array.init([Dashboard.React.Elements.Text("Edit Patient")], Object)), Dashboard.React.Elements.P("page-description", void 0, System.Array.init([Dashboard.React.Elements.Text("Error loading patient")], Object))], Object)), Dashboard.React.Elements.Button("btn btn-secondary", onBack, false, "button", System.Array.init([Dashboard.Components.Icons.ChevronLeft(), Dashboard.React.Elements.Text("Back to Patients")], Object))], Object)), Dashboard.React.Elements.Div("card", void 0, { borderLeft: "4px solid var(--error)" }, void 0, System.Array.init([Dashboard.React.Elements.Div("flex items-center gap-3 p-4", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Icons.X(), Dashboard.React.Elements.Text("Error loading patient: " + (error || ""))], Object))], Object))], Object));
+                },
+                RenderHeader: function (patient, onBack) {
+                    var fullName = (patient.GivenName || "") + " " + (patient.FamilyName || "");
+                    return Dashboard.React.Elements.Div("page-header flex justify-between items-center", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div(void 0, void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.H(2, "page-title", System.Array.init([Dashboard.React.Elements.Text("Edit Patient")], Object)), Dashboard.React.Elements.P("page-description", void 0, System.Array.init([Dashboard.React.Elements.Text("Update information for " + (fullName || ""))], Object))], Object)), Dashboard.React.Elements.Button("btn btn-secondary", onBack, false, "button", System.Array.init([Dashboard.Components.Icons.ChevronLeft(), Dashboard.React.Elements.Text("Back to Patients")], Object))], Object));
+                },
+                RenderForm: function (state, setState, onBack) {
+                    return Dashboard.React.Elements.Div("card", void 0, void 0, void 0, System.Array.init([state.Error != null ? Dashboard.React.Elements.Div("alert alert-error mb-4", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Icons.X(), Dashboard.React.Elements.Text(state.Error)], Object)) : null, state.Success != null ? Dashboard.React.Elements.Div("alert alert-success mb-4", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Text(state.Success)], Object)) : null, Dashboard.React.Elements.Form("form", function () {
+                        Dashboard.Pages.EditPatientPage.SavePatient(state, setState, onBack);
+                    }, System.Array.init([Dashboard.Pages.EditPatientPage.RenderFormSection("Personal Information", System.Array.init([Dashboard.Pages.EditPatientPage.RenderInputField("Given Name", "patient-edit-given-name", state.GivenName, "Enter first name", function (v) {
+                        Dashboard.Pages.EditPatientPage.UpdateField(state, setState, "GivenName", v);
+                    }), Dashboard.Pages.EditPatientPage.RenderInputField("Family Name", "patient-edit-family-name", state.FamilyName, "Enter last name", function (v) {
+                        Dashboard.Pages.EditPatientPage.UpdateField(state, setState, "FamilyName", v);
+                    }), Dashboard.Pages.EditPatientPage.RenderInputField("Birth Date", "patient-edit-birth-date", state.BirthDate, "YYYY-MM-DD", function (v) {
+                        Dashboard.Pages.EditPatientPage.UpdateField(state, setState, "BirthDate", v);
+                    }, "date"), Dashboard.Pages.EditPatientPage.RenderSelectField("Gender", "patient-edit-gender", state.Gender, System.Array.init([new (System.ValueTuple$2(System.String,System.String)).$ctor1("", "Select gender"), new (System.ValueTuple$2(System.String,System.String)).$ctor1("male", "Male"), new (System.ValueTuple$2(System.String,System.String)).$ctor1("female", "Female"), new (System.ValueTuple$2(System.String,System.String)).$ctor1("other", "Other"), new (System.ValueTuple$2(System.String,System.String)).$ctor1("unknown", "Unknown")], System.ValueTuple$2(System.String,System.String)), function (v) {
+                        Dashboard.Pages.EditPatientPage.UpdateField(state, setState, "Gender", v);
+                    }), Dashboard.Pages.EditPatientPage.RenderCheckboxField("Active", "patient-edit-active", state.Active, function (v) {
+                        Dashboard.Pages.EditPatientPage.UpdateActive(state, setState, v);
+                    })], Object)), Dashboard.Pages.EditPatientPage.RenderFormSection("Contact Information", System.Array.init([Dashboard.Pages.EditPatientPage.RenderInputField("Phone", "patient-edit-phone", state.Phone, "Enter phone number", function (v) {
+                        Dashboard.Pages.EditPatientPage.UpdateField(state, setState, "Phone", v);
+                    }, "tel"), Dashboard.Pages.EditPatientPage.RenderInputField("Email", "patient-edit-email", state.Email, "Enter email address", function (v) {
+                        Dashboard.Pages.EditPatientPage.UpdateField(state, setState, "Email", v);
+                    }, "email")], Object)), Dashboard.Pages.EditPatientPage.RenderFormSection("Address", System.Array.init([Dashboard.Pages.EditPatientPage.RenderInputField("Address Line", "patient-edit-address", state.AddressLine, "Enter street address", function (v) {
+                        Dashboard.Pages.EditPatientPage.UpdateField(state, setState, "AddressLine", v);
+                    }), Dashboard.Pages.EditPatientPage.RenderInputField("City", "patient-edit-city", state.City, "Enter city", function (v) {
+                        Dashboard.Pages.EditPatientPage.UpdateField(state, setState, "City", v);
+                    }), Dashboard.Pages.EditPatientPage.RenderInputField("State", "patient-edit-state", state.State, "Enter state/province", function (v) {
+                        Dashboard.Pages.EditPatientPage.UpdateField(state, setState, "State", v);
+                    }), Dashboard.Pages.EditPatientPage.RenderInputField("Postal Code", "patient-edit-postal-code", state.PostalCode, "Enter postal code", function (v) {
+                        Dashboard.Pages.EditPatientPage.UpdateField(state, setState, "PostalCode", v);
+                    }), Dashboard.Pages.EditPatientPage.RenderInputField("Country", "patient-edit-country", state.Country, "Enter country", function (v) {
+                        Dashboard.Pages.EditPatientPage.UpdateField(state, setState, "Country", v);
+                    })], Object)), Dashboard.Pages.EditPatientPage.RenderFormActions(state, onBack)], Object))], Object));
+                },
+                RenderFormSection: function (title, fields) {
+                    return Dashboard.React.Elements.Div("form-section mb-6", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.H(4, "form-section-title mb-4", System.Array.init([Dashboard.React.Elements.Text(title)], Object)), Dashboard.React.Elements.Div("grid grid-cols-2 gap-4", void 0, void 0, void 0, fields)], Object));
+                },
+                RenderInputField: function (label, id, value, placeholder, onChange, type) {
+                    if (type === void 0) { type = "text"; }
+                    return Dashboard.React.Elements.Div("form-group", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Label(id, "form-label", System.Array.init([Dashboard.React.Elements.Text(label)], Object)), Dashboard.React.Elements.Input("input", type, value, placeholder, onChange, false)], Object));
+                },
+                RenderSelectField: function (label, id, value, options, onChange) {
+                    var optionElements = System.Array.init(options.length, null, Object);
+                    for (var i = 0; i < options.length; i = (i + 1) | 0) {
+                        optionElements[System.Array.index(i, optionElements)] = Dashboard.React.Elements.Option(options[System.Array.index(i, options)].Item1, options[System.Array.index(i, options)].Item2);
+                    }
+
+                    return Dashboard.React.Elements.Div("form-group", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Label(id, "form-label", System.Array.init([Dashboard.React.Elements.Text(label)], Object)), Dashboard.React.Elements.Select("input", value, onChange, optionElements)], Object));
+                },
+                RenderCheckboxField: function (label, id, value, onChange) {
+                    return Dashboard.React.Elements.Div("form-group flex items-center gap-2", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("flex items-center gap-2", void 0, void 0, function () {
+                        onChange(!value);
+                    }, System.Array.init([Dashboard.React.Elements.Span("status-dot " + ((value ? "active" : "inactive") || ""), void 0, void 0), Dashboard.React.Elements.Text((label || "") + ": " + ((value ? "Active" : "Inactive") || ""))], Object))], Object));
+                },
+                RenderFormActions: function (state, onBack) {
+                    return Dashboard.React.Elements.Div("form-actions flex justify-end gap-4 mt-6", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Button("btn btn-secondary", onBack, state.Saving, "button", System.Array.init([Dashboard.React.Elements.Text("Cancel")], Object)), Dashboard.React.Elements.Button("btn btn-primary", void 0, state.Saving, "submit", System.Array.init([Dashboard.React.Elements.Text(state.Saving ? "Saving..." : "Save Changes")], Object))], Object));
+                },
+                UpdateField: function (state, setState, field, value) {
+                    var $t;
+                    var newState = ($t = new Dashboard.Pages.EditPatientState(), $t.Patient = state.Patient, $t.Loading = state.Loading, $t.Saving = state.Saving, $t.Error = null, $t.Success = null, $t.Active = state.Active, $t.GivenName = state.GivenName, $t.FamilyName = state.FamilyName, $t.BirthDate = state.BirthDate, $t.Gender = state.Gender, $t.Phone = state.Phone, $t.Email = state.Email, $t.AddressLine = state.AddressLine, $t.City = state.City, $t.State = state.State, $t.PostalCode = state.PostalCode, $t.Country = state.Country, $t);
+
+                    if (H5.referenceEquals(field, "GivenName")) {
+                        newState.GivenName = value;
+                    } else {
+                        if (H5.referenceEquals(field, "FamilyName")) {
+                            newState.FamilyName = value;
+                        } else {
+                            if (H5.referenceEquals(field, "BirthDate")) {
+                                newState.BirthDate = value;
+                            } else {
+                                if (H5.referenceEquals(field, "Gender")) {
+                                    newState.Gender = value;
+                                } else {
+                                    if (H5.referenceEquals(field, "Phone")) {
+                                        newState.Phone = value;
+                                    } else {
+                                        if (H5.referenceEquals(field, "Email")) {
+                                            newState.Email = value;
+                                        } else {
+                                            if (H5.referenceEquals(field, "AddressLine")) {
+                                                newState.AddressLine = value;
+                                            } else {
+                                                if (H5.referenceEquals(field, "City")) {
+                                                    newState.City = value;
+                                                } else {
+                                                    if (H5.referenceEquals(field, "State")) {
+                                                        newState.State = value;
+                                                    } else {
+                                                        if (H5.referenceEquals(field, "PostalCode")) {
+                                                            newState.PostalCode = value;
+                                                        } else {
+                                                            if (H5.referenceEquals(field, "Country")) {
+                                                                newState.Country = value;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    setState(newState);
+                },
+                UpdateActive: function (state, setState, value) {
+                    var $t;
+                    setState(($t = new Dashboard.Pages.EditPatientState(), $t.Patient = state.Patient, $t.Loading = state.Loading, $t.Saving = state.Saving, $t.Error = null, $t.Success = null, $t.Active = value, $t.GivenName = state.GivenName, $t.FamilyName = state.FamilyName, $t.BirthDate = state.BirthDate, $t.Gender = state.Gender, $t.Phone = state.Phone, $t.Email = state.Email, $t.AddressLine = state.AddressLine, $t.City = state.City, $t.State = state.State, $t.PostalCode = state.PostalCode, $t.Country = state.Country, $t));
+                }
+            }
+        }
+    });
+
+    /**
+     * Edit patient page state class.
+     *
+     * @public
+     * @class Dashboard.Pages.EditPatientState
+     */
+    H5.define("Dashboard.Pages.EditPatientState", {
+        fields: {
+            /**
+             * Patient being edited.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function Patient
+             * @type Object
+             */
+            Patient: null,
+            /**
+             * Whether loading.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function Loading
+             * @type boolean
+             */
+            Loading: false,
+            /**
+             * Whether saving.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function Saving
+             * @type boolean
+             */
+            Saving: false,
+            /**
+             * Error message if any.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function Error
+             * @type string
+             */
+            Error: null,
+            /**
+             * Success message if any.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function Success
+             * @type string
+             */
+            Success: null,
+            /**
+             * Form field: Active status.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function Active
+             * @type boolean
+             */
+            Active: false,
+            /**
+             * Form field: Given name.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function GivenName
+             * @type string
+             */
+            GivenName: null,
+            /**
+             * Form field: Family name.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function FamilyName
+             * @type string
+             */
+            FamilyName: null,
+            /**
+             * Form field: Birth date.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function BirthDate
+             * @type string
+             */
+            BirthDate: null,
+            /**
+             * Form field: Gender.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function Gender
+             * @type string
+             */
+            Gender: null,
+            /**
+             * Form field: Phone.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function Phone
+             * @type string
+             */
+            Phone: null,
+            /**
+             * Form field: Email.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function Email
+             * @type string
+             */
+            Email: null,
+            /**
+             * Form field: Address line.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function AddressLine
+             * @type string
+             */
+            AddressLine: null,
+            /**
+             * Form field: City.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function City
+             * @type string
+             */
+            City: null,
+            /**
+             * Form field: State.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function State
+             * @type string
+             */
+            State: null,
+            /**
+             * Form field: Postal code.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function PostalCode
+             * @type string
+             */
+            PostalCode: null,
+            /**
+             * Form field: Country.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditPatientState
+             * @function Country
+             * @type string
+             */
+            Country: null
+        }
+    });
+
+    /**
      * Patients list page.
      *
      * @static
@@ -53973,6 +54661,9 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
      */
     H5.define("Dashboard.Pages.PatientsPage", {
         statics: {
+            fields: {
+                _onEditPatient: null
+            },
             methods: {
                 /**
                  * Renders the patients page.
@@ -53981,10 +54672,13 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                  * @public
                  * @this Dashboard.Pages.PatientsPage
                  * @memberof Dashboard.Pages.PatientsPage
+                 * @param   {System.Action}    onEditPatient
                  * @return  {Object}
                  */
-                Render: function () {
+                Render: function (onEditPatient) {
                     var $t;
+                    if (onEditPatient === void 0) { onEditPatient = null; }
+                    Dashboard.Pages.PatientsPage._onEditPatient = onEditPatient;
                     var stateResult = Dashboard.React.Hooks.UseState(Dashboard.Pages.PatientsState, ($t = new Dashboard.Pages.PatientsState(), $t.Patients = System.Array.init(0, null, Object), $t.Loading = true, $t.Error = null, $t.SearchQuery = "", $t.SelectedPatient = null, $t));
 
                     var state = stateResult.State;
@@ -54206,7 +54900,9 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                 RenderActions: function (patient, onSelect) {
                     return Dashboard.React.Elements.Div("table-action", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Button("btn btn-ghost btn-sm", function () {
                         onSelect(patient);
-                    }, false, "button", System.Array.init([Dashboard.Components.Icons.Eye()], Object)), Dashboard.React.Elements.Button("btn btn-ghost btn-sm", void 0, false, "button", System.Array.init([Dashboard.Components.Icons.Edit()], Object))], Object));
+                    }, false, "button", System.Array.init([Dashboard.Components.Icons.Eye()], Object)), Dashboard.React.Elements.Button("btn btn-ghost btn-sm", function () {
+                        !H5.staticEquals(Dashboard.Pages.PatientsPage._onEditPatient, null) ? Dashboard.Pages.PatientsPage._onEditPatient(patient.Id) : null;
+                    }, false, "button", System.Array.init([Dashboard.Components.Icons.Edit()], Object))], Object));
                 },
                 GetInitials: function (patient) {
                     return (Dashboard.Pages.PatientsPage.FirstChar(patient.GivenName) || "") + (Dashboard.Pages.PatientsPage.FirstChar(patient.FamilyName) || "");
@@ -55535,32 +56231,34 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
 
 
     var $m = H5.setMetadata,
-        $n = ["System","Dashboard.React","Dashboard.Pages","Dashboard.Components","System.Threading.Tasks"];
-    $m("Dashboard.AppState", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"ActiveView","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_ActiveView","t":8,"rt":$n[0].String,"fg":"ActiveView"},"s":{"a":2,"n":"set_ActiveView","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"ActiveView"},"fn":"ActiveView"},{"a":2,"n":"NotificationCount","t":16,"rt":$n[0].Int32,"g":{"a":2,"n":"get_NotificationCount","t":8,"rt":$n[0].Int32,"fg":"NotificationCount","box":function ($v) { return H5.box($v, System.Int32);}},"s":{"a":2,"n":"set_NotificationCount","t":8,"p":[$n[0].Int32],"rt":$n[0].Void,"fs":"NotificationCount"},"fn":"NotificationCount"},{"a":2,"n":"SearchQuery","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_SearchQuery","t":8,"rt":$n[0].String,"fg":"SearchQuery"},"s":{"a":2,"n":"set_SearchQuery","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"SearchQuery"},"fn":"SearchQuery"},{"a":2,"n":"SidebarCollapsed","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_SidebarCollapsed","t":8,"rt":$n[0].Boolean,"fg":"SidebarCollapsed","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_SidebarCollapsed","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"SidebarCollapsed"},"fn":"SidebarCollapsed"},{"a":1,"backing":true,"n":"<ActiveView>k__BackingField","t":4,"rt":$n[0].String,"sn":"ActiveView"},{"a":1,"backing":true,"n":"<NotificationCount>k__BackingField","t":4,"rt":$n[0].Int32,"sn":"NotificationCount","box":function ($v) { return H5.box($v, System.Int32);}},{"a":1,"backing":true,"n":"<SearchQuery>k__BackingField","t":4,"rt":$n[0].String,"sn":"SearchQuery"},{"a":1,"backing":true,"n":"<SidebarCollapsed>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"SidebarCollapsed","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}}]}; }, $n);
-    $m("Dashboard.App", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"GetPageTitle","is":true,"t":8,"pi":[{"n":"view","pt":$n[0].String,"ps":0}],"sn":"GetPageTitle","rt":$n[0].String,"p":[$n[0].String]},{"a":2,"n":"Render","is":true,"t":8,"sn":"Render","rt":Object},{"a":1,"n":"RenderPage","is":true,"t":8,"pi":[{"n":"view","pt":$n[0].String,"ps":0}],"sn":"RenderPage","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderPlaceholderPage","is":true,"t":8,"pi":[{"n":"title","pt":$n[0].String,"ps":0},{"n":"description","pt":$n[0].String,"ps":1}],"sn":"RenderPlaceholderPage","rt":Object,"p":[$n[0].String,$n[0].String]}]}; }, $n);
+        $n = ["System","Dashboard","Dashboard.React","Dashboard.Pages","Dashboard.Components","System.Threading.Tasks"];
+    $m("Dashboard.AppState", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"ActiveView","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_ActiveView","t":8,"rt":$n[0].String,"fg":"ActiveView"},"s":{"a":2,"n":"set_ActiveView","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"ActiveView"},"fn":"ActiveView"},{"a":2,"n":"EditingPatientId","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_EditingPatientId","t":8,"rt":$n[0].String,"fg":"EditingPatientId"},"s":{"a":2,"n":"set_EditingPatientId","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"EditingPatientId"},"fn":"EditingPatientId"},{"a":2,"n":"NotificationCount","t":16,"rt":$n[0].Int32,"g":{"a":2,"n":"get_NotificationCount","t":8,"rt":$n[0].Int32,"fg":"NotificationCount","box":function ($v) { return H5.box($v, System.Int32);}},"s":{"a":2,"n":"set_NotificationCount","t":8,"p":[$n[0].Int32],"rt":$n[0].Void,"fs":"NotificationCount"},"fn":"NotificationCount"},{"a":2,"n":"SearchQuery","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_SearchQuery","t":8,"rt":$n[0].String,"fg":"SearchQuery"},"s":{"a":2,"n":"set_SearchQuery","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"SearchQuery"},"fn":"SearchQuery"},{"a":2,"n":"SidebarCollapsed","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_SidebarCollapsed","t":8,"rt":$n[0].Boolean,"fg":"SidebarCollapsed","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_SidebarCollapsed","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"SidebarCollapsed"},"fn":"SidebarCollapsed"},{"a":1,"backing":true,"n":"<ActiveView>k__BackingField","t":4,"rt":$n[0].String,"sn":"ActiveView"},{"a":1,"backing":true,"n":"<EditingPatientId>k__BackingField","t":4,"rt":$n[0].String,"sn":"EditingPatientId"},{"a":1,"backing":true,"n":"<NotificationCount>k__BackingField","t":4,"rt":$n[0].Int32,"sn":"NotificationCount","box":function ($v) { return H5.box($v, System.Int32);}},{"a":1,"backing":true,"n":"<SearchQuery>k__BackingField","t":4,"rt":$n[0].String,"sn":"SearchQuery"},{"a":1,"backing":true,"n":"<SidebarCollapsed>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"SidebarCollapsed","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}}]}; }, $n);
+    $m("Dashboard.App", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"GetPageTitle","is":true,"t":8,"pi":[{"n":"view","pt":$n[0].String,"ps":0}],"sn":"GetPageTitle","rt":$n[0].String,"p":[$n[0].String]},{"a":2,"n":"Render","is":true,"t":8,"sn":"Render","rt":Object},{"a":1,"n":"RenderPage","is":true,"t":8,"pi":[{"n":"state","pt":$n[1].AppState,"ps":0},{"n":"setState","pt":Function,"ps":1}],"sn":"RenderPage","rt":Object,"p":[$n[1].AppState,Function]},{"a":1,"n":"RenderPlaceholderPage","is":true,"t":8,"pi":[{"n":"title","pt":$n[0].String,"ps":0},{"n":"description","pt":$n[0].String,"ps":1}],"sn":"RenderPlaceholderPage","rt":Object,"p":[$n[0].String,$n[0].String]}]}; }, $n);
     $m("Dashboard.Program", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"GetConfigValue","is":true,"t":8,"pi":[{"n":"key","pt":$n[0].String,"ps":0},{"n":"defaultValue","pt":$n[0].String,"ps":1}],"sn":"GetConfigValue","rt":$n[0].String,"p":[$n[0].String,$n[0].String]},{"a":1,"n":"HideLoadingScreen","is":true,"t":8,"sn":"HideLoadingScreen","rt":$n[0].Void},{"a":1,"n":"Log","is":true,"t":8,"pi":[{"n":"message","pt":$n[0].String,"ps":0}],"sn":"Log","rt":$n[0].Void,"p":[$n[0].String]},{"a":2,"n":"Main","is":true,"t":8,"sn":"Main","rt":$n[0].Void}]}; }, $n);
     $m("Dashboard.React.Elements", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"A","is":true,"t":8,"pi":[{"n":"href","pt":$n[0].String,"ps":0},{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"target","dv":null,"o":true,"pt":$n[0].String,"ps":2},{"n":"onClick","dv":null,"o":true,"pt":Function,"ps":3},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":4}],"sn":"A","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,Function,System.Array.type(Object)]},{"a":2,"n":"Article","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Article","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Aside","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Aside","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Button","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"onClick","dv":null,"o":true,"pt":Function,"ps":1},{"n":"disabled","dv":false,"o":true,"pt":$n[0].Boolean,"ps":2},{"n":"type","dv":"button","o":true,"pt":$n[0].String,"ps":3},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":4}],"sn":"Button","rt":Object,"p":[$n[0].String,Function,$n[0].Boolean,$n[0].String,System.Array.type(Object)]},{"a":1,"n":"CreateElement","is":true,"t":8,"pi":[{"n":"tag","pt":$n[0].String,"ps":0},{"n":"className","pt":$n[0].String,"ps":1},{"n":"id","pt":$n[0].String,"ps":2},{"n":"style","pt":$n[0].Object,"ps":3},{"n":"onClick","pt":Function,"ps":4},{"n":"children","pt":System.Array.type(Object),"ps":5}],"sn":"CreateElement","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].Object,Function,System.Array.type(Object)]},{"a":2,"n":"Div","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"id","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"style","dv":null,"o":true,"pt":$n[0].Object,"ps":2},{"n":"onClick","dv":null,"o":true,"pt":Function,"ps":3},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":4}],"sn":"Div","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].Object,Function,System.Array.type(Object)]},{"a":2,"n":"Footer","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Footer","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Form","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"onSubmit","dv":null,"o":true,"pt":Function,"ps":1},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":2}],"sn":"Form","rt":Object,"p":[$n[0].String,Function,System.Array.type(Object)]},{"a":2,"n":"Fragment","is":true,"t":8,"pi":[{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":0}],"sn":"Fragment","rt":Object,"p":[System.Array.type(Object)]},{"a":2,"n":"H","is":true,"t":8,"pi":[{"n":"level","pt":$n[0].Int32,"ps":0},{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":2}],"sn":"H","rt":Object,"p":[$n[0].Int32,$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Header","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Header","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Img","is":true,"t":8,"pi":[{"n":"src","pt":$n[0].String,"ps":0},{"n":"alt","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":2},{"n":"style","dv":null,"o":true,"pt":$n[0].Object,"ps":3}],"sn":"Img","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].Object]},{"a":2,"n":"Input","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"type","dv":"text","o":true,"pt":$n[0].String,"ps":1},{"n":"value","dv":null,"o":true,"pt":$n[0].String,"ps":2},{"n":"placeholder","dv":null,"o":true,"pt":$n[0].String,"ps":3},{"n":"onChange","dv":null,"o":true,"pt":Function,"ps":4},{"n":"disabled","dv":false,"o":true,"pt":$n[0].Boolean,"ps":5}],"sn":"Input","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].String,Function,$n[0].Boolean]},{"a":2,"n":"Label","is":true,"t":8,"pi":[{"n":"htmlFor","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":2}],"sn":"Label","rt":Object,"p":[$n[0].String,$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Li","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"onClick","dv":null,"o":true,"pt":Function,"ps":1},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":2}],"sn":"Li","rt":Object,"p":[$n[0].String,Function,System.Array.type(Object)]},{"a":2,"n":"Main","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Main","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Nav","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Nav","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Option","is":true,"t":8,"pi":[{"n":"value","pt":$n[0].String,"ps":0},{"n":"label","pt":$n[0].String,"ps":1}],"sn":"Option","rt":Object,"p":[$n[0].String,$n[0].String]},{"a":2,"n":"P","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"style","dv":null,"o":true,"pt":$n[0].Object,"ps":1},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":2}],"sn":"P","rt":Object,"p":[$n[0].String,$n[0].Object,System.Array.type(Object)]},{"a":2,"n":"Path","is":true,"t":8,"pi":[{"n":"d","pt":$n[0].String,"ps":0},{"n":"fill","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"stroke","dv":null,"o":true,"pt":$n[0].String,"ps":2},{"n":"strokeWidth","dv":0,"o":true,"pt":$n[0].Int32,"ps":3}],"sn":"Path","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].Int32]},{"a":2,"n":"Section","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Section","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Select","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"value","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"onChange","dv":null,"o":true,"pt":Function,"ps":2},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":3}],"sn":"Select","rt":Object,"p":[$n[0].String,$n[0].String,Function,System.Array.type(Object)]},{"a":2,"n":"Span","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"id","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"style","dv":null,"o":true,"pt":$n[0].Object,"ps":2},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":3}],"sn":"Span","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].Object,System.Array.type(Object)]},{"a":2,"n":"Svg","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"width","dv":0,"o":true,"pt":$n[0].Int32,"ps":1},{"n":"height","dv":0,"o":true,"pt":$n[0].Int32,"ps":2},{"n":"viewBox","dv":null,"o":true,"pt":$n[0].String,"ps":3},{"n":"fill","dv":null,"o":true,"pt":$n[0].String,"ps":4},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":5}],"sn":"Svg","rt":Object,"p":[$n[0].String,$n[0].Int32,$n[0].Int32,$n[0].String,$n[0].String,System.Array.type(Object)]},{"a":2,"n":"TBody","is":true,"t":8,"pi":[{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":0}],"sn":"TBody","rt":Object,"p":[System.Array.type(Object)]},{"a":2,"n":"THead","is":true,"t":8,"pi":[{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":0}],"sn":"THead","rt":Object,"p":[System.Array.type(Object)]},{"a":2,"n":"Table","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Table","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Td","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Td","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Text","is":true,"t":8,"pi":[{"n":"content","pt":$n[0].String,"ps":0}],"sn":"Text","rt":Object,"p":[$n[0].String]},{"a":2,"n":"TextArea","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"value","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"placeholder","dv":null,"o":true,"pt":$n[0].String,"ps":2},{"n":"rows","dv":0,"o":true,"pt":$n[0].Int32,"ps":3},{"n":"onChange","dv":null,"o":true,"pt":Function,"ps":4}],"sn":"TextArea","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].Int32,Function]},{"a":2,"n":"Th","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Th","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Tr","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"onClick","dv":null,"o":true,"pt":Function,"ps":1},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":2}],"sn":"Tr","rt":Object,"p":[$n[0].String,Function,System.Array.type(Object)]},{"a":2,"n":"Ul","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Ul","rt":Object,"p":[$n[0].String,System.Array.type(Object)]}]}; }, $n);
     $m("Dashboard.React.StateResult$1", function (T) { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"SetState","t":16,"rt":Function,"g":{"a":2,"n":"get_SetState","t":8,"rt":Function,"fg":"SetState"},"s":{"a":2,"n":"set_SetState","t":8,"p":[Function],"rt":$n[0].Void,"fs":"SetState"},"fn":"SetState"},{"a":2,"n":"State","t":16,"rt":T,"g":{"a":2,"n":"get_State","t":8,"rt":T,"fg":"State"},"s":{"a":2,"n":"set_State","t":8,"p":[T],"rt":$n[0].Void,"fs":"State"},"fn":"State"},{"a":1,"backing":true,"n":"<SetState>k__BackingField","t":4,"rt":Function,"sn":"SetState"},{"a":1,"backing":true,"n":"<State>k__BackingField","t":4,"rt":T,"sn":"State"}]}; }, $n);
     $m("Dashboard.React.StateFuncResult$1", function (T) { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"SetState","t":16,"rt":Function,"g":{"a":2,"n":"get_SetState","t":8,"rt":Function,"fg":"SetState"},"s":{"a":2,"n":"set_SetState","t":8,"p":[Function],"rt":$n[0].Void,"fs":"SetState"},"fn":"SetState"},{"a":2,"n":"State","t":16,"rt":T,"g":{"a":2,"n":"get_State","t":8,"rt":T,"fg":"State"},"s":{"a":2,"n":"set_State","t":8,"p":[T],"rt":$n[0].Void,"fs":"State"},"fn":"State"},{"a":1,"backing":true,"n":"<SetState>k__BackingField","t":4,"rt":Function,"sn":"SetState"},{"a":1,"backing":true,"n":"<State>k__BackingField","t":4,"rt":T,"sn":"State"}]}; }, $n);
-    $m("Dashboard.React.Hooks", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"UseCallback","is":true,"t":8,"pi":[{"n":"callback","pt":System.Object,"ps":0},{"n":"deps","pt":$n[0].Array.type(System.Object),"ps":1}],"tpc":1,"tprm":["T"],"sn":"UseCallback","rt":System.Object,"p":[System.Object,$n[0].Array.type(System.Object)]},{"a":2,"n":"UseContext","is":true,"t":8,"pi":[{"n":"context","pt":$n[0].Object,"ps":0}],"tpc":1,"tprm":["T"],"sn":"UseContext","rt":System.Object,"p":[$n[0].Object]},{"a":2,"n":"UseEffect","is":true,"t":8,"pi":[{"n":"effect","pt":Function,"ps":0},{"n":"deps","dv":null,"o":true,"pt":$n[0].Array.type(System.Object),"ps":1}],"sn":"UseEffect$1","rt":$n[0].Void,"p":[Function,$n[0].Array.type(System.Object)]},{"a":2,"n":"UseEffect","is":true,"t":8,"pi":[{"n":"effect","pt":Function,"ps":0},{"n":"cleanup","pt":Function,"ps":1},{"n":"deps","dv":null,"o":true,"pt":$n[0].Array.type(System.Object),"ps":2}],"sn":"UseEffect","rt":$n[0].Void,"p":[Function,Function,$n[0].Array.type(System.Object)]},{"a":2,"n":"UseMemo","is":true,"t":8,"pi":[{"n":"factory","pt":Function,"ps":0},{"n":"deps","pt":$n[0].Array.type(System.Object),"ps":1}],"tpc":1,"tprm":["T"],"sn":"UseMemo","rt":System.Object,"p":[Function,$n[0].Array.type(System.Object)]},{"a":2,"n":"UseRef","is":true,"t":8,"pi":[{"n":"initialValue","dv":null,"o":true,"pt":System.Object,"ps":0}],"tpc":1,"tprm":["T"],"sn":"UseRef","rt":Object(System.Object),"p":[System.Object]},{"a":2,"n":"UseState","is":true,"t":8,"pi":[{"n":"initialValue","pt":System.Object,"ps":0}],"tpc":1,"tprm":["T"],"sn":"UseState","rt":$n[1].StateResult$1(System.Object),"p":[System.Object]},{"a":2,"n":"UseStateFunc","is":true,"t":8,"pi":[{"n":"initialValue","pt":System.Object,"ps":0}],"tpc":1,"tprm":["T"],"sn":"UseStateFunc","rt":$n[1].StateFuncResult$1(System.Object),"p":[System.Object]}]}; }, $n);
+    $m("Dashboard.React.Hooks", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"UseCallback","is":true,"t":8,"pi":[{"n":"callback","pt":System.Object,"ps":0},{"n":"deps","pt":$n[0].Array.type(System.Object),"ps":1}],"tpc":1,"tprm":["T"],"sn":"UseCallback","rt":System.Object,"p":[System.Object,$n[0].Array.type(System.Object)]},{"a":2,"n":"UseContext","is":true,"t":8,"pi":[{"n":"context","pt":$n[0].Object,"ps":0}],"tpc":1,"tprm":["T"],"sn":"UseContext","rt":System.Object,"p":[$n[0].Object]},{"a":2,"n":"UseEffect","is":true,"t":8,"pi":[{"n":"effect","pt":Function,"ps":0},{"n":"deps","dv":null,"o":true,"pt":$n[0].Array.type(System.Object),"ps":1}],"sn":"UseEffect$1","rt":$n[0].Void,"p":[Function,$n[0].Array.type(System.Object)]},{"a":2,"n":"UseEffect","is":true,"t":8,"pi":[{"n":"effect","pt":Function,"ps":0},{"n":"cleanup","pt":Function,"ps":1},{"n":"deps","dv":null,"o":true,"pt":$n[0].Array.type(System.Object),"ps":2}],"sn":"UseEffect","rt":$n[0].Void,"p":[Function,Function,$n[0].Array.type(System.Object)]},{"a":2,"n":"UseMemo","is":true,"t":8,"pi":[{"n":"factory","pt":Function,"ps":0},{"n":"deps","pt":$n[0].Array.type(System.Object),"ps":1}],"tpc":1,"tprm":["T"],"sn":"UseMemo","rt":System.Object,"p":[Function,$n[0].Array.type(System.Object)]},{"a":2,"n":"UseRef","is":true,"t":8,"pi":[{"n":"initialValue","dv":null,"o":true,"pt":System.Object,"ps":0}],"tpc":1,"tprm":["T"],"sn":"UseRef","rt":Object(System.Object),"p":[System.Object]},{"a":2,"n":"UseState","is":true,"t":8,"pi":[{"n":"initialValue","pt":System.Object,"ps":0}],"tpc":1,"tprm":["T"],"sn":"UseState","rt":$n[2].StateResult$1(System.Object),"p":[System.Object]},{"a":2,"n":"UseStateFunc","is":true,"t":8,"pi":[{"n":"initialValue","pt":System.Object,"ps":0}],"tpc":1,"tprm":["T"],"sn":"UseStateFunc","rt":$n[2].StateFuncResult$1(System.Object),"p":[System.Object]}]}; }, $n);
     $m("Dashboard.React.ReactInterop", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"CreateElement","is":true,"t":8,"pi":[{"n":"component","pt":Function,"ps":0},{"n":"props","dv":null,"o":true,"pt":$n[0].Object,"ps":1},{"n":"children","ip":true,"pt":$n[0].Array.type(System.Object),"ps":2}],"sn":"CreateElement","rt":Object,"p":[Function,$n[0].Object,$n[0].Array.type(System.Object)]},{"a":2,"n":"CreateElement","is":true,"t":8,"pi":[{"n":"type","pt":$n[0].String,"ps":0},{"n":"props","dv":null,"o":true,"pt":$n[0].Object,"ps":1},{"n":"children","ip":true,"pt":$n[0].Array.type(System.Object),"ps":2}],"sn":"CreateElement$1","rt":Object,"p":[$n[0].String,$n[0].Object,$n[0].Array.type(System.Object)]},{"a":2,"n":"RenderApp","is":true,"t":8,"pi":[{"n":"element","pt":Object,"ps":0},{"n":"containerId","dv":"root","o":true,"pt":$n[0].String,"ps":1}],"sn":"RenderApp","rt":$n[0].Void,"p":[Object,$n[0].String]}]}; }, $n);
     $m("Dashboard.Pages.AppointmentsState", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Appointments","t":16,"rt":System.Array.type(Object),"g":{"a":2,"n":"get_Appointments","t":8,"rt":System.Array.type(Object),"fg":"Appointments"},"s":{"a":2,"n":"set_Appointments","t":8,"p":[System.Array.type(Object)],"rt":$n[0].Void,"fs":"Appointments"},"fn":"Appointments"},{"a":2,"n":"Error","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Error","t":8,"rt":$n[0].String,"fg":"Error"},"s":{"a":2,"n":"set_Error","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Error"},"fn":"Error"},{"a":2,"n":"Loading","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Loading","t":8,"rt":$n[0].Boolean,"fg":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Loading","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Loading"},"fn":"Loading"},{"a":2,"n":"StatusFilter","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_StatusFilter","t":8,"rt":$n[0].String,"fg":"StatusFilter"},"s":{"a":2,"n":"set_StatusFilter","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"StatusFilter"},"fn":"StatusFilter"},{"a":1,"backing":true,"n":"<Appointments>k__BackingField","t":4,"rt":System.Array.type(Object),"sn":"Appointments"},{"a":1,"backing":true,"n":"<Error>k__BackingField","t":4,"rt":$n[0].String,"sn":"Error"},{"a":1,"backing":true,"n":"<Loading>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<StatusFilter>k__BackingField","t":4,"rt":$n[0].String,"sn":"StatusFilter"}]}; }, $n);
-    $m("Dashboard.Pages.AppointmentsPage", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"FilterByStatus","is":true,"t":8,"pi":[{"n":"status","pt":$n[0].String,"ps":0},{"n":"currentState","pt":$n[2].AppointmentsState,"ps":1},{"n":"setState","pt":Function,"ps":2}],"sn":"FilterByStatus","rt":$n[0].Void,"p":[$n[0].String,$n[2].AppointmentsState,Function]},{"a":1,"n":"FormatReference","is":true,"t":8,"pi":[{"n":"reference","pt":$n[0].String,"ps":0}],"sn":"FormatReference","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"FormatTime","is":true,"t":8,"pi":[{"n":"dateTime","pt":$n[0].String,"ps":0}],"sn":"FormatTime","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"LoadAppointments","is":true,"t":8,"pi":[{"n":"setState","pt":Function,"ps":0}],"sn":"LoadAppointments","rt":$n[0].Void,"p":[Function]},{"a":2,"n":"Render","is":true,"t":8,"sn":"Render","rt":Object},{"a":1,"n":"RenderAppointmentCard","is":true,"t":8,"pi":[{"n":"appointment","pt":Object,"ps":0}],"sn":"RenderAppointmentCard","rt":Object,"p":[Object]},{"a":1,"n":"RenderAppointmentList","is":true,"t":8,"pi":[{"n":"appointments","pt":System.Array.type(Object),"ps":0}],"sn":"RenderAppointmentList","rt":Object,"p":[System.Array.type(Object)]},{"a":1,"n":"RenderEmpty","is":true,"t":8,"sn":"RenderEmpty","rt":Object},{"a":1,"n":"RenderError","is":true,"t":8,"pi":[{"n":"message","pt":$n[0].String,"ps":0}],"sn":"RenderError","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderLoadingList","is":true,"t":8,"sn":"RenderLoadingList","rt":Object},{"a":1,"n":"RenderPriorityBadge","is":true,"t":8,"pi":[{"n":"priority","pt":$n[0].String,"ps":0}],"sn":"RenderPriorityBadge","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderStatusBadge","is":true,"t":8,"pi":[{"n":"status","pt":$n[0].String,"ps":0}],"sn":"RenderStatusBadge","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderTab","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"status","pt":$n[0].String,"ps":1},{"n":"currentFilter","pt":$n[0].String,"ps":2},{"n":"onSelect","pt":Function,"ps":3}],"sn":"RenderTab","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,Function]}]}; }, $n);
+    $m("Dashboard.Pages.AppointmentsPage", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"FilterByStatus","is":true,"t":8,"pi":[{"n":"status","pt":$n[0].String,"ps":0},{"n":"currentState","pt":$n[3].AppointmentsState,"ps":1},{"n":"setState","pt":Function,"ps":2}],"sn":"FilterByStatus","rt":$n[0].Void,"p":[$n[0].String,$n[3].AppointmentsState,Function]},{"a":1,"n":"FormatReference","is":true,"t":8,"pi":[{"n":"reference","pt":$n[0].String,"ps":0}],"sn":"FormatReference","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"FormatTime","is":true,"t":8,"pi":[{"n":"dateTime","pt":$n[0].String,"ps":0}],"sn":"FormatTime","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"LoadAppointments","is":true,"t":8,"pi":[{"n":"setState","pt":Function,"ps":0}],"sn":"LoadAppointments","rt":$n[0].Void,"p":[Function]},{"a":2,"n":"Render","is":true,"t":8,"sn":"Render","rt":Object},{"a":1,"n":"RenderAppointmentCard","is":true,"t":8,"pi":[{"n":"appointment","pt":Object,"ps":0}],"sn":"RenderAppointmentCard","rt":Object,"p":[Object]},{"a":1,"n":"RenderAppointmentList","is":true,"t":8,"pi":[{"n":"appointments","pt":System.Array.type(Object),"ps":0}],"sn":"RenderAppointmentList","rt":Object,"p":[System.Array.type(Object)]},{"a":1,"n":"RenderEmpty","is":true,"t":8,"sn":"RenderEmpty","rt":Object},{"a":1,"n":"RenderError","is":true,"t":8,"pi":[{"n":"message","pt":$n[0].String,"ps":0}],"sn":"RenderError","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderLoadingList","is":true,"t":8,"sn":"RenderLoadingList","rt":Object},{"a":1,"n":"RenderPriorityBadge","is":true,"t":8,"pi":[{"n":"priority","pt":$n[0].String,"ps":0}],"sn":"RenderPriorityBadge","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderStatusBadge","is":true,"t":8,"pi":[{"n":"status","pt":$n[0].String,"ps":0}],"sn":"RenderStatusBadge","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderTab","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"status","pt":$n[0].String,"ps":1},{"n":"currentFilter","pt":$n[0].String,"ps":2},{"n":"onSelect","pt":Function,"ps":3}],"sn":"RenderTab","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,Function]}]}; }, $n);
     $m("Dashboard.Pages.DashboardState", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"AppointmentCount","t":16,"rt":$n[0].Int32,"g":{"a":2,"n":"get_AppointmentCount","t":8,"rt":$n[0].Int32,"fg":"AppointmentCount","box":function ($v) { return H5.box($v, System.Int32);}},"s":{"a":2,"n":"set_AppointmentCount","t":8,"p":[$n[0].Int32],"rt":$n[0].Void,"fs":"AppointmentCount"},"fn":"AppointmentCount"},{"a":2,"n":"EncounterCount","t":16,"rt":$n[0].Int32,"g":{"a":2,"n":"get_EncounterCount","t":8,"rt":$n[0].Int32,"fg":"EncounterCount","box":function ($v) { return H5.box($v, System.Int32);}},"s":{"a":2,"n":"set_EncounterCount","t":8,"p":[$n[0].Int32],"rt":$n[0].Void,"fs":"EncounterCount"},"fn":"EncounterCount"},{"a":2,"n":"Error","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Error","t":8,"rt":$n[0].String,"fg":"Error"},"s":{"a":2,"n":"set_Error","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Error"},"fn":"Error"},{"a":2,"n":"Loading","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Loading","t":8,"rt":$n[0].Boolean,"fg":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Loading","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Loading"},"fn":"Loading"},{"a":2,"n":"PatientCount","t":16,"rt":$n[0].Int32,"g":{"a":2,"n":"get_PatientCount","t":8,"rt":$n[0].Int32,"fg":"PatientCount","box":function ($v) { return H5.box($v, System.Int32);}},"s":{"a":2,"n":"set_PatientCount","t":8,"p":[$n[0].Int32],"rt":$n[0].Void,"fs":"PatientCount"},"fn":"PatientCount"},{"a":2,"n":"PractitionerCount","t":16,"rt":$n[0].Int32,"g":{"a":2,"n":"get_PractitionerCount","t":8,"rt":$n[0].Int32,"fg":"PractitionerCount","box":function ($v) { return H5.box($v, System.Int32);}},"s":{"a":2,"n":"set_PractitionerCount","t":8,"p":[$n[0].Int32],"rt":$n[0].Void,"fs":"PractitionerCount"},"fn":"PractitionerCount"},{"a":1,"backing":true,"n":"<AppointmentCount>k__BackingField","t":4,"rt":$n[0].Int32,"sn":"AppointmentCount","box":function ($v) { return H5.box($v, System.Int32);}},{"a":1,"backing":true,"n":"<EncounterCount>k__BackingField","t":4,"rt":$n[0].Int32,"sn":"EncounterCount","box":function ($v) { return H5.box($v, System.Int32);}},{"a":1,"backing":true,"n":"<Error>k__BackingField","t":4,"rt":$n[0].String,"sn":"Error"},{"a":1,"backing":true,"n":"<Loading>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<PatientCount>k__BackingField","t":4,"rt":$n[0].Int32,"sn":"PatientCount","box":function ($v) { return H5.box($v, System.Int32);}},{"a":1,"backing":true,"n":"<PractitionerCount>k__BackingField","t":4,"rt":$n[0].Int32,"sn":"PractitionerCount","box":function ($v) { return H5.box($v, System.Int32);}}]}; }, $n);
     $m("Dashboard.Pages.DashboardPage", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"LoadData","is":true,"t":8,"pi":[{"n":"setState","pt":Function,"ps":0}],"sn":"LoadData","rt":$n[0].Void,"p":[Function]},{"a":2,"n":"Render","is":true,"t":8,"sn":"Render","rt":Object},{"a":1,"n":"RenderActionButton","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"icon","pt":Function,"ps":1},{"n":"variant","pt":$n[0].String,"ps":2}],"sn":"RenderActionButton","rt":Object,"p":[$n[0].String,Function,$n[0].String]},{"a":1,"n":"RenderActivityItem","is":true,"t":8,"pi":[{"n":"title","pt":$n[0].String,"ps":0},{"n":"subtitle","pt":$n[0].String,"ps":1},{"n":"time","pt":$n[0].String,"ps":2}],"sn":"RenderActivityItem","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String]},{"a":1,"n":"RenderError","is":true,"t":8,"pi":[{"n":"message","pt":$n[0].String,"ps":0}],"sn":"RenderError","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderQuickActions","is":true,"t":8,"sn":"RenderQuickActions","rt":Object},{"a":1,"n":"RenderRecentActivity","is":true,"t":8,"sn":"RenderRecentActivity","rt":Object}]}; }, $n);
+    $m("Dashboard.Pages.EditPatientState", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Active","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Active","t":8,"rt":$n[0].Boolean,"fg":"Active","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Active","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Active"},"fn":"Active"},{"a":2,"n":"AddressLine","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_AddressLine","t":8,"rt":$n[0].String,"fg":"AddressLine"},"s":{"a":2,"n":"set_AddressLine","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"AddressLine"},"fn":"AddressLine"},{"a":2,"n":"BirthDate","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_BirthDate","t":8,"rt":$n[0].String,"fg":"BirthDate"},"s":{"a":2,"n":"set_BirthDate","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"BirthDate"},"fn":"BirthDate"},{"a":2,"n":"City","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_City","t":8,"rt":$n[0].String,"fg":"City"},"s":{"a":2,"n":"set_City","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"City"},"fn":"City"},{"a":2,"n":"Country","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Country","t":8,"rt":$n[0].String,"fg":"Country"},"s":{"a":2,"n":"set_Country","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Country"},"fn":"Country"},{"a":2,"n":"Email","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Email","t":8,"rt":$n[0].String,"fg":"Email"},"s":{"a":2,"n":"set_Email","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Email"},"fn":"Email"},{"a":2,"n":"Error","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Error","t":8,"rt":$n[0].String,"fg":"Error"},"s":{"a":2,"n":"set_Error","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Error"},"fn":"Error"},{"a":2,"n":"FamilyName","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_FamilyName","t":8,"rt":$n[0].String,"fg":"FamilyName"},"s":{"a":2,"n":"set_FamilyName","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"FamilyName"},"fn":"FamilyName"},{"a":2,"n":"Gender","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Gender","t":8,"rt":$n[0].String,"fg":"Gender"},"s":{"a":2,"n":"set_Gender","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Gender"},"fn":"Gender"},{"a":2,"n":"GivenName","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_GivenName","t":8,"rt":$n[0].String,"fg":"GivenName"},"s":{"a":2,"n":"set_GivenName","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"GivenName"},"fn":"GivenName"},{"a":2,"n":"Loading","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Loading","t":8,"rt":$n[0].Boolean,"fg":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Loading","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Loading"},"fn":"Loading"},{"a":2,"n":"Patient","t":16,"rt":Object,"g":{"a":2,"n":"get_Patient","t":8,"rt":Object,"fg":"Patient"},"s":{"a":2,"n":"set_Patient","t":8,"p":[Object],"rt":$n[0].Void,"fs":"Patient"},"fn":"Patient"},{"a":2,"n":"Phone","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Phone","t":8,"rt":$n[0].String,"fg":"Phone"},"s":{"a":2,"n":"set_Phone","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Phone"},"fn":"Phone"},{"a":2,"n":"PostalCode","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_PostalCode","t":8,"rt":$n[0].String,"fg":"PostalCode"},"s":{"a":2,"n":"set_PostalCode","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"PostalCode"},"fn":"PostalCode"},{"a":2,"n":"Saving","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Saving","t":8,"rt":$n[0].Boolean,"fg":"Saving","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Saving","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Saving"},"fn":"Saving"},{"a":2,"n":"State","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_State","t":8,"rt":$n[0].String,"fg":"State"},"s":{"a":2,"n":"set_State","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"State"},"fn":"State"},{"a":2,"n":"Success","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Success","t":8,"rt":$n[0].String,"fg":"Success"},"s":{"a":2,"n":"set_Success","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Success"},"fn":"Success"},{"a":1,"backing":true,"n":"<Active>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Active","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<AddressLine>k__BackingField","t":4,"rt":$n[0].String,"sn":"AddressLine"},{"a":1,"backing":true,"n":"<BirthDate>k__BackingField","t":4,"rt":$n[0].String,"sn":"BirthDate"},{"a":1,"backing":true,"n":"<City>k__BackingField","t":4,"rt":$n[0].String,"sn":"City"},{"a":1,"backing":true,"n":"<Country>k__BackingField","t":4,"rt":$n[0].String,"sn":"Country"},{"a":1,"backing":true,"n":"<Email>k__BackingField","t":4,"rt":$n[0].String,"sn":"Email"},{"a":1,"backing":true,"n":"<Error>k__BackingField","t":4,"rt":$n[0].String,"sn":"Error"},{"a":1,"backing":true,"n":"<FamilyName>k__BackingField","t":4,"rt":$n[0].String,"sn":"FamilyName"},{"a":1,"backing":true,"n":"<Gender>k__BackingField","t":4,"rt":$n[0].String,"sn":"Gender"},{"a":1,"backing":true,"n":"<GivenName>k__BackingField","t":4,"rt":$n[0].String,"sn":"GivenName"},{"a":1,"backing":true,"n":"<Loading>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<Patient>k__BackingField","t":4,"rt":Object,"sn":"Patient"},{"a":1,"backing":true,"n":"<Phone>k__BackingField","t":4,"rt":$n[0].String,"sn":"Phone"},{"a":1,"backing":true,"n":"<PostalCode>k__BackingField","t":4,"rt":$n[0].String,"sn":"PostalCode"},{"a":1,"backing":true,"n":"<Saving>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Saving","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<State>k__BackingField","t":4,"rt":$n[0].String,"sn":"State"},{"a":1,"backing":true,"n":"<Success>k__BackingField","t":4,"rt":$n[0].String,"sn":"Success"}]}; }, $n);
+    $m("Dashboard.Pages.EditPatientPage", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"LoadPatient","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0},{"n":"setState","pt":Function,"ps":1}],"sn":"LoadPatient","rt":$n[0].Void,"p":[$n[0].String,Function]},{"a":2,"n":"Render","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0},{"n":"onBack","pt":Function,"ps":1}],"sn":"Render","rt":Object,"p":[$n[0].String,Function]},{"a":1,"n":"RenderCheckboxField","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"id","pt":$n[0].String,"ps":1},{"n":"value","pt":$n[0].Boolean,"ps":2},{"n":"onChange","pt":Function,"ps":3}],"sn":"RenderCheckboxField","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].Boolean,Function]},{"a":1,"n":"RenderErrorState","is":true,"t":8,"pi":[{"n":"error","pt":$n[0].String,"ps":0},{"n":"onBack","pt":Function,"ps":1}],"sn":"RenderErrorState","rt":Object,"p":[$n[0].String,Function]},{"a":1,"n":"RenderForm","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].EditPatientState,"ps":0},{"n":"setState","pt":Function,"ps":1},{"n":"onBack","pt":Function,"ps":2}],"sn":"RenderForm","rt":Object,"p":[$n[3].EditPatientState,Function,Function]},{"a":1,"n":"RenderFormActions","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].EditPatientState,"ps":0},{"n":"onBack","pt":Function,"ps":1}],"sn":"RenderFormActions","rt":Object,"p":[$n[3].EditPatientState,Function]},{"a":1,"n":"RenderFormSection","is":true,"t":8,"pi":[{"n":"title","pt":$n[0].String,"ps":0},{"n":"fields","pt":System.Array.type(Object),"ps":1}],"sn":"RenderFormSection","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":1,"n":"RenderHeader","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0},{"n":"onBack","pt":Function,"ps":1}],"sn":"RenderHeader","rt":Object,"p":[Object,Function]},{"a":1,"n":"RenderInputField","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"id","pt":$n[0].String,"ps":1},{"n":"value","pt":$n[0].String,"ps":2},{"n":"placeholder","pt":$n[0].String,"ps":3},{"n":"onChange","pt":Function,"ps":4},{"n":"type","dv":"text","o":true,"pt":$n[0].String,"ps":5}],"sn":"RenderInputField","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].String,Function,$n[0].String]},{"a":1,"n":"RenderLoadingState","is":true,"t":8,"sn":"RenderLoadingState","rt":Object},{"a":1,"n":"RenderSelectField","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"id","pt":$n[0].String,"ps":1},{"n":"value","pt":$n[0].String,"ps":2},{"n":"options","pt":$n[0].Array.type(System.ValueTuple$2(System.String,System.String)),"ps":3},{"n":"onChange","pt":Function,"ps":4}],"sn":"RenderSelectField","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].Array.type(System.ValueTuple$2(System.String,System.String)),Function]},{"a":1,"n":"SavePatient","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].EditPatientState,"ps":0},{"n":"setState","pt":Function,"ps":1},{"n":"onBack","pt":Function,"ps":2}],"sn":"SavePatient","rt":$n[0].Void,"p":[$n[3].EditPatientState,Function,Function]},{"a":1,"n":"UpdateActive","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].EditPatientState,"ps":0},{"n":"setState","pt":Function,"ps":1},{"n":"value","pt":$n[0].Boolean,"ps":2}],"sn":"UpdateActive","rt":$n[0].Void,"p":[$n[3].EditPatientState,Function,$n[0].Boolean]},{"a":1,"n":"UpdateField","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].EditPatientState,"ps":0},{"n":"setState","pt":Function,"ps":1},{"n":"field","pt":$n[0].String,"ps":2},{"n":"value","pt":$n[0].String,"ps":3}],"sn":"UpdateField","rt":$n[0].Void,"p":[$n[3].EditPatientState,Function,$n[0].String,$n[0].String]}]}; }, $n);
     $m("Dashboard.Pages.PatientsState", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Error","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Error","t":8,"rt":$n[0].String,"fg":"Error"},"s":{"a":2,"n":"set_Error","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Error"},"fn":"Error"},{"a":2,"n":"Loading","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Loading","t":8,"rt":$n[0].Boolean,"fg":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Loading","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Loading"},"fn":"Loading"},{"a":2,"n":"Patients","t":16,"rt":System.Array.type(Object),"g":{"a":2,"n":"get_Patients","t":8,"rt":System.Array.type(Object),"fg":"Patients"},"s":{"a":2,"n":"set_Patients","t":8,"p":[System.Array.type(Object)],"rt":$n[0].Void,"fs":"Patients"},"fn":"Patients"},{"a":2,"n":"SearchQuery","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_SearchQuery","t":8,"rt":$n[0].String,"fg":"SearchQuery"},"s":{"a":2,"n":"set_SearchQuery","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"SearchQuery"},"fn":"SearchQuery"},{"a":2,"n":"SelectedPatient","t":16,"rt":Object,"g":{"a":2,"n":"get_SelectedPatient","t":8,"rt":Object,"fg":"SelectedPatient"},"s":{"a":2,"n":"set_SelectedPatient","t":8,"p":[Object],"rt":$n[0].Void,"fs":"SelectedPatient"},"fn":"SelectedPatient"},{"a":1,"backing":true,"n":"<Error>k__BackingField","t":4,"rt":$n[0].String,"sn":"Error"},{"a":1,"backing":true,"n":"<Loading>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<Patients>k__BackingField","t":4,"rt":System.Array.type(Object),"sn":"Patients"},{"a":1,"backing":true,"n":"<SearchQuery>k__BackingField","t":4,"rt":$n[0].String,"sn":"SearchQuery"},{"a":1,"backing":true,"n":"<SelectedPatient>k__BackingField","t":4,"rt":Object,"sn":"SelectedPatient"}]}; }, $n);
-    $m("Dashboard.Pages.PatientsPage", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"FirstChar","is":true,"t":8,"pi":[{"n":"s","pt":$n[0].String,"ps":0}],"sn":"FirstChar","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"GenderBadgeClass","is":true,"t":8,"pi":[{"n":"gender","pt":$n[0].String,"ps":0}],"sn":"GenderBadgeClass","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"GetInitials","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0}],"sn":"GetInitials","rt":$n[0].String,"p":[Object]},{"a":1,"n":"HandleSearch","is":true,"t":8,"pi":[{"n":"query","pt":$n[0].String,"ps":0},{"n":"setState","pt":Function,"ps":1}],"sn":"HandleSearch","rt":$n[0].Void,"p":[$n[0].String,Function]},{"a":1,"n":"LoadPatients","is":true,"t":8,"pi":[{"n":"setState","pt":Function,"ps":0}],"sn":"LoadPatients","rt":$n[0].Void,"p":[Function]},{"a":2,"n":"Render","is":true,"t":8,"sn":"Render","rt":Object},{"a":1,"n":"RenderActions","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0},{"n":"onSelect","pt":Function,"ps":1}],"sn":"RenderActions","rt":Object,"p":[Object,Function]},{"a":1,"n":"RenderCell","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0},{"n":"key","pt":$n[0].String,"ps":1},{"n":"onSelect","pt":Function,"ps":2}],"sn":"RenderCell","rt":Object,"p":[Object,$n[0].String,Function]},{"a":1,"n":"RenderContact","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0}],"sn":"RenderContact","rt":Object,"p":[Object]},{"a":1,"n":"RenderError","is":true,"t":8,"pi":[{"n":"message","pt":$n[0].String,"ps":0}],"sn":"RenderError","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderGender","is":true,"t":8,"pi":[{"n":"gender","pt":$n[0].String,"ps":0}],"sn":"RenderGender","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderPatientName","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0}],"sn":"RenderPatientName","rt":Object,"p":[Object]},{"a":1,"n":"RenderPatientTable","is":true,"t":8,"pi":[{"n":"patients","pt":System.Array.type(Object),"ps":0},{"n":"onSelect","pt":Function,"ps":1}],"sn":"RenderPatientTable","rt":Object,"p":[System.Array.type(Object),Function]},{"a":1,"n":"RenderStatus","is":true,"t":8,"pi":[{"n":"active","pt":$n[0].Boolean,"ps":0}],"sn":"RenderStatus","rt":Object,"p":[$n[0].Boolean]},{"a":1,"n":"SelectPatient","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0},{"n":"setState","pt":Function,"ps":1}],"sn":"SelectPatient","rt":$n[0].Void,"p":[Object,Function]}]}; }, $n);
+    $m("Dashboard.Pages.PatientsPage", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"FirstChar","is":true,"t":8,"pi":[{"n":"s","pt":$n[0].String,"ps":0}],"sn":"FirstChar","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"GenderBadgeClass","is":true,"t":8,"pi":[{"n":"gender","pt":$n[0].String,"ps":0}],"sn":"GenderBadgeClass","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"GetInitials","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0}],"sn":"GetInitials","rt":$n[0].String,"p":[Object]},{"a":1,"n":"HandleSearch","is":true,"t":8,"pi":[{"n":"query","pt":$n[0].String,"ps":0},{"n":"setState","pt":Function,"ps":1}],"sn":"HandleSearch","rt":$n[0].Void,"p":[$n[0].String,Function]},{"a":1,"n":"LoadPatients","is":true,"t":8,"pi":[{"n":"setState","pt":Function,"ps":0}],"sn":"LoadPatients","rt":$n[0].Void,"p":[Function]},{"a":2,"n":"Render","is":true,"t":8,"pi":[{"n":"onEditPatient","dv":null,"o":true,"pt":Function,"ps":0}],"sn":"Render","rt":Object,"p":[Function]},{"a":1,"n":"RenderActions","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0},{"n":"onSelect","pt":Function,"ps":1}],"sn":"RenderActions","rt":Object,"p":[Object,Function]},{"a":1,"n":"RenderCell","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0},{"n":"key","pt":$n[0].String,"ps":1},{"n":"onSelect","pt":Function,"ps":2}],"sn":"RenderCell","rt":Object,"p":[Object,$n[0].String,Function]},{"a":1,"n":"RenderContact","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0}],"sn":"RenderContact","rt":Object,"p":[Object]},{"a":1,"n":"RenderError","is":true,"t":8,"pi":[{"n":"message","pt":$n[0].String,"ps":0}],"sn":"RenderError","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderGender","is":true,"t":8,"pi":[{"n":"gender","pt":$n[0].String,"ps":0}],"sn":"RenderGender","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderPatientName","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0}],"sn":"RenderPatientName","rt":Object,"p":[Object]},{"a":1,"n":"RenderPatientTable","is":true,"t":8,"pi":[{"n":"patients","pt":System.Array.type(Object),"ps":0},{"n":"onSelect","pt":Function,"ps":1}],"sn":"RenderPatientTable","rt":Object,"p":[System.Array.type(Object),Function]},{"a":1,"n":"RenderStatus","is":true,"t":8,"pi":[{"n":"active","pt":$n[0].Boolean,"ps":0}],"sn":"RenderStatus","rt":Object,"p":[$n[0].Boolean]},{"a":1,"n":"SelectPatient","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0},{"n":"setState","pt":Function,"ps":1}],"sn":"SelectPatient","rt":$n[0].Void,"p":[Object,Function]},{"a":1,"n":"_onEditPatient","is":true,"t":4,"rt":Function,"sn":"_onEditPatient"}]}; }, $n);
     $m("Dashboard.Pages.PractitionersState", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Error","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Error","t":8,"rt":$n[0].String,"fg":"Error"},"s":{"a":2,"n":"set_Error","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Error"},"fn":"Error"},{"a":2,"n":"Loading","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Loading","t":8,"rt":$n[0].Boolean,"fg":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Loading","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Loading"},"fn":"Loading"},{"a":2,"n":"Practitioners","t":16,"rt":System.Array.type(Object),"g":{"a":2,"n":"get_Practitioners","t":8,"rt":System.Array.type(Object),"fg":"Practitioners"},"s":{"a":2,"n":"set_Practitioners","t":8,"p":[System.Array.type(Object)],"rt":$n[0].Void,"fs":"Practitioners"},"fn":"Practitioners"},{"a":2,"n":"SpecialtyFilter","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_SpecialtyFilter","t":8,"rt":$n[0].String,"fg":"SpecialtyFilter"},"s":{"a":2,"n":"set_SpecialtyFilter","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"SpecialtyFilter"},"fn":"SpecialtyFilter"},{"a":1,"backing":true,"n":"<Error>k__BackingField","t":4,"rt":$n[0].String,"sn":"Error"},{"a":1,"backing":true,"n":"<Loading>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<Practitioners>k__BackingField","t":4,"rt":System.Array.type(Object),"sn":"Practitioners"},{"a":1,"backing":true,"n":"<SpecialtyFilter>k__BackingField","t":4,"rt":$n[0].String,"sn":"SpecialtyFilter"}]}; }, $n);
     $m("Dashboard.Pages.PractitionersPage", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"FilterBySpecialty","is":true,"t":8,"pi":[{"n":"specialty","pt":$n[0].String,"ps":0},{"n":"setState","pt":Function,"ps":1}],"sn":"FilterBySpecialty","rt":$n[0].Void,"p":[$n[0].String,Function]},{"a":1,"n":"FirstChar","is":true,"t":8,"pi":[{"n":"s","pt":$n[0].String,"ps":0}],"sn":"FirstChar","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"GetInitials","is":true,"t":8,"pi":[{"n":"p","pt":Object,"ps":0}],"sn":"GetInitials","rt":$n[0].String,"p":[Object]},{"a":1,"n":"LoadPractitioners","is":true,"t":8,"pi":[{"n":"setState","pt":Function,"ps":0}],"sn":"LoadPractitioners","rt":$n[0].Void,"p":[Function]},{"a":2,"n":"Render","is":true,"t":8,"sn":"Render","rt":Object},{"a":1,"n":"RenderDetail","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"value","pt":$n[0].String,"ps":1}],"sn":"RenderDetail","rt":Object,"p":[$n[0].String,$n[0].String]},{"a":1,"n":"RenderEmpty","is":true,"t":8,"sn":"RenderEmpty","rt":Object},{"a":1,"n":"RenderError","is":true,"t":8,"pi":[{"n":"message","pt":$n[0].String,"ps":0}],"sn":"RenderError","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderLoadingGrid","is":true,"t":8,"sn":"RenderLoadingGrid","rt":Object},{"a":1,"n":"RenderPractitionerCard","is":true,"t":8,"pi":[{"n":"practitioner","pt":Object,"ps":0}],"sn":"RenderPractitionerCard","rt":Object,"p":[Object]},{"a":1,"n":"RenderPractitionerGrid","is":true,"t":8,"pi":[{"n":"practitioners","pt":System.Array.type(Object),"ps":0}],"sn":"RenderPractitionerGrid","rt":Object,"p":[System.Array.type(Object)]}]}; }, $n);
     $m("Dashboard.Components.Column", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"ClassName","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_ClassName","t":8,"rt":$n[0].String,"fg":"ClassName"},"s":{"a":2,"n":"set_ClassName","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"ClassName"},"fn":"ClassName"},{"a":2,"n":"Header","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Header","t":8,"rt":$n[0].String,"fg":"Header"},"s":{"a":2,"n":"set_Header","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Header"},"fn":"Header"},{"a":2,"n":"Key","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Key","t":8,"rt":$n[0].String,"fg":"Key"},"s":{"a":2,"n":"set_Key","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Key"},"fn":"Key"},{"a":1,"backing":true,"n":"<ClassName>k__BackingField","t":4,"rt":$n[0].String,"sn":"ClassName"},{"a":1,"backing":true,"n":"<Header>k__BackingField","t":4,"rt":$n[0].String,"sn":"Header"},{"a":1,"backing":true,"n":"<Key>k__BackingField","t":4,"rt":$n[0].String,"sn":"Key"}]}; }, $n);
     $m("Dashboard.Components.DataTable", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"Render","is":true,"t":8,"pi":[{"n":"columns","pt":System.Array.type(Dashboard.Components.Column),"ps":0},{"n":"data","pt":System.Array.type(System.Object),"ps":1},{"n":"getKey","pt":Function,"ps":2},{"n":"renderCell","pt":Function,"ps":3},{"n":"onRowClick","dv":null,"o":true,"pt":Function,"ps":4}],"tpc":1,"tprm":["T"],"sn":"Render","rt":Object,"p":[System.Array.type(Dashboard.Components.Column),System.Array.type(System.Object),Function,Function,Function]},{"a":2,"n":"RenderEmpty","is":true,"t":8,"pi":[{"n":"message","dv":"No data available","o":true,"pt":$n[0].String,"ps":0}],"sn":"RenderEmpty","rt":Object,"p":[$n[0].String]},{"a":2,"n":"RenderLoading","is":true,"t":8,"pi":[{"n":"rows","dv":5,"o":true,"pt":$n[0].Int32,"ps":0},{"n":"columns","dv":4,"o":true,"pt":$n[0].Int32,"ps":1}],"sn":"RenderLoading","rt":Object,"p":[$n[0].Int32,$n[0].Int32]}]}; }, $n);
     $m("Dashboard.Components.Header", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"Render","is":true,"t":8,"pi":[{"n":"title","pt":$n[0].String,"ps":0},{"n":"searchQuery","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"onSearchChange","dv":null,"o":true,"pt":Function,"ps":2},{"n":"notificationCount","dv":0,"o":true,"pt":$n[0].Int32,"ps":3}],"sn":"Render","rt":Object,"p":[$n[0].String,$n[0].String,Function,$n[0].Int32]},{"a":1,"n":"RenderNotificationButton","is":true,"t":8,"pi":[{"n":"count","pt":$n[0].Int32,"ps":0}],"sn":"RenderNotificationButton","rt":Object,"p":[$n[0].Int32]},{"a":1,"n":"RenderUserAvatar","is":true,"t":8,"sn":"RenderUserAvatar","rt":Object}]}; }, $n);
     $m("Dashboard.Components.Icons", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"Activity","is":true,"t":8,"sn":"Activity","rt":Object},{"a":2,"n":"Bell","is":true,"t":8,"sn":"Bell","rt":Object},{"a":2,"n":"Calendar","is":true,"t":8,"sn":"Calendar","rt":Object},{"a":2,"n":"ChevronLeft","is":true,"t":8,"sn":"ChevronLeft","rt":Object},{"a":2,"n":"ChevronRight","is":true,"t":8,"sn":"ChevronRight","rt":Object},{"a":2,"n":"Clipboard","is":true,"t":8,"sn":"Clipboard","rt":Object},{"a":2,"n":"Edit","is":true,"t":8,"sn":"Edit","rt":Object},{"a":2,"n":"Eye","is":true,"t":8,"sn":"Eye","rt":Object},{"a":2,"n":"Heart","is":true,"t":8,"sn":"Heart","rt":Object},{"a":2,"n":"Home","is":true,"t":8,"sn":"Home","rt":Object},{"a":2,"n":"Menu","is":true,"t":8,"sn":"Menu","rt":Object},{"a":2,"n":"Pill","is":true,"t":8,"sn":"Pill","rt":Object},{"a":2,"n":"Plus","is":true,"t":8,"sn":"Plus","rt":Object},{"a":2,"n":"Refresh","is":true,"t":8,"sn":"Refresh","rt":Object},{"a":2,"n":"Search","is":true,"t":8,"sn":"Search","rt":Object},{"a":2,"n":"Settings","is":true,"t":8,"sn":"Settings","rt":Object},{"a":2,"n":"Trash","is":true,"t":8,"sn":"Trash","rt":Object},{"a":2,"n":"TrendDown","is":true,"t":8,"sn":"TrendDown","rt":Object},{"a":2,"n":"TrendUp","is":true,"t":8,"sn":"TrendUp","rt":Object},{"a":2,"n":"UserDoctor","is":true,"t":8,"sn":"UserDoctor","rt":Object},{"a":2,"n":"Users","is":true,"t":8,"sn":"Users","rt":Object},{"a":2,"n":"X","is":true,"t":8,"sn":"X","rt":Object}]}; }, $n);
-    $m("Dashboard.Components.TrendDirection", function () { return {"att":257,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Down","is":true,"t":4,"rt":$n[3].TrendDirection,"sn":"Down","box":function ($v) { return H5.box($v, Dashboard.Components.TrendDirection, System.Enum.toStringFn(Dashboard.Components.TrendDirection));}},{"a":2,"n":"Neutral","is":true,"t":4,"rt":$n[3].TrendDirection,"sn":"Neutral","box":function ($v) { return H5.box($v, Dashboard.Components.TrendDirection, System.Enum.toStringFn(Dashboard.Components.TrendDirection));}},{"a":2,"n":"Up","is":true,"t":4,"rt":$n[3].TrendDirection,"sn":"Up","box":function ($v) { return H5.box($v, Dashboard.Components.TrendDirection, System.Enum.toStringFn(Dashboard.Components.TrendDirection));}}]}; }, $n);
-    $m("Dashboard.Components.MetricCardProps", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Icon","t":16,"rt":Function,"g":{"a":2,"n":"get_Icon","t":8,"rt":Function,"fg":"Icon"},"s":{"a":2,"n":"set_Icon","t":8,"p":[Function],"rt":$n[0].Void,"fs":"Icon"},"fn":"Icon"},{"a":2,"n":"IconColor","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_IconColor","t":8,"rt":$n[0].String,"fg":"IconColor"},"s":{"a":2,"n":"set_IconColor","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"IconColor"},"fn":"IconColor"},{"a":2,"n":"Label","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Label","t":8,"rt":$n[0].String,"fg":"Label"},"s":{"a":2,"n":"set_Label","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Label"},"fn":"Label"},{"a":2,"n":"Trend","t":16,"rt":$n[3].TrendDirection,"g":{"a":2,"n":"get_Trend","t":8,"rt":$n[3].TrendDirection,"fg":"Trend","box":function ($v) { return H5.box($v, Dashboard.Components.TrendDirection, System.Enum.toStringFn(Dashboard.Components.TrendDirection));}},"s":{"a":2,"n":"set_Trend","t":8,"p":[$n[3].TrendDirection],"rt":$n[0].Void,"fs":"Trend"},"fn":"Trend"},{"a":2,"n":"TrendValue","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_TrendValue","t":8,"rt":$n[0].String,"fg":"TrendValue"},"s":{"a":2,"n":"set_TrendValue","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"TrendValue"},"fn":"TrendValue"},{"a":2,"n":"Value","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Value","t":8,"rt":$n[0].String,"fg":"Value"},"s":{"a":2,"n":"set_Value","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Value"},"fn":"Value"},{"a":1,"backing":true,"n":"<Icon>k__BackingField","t":4,"rt":Function,"sn":"Icon"},{"a":1,"backing":true,"n":"<IconColor>k__BackingField","t":4,"rt":$n[0].String,"sn":"IconColor"},{"a":1,"backing":true,"n":"<Label>k__BackingField","t":4,"rt":$n[0].String,"sn":"Label"},{"a":1,"backing":true,"n":"<Trend>k__BackingField","t":4,"rt":$n[3].TrendDirection,"sn":"Trend","box":function ($v) { return H5.box($v, Dashboard.Components.TrendDirection, System.Enum.toStringFn(Dashboard.Components.TrendDirection));}},{"a":1,"backing":true,"n":"<TrendValue>k__BackingField","t":4,"rt":$n[0].String,"sn":"TrendValue"},{"a":1,"backing":true,"n":"<Value>k__BackingField","t":4,"rt":$n[0].String,"sn":"Value"}]}; }, $n);
-    $m("Dashboard.Components.MetricCard", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"Render","is":true,"t":8,"pi":[{"n":"props","pt":$n[3].MetricCardProps,"ps":0}],"sn":"Render","rt":Object,"p":[$n[3].MetricCardProps]},{"a":1,"n":"TrendClass","is":true,"t":8,"pi":[{"n":"trend","pt":$n[3].TrendDirection,"ps":0}],"sn":"TrendClass","rt":$n[0].String,"p":[$n[3].TrendDirection]},{"a":1,"n":"TrendIcon","is":true,"t":8,"pi":[{"n":"trend","pt":$n[3].TrendDirection,"ps":0}],"sn":"TrendIcon","rt":Object,"p":[$n[3].TrendDirection]}]}; }, $n);
+    $m("Dashboard.Components.TrendDirection", function () { return {"att":257,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Down","is":true,"t":4,"rt":$n[4].TrendDirection,"sn":"Down","box":function ($v) { return H5.box($v, Dashboard.Components.TrendDirection, System.Enum.toStringFn(Dashboard.Components.TrendDirection));}},{"a":2,"n":"Neutral","is":true,"t":4,"rt":$n[4].TrendDirection,"sn":"Neutral","box":function ($v) { return H5.box($v, Dashboard.Components.TrendDirection, System.Enum.toStringFn(Dashboard.Components.TrendDirection));}},{"a":2,"n":"Up","is":true,"t":4,"rt":$n[4].TrendDirection,"sn":"Up","box":function ($v) { return H5.box($v, Dashboard.Components.TrendDirection, System.Enum.toStringFn(Dashboard.Components.TrendDirection));}}]}; }, $n);
+    $m("Dashboard.Components.MetricCardProps", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Icon","t":16,"rt":Function,"g":{"a":2,"n":"get_Icon","t":8,"rt":Function,"fg":"Icon"},"s":{"a":2,"n":"set_Icon","t":8,"p":[Function],"rt":$n[0].Void,"fs":"Icon"},"fn":"Icon"},{"a":2,"n":"IconColor","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_IconColor","t":8,"rt":$n[0].String,"fg":"IconColor"},"s":{"a":2,"n":"set_IconColor","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"IconColor"},"fn":"IconColor"},{"a":2,"n":"Label","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Label","t":8,"rt":$n[0].String,"fg":"Label"},"s":{"a":2,"n":"set_Label","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Label"},"fn":"Label"},{"a":2,"n":"Trend","t":16,"rt":$n[4].TrendDirection,"g":{"a":2,"n":"get_Trend","t":8,"rt":$n[4].TrendDirection,"fg":"Trend","box":function ($v) { return H5.box($v, Dashboard.Components.TrendDirection, System.Enum.toStringFn(Dashboard.Components.TrendDirection));}},"s":{"a":2,"n":"set_Trend","t":8,"p":[$n[4].TrendDirection],"rt":$n[0].Void,"fs":"Trend"},"fn":"Trend"},{"a":2,"n":"TrendValue","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_TrendValue","t":8,"rt":$n[0].String,"fg":"TrendValue"},"s":{"a":2,"n":"set_TrendValue","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"TrendValue"},"fn":"TrendValue"},{"a":2,"n":"Value","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Value","t":8,"rt":$n[0].String,"fg":"Value"},"s":{"a":2,"n":"set_Value","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Value"},"fn":"Value"},{"a":1,"backing":true,"n":"<Icon>k__BackingField","t":4,"rt":Function,"sn":"Icon"},{"a":1,"backing":true,"n":"<IconColor>k__BackingField","t":4,"rt":$n[0].String,"sn":"IconColor"},{"a":1,"backing":true,"n":"<Label>k__BackingField","t":4,"rt":$n[0].String,"sn":"Label"},{"a":1,"backing":true,"n":"<Trend>k__BackingField","t":4,"rt":$n[4].TrendDirection,"sn":"Trend","box":function ($v) { return H5.box($v, Dashboard.Components.TrendDirection, System.Enum.toStringFn(Dashboard.Components.TrendDirection));}},{"a":1,"backing":true,"n":"<TrendValue>k__BackingField","t":4,"rt":$n[0].String,"sn":"TrendValue"},{"a":1,"backing":true,"n":"<Value>k__BackingField","t":4,"rt":$n[0].String,"sn":"Value"}]}; }, $n);
+    $m("Dashboard.Components.MetricCard", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"Render","is":true,"t":8,"pi":[{"n":"props","pt":$n[4].MetricCardProps,"ps":0}],"sn":"Render","rt":Object,"p":[$n[4].MetricCardProps]},{"a":1,"n":"TrendClass","is":true,"t":8,"pi":[{"n":"trend","pt":$n[4].TrendDirection,"ps":0}],"sn":"TrendClass","rt":$n[0].String,"p":[$n[4].TrendDirection]},{"a":1,"n":"TrendIcon","is":true,"t":8,"pi":[{"n":"trend","pt":$n[4].TrendDirection,"ps":0}],"sn":"TrendIcon","rt":Object,"p":[$n[4].TrendDirection]}]}; }, $n);
     $m("Dashboard.Components.NavItem", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Badge","t":16,"rt":$n[0].Nullable$1(System.Int32),"g":{"a":2,"n":"get_Badge","t":8,"rt":$n[0].Nullable$1(System.Int32),"fg":"Badge","box":function ($v) { return H5.box($v, System.Int32, System.Nullable.toString, System.Nullable.getHashCode);}},"s":{"a":2,"n":"set_Badge","t":8,"p":[$n[0].Nullable$1(System.Int32)],"rt":$n[0].Void,"fs":"Badge"},"fn":"Badge"},{"a":2,"n":"Icon","t":16,"rt":Function,"g":{"a":2,"n":"get_Icon","t":8,"rt":Function,"fg":"Icon"},"s":{"a":2,"n":"set_Icon","t":8,"p":[Function],"rt":$n[0].Void,"fs":"Icon"},"fn":"Icon"},{"a":2,"n":"Id","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Id","t":8,"rt":$n[0].String,"fg":"Id"},"s":{"a":2,"n":"set_Id","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Id"},"fn":"Id"},{"a":2,"n":"Label","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Label","t":8,"rt":$n[0].String,"fg":"Label"},"s":{"a":2,"n":"set_Label","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Label"},"fn":"Label"},{"a":1,"backing":true,"n":"<Badge>k__BackingField","t":4,"rt":$n[0].Nullable$1(System.Int32),"sn":"Badge","box":function ($v) { return H5.box($v, System.Int32, System.Nullable.toString, System.Nullable.getHashCode);}},{"a":1,"backing":true,"n":"<Icon>k__BackingField","t":4,"rt":Function,"sn":"Icon"},{"a":1,"backing":true,"n":"<Id>k__BackingField","t":4,"rt":$n[0].String,"sn":"Id"},{"a":1,"backing":true,"n":"<Label>k__BackingField","t":4,"rt":$n[0].String,"sn":"Label"}]}; }, $n);
     $m("Dashboard.Components.NavSection", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Items","t":16,"rt":System.Array.type(Dashboard.Components.NavItem),"g":{"a":2,"n":"get_Items","t":8,"rt":System.Array.type(Dashboard.Components.NavItem),"fg":"Items"},"s":{"a":2,"n":"set_Items","t":8,"p":[System.Array.type(Dashboard.Components.NavItem)],"rt":$n[0].Void,"fs":"Items"},"fn":"Items"},{"a":2,"n":"Title","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Title","t":8,"rt":$n[0].String,"fg":"Title"},"s":{"a":2,"n":"set_Title","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Title"},"fn":"Title"},{"a":1,"backing":true,"n":"<Items>k__BackingField","t":4,"rt":System.Array.type(Dashboard.Components.NavItem),"sn":"Items"},{"a":1,"backing":true,"n":"<Title>k__BackingField","t":4,"rt":$n[0].String,"sn":"Title"}]}; }, $n);
-    $m("Dashboard.Components.Sidebar", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"GetNavSections","is":true,"t":8,"sn":"GetNavSections","rt":System.Array.type(Dashboard.Components.NavSection)},{"a":2,"n":"Render","is":true,"t":8,"pi":[{"n":"activeView","pt":$n[0].String,"ps":0},{"n":"onNavigate","pt":Function,"ps":1},{"n":"collapsed","pt":$n[0].Boolean,"ps":2},{"n":"onToggle","pt":Function,"ps":3}],"sn":"Render","rt":Object,"p":[$n[0].String,Function,$n[0].Boolean,Function]},{"a":1,"n":"RenderFooter","is":true,"t":8,"pi":[{"n":"collapsed","pt":$n[0].Boolean,"ps":0}],"sn":"RenderFooter","rt":Object,"p":[$n[0].Boolean]},{"a":1,"n":"RenderHeader","is":true,"t":8,"pi":[{"n":"collapsed","pt":$n[0].Boolean,"ps":0}],"sn":"RenderHeader","rt":Object,"p":[$n[0].Boolean]},{"a":1,"n":"RenderNavItem","is":true,"t":8,"pi":[{"n":"item","pt":$n[3].NavItem,"ps":0},{"n":"activeView","pt":$n[0].String,"ps":1},{"n":"onNavigate","pt":Function,"ps":2}],"sn":"RenderNavItem","rt":Object,"p":[$n[3].NavItem,$n[0].String,Function]},{"a":1,"n":"RenderSection","is":true,"t":8,"pi":[{"n":"section","pt":$n[3].NavSection,"ps":0},{"n":"activeView","pt":$n[0].String,"ps":1},{"n":"onNavigate","pt":Function,"ps":2}],"sn":"RenderSection","rt":Object,"p":[$n[3].NavSection,$n[0].String,Function]}]}; }, $n);
-    $m("Dashboard.Api.ApiClient", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"Configure","is":true,"t":8,"pi":[{"n":"clinicalUrl","pt":$n[0].String,"ps":0},{"n":"schedulingUrl","pt":$n[0].String,"ps":1}],"sn":"Configure","rt":$n[0].Void,"p":[$n[0].String,$n[0].String]},{"a":1,"n":"EncodeUri","is":true,"t":8,"pi":[{"n":"value","pt":$n[0].String,"ps":0}],"sn":"EncodeUri","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"FetchAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0}],"sn":"FetchAsync","rt":$n[4].Task$1(System.String),"p":[$n[0].String]},{"a":2,"n":"GetAppointmentAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetAppointmentAsync","rt":$n[4].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetAppointmentsAsync","is":true,"t":8,"sn":"GetAppointmentsAsync","rt":$n[4].Task$1(System.Array.type(Object))},{"a":2,"n":"GetConditionsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetConditionsAsync","rt":$n[4].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetEncountersAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetEncountersAsync","rt":$n[4].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetMedicationsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetMedicationsAsync","rt":$n[4].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPatientAppointmentsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetPatientAppointmentsAsync","rt":$n[4].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPatientAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetPatientAsync","rt":$n[4].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetPatientsAsync","is":true,"t":8,"sn":"GetPatientsAsync","rt":$n[4].Task$1(System.Array.type(Object))},{"a":2,"n":"GetPractitionerAppointmentsAsync","is":true,"t":8,"pi":[{"n":"practitionerId","pt":$n[0].String,"ps":0}],"sn":"GetPractitionerAppointmentsAsync","rt":$n[4].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPractitionerAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetPractitionerAsync","rt":$n[4].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetPractitionersAsync","is":true,"t":8,"sn":"GetPractitionersAsync","rt":$n[4].Task$1(System.Array.type(Object))},{"a":1,"n":"ParseJson","is":true,"t":8,"pi":[{"n":"json","pt":$n[0].String,"ps":0}],"tpc":1,"tprm":["T"],"sn":"ParseJson","rt":System.Object,"p":[$n[0].String]},{"a":1,"n":"PostAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0},{"n":"data","pt":$n[0].Object,"ps":1}],"sn":"PostAsync","rt":$n[4].Task$1(System.String),"p":[$n[0].String,$n[0].Object]},{"a":2,"n":"SearchPatientsAsync","is":true,"t":8,"pi":[{"n":"query","pt":$n[0].String,"ps":0}],"sn":"SearchPatientsAsync","rt":$n[4].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"SearchPractitionersAsync","is":true,"t":8,"pi":[{"n":"specialty","pt":$n[0].String,"ps":0}],"sn":"SearchPractitionersAsync","rt":$n[4].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":1,"n":"_clinicalBaseUrl","is":true,"t":4,"rt":$n[0].String,"sn":"_clinicalBaseUrl"},{"a":1,"n":"_schedulingBaseUrl","is":true,"t":4,"rt":$n[0].String,"sn":"_schedulingBaseUrl"}]}; }, $n);
+    $m("Dashboard.Components.Sidebar", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"GetNavSections","is":true,"t":8,"sn":"GetNavSections","rt":System.Array.type(Dashboard.Components.NavSection)},{"a":2,"n":"Render","is":true,"t":8,"pi":[{"n":"activeView","pt":$n[0].String,"ps":0},{"n":"onNavigate","pt":Function,"ps":1},{"n":"collapsed","pt":$n[0].Boolean,"ps":2},{"n":"onToggle","pt":Function,"ps":3}],"sn":"Render","rt":Object,"p":[$n[0].String,Function,$n[0].Boolean,Function]},{"a":1,"n":"RenderFooter","is":true,"t":8,"pi":[{"n":"collapsed","pt":$n[0].Boolean,"ps":0}],"sn":"RenderFooter","rt":Object,"p":[$n[0].Boolean]},{"a":1,"n":"RenderHeader","is":true,"t":8,"pi":[{"n":"collapsed","pt":$n[0].Boolean,"ps":0}],"sn":"RenderHeader","rt":Object,"p":[$n[0].Boolean]},{"a":1,"n":"RenderNavItem","is":true,"t":8,"pi":[{"n":"item","pt":$n[4].NavItem,"ps":0},{"n":"activeView","pt":$n[0].String,"ps":1},{"n":"onNavigate","pt":Function,"ps":2}],"sn":"RenderNavItem","rt":Object,"p":[$n[4].NavItem,$n[0].String,Function]},{"a":1,"n":"RenderSection","is":true,"t":8,"pi":[{"n":"section","pt":$n[4].NavSection,"ps":0},{"n":"activeView","pt":$n[0].String,"ps":1},{"n":"onNavigate","pt":Function,"ps":2}],"sn":"RenderSection","rt":Object,"p":[$n[4].NavSection,$n[0].String,Function]}]}; }, $n);
+    $m("Dashboard.Api.ApiClient", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"Configure","is":true,"t":8,"pi":[{"n":"clinicalUrl","pt":$n[0].String,"ps":0},{"n":"schedulingUrl","pt":$n[0].String,"ps":1}],"sn":"Configure","rt":$n[0].Void,"p":[$n[0].String,$n[0].String]},{"a":2,"n":"CreatePatientAsync","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0}],"sn":"CreatePatientAsync","rt":$n[5].Task$1(Object),"p":[Object]},{"a":1,"n":"EncodeUri","is":true,"t":8,"pi":[{"n":"value","pt":$n[0].String,"ps":0}],"sn":"EncodeUri","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"FetchAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0}],"sn":"FetchAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String]},{"a":2,"n":"GetAppointmentAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetAppointmentAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetAppointmentsAsync","is":true,"t":8,"sn":"GetAppointmentsAsync","rt":$n[5].Task$1(System.Array.type(Object))},{"a":2,"n":"GetConditionsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetConditionsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetEncountersAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetEncountersAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetMedicationsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetMedicationsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPatientAppointmentsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetPatientAppointmentsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPatientAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetPatientAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetPatientsAsync","is":true,"t":8,"sn":"GetPatientsAsync","rt":$n[5].Task$1(System.Array.type(Object))},{"a":2,"n":"GetPractitionerAppointmentsAsync","is":true,"t":8,"pi":[{"n":"practitionerId","pt":$n[0].String,"ps":0}],"sn":"GetPractitionerAppointmentsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPractitionerAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetPractitionerAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetPractitionersAsync","is":true,"t":8,"sn":"GetPractitionersAsync","rt":$n[5].Task$1(System.Array.type(Object))},{"a":1,"n":"ParseJson","is":true,"t":8,"pi":[{"n":"json","pt":$n[0].String,"ps":0}],"tpc":1,"tprm":["T"],"sn":"ParseJson","rt":System.Object,"p":[$n[0].String]},{"a":1,"n":"PostAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0},{"n":"data","pt":$n[0].Object,"ps":1}],"sn":"PostAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String,$n[0].Object]},{"a":1,"n":"PutAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0},{"n":"data","pt":$n[0].Object,"ps":1}],"sn":"PutAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String,$n[0].Object]},{"a":2,"n":"SearchPatientsAsync","is":true,"t":8,"pi":[{"n":"query","pt":$n[0].String,"ps":0}],"sn":"SearchPatientsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"SearchPractitionersAsync","is":true,"t":8,"pi":[{"n":"specialty","pt":$n[0].String,"ps":0}],"sn":"SearchPractitionersAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"UpdatePatientAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0},{"n":"patient","pt":Object,"ps":1}],"sn":"UpdatePatientAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String,Object]},{"a":1,"n":"_clinicalBaseUrl","is":true,"t":4,"rt":$n[0].String,"sn":"_clinicalBaseUrl"},{"a":1,"n":"_schedulingBaseUrl","is":true,"t":4,"rt":$n[0].String,"sn":"_schedulingBaseUrl"}]}; }, $n);
 });

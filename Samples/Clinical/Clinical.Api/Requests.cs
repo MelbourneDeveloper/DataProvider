@@ -19,6 +19,24 @@ public sealed record CreatePatientRequest(
 );
 
 /// <summary>
+/// Patient update request DTO.
+/// </summary>
+public sealed record UpdatePatientRequest(
+    bool Active,
+    string GivenName,
+    string FamilyName,
+    string? BirthDate,
+    string? Gender,
+    string? Phone,
+    string? Email,
+    string? AddressLine,
+    string? City,
+    string? State,
+    string? PostalCode,
+    string? Country
+);
+
+/// <summary>
 /// Encounter creation request DTO.
 /// </summary>
 public sealed record CreateEncounterRequest(

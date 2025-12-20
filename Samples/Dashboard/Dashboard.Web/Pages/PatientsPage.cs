@@ -34,11 +34,14 @@ namespace Dashboard.Pages
     /// </summary>
     public static class PatientsPage
     {
+        private static Action<string> _onEditPatient;
+
         /// <summary>
         /// Renders the patients page.
         /// </summary>
-        public static ReactElement Render()
+        public static ReactElement Render(Action<string> onEditPatient = null)
         {
+            _onEditPatient = onEditPatient;
             var stateResult = UseState(
                 new PatientsState
                 {
@@ -359,7 +362,11 @@ namespace Dashboard.Pages
                         onClick: () => onSelect(patient),
                         children: new[] { Icons.Eye() }
                     ),
-                    Button(className: "btn btn-ghost btn-sm", children: new[] { Icons.Edit() }),
+                    Button(
+                        className: "btn btn-ghost btn-sm",
+                        onClick: () => _onEditPatient?.Invoke(patient.Id),
+                        children: new[] { Icons.Edit() }
+                    ),
                 }
             );
 

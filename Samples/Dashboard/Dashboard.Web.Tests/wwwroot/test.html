@@ -11,14 +11,12 @@
   <link rel="stylesheet" href="../Dashboard.Web/wwwroot/css/components.css">
   <link rel="stylesheet" href="../Dashboard.Web/wwwroot/css/layout.css">
 
-  <!-- React 18 -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- React 18 - Local files for headless browser compatibility -->
+  <script src="../Dashboard.Web/wwwroot/js/vendor/react.development.js"></script>
+  <script src="../Dashboard.Web/wwwroot/js/vendor/react-dom.development.js"></script>
 
-  <!-- React Testing Library -->
-  <script crossorigin src="https://unpkg.com/@testing-library/dom@9.3.4/dist/@testing-library/dom.umd.js"></script>
-  <script crossorigin src="https://unpkg.com/@testing-library/react@14.2.1/dist/@testing-library/react.umd.js"></script>
-  <script crossorigin src="https://unpkg.com/@testing-library/user-event@14.5.2/dist/@testing-library/user-event.umd.js"></script>
+  <!-- React Testing Library - inline polyfill since CDN is unreliable in headless -->
+  <!-- Testing library functionality is implemented in the inline script below -->
 
   <style>
     body {

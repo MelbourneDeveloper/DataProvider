@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Sync.Api.Tests;
+namespace Sync.Http.Tests;
 
 #pragma warning disable CA1001 // Type owns disposable fields - disposed via IAsyncLifetime.DisposeAsync
 
@@ -14,7 +14,9 @@ namespace Sync.Api.Tests;
 /// - Constant values (Source = "mobile-app")
 /// - Excluded columns (PasswordHash, SecurityStamp)
 /// This is the REAL PROOF that LQL mapping works over HTTP!
+/// Requires Docker: run with --filter "Category!=Docker" to skip.
 /// </summary>
+[Trait("Category", "Docker")]
 public sealed class HttpMappingE2ETests : IAsyncLifetime
 {
     private PostgreSqlContainer _postgresContainer = null!;

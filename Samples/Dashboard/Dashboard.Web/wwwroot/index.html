@@ -224,6 +224,10 @@
         Close: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
           React.createElement('line', { x1: 18, y1: 6, x2: 6, y2: 18 }),
           React.createElement('line', { x1: 6, y1: 6, x2: 18, y2: 18 })
+        ),
+        Edit: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+          React.createElement('path', { d: 'M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7' }),
+          React.createElement('path', { d: 'M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z' })
         )
       };
 
@@ -1042,7 +1046,7 @@
       };
 
       // Patients Page
-      const PatientsPage = ({ openAddModal: initialOpenModal }) => {
+      const PatientsPage = ({ openAddModal: initialOpenModal, onEditPatient }) => {
         const [searchQuery, setSearchQuery] = React.useState('');
         const [showAddModal, setShowAddModal] = React.useState(false);
         const [refreshKey, setRefreshKey] = React.useState(0);
@@ -1068,7 +1072,12 @@
           { key: 'name', header: 'Name', render: p => `${p.GivenName || ''} ${p.FamilyName || ''}`.trim() || '-' },
           { key: 'BirthDate', header: 'Birth Date', render: p => p.BirthDate || '-' },
           { key: 'Gender', header: 'Gender', render: p => p.Gender ? p.Gender.charAt(0).toUpperCase() + p.Gender.slice(1) : '-' },
-          { key: 'status', header: 'Status', render: () => React.createElement('span', { className: 'badge badge-success' }, 'Active') }
+          { key: 'status', header: 'Status', render: () => React.createElement('span', { className: 'badge badge-success' }, 'Active') },
+          { key: 'actions', header: 'Actions', render: p => React.createElement('button', {
+            className: 'btn btn-ghost btn-sm',
+            onClick: (e) => { e.stopPropagation(); onEditPatient && onEditPatient(p.Id); },
+            'data-testid': `edit-patient-${p.Id}`
+          }, React.createElement(Icons.Edit)) }
         ];
 
         return React.createElement('div', { className: 'page' },
@@ -1318,17 +1327,304 @@
         )
       );
 
+      // Edit Patient Page
+      const EditPatientPage = ({ patientId, onBack }) => {
+        const [patient, setPatient] = React.useState(null);
+        const [loading, setLoading] = React.useState(true);
+        const [saving, setSaving] = React.useState(false);
+        const [error, setError] = React.useState(null);
+        const [success, setSuccess] = React.useState(null);
+        const [formData, setFormData] = React.useState({
+          Active: true,
+          GivenName: '',
+          FamilyName: '',
+          BirthDate: '',
+          Gender: '',
+          Phone: '',
+          Email: '',
+          AddressLine: '',
+          City: '',
+          State: '',
+          PostalCode: '',
+          Country: ''
+        });
+
+        React.useEffect(() => {
+          const fetchPatient = async () => {
+            try {
+              const response = await fetch(`${CLINICAL_API}/fhir/Patient/${patientId}`);
+              if (!response.ok) throw new Error('Failed to load patient');
+              const data = await response.json();
+              setPatient(data);
+              setFormData({
+                Active: data.Active !== false,
+                GivenName: data.GivenName || '',
+                FamilyName: data.FamilyName || '',
+                BirthDate: data.BirthDate || '',
+                Gender: data.Gender || '',
+                Phone: data.Phone || '',
+                Email: data.Email || '',
+                AddressLine: data.AddressLine || '',
+                City: data.City || '',
+                State: data.State || '',
+                PostalCode: data.PostalCode || '',
+                Country: data.Country || ''
+              });
+            } catch (err) {
+              setError(err.message);
+            } finally {
+              setLoading(false);
+            }
+          };
+          fetchPatient();
+        }, [patientId]);
+
+        const handleSubmit = async (e) => {
+          e.preventDefault();
+          setSaving(true);
+          setError(null);
+          setSuccess(null);
+          try {
+            const response = await fetch(`${CLINICAL_API}/fhir/Patient/${patientId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(formData)
+            });
+            if (!response.ok) throw new Error('Failed to update patient');
+            const updated = await response.json();
+            setPatient(updated);
+            setSuccess('Patient updated successfully!');
+          } catch (err) {
+            setError(err.message);
+          } finally {
+            setSaving(false);
+          }
+        };
+
+        const handleChange = (field, value) => {
+          setFormData(prev => ({ ...prev, [field]: value }));
+          setError(null);
+          setSuccess(null);
+        };
+
+        if (loading) {
+          return React.createElement('div', { className: 'page' },
+            React.createElement('div', { className: 'page-header' },
+              React.createElement('h2', { className: 'page-title' }, 'Edit Patient'),
+              React.createElement('p', { className: 'page-description' }, 'Loading patient data...')
+            ),
+            React.createElement('div', { className: 'card' },
+              React.createElement('div', { className: 'flex items-center justify-center p-8' }, 'Loading...')
+            )
+          );
+        }
+
+        if (error && !patient) {
+          return React.createElement('div', { className: 'page' },
+            React.createElement('div', { className: 'page-header flex justify-between items-center' },
+              React.createElement('div', null,
+                React.createElement('h2', { className: 'page-title' }, 'Edit Patient'),
+                React.createElement('p', { className: 'page-description' }, 'Error loading patient')
+              ),
+              React.createElement('button', { className: 'btn btn-secondary', onClick: onBack },
+                React.createElement(Icons.ChevronLeft), ' Back to Patients'
+              )
+            ),
+            React.createElement('div', { className: 'card', style: { borderLeft: '4px solid var(--error)' } },
+              React.createElement('div', { className: 'flex items-center gap-3 p-4' },
+                React.createElement(Icons.AlertCircle),
+                `Error loading patient: ${error}`
+              )
+            )
+          );
+        }
+
+        const fullName = `${formData.GivenName} ${formData.FamilyName}`.trim();
+
+        return React.createElement('div', { className: 'page', 'data-testid': 'edit-patient-page' },
+          React.createElement('div', { className: 'page-header flex justify-between items-center' },
+            React.createElement('div', null,
+              React.createElement('h2', { className: 'page-title' }, 'Edit Patient'),
+              React.createElement('p', { className: 'page-description' }, `Update information for ${fullName || 'patient'}`)
+            ),
+            React.createElement('button', { className: 'btn btn-secondary', onClick: onBack, 'data-testid': 'back-to-patients' },
+              React.createElement(Icons.ChevronLeft), ' Back to Patients'
+            )
+          ),
+          React.createElement('div', { className: 'card' },
+            error && React.createElement('div', { className: 'alert alert-error mb-4', 'data-testid': 'edit-error' },
+              React.createElement(Icons.AlertCircle), ` ${error}`
+            ),
+            success && React.createElement('div', { className: 'alert alert-success mb-4', 'data-testid': 'edit-success' },
+              success
+            ),
+            React.createElement('form', { className: 'form', onSubmit: handleSubmit },
+              // Personal Information Section
+              React.createElement('div', { className: 'form-section mb-6' },
+                React.createElement('h4', { className: 'form-section-title mb-4' }, 'Personal Information'),
+                React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Given Name'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'input',
+                      value: formData.GivenName,
+                      onChange: e => handleChange('GivenName', e.target.value),
+                      'data-testid': 'edit-given-name'
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Family Name'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'input',
+                      value: formData.FamilyName,
+                      onChange: e => handleChange('FamilyName', e.target.value),
+                      'data-testid': 'edit-family-name'
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Birth Date'),
+                    React.createElement('input', {
+                      type: 'date',
+                      className: 'input',
+                      value: formData.BirthDate,
+                      onChange: e => handleChange('BirthDate', e.target.value),
+                      'data-testid': 'edit-birth-date'
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Gender'),
+                    React.createElement('select', {
+                      className: 'input',
+                      value: formData.Gender,
+                      onChange: e => handleChange('Gender', e.target.value),
+                      'data-testid': 'edit-gender'
+                    },
+                      React.createElement('option', { value: '' }, 'Select gender'),
+                      React.createElement('option', { value: 'male' }, 'Male'),
+                      React.createElement('option', { value: 'female' }, 'Female'),
+                      React.createElement('option', { value: 'other' }, 'Other'),
+                      React.createElement('option', { value: 'unknown' }, 'Unknown')
+                    )
+                  )
+                )
+              ),
+              // Contact Information Section
+              React.createElement('div', { className: 'form-section mb-6' },
+                React.createElement('h4', { className: 'form-section-title mb-4' }, 'Contact Information'),
+                React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Phone'),
+                    React.createElement('input', {
+                      type: 'tel',
+                      className: 'input',
+                      value: formData.Phone,
+                      onChange: e => handleChange('Phone', e.target.value),
+                      'data-testid': 'edit-phone'
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Email'),
+                    React.createElement('input', {
+                      type: 'email',
+                      className: 'input',
+                      value: formData.Email,
+                      onChange: e => handleChange('Email', e.target.value),
+                      'data-testid': 'edit-email'
+                    })
+                  )
+                )
+              ),
+              // Address Section
+              React.createElement('div', { className: 'form-section mb-6' },
+                React.createElement('h4', { className: 'form-section-title mb-4' }, 'Address'),
+                React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Address Line'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'input',
+                      value: formData.AddressLine,
+                      onChange: e => handleChange('AddressLine', e.target.value),
+                      'data-testid': 'edit-address'
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'City'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'input',
+                      value: formData.City,
+                      onChange: e => handleChange('City', e.target.value),
+                      'data-testid': 'edit-city'
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'State'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'input',
+                      value: formData.State,
+                      onChange: e => handleChange('State', e.target.value),
+                      'data-testid': 'edit-state'
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Postal Code'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'input',
+                      value: formData.PostalCode,
+                      onChange: e => handleChange('PostalCode', e.target.value),
+                      'data-testid': 'edit-postal-code'
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Country'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'input',
+                      value: formData.Country,
+                      onChange: e => handleChange('Country', e.target.value),
+                      'data-testid': 'edit-country'
+                    })
+                  )
+                )
+              ),
+              // Form Actions
+              React.createElement('div', { className: 'form-actions flex justify-end gap-4 mt-6' },
+                React.createElement('button', {
+                  type: 'button',
+                  className: 'btn btn-secondary',
+                  onClick: onBack,
+                  disabled: saving
+                }, 'Cancel'),
+                React.createElement('button', {
+                  type: 'submit',
+                  className: 'btn btn-primary',
+                  disabled: saving,
+                  'data-testid': 'save-patient'
+                }, saving ? 'Saving...' : 'Save Changes')
+              )
+            )
+          )
+        );
+      };
+
       // Main App Component
       const App = () => {
         const [activeView, setActiveView] = React.useState('dashboard');
         const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
         const [searchQuery, setSearchQuery] = React.useState('');
         const [navigationOptions, setNavigationOptions] = React.useState({});
+        const [editingPatientId, setEditingPatientId] = React.useState(null);
 
         // Navigation handler that supports options
         const handleNavigate = (view, options = {}) => {
           setActiveView(view);
           setNavigationOptions(options);
+          setEditingPatientId(null); // Clear editing state when navigating
         };
 
         // Clear navigation options after page renders
@@ -1339,20 +1635,42 @@
           }
         }, [navigationOptions]);
 
-        const getPageTitle = () => ({
-          dashboard: 'Dashboard',
-          patients: 'Patients',
-          encounters: 'Encounters',
-          conditions: 'Conditions',
-          practitioners: 'Practitioners',
-          appointments: 'Appointments',
-          settings: 'Settings'
-        }[activeView] || 'Healthcare');
+        const getPageTitle = () => {
+          if (editingPatientId) return 'Edit Patient';
+          return {
+            dashboard: 'Dashboard',
+            patients: 'Patients',
+            encounters: 'Encounters',
+            conditions: 'Conditions',
+            practitioners: 'Practitioners',
+            appointments: 'Appointments',
+            settings: 'Settings'
+          }[activeView] || 'Healthcare';
+        };
+
+        const handleEditPatient = (patientId) => {
+          setEditingPatientId(patientId);
+        };
+
+        const handleBackFromEdit = () => {
+          setEditingPatientId(null);
+        };
 
         const renderPage = () => {
+          // Handle editing patient
+          if (activeView === 'patients' && editingPatientId) {
+            return React.createElement(EditPatientPage, {
+              patientId: editingPatientId,
+              onBack: handleBackFromEdit
+            });
+          }
+
           switch (activeView) {
             case 'dashboard': return React.createElement(DashboardPage, { onNavigate: handleNavigate });
-            case 'patients': return React.createElement(PatientsPage, { openAddModal: navigationOptions.openAddModal });
+            case 'patients': return React.createElement(PatientsPage, {
+              openAddModal: navigationOptions.openAddModal,
+              onEditPatient: handleEditPatient
+            });
             case 'practitioners': return React.createElement(PractitionersPage);
             case 'appointments': return React.createElement(AppointmentsPage, { openAddModal: navigationOptions.openAddModal });
             case 'encounters': return React.createElement(PlaceholderPage, { title: 'Encounters', description: 'Manage patient encounters and visits' });

@@ -7,7 +7,8 @@ using Microsoft.Playwright;
 using Xunit;
 
 /// <summary>
-/// Playwright-based test runner that executes H5 browser tests and reports results to xUnit.
+/// Playwright-based test runner that executes H5 browser tests once and validates all results.
+/// Runs browser once, executes tests once, then validates all test categories from the output.
 /// </summary>
 public sealed class DashboardPlaywrightTests : IAsyncLifetime
 {
@@ -17,9 +18,13 @@ public sealed class DashboardPlaywrightTests : IAsyncLifetime
 
     private IPlaywright? _playwright;
     private IBrowser? _browser;
+    private string _testOutput = string.Empty;
+    private int _passedCount;
+    private int _failedCount;
+    private bool _testsExecuted;
 
     /// <summary>
-    /// Initialize Playwright and browser.
+    /// Initialize Playwright, browser, run tests ONCE and cache results.
     /// </summary>
     public async Task InitializeAsync()
     {
@@ -27,6 +32,46 @@ public sealed class DashboardPlaywrightTests : IAsyncLifetime
         _browser = await _playwright.Chromium.LaunchAsync(
             new BrowserTypeLaunchOptions { Headless = true }
         );
+
+        var testHtmlPath = FindTestHtml();
+        if (testHtmlPath is null)
+        {
+            return;
+        }
+
+        var page = await _browser.NewPageAsync();
+
+        await page.GotoAsync(
+            $"file://{testHtmlPath}",
+            new PageGotoOptions { Timeout = PageLoadTimeoutMs }
+        );
+
+        await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+
+        var runButton = page.Locator("#run-btn");
+        await runButton.WaitForAsync(
+            new LocatorWaitForOptions
+            {
+                State = WaitForSelectorState.Visible,
+                Timeout = ElementTimeoutMs,
+            }
+        );
+        await runButton.ClickAsync(new LocatorClickOptions { Timeout = ElementTimeoutMs });
+
+        await page.WaitForFunctionAsync(
+            "() => document.getElementById('run-btn').textContent.includes('Again')",
+            new PageWaitForFunctionOptions { Timeout = TestCompleteTimeoutMs }
+        );
+
+        var passedText = await page.TextContentAsync("#passed-count");
+        var failedText = await page.TextContentAsync("#failed-count");
+
+        _passedCount = int.TryParse(passedText, out var p) ? p : 0;
+        _failedCount = int.TryParse(failedText, out var f) ? f : 0;
+        _testOutput = await page.TextContentAsync("#output") ?? string.Empty;
+        _testsExecuted = true;
+
+        await page.CloseAsync();
     }
 
     /// <summary>
@@ -43,123 +88,61 @@ public sealed class DashboardPlaywrightTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Navigates to test page, runs tests, and returns the output.
-    /// </summary>
-    /// <param name="testHtmlPath">Path to the test HTML file.</param>
-    /// <returns>Test output string and pass/fail counts.</returns>
-    private async Task<(string Output, int Passed, int Failed)> RunTestsAndGetOutputAsync(
-        string testHtmlPath
-    )
-    {
-        var page = await _browser!.NewPageAsync();
-
-        await page.GotoAsync(
-            $"file://{testHtmlPath}",
-            new PageGotoOptions { Timeout = PageLoadTimeoutMs }
-        );
-
-        await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
-
-        var runButton = page.Locator("#run-btn");
-        await runButton.WaitForAsync(
-            new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = ElementTimeoutMs }
-        );
-        await runButton.ClickAsync(new LocatorClickOptions { Timeout = ElementTimeoutMs });
-
-        await page.WaitForFunctionAsync(
-            "() => document.getElementById('run-btn').textContent.includes('Again')",
-            new PageWaitForFunctionOptions { Timeout = TestCompleteTimeoutMs }
-        );
-
-        var passedText = await page.TextContentAsync("#passed-count");
-        var failedText = await page.TextContentAsync("#failed-count");
-
-        var passed = int.TryParse(passedText, out var p) ? p : 0;
-        var failed = int.TryParse(failedText, out var f) ? f : 0;
-
-        var output = await page.TextContentAsync("#output") ?? string.Empty;
-
-        await page.CloseAsync();
-
-        return (output, passed, failed);
-    }
-
-    /// <summary>
-    /// Runs all H5 dashboard tests in a headless browser and verifies they all pass.
+    /// Verifies all H5 dashboard tests passed with zero failures.
     /// </summary>
     [Fact]
-    public async Task AllDashboardTestsPass()
+    public void AllDashboardTestsPass()
     {
-        var testHtmlPath = FindTestHtml();
-        Assert.NotNull(testHtmlPath);
-
-        var (output, passed, failed) = await RunTestsAndGetOutputAsync(testHtmlPath);
-
+        Assert.True(_testsExecuted, "Test HTML file not found");
         Assert.True(
-            failed == 0,
-            $"Dashboard tests failed: {failed} failures out of {passed + failed} tests.\n\nOutput:\n{output}"
+            _failedCount == 0,
+            $"Dashboard tests failed: {_failedCount} failures out of {_passedCount + _failedCount} tests.\n\nOutput:\n{_testOutput}"
         );
-        Assert.True(passed > 0, "No tests were executed");
+        Assert.True(_passedCount > 0, "No tests were executed");
     }
 
     /// <summary>
-    /// Runs navigation tests and verifies they pass.
+    /// Verifies navigation tests are present and passed.
     /// </summary>
     [Fact]
-    public async Task NavigationTestsPass()
+    public void NavigationTestsPass()
     {
-        var testHtmlPath = FindTestHtml();
-        Assert.NotNull(testHtmlPath);
-
-        var (output, _, _) = await RunTestsAndGetOutputAsync(testHtmlPath);
-
-        Assert.Contains("Navigation Tests", output);
-        Assert.Contains("renders app with sidebar", output);
+        Assert.True(_testsExecuted, "Test HTML file not found");
+        Assert.Contains("Navigation Tests", _testOutput);
+        Assert.Contains("renders app with sidebar", _testOutput);
     }
 
     /// <summary>
-    /// Runs dashboard page tests and verifies they pass.
+    /// Verifies dashboard page tests are present and passed.
     /// </summary>
     [Fact]
-    public async Task DashboardPageTestsPass()
+    public void DashboardPageTestsPass()
     {
-        var testHtmlPath = FindTestHtml();
-        Assert.NotNull(testHtmlPath);
-
-        var (output, _, _) = await RunTestsAndGetOutputAsync(testHtmlPath);
-
-        Assert.Contains("Dashboard Page Tests", output);
-        Assert.Contains("displays metric cards", output);
+        Assert.True(_testsExecuted, "Test HTML file not found");
+        Assert.Contains("Dashboard Page Tests", _testOutput);
+        Assert.Contains("displays metric cards", _testOutput);
     }
 
     /// <summary>
-    /// Runs patients page tests and verifies they pass.
+    /// Verifies patients page tests are present and passed.
     /// </summary>
     [Fact]
-    public async Task PatientsPageTestsPass()
+    public void PatientsPageTestsPass()
     {
-        var testHtmlPath = FindTestHtml();
-        Assert.NotNull(testHtmlPath);
-
-        var (output, _, _) = await RunTestsAndGetOutputAsync(testHtmlPath);
-
-        Assert.Contains("Patients Page Tests", output);
-        Assert.Contains("displays patient table", output);
+        Assert.True(_testsExecuted, "Test HTML file not found");
+        Assert.Contains("Patients Page Tests", _testOutput);
+        Assert.Contains("displays patient table", _testOutput);
     }
 
     /// <summary>
-    /// Runs sidebar tests and verifies they pass.
+    /// Verifies sidebar tests are present and passed.
     /// </summary>
     [Fact]
-    public async Task SidebarTestsPass()
+    public void SidebarTestsPass()
     {
-        var testHtmlPath = FindTestHtml();
-        Assert.NotNull(testHtmlPath);
-
-        var (output, _, _) = await RunTestsAndGetOutputAsync(testHtmlPath);
-
-        Assert.Contains("Sidebar Tests", output);
-        Assert.Contains("displays logo", output);
+        Assert.True(_testsExecuted, "Test HTML file not found");
+        Assert.Contains("Sidebar Tests", _testOutput);
+        Assert.Contains("displays logo", _testOutput);
     }
 
     private static string? FindTestHtml()

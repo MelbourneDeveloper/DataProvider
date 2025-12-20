@@ -45,7 +45,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync.Tests", "Sync\Sync.Tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync.SQLite.Tests", "Sync\Sync.SQLite.Tests\Sync.SQLite.Tests.csproj", "{3522A6C5-6205-4C7D-B805-84847035A921}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync.Api.Tests", "Sync\Sync.Api.Tests\Sync.Api.Tests.csproj", "{1EF92A45-C551-4B0F-9180-00E978DA499E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync.Http.Tests", "Sync\Sync.Http.Tests\Sync.Http.Tests.csproj", "{1EF92A45-C551-4B0F-9180-00E978DA499E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync.Postgres", "Sync\Sync.Postgres\Sync.Postgres.csproj", "{FC26C0FB-162E-4B4F-8561-9A688F4B42D2}"
 EndProject
