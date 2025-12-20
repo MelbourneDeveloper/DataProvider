@@ -1,5 +1,6 @@
 {
   "output": "wwwroot/js",
+  "fileName": "Dashboard",
   "generateSourceMap": true,
   "combineScripts": true,
   "fileNameCasing": "CamelCase"

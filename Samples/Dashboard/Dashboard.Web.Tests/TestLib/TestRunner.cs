@@ -101,10 +101,27 @@ namespace Dashboard.Tests.TestLib
                 Log($"\n💥 {failed} test(s) failed!");
             }
 
-            // Store results on window for external access
-            Script.Set("window", "testResults", _results);
-            Script.Set("window", "testsPassed", passed);
-            Script.Set("window", "testsFailed", failed);
+            // Store structured results on window for Playwright test runner
+            var failures = new List<object>();
+            foreach (var result in _results)
+            {
+                if (!result.Passed)
+                {
+                    failures.Add(new { name = result.Name, error = result.Error });
+                }
+            }
+
+            Script.Set(
+                "window",
+                "testResults",
+                new
+                {
+                    passed = passed,
+                    failed = failed,
+                    total = _tests.Count,
+                    failures = failures.ToArray(),
+                }
+            );
         }
 
         /// <summary>

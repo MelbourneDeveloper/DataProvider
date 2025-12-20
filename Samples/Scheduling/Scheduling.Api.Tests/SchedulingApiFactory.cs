@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 /// WebApplicationFactory for Scheduling.Api e2e testing.
 /// Just configures a temp database path - Program.cs does ALL initialization.
 /// </summary>
-public sealed class SchedulingApiFactory : WebApplicationFactory<Scheduling.Api.Program>
+public sealed class SchedulingApiFactory : WebApplicationFactory<Program>
 {
     private readonly string _dbPath;
 

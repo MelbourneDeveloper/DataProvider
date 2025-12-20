@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Check messages regularly, lock files before editing, unlock after
 - Don't edit locked files; signal intent via plans and messages
 - Coordinator: keep delegating via messages. Worker: keep asking for tasks via messages
+- Telegraph EVERYTHING with messages and plan updates
 - Clean up expired locks routinely
 
 ## Coding Rules

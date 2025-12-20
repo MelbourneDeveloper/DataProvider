@@ -619,6 +619,9 @@
         );
       };
 
+      // Export App for testing
+      window.App = App;
+
       // Render the app
       console.log('[Dashboard] Mounting React application...');
       const root = ReactDOM.createRoot(document.getElementById('root'));

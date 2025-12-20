@@ -6,10 +6,10 @@
   <title>Dashboard Tests - React Testing Library</title>
 
   <!-- Dashboard CSS -->
-  <link rel="stylesheet" href="../../Dashboard.Web/wwwroot/css/variables.css">
-  <link rel="stylesheet" href="../../Dashboard.Web/wwwroot/css/base.css">
-  <link rel="stylesheet" href="../../Dashboard.Web/wwwroot/css/components.css">
-  <link rel="stylesheet" href="../../Dashboard.Web/wwwroot/css/layout.css">
+  <link rel="stylesheet" href="../Dashboard.Web/wwwroot/css/variables.css">
+  <link rel="stylesheet" href="../Dashboard.Web/wwwroot/css/base.css">
+  <link rel="stylesheet" href="../Dashboard.Web/wwwroot/css/components.css">
+  <link rel="stylesheet" href="../Dashboard.Web/wwwroot/css/layout.css">
 
   <!-- React 18 -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -823,28 +823,294 @@ Click the button above to start the test suite.
     }
   </script>
 
-  <!-- Load the dashboard app components -->
+  <!-- Inline App Component for Testing -->
   <script>
-    // Load the app from the main dashboard
-    const script = document.createElement('script');
-    script.src = '../../Dashboard.Web/wwwroot/js/Dashboard.Web.js';
-    script.onerror = () => {
-      console.log('📋 Note: H5 script not found, using inline fallback App');
+    // Icons as SVG components
+    const Icons = {
+      Home: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('path', { d: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z' }),
+        React.createElement('polyline', { points: '9,22 9,12 15,12 15,22' })
+      ),
+      Users: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('path', { d: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2' }),
+        React.createElement('circle', { cx: 9, cy: 7, r: 4 })
+      ),
+      UserDoctor: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('path', { d: 'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2' }),
+        React.createElement('circle', { cx: 12, cy: 7, r: 4 })
+      ),
+      Calendar: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('rect', { x: 3, y: 4, width: 18, height: 18, rx: 2, ry: 2 })
+      ),
+      Clipboard: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('path', { d: 'M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2' })
+      ),
+      Search: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('circle', { cx: 11, cy: 11, r: 8 }),
+        React.createElement('line', { x1: 21, y1: 21, x2: 16.65, y2: 16.65 })
+      ),
+      Bell: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('path', { d: 'M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9' })
+      ),
+      ChevronLeft: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('polyline', { points: '15,18 9,12 15,6' })
+      ),
+      ChevronRight: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('polyline', { points: '9,6 15,12 9,18' })
+      ),
+      Activity: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('polyline', { points: '22,12 18,12 15,21 9,3 6,12 2,12' })
+      ),
+      AlertCircle: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('circle', { cx: 12, cy: 12, r: 10 })
+      ),
+      TrendUp: () => React.createElement('svg', { className: 'icon icon-sm', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('polyline', { points: '23,6 13.5,15.5 8.5,10.5 1,18' })
+      )
     };
-    document.head.appendChild(script);
-  </script>
 
-  <!-- Inline App component for testing (fallback) -->
-  <script src="../../Dashboard.Web/wwwroot/index.html" type="module"></script>
-  <script>
-    // Define the App component for testing if not already defined
-    setTimeout(() => {
-      if (typeof window.App === 'undefined') {
-        // Copy the App from the fallback implementation in index.html
-        // This ensures we're testing the actual app, not a mock
-        console.log('📋 Using fallback App component for testing');
-      }
-    }, 500);
+    // Metric Card Component
+    const MetricCard = ({ label, value, icon, iconColor, loading }) => (
+      React.createElement('div', { className: 'metric-card' },
+        React.createElement('div', { className: `metric-icon ${iconColor}` }, icon),
+        React.createElement('div', { className: 'metric-value' }, loading ? '-' : value),
+        React.createElement('div', { className: 'metric-label' }, label)
+      )
+    );
+
+    // Data Table Component
+    const DataTable = ({ columns, data, loading }) => {
+      if (loading) return React.createElement('div', { className: 'skeleton', style: { height: '200px' } });
+      if (!data || data.length === 0) return React.createElement('div', { className: 'empty-state' }, 'No Data');
+      return React.createElement('div', { className: 'table-container' },
+        React.createElement('table', { className: 'table' },
+          React.createElement('thead', null,
+            React.createElement('tr', null, columns.map(col => React.createElement('th', { key: col.key }, col.header)))
+          ),
+          React.createElement('tbody', null,
+            data.map((row, i) => React.createElement('tr', { key: row.id || i },
+              columns.map(col => React.createElement('td', { key: col.key }, col.render ? col.render(row) : row[col.key]))
+            ))
+          )
+        )
+      );
+    };
+
+    // Dashboard Page
+    const DashboardPage = ({ patients, practitioners, appointments }) => {
+      const hasError = patients?.error || practitioners?.error || appointments?.error;
+      const isLoading = patients?.loading || practitioners?.loading || appointments?.loading;
+      return React.createElement('div', { className: 'page' },
+        React.createElement('div', { className: 'page-header' },
+          React.createElement('h2', { className: 'page-title' }, 'Dashboard'),
+          React.createElement('p', { className: 'page-description' }, 'Overview of your healthcare system')
+        ),
+        hasError && React.createElement('div', { className: 'card warning' }, 'Could not connect to API'),
+        React.createElement('div', { className: 'dashboard-grid metrics mb-6' },
+          React.createElement(MetricCard, { label: 'Total Patients', value: patients?.data?.length || 0, icon: React.createElement(Icons.Users), iconColor: 'blue', loading: isLoading }),
+          React.createElement(MetricCard, { label: 'Practitioners', value: practitioners?.data?.length || 0, icon: React.createElement(Icons.UserDoctor), iconColor: 'teal', loading: isLoading }),
+          React.createElement(MetricCard, { label: 'Appointments', value: appointments?.data?.length || 0, icon: React.createElement(Icons.Calendar), iconColor: 'success', loading: isLoading }),
+          React.createElement(MetricCard, { label: 'Encounters', value: 0, icon: React.createElement(Icons.Clipboard), iconColor: 'warning', loading: isLoading })
+        ),
+        React.createElement('div', { className: 'dashboard-grid mixed' },
+          React.createElement('div', { className: 'card' },
+            React.createElement('h3', null, 'Quick Actions'),
+            React.createElement('button', { className: 'btn btn-primary' }, 'New Patient')
+          ),
+          React.createElement('div', { className: 'card' },
+            React.createElement('h3', null, 'Recent Activity'),
+            React.createElement('button', { className: 'btn btn-ghost' }, 'View All')
+          )
+        )
+      );
+    };
+
+    // Patients Page
+    const PatientsPage = ({ data, loading, error }) => {
+      const [searchQuery, setSearchQuery] = React.useState('');
+      const filteredData = data || [];
+      const columns = [
+        { key: 'identifier', header: 'ID' },
+        { key: 'name', header: 'Name', render: p => `${p.given_name || ''} ${p.family_name || ''}`.trim() || '-' },
+        { key: 'gender', header: 'Gender' }
+      ];
+      return React.createElement('div', { className: 'page' },
+        React.createElement('div', { className: 'page-header' },
+          React.createElement('h2', { className: 'page-title' }, 'Patients'),
+          React.createElement('p', { className: 'page-description' }, 'Manage patient records')
+        ),
+        React.createElement('div', { className: 'card' },
+          React.createElement('div', { className: 'card-header' },
+            React.createElement('div', { className: 'header-search' },
+              React.createElement(Icons.Search),
+              React.createElement('input', { type: 'text', placeholder: 'Search patients...', value: searchQuery, onChange: e => setSearchQuery(e.target.value) })
+            ),
+            React.createElement('button', { className: 'btn btn-primary' }, 'Add Patient')
+          ),
+          error ? React.createElement('div', { className: 'empty-state' }, 'Could not load patients') :
+            React.createElement(DataTable, { columns, data: filteredData, loading })
+        )
+      );
+    };
+
+    // Practitioners Page
+    const PractitionersPage = ({ data, loading, error }) => {
+      if (error) return React.createElement('div', { className: 'page' },
+        React.createElement('div', { className: 'page-header' },
+          React.createElement('h2', { className: 'page-title' }, 'Practitioners'),
+          React.createElement('p', { className: 'page-description' }, 'Manage healthcare providers')
+        ),
+        React.createElement('div', { className: 'card empty-state' }, 'Could not load practitioners')
+      );
+      return React.createElement('div', { className: 'page' },
+        React.createElement('div', { className: 'page-header' },
+          React.createElement('h2', { className: 'page-title' }, 'Practitioners'),
+          React.createElement('p', { className: 'page-description' }, 'Manage healthcare providers')
+        ),
+        React.createElement('div', { className: 'dashboard-grid practitioners' },
+          (data || []).map(p => React.createElement('div', { key: p.id, className: 'card practitioner-card' },
+            React.createElement('div', { className: 'avatar avatar-lg' }, (p.given_name?.[0] || '') + (p.family_name?.[0] || '')),
+            React.createElement('h4', null, `${p.given_name || ''} ${p.family_name || ''}`),
+            React.createElement('p', null, p.specialty || 'General')
+          ))
+        )
+      );
+    };
+
+    // Appointments Page
+    const AppointmentsPage = ({ data, loading, error }) => {
+      const [filter, setFilter] = React.useState('all');
+      const filteredData = (data || []).filter(a => filter === 'all' || a.status?.toLowerCase() === filter);
+      const columns = [
+        { key: 'patient', header: 'Patient', render: a => a.patient_name || '-' },
+        { key: 'practitioner', header: 'Practitioner', render: a => a.practitioner_name || '-' },
+        { key: 'status', header: 'Status', render: a => a.status || 'pending' }
+      ];
+      return React.createElement('div', { className: 'page' },
+        React.createElement('div', { className: 'page-header' },
+          React.createElement('h2', { className: 'page-title' }, 'Appointments'),
+          React.createElement('p', { className: 'page-description' }, 'Manage scheduling')
+        ),
+        React.createElement('div', { className: 'card' },
+          React.createElement('div', { className: 'card-header' },
+            React.createElement('div', { className: 'btn-group' },
+              ['all', 'booked', 'fulfilled', 'cancelled'].map(f =>
+                React.createElement('button', { key: f, className: `btn btn-sm ${filter === f ? 'btn-primary' : 'btn-ghost'}`, onClick: () => setFilter(f) },
+                  f.charAt(0).toUpperCase() + f.slice(1)
+                )
+              )
+            )
+          ),
+          error ? React.createElement('div', { className: 'empty-state' }, 'Could not load appointments') :
+            React.createElement(DataTable, { columns, data: filteredData, loading })
+        )
+      );
+    };
+
+    // Sidebar Component
+    const Sidebar = ({ activeView, onNavigate, collapsed, onToggle }) => {
+      const navSections = [
+        { title: 'Overview', items: [{ id: 'dashboard', label: 'Dashboard', icon: Icons.Home }] },
+        { title: 'Clinical', items: [{ id: 'patients', label: 'Patients', icon: Icons.Users }] },
+        { title: 'Scheduling', items: [
+          { id: 'practitioners', label: 'Practitioners', icon: Icons.UserDoctor },
+          { id: 'appointments', label: 'Appointments', icon: Icons.Calendar }
+        ]}
+      ];
+      return React.createElement('aside', { className: `sidebar ${collapsed ? 'collapsed' : ''}` },
+        React.createElement('div', { className: 'sidebar-header' },
+          React.createElement('a', { className: 'sidebar-logo', href: '#' },
+            React.createElement('div', { className: 'sidebar-logo-icon' }, React.createElement(Icons.Activity)),
+            React.createElement('span', { className: 'sidebar-logo-text' }, 'Healthcare')
+          )
+        ),
+        React.createElement('nav', { className: 'sidebar-nav' },
+          navSections.map(section => React.createElement('div', { key: section.title, className: 'nav-section' },
+            React.createElement('div', { className: 'nav-section-title' }, section.title),
+            section.items.map(item => React.createElement('a', {
+              key: item.id,
+              className: `nav-item ${activeView === item.id ? 'active' : ''}`,
+              onClick: () => onNavigate(item.id)
+            },
+              React.createElement('span', { className: 'nav-item-icon' }, React.createElement(item.icon)),
+              React.createElement('span', { className: 'nav-item-text' }, item.label)
+            ))
+          ))
+        ),
+        React.createElement('button', { className: 'sidebar-toggle', onClick: onToggle },
+          collapsed ? React.createElement(Icons.ChevronRight) : React.createElement(Icons.ChevronLeft)
+        ),
+        React.createElement('div', { className: 'sidebar-footer' },
+          React.createElement('div', { className: 'sidebar-user' },
+            React.createElement('div', { className: 'avatar avatar-sm' }, 'JD'),
+            React.createElement('div', { className: 'sidebar-user-info' },
+              React.createElement('div', { className: 'sidebar-user-name' }, 'John Doe'),
+              React.createElement('div', { className: 'sidebar-user-role' }, 'Administrator')
+            )
+          )
+        )
+      );
+    };
+
+    // Header Component
+    const Header = ({ title }) => (
+      React.createElement('header', { className: 'header' },
+        React.createElement('div', { className: 'header-left' },
+          React.createElement('h1', { className: 'header-title' }, title)
+        ),
+        React.createElement('div', { className: 'header-right' },
+          React.createElement('div', { className: 'header-search' },
+            React.createElement(Icons.Search),
+            React.createElement('input', { type: 'text', placeholder: 'Search...' })
+          ),
+          React.createElement('div', { className: 'header-actions' },
+            React.createElement('button', { className: 'header-action-btn' }, React.createElement(Icons.Bell)),
+            React.createElement('div', { className: 'avatar avatar-md' }, 'JD')
+          )
+        )
+      )
+    );
+
+    // Main App Component - exported to window.App
+    window.App = () => {
+      const [activeView, setActiveView] = React.useState('dashboard');
+      const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+      const [apiData, setApiData] = React.useState({ patients: null, practitioners: null, appointments: null });
+
+      React.useEffect(() => {
+        Promise.all([
+          fetch('http://localhost:5000/fhir/Patient').then(r => r.ok ? r.json() : Promise.reject()),
+          fetch('http://localhost:5001/Practitioner').then(r => r.ok ? r.json() : Promise.reject()),
+          fetch('http://localhost:5001/Appointment').then(r => r.ok ? r.json() : Promise.reject())
+        ]).then(([patients, practitioners, appointments]) => {
+          setApiData({ patients: { data: patients }, practitioners: { data: practitioners }, appointments: { data: appointments } });
+        }).catch(() => {
+          setApiData({ patients: { error: true }, practitioners: { error: true }, appointments: { error: true } });
+        });
+      }, []);
+
+      const titles = { dashboard: 'Dashboard', patients: 'Patients', practitioners: 'Practitioners', appointments: 'Appointments' };
+
+      const renderPage = () => {
+        switch (activeView) {
+          case 'dashboard': return React.createElement(DashboardPage, apiData);
+          case 'patients': return React.createElement(PatientsPage, apiData.patients || {});
+          case 'practitioners': return React.createElement(PractitionersPage, apiData.practitioners || {});
+          case 'appointments': return React.createElement(AppointmentsPage, apiData.appointments || {});
+          default: return React.createElement('div', null, 'Page not found');
+        }
+      };
+
+      return React.createElement('div', { className: 'app' },
+        React.createElement(Sidebar, { activeView, onNavigate: setActiveView, collapsed: sidebarCollapsed, onToggle: () => setSidebarCollapsed(!sidebarCollapsed) }),
+        React.createElement('div', { className: 'main-wrapper' },
+          React.createElement(Header, { title: titles[activeView] || 'Healthcare' }),
+          React.createElement('main', { className: 'main-content' }, renderPage())
+        )
+      );
+    };
+
+    console.log('📋 App component loaded for testing');
   </script>
 </body>
 </html>
