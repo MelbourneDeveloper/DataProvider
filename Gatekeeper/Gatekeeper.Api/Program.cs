@@ -182,11 +182,12 @@ authGroup.MapPost(
                         .ConfigureAwait(false);
                     if (credResult is GetUserCredentialsOk credOk)
                     {
-                        allowCredentials = credOk
-                            .Value.Select(c => new PublicKeyCredentialDescriptor(
+                        allowCredentials =
+                        [
+                            .. credOk.Value.Select(c => new PublicKeyCredentialDescriptor(
                                 Convert.FromBase64String(c.id)
-                            ))
-                            .ToList();
+                            )),
+                        ];
                     }
                 }
             }
