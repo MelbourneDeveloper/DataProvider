@@ -1,5 +1,4 @@
 using System.Data;
-using Generated;
 
 namespace DataProvider.Example;
 

@@ -1,6 +1,4 @@
 global using System;
-global using System.Collections.Immutable;
-global using System.Data;
 global using Generated;
 global using Microsoft.Data.Sqlite;
 global using Microsoft.Extensions.Logging;

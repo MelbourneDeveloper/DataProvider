@@ -7,7 +7,10 @@ namespace Dashboard.Integration.Tests;
 /// </summary>
 public sealed class ClinicalApiTestFactory : WebApplicationFactory<Clinical.Api.Program>
 {
-    private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"clinical_cors_test_{Guid.NewGuid()}.db");
+    private readonly string _dbPath = Path.Combine(
+        Path.GetTempPath(),
+        $"clinical_cors_test_{Guid.NewGuid()}.db"
+    );
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -25,7 +28,13 @@ public sealed class ClinicalApiTestFactory : WebApplicationFactory<Clinical.Api.
         base.Dispose(disposing);
         if (disposing && File.Exists(_dbPath))
         {
-            try { File.Delete(_dbPath); } catch { /* ignore */ }
+            try
+            {
+                File.Delete(_dbPath);
+            }
+            catch
+            { /* ignore */
+            }
         }
     }
 }
@@ -35,7 +44,10 @@ public sealed class ClinicalApiTestFactory : WebApplicationFactory<Clinical.Api.
 /// </summary>
 public sealed class SchedulingApiTestFactory : WebApplicationFactory<Scheduling.Api.Program>
 {
-    private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"scheduling_cors_test_{Guid.NewGuid()}.db");
+    private readonly string _dbPath = Path.Combine(
+        Path.GetTempPath(),
+        $"scheduling_cors_test_{Guid.NewGuid()}.db"
+    );
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -53,7 +65,13 @@ public sealed class SchedulingApiTestFactory : WebApplicationFactory<Scheduling.
         base.Dispose(disposing);
         if (disposing && File.Exists(_dbPath))
         {
-            try { File.Delete(_dbPath); } catch { /* ignore */ }
+            try
+            {
+                File.Delete(_dbPath);
+            }
+            catch
+            { /* ignore */
+            }
         }
     }
 }
@@ -118,7 +136,9 @@ public sealed class DashboardApiCorsTests : IAsyncLifetime
             "Clinical API must return Access-Control-Allow-Origin header for Dashboard origin"
         );
 
-        var allowedOrigin = response.Headers.GetValues("Access-Control-Allow-Origin").FirstOrDefault();
+        var allowedOrigin = response
+            .Headers.GetValues("Access-Control-Allow-Origin")
+            .FirstOrDefault();
         Assert.True(
             allowedOrigin == DashboardOrigin || allowedOrigin == "*",
             $"Clinical API must allow Dashboard origin. Got: {allowedOrigin}"
@@ -171,10 +191,16 @@ public sealed class DashboardApiCorsTests : IAsyncLifetime
         );
         var createResponse = await _clinicalClient.SendAsync(createRequest);
         var patientJson = await createResponse.Content.ReadAsStringAsync();
-        var patientId = System.Text.Json.JsonDocument.Parse(patientJson).RootElement.GetProperty("Id").GetString();
+        var patientId = System
+            .Text.Json.JsonDocument.Parse(patientJson)
+            .RootElement.GetProperty("Id")
+            .GetString();
 
         // Now test the encounters endpoint with CORS
-        var request = new HttpRequestMessage(HttpMethod.Get, $"/fhir/Patient/{patientId}/Encounter");
+        var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/fhir/Patient/{patientId}/Encounter"
+        );
         request.Headers.Add("Origin", DashboardOrigin);
         request.Headers.Add("Accept", "application/json");
 
@@ -220,7 +246,9 @@ public sealed class DashboardApiCorsTests : IAsyncLifetime
             "Scheduling API must return Access-Control-Allow-Origin header for Dashboard origin"
         );
 
-        var allowedOrigin = response.Headers.GetValues("Access-Control-Allow-Origin").FirstOrDefault();
+        var allowedOrigin = response
+            .Headers.GetValues("Access-Control-Allow-Origin")
+            .FirstOrDefault();
         Assert.True(
             allowedOrigin == DashboardOrigin || allowedOrigin == "*",
             $"Scheduling API must allow Dashboard origin. Got: {allowedOrigin}"
@@ -279,6 +307,102 @@ public sealed class DashboardApiCorsTests : IAsyncLifetime
             response.Headers.Contains("Access-Control-Allow-Origin"),
             "Scheduling API response must include Access-Control-Allow-Origin header"
         );
+    }
+
+    #endregion
+
+    #region Patient Creation Tests
+
+    /// <summary>
+    /// CRITICAL: Proves patient creation API works end-to-end.
+    /// This tests the actual POST endpoint that the AddPatientModal calls.
+    /// </summary>
+    [Fact]
+    public async Task ClinicalApi_CreatePatient_WorksEndToEnd()
+    {
+        // Arrange - Create a patient with unique name
+        var uniqueName = $"IntTest{DateTime.UtcNow.Ticks % 100000}";
+        var request = new HttpRequestMessage(HttpMethod.Post, "/fhir/Patient/");
+        request.Headers.Add("Origin", DashboardOrigin);
+        request.Content = new StringContent(
+            $$$"""{"Active": true, "GivenName": "{{{uniqueName}}}", "FamilyName": "IntegrationCreated", "Gender": "female"}""",
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+
+        // Act - Create patient
+        var createResponse = await _clinicalClient.SendAsync(request);
+        createResponse.EnsureSuccessStatusCode();
+
+        // Verify - Fetch all patients and confirm the new one is there
+        var listRequest = new HttpRequestMessage(HttpMethod.Get, "/fhir/Patient/");
+        listRequest.Headers.Add("Origin", DashboardOrigin);
+        var listResponse = await _clinicalClient.SendAsync(listRequest);
+        var listBody = await listResponse.Content.ReadAsStringAsync();
+
+        Assert.Contains(uniqueName, listBody);
+        Assert.Contains("IntegrationCreated", listBody);
+    }
+
+    /// <summary>
+    /// CRITICAL: Proves practitioner creation API works end-to-end.
+    /// This tests the actual POST endpoint that the AddPractitionerModal would call.
+    /// </summary>
+    [Fact]
+    public async Task SchedulingApi_CreatePractitioner_WorksEndToEnd()
+    {
+        // Arrange - Create a practitioner with unique identifier
+        var uniqueId = $"DR{DateTime.UtcNow.Ticks % 100000}";
+        var request = new HttpRequestMessage(HttpMethod.Post, "/Practitioner");
+        request.Headers.Add("Origin", DashboardOrigin);
+        request.Content = new StringContent(
+            $$$"""{"Identifier": "{{{uniqueId}}}", "Active": true, "NameGiven": "IntDoctor", "NameFamily": "TestDoc", "Qualification": "MD", "Specialty": "Testing", "TelecomEmail": "inttest@hospital.org", "TelecomPhone": "+1-555-8888"}""",
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+
+        // Act - Create practitioner
+        var createResponse = await _schedulingClient.SendAsync(request);
+        createResponse.EnsureSuccessStatusCode();
+
+        // Verify - Fetch all practitioners and confirm the new one is there
+        var listRequest = new HttpRequestMessage(HttpMethod.Get, "/Practitioner");
+        listRequest.Headers.Add("Origin", DashboardOrigin);
+        var listResponse = await _schedulingClient.SendAsync(listRequest);
+        var listBody = await listResponse.Content.ReadAsStringAsync();
+
+        Assert.Contains(uniqueId, listBody);
+        Assert.Contains("IntDoctor", listBody);
+    }
+
+    /// <summary>
+    /// CRITICAL: Proves appointment creation API works end-to-end.
+    /// This tests the actual POST endpoint that the AddAppointmentModal calls.
+    /// </summary>
+    [Fact]
+    public async Task SchedulingApi_CreateAppointment_WorksEndToEnd()
+    {
+        // Arrange - Create an appointment with unique service type
+        var uniqueService = $"Consult{DateTime.UtcNow.Ticks % 100000}";
+        var request = new HttpRequestMessage(HttpMethod.Post, "/Appointment");
+        request.Headers.Add("Origin", DashboardOrigin);
+        request.Content = new StringContent(
+            $$$"""{"ServiceCategory": "General", "ServiceType": "{{{uniqueService}}}", "Start": "2025-12-25T10:00:00Z", "End": "2025-12-25T11:00:00Z", "PatientReference": "Patient/test", "PractitionerReference": "Practitioner/test", "Priority": "routine"}""",
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+
+        // Act - Create appointment
+        var createResponse = await _schedulingClient.SendAsync(request);
+        createResponse.EnsureSuccessStatusCode();
+
+        // Verify - Fetch all appointments and confirm the new one is there
+        var listRequest = new HttpRequestMessage(HttpMethod.Get, "/Appointment");
+        listRequest.Headers.Add("Origin", DashboardOrigin);
+        var listResponse = await _schedulingClient.SendAsync(listRequest);
+        var listBody = await listResponse.Content.ReadAsStringAsync();
+
+        Assert.Contains(uniqueService, listBody);
     }
 
     #endregion

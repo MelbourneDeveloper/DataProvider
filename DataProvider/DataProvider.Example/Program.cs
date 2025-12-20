@@ -1,7 +1,5 @@
-using Generated;
 using Lql.SQLite;
 using Microsoft.Data.Sqlite;
-using Selecta;
 using static DataProvider.Example.MapFunctions;
 
 namespace DataProvider.Example;

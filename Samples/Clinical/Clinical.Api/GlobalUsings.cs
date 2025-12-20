@@ -1,11 +1,8 @@
 global using System;
-global using System.Collections.Immutable;
-global using System.Data;
 global using Generated;
 global using Microsoft.Data.Sqlite;
 global using Microsoft.Extensions.Logging;
 global using Outcome;
-global using Selecta;
 global using Sync;
 global using Sync.SQLite;
 global using GetConditionsError = Outcome.Result<

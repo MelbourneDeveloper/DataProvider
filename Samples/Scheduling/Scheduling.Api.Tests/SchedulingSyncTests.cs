@@ -23,8 +23,8 @@ public sealed class SchedulingSyncTests : IDisposable
             $"scheduling_sync_test_{Guid.NewGuid()}.db"
         );
 
-        _schedulingFactory = new WebApplicationFactory<Program>().WithWebHostBuilder(
-            builder => builder.UseSetting("DbPath", _schedulingDbPath)
+        _schedulingFactory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+            builder.UseSetting("DbPath", _schedulingDbPath)
         );
 
         _schedulingClient = _schedulingFactory.CreateClient();

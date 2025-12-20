@@ -10,7 +10,6 @@ public sealed class DashboardIntegrationTests : IClassFixture<ClinicalApiFactory
 {
     private readonly HttpClient _client;
 
-
     /// <summary>
     /// The actual URL where Dashboard runs (for CORS origin testing).
     /// </summary>
@@ -67,7 +66,9 @@ public sealed class DashboardIntegrationTests : IClassFixture<ClinicalApiFactory
             "Clinical API must return Access-Control-Allow-Origin header for Dashboard to work"
         );
 
-        var allowedOrigin = response.Headers.GetValues("Access-Control-Allow-Origin").FirstOrDefault();
+        var allowedOrigin = response
+            .Headers.GetValues("Access-Control-Allow-Origin")
+            .FirstOrDefault();
         Assert.True(
             allowedOrigin == DashboardOrigin || allowedOrigin == "*",
             $"Access-Control-Allow-Origin must be '{DashboardOrigin}' or '*', but was '{allowedOrigin}'"

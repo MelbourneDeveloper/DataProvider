@@ -40,9 +40,10 @@ public static class MappingConfigParser
                     .Cast<TableMapping>()
                     .ToList() ?? [];
 
-            var unmappedBehavior = dto.UnmappedTableBehavior?.ToLowerInvariant() switch
+            var unmappedBehavior = dto.UnmappedTableBehavior switch
             {
-                "passthrough" => UnmappedTableBehavior.Passthrough,
+                { } s when s.Equals("passthrough", StringComparison.OrdinalIgnoreCase) =>
+                    UnmappedTableBehavior.Passthrough,
                 _ => UnmappedTableBehavior.Strict,
             };
 
@@ -78,10 +79,10 @@ public static class MappingConfigParser
             return null;
         }
 
-        var direction = dto.Direction?.ToLowerInvariant() switch
+        var direction = dto.Direction switch
         {
-            "pull" => MappingDirection.Pull,
-            "both" => MappingDirection.Both,
+            { } s when s.Equals("pull", StringComparison.OrdinalIgnoreCase) => MappingDirection.Pull,
+            { } s when s.Equals("both", StringComparison.OrdinalIgnoreCase) => MappingDirection.Both,
             _ => MappingDirection.Push,
         };
 
@@ -101,11 +102,14 @@ public static class MappingConfigParser
             ? new SyncFilter(dto.Filter.Lql)
             : null;
 
-        var trackingStrategy = dto.SyncTracking?.Strategy?.ToLowerInvariant() switch
+        var trackingStrategy = dto.SyncTracking?.Strategy switch
         {
-            "hash" => SyncTrackingStrategy.Hash,
-            "timestamp" => SyncTrackingStrategy.Timestamp,
-            "external" => SyncTrackingStrategy.External,
+            { } s when s.Equals("hash", StringComparison.OrdinalIgnoreCase) =>
+                SyncTrackingStrategy.Hash,
+            { } s when s.Equals("timestamp", StringComparison.OrdinalIgnoreCase) =>
+                SyncTrackingStrategy.Timestamp,
+            { } s when s.Equals("external", StringComparison.OrdinalIgnoreCase) =>
+                SyncTrackingStrategy.External,
             _ => SyncTrackingStrategy.Version,
         };
 
@@ -147,10 +151,11 @@ public static class MappingConfigParser
             return null;
         }
 
-        var transform = dto.Transform?.ToLowerInvariant() switch
+        var transform = dto.Transform switch
         {
-            "constant" => TransformType.Constant,
-            "lql" => TransformType.Lql,
+            { } s when s.Equals("constant", StringComparison.OrdinalIgnoreCase) =>
+                TransformType.Constant,
+            { } s when s.Equals("lql", StringComparison.OrdinalIgnoreCase) => TransformType.Lql,
             _ => TransformType.None,
         };
 
@@ -183,6 +188,14 @@ public static class MappingConfigParser
     }
 
     /// <summary>
+    /// Converts enum to lowercase string for JSON output.
+    /// CA1308 suppressed: JSON schema spec requires lowercase enum values.
+    /// </summary>
+#pragma warning disable CA1308
+    private static string ToLowerCase(Enum value) => value.ToString().ToLowerInvariant();
+#pragma warning restore CA1308
+
+    /// <summary>
     /// Serializes a mapping config to JSON.
     /// </summary>
     /// <param name="config">Config to serialize.</param>
@@ -192,7 +205,7 @@ public static class MappingConfigParser
         var dto = new MappingConfigDto
         {
             Version = config.Version,
-            UnmappedTableBehavior = config.UnmappedTableBehavior.ToString().ToLowerInvariant(),
+            UnmappedTableBehavior = ToLowerCase(config.UnmappedTableBehavior),
             Mappings = [.. config.Mappings.Select(ToDto)],
         };
 
@@ -208,7 +221,7 @@ public static class MappingConfigParser
             Id = m.Id,
             SourceTable = m.SourceTable,
             TargetTable = m.TargetTable,
-            Direction = m.Direction.ToString().ToLowerInvariant(),
+            Direction = ToLowerCase(m.Direction),
             Enabled = m.Enabled,
             MultiTarget = m.IsMultiTarget,
             PkMapping = m.PkMapping is not null
@@ -225,9 +238,7 @@ public static class MappingConfigParser
                     Source = c.Source,
                     Target = c.Target,
                     Transform =
-                        c.Transform == TransformType.None
-                            ? null
-                            : c.Transform.ToString().ToLowerInvariant(),
+                        c.Transform == TransformType.None ? null : ToLowerCase(c.Transform),
                     Value = c.Value,
                     Lql = c.Lql,
                 }),
@@ -237,7 +248,7 @@ public static class MappingConfigParser
             SyncTracking = new SyncTrackingDto
             {
                 Enabled = m.SyncTracking.Enabled,
-                Strategy = m.SyncTracking.Strategy.ToString().ToLowerInvariant(),
+                Strategy = ToLowerCase(m.SyncTracking.Strategy),
                 TrackingColumn = m.SyncTracking.TrackingColumn,
             },
             Targets = m
@@ -253,7 +264,7 @@ public static class MappingConfigParser
                             Transform =
                                 c.Transform == TransformType.None
                                     ? null
-                                    : c.Transform.ToString().ToLowerInvariant(),
+                                    : ToLowerCase(c.Transform),
                             Value = c.Value,
                             Lql = c.Lql,
                         }),

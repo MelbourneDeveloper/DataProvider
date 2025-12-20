@@ -3,11 +3,7 @@
 
 using Sync.Http;
 
-var options = new WebApplicationOptions
-{
-    Args = args,
-    ContentRootPath = AppContext.BaseDirectory,
-};
+var options = new WebApplicationOptions { Args = args, ContentRootPath = AppContext.BaseDirectory };
 
 var builder = WebApplication.CreateBuilder(options);
 

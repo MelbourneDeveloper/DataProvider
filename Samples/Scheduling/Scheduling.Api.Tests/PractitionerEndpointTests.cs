@@ -33,7 +33,9 @@ public sealed class PractitionerEndpointTests
             "Missing Access-Control-Allow-Origin header - Dashboard cannot fetch from Scheduling API!"
         );
 
-        var allowOrigin = response.Headers.GetValues("Access-Control-Allow-Origin").FirstOrDefault();
+        var allowOrigin = response
+            .Headers.GetValues("Access-Control-Allow-Origin")
+            .FirstOrDefault();
         Assert.True(
             allowOrigin == "http://localhost:5173" || allowOrigin == "*",
             $"Access-Control-Allow-Origin must allow Dashboard origin. Got: {allowOrigin}"
@@ -56,7 +58,8 @@ public sealed class PractitionerEndpointTests
 
         // Preflight should return 200 or 204
         Assert.True(
-            response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent,
+            response.StatusCode == HttpStatusCode.OK
+                || response.StatusCode == HttpStatusCode.NoContent,
             $"Preflight request failed with {response.StatusCode}"
         );
 

@@ -1,14 +1,17 @@
+using Migration;
+using Migration.SQLite;
+
 namespace Scheduling.Api;
 
 /// <summary>
-/// Database initialization for Scheduling.Api.
+/// Database initialization for Scheduling.Api using Migration tool.
 /// All tables follow FHIR R4 resource structure with fhir_ prefix.
 /// See: https://build.fhir.org/resourcelist.html
 /// </summary>
 internal static class DatabaseSetup
 {
     /// <summary>
-    /// Creates the database schema and sync infrastructure.
+    /// Creates the database schema and sync infrastructure using Migration.
     /// Tables conform to FHIR R4 resources.
     /// </summary>
     public static void Initialize(SqliteConnection connection, ILogger logger)
@@ -27,19 +30,27 @@ internal static class DatabaseSetup
 
         _ = SyncSchema.SetOriginId(connection, Guid.NewGuid().ToString());
 
-        // Execute schema - use assembly location so each API finds its own schema
-        using var cmd = connection.CreateCommand();
-        var assemblyDir = Path.GetDirectoryName(typeof(DatabaseSetup).Assembly.Location)!;
-        var schemaPath = Path.Combine(assemblyDir, "scheduling_schema.sql");
+        // Use Migration tool to create schema from SchedulingSchema metadata
+        try
+        {
+            foreach (var table in SchedulingSchema.Definition.Tables)
+            {
+                var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
+                using var cmd = connection.CreateCommand();
+                cmd.CommandText = ddl;
+                cmd.ExecuteNonQuery();
+                logger.Log(LogLevel.Debug, "Created table {TableName}", table.Name);
+            }
 
-        if (File.Exists(schemaPath))
-        {
-            cmd.CommandText = File.ReadAllText(schemaPath);
-            cmd.ExecuteNonQuery();
+            logger.Log(
+                LogLevel.Information,
+                "Created Scheduling database schema from SchedulingSchema metadata"
+            );
         }
-        else
+        catch (Exception ex)
         {
-            logger.Log(LogLevel.Warning, "scheduling_schema.sql not found at {Path}", schemaPath);
+            logger.Log(LogLevel.Error, ex, "Failed to create Scheduling database schema");
+            return;
         }
 
         // Create sync triggers for FHIR resources

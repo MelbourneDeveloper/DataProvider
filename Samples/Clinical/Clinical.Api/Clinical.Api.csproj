@@ -13,6 +13,8 @@
     <ProjectReference Include="..\..\..\Sync\Sync.SQLite\Sync.SQLite.csproj" />
     <ProjectReference Include="..\..\..\DataProvider\DataProvider\DataProvider.csproj" />
     <ProjectReference Include="..\..\..\Other\Selecta\Selecta.csproj" />
+    <ProjectReference Include="..\..\..\Migration\Migration\Migration.csproj" />
+    <ProjectReference Include="..\..\..\Migration\Migration.SQLite\Migration.SQLite.csproj" />
   </ItemGroup>
 
   <ItemGroup>

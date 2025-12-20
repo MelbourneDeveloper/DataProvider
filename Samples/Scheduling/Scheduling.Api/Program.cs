@@ -32,7 +32,7 @@ var dbPath =
 var connectionString = new SqliteConnectionStringBuilder
 {
     DataSource = dbPath,
-    ForeignKeys = true // ENFORCE REFERENTIAL INTEGRITY
+    ForeignKeys = true, // ENFORCE REFERENTIAL INTEGRITY
 }.ToString();
 
 // Register a FACTORY that creates new connections - NOT a singleton connection

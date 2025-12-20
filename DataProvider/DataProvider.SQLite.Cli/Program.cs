@@ -154,8 +154,10 @@ internal static class Program
                     {
                         baseName = baseName[..^".generated".Length];
                     }
-                    if (string.Equals(baseName, "schema", StringComparison.OrdinalIgnoreCase)
-                        || baseName.EndsWith("_schema", StringComparison.OrdinalIgnoreCase))
+                    if (
+                        string.Equals(baseName, "schema", StringComparison.OrdinalIgnoreCase)
+                        || baseName.EndsWith("_schema", StringComparison.OrdinalIgnoreCase)
+                    )
                     {
                         // Skip schema files; they're only for DB initialization
                         continue;

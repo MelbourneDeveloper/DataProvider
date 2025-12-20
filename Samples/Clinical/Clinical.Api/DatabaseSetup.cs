@@ -1,12 +1,15 @@
+using Migration;
+using Migration.SQLite;
+
 namespace Clinical.Api;
 
 /// <summary>
-/// Database initialization for Clinical.Api.
+/// Database initialization for Clinical.Api using Migration tool.
 /// </summary>
 internal static class DatabaseSetup
 {
     /// <summary>
-    /// Creates the database schema and sync infrastructure.
+    /// Creates the database schema and sync infrastructure using Migration.
     /// </summary>
     public static void Initialize(SqliteConnection connection, ILogger logger)
     {
@@ -33,19 +36,26 @@ internal static class DatabaseSetup
             return;
         }
 
-        // Use assembly location to find schema file (works with WebApplicationFactory)
-        var assemblyDir = Path.GetDirectoryName(typeof(DatabaseSetup).Assembly.Location)!;
-        var schemaPath = Path.Combine(assemblyDir, "clinical_schema.sql");
-        if (File.Exists(schemaPath))
+        // Use Migration tool to create schema from ClinicalSchema metadata
+        try
         {
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = File.ReadAllText(schemaPath);
-            cmd.ExecuteNonQuery();
-            logger.Log(LogLevel.Information, "Executed clinical_schema.sql for Clinical.Api setup");
+            foreach (var table in ClinicalSchema.Definition.Tables)
+            {
+                var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
+                using var cmd = connection.CreateCommand();
+                cmd.CommandText = ddl;
+                cmd.ExecuteNonQuery();
+                logger.Log(LogLevel.Debug, "Created table {TableName}", table.Name);
+            }
+
+            logger.Log(
+                LogLevel.Information,
+                "Created Clinical database schema from ClinicalSchema metadata"
+            );
         }
-        else
+        catch (Exception ex)
         {
-            logger.Log(LogLevel.Error, "clinical_schema.sql not found at {SchemaPath}", schemaPath);
+            logger.Log(LogLevel.Error, ex, "Failed to create Clinical database schema");
             return;
         }
 
