@@ -11,7 +11,7 @@ namespace Dashboard.Api
     /// </summary>
     public static class ApiClient
     {
-        private static string _clinicalBaseUrl = "http://localhost:5000";
+        private static string _clinicalBaseUrl = "http://localhost:5080";
         private static string _schedulingBaseUrl = "http://localhost:5001";
 
         /// <summary>

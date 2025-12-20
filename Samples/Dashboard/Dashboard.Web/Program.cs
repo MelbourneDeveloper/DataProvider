@@ -16,7 +16,7 @@ namespace Dashboard
         {
             // Configure API endpoints
             // Default to local development URLs
-            var clinicalUrl = GetConfigValue("CLINICAL_API_URL", "http://localhost:5000");
+            var clinicalUrl = GetConfigValue("CLINICAL_API_URL", "http://localhost:5080");
             var schedulingUrl = GetConfigValue("SCHEDULING_API_URL", "http://localhost:5001");
 
             ApiClient.Configure(clinicalUrl, schedulingUrl);

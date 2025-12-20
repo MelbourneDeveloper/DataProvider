@@ -51677,7 +51677,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
             },
             ctors: {
                 init: function () {
-                    this._clinicalBaseUrl = "http://localhost:5000";
+                    this._clinicalBaseUrl = "http://localhost:5080";
                     this._schedulingBaseUrl = "http://localhost:5001";
                 }
             },
@@ -54563,7 +54563,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
          * @return  {void}
          */
         main: function Main () {
-            var clinicalUrl = Dashboard.Program.GetConfigValue("CLINICAL_API_URL", "http://localhost:5000");
+            var clinicalUrl = Dashboard.Program.GetConfigValue("CLINICAL_API_URL", "http://localhost:5080");
             var schedulingUrl = Dashboard.Program.GetConfigValue("SCHEDULING_API_URL", "http://localhost:5001");
 
             Dashboard.Api.ApiClient.Configure(clinicalUrl, schedulingUrl);

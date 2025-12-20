@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Dashboard.Tests</RootNamespace>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <NoWarn>CS0626;CS1591;CA1812;IDE0005;CA1848;CA2100;CS8632</NoWarn>
+    <NoWarn>CS0626;CS1591;CA1812;CA1848;CA2100;CS8632</NoWarn>
     <!-- H5 specific settings -->
     <DefineConstants>H5</DefineConstants>
     <UseLocalH5>true</UseLocalH5>

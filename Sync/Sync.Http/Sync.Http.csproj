@@ -1,7 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <!--
+      This project provides TOOLS for building sync servers (extension methods, DTOs, helpers).
+      It is a LIBRARY - not an executable. Reference this and use AddSyncApiServices() + MapSyncEndpoints()
+      in YOUR OWN host project.
+    -->
+    <OutputType>Library</OutputType>
     <RootNamespace>Sync.Http</RootNamespace>
     <NoWarn>$(NoWarn);CA1848;CA1515;CA1307;CA2007;EPC13;CS1591</NoWarn>
   </PropertyGroup>
