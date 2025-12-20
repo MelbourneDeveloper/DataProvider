@@ -136,6 +136,13 @@ public static class TriggerGenerator
     {
         logger.LogDebug("TRIGGER: Creating triggers for table {Table}", tableName);
 
+        // Drop existing triggers first to allow re-creation
+        var dropResult = DropTriggers(connection, tableName, logger);
+        if (dropResult is BoolSyncError dropError)
+        {
+            return dropError;
+        }
+
         var triggersResult = GenerateTriggersFromSchema(connection, tableName, logger);
 
         if (triggersResult is StringSyncError error)

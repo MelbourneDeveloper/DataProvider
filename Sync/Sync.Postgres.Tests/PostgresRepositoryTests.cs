@@ -21,21 +21,34 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         await _postgres.StartAsync().ConfigureAwait(false);
-        _conn = new NpgsqlConnection(_postgres.GetConnectionString());
 
-        // Retry connection with backoff - container may not be immediately ready
-        var maxRetries = 5;
+        // Retry connection with exponential backoff - container may not be immediately ready
+        var maxRetries = 10;
+        Exception? lastException = null;
+
         for (var i = 0; i < maxRetries; i++)
         {
             try
             {
+                _conn = new NpgsqlConnection(_postgres.GetConnectionString());
                 await _conn.OpenAsync().ConfigureAwait(false);
+                lastException = null;
                 break;
             }
-            catch (NpgsqlException) when (i < maxRetries - 1)
+            catch (Exception ex) when (i < maxRetries - 1)
             {
+                lastException = ex;
+                _conn?.Dispose();
                 await Task.Delay(500 * (i + 1)).ConfigureAwait(false);
             }
+        }
+
+        if (lastException is not null || _conn is null)
+        {
+            throw new InvalidOperationException(
+                $"Failed to connect to PostgreSQL container after {maxRetries} retries",
+                lastException
+            );
         }
 
         // Create schema

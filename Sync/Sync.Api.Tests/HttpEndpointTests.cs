@@ -1,20 +1,33 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.VisualStudio.TestPlatform.TestHost;
 
 namespace Sync.Api.Tests;
+
+/// <summary>
+/// Custom WebApplicationFactory that sets the correct content root path.
+/// </summary>
+public sealed class SyncApiWebApplicationFactory : WebApplicationFactory<Program>
+{
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        // Use the output directory where the test assembly runs from
+        // This avoids path resolution issues with the source directory structure
+        var contentRoot = Path.GetDirectoryName(typeof(Program).Assembly.Location)!;
+        builder.UseContentRoot(contentRoot);
+    }
+}
 
 /// <summary>
 /// E2E HTTP integration tests for sync API endpoints.
 /// Tests the FULL HTTP stack including rate limiting, validation, and error handling.
 /// Uses WebApplicationFactory for real ASP.NET Core hosting.
 /// </summary>
-public sealed class HttpEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class HttpEndpointTests : IClassFixture<SyncApiWebApplicationFactory>
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly SyncApiWebApplicationFactory _factory;
     private readonly HttpClient _client;
 
-    public HttpEndpointTests(WebApplicationFactory<Program> factory)
+    public HttpEndpointTests(SyncApiWebApplicationFactory factory)
     {
         _factory = factory;
         _client = _factory.CreateClient();

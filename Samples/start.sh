@@ -13,6 +13,16 @@ cleanup() {
 }
 trap cleanup SIGINT SIGTERM
 
+# Kill processes on ports we need
+kill_port() {
+    lsof -ti:"$1" | xargs kill -9 2>/dev/null || true
+}
+
+echo "Killing existing processes..."
+kill_port 5080
+kill_port 5001
+kill_port 5173
+
 echo "Starting services..."
 
 # Start Clinical API
