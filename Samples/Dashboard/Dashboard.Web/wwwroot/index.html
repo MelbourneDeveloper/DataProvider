@@ -15,6 +15,9 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/layout.css">
 
+  <!-- Google Charts -->
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
   <!-- React (local bundle for offline/test support) -->
   <script src="js/vendor/react.development.js"></script>
   <script src="js/vendor/react-dom.development.js"></script>
@@ -97,6 +100,18 @@
       document.getElementById('loading-screen').classList.add('hidden');
     }, 1500);
 
+    // Load Google Charts
+    google.charts.load('current', {
+      'packages': ['corechart', 'line', 'bar', 'gauge']
+    });
+
+    // Flag to track when charts are ready
+    let googleChartsLoaded = false;
+    google.charts.setOnLoadCallback(() => {
+      googleChartsLoaded = true;
+      console.log('[Dashboard] Google Charts loaded!');
+    });
+
     // Load the React dashboard
     console.log('[Dashboard] Loading React dashboard...');
 
@@ -135,6 +150,17 @@
         }, dependencies);
 
         return { data, loading, error };
+      };
+
+      // POST API helper
+      const postApi = async (url, data) => {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
       };
 
       // Icons as SVG components
@@ -194,7 +220,221 @@
         TrendDown: () => React.createElement('svg', { className: 'icon icon-sm', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
           React.createElement('polyline', { points: '23,18 13.5,8.5 8.5,13.5 1,6' }),
           React.createElement('polyline', { points: '17,18 23,18 23,12' })
+        ),
+        Close: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+          React.createElement('line', { x1: 18, y1: 6, x2: 6, y2: 18 }),
+          React.createElement('line', { x1: 6, y1: 6, x2: 18, y2: 18 })
         )
+      };
+
+      // Modal Component
+      const Modal = ({ isOpen, onClose, title, children }) => {
+        if (!isOpen) return null;
+        return React.createElement('div', { className: 'modal-backdrop open', onClick: onClose },
+          React.createElement('div', { className: 'modal', onClick: e => e.stopPropagation() },
+            React.createElement('div', { className: 'modal-header' },
+              React.createElement('h3', { className: 'modal-title' }, title),
+              React.createElement('button', { className: 'modal-close', onClick: onClose },
+                React.createElement(Icons.Close)
+              )
+            ),
+            children
+          )
+        );
+      };
+
+      // Add Patient Modal Component
+      const AddPatientModal = ({ isOpen, onClose, onSuccess }) => {
+        const [formData, setFormData] = React.useState({ GivenName: '', FamilyName: '', Gender: 'other', Active: true });
+        const [submitting, setSubmitting] = React.useState(false);
+        const [error, setError] = React.useState(null);
+
+        const handleSubmit = async (e) => {
+          e.preventDefault();
+          setSubmitting(true);
+          setError(null);
+          try {
+            await postApi(`${CLINICAL_API}/fhir/Patient/`, formData);
+            setFormData({ GivenName: '', FamilyName: '', Gender: 'other', Active: true });
+            onSuccess();
+            onClose();
+          } catch (err) {
+            setError(err.message);
+          } finally {
+            setSubmitting(false);
+          }
+        };
+
+        return React.createElement(Modal, { isOpen, onClose, title: 'Add New Patient' },
+          React.createElement('form', { onSubmit: handleSubmit },
+            React.createElement('div', { className: 'modal-body' },
+              error && React.createElement('div', { className: 'alert alert-error mb-4' }, error),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'Given Name'),
+                React.createElement('input', {
+                  type: 'text',
+                  className: 'input',
+                  placeholder: 'Enter given name',
+                  value: formData.GivenName,
+                  onChange: e => setFormData({ ...formData, GivenName: e.target.value }),
+                  required: true,
+                  'data-testid': 'patient-given-name'
+                })
+              ),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'Family Name'),
+                React.createElement('input', {
+                  type: 'text',
+                  className: 'input',
+                  placeholder: 'Enter family name',
+                  value: formData.FamilyName,
+                  onChange: e => setFormData({ ...formData, FamilyName: e.target.value }),
+                  required: true,
+                  'data-testid': 'patient-family-name'
+                })
+              ),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'Gender'),
+                React.createElement('select', {
+                  className: 'input',
+                  value: formData.Gender,
+                  onChange: e => setFormData({ ...formData, Gender: e.target.value }),
+                  'data-testid': 'patient-gender'
+                },
+                  React.createElement('option', { value: 'male' }, 'Male'),
+                  React.createElement('option', { value: 'female' }, 'Female'),
+                  React.createElement('option', { value: 'other' }, 'Other')
+                )
+              )
+            ),
+            React.createElement('div', { className: 'modal-footer' },
+              React.createElement('button', { type: 'button', className: 'btn btn-secondary', onClick: onClose }, 'Cancel'),
+              React.createElement('button', { type: 'submit', className: 'btn btn-primary', disabled: submitting, 'data-testid': 'submit-patient' },
+                submitting ? 'Saving...' : 'Add Patient'
+              )
+            )
+          )
+        );
+      };
+
+      // Add Appointment Modal Component
+      const AddAppointmentModal = ({ isOpen, onClose, onSuccess }) => {
+        const [formData, setFormData] = React.useState({
+          ServiceCategory: 'General',
+          ServiceType: 'Checkup',
+          Priority: 'routine',
+          PatientReference: 'Patient/1',
+          PractitionerReference: 'Practitioner/1',
+          Start: new Date().toISOString().slice(0, 16),
+          End: new Date(Date.now() + 3600000).toISOString().slice(0, 16)
+        });
+        const [submitting, setSubmitting] = React.useState(false);
+        const [error, setError] = React.useState(null);
+
+        const handleSubmit = async (e) => {
+          e.preventDefault();
+          setSubmitting(true);
+          setError(null);
+          try {
+            await postApi(`${SCHEDULING_API}/Appointment`, {
+              ...formData,
+              Start: new Date(formData.Start).toISOString(),
+              End: new Date(formData.End).toISOString()
+            });
+            onSuccess();
+            onClose();
+          } catch (err) {
+            setError(err.message);
+          } finally {
+            setSubmitting(false);
+          }
+        };
+
+        return React.createElement(Modal, { isOpen, onClose, title: 'New Appointment' },
+          React.createElement('form', { onSubmit: handleSubmit },
+            React.createElement('div', { className: 'modal-body' },
+              error && React.createElement('div', { className: 'alert alert-error mb-4' }, error),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'Service Type'),
+                React.createElement('input', {
+                  type: 'text',
+                  className: 'input',
+                  placeholder: 'e.g. Checkup, Consultation',
+                  value: formData.ServiceType,
+                  onChange: e => setFormData({ ...formData, ServiceType: e.target.value }),
+                  required: true,
+                  'data-testid': 'appointment-service-type'
+                })
+              ),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'Patient Reference'),
+                React.createElement('input', {
+                  type: 'text',
+                  className: 'input',
+                  placeholder: 'e.g. Patient/1',
+                  value: formData.PatientReference,
+                  onChange: e => setFormData({ ...formData, PatientReference: e.target.value }),
+                  required: true,
+                  'data-testid': 'appointment-patient-ref'
+                })
+              ),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'Practitioner Reference'),
+                React.createElement('input', {
+                  type: 'text',
+                  className: 'input',
+                  placeholder: 'e.g. Practitioner/1',
+                  value: formData.PractitionerReference,
+                  onChange: e => setFormData({ ...formData, PractitionerReference: e.target.value }),
+                  required: true,
+                  'data-testid': 'appointment-practitioner-ref'
+                })
+              ),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'Start Time'),
+                React.createElement('input', {
+                  type: 'datetime-local',
+                  className: 'input',
+                  value: formData.Start,
+                  onChange: e => setFormData({ ...formData, Start: e.target.value }),
+                  required: true,
+                  'data-testid': 'appointment-start'
+                })
+              ),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'End Time'),
+                React.createElement('input', {
+                  type: 'datetime-local',
+                  className: 'input',
+                  value: formData.End,
+                  onChange: e => setFormData({ ...formData, End: e.target.value }),
+                  required: true,
+                  'data-testid': 'appointment-end'
+                })
+              ),
+              React.createElement('div', { className: 'input-group mb-4' },
+                React.createElement('label', { className: 'input-label' }, 'Priority'),
+                React.createElement('select', {
+                  className: 'input',
+                  value: formData.Priority,
+                  onChange: e => setFormData({ ...formData, Priority: e.target.value }),
+                  'data-testid': 'appointment-priority'
+                },
+                  React.createElement('option', { value: 'routine' }, 'Routine'),
+                  React.createElement('option', { value: 'urgent' }, 'Urgent'),
+                  React.createElement('option', { value: 'asap' }, 'ASAP'),
+                  React.createElement('option', { value: 'stat' }, 'STAT')
+                )
+              )
+            ),
+            React.createElement('div', { className: 'modal-footer' },
+              React.createElement('button', { type: 'button', className: 'btn btn-secondary', onClick: onClose }, 'Cancel'),
+              React.createElement('button', { type: 'submit', className: 'btn btn-primary', disabled: submitting, 'data-testid': 'submit-appointment' },
+                submitting ? 'Saving...' : 'Create Appointment'
+              )
+            )
+          )
+        );
       };
 
       // Metric Card Component
@@ -221,7 +461,7 @@
         }
         if (!data || data.length === 0) {
           return React.createElement('div', { className: 'empty-state' },
-            React.createElement(Icons.Clipboard),
+            React.createElement('div', { className: 'empty-state-icon' }, React.createElement(Icons.Clipboard)),
             React.createElement('h4', { className: 'empty-state-title' }, 'No Data'),
             React.createElement('p', { className: 'empty-state-description' }, 'No records found')
           );
@@ -250,73 +490,551 @@
         );
       };
 
-      // Dashboard Page
-      const DashboardPage = () => {
+      // Mini Sparkline Chart Component
+      const Sparkline = ({ data, color = 'var(--primary-blue)', height = 40 }) => {
+        const max = Math.max(...data);
+        const min = Math.min(...data);
+        const range = max - min || 1;
+        const width = 100;
+        const points = data.map((v, i) => `${(i / (data.length - 1)) * width},${height - ((v - min) / range) * height}`).join(' ');
+        return React.createElement('svg', { viewBox: `0 0 ${width} ${height}`, style: { width: '100%', height: `${height}px` }, preserveAspectRatio: 'none' },
+          React.createElement('polyline', { fill: 'none', stroke: color, strokeWidth: 2, points }),
+          React.createElement('polyline', { fill: `${color}20`, stroke: 'none', points: `0,${height} ${points} ${width},${height}` })
+        );
+      };
+
+      // Donut Chart Component
+      const DonutChart = ({ value, max = 100, size = 80, strokeWidth = 8, color = 'var(--primary-blue)' }) => {
+        const radius = (size - strokeWidth) / 2;
+        const circumference = 2 * Math.PI * radius;
+        const percent = Math.min(value / max, 1);
+        const offset = circumference * (1 - percent);
+        return React.createElement('svg', { width: size, height: size, style: { transform: 'rotate(-90deg)' } },
+          React.createElement('circle', { cx: size/2, cy: size/2, r: radius, fill: 'none', stroke: 'var(--gray-200)', strokeWidth }),
+          React.createElement('circle', { cx: size/2, cy: size/2, r: radius, fill: 'none', stroke: color, strokeWidth, strokeDasharray: circumference, strokeDashoffset: offset, strokeLinecap: 'round' })
+        );
+      };
+
+      // Bar Chart Component
+      const BarChart = ({ data, height = 120 }) => {
+        const max = Math.max(...data.map(d => d.value));
+        return React.createElement('div', { className: 'bar-chart', style: { display: 'flex', alignItems: 'flex-end', gap: '8px', height: `${height}px` } },
+          data.map((d, i) => React.createElement('div', { key: i, className: 'bar-chart-item', style: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' } },
+            React.createElement('div', {
+              className: 'bar',
+              style: {
+                width: '100%',
+                height: `${(d.value / max) * 100}%`,
+                background: `linear-gradient(to top, ${d.color || 'var(--primary-blue)'}, ${d.colorLight || 'var(--primary-blue-subtle)'})`,
+                borderRadius: '4px 4px 0 0',
+                minHeight: '4px'
+              }
+            }),
+            React.createElement('span', { style: { fontSize: '10px', color: 'var(--gray-500)' } }, d.label)
+          ))
+        );
+      };
+
+      // Google Area Chart Component
+      const GoogleAreaChart = ({ data, title, height = 200, colors = ['#3b82f6', '#14b8a6'] }) => {
+        const chartRef = React.useRef(null);
+        const [chartReady, setChartReady] = React.useState(false);
+        React.useEffect(() => {
+          if (!googleChartsLoaded || !chartRef.current) {
+            const checkInterval = setInterval(() => { if (googleChartsLoaded && chartRef.current) { clearInterval(checkInterval); setChartReady(true); } }, 100);
+            return () => clearInterval(checkInterval);
+          }
+          setChartReady(true);
+        }, []);
+        React.useEffect(() => {
+          if (!chartReady || !chartRef.current || !data) return;
+          const chartData = google.visualization.arrayToDataTable(data);
+          const options = { title: title || '', titleTextStyle: { color: '#374151', fontSize: 14, fontName: 'Inter', bold: false }, hAxis: { textStyle: { color: '#9ca3af', fontSize: 11, fontName: 'Inter' }, gridlines: { color: 'transparent' }, baselineColor: '#e5e7eb' }, vAxis: { textStyle: { color: '#9ca3af', fontSize: 11, fontName: 'Inter' }, gridlines: { color: '#f3f4f6' }, baselineColor: '#e5e7eb', minValue: 0 }, legend: { position: 'top', alignment: 'end', textStyle: { color: '#6b7280', fontSize: 11, fontName: 'Inter' } }, colors: colors, areaOpacity: 0.15, lineWidth: 3, pointSize: 0, curveType: 'function', chartArea: { left: 50, top: 40, width: '85%', height: '70%' }, backgroundColor: 'transparent', animation: { startup: true, duration: 800, easing: 'out' } };
+          const chart = new google.visualization.AreaChart(chartRef.current);
+          chart.draw(chartData, options);
+        }, [chartReady, data, title, colors]);
+        return React.createElement('div', { ref: chartRef, className: 'google-chart-container', style: { width: '100%', height: `${height}px`, minHeight: `${height}px` } });
+      };
+
+      // Google Pie/Donut Chart Component
+      const GooglePieChart = ({ data, title, height = 200, colors, pieHole = 0.5 }) => {
+        const chartRef = React.useRef(null);
+        const [chartReady, setChartReady] = React.useState(false);
+        React.useEffect(() => {
+          if (!googleChartsLoaded || !chartRef.current) {
+            const checkInterval = setInterval(() => { if (googleChartsLoaded && chartRef.current) { clearInterval(checkInterval); setChartReady(true); } }, 100);
+            return () => clearInterval(checkInterval);
+          }
+          setChartReady(true);
+        }, []);
+        React.useEffect(() => {
+          if (!chartReady || !chartRef.current || !data) return;
+          const chartData = google.visualization.arrayToDataTable(data);
+          const options = { title: title || '', titleTextStyle: { color: '#374151', fontSize: 14, fontName: 'Inter', bold: false }, pieHole: pieHole, pieSliceTextStyle: { color: '#ffffff', fontSize: 11, fontName: 'Inter' }, legend: { position: 'right', alignment: 'center', textStyle: { color: '#6b7280', fontSize: 11, fontName: 'Inter' } }, colors: colors || ['#3b82f6', '#14b8a6', '#22c55e', '#f59e0b', '#f97316', '#8b5cf6'], chartArea: { left: 20, top: 30, width: '90%', height: '80%' }, backgroundColor: 'transparent', animation: { startup: true, duration: 800, easing: 'out' } };
+          const chart = new google.visualization.PieChart(chartRef.current);
+          chart.draw(chartData, options);
+        }, [chartReady, data, title, colors, pieHole]);
+        return React.createElement('div', { ref: chartRef, className: 'google-chart-container', style: { width: '100%', height: `${height}px`, minHeight: `${height}px` } });
+      };
+
+      // Google Column Chart Component
+      const GoogleColumnChart = ({ data, title, height = 200, colors = ['#14b8a6'] }) => {
+        const chartRef = React.useRef(null);
+        const [chartReady, setChartReady] = React.useState(false);
+        React.useEffect(() => {
+          if (!googleChartsLoaded || !chartRef.current) {
+            const checkInterval = setInterval(() => { if (googleChartsLoaded && chartRef.current) { clearInterval(checkInterval); setChartReady(true); } }, 100);
+            return () => clearInterval(checkInterval);
+          }
+          setChartReady(true);
+        }, []);
+        React.useEffect(() => {
+          if (!chartReady || !chartRef.current || !data) return;
+          const chartData = google.visualization.arrayToDataTable(data);
+          const options = { title: title || '', titleTextStyle: { color: '#374151', fontSize: 14, fontName: 'Inter', bold: false }, hAxis: { textStyle: { color: '#9ca3af', fontSize: 11, fontName: 'Inter' }, gridlines: { color: 'transparent' } }, vAxis: { textStyle: { color: '#9ca3af', fontSize: 11, fontName: 'Inter' }, gridlines: { color: '#f3f4f6' }, minValue: 0 }, legend: { position: 'none' }, colors: colors, bar: { groupWidth: '60%' }, chartArea: { left: 50, top: 30, width: '85%', height: '70%' }, backgroundColor: 'transparent', animation: { startup: true, duration: 800, easing: 'out' } };
+          const chart = new google.visualization.ColumnChart(chartRef.current);
+          chart.draw(chartData, options);
+        }, [chartReady, data, title, colors]);
+        return React.createElement('div', { ref: chartRef, className: 'google-chart-container', style: { width: '100%', height: `${height}px`, minHeight: `${height}px` } });
+      };
+
+      // Google Line Chart Component
+      const GoogleLineChart = ({ data, title, height = 200, colors = ['#3b82f6', '#14b8a6', '#f97316'] }) => {
+        const chartRef = React.useRef(null);
+        const [chartReady, setChartReady] = React.useState(false);
+        React.useEffect(() => {
+          if (!googleChartsLoaded || !chartRef.current) {
+            const checkInterval = setInterval(() => { if (googleChartsLoaded && chartRef.current) { clearInterval(checkInterval); setChartReady(true); } }, 100);
+            return () => clearInterval(checkInterval);
+          }
+          setChartReady(true);
+        }, []);
+        React.useEffect(() => {
+          if (!chartReady || !chartRef.current || !data) return;
+          const chartData = google.visualization.arrayToDataTable(data);
+          const options = { title: title || '', titleTextStyle: { color: '#374151', fontSize: 14, fontName: 'Inter', bold: false }, hAxis: { textStyle: { color: '#9ca3af', fontSize: 11, fontName: 'Inter' }, gridlines: { color: 'transparent' } }, vAxis: { textStyle: { color: '#9ca3af', fontSize: 11, fontName: 'Inter' }, gridlines: { color: '#f3f4f6' }, minValue: 0 }, legend: { position: 'top', alignment: 'end', textStyle: { color: '#6b7280', fontSize: 11, fontName: 'Inter' } }, colors: colors, lineWidth: 3, pointSize: 5, curveType: 'function', chartArea: { left: 50, top: 40, width: '85%', height: '65%' }, backgroundColor: 'transparent', animation: { startup: true, duration: 800, easing: 'out' } };
+          const chart = new google.visualization.LineChart(chartRef.current);
+          chart.draw(chartData, options);
+        }, [chartReady, data, title, colors]);
+        return React.createElement('div', { ref: chartRef, className: 'google-chart-container', style: { width: '100%', height: `${height}px`, minHeight: `${height}px` } });
+      };
+
+      // Calendar Date Picker Component
+      const CalendarPicker = ({ selectedDate, onSelect }) => {
+        const today = new Date();
+        const [currentMonth] = React.useState(today.getMonth());
+        const [currentYear] = React.useState(today.getFullYear());
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        const days = [];
+        for (let i = 0; i < firstDay; i++) days.push(null);
+        for (let i = 1; i <= daysInMonth; i++) days.push(i);
+
+        return React.createElement('div', { className: 'calendar-picker' },
+          React.createElement('div', { className: 'calendar-header' },
+            React.createElement('span', { className: 'calendar-month' },
+              new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+            )
+          ),
+          React.createElement('div', { className: 'calendar-weekdays' },
+            ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d =>
+              React.createElement('div', { key: d, className: 'calendar-weekday' }, d)
+            )
+          ),
+          React.createElement('div', { className: 'calendar-days' },
+            days.map((day, i) =>
+              React.createElement('div', {
+                key: i,
+                className: `calendar-day ${day === today.getDate() ? 'today' : ''} ${day === selectedDate ? 'selected' : ''} ${!day ? 'empty' : ''}`,
+                onClick: day ? () => onSelect(day) : undefined
+              }, day)
+            )
+          )
+        );
+      };
+
+      // Appointment Request Card
+      const AppointmentRequestCard = ({ patient, type, time, onAccept, onReject }) => (
+        React.createElement('div', { className: 'appointment-request' },
+          React.createElement('div', { className: 'appointment-request-info' },
+            React.createElement('div', { className: 'avatar avatar-md', style: { background: 'var(--teal-soft)', color: 'var(--teal-dark)' } },
+              patient.split(' ').map(n => n[0]).join('')
+            ),
+            React.createElement('div', { className: 'appointment-request-details' },
+              React.createElement('div', { className: 'appointment-request-name' }, patient),
+              React.createElement('div', { className: 'appointment-request-type' }, type),
+              React.createElement('div', { className: 'appointment-request-time' },
+                React.createElement(Icons.Calendar),
+                React.createElement('span', null, time)
+              )
+            )
+          ),
+          React.createElement('div', { className: 'appointment-request-actions' },
+            React.createElement('button', { className: 'btn-icon-circle reject', onClick: onReject, title: 'Reject' }, '×'),
+            React.createElement('button', { className: 'btn-icon-circle accept', onClick: onAccept, title: 'Accept' }, '✓')
+          )
+        )
+      );
+
+      // Rich Metric Card with breakdown
+      const RichMetricCard = ({ title, value, change, changeType, icon, breakdown, chart, loading }) => (
+        React.createElement('div', { className: 'metric-card metric-card-rich' },
+          React.createElement('div', { className: 'metric-card-header' },
+            React.createElement('div', { className: 'metric-card-icon' }, icon),
+            React.createElement('span', { className: 'metric-card-title' }, title),
+            React.createElement('a', { href: '#', className: 'metric-card-link' }, 'View more')
+          ),
+          React.createElement('div', { className: 'metric-card-body' },
+            React.createElement('div', { className: 'metric-card-value-row' },
+              React.createElement('span', { className: 'metric-card-value' }, loading ? '-' : value),
+              change && React.createElement('span', { className: `metric-card-change ${changeType}` }, change)
+            ),
+            breakdown && React.createElement('div', { className: 'metric-card-breakdown' },
+              breakdown.map((item, i) =>
+                React.createElement('span', { key: i, className: 'metric-breakdown-item' },
+                  React.createElement('span', { className: 'metric-breakdown-dot', style: { background: item.color } }),
+                  item.label
+                )
+              )
+            ),
+            chart
+          )
+        )
+      );
+
+      // Dashboard Page - Professional Healthcare Design
+      const DashboardPage = ({ onNavigate }) => {
         const patients = useFetch(`${CLINICAL_API}/fhir/Patient`);
         const practitioners = useFetch(`${SCHEDULING_API}/Practitioner`);
         const appointments = useFetch(`${SCHEDULING_API}/Appointment`);
+        const [selectedDate, setSelectedDate] = React.useState(new Date().getDate());
 
         const hasError = patients.error || practitioners.error || appointments.error;
         const isLoading = patients.loading || practitioners.loading || appointments.loading;
 
-        return React.createElement('div', { className: 'page' },
-          React.createElement('div', { className: 'page-header' },
-            React.createElement('h2', { className: 'page-title' }, 'Dashboard'),
-            React.createElement('p', { className: 'page-description' }, 'Overview of your healthcare system')
+        // Sample data for charts
+        const weeklyData = [35, 45, 38, 52, 48, 60, 55];
+        const monthlyTrend = [120, 145, 132, 168, 155, 180, 175, 190, 185, 210, 198, 220];
+        const treatmentBreakdown = [
+          { label: 'Surgery', color: 'var(--primary-blue)' },
+          { label: 'Consultation', color: 'var(--teal-bold)' },
+          { label: 'Diagnosis', color: 'var(--success)' },
+          { label: 'Biopsy', color: 'var(--warning)' }
+        ];
+        const revenueData = [
+          { label: 'Jan', value: 120, color: 'var(--teal-bold)', colorLight: 'var(--teal-soft)' },
+          { label: 'Feb', value: 180, color: 'var(--teal-bold)', colorLight: 'var(--teal-soft)' },
+          { label: 'Mar', value: 150, color: 'var(--teal-bold)', colorLight: 'var(--teal-soft)' },
+          { label: 'Apr', value: 220, color: 'var(--teal-bold)', colorLight: 'var(--teal-soft)' },
+          { label: 'May', value: 190, color: 'var(--teal-bold)', colorLight: 'var(--teal-soft)' },
+          { label: 'Jun', value: 250, color: 'var(--teal-bold)', colorLight: 'var(--teal-soft)' }
+        ];
+
+        // Mock upcoming appointments
+        const upcomingAppointments = [
+          { patient: 'Jane Cooper', treatment: 'Consultation', status: 'Confirmed', date: 'Mar. 22', time: '10:00AM' },
+          { patient: 'Guy Hawkins', treatment: 'Diagnosis', status: 'Confirmed', date: 'Mar. 22', time: '11:00AM' },
+          { patient: 'Cameron Williamson', treatment: 'Surgery', status: 'Confirmed', date: 'Mar. 22', time: '12:30PM' },
+          { patient: 'Jerome Bell', treatment: 'Consultation', status: 'Confirmed', date: 'Mar. 22', time: '3:00PM' }
+        ];
+
+        // Mock appointment requests
+        const appointmentRequests = [
+          { patient: 'Jane Cooper', type: 'Individual consultation', time: '02 Apr, 10:00 am' },
+          { patient: 'Albert Flores', type: 'Individual consultation', time: '04 Apr, 09:00 am' },
+          { patient: 'Kristin Watson', type: 'Individual consultation', time: '04 Apr, 02:00 pm' }
+        ];
+
+        return React.createElement('div', { className: 'page dashboard-page' },
+          // Welcome Header
+          React.createElement('div', { className: 'dashboard-welcome' },
+            React.createElement('h2', { className: 'welcome-title' }, 'Welcome back, Dr. Robert!'),
+            React.createElement('div', { className: 'welcome-actions' },
+              React.createElement('div', { className: 'date-filter' },
+                React.createElement('span', null, 'Monthly'),
+                React.createElement(Icons.Calendar)
+              ),
+              React.createElement('button', { className: 'btn btn-outline' }, 'Export data')
+            )
           ),
-          hasError && React.createElement('div', { className: 'card mb-6', style: { borderLeft: '4px solid var(--warning)' } },
-            React.createElement('div', { className: 'flex items-center gap-3' },
-              React.createElement(Icons.AlertCircle),
-              React.createElement('div', null,
-                React.createElement('h4', { className: 'font-semibold' }, 'Connection Warning'),
-                React.createElement('p', { className: 'text-sm text-gray-600' },
-                  'Could not connect to API. Make sure Clinical API (port 5000) and Scheduling API (port 5001) are running.'
+
+          // Connection Warning
+          hasError && React.createElement('div', { className: 'alert alert-warning mb-6' },
+            React.createElement(Icons.AlertCircle),
+            React.createElement('div', null,
+              React.createElement('strong', null, 'Connection Warning'),
+              React.createElement('p', null, 'Could not connect to API. Make sure Clinical API (port 5080) and Scheduling API (port 5001) are running.')
+            )
+          ),
+
+          // Top Metrics Row
+          React.createElement('div', { className: 'dashboard-metrics-row' },
+            React.createElement(RichMetricCard, {
+              title: 'Top Treatment',
+              value: '580',
+              change: '+24',
+              changeType: 'up',
+              icon: React.createElement(Icons.Activity),
+              breakdown: treatmentBreakdown,
+              loading: isLoading,
+              chart: React.createElement('div', { className: 'donut-chart-container' },
+                React.createElement('div', { className: 'donut-legend' },
+                  [180, 240, 100, 60].map((v, i) =>
+                    React.createElement('div', { key: i, className: 'donut-legend-item' },
+                      React.createElement(DonutChart, { value: v, max: 580, size: i === 0 ? 70 : i === 1 ? 60 : 40, strokeWidth: 6, color: treatmentBreakdown[i].color }),
+                      React.createElement('span', null, v)
+                    )
+                  )
+                )
+              )
+            }),
+            React.createElement(RichMetricCard, {
+              title: 'Satisfaction Rate',
+              value: '85%',
+              change: '-2%',
+              changeType: 'down',
+              icon: React.createElement('span', { style: { fontSize: '20px' } }, '😊'),
+              loading: isLoading,
+              chart: React.createElement(Sparkline, { data: weeklyData, color: 'var(--primary-blue)', height: 50 })
+            }),
+            React.createElement(RichMetricCard, {
+              title: 'Total Patients',
+              value: patients.data?.length || 620,
+              change: '+28',
+              changeType: 'up',
+              icon: React.createElement(Icons.Users),
+              breakdown: [
+                { label: 'Inpatient', color: 'var(--primary-blue)' },
+                { label: 'Discharged', color: 'var(--gray-400)' },
+                { label: 'Outpatient', color: 'var(--teal-bold)' }
+              ],
+              loading: isLoading,
+              chart: React.createElement('div', { className: 'patient-breakdown-bars' },
+                [420, 120, 80].map((v, i) =>
+                  React.createElement('div', { key: i, className: 'breakdown-bar-item' },
+                    React.createElement('span', { className: 'breakdown-bar-value' }, v),
+                    React.createElement('div', { className: 'breakdown-bar', style: { width: `${(v/420)*100}%`, background: ['var(--primary-blue)', 'var(--gray-300)', 'var(--teal-bold)'][i] } })
+                  )
+                )
+              )
+            }),
+            React.createElement(RichMetricCard, {
+              title: 'Total Appointments',
+              value: appointments.data?.length || 260,
+              change: '+16',
+              changeType: 'up',
+              icon: React.createElement(Icons.Calendar),
+              loading: isLoading,
+              chart: React.createElement(Sparkline, { data: monthlyTrend, color: 'var(--teal-bold)', height: 50 })
+            })
+          ),
+
+          // Main Content Grid
+          React.createElement('div', { className: 'dashboard-main-grid' },
+            // Left Column - Appointments Table
+            React.createElement('div', { className: 'dashboard-appointments-section' },
+              React.createElement('div', { className: 'card' },
+                React.createElement('div', { className: 'card-header' },
+                  React.createElement('div', { className: 'card-header-left' },
+                    React.createElement(Icons.Calendar),
+                    React.createElement('h3', { className: 'card-title' }, 'Upcoming Appointments')
+                  ),
+                  React.createElement('div', { className: 'appointment-legend' },
+                    React.createElement('span', { className: 'legend-item' }, React.createElement('span', { className: 'legend-dot available' }), 'Available'),
+                    React.createElement('span', { className: 'legend-item' }, React.createElement('span', { className: 'legend-dot selected' }), 'Selected'),
+                    React.createElement('span', { className: 'legend-item' }, React.createElement('span', { className: 'legend-dot unavailable' }), 'Unavailable')
+                  ),
+                  React.createElement('a', { href: '#', className: 'view-more-link' }, 'View more')
+                ),
+                React.createElement('div', { className: 'card-body' },
+                  // Calendar strip
+                  React.createElement('div', { className: 'calendar-strip' },
+                    React.createElement('button', { className: 'calendar-nav' }, React.createElement(Icons.ChevronLeft)),
+                    [...Array(9)].map((_, i) => {
+                      const day = 14 + i;
+                      const isToday = day === 22;
+                      const isSelected = day === selectedDate;
+                      return React.createElement('button', {
+                        key: i,
+                        className: `calendar-day-btn ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''} ${[18, 19].includes(day) ? 'has-events' : ''}`,
+                        onClick: () => setSelectedDate(day)
+                      }, day);
+                    }),
+                    React.createElement('button', { className: 'calendar-nav' }, React.createElement(Icons.ChevronRight))
+                  ),
+                  // Appointments table
+                  React.createElement('table', { className: 'appointments-table' },
+                    React.createElement('thead', null,
+                      React.createElement('tr', null,
+                        React.createElement('th', null, 'Patient'),
+                        React.createElement('th', null, 'Treatment'),
+                        React.createElement('th', null, 'Status'),
+                        React.createElement('th', null, 'Date'),
+                        React.createElement('th', null, 'Time'),
+                        React.createElement('th', null, 'Action')
+                      )
+                    ),
+                    React.createElement('tbody', null,
+                      (appointments.data || upcomingAppointments).slice(0, 5).map((apt, i) =>
+                        React.createElement('tr', { key: i },
+                          React.createElement('td', null,
+                            React.createElement('div', { className: 'patient-cell' },
+                              React.createElement('div', { className: 'avatar avatar-sm' },
+                                (apt.patient || apt.PatientReference || 'JD').substring(0, 2)
+                              ),
+                              apt.patient || apt.PatientReference || 'Patient'
+                            )
+                          ),
+                          React.createElement('td', null, apt.treatment || apt.ServiceType || 'Consultation'),
+                          React.createElement('td', null,
+                            React.createElement('span', { className: `status-badge ${(apt.status || apt.Status || 'confirmed').toLowerCase()}` },
+                              '• ', apt.status || apt.Status || 'Confirmed'
+                            )
+                          ),
+                          React.createElement('td', null, apt.date || (apt.Start ? new Date(apt.Start).toLocaleDateString() : 'Today')),
+                          React.createElement('td', null, apt.time || (apt.Start ? new Date(apt.Start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '10:00 AM')),
+                          React.createElement('td', null,
+                            React.createElement('div', { className: 'action-buttons' },
+                              React.createElement('button', { className: 'btn-icon-sm call' }, '📞'),
+                              React.createElement('button', { className: 'btn-icon-sm more' }, '⋮')
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            ),
+
+            // Right Column - Appointment Requests
+            React.createElement('div', { className: 'dashboard-requests-section' },
+              React.createElement('div', { className: 'card' },
+                React.createElement('div', { className: 'card-header' },
+                  React.createElement('div', { className: 'card-header-left' },
+                    React.createElement(Icons.Calendar),
+                    React.createElement('h3', { className: 'card-title' }, 'Appointment Requests')
+                  ),
+                  React.createElement('a', { href: '#', className: 'view-more-link' }, 'View more')
+                ),
+                React.createElement('div', { className: 'card-body requests-list' },
+                  appointmentRequests.map((req, i) =>
+                    React.createElement(AppointmentRequestCard, {
+                      key: i,
+                      patient: req.patient,
+                      type: req.type,
+                      time: req.time,
+                      onAccept: () => console.log('Accept', req.patient),
+                      onReject: () => console.log('Reject', req.patient)
+                    })
+                  )
+                )
+              ),
+
+              // Quick Actions Card
+              React.createElement('div', { className: 'card quick-actions-card' },
+                React.createElement('div', { className: 'card-header' },
+                  React.createElement('h3', { className: 'card-title' }, 'Quick Actions')
+                ),
+                React.createElement('div', { className: 'card-body' },
+                  React.createElement('div', { className: 'quick-actions-grid' },
+                    React.createElement('button', { className: 'quick-action-btn primary', onClick: () => onNavigate('patients', { openAddModal: true }), 'data-testid': 'quick-new-patient' },
+                      React.createElement(Icons.Users),
+                      React.createElement('span', null, '+ New Patient')
+                    ),
+                    React.createElement('button', { className: 'quick-action-btn', onClick: () => onNavigate('appointments', { openAddModal: true }), 'data-testid': 'quick-new-appointment' },
+                      React.createElement(Icons.Calendar),
+                      React.createElement('span', null, '+ New Appointment')
+                    ),
+                    React.createElement('button', { className: 'quick-action-btn', onClick: () => onNavigate('patients'), 'data-testid': 'quick-patient-search' },
+                      React.createElement(Icons.Search),
+                      React.createElement('span', null, 'Patient Search')
+                    ),
+                    React.createElement('button', { className: 'quick-action-btn', onClick: () => onNavigate('appointments'), 'data-testid': 'quick-view-schedule' },
+                      React.createElement(Icons.Clipboard),
+                      React.createElement('span', null, 'View Schedule')
+                    )
+                  )
                 )
               )
             )
           ),
-          React.createElement('div', { className: 'dashboard-grid metrics mb-6' },
-            React.createElement(MetricCard, { label: 'Total Patients', value: patients.data?.length || 0, icon: React.createElement(Icons.Users), iconColor: 'blue', trend: 'up', trendValue: '+12%', loading: isLoading }),
-            React.createElement(MetricCard, { label: 'Practitioners', value: practitioners.data?.length || 0, icon: React.createElement(Icons.UserDoctor), iconColor: 'teal', loading: isLoading }),
-            React.createElement(MetricCard, { label: 'Appointments', value: appointments.data?.length || 0, icon: React.createElement(Icons.Calendar), iconColor: 'success', trend: 'up', trendValue: '+8%', loading: isLoading }),
-            React.createElement(MetricCard, { label: 'Encounters', value: 0, icon: React.createElement(Icons.Clipboard), iconColor: 'warning', trend: 'down', trendValue: '-3%', loading: isLoading })
-          ),
-          React.createElement('div', { className: 'dashboard-grid mixed' },
+
+          // Google Charts Analytics Section
+          React.createElement('div', { className: 'dashboard-charts-section' },
             React.createElement('div', { className: 'card' },
               React.createElement('div', { className: 'card-header' },
-                React.createElement('h3', { className: 'card-title' }, 'Quick Actions')
+                React.createElement('h3', { className: 'card-title' }, 'Patient Activity Trends'),
+                React.createElement('a', { href: '#', className: 'view-more-link' }, 'View details')
               ),
               React.createElement('div', { className: 'card-body' },
-                React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
-                  React.createElement('button', { className: 'btn btn-primary w-full' }, '+ New Patient'),
-                  React.createElement('button', { className: 'btn btn-secondary w-full' }, '+ New Appointment'),
-                  React.createElement('button', { className: 'btn btn-secondary w-full' }, 'View Schedule'),
-                  React.createElement('button', { className: 'btn btn-secondary w-full' }, 'Patient Search')
-                )
+                React.createElement(GoogleAreaChart, {
+                  data: [
+                    ['Month', 'Outpatient', 'Inpatient'],
+                    ['Jan', 120, 45], ['Feb', 145, 52], ['Mar', 132, 48],
+                    ['Apr', 168, 61], ['May', 155, 58], ['Jun', 180, 65],
+                    ['Jul', 175, 62], ['Aug', 190, 68], ['Sep', 185, 66],
+                    ['Oct', 210, 72], ['Nov', 198, 70], ['Dec', 220, 78]
+                  ],
+                  height: 280,
+                  colors: ['#3b82f6', '#14b8a6']
+                })
               )
             ),
             React.createElement('div', { className: 'card' },
               React.createElement('div', { className: 'card-header' },
-                React.createElement('h3', { className: 'card-title' }, 'Recent Activity'),
-                React.createElement('button', { className: 'btn btn-ghost btn-sm' }, 'View All')
+                React.createElement('h3', { className: 'card-title' }, 'Treatment Distribution'),
+                React.createElement('a', { href: '#', className: 'view-more-link' }, 'View all')
               ),
               React.createElement('div', { className: 'card-body' },
-                React.createElement('div', { className: 'data-list' },
-                  [
-                    { title: 'New patient registered', subtitle: 'John Smith added', time: '2 min ago' },
-                    { title: 'Appointment completed', subtitle: 'Dr. Wilson with Jane Doe', time: '15 min ago' },
-                    { title: 'Lab results available', subtitle: 'Patient ID: PAT-0042', time: '1 hour ago' }
-                  ].map((item, i) =>
-                    React.createElement('div', { key: i, className: 'data-list-item' },
-                      React.createElement('div', { className: 'avatar avatar-sm' }, React.createElement(Icons.Activity)),
-                      React.createElement('div', { className: 'data-list-item-content' },
-                        React.createElement('div', { className: 'data-list-item-title' }, item.title),
-                        React.createElement('div', { className: 'data-list-item-subtitle' }, item.subtitle)
-                      ),
-                      React.createElement('div', { className: 'data-list-item-meta' }, item.time)
-                    )
-                  )
-                )
+                React.createElement(GooglePieChart, {
+                  data: [
+                    ['Treatment', 'Count'],
+                    ['Surgery', 180], ['Consultation', 240], ['Diagnosis', 100],
+                    ['Biopsy', 60], ['Therapy', 85], ['Emergency', 45]
+                  ],
+                  height: 280,
+                  colors: ['#3b82f6', '#14b8a6', '#22c55e', '#f59e0b', '#8b5cf6', '#f97316'],
+                  pieHole: 0.5
+                })
+              )
+            )
+          ),
+
+          // Additional Charts Row
+          React.createElement('div', { className: 'dashboard-charts-section' },
+            React.createElement('div', { className: 'card' },
+              React.createElement('div', { className: 'card-header' },
+                React.createElement('h3', { className: 'card-title' }, 'Monthly Revenue'),
+                React.createElement('a', { href: '#', className: 'view-more-link' }, 'View report')
+              ),
+              React.createElement('div', { className: 'card-body' },
+                React.createElement(GoogleColumnChart, {
+                  data: [
+                    ['Month', 'Revenue ($K)'],
+                    ['Jan', 120], ['Feb', 180], ['Mar', 150],
+                    ['Apr', 220], ['May', 190], ['Jun', 250]
+                  ],
+                  height: 250,
+                  colors: ['#14b8a6']
+                })
+              )
+            ),
+            React.createElement('div', { className: 'card' },
+              React.createElement('div', { className: 'card-header' },
+                React.createElement('h3', { className: 'card-title' }, 'Appointment Completion Rate'),
+                React.createElement('a', { href: '#', className: 'view-more-link' }, 'View analytics')
+              ),
+              React.createElement('div', { className: 'card-body' },
+                React.createElement(GoogleLineChart, {
+                  data: [
+                    ['Week', 'Completed', 'Cancelled', 'Rescheduled'],
+                    ['W1', 85, 8, 7], ['W2', 88, 6, 6], ['W3', 82, 10, 8],
+                    ['W4', 90, 5, 5], ['W5', 87, 7, 6], ['W6', 92, 4, 4]
+                  ],
+                  height: 250,
+                  colors: ['#22c55e', '#ef4444', '#f59e0b']
+                })
               )
             )
           )
@@ -324,9 +1042,16 @@
       };
 
       // Patients Page
-      const PatientsPage = () => {
+      const PatientsPage = ({ openAddModal: initialOpenModal }) => {
         const [searchQuery, setSearchQuery] = React.useState('');
-        const { data, loading, error } = useFetch(`${CLINICAL_API}/fhir/Patient`);
+        const [showAddModal, setShowAddModal] = React.useState(false);
+        const [refreshKey, setRefreshKey] = React.useState(0);
+        const { data, loading, error } = useFetch(`${CLINICAL_API}/fhir/Patient`, [refreshKey]);
+
+        // Open modal when navigated with openAddModal option
+        React.useEffect(() => {
+          if (initialOpenModal) setShowAddModal(true);
+        }, [initialOpenModal]);
 
         const filteredData = React.useMemo(() => {
           if (!data || !searchQuery) return data || [];
@@ -347,6 +1072,11 @@
         ];
 
         return React.createElement('div', { className: 'page' },
+          React.createElement(AddPatientModal, {
+            isOpen: showAddModal,
+            onClose: () => setShowAddModal(false),
+            onSuccess: () => setRefreshKey(k => k + 1)
+          }),
           React.createElement('div', { className: 'page-header' },
             React.createElement('h2', { className: 'page-title' }, 'Patients'),
             React.createElement('p', { className: 'page-description' }, 'Manage patient records')
@@ -363,13 +1093,17 @@
                   onChange: e => setSearchQuery(e.target.value)
                 })
               ),
-              React.createElement('button', { className: 'btn btn-primary' }, '+ Add Patient')
+              React.createElement('button', {
+                className: 'btn btn-primary',
+                onClick: () => setShowAddModal(true),
+                'data-testid': 'add-patient-btn'
+              }, '+ Add Patient')
             ),
             React.createElement('div', { className: 'card-body' },
               error ? React.createElement('div', { className: 'empty-state' },
-                React.createElement(Icons.AlertCircle),
+                React.createElement('div', { className: 'empty-state-icon' }, React.createElement(Icons.AlertCircle)),
                 React.createElement('h4', { className: 'empty-state-title' }, 'Could not load patients'),
-                React.createElement('p', { className: 'empty-state-description' }, 'Make sure the Clinical API is running on port 5000')
+                React.createElement('p', { className: 'empty-state-description' }, 'Make sure the Clinical API is running on port 5080')
               ) : React.createElement(DataTable, { columns, data: filteredData, loading })
             )
           )
@@ -387,7 +1121,7 @@
           ),
           error ? React.createElement('div', { className: 'card' },
             React.createElement('div', { className: 'empty-state' },
-              React.createElement(Icons.AlertCircle),
+              React.createElement('div', { className: 'empty-state-icon' }, React.createElement(Icons.AlertCircle)),
               React.createElement('h4', { className: 'empty-state-title' }, 'Could not load practitioners'),
               React.createElement('p', { className: 'empty-state-description' }, 'Make sure the Scheduling API is running on port 5001')
             )
@@ -417,9 +1151,16 @@
       };
 
       // Appointments Page
-      const AppointmentsPage = () => {
+      const AppointmentsPage = ({ openAddModal: initialOpenModal }) => {
         const [filter, setFilter] = React.useState('all');
-        const { data, loading, error } = useFetch(`${SCHEDULING_API}/Appointment`);
+        const [showAddModal, setShowAddModal] = React.useState(false);
+        const [refreshKey, setRefreshKey] = React.useState(0);
+        const { data, loading, error } = useFetch(`${SCHEDULING_API}/Appointment`, [refreshKey]);
+
+        // Open modal when navigated with openAddModal option
+        React.useEffect(() => {
+          if (initialOpenModal) setShowAddModal(true);
+        }, [initialOpenModal]);
 
         const filteredData = React.useMemo(() => {
           if (!data) return [];
@@ -439,6 +1180,11 @@
         ];
 
         return React.createElement('div', { className: 'page' },
+          React.createElement(AddAppointmentModal, {
+            isOpen: showAddModal,
+            onClose: () => setShowAddModal(false),
+            onSuccess: () => setRefreshKey(k => k + 1)
+          }),
           React.createElement('div', { className: 'page-header' },
             React.createElement('h2', { className: 'page-title' }, 'Appointments'),
             React.createElement('p', { className: 'page-description' }, 'Manage scheduling and appointments')
@@ -454,11 +1200,15 @@
                   }, f.charAt(0).toUpperCase() + f.slice(1))
                 )
               ),
-              React.createElement('button', { className: 'btn btn-primary' }, '+ New Appointment')
+              React.createElement('button', {
+                className: 'btn btn-primary',
+                onClick: () => setShowAddModal(true),
+                'data-testid': 'add-appointment-btn'
+              }, '+ New Appointment')
             ),
             React.createElement('div', { className: 'card-body' },
               error ? React.createElement('div', { className: 'empty-state' },
-                React.createElement(Icons.AlertCircle),
+                React.createElement('div', { className: 'empty-state-icon' }, React.createElement(Icons.AlertCircle)),
                 React.createElement('h4', { className: 'empty-state-title' }, 'Could not load appointments'),
                 React.createElement('p', { className: 'empty-state-description' }, 'Make sure the Scheduling API is running on port 5001')
               ) : React.createElement(DataTable, { columns, data: filteredData, loading })
@@ -476,7 +1226,7 @@
           ),
           React.createElement('div', { className: 'card' },
             React.createElement('div', { className: 'empty-state' },
-              React.createElement(Icons.Clipboard),
+              React.createElement('div', { className: 'empty-state-icon' }, React.createElement(Icons.Clipboard)),
               React.createElement('h4', { className: 'empty-state-title' }, 'Coming Soon'),
               React.createElement('p', { className: 'empty-state-description' }, 'This page is under development.')
             )
@@ -573,6 +1323,21 @@
         const [activeView, setActiveView] = React.useState('dashboard');
         const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
         const [searchQuery, setSearchQuery] = React.useState('');
+        const [navigationOptions, setNavigationOptions] = React.useState({});
+
+        // Navigation handler that supports options
+        const handleNavigate = (view, options = {}) => {
+          setActiveView(view);
+          setNavigationOptions(options);
+        };
+
+        // Clear navigation options after page renders
+        React.useEffect(() => {
+          if (Object.keys(navigationOptions).length > 0) {
+            const timer = setTimeout(() => setNavigationOptions({}), 100);
+            return () => clearTimeout(timer);
+          }
+        }, [navigationOptions]);
 
         const getPageTitle = () => ({
           dashboard: 'Dashboard',
@@ -586,10 +1351,10 @@
 
         const renderPage = () => {
           switch (activeView) {
-            case 'dashboard': return React.createElement(DashboardPage);
-            case 'patients': return React.createElement(PatientsPage);
+            case 'dashboard': return React.createElement(DashboardPage, { onNavigate: handleNavigate });
+            case 'patients': return React.createElement(PatientsPage, { openAddModal: navigationOptions.openAddModal });
             case 'practitioners': return React.createElement(PractitionersPage);
-            case 'appointments': return React.createElement(AppointmentsPage);
+            case 'appointments': return React.createElement(AppointmentsPage, { openAddModal: navigationOptions.openAddModal });
             case 'encounters': return React.createElement(PlaceholderPage, { title: 'Encounters', description: 'Manage patient encounters and visits' });
             case 'conditions': return React.createElement(PlaceholderPage, { title: 'Conditions', description: 'View and manage patient conditions' });
             default: return React.createElement(PlaceholderPage, { title: 'Page Not Found', description: 'The requested page does not exist' });

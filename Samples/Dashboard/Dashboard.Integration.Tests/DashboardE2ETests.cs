@@ -52,13 +52,19 @@ public sealed class E2EFixture : IAsyncLifetime
         await KillProcessOnPortAsync(5001);
         await KillProcessOnPortAsync(5173);
 
-        var solutionDir = FindSolutionDirectory();
+        // Start Clinical API using pre-built DLL
+        var clinicalDll = Path.Combine(
+            Path.GetDirectoryName(typeof(Clinical.Api.Program).Assembly.Location)!,
+            "Clinical.Api.dll"
+        );
+        _clinicalProcess = StartApi(clinicalDll, ClinicalUrl);
 
-        // Start Clinical API with dotnet run - EXACTLY like you would manually
-        _clinicalProcess = StartApi(Path.Combine(solutionDir, "Samples", "Clinical", "Clinical.Api"));
-
-        // Start Scheduling API with dotnet run - EXACTLY like you would manually
-        _schedulingProcess = StartApi(Path.Combine(solutionDir, "Samples", "Scheduling", "Scheduling.Api"));
+        // Start Scheduling API using pre-built DLL
+        var schedulingDll = Path.Combine(
+            Path.GetDirectoryName(typeof(Scheduling.Api.Program).Assembly.Location)!,
+            "Scheduling.Api.dll"
+        );
+        _schedulingProcess = StartApi(schedulingDll, SchedulingUrl);
 
         // Wait for APIs to be ready
         await WaitForApiAsync(ClinicalUrl, "/fhir/Patient/");
@@ -95,15 +101,14 @@ public sealed class E2EFixture : IAsyncLifetime
         StopProcess(_schedulingProcess);
     }
 
-    private static Process StartApi(string projectDir)
+    private static Process StartApi(string dllPath, string url)
     {
         var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = "run",
-                WorkingDirectory = projectDir,
+                Arguments = $"\"{dllPath}\" --urls \"{url}\"",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -137,35 +142,18 @@ public sealed class E2EFixture : IAsyncLifetime
     {
         try
         {
+            // Use shell to kill -9 any process on the port
             var psi = new ProcessStartInfo
             {
-                FileName = "lsof",
-                Arguments = $"-ti :{port}",
-                RedirectStandardOutput = true,
+                FileName = "/bin/sh",
+                Arguments = $"-c \"lsof -ti :{port} | xargs kill -9 2>/dev/null || true\"",
                 UseShellExecute = false,
                 CreateNoWindow = true,
             };
 
             using var process = Process.Start(psi);
-            if (process is null)
-                return;
-
-            var output = await process.StandardOutput.ReadToEndAsync();
-            await process.WaitForExitAsync();
-
-            foreach (var pidStr in output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-            {
-                if (int.TryParse(pidStr.Trim(), out var pid))
-                {
-                    try
-                    {
-                        Process.GetProcessById(pid).Kill();
-                    }
-                    catch
-                    { /* ignore */
-                    }
-                }
-            }
+            if (process is not null)
+                await process.WaitForExitAsync();
 
             await Task.Delay(500);
         }
@@ -256,18 +244,6 @@ public sealed class E2EFixture : IAsyncLifetime
         appointmentResponse.EnsureSuccessStatusCode();
     }
 
-    private static string FindSolutionDirectory()
-    {
-        var dir = AppContext.BaseDirectory;
-        while (dir != null)
-        {
-            if (Directory.GetFiles(dir, "*.sln").Length > 0)
-                return dir;
-            dir = Directory.GetParent(dir)?.FullName;
-        }
-
-        throw new InvalidOperationException("Could not find solution directory");
-    }
 }
 
 /// <summary>
@@ -361,5 +337,134 @@ public sealed class DashboardE2ETests
 
         var cards = await page.QuerySelectorAllAsync(".metric-card");
         Assert.True(cards.Count > 0, "Dashboard should display metric cards with API data");
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Add Patient button opens modal and creates patient via API.
+    /// </summary>
+    [Fact]
+    public async Task AddPatientButton_OpensModal_AndCreatesPatient()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+
+        // Navigate to Patients page
+        await page.ClickAsync("text=Patients");
+        await page.WaitForSelectorAsync("[data-testid='add-patient-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+
+        // Click Add Patient button
+        await page.ClickAsync("[data-testid='add-patient-btn']");
+
+        // Wait for modal to appear
+        await page.WaitForSelectorAsync(".modal", new PageWaitForSelectorOptions { Timeout = 5000 });
+
+        // Fill in patient details
+        var uniqueName = $"E2ECreated{DateTime.UtcNow.Ticks % 100000}";
+        await page.FillAsync("[data-testid='patient-given-name']", uniqueName);
+        await page.FillAsync("[data-testid='patient-family-name']", "TestCreated");
+        await page.SelectOptionAsync("[data-testid='patient-gender']", "male");
+
+        // Submit the form
+        await page.ClickAsync("[data-testid='submit-patient']");
+
+        // Wait for modal to close and patient to appear in list
+        await page.WaitForSelectorAsync($"text={uniqueName}", new PageWaitForSelectorOptions { Timeout = 10000 });
+
+        // Verify via API that patient was actually created
+        using var client = new HttpClient();
+        var response = await client.GetStringAsync($"{E2EFixture.ClinicalUrl}/fhir/Patient/");
+        Assert.Contains(uniqueName, response);
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Add Appointment button opens modal and creates appointment via API.
+    /// </summary>
+    [Fact]
+    public async Task AddAppointmentButton_OpensModal_AndCreatesAppointment()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+
+        // Navigate to Appointments page
+        await page.ClickAsync("text=Appointments");
+        await page.WaitForSelectorAsync("[data-testid='add-appointment-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+
+        // Click Add Appointment button
+        await page.ClickAsync("[data-testid='add-appointment-btn']");
+
+        // Wait for modal to appear
+        await page.WaitForSelectorAsync(".modal", new PageWaitForSelectorOptions { Timeout = 5000 });
+
+        // Fill in appointment details
+        var uniqueServiceType = $"E2EConsult{DateTime.UtcNow.Ticks % 100000}";
+        await page.FillAsync("[data-testid='appointment-service-type']", uniqueServiceType);
+
+        // Submit the form
+        await page.ClickAsync("[data-testid='submit-appointment']");
+
+        // Wait for modal to close and appointment to appear in list
+        await page.WaitForSelectorAsync($"text={uniqueServiceType}", new PageWaitForSelectorOptions { Timeout = 10000 });
+
+        // Verify via API that appointment was actually created
+        using var client = new HttpClient();
+        var response = await client.GetStringAsync($"{E2EFixture.SchedulingUrl}/Appointment");
+        Assert.Contains(uniqueServiceType, response);
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Patient Search button navigates to search and finds patients.
+    /// </summary>
+    [Fact]
+    public async Task PatientSearchButton_NavigatesToSearch_AndFindsPatients()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+
+        // Click the Patient Search button
+        await page.ClickAsync("text=Patient Search");
+
+        // Should navigate to patients page with search focused
+        await page.WaitForSelectorAsync("input[placeholder*='Search']", new PageWaitForSelectorOptions { Timeout = 5000 });
+
+        // Type a search query
+        await page.FillAsync("input[placeholder*='Search']", "E2ETest");
+
+        // Wait for filtered results
+        await page.WaitForSelectorAsync("text=TestPatient", new PageWaitForSelectorOptions { Timeout = 10000 });
+
+        var content = await page.ContentAsync();
+        Assert.Contains("TestPatient", content);
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: View Schedule button navigates to appointments view.
+    /// </summary>
+    [Fact]
+    public async Task ViewScheduleButton_NavigatesToAppointments()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+
+        // Click the View Schedule button
+        await page.ClickAsync("text=View Schedule");
+
+        // Should navigate to appointments page
+        await page.WaitForSelectorAsync("text=Appointments", new PageWaitForSelectorOptions { Timeout = 5000 });
+
+        // Should show the seeded appointment
+        await page.WaitForSelectorAsync("text=Checkup", new PageWaitForSelectorOptions { Timeout = 10000 });
+
+        var content = await page.ContentAsync();
+        Assert.Contains("Checkup", content);
     }
 }

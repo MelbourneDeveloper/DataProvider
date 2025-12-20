@@ -89,3 +89,14 @@ Samples/
 - DataProvider (SQL→extension methods)
 - LQL (Lambda Query Language)
 - H5 transpiler + React 18
+
+Design Inspiration
+
+https://www.behance.net/gallery/239837827/Wellmetrix-Glassmorphic-Longevity-Dashboard?tracking_source=search_projects|medical+dashboard&l=0
+
+https://www.behance.net/gallery/237041681/Healthcare-SaaS-Dashboard-UI-UX-Design-Health-App-UXUI?tracking_source=search_projects|medical+dashboard&l=8
+
+https://www.behance.net/gallery/224736607/Healthcare-SaaS-Dashboard-Health-App-UI-UX-Design-EHR?tracking_source=search_projects|medical+dashboard&l=9
+
+![alt text](image.png)
+![alt text](image-1.png)
