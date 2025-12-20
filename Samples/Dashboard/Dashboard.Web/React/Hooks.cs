@@ -57,9 +57,7 @@ namespace Dashboard.React
         /// <summary>
         /// React useEffect hook - manages side effects.
         /// </summary>
-        public static void UseEffect(Action effect, object[] deps = null)
-        {
-            Script.Call<object>(
+        public static void UseEffect(Action effect, object[] deps = null) => Script.Call<object>(
                 "React.useEffect",
                 (Func<object>)(
                     () =>
@@ -70,14 +68,11 @@ namespace Dashboard.React
                 ),
                 deps
             );
-        }
 
         /// <summary>
         /// React useEffect hook with cleanup function.
         /// </summary>
-        public static void UseEffect(Action effect, Func<Action> cleanup, object[] deps = null)
-        {
-            Script.Call<object>(
+        public static void UseEffect(Action effect, Func<Action> cleanup, object[] deps = null) => Script.Call<object>(
                 "React.useEffect",
                 (Func<Action>)(
                     () =>
@@ -88,39 +83,26 @@ namespace Dashboard.React
                 ),
                 deps
             );
-        }
 
         /// <summary>
         /// React useRef hook - creates a mutable ref object.
         /// </summary>
-        public static RefObject<T> UseRef<T>(T initialValue = default(T))
-        {
-            return Script.Call<RefObject<T>>("React.useRef", initialValue);
-        }
+        public static RefObject<T> UseRef<T>(T initialValue = default(T)) => Script.Call<RefObject<T>>("React.useRef", initialValue);
 
         /// <summary>
         /// React useMemo hook - memoizes expensive computations.
         /// </summary>
-        public static T UseMemo<T>(Func<T> factory, object[] deps)
-        {
-            return Script.Call<T>("React.useMemo", factory, deps);
-        }
+        public static T UseMemo<T>(Func<T> factory, object[] deps) => Script.Call<T>("React.useMemo", factory, deps);
 
         /// <summary>
         /// React useCallback hook - memoizes callback functions.
         /// Note: In C# 7.2, we cannot use Delegate constraint, so callback must be cast appropriately.
         /// </summary>
-        public static T UseCallback<T>(T callback, object[] deps)
-        {
-            return Script.Call<T>("React.useCallback", callback, deps);
-        }
+        public static T UseCallback<T>(T callback, object[] deps) => Script.Call<T>("React.useCallback", callback, deps);
 
         /// <summary>
         /// React useContext hook - consumes a React context.
         /// </summary>
-        public static T UseContext<T>(object context)
-        {
-            return Script.Call<T>("React.useContext", context);
-        }
+        public static T UseContext<T>(object context) => Script.Call<T>("React.useContext", context);
     }
 }

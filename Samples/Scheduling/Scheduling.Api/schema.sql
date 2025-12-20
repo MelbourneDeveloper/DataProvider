@@ -38,6 +38,8 @@ CREATE TABLE IF NOT EXISTS fhir_Slot (
 );
 
 -- FHIR Appointment - Scheduled healthcare encounters
+-- Note: References are stored as FHIR-style strings (e.g., "Practitioner/abc123")
+-- No FK constraint as references may point to external systems
 CREATE TABLE IF NOT EXISTS fhir_Appointment (
     Id TEXT PRIMARY KEY,
     Status TEXT NOT NULL CHECK (Status IN ('proposed', 'pending', 'booked', 'arrived', 'fulfilled', 'cancelled', 'noshow', 'entered-in-error', 'checked-in', 'waitlist')),
@@ -52,8 +54,7 @@ CREATE TABLE IF NOT EXISTS fhir_Appointment (
     PatientReference TEXT NOT NULL,
     PractitionerReference TEXT NOT NULL,
     Created TEXT NOT NULL,
-    Comment TEXT,
-    FOREIGN KEY (PractitionerReference) REFERENCES fhir_Practitioner(Id)
+    Comment TEXT
 );
 
 -- Synced patient data (mapped from Clinical domain)

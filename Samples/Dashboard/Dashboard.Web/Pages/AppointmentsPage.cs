@@ -145,16 +145,13 @@ namespace Dashboard.Pages
             }
         }
 
-        private static void FilterByStatus(string status, AppointmentsState currentState, Action<AppointmentsState> setState)
+        private static void FilterByStatus(string status, AppointmentsState currentState, Action<AppointmentsState> setState) => setState(new AppointmentsState
         {
-            setState(new AppointmentsState
-            {
-                Appointments = currentState.Appointments,
-                Loading = currentState.Loading,
-                Error = currentState.Error,
-                StatusFilter = status
-            });
-        }
+            Appointments = currentState.Appointments,
+            Loading = currentState.Loading,
+            Error = currentState.Error,
+            StatusFilter = status
+        });
 
         private static ReactElement RenderTab(
             string label,
@@ -171,9 +168,7 @@ namespace Dashboard.Pages
             );
         }
 
-        private static ReactElement RenderError(string message)
-        {
-            return Div(
+        private static ReactElement RenderError(string message) => Div(
                 className: "card",
                 style: new { borderLeft = "4px solid var(--error)" },
                 children: new[]
@@ -184,11 +179,8 @@ namespace Dashboard.Pages
                     ),
                 }
             );
-        }
 
-        private static ReactElement RenderEmpty()
-        {
-            return Div(
+        private static ReactElement RenderEmpty() => Div(
                 className: "card",
                 children: new[]
                 {
@@ -213,11 +205,8 @@ namespace Dashboard.Pages
                     ),
                 }
             );
-        }
 
-        private static ReactElement RenderLoadingList()
-        {
-            return Div(
+        private static ReactElement RenderLoadingList() => Div(
                 className: "data-list",
                 children: Enumerable
                     .Range(0, 5)
@@ -264,12 +253,8 @@ namespace Dashboard.Pages
                     )
                     .ToArray()
             );
-        }
 
-        private static ReactElement RenderAppointmentList(Appointment[] appointments)
-        {
-            return Div(className: "data-list", children: appointments.Select(RenderAppointmentCard).ToArray());
-        }
+        private static ReactElement RenderAppointmentList(Appointment[] appointments) => Div(className: "data-list", children: appointments.Select(RenderAppointmentCard).ToArray());
 
         private static ReactElement RenderAppointmentCard(Appointment appointment)
         {

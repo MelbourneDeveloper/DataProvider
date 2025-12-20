@@ -57,9 +57,6 @@ namespace Dashboard.Tests
             Log("⚠️ Warning: Some dependencies may not be loaded");
         }
 
-        private static void Log(string message)
-        {
-            Script.Call<object>("console.log", message);
-        }
+        private static void Log(string message) => Script.Call<object>("console.log", message);
     }
 }

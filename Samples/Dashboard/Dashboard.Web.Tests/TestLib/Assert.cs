@@ -133,11 +133,11 @@ namespace Dashboard.Tests.TestLib
         public static void HasClass(object element, string className, string message = null)
         {
             var classList = Script.Get<object>(element, "classList");
-            var hasClass = Script.Call<bool>(classList, "contains", className);
+            var hasClass = Script.Write<bool>("classList.contains(className)");
             if (!hasClass)
             {
                 throw new AssertionException(
-                    message ?? $"Element does not have class '{className}'"
+                    message ?? "Element does not have class '" + className + "'"
                 );
             }
         }
@@ -171,12 +171,12 @@ namespace Dashboard.Tests.TestLib
             string message = null
         )
         {
-            var actualValue = Script.Call<string>(element, "getAttribute", attributeName);
+            var actualValue = Script.Write<string>("element.getAttribute(attributeName)");
             if (actualValue != expectedValue)
             {
                 throw new AssertionException(
                     message
-                        ?? $"Expected attribute '{attributeName}' to be '{expectedValue}' but was '{actualValue}'"
+                        ?? "Expected attribute '" + attributeName + "' to be '" + expectedValue + "' but was '" + actualValue + "'"
                 );
             }
         }
@@ -224,10 +224,7 @@ namespace Dashboard.Tests.TestLib
         /// <summary>
         /// Fails the test with a message.
         /// </summary>
-        public static void Fail(string message)
-        {
-            throw new AssertionException(message);
-        }
+        public static void Fail(string message) => throw new AssertionException(message);
     }
 
     /// <summary>

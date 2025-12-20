@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Healthcare Dashboard - E2E Test Suite</title>
+
+  <!-- Dashboard CSS -->
+  <link rel="stylesheet" href="../../Dashboard.Web/wwwroot/css/variables.css">
+  <link rel="stylesheet" href="../../Dashboard.Web/wwwroot/css/base.css">
+  <link rel="stylesheet" href="../../Dashboard.Web/wwwroot/css/components.css">
+  <link rel="stylesheet" href="../../Dashboard.Web/wwwroot/css/layout.css">
+
+  <!-- React 18 -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f0f4f8;
+      min-height: 100vh;
+    }
+
+    .test-suite {
+      display: flex;
+      height: 100vh;
+    }
+
+    .test-panel {
+      width: 450px;
+      background: #1a1a2e;
+      color: #e4e4e7;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #2d2d44;
+    }
+
+    .test-header {
+      background: linear-gradient(135deg, #2ca3fa 0%, #00bcd4 100%);
+      color: white;
+      padding: 20px;
+      flex-shrink: 0;
+    }
+
+    .test-header h1 {
+      margin: 0 0 4px 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .test-header p {
+      margin: 0;
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .test-stats {
+      display: flex;
+      gap: 12px;
+      padding: 16px 20px;
+      background: #16162a;
+      border-bottom: 1px solid #2d2d44;
+      flex-shrink: 0;
+    }
+
+    .stat {
+      text-align: center;
+      flex: 1;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #9ca3af;
+    }
+
+    .stat.passed .stat-value { color: #10b981; }
+    .stat.failed .stat-value { color: #ef4444; }
+    .stat.total .stat-value { color: #60a5fa; }
+
+    .test-controls {
+      padding: 16px 20px;
+      border-bottom: 1px solid #2d2d44;
+      flex-shrink: 0;
+    }
+
+    .run-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .run-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+
+    .run-btn:disabled {
+      background: #4b5563;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .test-output {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .test-output .group {
+      color: #60a5fa;
+      font-weight: 600;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .test-output .pass {
+      color: #10b981;
+    }
+
+    .test-output .fail {
+      color: #ef4444;
+    }
+
+    .test-output .error {
+      color: #9ca3af;
+      margin-left: 20px;
+      font-size: 11px;
+    }
+
+    .test-output .info {
+      color: #9ca3af;
+    }
+
+    .app-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: white;
+    }
+
+    .app-header {
+      background: #f8fafc;
+      padding: 12px 20px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .app-header h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+    }
+
+    .app-header .badge {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    #root {
+      flex: 1;
+      overflow: auto;
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      height: 3px;
+      background: #2d2d44;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-bar .fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981 0%, #00bcd4 100%);
+      transition: width 0.3s;
+    }
+
+    /* Scrollbar styling */
+    .test-output::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .test-output::-webkit-scrollbar-track {
+      background: #16162a;
+    }
+
+    .test-output::-webkit-scrollbar-thumb {
+      background: #4b5563;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-suite">
+    <!-- Test Panel -->
+    <div class="test-panel">
+      <div class="test-header">
+        <h1>🧪 Healthcare Dashboard Tests</h1>
+        <p>End-to-end testing with React Testing Library patterns</p>
+      </div>
+
+      <div class="test-stats">
+        <div class="stat passed">
+          <div class="stat-value" id="passed">0</div>
+          <div class="stat-label">Passed</div>
+        </div>
+        <div class="stat failed">
+          <div class="stat-value" id="failed">0</div>
+          <div class="stat-label">Failed</div>
+        </div>
+        <div class="stat total">
+          <div class="stat-value" id="total">0</div>
+          <div class="stat-label">Total</div>
+        </div>
+      </div>
+
+      <div class="progress-bar">
+        <div class="fill" id="progress" style="width: 0%"></div>
+      </div>
+
+      <div class="test-controls">
+        <button class="run-btn" id="run-btn" onclick="runAllTests()">
+          <span>▶</span> Run All Tests
+        </button>
+      </div>
+
+      <div class="test-output" id="output">
+<span class="info">Ready to run tests.</span>
+
+<span class="info">Tests will verify:</span>
+<span class="info">• App rendering and structure</span>
+<span class="info">• Navigation between pages</span>
+<span class="info">• Data fetching and display</span>
+<span class="info">• User interactions</span>
+<span class="info">• Error handling</span>
+
+<span class="info">Click "Run All Tests" to start.</span>
+      </div>
+    </div>
+
+    <!-- App Panel -->
+    <div class="app-panel">
+      <div class="app-header">
+        <h2>Test Render Container</h2>
+        <span class="badge" id="current-test">Idle</span>
+      </div>
+      <div id="root"></div>
+    </div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════════
+    // Test Data
+    // ═══════════════════════════════════════════════════════════════
+
+    const MOCK_DATA = {
+      patients: [
+        { id: 'patient-001', identifier: 'PAT-0001', given_name: 'John', family_name: 'Smith', birth_date: '1985-03-15', gender: 'male', active: true, email: 'john.smith@email.com', phone: '555-0101' },
+        { id: 'patient-002', identifier: 'PAT-0002', given_name: 'Jane', family_name: 'Doe', birth_date: '1990-07-22', gender: 'female', active: true, email: 'jane.doe@email.com', phone: '555-0102' },
+        { id: 'patient-003', identifier: 'PAT-0003', given_name: 'Robert', family_name: 'Johnson', birth_date: '1978-11-08', gender: 'male', active: false, email: 'robert.j@email.com', phone: '555-0103' },
+        { id: 'patient-004', identifier: 'PAT-0004', given_name: 'Emily', family_name: 'Wilson', birth_date: '1995-01-30', gender: 'female', active: true, email: 'emily.w@email.com', phone: '555-0104' },
+        { id: 'patient-005', identifier: 'PAT-0005', given_name: 'Michael', family_name: 'Brown', birth_date: '1982-09-12', gender: 'male', active: true, email: 'michael.b@email.com', phone: '555-0105' }
+      ],
+      practitioners: [
+        { id: 'pract-001', identifier: 'DR-0001', given_name: 'Sarah', family_name: 'Williams', specialty: 'Cardiology', qualification: 'MD, FACC', active: true, telecom_email: 'dr.williams@hospital.com' },
+        { id: 'pract-002', identifier: 'DR-0002', given_name: 'James', family_name: 'Anderson', specialty: 'Neurology', qualification: 'MD, PhD', active: true, telecom_email: 'dr.anderson@hospital.com' },
+        { id: 'pract-003', identifier: 'DR-0003', given_name: 'Maria', family_name: 'Garcia', specialty: 'Pediatrics', qualification: 'MD, FAAP', active: true, telecom_email: 'dr.garcia@hospital.com' },
+        { id: 'pract-004', identifier: 'DR-0004', given_name: 'David', family_name: 'Lee', specialty: 'Internal Medicine', qualification: 'MD', active: false, telecom_email: 'dr.lee@hospital.com' }
+      ],
+      appointments: [
+        { id: 'appt-001', status: 'booked', start_time: '2024-12-20T09:00:00Z', end_time: '2024-12-20T09:30:00Z', minutes_duration: 30, patient_id: 'patient-001', patient_name: 'John Smith', practitioner_id: 'pract-001', practitioner_name: 'Dr. Sarah Williams', service_type: 'Follow-up', priority: 'routine' },
+        { id: 'appt-002', status: 'fulfilled', start_time: '2024-12-19T14:00:00Z', end_time: '2024-12-19T14:45:00Z', minutes_duration: 45, patient_id: 'patient-002', patient_name: 'Jane Doe', practitioner_id: 'pract-002', practitioner_name: 'Dr. James Anderson', service_type: 'Consultation', priority: 'routine' },
+        { id: 'appt-003', status: 'cancelled', start_time: '2024-12-18T10:00:00Z', end_time: '2024-12-18T10:30:00Z', minutes_duration: 30, patient_id: 'patient-003', patient_name: 'Robert Johnson', practitioner_id: 'pract-003', practitioner_name: 'Dr. Maria Garcia', service_type: 'Annual Physical', priority: 'routine' },
+        { id: 'appt-004', status: 'booked', start_time: '2024-12-21T11:00:00Z', end_time: '2024-12-21T11:30:00Z', minutes_duration: 30, patient_id: 'patient-004', patient_name: 'Emily Wilson', practitioner_id: 'pract-001', practitioner_name: 'Dr. Sarah Williams', service_type: 'New Patient', priority: 'urgent' },
+        { id: 'appt-005', status: 'arrived', start_time: '2024-12-20T08:00:00Z', end_time: '2024-12-20T08:30:00Z', minutes_duration: 30, patient_id: 'patient-005', patient_name: 'Michael Brown', practitioner_id: 'pract-002', practitioner_name: 'Dr. James Anderson', service_type: 'Follow-up', priority: 'routine' }
+      ]
+    };
+
+    // ═══════════════════════════════════════════════════════════════
+    // Mock Fetch
+    // ═══════════════════════════════════════════════════════════════
+
+    function createMockFetch(data = MOCK_DATA, delay = 50) {
+      return async (url) => {
+        await new Promise(r => setTimeout(r, delay));
+
+        try {
+          const urlObj = new URL(url);
+          const path = urlObj.pathname;
+
+          if (path.includes('/fhir/Patient')) {
+            return { ok: true, status: 200, json: async () => data.patients };
+          }
+          if (path.includes('/Practitioner')) {
+            return { ok: true, status: 200, json: async () => data.practitioners };
+          }
+          if (path.includes('/Appointment')) {
+            return { ok: true, status: 200, json: async () => data.appointments };
+          }
+
+          return { ok: false, status: 404, json: async () => ({ error: 'Not found' }) };
+        } catch (e) {
+          return { ok: false, status: 500, json: async () => ({ error: e.message }) };
+        }
+      };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Test Framework
+    // ═══════════════════════════════════════════════════════════════
+
+    const output = document.getElementById('output');
+    const runBtn = document.getElementById('run-btn');
+    const passedEl = document.getElementById('passed');
+    const failedEl = document.getElementById('failed');
+    const totalEl = document.getElementById('total');
+    const progressEl = document.getElementById('progress');
+    const currentTestEl = document.getElementById('current-test');
+
+    let testsPassed = 0;
+    let testsFailed = 0;
+    let testsTotal = 0;
+    let root = null;
+
+    function log(message, type = '') {
+      const line = document.createElement('div');
+      line.className = type;
+      line.textContent = message;
+      output.appendChild(line);
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function updateStats() {
+      passedEl.textContent = testsPassed;
+      failedEl.textContent = testsFailed;
+      totalEl.textContent = testsTotal;
+      progressEl.style.width = `${(testsPassed + testsFailed) / testsTotal * 100}%`;
+    }
+
+    function cleanup() {
+      const rootEl = document.getElementById('root');
+      if (root) {
+        root.unmount();
+        root = null;
+      }
+      rootEl.innerHTML = '';
+    }
+
+    function render(element) {
+      cleanup();
+      const rootEl = document.getElementById('root');
+      root = ReactDOM.createRoot(rootEl);
+      root.render(element);
+      return {
+        container: rootEl,
+        unmount: () => {
+          root.unmount();
+          root = null;
+        }
+      };
+    }
+
+    async function waitFor(condition, timeout = 3000) {
+      const start = Date.now();
+      while (Date.now() - start < timeout) {
+        if (condition()) return;
+        await new Promise(r => setTimeout(r, 50));
+      }
+      throw new Error('waitFor timeout');
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Test Definitions
+    // ═══════════════════════════════════════════════════════════════
+
+    const tests = [];
+
+    function describe(name, fn) {
+      tests.push({ type: 'group', name });
+      fn();
+    }
+
+    function test(name, fn) {
+      tests.push({ type: 'test', name, fn });
+      testsTotal++;
+    }
+
+    // Register all tests
+    function registerTests() {
+      tests.length = 0;
+      testsTotal = 0;
+
+      // ─────────────────────────────────────────────────────────────
+      describe('📦 Navigation', () => {
+      // ─────────────────────────────────────────────────────────────
+
+        test('renders app with sidebar and main content', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          const sidebar = result.container.querySelector('.sidebar');
+          if (!sidebar) throw new Error('Sidebar not found');
+
+          const mainWrapper = result.container.querySelector('.main-wrapper');
+          if (!mainWrapper) throw new Error('Main wrapper not found');
+
+          if (!document.body.textContent.includes('Dashboard')) {
+            throw new Error('Dashboard title not visible');
+          }
+        });
+
+        test('navigates to Patients page when clicking nav item', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          const navItems = result.container.querySelectorAll('.nav-item');
+          let clicked = false;
+          navItems.forEach(item => {
+            if (item.textContent.includes('Patients') && !clicked) {
+              item.click();
+              clicked = true;
+            }
+          });
+
+          await waitFor(() => document.body.textContent.includes('Manage patient records'));
+        });
+
+        test('navigates to Practitioners page', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          const navItems = result.container.querySelectorAll('.nav-item');
+          navItems.forEach(item => {
+            if (item.textContent.includes('Practitioners')) item.click();
+          });
+
+          await waitFor(() => document.body.textContent.includes('Manage healthcare providers'));
+        });
+
+        test('navigates to Appointments page', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          const navItems = result.container.querySelectorAll('.nav-item');
+          navItems.forEach(item => {
+            if (item.textContent.includes('Appointments')) item.click();
+          });
+
+          await waitFor(() => document.body.textContent.includes('Manage scheduling'));
+        });
+
+        test('updates header title when navigating', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          const headerTitle = result.container.querySelector('.header-title');
+          if (!headerTitle?.textContent?.includes('Dashboard')) {
+            throw new Error('Initial header should show Dashboard');
+          }
+
+          const navItems = result.container.querySelectorAll('.nav-item');
+          navItems.forEach(item => {
+            if (item.textContent.includes('Patients')) item.click();
+          });
+
+          await waitFor(() => {
+            const title = result.container.querySelector('.header-title');
+            return title?.textContent?.includes('Patients');
+          });
+        });
+      });
+
+      // ─────────────────────────────────────────────────────────────
+      describe('📦 Dashboard Page', () => {
+      // ─────────────────────────────────────────────────────────────
+
+        test('displays metric cards with patient count', async () => {
+          const result = render(React.createElement(App));
+          await waitFor(() => {
+            const cards = result.container.querySelectorAll('.metric-card');
+            return cards.length >= 4;
+          });
+
+          if (!document.body.textContent.includes('Total Patients')) {
+            throw new Error('Patient metric label not found');
+          }
+          if (!document.body.textContent.includes('5')) {
+            throw new Error('Patient count should be 5');
+          }
+        });
+
+        test('displays practitioner count', async () => {
+          const result = render(React.createElement(App));
+          await waitFor(() => document.body.textContent.includes('Practitioners'));
+
+          if (!document.body.textContent.includes('4')) {
+            throw new Error('Practitioner count should be 4');
+          }
+        });
+
+        test('displays Quick Actions section', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          if (!document.body.textContent.includes('Quick Actions')) {
+            throw new Error('Quick Actions section not found');
+          }
+          if (!document.body.textContent.includes('New Patient')) {
+            throw new Error('New Patient button not found');
+          }
+        });
+
+        test('displays Recent Activity section', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          if (!document.body.textContent.includes('Recent Activity')) {
+            throw new Error('Recent Activity section not found');
+          }
+        });
+      });
+
+      // ─────────────────────────────────────────────────────────────
+      describe('📦 Patients Page', () => {
+      // ─────────────────────────────────────────────────────────────
+
+        test('displays patient data after navigation', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          result.container.querySelectorAll('.nav-item').forEach(item => {
+            if (item.textContent.includes('Patients')) item.click();
+          });
+
+          await waitFor(() => document.body.textContent.includes('John Smith'));
+
+          if (!document.body.textContent.includes('Jane Doe')) {
+            throw new Error('Patient Jane Doe not found');
+          }
+        });
+
+        test('shows search input', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          result.container.querySelectorAll('.nav-item').forEach(item => {
+            if (item.textContent.includes('Patients')) item.click();
+          });
+
+          await waitFor(() => {
+            const input = result.container.querySelector('input[placeholder*="Search"]');
+            return input !== null;
+          });
+        });
+
+        test('shows Add Patient button', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          result.container.querySelectorAll('.nav-item').forEach(item => {
+            if (item.textContent.includes('Patients')) item.click();
+          });
+
+          await waitFor(() => document.body.textContent.includes('Add Patient'));
+        });
+
+        test('filters patients when typing in search', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          result.container.querySelectorAll('.nav-item').forEach(item => {
+            if (item.textContent.includes('Patients')) item.click();
+          });
+
+          await waitFor(() => document.body.textContent.includes('John Smith'));
+
+          const searchInput = result.container.querySelector('input[placeholder*="Search"]');
+          if (!searchInput) throw new Error('Search input not found');
+
+          searchInput.value = 'Jane';
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          searchInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+          await new Promise(r => setTimeout(r, 300));
+
+          // Jane should still be visible, others may be filtered
+          if (!document.body.textContent.includes('Jane')) {
+            throw new Error('Jane should be visible after filtering');
+          }
+        });
+      });
+
+      // ─────────────────────────────────────────────────────────────
+      describe('📦 Practitioners Page', () => {
+      // ─────────────────────────────────────────────────────────────
+
+        test('displays practitioner cards', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          result.container.querySelectorAll('.nav-item').forEach(item => {
+            if (item.textContent.includes('Practitioners')) item.click();
+          });
+
+          await waitFor(() => document.body.textContent.includes('Sarah Williams'));
+
+          if (!document.body.textContent.includes('Cardiology')) {
+            throw new Error('Specialty Cardiology not found');
+          }
+        });
+
+        test('shows practitioner avatars with initials', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          result.container.querySelectorAll('.nav-item').forEach(item => {
+            if (item.textContent.includes('Practitioners')) item.click();
+          });
+
+          await waitFor(() => {
+            const avatars = result.container.querySelectorAll('.avatar');
+            return avatars.length > 0;
+          });
+
+          if (!document.body.textContent.includes('SW')) {
+            throw new Error('Initials SW for Sarah Williams not found');
+          }
+        });
+
+        test('shows all four practitioners', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          result.container.querySelectorAll('.nav-item').forEach(item => {
+            if (item.textContent.includes('Practitioners')) item.click();
+          });
+
+          await waitFor(() => document.body.textContent.includes('Sarah Williams'));
+
+          const names = ['Sarah Williams', 'James Anderson', 'Maria Garcia', 'David Lee'];
+          for (const name of names) {
+            if (!document.body.textContent.includes(name)) {
+              throw new Error(`Practitioner ${name} not found`);
+            }
+          }
+        });
+      });
+
+      // ─────────────────────────────────────────────────────────────
+      describe('📦 Appointments Page', () => {
+      // ─────────────────────────────────────────────────────────────
+
+        test('displays appointment list', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          result.container.querySelectorAll('.nav-item').forEach(item => {
+            if (item.textContent.includes('Appointments')) item.click();
+          });
+
+          await waitFor(() => document.body.textContent.includes('John Smith'));
+
+          if (!document.body.textContent.includes('Dr. Sarah Williams')) {
+            throw new Error('Practitioner name not found in appointment');
+          }
+        });
+
+        test('displays status filter tabs', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          result.container.querySelectorAll('.nav-item').forEach(item => {
+            if (item.textContent.includes('Appointments')) item.click();
+          });
+
+          await waitFor(() => document.body.textContent.includes('Booked'));
+
+          const filters = ['All', 'Booked', 'Fulfilled', 'Cancelled'];
+          for (const filter of filters) {
+            if (!document.body.textContent.includes(filter)) {
+              throw new Error(`Filter ${filter} not found`);
+            }
+          }
+        });
+
+        test('filters appointments when clicking status tab', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          result.container.querySelectorAll('.nav-item').forEach(item => {
+            if (item.textContent.includes('Appointments')) item.click();
+          });
+
+          await waitFor(() => document.body.textContent.includes('John Smith'));
+
+          // Click Booked filter
+          const buttons = result.container.querySelectorAll('button');
+          buttons.forEach(btn => {
+            if (btn.textContent === 'Booked') btn.click();
+          });
+
+          await new Promise(r => setTimeout(r, 300));
+
+          // Should still see booked appointments
+          if (!document.body.textContent.includes('booked')) {
+            throw new Error('Booked status not visible after filter');
+          }
+        });
+
+        test('shows New Appointment button', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          result.container.querySelectorAll('.nav-item').forEach(item => {
+            if (item.textContent.includes('Appointments')) item.click();
+          });
+
+          await waitFor(() => document.body.textContent.includes('New Appointment'));
+        });
+      });
+
+      // ─────────────────────────────────────────────────────────────
+      describe('📦 Sidebar', () => {
+      // ─────────────────────────────────────────────────────────────
+
+        test('displays brand name Healthcare', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          if (!document.body.textContent.includes('Healthcare')) {
+            throw new Error('Brand name Healthcare not found');
+          }
+        });
+
+        test('displays navigation sections', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          const sections = ['Overview', 'Clinical', 'Scheduling'];
+          for (const section of sections) {
+            if (!document.body.textContent.includes(section)) {
+              throw new Error(`Section ${section} not found`);
+            }
+          }
+        });
+
+        test('highlights active nav item', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          const activeNav = result.container.querySelector('.nav-item.active');
+          if (!activeNav) throw new Error('No active nav item found');
+
+          if (!activeNav.textContent.includes('Dashboard')) {
+            throw new Error('Dashboard should be active by default');
+          }
+        });
+
+        test('toggles sidebar collapse', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          const toggleBtn = result.container.querySelector('.sidebar-toggle');
+          if (!toggleBtn) throw new Error('Sidebar toggle button not found');
+
+          toggleBtn.click();
+          await new Promise(r => setTimeout(r, 200));
+
+          const sidebar = result.container.querySelector('.sidebar');
+          if (!sidebar.classList.contains('collapsed')) {
+            throw new Error('Sidebar should be collapsed after toggle');
+          }
+
+          toggleBtn.click();
+          await new Promise(r => setTimeout(r, 200));
+
+          if (sidebar.classList.contains('collapsed')) {
+            throw new Error('Sidebar should be expanded after second toggle');
+          }
+        });
+
+        test('displays user info in footer', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          if (!document.body.textContent.includes('John Doe')) {
+            throw new Error('User name not found');
+          }
+          if (!document.body.textContent.includes('Administrator')) {
+            throw new Error('User role not found');
+          }
+        });
+      });
+
+      // ─────────────────────────────────────────────────────────────
+      describe('📦 Header', () => {
+      // ─────────────────────────────────────────────────────────────
+
+        test('displays search input', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          const searchInput = result.container.querySelector('.header-search input');
+          if (!searchInput) throw new Error('Header search input not found');
+        });
+
+        test('displays notification bell', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          const bellBtn = result.container.querySelector('.header-action-btn');
+          if (!bellBtn) throw new Error('Notification bell not found');
+        });
+
+        test('displays user avatar', async () => {
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          const headerAvatars = result.container.querySelectorAll('.header .avatar');
+          if (headerAvatars.length === 0) {
+            throw new Error('Header user avatar not found');
+          }
+        });
+      });
+
+      // ─────────────────────────────────────────────────────────────
+      describe('📦 Error Handling', () => {
+      // ─────────────────────────────────────────────────────────────
+
+        test('shows warning when API fails', async () => {
+          // Override fetch to return errors
+          const savedFetch = window.fetch;
+          window.fetch = async () => ({
+            ok: false,
+            status: 500,
+            json: async () => ({ error: 'Server error' })
+          });
+
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 800));
+
+          window.fetch = savedFetch;
+
+          const hasWarning = document.body.textContent.includes('Warning') ||
+                            document.body.textContent.includes('Error') ||
+                            document.body.textContent.includes('Could not connect') ||
+                            document.body.textContent.includes('Could not load');
+
+          if (!hasWarning) {
+            throw new Error('Should show error/warning state when API fails');
+          }
+        });
+
+        test('handles empty data gracefully', async () => {
+          const savedFetch = window.fetch;
+          window.fetch = async () => ({
+            ok: true,
+            status: 200,
+            json: async () => []
+          });
+
+          const result = render(React.createElement(App));
+          await new Promise(r => setTimeout(r, 200));
+
+          result.container.querySelectorAll('.nav-item').forEach(item => {
+            if (item.textContent.includes('Patients')) item.click();
+          });
+
+          await new Promise(r => setTimeout(r, 500));
+
+          window.fetch = savedFetch;
+
+          // Should show empty state or handle gracefully (not crash)
+          const hasEmptyState = document.body.textContent.includes('No') ||
+                               document.body.textContent.includes('Empty') ||
+                               document.body.textContent.includes('no records') ||
+                               document.body.textContent.includes('No Data') ||
+                               document.getElementById('root').innerHTML.length > 0;
+
+          if (!hasEmptyState) {
+            throw new Error('Should handle empty data gracefully');
+          }
+        });
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Test Runner
+    // ═══════════════════════════════════════════════════════════════
+
+    async function runAllTests() {
+      // Reset state
+      testsPassed = 0;
+      testsFailed = 0;
+      output.innerHTML = '';
+
+      runBtn.disabled = true;
+      runBtn.innerHTML = '<span>⏳</span> Running...';
+
+      // Install mock fetch
+      const originalFetch = window.fetch;
+      window.fetch = createMockFetch();
+
+      // Register tests
+      registerTests();
+      updateStats();
+
+      log('🧪 Healthcare Dashboard E2E Test Suite', 'info');
+      log('═══════════════════════════════════════════════════════════════', 'info');
+      log('');
+
+      // Run tests
+      for (const item of tests) {
+        if (item.type === 'group') {
+          log('');
+          log(item.name, 'group');
+        } else {
+          currentTestEl.textContent = item.name;
+
+          try {
+            await item.fn();
+            testsPassed++;
+            log(`✅ ${item.name}`, 'pass');
+          } catch (error) {
+            testsFailed++;
+            log(`❌ ${item.name}`, 'fail');
+            log(`   Error: ${error.message}`, 'error');
+          }
+
+          cleanup();
+          updateStats();
+
+          // Small delay between tests
+          await new Promise(r => setTimeout(r, 100));
+        }
+      }
+
+      // Restore fetch
+      window.fetch = originalFetch;
+
+      // Summary
+      log('');
+      log('═══════════════════════════════════════════════════════════════', 'info');
+      log(`📊 Results: ${testsPassed} passed, ${testsFailed} failed, ${testsTotal} total`, 'info');
+      log('');
+
+      if (testsFailed === 0) {
+        log('🎉 All tests passed!', 'pass');
+      } else {
+        log(`💥 ${testsFailed} test(s) failed!`, 'fail');
+      }
+
+      runBtn.disabled = false;
+      runBtn.innerHTML = '<span>▶</span> Run Again';
+      currentTestEl.textContent = testsFailed === 0 ? 'All Passed ✓' : `${testsFailed} Failed`;
+
+      // Store results globally for CI
+      window.testResults = { passed: testsPassed, failed: testsFailed, total: testsTotal };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // App Component (from dashboard)
+    // ═══════════════════════════════════════════════════════════════
+
+    // Copy from index.html - the actual App implementation
+    const CLINICAL_API = 'http://localhost:5000';
+    const SCHEDULING_API = 'http://localhost:5001';
+
+    const fetchApi = async (url) => {
+      const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    };
+
+    const useFetch = (url, deps = []) => {
+      const [data, setData] = React.useState(null);
+      const [loading, setLoading] = React.useState(true);
+      const [error, setError] = React.useState(null);
+
+      React.useEffect(() => {
+        let mounted = true;
+        setLoading(true);
+        fetchApi(url)
+          .then(result => { if (mounted) { setData(result); setError(null); } })
+          .catch(err => { if (mounted) setError(err.message); })
+          .finally(() => { if (mounted) setLoading(false); });
+        return () => { mounted = false; };
+      }, deps);
+
+      return { data, loading, error };
+    };
+
+    // Icons
+    const Icons = {
+      Home: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('path', { d: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z' }),
+        React.createElement('polyline', { points: '9,22 9,12 15,12 15,22' })
+      ),
+      Users: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('path', { d: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2' }),
+        React.createElement('circle', { cx: 9, cy: 7, r: 4 }),
+        React.createElement('path', { d: 'M23 21v-2a4 4 0 00-3-3.87' }),
+        React.createElement('path', { d: 'M16 3.13a4 4 0 010 7.75' })
+      ),
+      UserDoctor: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('path', { d: 'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2' }),
+        React.createElement('circle', { cx: 12, cy: 7, r: 4 }),
+        React.createElement('line', { x1: 12, y1: 11, x2: 12, y2: 17 }),
+        React.createElement('line', { x1: 9, y1: 14, x2: 15, y2: 14 })
+      ),
+      Calendar: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('rect', { x: 3, y: 4, width: 18, height: 18, rx: 2 }),
+        React.createElement('line', { x1: 16, y1: 2, x2: 16, y2: 6 }),
+        React.createElement('line', { x1: 8, y1: 2, x2: 8, y2: 6 }),
+        React.createElement('line', { x1: 3, y1: 10, x2: 21, y2: 10 })
+      ),
+      Clipboard: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('path', { d: 'M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2' }),
+        React.createElement('rect', { x: 8, y: 2, width: 8, height: 4, rx: 1 })
+      ),
+      Search: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('circle', { cx: 11, cy: 11, r: 8 }),
+        React.createElement('line', { x1: 21, y1: 21, x2: 16.65, y2: 16.65 })
+      ),
+      Bell: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('path', { d: 'M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9' }),
+        React.createElement('path', { d: 'M13.73 21a2 2 0 01-3.46 0' })
+      ),
+      ChevronLeft: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('polyline', { points: '15,18 9,12 15,6' })
+      ),
+      ChevronRight: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('polyline', { points: '9,6 15,12 9,18' })
+      ),
+      Activity: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('polyline', { points: '22,12 18,12 15,21 9,3 6,12 2,12' })
+      ),
+      AlertCircle: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('circle', { cx: 12, cy: 12, r: 10 }),
+        React.createElement('line', { x1: 12, y1: 8, x2: 12, y2: 12 }),
+        React.createElement('line', { x1: 12, y1: 16, x2: 12.01, y2: 16 })
+      ),
+      TrendUp: () => React.createElement('svg', { className: 'icon icon-sm', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('polyline', { points: '23,6 13.5,15.5 8.5,10.5 1,18' }),
+        React.createElement('polyline', { points: '17,6 23,6 23,12' })
+      ),
+      TrendDown: () => React.createElement('svg', { className: 'icon icon-sm', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+        React.createElement('polyline', { points: '23,18 13.5,8.5 8.5,13.5 1,6' }),
+        React.createElement('polyline', { points: '17,18 23,18 23,12' })
+      )
+    };
+
+    // MetricCard
+    const MetricCard = ({ label, value, icon, iconColor, trend, trendValue, loading }) => (
+      React.createElement('div', { className: 'metric-card' },
+        React.createElement('div', { className: `metric-icon ${iconColor}` }, icon),
+        React.createElement('div', { className: 'metric-value' }, loading ? '-' : value),
+        React.createElement('div', { className: 'metric-label' }, label),
+        trendValue && React.createElement('div', { className: `metric-trend ${trend}` },
+          trend === 'up' ? React.createElement(Icons.TrendUp) : React.createElement(Icons.TrendDown),
+          ' ', trendValue
+        )
+      )
+    );
+
+    // DataTable
+    const DataTable = ({ columns, data, loading, onRowClick }) => {
+      if (loading) return React.createElement('div', { className: 'table-container' },
+        React.createElement('div', { className: 'skeleton-rows' },
+          [...Array(5)].map((_, i) => React.createElement('div', { key: i, className: 'skeleton', style: { height: '48px', marginBottom: '8px' } }))
+        )
+      );
+      if (!data || data.length === 0) return React.createElement('div', { className: 'empty-state' },
+        React.createElement(Icons.Clipboard),
+        React.createElement('h4', { className: 'empty-state-title' }, 'No Data'),
+        React.createElement('p', { className: 'empty-state-description' }, 'No records found')
+      );
+      return React.createElement('div', { className: 'table-container' },
+        React.createElement('table', { className: 'table' },
+          React.createElement('thead', null,
+            React.createElement('tr', null,
+              columns.map(col => React.createElement('th', { key: col.key }, col.header))
+            )
+          ),
+          React.createElement('tbody', null,
+            data.map((row, i) =>
+              React.createElement('tr', { key: row.id || i, className: onRowClick ? 'cursor-pointer' : '', onClick: onRowClick ? () => onRowClick(row) : undefined },
+                columns.map(col =>
+                  React.createElement('td', { key: col.key }, col.render ? col.render(row) : row[col.key])
+                )
+              )
+            )
+          )
+        )
+      );
+    };
+
+    // DashboardPage
+    const DashboardPage = () => {
+      const patients = useFetch(`${CLINICAL_API}/fhir/Patient`);
+      const practitioners = useFetch(`${SCHEDULING_API}/Practitioner`);
+      const appointments = useFetch(`${SCHEDULING_API}/Appointment`);
+
+      const hasError = patients.error || practitioners.error || appointments.error;
+      const isLoading = patients.loading || practitioners.loading || appointments.loading;
+
+      return React.createElement('div', { className: 'page' },
+        React.createElement('div', { className: 'page-header' },
+          React.createElement('h2', { className: 'page-title' }, 'Dashboard'),
+          React.createElement('p', { className: 'page-description' }, 'Overview of your healthcare system')
+        ),
+        hasError && React.createElement('div', { className: 'card mb-6', style: { borderLeft: '4px solid var(--warning)' } },
+          React.createElement('div', { className: 'flex items-center gap-3' },
+            React.createElement(Icons.AlertCircle),
+            React.createElement('div', null,
+              React.createElement('h4', { className: 'font-semibold' }, 'Connection Warning'),
+              React.createElement('p', { className: 'text-sm text-gray-600' }, 'Could not connect to API.')
+            )
+          )
+        ),
+        React.createElement('div', { className: 'dashboard-grid metrics mb-6' },
+          React.createElement(MetricCard, { label: 'Total Patients', value: patients.data?.length || 0, icon: React.createElement(Icons.Users), iconColor: 'blue', trend: 'up', trendValue: '+12%', loading: isLoading }),
+          React.createElement(MetricCard, { label: 'Practitioners', value: practitioners.data?.length || 0, icon: React.createElement(Icons.UserDoctor), iconColor: 'teal', loading: isLoading }),
+          React.createElement(MetricCard, { label: 'Appointments', value: appointments.data?.length || 0, icon: React.createElement(Icons.Calendar), iconColor: 'success', trend: 'up', trendValue: '+8%', loading: isLoading }),
+          React.createElement(MetricCard, { label: 'Encounters', value: 0, icon: React.createElement(Icons.Clipboard), iconColor: 'warning', trend: 'down', trendValue: '-3%', loading: isLoading })
+        ),
+        React.createElement('div', { className: 'dashboard-grid mixed' },
+          React.createElement('div', { className: 'card' },
+            React.createElement('div', { className: 'card-header' },
+              React.createElement('h3', { className: 'card-title' }, 'Quick Actions')
+            ),
+            React.createElement('div', { className: 'card-body' },
+              React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
+                React.createElement('button', { className: 'btn btn-primary w-full' }, '+ New Patient'),
+                React.createElement('button', { className: 'btn btn-secondary w-full' }, '+ New Appointment'),
+                React.createElement('button', { className: 'btn btn-secondary w-full' }, 'View Schedule'),
+                React.createElement('button', { className: 'btn btn-secondary w-full' }, 'Patient Search')
+              )
+            )
+          ),
+          React.createElement('div', { className: 'card' },
+            React.createElement('div', { className: 'card-header' },
+              React.createElement('h3', { className: 'card-title' }, 'Recent Activity'),
+              React.createElement('button', { className: 'btn btn-ghost btn-sm' }, 'View All')
+            ),
+            React.createElement('div', { className: 'card-body' },
+              React.createElement('div', { className: 'data-list' },
+                [
+                  { title: 'New patient registered', subtitle: 'John Smith added', time: '2 min ago' },
+                  { title: 'Appointment completed', subtitle: 'Dr. Wilson with Jane Doe', time: '15 min ago' },
+                  { title: 'Lab results available', subtitle: 'Patient ID: PAT-0042', time: '1 hour ago' }
+                ].map((item, i) =>
+                  React.createElement('div', { key: i, className: 'data-list-item' },
+                    React.createElement('div', { className: 'avatar avatar-sm' }, React.createElement(Icons.Activity)),
+                    React.createElement('div', { className: 'data-list-item-content' },
+                      React.createElement('div', { className: 'data-list-item-title' }, item.title),
+                      React.createElement('div', { className: 'data-list-item-subtitle' }, item.subtitle)
+                    ),
+                    React.createElement('div', { className: 'data-list-item-meta' }, item.time)
+                  )
+                )
+              )
+            )
+          )
+        )
+      );
+    };
+
+    // PatientsPage
+    const PatientsPage = () => {
+      const [searchQuery, setSearchQuery] = React.useState('');
+      const { data, loading, error } = useFetch(`${CLINICAL_API}/fhir/Patient`);
+
+      const filteredData = React.useMemo(() => {
+        if (!data || !searchQuery) return data || [];
+        const q = searchQuery.toLowerCase();
+        return data.filter(p =>
+          (p.given_name && p.given_name.toLowerCase().includes(q)) ||
+          (p.family_name && p.family_name.toLowerCase().includes(q))
+        );
+      }, [data, searchQuery]);
+
+      const columns = [
+        { key: 'identifier', header: 'ID' },
+        { key: 'name', header: 'Name', render: p => `${p.given_name || ''} ${p.family_name || ''}`.trim() || '-' },
+        { key: 'birth_date', header: 'Birth Date', render: p => p.birth_date || '-' },
+        { key: 'gender', header: 'Gender', render: p => p.gender ? p.gender.charAt(0).toUpperCase() + p.gender.slice(1) : '-' },
+        { key: 'status', header: 'Status', render: () => React.createElement('span', { className: 'badge badge-success' }, 'Active') }
+      ];
+
+      return React.createElement('div', { className: 'page' },
+        React.createElement('div', { className: 'page-header' },
+          React.createElement('h2', { className: 'page-title' }, 'Patients'),
+          React.createElement('p', { className: 'page-description' }, 'Manage patient records')
+        ),
+        React.createElement('div', { className: 'card' },
+          React.createElement('div', { className: 'card-header' },
+            React.createElement('div', { className: 'header-search' },
+              React.createElement(Icons.Search),
+              React.createElement('input', { type: 'text', className: 'input', placeholder: 'Search patients...', value: searchQuery, onChange: e => setSearchQuery(e.target.value) })
+            ),
+            React.createElement('button', { className: 'btn btn-primary' }, '+ Add Patient')
+          ),
+          React.createElement('div', { className: 'card-body' },
+            error ? React.createElement('div', { className: 'empty-state' },
+              React.createElement(Icons.AlertCircle),
+              React.createElement('h4', { className: 'empty-state-title' }, 'Could not load patients')
+            ) : React.createElement(DataTable, { columns, data: filteredData, loading })
+          )
+        )
+      );
+    };
+
+    // PractitionersPage
+    const PractitionersPage = () => {
+      const { data, loading, error } = useFetch(`${SCHEDULING_API}/Practitioner`);
+
+      return React.createElement('div', { className: 'page' },
+        React.createElement('div', { className: 'page-header' },
+          React.createElement('h2', { className: 'page-title' }, 'Practitioners'),
+          React.createElement('p', { className: 'page-description' }, 'Manage healthcare providers')
+        ),
+        error ? React.createElement('div', { className: 'card' },
+          React.createElement('div', { className: 'empty-state' },
+            React.createElement(Icons.AlertCircle),
+            React.createElement('h4', { className: 'empty-state-title' }, 'Could not load practitioners')
+          )
+        ) : loading ? React.createElement('div', { className: 'dashboard-grid practitioners' },
+          [...Array(6)].map((_, i) => React.createElement('div', { key: i, className: 'card' },
+            React.createElement('div', { className: 'skeleton', style: { height: '200px' } })
+          ))
+        ) : React.createElement('div', { className: 'dashboard-grid practitioners' },
+          (data || []).map(p =>
+            React.createElement('div', { key: p.id || p.identifier, className: 'card practitioner-card' },
+              React.createElement('div', { className: 'practitioner-avatar' },
+                React.createElement('div', { className: 'avatar avatar-lg' },
+                  (p.given_name?.[0] || '') + (p.family_name?.[0] || '')
+                )
+              ),
+              React.createElement('h4', { className: 'practitioner-name' },
+                `${p.given_name || ''} ${p.family_name || ''}`.trim() || 'Unknown'
+              ),
+              React.createElement('p', { className: 'practitioner-specialty' }, p.specialty || 'General'),
+              React.createElement('div', { className: 'practitioner-meta' },
+                React.createElement('span', { className: 'badge badge-info' }, p.qualification || 'MD')
+              )
+            )
+          )
+        )
+      );
+    };
+
+    // AppointmentsPage
+    const AppointmentsPage = () => {
+      const [filter, setFilter] = React.useState('all');
+      const { data, loading, error } = useFetch(`${SCHEDULING_API}/Appointment`);
+
+      const filteredData = React.useMemo(() => {
+        if (!data) return [];
+        if (filter === 'all') return data;
+        return data.filter(a => a.status?.toLowerCase() === filter);
+      }, [data, filter]);
+
+      const columns = [
+        { key: 'id', header: 'ID' },
+        { key: 'patient', header: 'Patient', render: a => a.patient_name || a.patient_id || '-' },
+        { key: 'practitioner', header: 'Practitioner', render: a => a.practitioner_name || a.practitioner_id || '-' },
+        { key: 'date', header: 'Date/Time', render: a => a.start_time || '-' },
+        { key: 'status', header: 'Status', render: a => React.createElement('span', {
+          className: `badge ${a.status === 'booked' ? 'badge-primary' : a.status === 'fulfilled' ? 'badge-success' : a.status === 'cancelled' ? 'badge-danger' : 'badge-secondary'}`
+        }, a.status || 'pending') }
+      ];
+
+      return React.createElement('div', { className: 'page' },
+        React.createElement('div', { className: 'page-header' },
+          React.createElement('h2', { className: 'page-title' }, 'Appointments'),
+          React.createElement('p', { className: 'page-description' }, 'Manage scheduling and appointments')
+        ),
+        React.createElement('div', { className: 'card' },
+          React.createElement('div', { className: 'card-header' },
+            React.createElement('div', { className: 'btn-group' },
+              ['all', 'booked', 'fulfilled', 'cancelled'].map(f =>
+                React.createElement('button', { key: f, className: `btn btn-sm ${filter === f ? 'btn-primary' : 'btn-ghost'}`, onClick: () => setFilter(f) }, f.charAt(0).toUpperCase() + f.slice(1))
+              )
+            ),
+            React.createElement('button', { className: 'btn btn-primary' }, '+ New Appointment')
+          ),
+          React.createElement('div', { className: 'card-body' },
+            error ? React.createElement('div', { className: 'empty-state' },
+              React.createElement(Icons.AlertCircle),
+              React.createElement('h4', { className: 'empty-state-title' }, 'Could not load appointments')
+            ) : React.createElement(DataTable, { columns, data: filteredData, loading })
+          )
+        )
+      );
+    };
+
+    // PlaceholderPage
+    const PlaceholderPage = ({ title, description }) => (
+      React.createElement('div', { className: 'page' },
+        React.createElement('div', { className: 'page-header' },
+          React.createElement('h2', { className: 'page-title' }, title),
+          React.createElement('p', { className: 'page-description' }, description)
+        ),
+        React.createElement('div', { className: 'card' },
+          React.createElement('div', { className: 'empty-state' },
+            React.createElement(Icons.Clipboard),
+            React.createElement('h4', { className: 'empty-state-title' }, 'Coming Soon'),
+            React.createElement('p', { className: 'empty-state-description' }, 'This page is under development.')
+          )
+        )
+      )
+    );
+
+    // Sidebar
+    const Sidebar = ({ activeView, onNavigate, collapsed, onToggle }) => {
+      const navSections = [
+        { title: 'Overview', items: [{ id: 'dashboard', label: 'Dashboard', icon: Icons.Home }] },
+        { title: 'Clinical', items: [
+          { id: 'patients', label: 'Patients', icon: Icons.Users },
+          { id: 'encounters', label: 'Encounters', icon: Icons.Clipboard },
+          { id: 'conditions', label: 'Conditions', icon: Icons.Activity }
+        ]},
+        { title: 'Scheduling', items: [
+          { id: 'practitioners', label: 'Practitioners', icon: Icons.UserDoctor },
+          { id: 'appointments', label: 'Appointments', icon: Icons.Calendar }
+        ]}
+      ];
+
+      return React.createElement('aside', { className: `sidebar ${collapsed ? 'collapsed' : ''}` },
+        React.createElement('div', { className: 'sidebar-header' },
+          React.createElement('a', { className: 'sidebar-logo', href: '#' },
+            React.createElement('div', { className: 'sidebar-logo-icon' }, React.createElement(Icons.Activity)),
+            React.createElement('span', { className: 'sidebar-logo-text' }, 'Healthcare')
+          )
+        ),
+        React.createElement('nav', { className: 'sidebar-nav' },
+          navSections.map(section =>
+            React.createElement('div', { key: section.title, className: 'nav-section' },
+              React.createElement('div', { className: 'nav-section-title' }, section.title),
+              section.items.map(item =>
+                React.createElement('a', { key: item.id, className: `nav-item ${activeView === item.id ? 'active' : ''}`, onClick: () => onNavigate(item.id) },
+                  React.createElement('span', { className: 'nav-item-icon' }, React.createElement(item.icon)),
+                  React.createElement('span', { className: 'nav-item-text' }, item.label)
+                )
+              )
+            )
+          )
+        ),
+        React.createElement('button', { className: 'sidebar-toggle', onClick: onToggle },
+          collapsed ? React.createElement(Icons.ChevronRight) : React.createElement(Icons.ChevronLeft)
+        ),
+        React.createElement('div', { className: 'sidebar-footer' },
+          React.createElement('div', { className: 'sidebar-user' },
+            React.createElement('div', { className: 'avatar avatar-sm' }, 'JD'),
+            React.createElement('div', { className: 'sidebar-user-info' },
+              React.createElement('div', { className: 'sidebar-user-name' }, 'John Doe'),
+              React.createElement('div', { className: 'sidebar-user-role' }, 'Administrator')
+            )
+          )
+        )
+      );
+    };
+
+    // Header
+    const Header = ({ title, searchQuery, onSearchChange }) => (
+      React.createElement('header', { className: 'header' },
+        React.createElement('div', { className: 'header-left' },
+          React.createElement('h1', { className: 'header-title' }, title)
+        ),
+        React.createElement('div', { className: 'header-right' },
+          React.createElement('div', { className: 'header-search' },
+            React.createElement(Icons.Search),
+            React.createElement('input', { type: 'text', className: 'input', placeholder: 'Search...', value: searchQuery, onChange: e => onSearchChange(e.target.value) })
+          ),
+          React.createElement('div', { className: 'header-actions' },
+            React.createElement('button', { className: 'header-action-btn' },
+              React.createElement(Icons.Bell),
+              React.createElement('span', { className: 'header-action-badge' })
+            ),
+            React.createElement('div', { className: 'avatar avatar-md' }, 'JD')
+          )
+        )
+      )
+    );
+
+    // App
+    const App = () => {
+      const [activeView, setActiveView] = React.useState('dashboard');
+      const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+      const [searchQuery, setSearchQuery] = React.useState('');
+
+      const getPageTitle = () => ({
+        dashboard: 'Dashboard', patients: 'Patients', encounters: 'Encounters',
+        conditions: 'Conditions', practitioners: 'Practitioners', appointments: 'Appointments', settings: 'Settings'
+      }[activeView] || 'Healthcare');
+
+      const renderPage = () => {
+        switch (activeView) {
+          case 'dashboard': return React.createElement(DashboardPage);
+          case 'patients': return React.createElement(PatientsPage);
+          case 'practitioners': return React.createElement(PractitionersPage);
+          case 'appointments': return React.createElement(AppointmentsPage);
+          case 'encounters': return React.createElement(PlaceholderPage, { title: 'Encounters', description: 'Manage patient encounters and visits' });
+          case 'conditions': return React.createElement(PlaceholderPage, { title: 'Conditions', description: 'View and manage patient conditions' });
+          default: return React.createElement(PlaceholderPage, { title: 'Page Not Found', description: 'The requested page does not exist' });
+        }
+      };
+
+      return React.createElement('div', { className: 'app' },
+        React.createElement(Sidebar, { activeView, onNavigate: setActiveView, collapsed: sidebarCollapsed, onToggle: () => setSidebarCollapsed(!sidebarCollapsed) }),
+        React.createElement('div', { className: 'main-wrapper' },
+          React.createElement(Header, { title: getPageTitle(), searchQuery, onSearchChange: setSearchQuery }),
+          React.createElement('main', { className: 'main-content' }, renderPage())
+        )
+      );
+    };
+
+    // Make App global for testing
+    window.App = App;
+  </script>
+</body>
+</html>

@@ -16,21 +16,18 @@ namespace Dashboard.Tests.TestLib
         /// </summary>
         public static Func<string, object, Task<object>> Create(
             Dictionary<string, object> responses
-        )
-        {
-            return (url, options) =>
-            {
-                var path = ExtractPath(url);
+        ) => (url, options) =>
+                      {
+                          var path = ExtractPath(url);
 
-                if (responses.TryGetValue(path, out var response))
-                {
-                    return CreateSuccessResponse(response);
-                }
+                          if (responses.TryGetValue(path, out var response))
+                          {
+                              return CreateSuccessResponse(response);
+                          }
 
-                // Return 404 for unknown paths
-                return CreateErrorResponse(404, "Not Found");
-            };
-        }
+                          // Return 404 for unknown paths
+                          return CreateErrorResponse(404, "Not Found");
+                      };
 
         /// <summary>
         /// Creates a mock fetch that tracks all calls made.
@@ -63,22 +60,19 @@ namespace Dashboard.Tests.TestLib
         public static Func<string, object, Task<object>> CreateWithDelay(
             Dictionary<string, object> responses,
             int delayMs
-        )
-        {
-            return async (url, options) =>
-            {
-                await Task.Delay(delayMs);
+        ) => async (url, options) =>
+                      {
+                          await Task.Delay(delayMs);
 
-                var path = ExtractPath(url);
+                          var path = ExtractPath(url);
 
-                if (responses.TryGetValue(path, out var response))
-                {
-                    return await CreateSuccessResponse(response);
-                }
+                          if (responses.TryGetValue(path, out var response))
+                          {
+                              return await CreateSuccessResponse(response);
+                          }
 
-                return await CreateErrorResponse(404, "Not Found");
-            };
-        }
+                          return await CreateErrorResponse(404, "Not Found");
+                      };
 
         /// <summary>
         /// Creates a mock fetch that fails for specific paths.
@@ -86,41 +80,32 @@ namespace Dashboard.Tests.TestLib
         public static Func<string, object, Task<object>> CreateWithErrors(
             Dictionary<string, object> responses,
             Dictionary<string, int> errors
-        )
-        {
-            return (url, options) =>
-            {
-                var path = ExtractPath(url);
+        ) => (url, options) =>
+                      {
+                          var path = ExtractPath(url);
 
-                if (errors.TryGetValue(path, out var statusCode))
-                {
-                    return CreateErrorResponse(statusCode, "Error");
-                }
+                          if (errors.TryGetValue(path, out var statusCode))
+                          {
+                              return CreateErrorResponse(statusCode, "Error");
+                          }
 
-                if (responses.TryGetValue(path, out var response))
-                {
-                    return CreateSuccessResponse(response);
-                }
+                          if (responses.TryGetValue(path, out var response))
+                          {
+                              return CreateSuccessResponse(response);
+                          }
 
-                return CreateErrorResponse(404, "Not Found");
-            };
-        }
+                          return CreateErrorResponse(404, "Not Found");
+                      };
 
         /// <summary>
         /// Installs mock fetch globally on window.
         /// </summary>
-        public static void Install(Func<string, object, Task<object>> mockFetch)
-        {
-            Script.Set("window", "fetch", mockFetch);
-        }
+        public static void Install(Func<string, object, Task<object>> mockFetch) => Script.Set("window", "fetch", mockFetch);
 
         /// <summary>
         /// Restores the original fetch function.
         /// </summary>
-        public static void Restore()
-        {
-            Script.Call<object>("window.fetch = window.originalFetch || window.fetch");
-        }
+        public static void Restore() => Script.Call<object>("window.fetch = window.originalFetch || window.fetch");
 
         private static string ExtractPath(string url)
         {
@@ -189,26 +174,17 @@ namespace Dashboard.Tests.TestLib
         /// <summary>
         /// Clears the call history.
         /// </summary>
-        public void ClearHistory()
-        {
-            History.Clear();
-        }
+        public void ClearHistory() => History.Clear();
 
         /// <summary>
         /// Checks if a specific path was called.
         /// </summary>
-        public bool WasCalled(string path)
-        {
-            return History.Exists(c => c.Path == path);
-        }
+        public bool WasCalled(string path) => History.Exists(c => c.Path == path);
 
         /// <summary>
         /// Gets the number of times a path was called.
         /// </summary>
-        public int CallCount(string path)
-        {
-            return History.FindAll(c => c.Path == path).Count;
-        }
+        public int CallCount(string path) => History.FindAll(c => c.Path == path).Count;
     }
 
     /// <summary>

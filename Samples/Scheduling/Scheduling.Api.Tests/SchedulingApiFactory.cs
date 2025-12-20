@@ -25,11 +25,9 @@ public sealed class SchedulingApiFactory : WebApplicationFactory<Scheduling.Api.
     public string DbPath => _dbPath;
 
     /// <inheritdoc />
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
-    {
+    protected override void ConfigureWebHost(IWebHostBuilder builder) =>
         // Just set configuration - Program.cs handles everything else
         builder.UseSetting("DbPath", _dbPath);
-    }
 
     /// <inheritdoc />
     protected override void Dispose(bool disposing)

@@ -61,9 +61,6 @@ namespace Dashboard
             }
         }
 
-        private static void Log(string message)
-        {
-            Script.Call<object>("console.log", "[Dashboard] " + message);
-        }
+        private static void Log(string message) => Script.Call<object>("console.log", "[Dashboard] " + message);
     }
 }

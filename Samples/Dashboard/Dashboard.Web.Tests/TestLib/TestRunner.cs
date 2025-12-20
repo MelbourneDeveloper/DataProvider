@@ -16,17 +16,12 @@ namespace Dashboard.Tests.TestLib
         /// <summary>
         /// Registers a test case.
         /// </summary>
-        public static void Test(string name, Func<Task> testFn)
-        {
-            _tests.Add(new TestCase { Name = name, TestFn = testFn });
-        }
+        public static void Test(string name, Func<Task> testFn) => _tests.Add(new TestCase { Name = name, TestFn = testFn });
 
         /// <summary>
         /// Registers a synchronous test case.
         /// </summary>
-        public static void Test(string name, Action testFn)
-        {
-            _tests.Add(
+        public static void Test(string name, Action testFn) => _tests.Add(
                 new TestCase
                 {
                     Name = name,
@@ -37,7 +32,6 @@ namespace Dashboard.Tests.TestLib
                     },
                 }
             );
-        }
 
         /// <summary>
         /// Groups related tests together.
@@ -122,10 +116,7 @@ namespace Dashboard.Tests.TestLib
             _results.Clear();
         }
 
-        private static void Log(string message)
-        {
-            Script.Call<object>("console.log", message);
-        }
+        private static void Log(string message) => Script.Call<object>("console.log", message);
     }
 
     /// <summary>

@@ -165,9 +165,7 @@ namespace Dashboard.Pages
             }
         }
 
-        private static ReactElement RenderError(string message)
-        {
-            return Div(
+        private static ReactElement RenderError(string message) => Div(
                 className: "card mb-6",
                 style: new { borderLeft = "4px solid var(--warning)" },
                 children: new[]
@@ -204,11 +202,8 @@ namespace Dashboard.Pages
                     ),
                 }
             );
-        }
 
-        private static ReactElement RenderQuickActions()
-        {
-            return Div(
+        private static ReactElement RenderQuickActions() => Div(
                 className: "card",
                 children: new[]
                 {
@@ -237,20 +232,14 @@ namespace Dashboard.Pages
                     ),
                 }
             );
-        }
 
         private static ReactElement RenderActionButton(
             string label,
             Func<ReactElement> icon,
             string variant
-        )
-        {
-            return Button(className: "btn btn-" + variant + " w-full", children: new[] { icon(), Text(label) });
-        }
+        ) => Button(className: "btn btn-" + variant + " w-full", children: new[] { icon(), Text(label) });
 
-        private static ReactElement RenderRecentActivity()
-        {
-            return Div(
+        private static ReactElement RenderRecentActivity() => Div(
                 className: "card",
                 children: new[]
                 {
@@ -294,11 +283,8 @@ namespace Dashboard.Pages
                     ),
                 }
             );
-        }
 
-        private static ReactElement RenderActivityItem(string title, string subtitle, string time)
-        {
-            return Div(
+        private static ReactElement RenderActivityItem(string title, string subtitle, string time) => Div(
                 className: "data-list-item",
                 children: new[]
                 {
@@ -317,6 +303,5 @@ namespace Dashboard.Pages
                     Div(className: "data-list-item-meta", children: new[] { Text(time) }),
                 }
             );
-        }
     }
 }

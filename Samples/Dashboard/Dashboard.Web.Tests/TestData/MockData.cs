@@ -214,16 +214,13 @@ namespace Dashboard.Tests.TestData
         /// <summary>
         /// Gets mock responses for all API endpoints.
         /// </summary>
-        public static Dictionary<string, object> GetApiResponses()
-        {
-            return new Dictionary<string, object>
+        public static Dictionary<string, object> GetApiResponses() => new Dictionary<string, object>
             {
                 { "/fhir/Patient", Patients },
                 { "/fhir/Patient/_search", Patients },
                 { "/Practitioner", Practitioners },
                 { "/Appointment", Appointments },
             };
-        }
 
         /// <summary>
         /// Gets filtered patients by name.
@@ -231,12 +228,12 @@ namespace Dashboard.Tests.TestData
         public static object[] FilterPatientsByName(string query)
         {
             var results = new List<object>();
-            var q = query.ToLowerInvariant();
+            var q = query.ToLower();
 
             foreach (dynamic patient in Patients)
             {
-                var given = ((string)patient.given_name).ToLowerInvariant();
-                var family = ((string)patient.family_name).ToLowerInvariant();
+                var given = ((string)patient.given_name).ToLower();
+                var family = ((string)patient.family_name).ToLower();
                 if (given.Contains(q) || family.Contains(q))
                 {
                     results.Add(patient);

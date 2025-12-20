@@ -17,9 +17,7 @@ namespace Dashboard.Components
             string searchQuery = null,
             Action<string> onSearchChange = null,
             int notificationCount = 0
-        )
-        {
-            return React.Elements.Header(
+        ) => React.Elements.Header(
                 className: "header",
                 children: new[]
                 {
@@ -67,7 +65,6 @@ namespace Dashboard.Components
                     ),
                 }
             );
-        }
 
         private static ReactElement RenderNotificationButton(int count)
         {
@@ -88,9 +85,6 @@ namespace Dashboard.Components
             );
         }
 
-        private static ReactElement RenderUserAvatar()
-        {
-            return Div(className: "avatar avatar-md", children: new[] { Text("JD") });
-        }
+        private static ReactElement RenderUserAvatar() => Div(className: "avatar avatar-md", children: new[] { Text("JD") });
     }
 }

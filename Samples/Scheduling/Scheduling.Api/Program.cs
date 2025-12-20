@@ -259,7 +259,7 @@ app.MapPost(
         return result switch
         {
             InsertOk => Results.Problem("Unexpected success after handling"),
-            InsertError err => Results.Problem(err.Value.Message),
+            InsertError err => Results.Problem(err.Value.DetailedMessage),
         };
     }
 );

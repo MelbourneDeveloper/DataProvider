@@ -16,10 +16,7 @@ namespace Dashboard.React
             string type,
             object props = null,
             params object[] children
-        )
-        {
-            return Script.Call<ReactElement>("React.createElement", type, props, children);
-        }
+        ) => Script.Call<ReactElement>("React.createElement", type, props, children);
 
         /// <summary>
         /// Creates a React element from a component function.
@@ -28,10 +25,7 @@ namespace Dashboard.React
             Func<object, ReactElement> component,
             object props = null,
             params object[] children
-        )
-        {
-            return Script.Call<ReactElement>("React.createElement", component, props, children);
-        }
+        ) => Script.Call<ReactElement>("React.createElement", component, props, children);
 
         /// <summary>
         /// Creates the React root and renders the application.

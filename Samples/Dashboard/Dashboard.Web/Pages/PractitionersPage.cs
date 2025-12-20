@@ -205,9 +205,7 @@ namespace Dashboard.Pages
             }
         }
 
-        private static ReactElement RenderError(string message)
-        {
-            return Div(
+        private static ReactElement RenderError(string message) => Div(
                 className: "card",
                 style: new { borderLeft = "4px solid var(--error)" },
                 children: new[]
@@ -218,11 +216,8 @@ namespace Dashboard.Pages
                     ),
                 }
             );
-        }
 
-        private static ReactElement RenderEmpty()
-        {
-            return Div(
+        private static ReactElement RenderEmpty() => Div(
                 className: "card",
                 children: new[]
                 {
@@ -247,11 +242,8 @@ namespace Dashboard.Pages
                     ),
                 }
             );
-        }
 
-        private static ReactElement RenderLoadingGrid()
-        {
-            return Div(
+        private static ReactElement RenderLoadingGrid() => Div(
                 className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6",
                 children: Enumerable
                     .Range(0, 6)
@@ -286,19 +278,13 @@ namespace Dashboard.Pages
                     )
                     .ToArray()
             );
-        }
 
-        private static ReactElement RenderPractitionerGrid(Practitioner[] practitioners)
-        {
-            return Div(
+        private static ReactElement RenderPractitionerGrid(Practitioner[] practitioners) => Div(
                 className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6",
                 children: practitioners.Select(RenderPractitionerCard).ToArray()
             );
-        }
 
-        private static ReactElement RenderPractitionerCard(Practitioner practitioner)
-        {
-            return Div(
+        private static ReactElement RenderPractitionerCard(Practitioner practitioner) => Div(
                 className: "card",
                 children: new[]
                 {
@@ -367,11 +353,8 @@ namespace Dashboard.Pages
                     ),
                 }
             );
-        }
 
-        private static ReactElement RenderDetail(string label, string value)
-        {
-            return Div(
+        private static ReactElement RenderDetail(string label, string value) => Div(
                 className: "flex justify-between py-1",
                 children: new[]
                 {
@@ -379,12 +362,8 @@ namespace Dashboard.Pages
                     Span(className: "text-sm font-medium", children: new[] { Text(value) }),
                 }
             );
-        }
 
-        private static string GetInitials(Practitioner p)
-        {
-            return FirstChar(p.NameGiven) + FirstChar(p.NameFamily);
-        }
+        private static string GetInitials(Practitioner p) => FirstChar(p.NameGiven) + FirstChar(p.NameFamily);
 
         private static string FirstChar(string s)
         {

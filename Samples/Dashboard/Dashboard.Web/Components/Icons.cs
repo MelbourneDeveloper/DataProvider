@@ -12,9 +12,7 @@ namespace Dashboard.Components
         /// <summary>
         /// Home icon.
         /// </summary>
-        public static ReactElement Home()
-        {
-            return Svg(
+        public static ReactElement Home() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -26,14 +24,11 @@ namespace Dashboard.Components
                     strokeWidth: 2
                 )
             );
-        }
 
         /// <summary>
         /// Users icon.
         /// </summary>
-        public static ReactElement Users()
-        {
-            return Svg(
+        public static ReactElement Users() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -45,14 +40,11 @@ namespace Dashboard.Components
                     strokeWidth: 2
                 )
             );
-        }
 
         /// <summary>
         /// User/Doctor icon.
         /// </summary>
-        public static ReactElement UserDoctor()
-        {
-            return Svg(
+        public static ReactElement UserDoctor() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -64,14 +56,11 @@ namespace Dashboard.Components
                     strokeWidth: 2
                 )
             );
-        }
 
         /// <summary>
         /// Calendar icon.
         /// </summary>
-        public static ReactElement Calendar()
-        {
-            return Svg(
+        public static ReactElement Calendar() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -83,14 +72,11 @@ namespace Dashboard.Components
                     strokeWidth: 2
                 )
             );
-        }
 
         /// <summary>
         /// Clipboard/Encounter icon.
         /// </summary>
-        public static ReactElement Clipboard()
-        {
-            return Svg(
+        public static ReactElement Clipboard() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -102,14 +88,11 @@ namespace Dashboard.Components
                     strokeWidth: 2
                 )
             );
-        }
 
         /// <summary>
         /// Heart/Condition icon.
         /// </summary>
-        public static ReactElement Heart()
-        {
-            return Svg(
+        public static ReactElement Heart() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -121,14 +104,11 @@ namespace Dashboard.Components
                     strokeWidth: 2
                 )
             );
-        }
 
         /// <summary>
         /// Pill/Medication icon.
         /// </summary>
-        public static ReactElement Pill()
-        {
-            return Svg(
+        public static ReactElement Pill() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -140,14 +120,11 @@ namespace Dashboard.Components
                     strokeWidth: 2
                 )
             );
-        }
 
         /// <summary>
         /// Activity/Heartbeat icon.
         /// </summary>
-        public static ReactElement Activity()
-        {
-            return Svg(
+        public static ReactElement Activity() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -159,14 +136,11 @@ namespace Dashboard.Components
                     strokeWidth: 2
                 )
             );
-        }
 
         /// <summary>
         /// Search icon.
         /// </summary>
-        public static ReactElement Search()
-        {
-            return Svg(
+        public static ReactElement Search() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -178,14 +152,11 @@ namespace Dashboard.Components
                     strokeWidth: 2
                 )
             );
-        }
 
         /// <summary>
         /// Bell/Notification icon.
         /// </summary>
-        public static ReactElement Bell()
-        {
-            return Svg(
+        public static ReactElement Bell() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -197,14 +168,11 @@ namespace Dashboard.Components
                     strokeWidth: 2
                 )
             );
-        }
 
         /// <summary>
         /// Settings icon.
         /// </summary>
-        public static ReactElement Settings()
-        {
-            return Svg(
+        public static ReactElement Settings() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -216,14 +184,11 @@ namespace Dashboard.Components
                     strokeWidth: 2
                 )
             );
-        }
 
         /// <summary>
         /// ChevronLeft icon.
         /// </summary>
-        public static ReactElement ChevronLeft()
-        {
-            return Svg(
+        public static ReactElement ChevronLeft() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -231,14 +196,11 @@ namespace Dashboard.Components
                 fill: "none",
                 children: Path(d: "M15 18l-6-6 6-6", stroke: "currentColor", strokeWidth: 2)
             );
-        }
 
         /// <summary>
         /// ChevronRight icon.
         /// </summary>
-        public static ReactElement ChevronRight()
-        {
-            return Svg(
+        public static ReactElement ChevronRight() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -246,14 +208,11 @@ namespace Dashboard.Components
                 fill: "none",
                 children: Path(d: "M9 18l6-6-6-6", stroke: "currentColor", strokeWidth: 2)
             );
-        }
 
         /// <summary>
         /// Plus icon.
         /// </summary>
-        public static ReactElement Plus()
-        {
-            return Svg(
+        public static ReactElement Plus() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -261,14 +220,11 @@ namespace Dashboard.Components
                 fill: "none",
                 children: Path(d: "M12 5v14 M5 12h14", stroke: "currentColor", strokeWidth: 2)
             );
-        }
 
         /// <summary>
         /// Edit/Pencil icon.
         /// </summary>
-        public static ReactElement Edit()
-        {
-            return Svg(
+        public static ReactElement Edit() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -280,14 +236,11 @@ namespace Dashboard.Components
                     strokeWidth: 2
                 )
             );
-        }
 
         /// <summary>
         /// Trash icon.
         /// </summary>
-        public static ReactElement Trash()
-        {
-            return Svg(
+        public static ReactElement Trash() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -299,14 +252,11 @@ namespace Dashboard.Components
                     strokeWidth: 2
                 )
             );
-        }
 
         /// <summary>
         /// Eye icon.
         /// </summary>
-        public static ReactElement Eye()
-        {
-            return Svg(
+        public static ReactElement Eye() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -318,14 +268,11 @@ namespace Dashboard.Components
                     strokeWidth: 2
                 )
             );
-        }
 
         /// <summary>
         /// Refresh icon.
         /// </summary>
-        public static ReactElement Refresh()
-        {
-            return Svg(
+        public static ReactElement Refresh() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -337,14 +284,11 @@ namespace Dashboard.Components
                     strokeWidth: 2
                 )
             );
-        }
 
         /// <summary>
         /// TrendUp icon.
         /// </summary>
-        public static ReactElement TrendUp()
-        {
-            return Svg(
+        public static ReactElement TrendUp() => Svg(
                 className: "icon",
                 width: 16,
                 height: 16,
@@ -352,14 +296,11 @@ namespace Dashboard.Components
                 fill: "none",
                 children: Path(d: "M23 6l-9.5 9.5-5-5L1 18", stroke: "currentColor", strokeWidth: 2)
             );
-        }
 
         /// <summary>
         /// TrendDown icon.
         /// </summary>
-        public static ReactElement TrendDown()
-        {
-            return Svg(
+        public static ReactElement TrendDown() => Svg(
                 className: "icon",
                 width: 16,
                 height: 16,
@@ -367,14 +308,11 @@ namespace Dashboard.Components
                 fill: "none",
                 children: Path(d: "M23 18l-9.5-9.5-5 5L1 6", stroke: "currentColor", strokeWidth: 2)
             );
-        }
 
         /// <summary>
         /// Menu icon (hamburger).
         /// </summary>
-        public static ReactElement Menu()
-        {
-            return Svg(
+        public static ReactElement Menu() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -382,14 +320,11 @@ namespace Dashboard.Components
                 fill: "none",
                 children: Path(d: "M3 12h18M3 6h18M3 18h18", stroke: "currentColor", strokeWidth: 2)
             );
-        }
 
         /// <summary>
         /// X/Close icon.
         /// </summary>
-        public static ReactElement X()
-        {
-            return Svg(
+        public static ReactElement X() => Svg(
                 className: "icon",
                 width: 20,
                 height: 20,
@@ -397,6 +332,5 @@ namespace Dashboard.Components
                 fill: "none",
                 children: Path(d: "M18 6L6 18M6 6l12 12", stroke: "currentColor", strokeWidth: 2)
             );
-        }
     }
 }

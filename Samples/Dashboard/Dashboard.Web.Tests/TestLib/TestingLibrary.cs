@@ -36,9 +36,7 @@ namespace Dashboard.Tests.TestLib
         /// <summary>
         /// Waits for an element matching the text to appear.
         /// </summary>
-        public static Task<object> WaitFor(Func<bool> condition, int timeout = 5000)
-        {
-            return Script.Call<Task<object>>(
+        public static Task<object> WaitFor(Func<bool> condition, int timeout = 5000) => Script.Call<Task<object>>(
                 "TestingLibrary.waitFor",
                 (Func<object>)(() =>
                 {
@@ -50,14 +48,11 @@ namespace Dashboard.Tests.TestLib
                 }),
                 new { timeout }
             );
-        }
 
         /// <summary>
         /// Waits for text to appear in the document.
         /// </summary>
-        public static Task<object> WaitForText(string text, int timeout = 5000)
-        {
-            return Script.Call<Task<object>>(
+        public static Task<object> WaitForText(string text, int timeout = 5000) => Script.Call<Task<object>>(
                 "TestingLibrary.waitFor",
                 (Func<object>)(() =>
                 {
@@ -73,63 +68,41 @@ namespace Dashboard.Tests.TestLib
                 }),
                 new { timeout }
             );
-        }
 
         /// <summary>
         /// Simulates typing text into an input element.
         /// </summary>
-        public static Task UserType(object element, string text)
-        {
-            return Script.Call<Task>("TestingLibrary.userEvent.type", element, text);
-        }
+        public static Task UserType(object element, string text) => Script.Call<Task>("TestingLibrary.userEvent.type", element, text);
 
         /// <summary>
         /// Simulates clicking an element.
         /// </summary>
-        public static Task UserClick(object element)
-        {
-            return Script.Call<Task>("TestingLibrary.userEvent.click", element);
-        }
+        public static Task UserClick(object element) => Script.Call<Task>("TestingLibrary.userEvent.click", element);
 
         /// <summary>
         /// Fires a click event on an element.
         /// </summary>
-        public static void FireClick(object element)
-        {
-            Script.Call<object>("TestingLibrary.fireEvent.click", element);
-        }
+        public static void FireClick(object element) => Script.Call<object>("TestingLibrary.fireEvent.click", element);
 
         /// <summary>
         /// Fires a change event on an element.
         /// </summary>
-        public static void FireChange(object element, object eventInit)
-        {
-            Script.Call<object>("TestingLibrary.fireEvent.change", element, eventInit);
-        }
+        public static void FireChange(object element, object eventInit) => Script.Call<object>("TestingLibrary.fireEvent.change", element, eventInit);
 
         /// <summary>
         /// Clears all rendered components (call in cleanup).
         /// </summary>
-        public static void Cleanup()
-        {
-            Script.Call<object>("TestingLibrary.cleanup");
-        }
+        public static void Cleanup() => Script.Call<object>("TestingLibrary.cleanup");
 
         /// <summary>
         /// Advances fake timers by specified milliseconds.
         /// </summary>
-        public static void AdvanceTimers(int ms)
-        {
-            Script.Call<object>("jest.advanceTimersByTime", ms);
-        }
+        public static void AdvanceTimers(int ms) => Script.Call<object>("jest.advanceTimersByTime", ms);
 
         /// <summary>
         /// Runs all pending timers immediately.
         /// </summary>
-        public static void RunAllTimers()
-        {
-            Script.Call<object>("jest.runAllTimers");
-        }
+        public static void RunAllTimers() => Script.Call<object>("jest.runAllTimers");
     }
 
     /// <summary>
@@ -181,162 +154,111 @@ namespace Dashboard.Tests.TestLib
         /// <summary>
         /// Gets an element by its text content. Throws if not found.
         /// </summary>
-        public object GetByText(string text)
-        {
-            return Script.Call<object>("TestingLibrary.screen.getByText", text);
-        }
+        public object GetByText(string text) => Script.Call<object>("TestingLibrary.screen.getByText", text);
 
         /// <summary>
         /// Gets all elements matching the text.
         /// </summary>
-        public object[] GetAllByText(string text)
-        {
-            return Script.Call<object[]>("TestingLibrary.screen.getAllByText", text);
-        }
+        public object[] GetAllByText(string text) => Script.Call<object[]>("TestingLibrary.screen.getAllByText", text);
 
         /// <summary>
         /// Queries for an element by text. Returns null if not found.
         /// </summary>
-        public object QueryByText(string text)
-        {
-            return Script.Call<object>("TestingLibrary.screen.queryByText", text);
-        }
+        public object QueryByText(string text) => Script.Call<object>("TestingLibrary.screen.queryByText", text);
 
         /// <summary>
         /// Queries for all elements by text.
         /// </summary>
-        public object[] QueryAllByText(string text)
-        {
-            return Script.Call<object[]>("TestingLibrary.screen.queryAllByText", text);
-        }
+        public object[] QueryAllByText(string text) => Script.Call<object[]>("TestingLibrary.screen.queryAllByText", text);
 
         /// <summary>
         /// Finds an element by text (waits for it to appear).
         /// </summary>
-        public Task<object> FindByText(string text, int timeout = 5000)
-        {
-            return Script.Call<Task<object>>(
+        public Task<object> FindByText(string text, int timeout = 5000) => Script.Call<Task<object>>(
                 "TestingLibrary.screen.findByText",
                 text,
                 new { timeout }
             );
-        }
 
         // Query by role
 
         /// <summary>
         /// Gets an element by its ARIA role. Throws if not found.
         /// </summary>
-        public object GetByRole(string role, object options = null)
-        {
-            return Script.Call<object>("TestingLibrary.screen.getByRole", role, options);
-        }
+        public object GetByRole(string role, object options = null) => Script.Call<object>("TestingLibrary.screen.getByRole", role, options);
 
         /// <summary>
         /// Gets all elements matching the role.
         /// </summary>
-        public object[] GetAllByRole(string role, object options = null)
-        {
-            return Script.Call<object[]>("TestingLibrary.screen.getAllByRole", role, options);
-        }
+        public object[] GetAllByRole(string role, object options = null) => Script.Call<object[]>("TestingLibrary.screen.getAllByRole", role, options);
 
         /// <summary>
         /// Queries for an element by role. Returns null if not found.
         /// </summary>
-        public object QueryByRole(string role, object options = null)
-        {
-            return Script.Call<object>("TestingLibrary.screen.queryByRole", role, options);
-        }
+        public object QueryByRole(string role, object options = null) => Script.Call<object>("TestingLibrary.screen.queryByRole", role, options);
 
         /// <summary>
         /// Finds an element by role (waits for it to appear).
         /// </summary>
-        public Task<object> FindByRole(string role, object options = null, int timeout = 5000)
-        {
-            return Script.Call<Task<object>>(
+        public Task<object> FindByRole(string role, object options = null, int timeout = 5000) => Script.Call<Task<object>>(
                 "TestingLibrary.screen.findByRole",
                 role,
                 options ?? new { timeout }
             );
-        }
 
         // Query by placeholder
 
         /// <summary>
         /// Gets an element by its placeholder text.
         /// </summary>
-        public object GetByPlaceholderText(string text)
-        {
-            return Script.Call<object>("TestingLibrary.screen.getByPlaceholderText", text);
-        }
+        public object GetByPlaceholderText(string text) => Script.Call<object>("TestingLibrary.screen.getByPlaceholderText", text);
 
         /// <summary>
         /// Queries for an element by placeholder text.
         /// </summary>
-        public object QueryByPlaceholderText(string text)
-        {
-            return Script.Call<object>("TestingLibrary.screen.queryByPlaceholderText", text);
-        }
+        public object QueryByPlaceholderText(string text) => Script.Call<object>("TestingLibrary.screen.queryByPlaceholderText", text);
 
         /// <summary>
         /// Finds an element by placeholder text (waits).
         /// </summary>
-        public Task<object> FindByPlaceholderText(string text, int timeout = 5000)
-        {
-            return Script.Call<Task<object>>(
+        public Task<object> FindByPlaceholderText(string text, int timeout = 5000) => Script.Call<Task<object>>(
                 "TestingLibrary.screen.findByPlaceholderText",
                 text,
                 new { timeout }
             );
-        }
 
         // Query by test ID
 
         /// <summary>
         /// Gets an element by its data-testid attribute.
         /// </summary>
-        public object GetByTestId(string testId)
-        {
-            return Script.Call<object>("TestingLibrary.screen.getByTestId", testId);
-        }
+        public object GetByTestId(string testId) => Script.Call<object>("TestingLibrary.screen.getByTestId", testId);
 
         /// <summary>
         /// Queries for an element by test ID.
         /// </summary>
-        public object QueryByTestId(string testId)
-        {
-            return Script.Call<object>("TestingLibrary.screen.queryByTestId", testId);
-        }
+        public object QueryByTestId(string testId) => Script.Call<object>("TestingLibrary.screen.queryByTestId", testId);
 
         /// <summary>
         /// Finds an element by test ID (waits).
         /// </summary>
-        public Task<object> FindByTestId(string testId, int timeout = 5000)
-        {
-            return Script.Call<Task<object>>(
+        public Task<object> FindByTestId(string testId, int timeout = 5000) => Script.Call<Task<object>>(
                 "TestingLibrary.screen.findByTestId",
                 testId,
                 new { timeout }
             );
-        }
 
         // Query by label
 
         /// <summary>
         /// Gets an element by its associated label text.
         /// </summary>
-        public object GetByLabelText(string text)
-        {
-            return Script.Call<object>("TestingLibrary.screen.getByLabelText", text);
-        }
+        public object GetByLabelText(string text) => Script.Call<object>("TestingLibrary.screen.getByLabelText", text);
 
         /// <summary>
         /// Queries for an element by label text.
         /// </summary>
-        public object QueryByLabelText(string text)
-        {
-            return Script.Call<object>("TestingLibrary.screen.queryByLabelText", text);
-        }
+        public object QueryByLabelText(string text) => Script.Call<object>("TestingLibrary.screen.queryByLabelText", text);
 
         // Query by CSS selector (escape hatch)
 

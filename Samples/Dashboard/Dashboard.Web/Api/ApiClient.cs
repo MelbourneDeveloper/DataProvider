@@ -191,15 +191,9 @@ namespace Dashboard.Api
             return await response.Text();
         }
 
-        private static T ParseJson<T>(string json)
-        {
-            return Script.Call<T>("JSON.parse", json);
-        }
+        private static T ParseJson<T>(string json) => Script.Call<T>("JSON.parse", json);
 
-        private static string EncodeUri(string value)
-        {
-            return Script.Call<string>("encodeURIComponent", value);
-        }
+        private static string EncodeUri(string value) => Script.Call<string>("encodeURIComponent", value);
     }
 
     /// <summary>

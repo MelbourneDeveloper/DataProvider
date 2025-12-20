@@ -205,9 +205,7 @@ namespace Dashboard.Pages
             // TODO: Navigate to patient detail or open modal
         }
 
-        private static ReactElement RenderError(string message)
-        {
-            return Div(
+        private static ReactElement RenderError(string message) => Div(
                 className: "card",
                 style: new { borderLeft = "4px solid var(--error)" },
                 children: new[]
@@ -218,7 +216,6 @@ namespace Dashboard.Pages
                     ),
                 }
             );
-        }
 
         private static ReactElement RenderPatientTable(Patient[] patients, Action<Patient> onSelect)
         {
@@ -277,13 +274,10 @@ namespace Dashboard.Pages
             );
         }
 
-        private static ReactElement RenderGender(string gender)
-        {
-            return Span(
+        private static ReactElement RenderGender(string gender) => Span(
                 className: "badge " + GenderBadgeClass(gender),
                 children: new[] { Text(gender ?? "Unknown") }
             );
-        }
 
         private static string GenderBadgeClass(string gender)
         {
@@ -298,9 +292,7 @@ namespace Dashboard.Pages
             return Text(contact);
         }
 
-        private static ReactElement RenderStatus(bool active)
-        {
-            return Div(
+        private static ReactElement RenderStatus(bool active) => Div(
                 className: "flex items-center gap-2",
                 children: new[]
                 {
@@ -308,11 +300,8 @@ namespace Dashboard.Pages
                     Text(active ? "Active" : "Inactive"),
                 }
             );
-        }
 
-        private static ReactElement RenderActions(Patient patient, Action<Patient> onSelect)
-        {
-            return Div(
+        private static ReactElement RenderActions(Patient patient, Action<Patient> onSelect) => Div(
                 className: "table-action",
                 children: new[]
                 {
@@ -324,12 +313,8 @@ namespace Dashboard.Pages
                     Button(className: "btn btn-ghost btn-sm", children: new[] { Icons.Edit() }),
                 }
             );
-        }
 
-        private static string GetInitials(Patient patient)
-        {
-            return FirstChar(patient.GivenName) + FirstChar(patient.FamilyName);
-        }
+        private static string GetInitials(Patient patient) => FirstChar(patient.GivenName) + FirstChar(patient.FamilyName);
 
         private static string FirstChar(string s)
         {

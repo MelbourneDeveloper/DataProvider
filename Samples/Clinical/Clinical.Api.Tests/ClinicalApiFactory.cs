@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 /// WebApplicationFactory for Clinical.Api e2e testing.
 /// Just configures a temp database path - Program.cs does ALL initialization.
 /// </summary>
-public sealed class ClinicalApiFactory : WebApplicationFactory<Clinical.Api.Program>
+public sealed class ClinicalApiFactory : WebApplicationFactory<Program>
 {
     private readonly string _dbPath;
 
@@ -25,11 +25,9 @@ public sealed class ClinicalApiFactory : WebApplicationFactory<Clinical.Api.Prog
     public string DbPath => _dbPath;
 
     /// <inheritdoc />
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
-    {
+    protected override void ConfigureWebHost(IWebHostBuilder builder) =>
         // Just set configuration - Program.cs handles everything else
         builder.UseSetting("DbPath", _dbPath);
-    }
 
     /// <inheritdoc />
     protected override void Dispose(bool disposing)

@@ -154,9 +154,7 @@ namespace Dashboard
             return RenderPlaceholderPage("Page Not Found", "The requested page does not exist");
         }
 
-        private static ReactElement RenderPlaceholderPage(string title, string description)
-        {
-            return Div(
+        private static ReactElement RenderPlaceholderPage(string title, string description) => Div(
                 className: "page",
                 children: new[]
                 {
@@ -192,6 +190,5 @@ namespace Dashboard
                     ),
                 }
             );
-        }
     }
 }
