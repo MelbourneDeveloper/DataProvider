@@ -412,3 +412,5 @@ coverage-results/
 
 
 Samples/Dashboard/Dashboard.Web/wwwroot/js/vendor/
+
+*.db
