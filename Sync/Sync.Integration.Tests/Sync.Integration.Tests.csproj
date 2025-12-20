@@ -25,7 +25,7 @@
     <ProjectReference Include="../Sync/Sync.csproj" />
     <ProjectReference Include="../Sync.SQLite/Sync.SQLite.csproj" />
     <ProjectReference Include="../Sync.Postgres/Sync.Postgres.csproj" />
-    <ProjectReference Include="../Sync.Api/Sync.Api.csproj" />
+    <ProjectReference Include="../Sync.Http/Sync.Http.csproj" />
   </ItemGroup>
 
 </Project>

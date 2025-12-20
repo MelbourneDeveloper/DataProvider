@@ -917,6 +917,307 @@ public sealed class DataProviderIntegrationTests : IDisposable
 
     #endregion
 
+    #region SelectStatementLinqExtensions Coverage Tests
+
+    [Fact]
+    public void FluentQueryBuilder_And_GeneratesCorrectSQL()
+    {
+        // Arrange & Act
+        var query = "Orders"
+            .From("o")
+            .Select(("o", "OrderNumber"), ("o", "TotalAmount"))
+            .Where("o.Status", "Completed")
+            .And("o.TotalAmount", "500.00")
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
+
+        Assert.Contains("WHERE o.Status = 'Completed'", sql);
+        Assert.Contains("AND o.TotalAmount = '500.00'", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_Or_GeneratesCorrectSQL()
+    {
+        // Arrange & Act
+        var query = "Orders"
+            .From("o")
+            .Select(("o", "OrderNumber"), ("o", "Status"))
+            .Where("o.Status", "Completed")
+            .Or("o.Status", "Processing")
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
+
+        Assert.Contains("WHERE o.Status = 'Completed'", sql);
+        Assert.Contains("OR o.Status = 'Processing'", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_Distinct_GeneratesCorrectSQL()
+    {
+        // Arrange & Act
+        var query = "Orders"
+            .From("o")
+            .Select(("o", "Status"))
+            .Distinct()
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
+
+        Assert.Contains("SELECT DISTINCT", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_Skip_GeneratesCorrectSQL()
+    {
+        // Arrange & Act
+        var query = "Orders"
+            .From("o")
+            .SelectAll()
+            .Skip(10)
+            .Take(5)
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
+
+        Assert.Contains("OFFSET 10", sql);
+        Assert.Contains("LIMIT 5", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_SelectAll_GeneratesCorrectSQL()
+    {
+        // Arrange & Act
+        var query = "Orders"
+            .From("o")
+            .SelectAll("o")
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
+
+        Assert.Contains("SELECT o.*", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_GroupBy_GeneratesCorrectSQL()
+    {
+        // Arrange & Act
+        var query = "Orders"
+            .From("o")
+            .Select(("o", "Status"))
+            .GroupBy("o.Status")
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
+
+        Assert.Contains("GROUP BY o.Status", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_WhereWithOperator_GeneratesCorrectSQL()
+    {
+        // Arrange & Act
+        var query = "Orders"
+            .From("o")
+            .Select(("o", "OrderNumber"), ("o", "TotalAmount"))
+            .Where("o.TotalAmount", ComparisonOperator.GreaterOrEq, "100.00")
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
+
+        Assert.Contains("WHERE o.TotalAmount >= '100.00'", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_MultipleGroupBy_GeneratesCorrectSQL()
+    {
+        // Arrange & Act
+        var query = "Orders"
+            .From("o")
+            .Select(("o", "Status"), ("o", "CustomerId"))
+            .GroupBy("o.Status", "o.CustomerId")
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
+
+        Assert.Contains("GROUP BY o.Status, o.CustomerId", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_CombinedAndOr_GeneratesCorrectSQL()
+    {
+        // Arrange & Act
+        var query = "Orders"
+            .From("o")
+            .Select(("o", "OrderNumber"))
+            .Where("o.Status", "Completed")
+            .And("o.TotalAmount", "500.00")
+            .Or("o.Status", "VIP")
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
+
+        Assert.Contains("WHERE o.Status = 'Completed'", sql);
+        Assert.Contains("AND o.TotalAmount = '500.00'", sql);
+        Assert.Contains("OR o.Status = 'VIP'", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_WhereWithBoolValue_GeneratesCorrectSQL()
+    {
+        // Arrange & Act - tests FormatValue with bool
+        var query = "Orders"
+            .From("o")
+            .SelectAll()
+            .Where("o.IsActive", true)
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
+
+        Assert.Contains("WHERE o.IsActive = 1", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_WhereWithDateTimeValue_GeneratesCorrectSQL()
+    {
+        // Arrange & Act - tests FormatValue with DateTime
+        var testDate = new DateTime(2024, 6, 15, 10, 30, 0, DateTimeKind.Utc);
+        var query = "Orders"
+            .From("o")
+            .SelectAll()
+            .Where("o.OrderDate", testDate)
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
+
+        Assert.Contains("WHERE o.OrderDate = '2024-06-15 10:30:00'", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_WhereWithIntValue_GeneratesCorrectSQL()
+    {
+        // Arrange & Act - tests FormatValue with numeric
+        var query = "Orders"
+            .From("o")
+            .SelectAll()
+            .Where("o.CustomerId", 42)
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
+
+        Assert.Contains("WHERE o.CustomerId = 42", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_WhereWithStringContainingQuote_EscapesCorrectly()
+    {
+        // Arrange & Act - tests FormatValue with string containing single quote
+        var query = "Orders"
+            .From("o")
+            .SelectAll()
+            .Where("o.CustomerName", "O'Brien")
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
+
+        Assert.Contains("WHERE o.CustomerName = 'O''Brien'", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_OrderByDescending_GeneratesCorrectSQL()
+    {
+        // Arrange & Act
+        var query = "Orders"
+            .From("o")
+            .SelectAll()
+            .OrderByDescending("o.OrderDate")
+            .ToSqlStatement();
+
+        var sqlResult = query.ToSQLite();
+
+        // Assert
+        Assert.True(sqlResult is StringSqlOk);
+        var sql = ((StringSqlOk)sqlResult).Value;
+
+        Assert.Contains("ORDER BY o.OrderDate DESC", sql);
+    }
+
+    [Fact]
+    public void FluentQueryBuilder_AllComparisonOperators_GenerateCorrectSQL()
+    {
+        // Test Less Than
+        var ltQuery = "Orders".From().Select(("", "Id")).Where("Id", ComparisonOperator.LessThan, 10).ToSqlStatement();
+        Assert.Contains("Id < ", ((StringSqlOk)ltQuery.ToSQLite()).Value);
+
+        // Test Less Than or Equal
+        var leQuery = "Orders".From().Select(("", "Id")).Where("Id", ComparisonOperator.LessOrEq, 10).ToSqlStatement();
+        Assert.Contains("Id <= ", ((StringSqlOk)leQuery.ToSQLite()).Value);
+
+        // Test Greater Than
+        var gtQuery = "Orders".From().Select(("", "Id")).Where("Id", ComparisonOperator.GreaterThan, 10).ToSqlStatement();
+        Assert.Contains("Id > ", ((StringSqlOk)gtQuery.ToSQLite()).Value);
+
+        // Test Not Equal
+        var neQuery = "Orders".From().Select(("", "Id")).Where("Id", ComparisonOperator.NotEq, 10).ToSqlStatement();
+        var neSql = ((StringSqlOk)neQuery.ToSQLite()).Value;
+        Assert.True(neSql.Contains("Id <> ") || neSql.Contains("Id != "));
+    }
+
+    #endregion
+
     public void Dispose()
     {
         _connection?.Dispose();

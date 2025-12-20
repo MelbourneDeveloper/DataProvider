@@ -1,8 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
+    <!--
+      This project provides TOOLS for building sync servers (extension methods, DTOs, helpers).
+      The Program.cs exists ONLY for WebApplicationFactory<Program> test support.
+      For actual production use, reference this library and use AddSyncApiServices() + MapSyncEndpoints()
+      in YOUR OWN host project.
+    -->
     <OutputType>Exe</OutputType>
-    <RootNamespace>Sync.Http</RootNamespace>
+    <RootNamespace>Sync.Api</RootNamespace>
     <NoWarn>$(NoWarn);CA1848;CA1515;CA1307;CA2007;EPC13;CS1591</NoWarn>
   </PropertyGroup>
 
