@@ -5,3 +5,11 @@ csharp_style_expression_bodied_methods = true
 
 # CA1062: Validate arguments of public methods - DISABLED because we use nullable reference types
 dotnet_diagnostic.CA1062.severity = none
+
+# IDE0037: Member name can be simplified - DISABLED for anonymous objects
+dotnet_diagnostic.IDE0037.severity = none
+
+# CA1308: Normalize strings to uppercase - DISABLED because lowercase is intentional for identifiers and hashes
+dotnet_diagnostic.CA1308.severity = none
+
+

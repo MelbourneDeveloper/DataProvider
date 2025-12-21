@@ -1,4 +1,4 @@
-using Results;
+using Outcome;
 using Xunit;
 
 namespace DataProvider.Tests;
@@ -12,7 +12,7 @@ public class ResultTypeTests
         const string value = "Success";
 
         // Act
-        var result = new Result<string, string>.Success(value);
+        var result = new Result<string, string>.Ok<string, string>(value);
 
         // Assert
         Assert.NotNull(result);
@@ -27,7 +27,7 @@ public class ResultTypeTests
         const string error = "Something went wrong";
 
         // Act
-        var result = new Result<string, string>.Failure(error);
+        var result = new Result<string, string>.Error<string, string>(error);
 
         // Assert
         Assert.NotNull(result);

@@ -1,0 +1,5 @@
+fhir_Appointment
+|> select(id, status, start_time, end_time, service_type, reason_code, practitioner_reference, created)
+|> where(patient_reference = @patientRef)
+|> orderByDesc(start_time)
+|> limit(@limit)

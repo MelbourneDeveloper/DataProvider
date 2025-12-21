@@ -1,0 +1,34 @@
+<Project Sdk="h5.Target/25.11.62725">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Dashboard</RootNamespace>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>CS0626;CS1591;CA1812;CA1848;CA2100;CS8632</NoWarn>
+    <!-- H5 specific settings -->
+    <DefineConstants>H5</DefineConstants>
+    <UseLocalH5>true</UseLocalH5>
+    <UpdateH5>false</UpdateH5>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Disable analyzers that don't work with H5 -->
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="h5" Version="25.11.62743" />
+    <PackageReference Include="h5.Core" Version="25.11.62742" />
+  </ItemGroup>
+
+  <!-- Copy wwwroot files to output -->
+  <ItemGroup>
+    <None Include="wwwroot/**/*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -1,7 +1,8 @@
 using Lql.Postgres;
 using Lql.SQLite;
 using Lql.SqlServer;
-using Results;
+using Outcome;
+using Selecta;
 using Xunit;
 
 namespace Lql.Tests;
@@ -44,14 +45,16 @@ public partial class LqlFileBasedTests
 
         // Act
         var statementResult = LqlStatementConverter.ToStatement(lqlCode);
-        if (statementResult is Result<LqlStatement, SqlError>.Failure failure)
+        if (statementResult is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> failure)
         {
             throw new InvalidOperationException(
-                $"Parsing failed for {testCaseName}: {failure.ErrorValue.DetailedMessage}"
+                $"Parsing failed for {testCaseName}: {failure.Value.DetailedMessage}"
             );
         }
-        Assert.IsType<Result<LqlStatement, SqlError>.Success>(statementResult);
-        var statement = ((Result<LqlStatement, SqlError>.Success)statementResult).Value;
+        Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(statementResult);
+        var statement = (
+            (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)statementResult
+        ).Value;
 
         Result<string, SqlError> sqlResult = dialect switch
         {
@@ -61,8 +64,8 @@ public partial class LqlFileBasedTests
             _ => throw new ArgumentException($"Unsupported dialect: {dialect}"),
         };
 
-        Assert.IsType<Result<string, SqlError>.Success>(sqlResult);
-        var actualSql = ((Result<string, SqlError>.Success)sqlResult).Value;
+        Assert.IsType<Result<string, SqlError>.Ok<string, SqlError>>(sqlResult);
+        var actualSql = ((Result<string, SqlError>.Ok<string, SqlError>)sqlResult).Value;
 
         if (expectedSql != actualSql)
         {
@@ -162,11 +165,13 @@ public partial class LqlFileBasedTests
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         var statementResult = LqlStatementConverter.ToStatement(largeLqlCode);
-        Assert.IsType<Result<LqlStatement, SqlError>.Success>(statementResult);
-        var statement = ((Result<LqlStatement, SqlError>.Success)statementResult).Value;
+        Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(statementResult);
+        var statement = (
+            (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)statementResult
+        ).Value;
 
         var sqlResult = statement.ToPostgreSql();
-        Assert.IsType<Result<string, SqlError>.Success>(sqlResult);
+        Assert.IsType<Result<string, SqlError>.Ok<string, SqlError>>(sqlResult);
 
         stopwatch.Stop();
         Assert.True(
@@ -187,11 +192,15 @@ public partial class LqlFileBasedTests
         for (int i = 0; i < 1000; i++)
         {
             var statementResult = LqlStatementConverter.ToStatement(lqlCode);
-            Assert.IsType<Result<LqlStatement, SqlError>.Success>(statementResult);
-            var statement = ((Result<LqlStatement, SqlError>.Success)statementResult).Value;
+            Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(
+                statementResult
+            );
+            var statement = (
+                (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)statementResult
+            ).Value;
 
             var sqlResult = statement.ToPostgreSql();
-            Assert.IsType<Result<string, SqlError>.Success>(sqlResult);
+            Assert.IsType<Result<string, SqlError>.Ok<string, SqlError>>(sqlResult);
         }
 
         // Force garbage collection

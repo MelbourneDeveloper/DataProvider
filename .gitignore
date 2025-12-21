@@ -404,6 +404,13 @@ invoices.db
 *.bak
 *.swp
 *~
-coverage_report/
 
-final_coverage_report/
+coverage/
+coverage-report/
+coverage-results/
+
+
+
+Samples/Dashboard/Dashboard.Web/wwwroot/js/vendor/
+
+*.db

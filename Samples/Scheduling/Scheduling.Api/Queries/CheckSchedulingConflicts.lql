@@ -1,0 +1,6 @@
+fhir_Appointment
+|> select(id, start_time, end_time, status)
+|> where(practitioner_reference = @practitionerRef)
+|> where(status != 'cancelled')
+|> where(start_time < @proposedEnd)
+|> where(end_time > @proposedStart)

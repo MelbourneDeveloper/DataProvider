@@ -7,9 +7,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsAsErrors>IDE0301;IDE0063;IDE0090</WarningsAsErrors>
-    <NoWarn>CA1016;CA1303;EPS06;IDE0290;CA1062;CA1002;CA1308</NoWarn>
-    <WarningsNotAsErrors>$(WarningsNotAsErrors);CA1303;EPS06;CA1016;IDE0290;CA1062;CA1002</WarningsNotAsErrors>
+    <WarningsAsErrors>IDE0301;IDE0063;IDE0005</WarningsAsErrors>
+    <NoWarn>CA1016;CA1303;EPS06;IDE0290;CA1062;CA1002;IDE0090;CA1017;CS8509;IDE0037</NoWarn>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);CA1303;EPS06;CA1016;IDE0290;CA1062;CA1002;CA1017;CS8509;IDE0037</WarningsNotAsErrors>
     <WarningLevel>9999</WarningLevel>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
@@ -18,7 +18,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     
     <!-- Temporarily suppress problematic style rules to focus on core functionality -->
-    <WarningsNotAsErrors>$(WarningsNotAsErrors);SA1009;SA1111;SA1402;SA1649;SA1502;SA1201;SA1202;SA0001;CA1031;CA1304;CA1311;CA1725;CA1849;CA1861;CA2100;ERP022;CA1308</WarningsNotAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);SA1009;SA1111;SA1402;SA1649;SA1502;SA1201;SA1202;SA0001;CA1031;CA1304;CA1311;CA1725;CA1849;CA1861;CA2100;ERP022</WarningsNotAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,9 +30,18 @@
     
     <!-- SqlParserCS for SQL parsing -->
     <PackageReference Include="SqlParserCS" Version="0.6.5" />
-    
+
     <!-- JSON serialization -->
     <PackageReference Include="System.Text.Json" Version="9.0.0" />
+
+    <!-- Result types for Railway Oriented Programming -->
+    <PackageReference Include="Outcome" Version="1.0.0" />
+
+    <!-- Exhaustive pattern matching analyzer -->
+    <PackageReference Include="Exhaustion" Version="1.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
   
   <!-- Code Analysis packages only for non-test projects -->

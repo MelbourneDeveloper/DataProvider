@@ -1,0 +1,5 @@
+fhir_Schedule
+|> join(fhir_Practitioner, practitioner_reference, id)
+|> select(id, practitioner_reference, name_family, name_given, planning_horizon, active)
+|> where(practitioner_reference = @practitionerRef)
+|> where(active = true)

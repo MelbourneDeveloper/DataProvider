@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Text;
-using Results;
+using Outcome;
 using Selecta;
 
 namespace DataProvider.CodeGeneration;
@@ -51,12 +51,12 @@ public class DefaultCodeTemplate : ICodeTemplate
     )
     {
         if (string.IsNullOrWhiteSpace(namespaceName))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("namespaceName cannot be null or empty")
             );
 
         if (string.IsNullOrWhiteSpace(modelCode) && string.IsNullOrWhiteSpace(dataAccessCode))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("At least one of modelCode or dataAccessCode must be provided")
             );
 
@@ -68,7 +68,8 @@ public class DefaultCodeTemplate : ICodeTemplate
         sb.AppendLine("using System.Collections.Immutable;");
         sb.AppendLine("using System.Threading.Tasks;");
         sb.AppendLine("using Microsoft.Data.Sqlite;");
-        sb.AppendLine("using Results;");
+        sb.AppendLine("using Outcome;");
+        sb.AppendLine("using Selecta;");
         sb.AppendLine();
 
         // Generate namespace
@@ -88,7 +89,7 @@ public class DefaultCodeTemplate : ICodeTemplate
             sb.Append(modelCode);
         }
 
-        return new Result<string, SqlError>.Success(sb.ToString());
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
 
     /// <summary>
@@ -100,12 +101,12 @@ public class DefaultCodeTemplate : ICodeTemplate
     )
     {
         if (groupingConfig == null)
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("groupingConfig cannot be null")
             );
 
         if (columns == null || columns.Count == 0)
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("columns cannot be null or empty")
             );
 

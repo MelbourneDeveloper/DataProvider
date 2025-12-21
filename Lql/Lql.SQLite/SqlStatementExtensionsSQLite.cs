@@ -1,4 +1,5 @@
-using Results;
+using Outcome;
+using Selecta;
 
 namespace Lql.SQLite;
 
@@ -19,12 +20,12 @@ public static class SqlStatementExtensionsSQLite
 
         if (statement.ParseError != null)
         {
-            return new Result<string, SqlError>.Failure(statement.ParseError);
+            return new Result<string, SqlError>.Error<string, SqlError>(statement.ParseError);
         }
 
         if (statement.AstNode == null)
         {
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("No AST node found in statement")
             );
         }
@@ -34,17 +35,17 @@ public static class SqlStatementExtensionsSQLite
             if (statement.AstNode is Pipeline pipeline)
             {
                 var sql = ConvertPipelineToSQLite(pipeline);
-                return new Result<string, SqlError>.Success(sql);
+                return new Result<string, SqlError>.Ok<string, SqlError>(sql);
             }
 
             var unknownSql = statement.AstNode is Identifier identifier
                 ? $"SELECT *\nFROM {identifier.Name}"
                 : "-- Unknown AST node type";
-            return new Result<string, SqlError>.Success(unknownSql);
+            return new Result<string, SqlError>.Ok<string, SqlError>(unknownSql);
         }
         catch (Exception ex)
         {
-            return new Result<string, SqlError>.Failure(SqlError.FromException(ex));
+            return new Result<string, SqlError>.Error<string, SqlError>(SqlError.FromException(ex));
         }
     }
 
@@ -54,16 +55,16 @@ public static class SqlStatementExtensionsSQLite
     /// </summary>
     /// <param name="statement">The SelectStatement to convert</param>
     /// <returns>A Result containing either SQLite SQL string or a SqlError</returns>
-    public static Result<string, SqlError> ToSQLite(this Selecta.SelectStatement statement)
+    public static Result<string, SqlError> ToSQLite(this SelectStatement statement)
     {
         try
         {
             var sql = SQLiteContext.ToSQLiteSql(statement);
-            return new Result<string, SqlError>.Success(sql);
+            return new Result<string, SqlError>.Ok<string, SqlError>(sql);
         }
         catch (Exception ex)
         {
-            return new Result<string, SqlError>.Failure(SqlError.FromException(ex));
+            return new Result<string, SqlError>.Error<string, SqlError>(SqlError.FromException(ex));
         }
     }
 

@@ -1,5 +1,5 @@
 using Avalonia.Platform.Storage;
-using Results;
+using Outcome;
 
 namespace Lql.Browser.Services;
 
@@ -35,14 +35,16 @@ public static class FileDialogService
             var files = await storageProvider.OpenFilePickerAsync(dialog);
             if (files.Count > 0)
             {
-                return new Result<string, string>.Success(files[0].Path.LocalPath);
+                return new Result<string, string>.Ok<string, string>(files[0].Path.LocalPath);
             }
 
-            return new Result<string, string>.Failure("No file selected");
+            return new Result<string, string>.Error<string, string>("No file selected");
         }
         catch (Exception ex)
         {
-            return new Result<string, string>.Failure($"Error selecting database: {ex.Message}");
+            return new Result<string, string>.Error<string, string>(
+                $"Error selecting database: {ex.Message}"
+            );
         }
     }
 
@@ -71,14 +73,16 @@ public static class FileDialogService
             var files = await storageProvider.OpenFilePickerAsync(dialog);
             if (files.Count > 0)
             {
-                return new Result<string, string>.Success(files[0].Path.LocalPath);
+                return new Result<string, string>.Ok<string, string>(files[0].Path.LocalPath);
             }
 
-            return new Result<string, string>.Failure("No file selected");
+            return new Result<string, string>.Error<string, string>("No file selected");
         }
         catch (Exception ex)
         {
-            return new Result<string, string>.Failure($"Error opening file: {ex.Message}");
+            return new Result<string, string>.Error<string, string>(
+                $"Error opening file: {ex.Message}"
+            );
         }
     }
 
@@ -109,14 +113,16 @@ public static class FileDialogService
             var file = await storageProvider.SaveFilePickerAsync(dialog);
             if (file != null)
             {
-                return new Result<string, string>.Success(file.Path.LocalPath);
+                return new Result<string, string>.Ok<string, string>(file.Path.LocalPath);
             }
 
-            return new Result<string, string>.Failure("No file selected");
+            return new Result<string, string>.Error<string, string>("No file selected");
         }
         catch (Exception ex)
         {
-            return new Result<string, string>.Failure($"Error saving file: {ex.Message}");
+            return new Result<string, string>.Error<string, string>(
+                $"Error saving file: {ex.Message}"
+            );
         }
     }
 
@@ -141,14 +147,16 @@ public static class FileDialogService
             var file = await storageProvider.SaveFilePickerAsync(dialog);
             if (file != null)
             {
-                return new Result<string, string>.Success(file.Path.LocalPath);
+                return new Result<string, string>.Ok<string, string>(file.Path.LocalPath);
             }
 
-            return new Result<string, string>.Failure("No file selected");
+            return new Result<string, string>.Error<string, string>("No file selected");
         }
         catch (Exception ex)
         {
-            return new Result<string, string>.Failure($"Error selecting export file: {ex.Message}");
+            return new Result<string, string>.Error<string, string>(
+                $"Error selecting export file: {ex.Message}"
+            );
         }
     }
 
@@ -173,14 +181,16 @@ public static class FileDialogService
             var file = await storageProvider.SaveFilePickerAsync(dialog);
             if (file != null)
             {
-                return new Result<string, string>.Success(file.Path.LocalPath);
+                return new Result<string, string>.Ok<string, string>(file.Path.LocalPath);
             }
 
-            return new Result<string, string>.Failure("No file selected");
+            return new Result<string, string>.Error<string, string>("No file selected");
         }
         catch (Exception ex)
         {
-            return new Result<string, string>.Failure($"Error selecting export file: {ex.Message}");
+            return new Result<string, string>.Error<string, string>(
+                $"Error selecting export file: {ex.Message}"
+            );
         }
     }
 }

@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <IsTestProject>true</IsTestProject>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Dashboard.Integration.Tests</RootNamespace>
+    <NoWarn>CS1591;CA1707;CA1307;CA1062;CA1515;CA2100;CA1848</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.50.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Clinical/Clinical.Api/Clinical.Api.csproj" />
+    <ProjectReference Include="../../Scheduling/Scheduling.Api/Scheduling.Api.csproj" />
+  </ItemGroup>
+
+  <!-- Copy Dashboard.Web wwwroot for Playwright tests -->
+  <ItemGroup>
+    <None Include="../Dashboard.Web/wwwroot/**/*" CopyToOutputDirectory="PreserveNewest" LinkBase="wwwroot" />
+  </ItemGroup>
+
+</Project>

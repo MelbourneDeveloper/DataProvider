@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <NoWarn>CA1848;CA1515;CA2100;RS1035;CA1508;CA2234;CA1812</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Sync\Sync.SQLite\Sync.SQLite.csproj" />
+    <ProjectReference Include="..\..\..\DataProvider\DataProvider\DataProvider.csproj" />
+    <ProjectReference Include="..\..\..\Other\Selecta\Selecta.csproj" />
+    <ProjectReference Include="..\..\..\Migration\Migration\Migration.csproj" />
+    <ProjectReference Include="..\..\..\Migration\Migration.SQLite\Migration.SQLite.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="Queries/*.sql" />
+    <AdditionalFiles Include="DataProvider.json" />
+  </ItemGroup>
+
+  <!-- Generate C# from SQL using DataProvider.SQLite.Cli -->
+  <Target Name="GenerateDataProvider" BeforeTargets="CoreCompile">
+    <RemoveDir Directories="$(IntermediateOutputPath)Generated" />
+    <MakeDir Directories="$(IntermediateOutputPath)Generated" />
+    <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)..\..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(IntermediateOutputPath)Generated"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)Generated/**/*.g.cs" Visible="false" />
+    </ItemGroup>
+  </Target>
+
+</Project>

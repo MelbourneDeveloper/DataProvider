@@ -1,4 +1,4 @@
-using Results;
+using Outcome;
 
 namespace Selecta;
 

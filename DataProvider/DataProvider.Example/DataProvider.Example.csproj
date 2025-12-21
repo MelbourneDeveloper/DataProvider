@@ -9,7 +9,6 @@
         <EnableLqlTranspile>true</EnableLqlTranspile>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="../../Other/Results/Results.csproj" />
         <ProjectReference Include="../DataProvider/DataProvider.csproj" />
         <ProjectReference Include="../../Lql/Lql.SQLite/Lql.SQLite.csproj" />
         <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
@@ -25,7 +24,6 @@
         <AdditionalFiles Include="GetCustomersLql.lql" />
         <AdditionalFiles Include="GetCustomersLql.grouping.json" />
         <AdditionalFiles Include="DataProvider.json" />
-        <AdditionalFiles Include="schema.sql" />
     </ItemGroup>
     <!-- Pre-compile: transpile LQL to SQL, then generate C# from SQL using external CLI -->
     <Target Name="TranspileLqlAndGenerateDataProvider" BeforeTargets="CoreCompile">
@@ -39,7 +37,7 @@
         <Message Importance="High" Text="Transpiling LQL files (@(LqlFiles))" />
         <Exec Command='dotnet run --project $(MSBuildProjectDirectory)/../../Lql/LqlCli.SQLite/LqlCli.csproj -- --input &quot;%(LqlFiles.Identity)&quot; --output &quot;%(LqlFiles.RootDir)%(LqlFiles.Directory)%(LqlFiles.Filename).generated.sql&quot;' Condition="'$(EnableLqlTranspile)' == 'true' and @(LqlFiles) != ''" WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' ContinueOnError="WarnAndContinue" />
         <!-- Run SQLite generator CLI to emit .g.cs into IntermediateOutputPath/Generated -->
-        <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)../DataProvider.SQLite.Cli/DataProvider.SQLite.Cli.csproj -- --project-dir &quot;$(MSBuildProjectDirectory)&quot; --config &quot;$(MSBuildProjectDirectory)/DataProvider.json&quot; --out &quot;$(IntermediateOutputPath)Generated&quot; --schema &quot;$(MSBuildProjectDirectory)/schema.sql&quot;' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
+        <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)../DataProvider.SQLite.Cli/DataProvider.SQLite.Cli.csproj -- --project-dir &quot;$(MSBuildProjectDirectory)&quot; --config &quot;$(MSBuildProjectDirectory)/DataProvider.json&quot; --out &quot;$(IntermediateOutputPath)Generated&quot;' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
         <!-- Include generated sources created in this target -->
         <ItemGroup>
             <Compile Include="$(IntermediateOutputPath)Generated/**/*.g.cs" Visible="false" />

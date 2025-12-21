@@ -1,6 +1,5 @@
 using System.Data;
 using DataProvider.Example.Model;
-using Generated;
 
 namespace DataProvider.Example;
 
@@ -15,7 +14,7 @@ public static class MapFunctions
     /// </summary>
     /// <param name="reader">The data reader</param>
     /// <returns>Order instance</returns>
-    public static Order MapOrder(IDataReader reader) =>
+    public static Generated.Order MapOrder(IDataReader reader) =>
         new(
             reader.GetInt64(reader.GetOrdinal("Id")),
             reader.GetString(reader.GetOrdinal("OrderNumber")),
@@ -31,7 +30,7 @@ public static class MapFunctions
     /// </summary>
     /// <param name="reader">The data reader</param>
     /// <returns>Customer instance</returns>
-    public static Customer MapCustomer(IDataReader reader) =>
+    public static Generated.Customer MapCustomer(IDataReader reader) =>
         new(
             reader.GetInt64(reader.GetOrdinal("Id")),
             reader.GetString(reader.GetOrdinal("CustomerName")),

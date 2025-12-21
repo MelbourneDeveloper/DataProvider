@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <NoWarn>CA1308;CA1515;CA1866;CA1310;CA1834;</NoWarn>
+    <NoWarn>CA1515;CA1866;CA1310;CA1834;</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,7 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../Other/Results/Results.csproj" />
     <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
   </ItemGroup>
 

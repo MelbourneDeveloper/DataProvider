@@ -1,5 +1,5 @@
 using DataProvider.SqlServer.SqlParsing;
-using Results;
+using Outcome;
 using Selecta;
 
 namespace DataProvider.SqlServer;

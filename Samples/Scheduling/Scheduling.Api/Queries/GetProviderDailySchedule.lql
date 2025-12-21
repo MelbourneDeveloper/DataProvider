@@ -1,0 +1,12 @@
+fhir_Appointment
+|> join(sync_ScheduledPatient, patient_reference, PatientId)
+|> select(
+    id, start_time, end_time, minutes_duration,
+    status, service_category, service_type, reason_code, description,
+    patient_reference, PatientId, DisplayName, ContactPhone,
+    practitioner_reference
+)
+|> where(practitioner_reference = @practitionerRef)
+|> where(start_time >= @dateStart)
+|> where(start_time < @dateEnd)
+|> orderBy(start_time)

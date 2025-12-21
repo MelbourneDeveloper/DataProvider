@@ -3,8 +3,8 @@
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
         <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)Testing.ruleset</CodeAnalysisRuleSet>
-        <WarningsNotAsError>CA1307</WarningsNotAsError>
-        <NoWarn>CA1307</NoWarn>
+        <WarningsNotAsErrors>CA1307;xUnit1030</WarningsNotAsErrors>
+        <NoWarn>$(NoWarn);CA1307;xUnit1030</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />

@@ -2,7 +2,7 @@ using System.CommandLine;
 using System.Text.Json;
 using DataProvider.CodeGeneration;
 using DataProvider.SQLite.Parsing;
-using Results;
+using Outcome;
 using Selecta;
 
 #pragma warning disable CA1849 // Call async methods when in an async method
@@ -36,31 +36,21 @@ internal static class Program
         {
             IsRequired = true,
         };
-        var schema = new Option<FileInfo?>(
-            "--schema",
-            description: "Optional schema SQL file to execute before generation"
-        )
-        {
-            IsRequired = false,
-        };
-
         var root = new RootCommand("DataProvider.SQLite codegen CLI")
         {
             projectDir,
             config,
             outDir,
-            schema,
         };
         root.SetHandler(
-            async (DirectoryInfo proj, FileInfo cfg, DirectoryInfo output, FileInfo? schemaFile) =>
+            async (DirectoryInfo proj, FileInfo cfg, DirectoryInfo output) =>
             {
-                var exit = await RunAsync(proj, cfg, output, schemaFile).ConfigureAwait(false);
+                var exit = await RunAsync(proj, cfg, output).ConfigureAwait(false);
                 Environment.Exit(exit);
             },
             projectDir,
             config,
-            outDir,
-            schema
+            outDir
         );
 
         return await root.InvokeAsync(args).ConfigureAwait(false);
@@ -69,8 +59,7 @@ internal static class Program
     private static async Task<int> RunAsync(
         DirectoryInfo projectDir,
         FileInfo configFile,
-        DirectoryInfo outDir,
-        FileInfo? schemaFile
+        DirectoryInfo outDir
     )
     {
         try
@@ -95,23 +84,15 @@ internal static class Program
                 return 1;
             }
 
-            // Ensure DB exists and schema applied if provided
+            // Verify DB exists and is accessible
             try
             {
                 using var conn = new Microsoft.Data.Sqlite.SqliteConnection(cfg.ConnectionString);
                 await conn.OpenAsync().ConfigureAwait(false);
-                if (schemaFile is not null && schemaFile.Exists)
-                {
-                    var schemaSql = await File.ReadAllTextAsync(schemaFile.FullName)
-                        .ConfigureAwait(false);
-                    using var cmd = conn.CreateCommand();
-                    cmd.CommandText = schemaSql;
-                    await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
-                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Failed to prepare database: {ex.Message}");
+                Console.WriteLine($"❌ Failed to open database: {ex.Message}");
                 return 1;
             }
 
@@ -154,32 +135,50 @@ internal static class Program
                     {
                         baseName = baseName[..^".generated".Length];
                     }
-                    if (string.Equals(baseName, "schema", StringComparison.OrdinalIgnoreCase))
+                    if (
+                        string.Equals(baseName, "schema", StringComparison.OrdinalIgnoreCase)
+                        || baseName.EndsWith("_schema", StringComparison.OrdinalIgnoreCase)
+                    )
                     {
-                        // Skip schema file; it's only for DB initialization
+                        // Skip schema files; they're only for DB initialization
                         continue;
                     }
                     var parseResult = parser.ParseSql(sql);
-                    if (parseResult is Result<SelectStatement, string>.Failure parseFailure)
+                    if (
+                        parseResult
+                        is Result<SelectStatement, string>.Error<
+                            SelectStatement,
+                            string
+                        > parseFailure
+                    )
                     {
                         Console.WriteLine(
-                            $"Error parsing SQL file '{sqlPath}': {parseFailure.ErrorValue}"
+                            $"Error parsing SQL file '{sqlPath}': {parseFailure.Value}"
                         );
                         continue;
                     }
-                    var stmt = ((Result<SelectStatement, string>.Success)parseResult).Value;
+                    var stmt = (
+                        (Result<SelectStatement, string>.Ok<SelectStatement, string>)parseResult
+                    ).Value;
 
                     var colsResult = await SqliteCodeGenerator
                         .GetColumnMetadataFromSqlAsync(cfg.ConnectionString, sql, stmt.Parameters)
                         .ConfigureAwait(false);
                     if (
                         colsResult
-                        is not Result<IReadOnlyList<DatabaseColumn>, SqlError>.Success cols
+                        is not Result<IReadOnlyList<DatabaseColumn>, SqlError>.Ok<
+                            IReadOnlyList<DatabaseColumn>,
+                            SqlError
+                        > cols
                     )
                     {
                         var err = (
-                            colsResult as Result<IReadOnlyList<DatabaseColumn>, SqlError>.Failure
-                        )!.ErrorValue;
+                            colsResult
+                            as Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error<
+                                IReadOnlyList<DatabaseColumn>,
+                                SqlError
+                            >
+                        )!.Value;
                         var prettyMeta = FormatSqliteMetadataMessage(err.DetailedMessage);
                         Console.WriteLine($"❌ {prettyMeta}");
                         // Also emit an MSBuild-formatted error so IDE Problem Matchers pick it up
@@ -210,17 +209,15 @@ internal static class Program
                         hasCustomImplementation: false,
                         grouping
                     );
-                    if (gen is Result<string, SqlError>.Success success)
+                    if (gen is Result<string, SqlError>.Ok<string, SqlError> success)
                     {
                         var target = Path.Combine(outDir.FullName, baseName + ".g.cs");
                         await File.WriteAllTextAsync(target, success.Value).ConfigureAwait(false);
                         Console.WriteLine($"✅ Generated {target}");
                     }
-                    else if (gen is Result<string, SqlError>.Failure failure)
+                    else if (gen is Result<string, SqlError>.Error<string, SqlError> failure)
                     {
-                        var prettyGen = FormatSqliteMetadataMessage(
-                            failure.ErrorValue.DetailedMessage
-                        );
+                        var prettyGen = FormatSqliteMetadataMessage(failure.Value.DetailedMessage);
                         Console.WriteLine($"❌ {prettyGen}");
                         // Also emit an MSBuild-formatted error so IDE Problem Matchers pick it up
                         Console.Error.WriteLine($"{sqlPath}(1,1): error DL0002: {prettyGen}");
@@ -342,7 +339,10 @@ internal static class Program
                             table,
                             tableConfig
                         );
-                        if (operationsResult is Result<string, SqlError>.Success operationsSuccess)
+                        if (
+                            operationsResult
+                            is Result<string, SqlError>.Ok<string, SqlError> operationsSuccess
+                        )
                         {
                             var target = Path.Combine(
                                 outDir.FullName,
@@ -353,11 +353,12 @@ internal static class Program
                             Console.WriteLine($"✅ Generated {target}");
                         }
                         else if (
-                            operationsResult is Result<string, SqlError>.Failure operationsFailure
+                            operationsResult
+                            is Result<string, SqlError>.Error<string, SqlError> operationsFailure
                         )
                         {
                             Console.WriteLine(
-                                $"❌ Failed to generate table operations for {tableConfigItem.Name}: {operationsFailure.ErrorValue.Message}"
+                                $"❌ Failed to generate table operations for {tableConfigItem.Name}: {operationsFailure.Value.Message}"
                             );
                             hadErrors = true;
                         }

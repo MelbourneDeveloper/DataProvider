@@ -1,7 +1,7 @@
 using System.Collections.Frozen;
 using DataProvider.CodeGeneration;
 using DataProvider.SQLite;
-using Results;
+using Outcome;
 using Selecta;
 using Xunit;
 
@@ -59,7 +59,10 @@ public class CustomCodeGenerationTests
         IEnumerable<ParameterInfo> parameters
     ) =>
         Task.FromResult<Result<IReadOnlyList<DatabaseColumn>, SqlError>>(
-            new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Success(TestColumns)
+            new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Ok<
+                IReadOnlyList<DatabaseColumn>,
+                SqlError
+            >(TestColumns)
         );
 
     [Fact]
@@ -86,7 +89,7 @@ public class {typeName}Data
 {string.Join(",\n", columns.Select(c => $"        {c.Name} = this.{c.Name}"))}
     }};
 }}";
-            return new Result<string, SqlError>.Success(code);
+            return new StringOk(code);
         }
 
         var config = new CodeGenerationConfig(MockGetColumnMetadata)
@@ -106,8 +109,8 @@ public class {typeName}Data
             config
         );
 
-        Assert.True(result is Result<string, SqlError>.Success);
-        var generatedCode = (result as Result<string, SqlError>.Success)!.Value;
+        Assert.True(result is StringOk);
+        var generatedCode = (result as StringOk)!.Value;
 
         var expectedCode =
             @"using System;
@@ -115,7 +118,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
+using Selecta;
 
 namespace CustomGenerated;
 
@@ -156,11 +160,11 @@ public static partial class UserExtensions
                 }
             }
 
-            return new Result<ImmutableList<User>, SqlError>.Success(results.ToImmutable());
+            return new Result<ImmutableList<User>, SqlError>.Ok<ImmutableList<User>, SqlError>(results.ToImmutable());
         }
         catch (Exception ex)
         {
-            return new Result<ImmutableList<User>, SqlError>.Failure(new SqlError(""Database error"", ex));
+            return new Result<ImmutableList<User>, SqlError>.Error<ImmutableList<User>, SqlError>(new SqlError(""Database error"", ex));
         }
     }
 }
@@ -191,7 +195,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
+using Selecta;
 
 namespace CustomGenerated;
 
@@ -232,11 +237,11 @@ public static partial class UserExtensions
                 }
             }
 
-            return new Result<ImmutableList<User>, SqlError>.Success(results.ToImmutable());
+            return new Result<ImmutableList<User>, SqlError>.Ok<ImmutableList<User>, SqlError>(results.ToImmutable());
         }
         catch (Exception ex)
         {
-            return new Result<ImmutableList<User>, SqlError>.Failure(new SqlError(""Database error"", ex));
+            return new Result<ImmutableList<User>, SqlError>.Error<ImmutableList<User>, SqlError>(new SqlError(""Database error"", ex));
         }
     }
 }
@@ -322,14 +327,14 @@ public class {methodName}Query
     }}
 }}
 ";
-            return new Result<string, SqlError>.Success(code);
+            return new StringOk(code);
         }
 
         var config = new CodeGenerationConfig(MockGetColumnMetadata)
         {
             GenerateDataAccessMethod = CustomDataAccessGenerator,
             GenerateModelType = (typeName, columns) =>
-                new Result<string, SqlError>.Success($"// Model for {typeName} would be here"),
+                new StringOk($"// Model for {typeName} would be here"),
             TargetNamespace = "FluentGenerated",
         };
 
@@ -344,8 +349,8 @@ public class {methodName}Query
             config
         );
 
-        Assert.True(result is Result<string, SqlError>.Success);
-        var generatedCode = (result as Result<string, SqlError>.Success)!.Value;
+        Assert.True(result is StringOk);
+        var generatedCode = (result as StringOk)!.Value;
 
         var expectedCode =
             @"using System;
@@ -353,7 +358,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
+using Selecta;
 
 namespace FluentGenerated;
 
@@ -438,7 +444,7 @@ public class DataController : ControllerBase
 
 // Data Transfer Objects
 {modelCode}";
-            return new Result<string, SqlError>.Success(code);
+            return new StringOk(code);
         }
 
         static Result<string, SqlError> ApiModelGenerator(
@@ -452,7 +458,7 @@ public class DataController : ControllerBase
 
 public record Create{typeName}Request(
 {string.Join(",\n", columns.Where(c => !c.IsIdentity).Select(c => $"    {c.CSharpType} {c.Name}"))});";
-            return new Result<string, SqlError>.Success(code);
+            return new StringOk(code);
         }
 
         static Result<string, SqlError> ApiDataAccessGenerator(
@@ -492,7 +498,7 @@ public record Create{typeName}Request(
         
         return Ok(results);
     }}";
-            return new Result<string, SqlError>.Success(code);
+            return new StringOk(code);
         }
 
         var config = new CodeGenerationConfig(MockGetColumnMetadata)
@@ -514,8 +520,8 @@ public record Create{typeName}Request(
             config
         );
 
-        Assert.True(result is Result<string, SqlError>.Success);
-        var generatedCode = (result as Result<string, SqlError>.Success)!.Value;
+        Assert.True(result is StringOk);
+        var generatedCode = (result as StringOk)!.Value;
 
         var expectedCode =
             @"// <auto-generated />
@@ -586,8 +592,8 @@ public record CreateUserRequest(
 
         var result = customTableGenerator.GenerateTableOperations(table, config);
 
-        Assert.True(result is Result<string, SqlError>.Success);
-        var generatedCode = (result as Result<string, SqlError>.Success)!.Value;
+        Assert.True(result is StringOk);
+        var generatedCode = (result as StringOk)!.Value;
 
         var expectedCode =
             @"using Microsoft.Data.Sqlite;
@@ -698,10 +704,10 @@ internal sealed class RepositoryPatternTableOperationGenerator : ITableOperation
     public Result<string, SqlError> GenerateTableOperations(DatabaseTable table, TableConfig config)
     {
         if (table == null)
-            return new Result<string, SqlError>.Failure(new SqlError("table cannot be null"));
+            return new StringError(new SqlError("table cannot be null"));
 
         if (config == null)
-            return new Result<string, SqlError>.Failure(new SqlError("config cannot be null"));
+            return new StringError(new SqlError("config cannot be null"));
 
         var entityName = $"{table.Name.TrimEnd('s')}Entity";
         var repositoryInterface = $"I{table.Name}Repository";
@@ -773,14 +779,14 @@ public class {repositoryClass} : {repositoryInterface}
 public record {entityName}(
 {string.Join(",\n", table.Columns.Select(c => $"    {c.CSharpType} {c.Name}"))});";
 
-        return new Result<string, SqlError>.Success(code);
+        return new StringOk(code);
     }
 
     public Result<string, SqlError> GenerateInsertMethod(DatabaseTable table) =>
-        new Result<string, SqlError>.Success("// Insert handled by repository pattern");
+        new StringOk("// Insert handled by repository pattern");
 
     public Result<string, SqlError> GenerateUpdateMethod(DatabaseTable table) =>
-        new Result<string, SqlError>.Success("// Update handled by repository pattern");
+        new StringOk("// Update handled by repository pattern");
 
     private static string GenerateRepositoryInsertMethod(DatabaseTable table, string entityName)
     {
@@ -834,4 +840,152 @@ internal static class StringExtensions
             ? input
             : char.ToUpper(input[0], System.Globalization.CultureInfo.InvariantCulture)
                 + input[1..];
+}
+
+/// <summary>
+/// Tests for non-query (UPDATE/DELETE/INSERT) SQL statement code generation.
+/// </summary>
+public class NonQueryCodeGenerationTests
+{
+    [Fact]
+    public void GenerateNonQueryMethod_UpdateStatement_GeneratesCorrectExtension()
+    {
+        var sql = "UPDATE gk_session SET is_revoked = 1 WHERE id = @jti";
+        var parameters = new List<ParameterInfo> { new("jti", "TEXT") };
+
+        var result = DataAccessGenerator.GenerateNonQueryMethod(
+            "RevokeSessionExtensions",
+            "RevokeSession",
+            sql,
+            parameters,
+            "SqliteConnection"
+        );
+
+        Assert.True(result is StringOk);
+        var code = (result as StringOk)!.Value;
+
+        // Verify key parts of generated code
+        Assert.Contains("public static partial class RevokeSessionExtensions", code);
+        Assert.Contains("public static async Task<Result<int, SqlError>> RevokeSessionAsync", code);
+        Assert.Contains("this SqliteConnection connection", code);
+        Assert.Contains("object jti", code);
+        Assert.Contains("ExecuteNonQueryAsync", code);
+        Assert.Contains("UPDATE gk_session SET is_revoked = 1 WHERE id = @jti", code);
+    }
+
+    [Fact]
+    public void GenerateNonQueryMethod_DeleteStatement_GeneratesCorrectExtension()
+    {
+        var sql = "DELETE FROM sync_log WHERE created_at < @cutoff";
+        var parameters = new List<ParameterInfo> { new("cutoff", "TEXT") };
+
+        var result = DataAccessGenerator.GenerateNonQueryMethod(
+            "PurgeSyncLogExtensions",
+            "PurgeSyncLog",
+            sql,
+            parameters,
+            "SqliteConnection"
+        );
+
+        Assert.True(result is StringOk);
+        var code = (result as StringOk)!.Value;
+
+        Assert.Contains("PurgeSyncLogAsync", code);
+        Assert.Contains("DELETE FROM sync_log", code);
+        Assert.Contains("@cutoff", code);
+    }
+
+    [Fact]
+    public void GenerateNonQueryMethod_MultipleParameters_GeneratesAllParameters()
+    {
+        var sql = "UPDATE users SET name = @name, email = @email WHERE id = @id";
+        var parameters = new List<ParameterInfo>
+        {
+            new("name", "TEXT"),
+            new("email", "TEXT"),
+            new("id", "INTEGER"),
+        };
+
+        var result = DataAccessGenerator.GenerateNonQueryMethod(
+            "UpdateUserExtensions",
+            "UpdateUser",
+            sql,
+            parameters,
+            "SqliteConnection"
+        );
+
+        Assert.True(result is StringOk);
+        var code = (result as StringOk)!.Value;
+
+        Assert.Contains("object name", code);
+        Assert.Contains("object email", code);
+        Assert.Contains("object id", code);
+        Assert.Contains("AddWithValue(\"@name\"", code);
+        Assert.Contains("AddWithValue(\"@email\"", code);
+        Assert.Contains("AddWithValue(\"@id\"", code);
+    }
+
+    [Fact]
+    public void GenerateNonQueryMethod_NoParameters_GeneratesMethodWithoutParams()
+    {
+        var sql = "DELETE FROM temp_data";
+        var parameters = new List<ParameterInfo>();
+
+        var result = DataAccessGenerator.GenerateNonQueryMethod(
+            "ClearTempDataExtensions",
+            "ClearTempData",
+            sql,
+            parameters,
+            "SqliteConnection"
+        );
+
+        Assert.True(result is StringOk);
+        var code = (result as StringOk)!.Value;
+
+        // Should have connection param only
+        Assert.Contains("ClearTempDataAsync(this SqliteConnection connection)", code);
+        Assert.DoesNotContain("AddWithValue", code);
+    }
+
+    [Fact]
+    public void GenerateNonQueryMethod_EmptyClassName_ReturnsError()
+    {
+        var result = DataAccessGenerator.GenerateNonQueryMethod(
+            "",
+            "Test",
+            "UPDATE x SET y = 1",
+            new List<ParameterInfo>(),
+            "SqliteConnection"
+        );
+
+        Assert.True(result is StringError);
+    }
+
+    [Fact]
+    public void GenerateNonQueryMethod_EmptyMethodName_ReturnsError()
+    {
+        var result = DataAccessGenerator.GenerateNonQueryMethod(
+            "TestExtensions",
+            "",
+            "UPDATE x SET y = 1",
+            new List<ParameterInfo>(),
+            "SqliteConnection"
+        );
+
+        Assert.True(result is StringError);
+    }
+
+    [Fact]
+    public void GenerateNonQueryMethod_EmptySql_ReturnsError()
+    {
+        var result = DataAccessGenerator.GenerateNonQueryMethod(
+            "TestExtensions",
+            "Test",
+            "",
+            new List<ParameterInfo>(),
+            "SqliteConnection"
+        );
+
+        Assert.True(result is StringError);
+    }
 }

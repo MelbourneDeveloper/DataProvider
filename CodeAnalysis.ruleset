@@ -12,6 +12,9 @@
         <Rule Id="CA1002" Action="None" />
         <Rule Id="CA1062" Action="None" />
         <Rule Id="CA1002" Action="None" />
+        <!-- Mark assemblies with assembly version -->
+        <Rule Id="CA1017" Action="None" />
+        <Rule Id="IDE0037" Action="Error" />
         <Rule Id="IDE0301" Action="Error" />
         <Rule Id="IDE0042" Action="Error" />
         <Rule Id="IDE0056" Action="Error" />
@@ -48,8 +51,6 @@
         <Rule Id="CA1010" Action="Error" />
         <!-- Generic interface should also be implemented -->
         <Rule Id="CA1012" Action="Error" />
-        <!-- Mark assemblies with assembly version -->
-        <Rule Id="CA1017" Action="Error" />
         <!-- Mark assemblies with ComVisible -->
         <Rule Id="CA1018" Action="Error" />
         <!-- Mark attributes with AttributeUsageAttribute -->

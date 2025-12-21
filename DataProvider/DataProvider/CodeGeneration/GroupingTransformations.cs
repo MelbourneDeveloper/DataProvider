@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Text;
-using Results;
+using Outcome;
 using Selecta;
 
 namespace DataProvider.CodeGeneration;
@@ -22,12 +22,12 @@ public static class GroupingTransformations
     )
     {
         if (string.IsNullOrWhiteSpace(fileName))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("fileName cannot be null or empty")
             );
 
         if (groupingConfig == null)
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("groupingConfig cannot be null")
             );
 
@@ -105,7 +105,7 @@ public static class GroupingTransformations
         sb.AppendLine("        return result.ToImmutableList();");
         sb.AppendLine("    }");
 
-        return new Result<string, SqlError>.Success(sb.ToString());
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
 
     /// <summary>
@@ -130,27 +130,27 @@ public static class GroupingTransformations
     )
     {
         if (string.IsNullOrWhiteSpace(className))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("className cannot be null or empty")
             );
 
         if (string.IsNullOrWhiteSpace(methodName))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("methodName cannot be null or empty")
             );
 
         if (string.IsNullOrWhiteSpace(sql))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("sql cannot be null or empty")
             );
 
         if (columns == null || columns.Count == 0)
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("columns cannot be null or empty")
             );
 
         if (groupingConfig == null)
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("groupingConfig cannot be null")
             );
 
@@ -264,14 +264,14 @@ public static class GroupingTransformations
         sb.AppendLine("            var grouped = GroupResults(rawResults.ToImmutable());");
         sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            return new Result<ImmutableList<{groupingConfig.ParentEntity.Name}>, SqlError>.Success(grouped);"
+            $"            return new Result<ImmutableList<{groupingConfig.ParentEntity.Name}>, SqlError>.Ok<ImmutableList<{groupingConfig.ParentEntity.Name}>, SqlError>(grouped);"
         );
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");
         sb.AppendLine("        {");
         sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            return new Result<ImmutableList<{groupingConfig.ParentEntity.Name}>, SqlError>.Failure(new SqlError(\"Database error\", ex));"
+            $"            return new Result<ImmutableList<{groupingConfig.ParentEntity.Name}>, SqlError>.Error<ImmutableList<{groupingConfig.ParentEntity.Name}>, SqlError>(new SqlError(\"Database error\", ex));"
         );
         sb.AppendLine("        }");
         sb.AppendLine("    }");
@@ -279,17 +279,19 @@ public static class GroupingTransformations
         // Add the grouping method
         sb.AppendLine();
         var groupingMethodResult = GenerateGroupingMethod(methodName, groupingConfig);
-        if (groupingMethodResult is Result<string, SqlError>.Success groupingSuccess)
+        if (groupingMethodResult is Result<string, SqlError>.Ok<string, SqlError> groupingSuccess)
         {
             sb.Append(groupingSuccess.Value);
         }
-        else if (groupingMethodResult is Result<string, SqlError>.Failure groupingFailure)
+        else if (
+            groupingMethodResult is Result<string, SqlError>.Error<string, SqlError> groupingFailure
+        )
         {
             return groupingFailure;
         }
 
         sb.AppendLine("}");
 
-        return new Result<string, SqlError>.Success(sb.ToString());
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
 }

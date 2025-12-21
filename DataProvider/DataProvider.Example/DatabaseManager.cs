@@ -1,5 +1,4 @@
 using Microsoft.Data.Sqlite;
-using Results;
 
 namespace DataProvider.Example;
 
@@ -40,7 +39,7 @@ internal static class DatabaseManager
             .Transact(
                 async (transaction) =>
                 {
-                    (bool flowControl, Result<string, SqlError> value) = await SampleDataSeeder
+                    (bool flowControl, StringSqlResult value) = await SampleDataSeeder
                         .SeedDataAsync(transaction)
                         .ConfigureAwait(false);
                     if (!flowControl)
@@ -48,9 +47,7 @@ internal static class DatabaseManager
                         return value;
                     }
 
-                    return new Result<string, SqlError>.Success(
-                        "Data inserted successfully using generated methods"
-                    );
+                    return new StringSqlOk("Data inserted successfully using generated methods");
                 }
             )
             .ConfigureAwait(false);

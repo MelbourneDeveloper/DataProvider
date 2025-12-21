@@ -1,0 +1,5 @@
+fhir_Appointment
+|> select(id, status, start_time, end_time, service_type, reason_code, patient_reference, created)
+|> where(practitioner_reference = @practitionerRef)
+|> where(status = 'booked')
+|> orderBy(start_time)

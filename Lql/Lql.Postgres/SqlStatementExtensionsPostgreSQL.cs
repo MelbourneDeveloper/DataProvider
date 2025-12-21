@@ -1,4 +1,5 @@
-using Results;
+using Outcome;
+using Selecta;
 
 namespace Lql.Postgres;
 
@@ -18,12 +19,12 @@ public static class SqlStatementExtensionsPostgreSQL
 
         if (statement.ParseError != null)
         {
-            return new Result<string, SqlError>.Failure(statement.ParseError);
+            return new Result<string, SqlError>.Error<string, SqlError>(statement.ParseError);
         }
 
         if (statement.AstNode == null)
         {
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("No AST node found in statement")
             );
         }
@@ -33,17 +34,17 @@ public static class SqlStatementExtensionsPostgreSQL
             if (statement.AstNode is Pipeline pipeline)
             {
                 var sql = ConvertPipelineToPostgreSQL(pipeline);
-                return new Result<string, SqlError>.Success(sql);
+                return new Result<string, SqlError>.Ok<string, SqlError>(sql);
             }
 
             var unknownSql = statement.AstNode is Identifier identifier
                 ? $"SELECT *\nFROM {identifier.Name}"
                 : "-- Unknown AST node type";
-            return new Result<string, SqlError>.Success(unknownSql);
+            return new Result<string, SqlError>.Ok<string, SqlError>(unknownSql);
         }
         catch (Exception ex)
         {
-            return new Result<string, SqlError>.Failure(SqlError.FromException(ex));
+            return new Result<string, SqlError>.Error<string, SqlError>(SqlError.FromException(ex));
         }
     }
 

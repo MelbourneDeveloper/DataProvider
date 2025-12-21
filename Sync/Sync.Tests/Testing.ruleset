@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="Sync Test Rules" Description="Code analysis rules for Sync test projects" ToolsVersion="17.0">
+  <IncludeAll Action="Error" />
+
+ <Rules AnalyzerId="Microsoft.CodeAnalysis.NetAnalyzers" RuleNamespace="Microsoft.CodeAnalysis.NetAnalyzers">
+    <Rule Id="CA1707" Action="None" />
+  </Rules>
+
+</RuleSet>
