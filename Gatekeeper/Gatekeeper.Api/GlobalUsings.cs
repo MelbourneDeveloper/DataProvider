@@ -24,10 +24,6 @@ global using GetCredentialByIdOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetCredentialById>,
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.GetCredentialById>, Selecta.SqlError>;
-global using GetSessionByIdOk = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.GetSessionById>,
-    Selecta.SqlError
->.Ok<System.Collections.Immutable.ImmutableList<Generated.GetSessionById>, Selecta.SqlError>;
 // Query result type aliases
 global using GetUserByEmailOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetUserByEmail>,
@@ -50,4 +46,3 @@ global using GetUserRolesOk = Outcome.Result<
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.GetUserRoles>, Selecta.SqlError>;
 // Insert result type alias
-global using InsertOk = Outcome.Result<long, Selecta.SqlError>.Ok<long, Selecta.SqlError>;

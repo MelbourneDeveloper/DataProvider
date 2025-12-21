@@ -26,16 +26,6 @@
     <ProjectReference Include="../../Scheduling/Scheduling.Api/Scheduling.Api.csproj" />
   </ItemGroup>
 
-  <!-- Copy both schema files with unique names to avoid collision -->
-  <ItemGroup>
-    <Content Include="../../Clinical/Clinical.Api/schema.sql" Link="clinical_schema.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="../../Scheduling/Scheduling.Api/schema.sql" Link="scheduling_schema.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
   <!-- Copy Dashboard.Web wwwroot for Playwright tests -->
   <ItemGroup>
     <None Include="../Dashboard.Web/wwwroot/**/*" CopyToOutputDirectory="PreserveNewest" LinkBase="wwwroot" />

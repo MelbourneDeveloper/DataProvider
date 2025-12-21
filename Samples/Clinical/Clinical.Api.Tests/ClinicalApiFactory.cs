@@ -30,7 +30,6 @@ public sealed class ClinicalApiFactory : WebApplicationFactory<Program>
         // Set DbPath for the temp database
         builder.UseSetting("DbPath", _dbPath);
 
-        // Set content root to Clinical.Api's output directory where clinical_schema.sql lives
         var clinicalApiAssembly = typeof(Program).Assembly;
         var contentRoot = Path.GetDirectoryName(clinicalApiAssembly.Location)!;
         builder.UseContentRoot(contentRoot);

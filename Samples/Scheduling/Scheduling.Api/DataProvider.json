@@ -49,5 +49,5 @@
             "primaryKeyColumns": ["Id"]
         }
     ],
-    "connectionString": "Data Source=scheduling.db"
+    "connectionString": "Data Source=scheduling-build.db"
 }

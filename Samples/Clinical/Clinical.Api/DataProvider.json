@@ -63,5 +63,5 @@
             "primaryKeyColumns": ["Id"]
         }
     ],
-    "connectionString": "Data Source=clinical.db"
+    "connectionString": "Data Source=clinical-build.db"
 }

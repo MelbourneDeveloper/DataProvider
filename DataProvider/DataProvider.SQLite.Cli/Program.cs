@@ -36,31 +36,21 @@ internal static class Program
         {
             IsRequired = true,
         };
-        var schema = new Option<FileInfo?>(
-            "--schema",
-            description: "Optional schema SQL file to execute before generation"
-        )
-        {
-            IsRequired = false,
-        };
-
         var root = new RootCommand("DataProvider.SQLite codegen CLI")
         {
             projectDir,
             config,
             outDir,
-            schema,
         };
         root.SetHandler(
-            async (DirectoryInfo proj, FileInfo cfg, DirectoryInfo output, FileInfo? schemaFile) =>
+            async (DirectoryInfo proj, FileInfo cfg, DirectoryInfo output) =>
             {
-                var exit = await RunAsync(proj, cfg, output, schemaFile).ConfigureAwait(false);
+                var exit = await RunAsync(proj, cfg, output).ConfigureAwait(false);
                 Environment.Exit(exit);
             },
             projectDir,
             config,
-            outDir,
-            schema
+            outDir
         );
 
         return await root.InvokeAsync(args).ConfigureAwait(false);
@@ -69,8 +59,7 @@ internal static class Program
     private static async Task<int> RunAsync(
         DirectoryInfo projectDir,
         FileInfo configFile,
-        DirectoryInfo outDir,
-        FileInfo? schemaFile
+        DirectoryInfo outDir
     )
     {
         try
@@ -95,23 +84,15 @@ internal static class Program
                 return 1;
             }
 
-            // Ensure DB exists and schema applied if provided
+            // Verify DB exists and is accessible
             try
             {
                 using var conn = new Microsoft.Data.Sqlite.SqliteConnection(cfg.ConnectionString);
                 await conn.OpenAsync().ConfigureAwait(false);
-                if (schemaFile is not null && schemaFile.Exists)
-                {
-                    var schemaSql = await File.ReadAllTextAsync(schemaFile.FullName)
-                        .ConfigureAwait(false);
-                    using var cmd = conn.CreateCommand();
-                    cmd.CommandText = schemaSql;
-                    await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
-                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Failed to prepare database: {ex.Message}");
+                Console.WriteLine($"❌ Failed to open database: {ex.Message}");
                 return 1;
             }
 
@@ -499,4 +480,5 @@ internal static class Program
 
         return baseType;
     }
+
 }

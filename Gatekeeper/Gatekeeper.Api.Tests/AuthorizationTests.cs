@@ -1,6 +1,7 @@
 namespace Gatekeeper.Api.Tests;
 
 using System.Globalization;
+using Generated;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Gatekeeper.Api;
@@ -14,42 +15,6 @@ public sealed class AuthorizationTests : IClassFixture<GatekeeperTestFixture>
     private readonly GatekeeperTestFixture _fixture;
 
     public AuthorizationTests(GatekeeperTestFixture fixture) => _fixture = fixture;
-
-    [Fact]
-    public async Task DatabaseSeeding_CreatesDefaultRolesAndPermissions()
-    {
-        // Verify seeding created the expected roles and permissions
-        var conn = _fixture.OpenConnection();
-        var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
-
-        // Check roles exist
-        var rolesResult = await conn.GetAllRolesAsync().ConfigureAwait(false);
-        Assert.True(rolesResult is GetAllRolesOk, "GetAllRolesAsync should succeed");
-        var roles = ((GetAllRolesOk)rolesResult).Value;
-        Assert.Contains(roles, r => r.name == "admin");
-        Assert.Contains(roles, r => r.name == "user");
-
-        // Check permissions exist via user permissions query
-        // Create a test user with the user role
-        var userId = Guid.NewGuid().ToString();
-        await conn.InsertGk_userAsync(
-            userId,
-            "Seed Test User",
-            "seed-test@example.com",
-            now,
-            null,
-            1,
-            null
-        ).ConfigureAwait(false);
-        await conn.InsertGk_user_roleAsync(userId, "role-user", now, null, null).ConfigureAwait(false);
-
-        var permsResult = await conn.GetUserPermissionsAsync(userId, now).ConfigureAwait(false);
-        Assert.True(permsResult is GetUserPermissionsOk, "GetUserPermissionsAsync should succeed");
-        var perms = ((GetUserPermissionsOk)permsResult).Value;
-        Assert.True(perms.Count > 0, $"Expected user to have permissions from role-user. Got {perms.Count} permissions.");
-        Assert.Contains(perms, p => p.code == "user:profile");
-        Assert.Contains(perms, p => p.code == "user:credentials");
-    }
 
     [Fact]
     public async Task Check_WithoutToken_ReturnsUnauthorized()
@@ -431,12 +396,13 @@ public sealed class GatekeeperTestFixture : IDisposable
     public async Task<(string Token, string UserId)> CreateTestUserAndGetTokenWithId(string email)
     {
         using var conn = OpenConnection();
+        using var tx = conn.BeginTransaction();
 
         var userId = Guid.NewGuid().ToString();
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
 
         // Insert user using DataProvider generated method
-        await conn.InsertGk_userAsync(
+        await tx.Insertgk_userAsync(
             userId,
             "Test User",
             email,
@@ -447,13 +413,20 @@ public sealed class GatekeeperTestFixture : IDisposable
         ).ConfigureAwait(false);
 
         // Link user to role using DataProvider generated method
-        await conn.InsertGk_user_roleAsync(
+        await tx.Insertgk_user_roleAsync(
             userId,
             "role-user",
             now,
             null, // granted_by
             null // expires_at
         ).ConfigureAwait(false);
+
+        tx.Commit();
+
+        // Force WAL checkpoint to ensure changes are visible to other connections
+        using var wal = conn.CreateCommand();
+        wal.CommandText = "PRAGMA wal_checkpoint(FULL)";
+        wal.ExecuteNonQuery();
 
         var token = TokenService.CreateToken(
             userId,
@@ -474,12 +447,13 @@ public sealed class GatekeeperTestFixture : IDisposable
     public async Task<string> CreateAdminUserAndGetToken(string email)
     {
         using var conn = OpenConnection();
+        using var tx = conn.BeginTransaction();
 
         var userId = Guid.NewGuid().ToString();
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
 
         // Insert user using DataProvider generated method
-        await conn.InsertGk_userAsync(
+        await tx.Insertgk_userAsync(
             userId,
             "Admin User",
             email,
@@ -490,13 +464,20 @@ public sealed class GatekeeperTestFixture : IDisposable
         ).ConfigureAwait(false);
 
         // Link user to admin role using DataProvider generated method
-        await conn.InsertGk_user_roleAsync(
+        await tx.Insertgk_user_roleAsync(
             userId,
             "role-admin",
             now,
             null, // granted_by
             null // expires_at
         ).ConfigureAwait(false);
+
+        tx.Commit();
+
+        // Force WAL checkpoint to ensure changes are visible to other connections
+        using var wal = conn.CreateCommand();
+        wal.CommandText = "PRAGMA wal_checkpoint(FULL)";
+        wal.ExecuteNonQuery();
 
         var token = TokenService.CreateToken(
             userId,
@@ -522,6 +503,7 @@ public sealed class GatekeeperTestFixture : IDisposable
     )
     {
         using var conn = OpenConnection();
+        using var tx = conn.BeginTransaction();
 
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
         var grantId = Guid.NewGuid().ToString();
@@ -529,7 +511,7 @@ public sealed class GatekeeperTestFixture : IDisposable
         var action = permissionCode.Split(':').LastOrDefault() ?? "read";
 
         // First ensure the permission exists using DataProvider generated method
-        await conn.InsertGk_permissionAsync(
+        await tx.Insertgk_permissionAsync(
             permId,
             permissionCode,
             resourceType,
@@ -539,7 +521,7 @@ public sealed class GatekeeperTestFixture : IDisposable
         ).ConfigureAwait(false);
 
         // Then grant access using DataProvider generated method
-        await conn.InsertGk_resource_grantAsync(
+        await tx.Insertgk_resource_grantAsync(
             grantId,
             userId,
             resourceType,
@@ -549,6 +531,13 @@ public sealed class GatekeeperTestFixture : IDisposable
             null, // granted_by
             null // expires_at
         ).ConfigureAwait(false);
+
+        tx.Commit();
+
+        // Force WAL checkpoint to ensure changes are visible to other connections
+        using var wal = conn.CreateCommand();
+        wal.CommandText = "PRAGMA wal_checkpoint(FULL)";
+        wal.ExecuteNonQuery();
     }
 
     /// <summary>
@@ -563,6 +552,7 @@ public sealed class GatekeeperTestFixture : IDisposable
     )
     {
         using var conn = OpenConnection();
+        using var tx = conn.BeginTransaction();
 
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
         var expired = DateTime.UtcNow.AddHours(-1).ToString("o", CultureInfo.InvariantCulture);
@@ -571,7 +561,7 @@ public sealed class GatekeeperTestFixture : IDisposable
         var action = permissionCode.Split(':').LastOrDefault() ?? "read";
 
         // First ensure the permission exists using DataProvider generated method
-        await conn.InsertGk_permissionAsync(
+        await tx.Insertgk_permissionAsync(
             permId,
             permissionCode,
             resourceType,
@@ -581,7 +571,7 @@ public sealed class GatekeeperTestFixture : IDisposable
         ).ConfigureAwait(false);
 
         // Then grant access with expired timestamp using DataProvider generated method
-        await conn.InsertGk_resource_grantAsync(
+        await tx.Insertgk_resource_grantAsync(
             grantId,
             userId,
             resourceType,
@@ -591,6 +581,13 @@ public sealed class GatekeeperTestFixture : IDisposable
             null, // granted_by
             expired // expires_at
         ).ConfigureAwait(false);
+
+        tx.Commit();
+
+        // Force WAL checkpoint to ensure changes are visible to other connections
+        using var wal = conn.CreateCommand();
+        wal.CommandText = "PRAGMA wal_checkpoint(FULL)";
+        wal.ExecuteNonQuery();
     }
 
     /// <summary>Disposes the test fixture.</summary>

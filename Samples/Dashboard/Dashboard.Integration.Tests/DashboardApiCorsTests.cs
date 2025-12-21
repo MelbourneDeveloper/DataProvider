@@ -17,7 +17,6 @@ public sealed class ClinicalApiTestFactory : WebApplicationFactory<Clinical.Api.
         // Set DbPath for the temp database
         builder.UseSetting("DbPath", _dbPath);
 
-        // Set content root to Clinical.Api's output directory where schema.sql lives
         var clinicalApiAssembly = typeof(Clinical.Api.Program).Assembly;
         var contentRoot = Path.GetDirectoryName(clinicalApiAssembly.Location)!;
         builder.UseContentRoot(contentRoot);
@@ -54,7 +53,6 @@ public sealed class SchedulingApiTestFactory : WebApplicationFactory<Scheduling.
         // Set DbPath for the temp database
         builder.UseSetting("DbPath", _dbPath);
 
-        // Set content root to Scheduling.Api's output directory where schema.sql lives
         var schedulingApiAssembly = typeof(Scheduling.Api.Program).Assembly;
         var contentRoot = Path.GetDirectoryName(schedulingApiAssembly.Location)!;
         builder.UseContentRoot(contentRoot);

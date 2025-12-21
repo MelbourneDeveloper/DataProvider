@@ -9,14 +9,24 @@
     { "name": "GetUserRoles", "sqlFile": "Sql/GetUserRoles.sql" },
     { "name": "GetUserPermissions", "sqlFile": "Sql/GetUserPermissions.sql" },
     { "name": "CheckResourceGrant", "sqlFile": "Sql/CheckResourceGrant.sql" },
-    { "name": "GetActivePolicies", "sqlFile": "Sql/GetActivePolicies.sql" }
+    { "name": "GetActivePolicies", "sqlFile": "Sql/GetActivePolicies.sql" },
+    { "name": "GetAllRoles", "sqlFile": "Sql/GetAllRoles.sql" },
+    { "name": "GetAllPermissions", "sqlFile": "Sql/GetAllPermissions.sql" },
+    { "name": "GetCredentialsByUserId", "sqlFile": "Sql/GetCredentialsByUserId.sql" },
+    { "name": "GetRolePermissions", "sqlFile": "Sql/GetRolePermissions.sql" },
+    { "name": "GetAllUsers", "sqlFile": "Sql/GetAllUsers.sql" },
+    { "name": "CheckPermission", "sqlFile": "Sql/CheckPermission.sql" }
   ],
   "tables": [
     { "schema": "main", "name": "gk_user", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
     { "schema": "main", "name": "gk_credential", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
     { "schema": "main", "name": "gk_session", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
     { "schema": "main", "name": "gk_challenge", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
-    { "schema": "main", "name": "gk_user_role", "generateInsert": true, "excludeColumns": [], "primaryKeyColumns": ["user_id", "role_id"] }
+    { "schema": "main", "name": "gk_user_role", "generateInsert": true, "excludeColumns": [], "primaryKeyColumns": ["user_id", "role_id"] },
+    { "schema": "main", "name": "gk_permission", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
+    { "schema": "main", "name": "gk_resource_grant", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
+    { "schema": "main", "name": "gk_role", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
+    { "schema": "main", "name": "gk_role_permission", "generateInsert": true, "excludeColumns": [], "primaryKeyColumns": ["role_id", "permission_id"] }
   ],
   "connectionString": "Data Source=gatekeeper-build.db"
 }

@@ -18,13 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="schema.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>scheduling_schema.sql</Link>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <AdditionalFiles Include="Queries/*.sql" />
     <AdditionalFiles Include="DataProvider.json" />
   </ItemGroup>
@@ -33,7 +26,7 @@
   <Target Name="GenerateDataProvider" BeforeTargets="CoreCompile">
     <RemoveDir Directories="$(IntermediateOutputPath)Generated" />
     <MakeDir Directories="$(IntermediateOutputPath)Generated" />
-    <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)..\..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(IntermediateOutputPath)Generated" --schema "$(MSBuildProjectDirectory)/schema.sql"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
+    <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)..\..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(IntermediateOutputPath)Generated"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
     <ItemGroup>
       <Compile Include="$(IntermediateOutputPath)Generated/**/*.g.cs" Visible="false" />
     </ItemGroup>

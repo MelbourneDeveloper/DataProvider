@@ -26,10 +26,4 @@
     <ProjectReference Include="..\Clinical.Api\Clinical.Api.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="..\Clinical.Api\schema.sql" Link="clinical_schema.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
 </Project>

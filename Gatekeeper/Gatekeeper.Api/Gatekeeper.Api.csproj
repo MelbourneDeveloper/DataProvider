@@ -27,10 +27,9 @@
 
   <!-- Generate C# from SQL using DataProvider.SQLite.Cli -->
   <Target Name="GenerateDataProvider" BeforeTargets="CoreCompile">
-    <Delete Files="$(MSBuildProjectDirectory)/gatekeeper-build.db" />
     <RemoveDir Directories="$(IntermediateOutputPath)Generated" />
     <MakeDir Directories="$(IntermediateOutputPath)Generated" />
-    <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(IntermediateOutputPath)Generated" --schema "$(MSBuildProjectDirectory)/schema.sql"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
+    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../DataProvider/DataProvider.SQLite.Cli/DataProvider.SQLite.Cli.csproj" -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(IntermediateOutputPath)Generated"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
     <ItemGroup>
       <Compile Include="$(IntermediateOutputPath)Generated/**/*.g.cs" Visible="false" />
     </ItemGroup>

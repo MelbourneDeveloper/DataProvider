@@ -28,9 +28,18 @@ public static class DatabaseSetup
             foreach (var table in schema.Tables)
             {
                 var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = ddl;
-                cmd.ExecuteNonQuery();
+                // DDL may contain multiple statements (CREATE TABLE + CREATE INDEX)
+                // SQLite ExecuteNonQuery only executes the first statement, so split them
+                foreach (var statement in ddl.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    if (string.IsNullOrWhiteSpace(statement))
+                    {
+                        continue;
+                    }
+                    using var cmd = conn.CreateCommand();
+                    cmd.CommandText = statement;
+                    cmd.ExecuteNonQuery();
+                }
                 logger.LogDebug("Created table {TableName}", table.Name);
             }
 
