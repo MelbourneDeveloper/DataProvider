@@ -18,6 +18,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **No casting or using ! for nulls** - Only pattern matching on type
 - **DO NOT USE GIT** <-- ⛔️ Source control is illegal for you 🙅🏼
 - **Do not supress analyzer warnings/errors** <-- Illegal
+- **No direct CREATE TABLE or other SQL to create schema** - Use the DataProvider Migrations!
+- **No direct SQL inserts/Updates!** - Generate extensions for inserts/updates with DataProvider
 - **NO CLASSES** - Use records and static methods. FP style with pure static methods
 - **Copious logging with ILogger** - Especially in the sync projects
 - **NO INTERFACES** - Use `Action<T>` or `Func<T>` for abstractions

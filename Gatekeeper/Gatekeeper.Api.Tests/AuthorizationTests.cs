@@ -16,6 +16,42 @@ public sealed class AuthorizationTests : IClassFixture<GatekeeperTestFixture>
     public AuthorizationTests(GatekeeperTestFixture fixture) => _fixture = fixture;
 
     [Fact]
+    public async Task DatabaseSeeding_CreatesDefaultRolesAndPermissions()
+    {
+        // Verify seeding created the expected roles and permissions
+        var conn = _fixture.OpenConnection();
+        var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+
+        // Check roles exist
+        var rolesResult = await conn.GetAllRolesAsync().ConfigureAwait(false);
+        Assert.True(rolesResult is GetAllRolesOk, "GetAllRolesAsync should succeed");
+        var roles = ((GetAllRolesOk)rolesResult).Value;
+        Assert.Contains(roles, r => r.name == "admin");
+        Assert.Contains(roles, r => r.name == "user");
+
+        // Check permissions exist via user permissions query
+        // Create a test user with the user role
+        var userId = Guid.NewGuid().ToString();
+        await conn.InsertGk_userAsync(
+            userId,
+            "Seed Test User",
+            "seed-test@example.com",
+            now,
+            null,
+            1,
+            null
+        ).ConfigureAwait(false);
+        await conn.InsertGk_user_roleAsync(userId, "role-user", now, null, null).ConfigureAwait(false);
+
+        var permsResult = await conn.GetUserPermissionsAsync(userId, now).ConfigureAwait(false);
+        Assert.True(permsResult is GetUserPermissionsOk, "GetUserPermissionsAsync should succeed");
+        var perms = ((GetUserPermissionsOk)permsResult).Value;
+        Assert.True(perms.Count > 0, $"Expected user to have permissions from role-user. Got {perms.Count} permissions.");
+        Assert.Contains(perms, p => p.code == "user:profile");
+        Assert.Contains(perms, p => p.code == "user:credentials");
+    }
+
+    [Fact]
     public async Task Check_WithoutToken_ReturnsUnauthorized()
     {
         var client = _fixture.CreateClient();
@@ -369,9 +405,18 @@ public sealed class GatekeeperTestFixture : IDisposable
     /// <summary>Creates a fresh HTTP client for testing.</summary>
     public HttpClient CreateClient() => _factory.CreateClient();
 
+    /// <summary>Opens a database connection for direct data access.</summary>
+    public SqliteConnection OpenConnection()
+    {
+        var conn = new SqliteConnection(GetConnectionString());
+        conn.Open();
+        return conn;
+    }
+
     /// <summary>
     /// Creates a test user and returns a valid JWT token.
     /// Bypasses WebAuthn by directly inserting user and generating token.
+    /// Uses DataProvider generated methods for data access.
     /// </summary>
     public async Task<string> CreateTestUserAndGetToken(string email)
     {
@@ -381,36 +426,34 @@ public sealed class GatekeeperTestFixture : IDisposable
 
     /// <summary>
     /// Creates a test user and returns both the token and user ID.
+    /// Uses DataProvider generated methods for data access.
     /// </summary>
     public async Task<(string Token, string UserId)> CreateTestUserAndGetTokenWithId(string email)
     {
-        using var conn = new SqliteConnection(GetConnectionString());
-        await conn.OpenAsync().ConfigureAwait(false);
+        using var conn = OpenConnection();
 
         var userId = Guid.NewGuid().ToString();
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
 
-        // Insert user
-        using var userCmd = conn.CreateCommand();
-        userCmd.CommandText = """
-            INSERT INTO gk_user (id, display_name, email, created_at, is_active)
-            VALUES (@id, @name, @email, @now, 1)
-            """;
-        userCmd.Parameters.AddWithValue("@id", userId);
-        userCmd.Parameters.AddWithValue("@name", "Test User");
-        userCmd.Parameters.AddWithValue("@email", email);
-        userCmd.Parameters.AddWithValue("@now", now);
-        await userCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        // Insert user using DataProvider generated method
+        await conn.InsertGk_userAsync(
+            userId,
+            "Test User",
+            email,
+            now,
+            null, // last_login_at
+            1, // is_active
+            null // metadata
+        ).ConfigureAwait(false);
 
-        // Link user to role
-        using var roleCmd = conn.CreateCommand();
-        roleCmd.CommandText = """
-            INSERT INTO gk_user_role (user_id, role_id, granted_at)
-            VALUES (@id, 'role-user', @now)
-            """;
-        roleCmd.Parameters.AddWithValue("@id", userId);
-        roleCmd.Parameters.AddWithValue("@now", now);
-        await roleCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        // Link user to role using DataProvider generated method
+        await conn.InsertGk_user_roleAsync(
+            userId,
+            "role-user",
+            now,
+            null, // granted_by
+            null // expires_at
+        ).ConfigureAwait(false);
 
         var token = TokenService.CreateToken(
             userId,
@@ -426,36 +469,34 @@ public sealed class GatekeeperTestFixture : IDisposable
 
     /// <summary>
     /// Creates an admin user and returns a valid JWT token.
+    /// Uses DataProvider generated methods for data access.
     /// </summary>
     public async Task<string> CreateAdminUserAndGetToken(string email)
     {
-        using var conn = new SqliteConnection(GetConnectionString());
-        await conn.OpenAsync().ConfigureAwait(false);
+        using var conn = OpenConnection();
 
         var userId = Guid.NewGuid().ToString();
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
 
-        // Insert user
-        using var userCmd = conn.CreateCommand();
-        userCmd.CommandText = """
-            INSERT INTO gk_user (id, display_name, email, created_at, is_active)
-            VALUES (@id, @name, @email, @now, 1)
-            """;
-        userCmd.Parameters.AddWithValue("@id", userId);
-        userCmd.Parameters.AddWithValue("@name", "Admin User");
-        userCmd.Parameters.AddWithValue("@email", email);
-        userCmd.Parameters.AddWithValue("@now", now);
-        await userCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        // Insert user using DataProvider generated method
+        await conn.InsertGk_userAsync(
+            userId,
+            "Admin User",
+            email,
+            now,
+            null, // last_login_at
+            1, // is_active
+            null // metadata
+        ).ConfigureAwait(false);
 
-        // Link user to admin role
-        using var roleCmd = conn.CreateCommand();
-        roleCmd.CommandText = """
-            INSERT INTO gk_user_role (user_id, role_id, granted_at)
-            VALUES (@id, 'role-admin', @now)
-            """;
-        roleCmd.Parameters.AddWithValue("@id", userId);
-        roleCmd.Parameters.AddWithValue("@now", now);
-        await roleCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        // Link user to admin role using DataProvider generated method
+        await conn.InsertGk_user_roleAsync(
+            userId,
+            "role-admin",
+            now,
+            null, // granted_by
+            null // expires_at
+        ).ConfigureAwait(false);
 
         var token = TokenService.CreateToken(
             userId,
@@ -471,6 +512,7 @@ public sealed class GatekeeperTestFixture : IDisposable
 
     /// <summary>
     /// Grants resource-level access to a user.
+    /// Uses DataProvider generated methods for data access.
     /// </summary>
     public async Task GrantResourceAccess(
         string userId,
@@ -479,46 +521,39 @@ public sealed class GatekeeperTestFixture : IDisposable
         string permissionCode
     )
     {
-        using var conn = new SqliteConnection(GetConnectionString());
-        await conn.OpenAsync().ConfigureAwait(false);
+        using var conn = OpenConnection();
 
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
         var grantId = Guid.NewGuid().ToString();
         var permId = $"perm-{permissionCode}-{Guid.NewGuid():N}";
+        var action = permissionCode.Split(':').LastOrDefault() ?? "read";
 
-        // First ensure the permission exists
-        using var permCmd = conn.CreateCommand();
-        permCmd.CommandText = """
-            INSERT INTO gk_permission (id, code, resource_type, action, created_at)
-            VALUES (@id, @code, @resourceType, @action, @now);
-            """;
-        permCmd.Parameters.AddWithValue("@id", permId);
-        permCmd.Parameters.AddWithValue("@code", permissionCode);
-        permCmd.Parameters.AddWithValue("@resourceType", resourceType);
-        permCmd.Parameters.AddWithValue(
-            "@action",
-            permissionCode.Split(':').LastOrDefault() ?? "read"
-        );
-        permCmd.Parameters.AddWithValue("@now", now);
-        await permCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        // First ensure the permission exists using DataProvider generated method
+        await conn.InsertGk_permissionAsync(
+            permId,
+            permissionCode,
+            resourceType,
+            action,
+            null, // description
+            now
+        ).ConfigureAwait(false);
 
-        // Then grant access
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = """
-            INSERT INTO gk_resource_grant (id, user_id, resource_type, resource_id, permission_id, granted_at)
-            VALUES (@id, @userId, @resourceType, @resourceId, @permId, @now);
-            """;
-        cmd.Parameters.AddWithValue("@id", grantId);
-        cmd.Parameters.AddWithValue("@userId", userId);
-        cmd.Parameters.AddWithValue("@resourceType", resourceType);
-        cmd.Parameters.AddWithValue("@resourceId", resourceId);
-        cmd.Parameters.AddWithValue("@permId", permId);
-        cmd.Parameters.AddWithValue("@now", now);
-        await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        // Then grant access using DataProvider generated method
+        await conn.InsertGk_resource_grantAsync(
+            grantId,
+            userId,
+            resourceType,
+            resourceId,
+            permId,
+            now,
+            null, // granted_by
+            null // expires_at
+        ).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Grants resource-level access that has already expired.
+    /// Uses DataProvider generated methods for data access.
     /// </summary>
     public async Task GrantResourceAccessExpired(
         string userId,
@@ -527,44 +562,35 @@ public sealed class GatekeeperTestFixture : IDisposable
         string permissionCode
     )
     {
-        using var conn = new SqliteConnection(GetConnectionString());
-        await conn.OpenAsync().ConfigureAwait(false);
+        using var conn = OpenConnection();
 
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
         var expired = DateTime.UtcNow.AddHours(-1).ToString("o", CultureInfo.InvariantCulture);
         var grantId = Guid.NewGuid().ToString();
         var permId = $"perm-{permissionCode}-{Guid.NewGuid():N}";
+        var action = permissionCode.Split(':').LastOrDefault() ?? "read";
 
-        // First ensure the permission exists
-        using var permCmd = conn.CreateCommand();
-        permCmd.CommandText = """
-            INSERT INTO gk_permission (id, code, resource_type, action, created_at)
-            VALUES (@id, @code, @resourceType, @action, @now);
-            """;
-        permCmd.Parameters.AddWithValue("@id", permId);
-        permCmd.Parameters.AddWithValue("@code", permissionCode);
-        permCmd.Parameters.AddWithValue("@resourceType", resourceType);
-        permCmd.Parameters.AddWithValue(
-            "@action",
-            permissionCode.Split(':').LastOrDefault() ?? "read"
-        );
-        permCmd.Parameters.AddWithValue("@now", now);
-        await permCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        // First ensure the permission exists using DataProvider generated method
+        await conn.InsertGk_permissionAsync(
+            permId,
+            permissionCode,
+            resourceType,
+            action,
+            null, // description
+            now
+        ).ConfigureAwait(false);
 
-        // Then grant access with expired timestamp
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = """
-            INSERT INTO gk_resource_grant (id, user_id, resource_type, resource_id, permission_id, granted_at, expires_at)
-            VALUES (@id, @userId, @resourceType, @resourceId, @permId, @now, @expired);
-            """;
-        cmd.Parameters.AddWithValue("@id", grantId);
-        cmd.Parameters.AddWithValue("@userId", userId);
-        cmd.Parameters.AddWithValue("@resourceType", resourceType);
-        cmd.Parameters.AddWithValue("@resourceId", resourceId);
-        cmd.Parameters.AddWithValue("@permId", permId);
-        cmd.Parameters.AddWithValue("@now", now);
-        cmd.Parameters.AddWithValue("@expired", expired);
-        await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        // Then grant access with expired timestamp using DataProvider generated method
+        await conn.InsertGk_resource_grantAsync(
+            grantId,
+            userId,
+            resourceType,
+            resourceId,
+            permId,
+            now,
+            null, // granted_by
+            expired // expires_at
+        ).ConfigureAwait(false);
     }
 
     /// <summary>Disposes the test fixture.</summary>
