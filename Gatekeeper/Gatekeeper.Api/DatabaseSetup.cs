@@ -24,6 +24,10 @@ public static class DatabaseSetup
 
         try
         {
+            // Set journal mode to DELETE and synchronous to FULL for test isolation
+            using var pragmaCmd = conn.CreateCommand();
+            pragmaCmd.CommandText = "PRAGMA journal_mode = DELETE; PRAGMA synchronous = FULL;";
+            pragmaCmd.ExecuteNonQuery();
             var schema = GatekeeperSchema.Build();
             foreach (var table in schema.Tables)
             {

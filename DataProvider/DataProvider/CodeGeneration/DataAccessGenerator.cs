@@ -403,6 +403,124 @@ public static class DataAccessGenerator
     }
 
     /// <summary>
+    /// Generates a non-query extension method for UPDATE/DELETE/INSERT SQL statements.
+    /// Returns the number of rows affected.
+    /// </summary>
+    /// <param name="className">Extension class name</param>
+    /// <param name="methodName">Method name</param>
+    /// <param name="sql">SQL statement</param>
+    /// <param name="parameters">SQL parameters</param>
+    /// <param name="connectionType">Database connection type (e.g., SqliteConnection)</param>
+    /// <returns>Generated extension method code</returns>
+    public static Result<string, SqlError> GenerateNonQueryMethod(
+        string className,
+        string methodName,
+        string sql,
+        IReadOnlyList<ParameterInfo> parameters,
+        string connectionType = "SqliteConnection"
+    )
+    {
+        if (string.IsNullOrWhiteSpace(className))
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("className cannot be null or empty")
+            );
+
+        if (string.IsNullOrWhiteSpace(methodName))
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("methodName cannot be null or empty")
+            );
+
+        if (string.IsNullOrWhiteSpace(sql))
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("sql cannot be null or empty")
+            );
+
+        var parameterList = GenerateParameterList(parameters);
+        var sb = new StringBuilder();
+
+        // Generate extension class
+        sb.AppendLine("/// <summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"/// Extension methods for '{methodName}'.");
+        sb.AppendLine("/// </summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"public static partial class {className}");
+        sb.AppendLine("{");
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// Executes '{methodName}.sql' and returns rows affected."
+        );
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// <param name=\"connection\">Open {connectionType} connection.</param>"
+        );
+
+        if (parameters != null)
+        {
+            foreach (var p in parameters)
+            {
+                sb.AppendLine(
+                    CultureInfo.InvariantCulture,
+                    $"    /// <param name=\"{p.Name}\">Query parameter.</param>"
+                );
+            }
+        }
+
+        sb.AppendLine("    /// <returns>Result with rows affected or SQL error.</returns>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    public static async Task<Result<int, SqlError>> {methodName}Async(this {connectionType} connection{(string.IsNullOrEmpty(parameterList) ? "" : ", " + parameterList)})"
+        );
+        sb.AppendLine("    {");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"        const string sql = @\"{sql.Replace("\"", "\"\"", StringComparison.Ordinal)}\";"
+        );
+        sb.AppendLine();
+        sb.AppendLine("        try");
+        sb.AppendLine("        {");
+
+        var commandType = connectionType.Replace("Connection", "Command", StringComparison.Ordinal);
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            using (var command = new {commandType}(sql, connection))"
+        );
+        sb.AppendLine("            {");
+
+        // Add parameters
+        if (parameters != null)
+        {
+            foreach (var parameter in parameters)
+            {
+                sb.AppendLine(
+                    CultureInfo.InvariantCulture,
+                    $"                command.Parameters.AddWithValue(\"@{parameter.Name}\", {parameter.Name} ?? (object)DBNull.Value);"
+                );
+            }
+        }
+
+        sb.AppendLine();
+        sb.AppendLine(
+            "                var rowsAffected = await command.ExecuteNonQueryAsync().ConfigureAwait(false);"
+        );
+        sb.AppendLine(
+            "                return new Result<int, SqlError>.Ok<int, SqlError>(rowsAffected);"
+        );
+        sb.AppendLine("            }");
+        sb.AppendLine("        }");
+        sb.AppendLine("        catch (Exception ex)");
+        sb.AppendLine("        {");
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Database error\", ex));"
+        );
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
+
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
+    }
+
+    /// <summary>
     /// Generates an UPDATE method for a database table
     /// </summary>
     /// <param name="table">Database table metadata</param>

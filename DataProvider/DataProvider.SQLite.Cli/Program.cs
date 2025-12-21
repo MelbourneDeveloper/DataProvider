@@ -480,5 +480,4 @@ internal static class Program
 
         return baseType;
     }
-
 }

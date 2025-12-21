@@ -1,6 +1,7 @@
 namespace Gatekeeper.Api.Tests;
 
 using System.Globalization;
+using Generated;
 using Microsoft.Data.Sqlite;
 
 /// <summary>
@@ -259,22 +260,32 @@ public sealed class TokenServiceTests
         var payload = JsonDocument.Parse(payloadJson);
         var jti = payload.RootElement.GetProperty("jti").GetString()!;
 
-        // Insert revoked session
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = """
-            INSERT INTO gk_session (id, user_id, created_at, expires_at, last_activity_at, is_revoked)
-            VALUES (@jti, 'user-revoked', @now, @exp, @now, 1);
-            """;
-        cmd.Parameters.AddWithValue("@jti", jti);
-        cmd.Parameters.AddWithValue(
-            "@now",
-            DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
-        );
-        cmd.Parameters.AddWithValue(
-            "@exp",
-            DateTime.UtcNow.AddHours(1).ToString("o", CultureInfo.InvariantCulture)
-        );
-        await cmd.ExecuteNonQueryAsync();
+        var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+        var exp = DateTime.UtcNow.AddHours(1).ToString("o", CultureInfo.InvariantCulture);
+
+        // Insert user and revoked session using DataProvider methods
+        using var tx = conn.BeginTransaction();
+        await tx.Insertgk_userAsync(
+            "user-revoked",
+            "Revoked User",
+            null!, // email
+            now,
+            null!, // last_login_at
+            1, // is_active
+            null! // metadata
+        ).ConfigureAwait(false);
+        await tx.Insertgk_sessionAsync(
+            jti,
+            "user-revoked",
+            null!, // credential_id
+            now,
+            exp,
+            now,
+            null!, // ip_address
+            null!, // user_agent
+            1 // is_revoked = true
+        ).ConfigureAwait(false);
+        tx.Commit();
 
         var result = await TokenService.ValidateTokenAsync(
             conn,
@@ -308,22 +319,32 @@ public sealed class TokenServiceTests
         var payload = JsonDocument.Parse(payloadJson);
         var jti = payload.RootElement.GetProperty("jti").GetString()!;
 
-        // Insert revoked session
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = """
-            INSERT INTO gk_session (id, user_id, created_at, expires_at, last_activity_at, is_revoked)
-            VALUES (@jti, 'user-revoked2', @now, @exp, @now, 1);
-            """;
-        cmd.Parameters.AddWithValue("@jti", jti);
-        cmd.Parameters.AddWithValue(
-            "@now",
-            DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
-        );
-        cmd.Parameters.AddWithValue(
-            "@exp",
-            DateTime.UtcNow.AddHours(1).ToString("o", CultureInfo.InvariantCulture)
-        );
-        await cmd.ExecuteNonQueryAsync();
+        var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+        var exp = DateTime.UtcNow.AddHours(1).ToString("o", CultureInfo.InvariantCulture);
+
+        // Insert user and revoked session using DataProvider methods
+        using var tx = conn.BeginTransaction();
+        await tx.Insertgk_userAsync(
+            "user-revoked2",
+            "Revoked User 2",
+            null!, // email
+            now,
+            null!, // last_login_at
+            1, // is_active
+            null! // metadata
+        ).ConfigureAwait(false);
+        await tx.Insertgk_sessionAsync(
+            jti,
+            "user-revoked2",
+            null!, // credential_id
+            now,
+            exp,
+            now,
+            null!, // ip_address
+            null!, // user_agent
+            1 // is_revoked = true
+        ).ConfigureAwait(false);
+        tx.Commit();
 
         // With checkRevocation: false, should still validate
         var result = await TokenService.ValidateTokenAsync(
@@ -343,37 +364,32 @@ public sealed class TokenServiceTests
 
         var jti = Guid.NewGuid().ToString();
         var userId = "user-test";
+        var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+        var exp = DateTime.UtcNow.AddHours(1).ToString("o", CultureInfo.InvariantCulture);
 
-        // Insert user first (foreign key requirement)
-        using var userCmd = conn.CreateCommand();
-        userCmd.CommandText = """
-            INSERT INTO gk_user (id, display_name, created_at)
-            VALUES (@userId, 'Test User', @now);
-            """;
-        userCmd.Parameters.AddWithValue("@userId", userId);
-        userCmd.Parameters.AddWithValue(
-            "@now",
-            DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
-        );
-        await userCmd.ExecuteNonQueryAsync();
-
-        // Insert session
-        using var insertCmd = conn.CreateCommand();
-        insertCmd.CommandText = """
-            INSERT INTO gk_session (id, user_id, created_at, expires_at, last_activity_at, is_revoked)
-            VALUES (@jti, @userId, @now, @exp, @now, 0);
-            """;
-        insertCmd.Parameters.AddWithValue("@userId", userId);
-        insertCmd.Parameters.AddWithValue("@jti", jti);
-        insertCmd.Parameters.AddWithValue(
-            "@now",
-            DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
-        );
-        insertCmd.Parameters.AddWithValue(
-            "@exp",
-            DateTime.UtcNow.AddHours(1).ToString("o", CultureInfo.InvariantCulture)
-        );
-        await insertCmd.ExecuteNonQueryAsync();
+        // Insert user and session using DataProvider methods
+        using var tx = conn.BeginTransaction();
+        await tx.Insertgk_userAsync(
+            userId,
+            "Test User",
+            null!, // email
+            now,
+            null!, // last_login_at
+            1, // is_active
+            null! // metadata
+        ).ConfigureAwait(false);
+        await tx.Insertgk_sessionAsync(
+            jti,
+            userId,
+            null!, // credential_id
+            now,
+            exp,
+            now,
+            null!, // ip_address
+            null!, // user_agent
+            0 // is_revoked = false
+        ).ConfigureAwait(false);
+        tx.Commit();
 
         // Revoke
         await TokenService.RevokeTokenAsync(conn, jti);

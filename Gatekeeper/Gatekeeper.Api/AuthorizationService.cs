@@ -64,14 +64,11 @@ public static class AuthorizationService
 
             if (scopeMatches)
             {
-                var sourceStr = ToStringValue(perm.source);
-                var sourceNameStr = perm.source_name;
-                var source = sourceStr switch
-                {
-                    "role" => $"role:{sourceNameStr}",
-                    "direct" => "direct-grant",
-                    _ => sourceStr ?? "unknown",
-                };
+                // source_type is role_id for role-based permissions, permission_id for direct grants
+                // source_name is role name for role-based, permission code for direct
+                var source = perm.source_name != perm.code
+                    ? $"role:{perm.source_name}"
+                    : "direct-grant";
                 return (true, $"{source} grants {perm.code}");
             }
         }

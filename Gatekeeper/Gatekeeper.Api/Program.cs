@@ -37,6 +37,8 @@ var connectionString = new SqliteConnectionStringBuilder
 {
     DataSource = dbPath,
     ForeignKeys = true,
+    Pooling = false, // Disable pooling for test isolation
+    Cache = SqliteCacheMode.Shared, // Use shared cache for better cross-connection visibility
 }.ToString();
 
 builder.Services.AddSingleton(new DbConfig(connectionString));
@@ -580,8 +582,8 @@ authzGroup.MapGet(
                 .Value.Select(p => new
                 {
                     p.code,
-                    p.source,
                     p.source_name,
+                    p.source_type,
                     p.scope_type,
                     p.scope_value,
                 })

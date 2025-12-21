@@ -15,12 +15,14 @@
     { "name": "GetCredentialsByUserId", "sqlFile": "Sql/GetCredentialsByUserId.sql" },
     { "name": "GetRolePermissions", "sqlFile": "Sql/GetRolePermissions.sql" },
     { "name": "GetAllUsers", "sqlFile": "Sql/GetAllUsers.sql" },
-    { "name": "CheckPermission", "sqlFile": "Sql/CheckPermission.sql" }
+    { "name": "CheckPermission", "sqlFile": "Sql/CheckPermission.sql" },
+    { "name": "GetSessionRevoked", "sqlFile": "Sql/GetSessionRevoked.sql" },
+    { "name": "GetSessionForRevoke", "sqlFile": "Sql/GetSessionForRevoke.sql" }
   ],
   "tables": [
     { "schema": "main", "name": "gk_user", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
     { "schema": "main", "name": "gk_credential", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
-    { "schema": "main", "name": "gk_session", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
+    { "schema": "main", "name": "gk_session", "generateInsert": true, "generateUpdate": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
     { "schema": "main", "name": "gk_challenge", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
     { "schema": "main", "name": "gk_user_role", "generateInsert": true, "excludeColumns": [], "primaryKeyColumns": ["user_id", "role_id"] },
     { "schema": "main", "name": "gk_permission", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },

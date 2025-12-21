@@ -446,6 +446,49 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
 
         var parser = new Parsing.SqliteAntlrParser();
 
+        // Helper to detect non-query statements
+        static bool IsNonQueryStatement(string sql)
+        {
+            var trimmed = sql.TrimStart();
+            return trimmed.StartsWith("UPDATE ", StringComparison.OrdinalIgnoreCase)
+                || trimmed.StartsWith("DELETE ", StringComparison.OrdinalIgnoreCase)
+                || trimmed.StartsWith("INSERT ", StringComparison.OrdinalIgnoreCase);
+        }
+
+        // Helper to extract @parameters from SQL
+        static IReadOnlyList<ParameterInfo> ExtractParameters(string sql)
+        {
+            var parameters = new List<ParameterInfo>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var i = 0;
+            while (i < sql.Length)
+            {
+                if (sql[i] == '@')
+                {
+                    var start = i + 1;
+                    var end = start;
+                    while (end < sql.Length && (char.IsLetterOrDigit(sql[end]) || sql[end] == '_'))
+                    {
+                        end++;
+                    }
+                    if (end > start)
+                    {
+                        var name = sql[start..end];
+                        if (seen.Add(name))
+                        {
+                            parameters.Add(new ParameterInfo(name, "TEXT"));
+                        }
+                    }
+                    i = end;
+                }
+                else
+                {
+                    i++;
+                }
+            }
+            return parameters.AsReadOnly();
+        }
+
         foreach (var sqlFile in sqlFiles)
         {
             try
@@ -461,6 +504,58 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
 
                 if (string.IsNullOrWhiteSpace(sqlText))
                 {
+                    continue;
+                }
+
+                // Handle non-query statements (UPDATE/DELETE/INSERT) separately
+                if (IsNonQueryStatement(sqlText))
+                {
+                    var parameters = ExtractParameters(sqlText);
+                    var className = $"{baseName}Extensions";
+                    var nonQueryResult = DataAccessGenerator.GenerateNonQueryMethod(
+                        className,
+                        baseName,
+                        sqlText,
+                        parameters,
+                        "SqliteConnection"
+                    );
+
+                    if (nonQueryResult is Result<string, SqlError>.Ok<string, SqlError> nqSuccess)
+                    {
+                        // Wrap in source file with usings
+                        var sb = new StringBuilder();
+                        sb.AppendLine("using System;");
+                        sb.AppendLine("using System.Threading.Tasks;");
+                        sb.AppendLine("using Microsoft.Data.Sqlite;");
+                        sb.AppendLine("using Outcome;");
+                        sb.AppendLine("using Selecta;");
+                        sb.AppendLine();
+                        sb.AppendLine("namespace Generated;");
+                        sb.AppendLine();
+                        sb.Append(nqSuccess.Value);
+
+                        context.AddSource(
+                            baseName + ".g.cs",
+                            SourceText.From(sb.ToString(), Encoding.UTF8)
+                        );
+                    }
+                    else if (
+                        nonQueryResult is Result<string, SqlError>.Error<string, SqlError> nqFailure
+                    )
+                    {
+                        var nqDiag = Diagnostic.Create(
+                            new DiagnosticDescriptor(
+                                "DP0003",
+                                "Non-query generation failed",
+                                $"Failed to generate non-query for '{baseName}': {nqFailure.Value.Message}",
+                                "DataProvider.SQLite",
+                                DiagnosticSeverity.Error,
+                                true
+                            ),
+                            Location.None
+                        );
+                        context.ReportDiagnostic(nqDiag);
+                    }
                     continue;
                 }
 

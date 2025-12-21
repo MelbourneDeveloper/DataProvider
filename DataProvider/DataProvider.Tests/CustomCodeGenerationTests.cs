@@ -841,3 +841,151 @@ internal static class StringExtensions
             : char.ToUpper(input[0], System.Globalization.CultureInfo.InvariantCulture)
                 + input[1..];
 }
+
+/// <summary>
+/// Tests for non-query (UPDATE/DELETE/INSERT) SQL statement code generation.
+/// </summary>
+public class NonQueryCodeGenerationTests
+{
+    [Fact]
+    public void GenerateNonQueryMethod_UpdateStatement_GeneratesCorrectExtension()
+    {
+        var sql = "UPDATE gk_session SET is_revoked = 1 WHERE id = @jti";
+        var parameters = new List<ParameterInfo> { new("jti", "TEXT") };
+
+        var result = DataAccessGenerator.GenerateNonQueryMethod(
+            "RevokeSessionExtensions",
+            "RevokeSession",
+            sql,
+            parameters,
+            "SqliteConnection"
+        );
+
+        Assert.True(result is StringOk);
+        var code = (result as StringOk)!.Value;
+
+        // Verify key parts of generated code
+        Assert.Contains("public static partial class RevokeSessionExtensions", code);
+        Assert.Contains("public static async Task<Result<int, SqlError>> RevokeSessionAsync", code);
+        Assert.Contains("this SqliteConnection connection", code);
+        Assert.Contains("object jti", code);
+        Assert.Contains("ExecuteNonQueryAsync", code);
+        Assert.Contains("UPDATE gk_session SET is_revoked = 1 WHERE id = @jti", code);
+    }
+
+    [Fact]
+    public void GenerateNonQueryMethod_DeleteStatement_GeneratesCorrectExtension()
+    {
+        var sql = "DELETE FROM sync_log WHERE created_at < @cutoff";
+        var parameters = new List<ParameterInfo> { new("cutoff", "TEXT") };
+
+        var result = DataAccessGenerator.GenerateNonQueryMethod(
+            "PurgeSyncLogExtensions",
+            "PurgeSyncLog",
+            sql,
+            parameters,
+            "SqliteConnection"
+        );
+
+        Assert.True(result is StringOk);
+        var code = (result as StringOk)!.Value;
+
+        Assert.Contains("PurgeSyncLogAsync", code);
+        Assert.Contains("DELETE FROM sync_log", code);
+        Assert.Contains("@cutoff", code);
+    }
+
+    [Fact]
+    public void GenerateNonQueryMethod_MultipleParameters_GeneratesAllParameters()
+    {
+        var sql = "UPDATE users SET name = @name, email = @email WHERE id = @id";
+        var parameters = new List<ParameterInfo>
+        {
+            new("name", "TEXT"),
+            new("email", "TEXT"),
+            new("id", "INTEGER"),
+        };
+
+        var result = DataAccessGenerator.GenerateNonQueryMethod(
+            "UpdateUserExtensions",
+            "UpdateUser",
+            sql,
+            parameters,
+            "SqliteConnection"
+        );
+
+        Assert.True(result is StringOk);
+        var code = (result as StringOk)!.Value;
+
+        Assert.Contains("object name", code);
+        Assert.Contains("object email", code);
+        Assert.Contains("object id", code);
+        Assert.Contains("AddWithValue(\"@name\"", code);
+        Assert.Contains("AddWithValue(\"@email\"", code);
+        Assert.Contains("AddWithValue(\"@id\"", code);
+    }
+
+    [Fact]
+    public void GenerateNonQueryMethod_NoParameters_GeneratesMethodWithoutParams()
+    {
+        var sql = "DELETE FROM temp_data";
+        var parameters = new List<ParameterInfo>();
+
+        var result = DataAccessGenerator.GenerateNonQueryMethod(
+            "ClearTempDataExtensions",
+            "ClearTempData",
+            sql,
+            parameters,
+            "SqliteConnection"
+        );
+
+        Assert.True(result is StringOk);
+        var code = (result as StringOk)!.Value;
+
+        // Should have connection param only
+        Assert.Contains("ClearTempDataAsync(this SqliteConnection connection)", code);
+        Assert.DoesNotContain("AddWithValue", code);
+    }
+
+    [Fact]
+    public void GenerateNonQueryMethod_EmptyClassName_ReturnsError()
+    {
+        var result = DataAccessGenerator.GenerateNonQueryMethod(
+            "",
+            "Test",
+            "UPDATE x SET y = 1",
+            new List<ParameterInfo>(),
+            "SqliteConnection"
+        );
+
+        Assert.True(result is StringError);
+    }
+
+    [Fact]
+    public void GenerateNonQueryMethod_EmptyMethodName_ReturnsError()
+    {
+        var result = DataAccessGenerator.GenerateNonQueryMethod(
+            "TestExtensions",
+            "",
+            "UPDATE x SET y = 1",
+            new List<ParameterInfo>(),
+            "SqliteConnection"
+        );
+
+        Assert.True(result is StringError);
+    }
+
+    [Fact]
+    public void GenerateNonQueryMethod_EmptySql_ReturnsError()
+    {
+        var result = DataAccessGenerator.GenerateNonQueryMethod(
+            "TestExtensions",
+            "Test",
+            "",
+            new List<ParameterInfo>(),
+            "SqliteConnection"
+        );
+
+        Assert.True(result is StringError);
+    }
+}
