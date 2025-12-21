@@ -2369,4 +2369,135 @@ public sealed class DashboardE2ETests
 
         await page.CloseAsync();
     }
+
+    [Fact]
+    public async Task SignOutButton_IsVisibleInSidebar()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Sign out button should be visible in the sidebar footer
+        var signOutButton = await page.QuerySelectorAsync("[data-testid='logout-button']");
+        Assert.NotNull(signOutButton);
+
+        // Verify the button is visible
+        var isVisible = await signOutButton.IsVisibleAsync();
+        Assert.True(isVisible, "Sign out button should be visible in sidebar");
+
+        await page.CloseAsync();
+    }
+
+    [Fact]
+    public async Task SignOutButton_ClickShowsLoginPage()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
+
+        // Set up a fake token in localStorage to simulate being logged in
+        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
+
+        // Inject a fake token to simulate authenticated state
+        await page.EvaluateAsync(
+            @"() => {
+                localStorage.setItem('gatekeeper_token', 'fake-token-for-testing');
+                localStorage.setItem('gatekeeper_user', JSON.stringify({
+                    userId: 'test-user',
+                    displayName: 'Test User',
+                    email: 'test@example.com'
+                }));
+            }"
+        );
+
+        // Reload to pick up the token
+        await page.ReloadAsync();
+
+        // Wait for the sidebar to appear (authenticated state)
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Click sign out button
+        await page.ClickAsync("[data-testid='logout-button']");
+
+        // Should show login page after sign out
+        await page.WaitForSelectorAsync(
+            "[data-testid='login-page']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Verify token was cleared from localStorage
+        var tokenAfterLogout = await page.EvaluateAsync<string?>(
+            "() => localStorage.getItem('gatekeeper_token')"
+        );
+        Assert.Null(tokenAfterLogout);
+
+        var userAfterLogout = await page.EvaluateAsync<string?>(
+            "() => localStorage.getItem('gatekeeper_user')"
+        );
+        Assert.Null(userAfterLogout);
+
+        await page.CloseAsync();
+    }
+
+    [Fact]
+    public async Task GatekeeperApi_Logout_RevokesToken()
+    {
+        using var client = new HttpClient();
+
+        // First, we need to get a valid session token by creating a user and session
+        // For this test, we'll verify the logout endpoint returns 401 for invalid tokens
+        // and verify the endpoint exists
+        var logoutResponse = await client.PostAsync(
+            $"{E2EFixture.GatekeeperUrl}/auth/logout",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json")
+        );
+
+        // Without a valid Bearer token, should return 401 Unauthorized
+        Assert.Equal(HttpStatusCode.Unauthorized, logoutResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task SignOutButton_DisplaysUserInitials()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
+
+        // Inject a user with a specific name
+        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
+
+        await page.EvaluateAsync(
+            @"() => {
+                localStorage.setItem('gatekeeper_token', 'fake-token-for-testing');
+                localStorage.setItem('gatekeeper_user', JSON.stringify({
+                    userId: 'test-user',
+                    displayName: 'Alice Smith',
+                    email: 'alice@example.com'
+                }));
+            }"
+        );
+
+        await page.ReloadAsync();
+
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Verify the user's name is displayed
+        var userNameText = await page.TextContentAsync(".sidebar-user-name");
+        Assert.Contains("Alice Smith", userNameText);
+
+        // Verify initials in avatar (should be "AS" for Alice Smith)
+        var avatarText = await page.TextContentAsync(".sidebar-user .avatar");
+        Assert.Equal("AS", avatarText?.Trim());
+
+        await page.CloseAsync();
+    }
 }

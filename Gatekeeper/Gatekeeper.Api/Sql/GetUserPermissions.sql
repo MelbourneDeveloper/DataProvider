@@ -4,8 +4,8 @@
 SELECT DISTINCT p.id, p.code, p.resource_type, p.action, p.description,
        r.name as source_name,
        ur.role_id as source_type,
-       p.resource_type as scope_type,
-       p.action as scope_value
+       NULL as scope_type,
+       NULL as scope_value
 FROM gk_user_role ur
 JOIN gk_role r ON ur.role_id = r.id
 JOIN gk_role_permission rp ON r.id = rp.role_id

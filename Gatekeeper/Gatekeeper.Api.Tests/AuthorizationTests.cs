@@ -46,13 +46,25 @@ public sealed class AuthorizationTests : IClassFixture<GatekeeperTestFixture>
         client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
+        // Debug: Check what's in the database using DataProvider extensions
+        using var conn = _fixture.OpenConnection();
+        var rolePermsResult = await conn.GetRolePermissionsAsync("role-user");
+        var rolePerms = rolePermsResult switch
+        {
+            GetRolePermissionsOk ok => ok.Value.Select(p => $"role-user->{p.code}").ToList(),
+            GetRolePermissionsError err => [$"(error: {err.Value.Message})"],
+        };
+
         // Default 'user' role has 'user:profile' permission
         var response = await client.GetAsync("/authz/check?permission=user:profile");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         var doc = JsonDocument.Parse(content);
-        Assert.True(doc.RootElement.GetProperty("Allowed").GetBoolean(), $"Response: {content}");
+        Assert.True(
+            doc.RootElement.GetProperty("Allowed").GetBoolean(),
+            $"Response: {content}, RolePerms: [{string.Join(", ", rolePerms)}]"
+        );
         Assert.Contains("user:profile", doc.RootElement.GetProperty("Reason").GetString());
     }
 
@@ -601,8 +613,5 @@ public sealed class GatekeeperTestFixture : IDisposable
     }
 
     /// <summary>Disposes the test fixture.</summary>
-    public void Dispose()
-    {
-        _factory.Dispose();
-    }
+    public void Dispose() => _factory.Dispose();
 }

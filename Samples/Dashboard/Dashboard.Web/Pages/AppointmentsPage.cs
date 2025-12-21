@@ -35,10 +35,7 @@ namespace Dashboard.Pages
         /// <summary>
         /// Renders the appointments page.
         /// </summary>
-        public static ReactElement Render(Action<string> onEditAppointment)
-        {
-            return RenderInternal(onEditAppointment);
-        }
+        public static ReactElement Render(Action<string> onEditAppointment) => RenderInternal(onEditAppointment);
 
         private static ReactElement RenderInternal(Action<string> onEditAppointment)
         {

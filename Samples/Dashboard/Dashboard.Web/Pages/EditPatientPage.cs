@@ -700,9 +700,7 @@ namespace Dashboard.Pages
             EditPatientState state,
             Action<EditPatientState> setState,
             bool value
-        )
-        {
-            setState(
+        ) => setState(
                 new EditPatientState
                 {
                     Patient = state.Patient,
@@ -724,6 +722,5 @@ namespace Dashboard.Pages
                     Country = state.Country,
                 }
             );
-        }
     }
 }

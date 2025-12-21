@@ -401,9 +401,7 @@ namespace Dashboard.Pages
             return Span(className: dotClass);
         }
 
-        private static void SelectDay(CalendarState state, Action<CalendarState> setState, int day)
-        {
-            setState(
+        private static void SelectDay(CalendarState state, Action<CalendarState> setState, int day) => setState(
                 new CalendarState
                 {
                     Appointments = state.Appointments,
@@ -414,7 +412,6 @@ namespace Dashboard.Pages
                     SelectedDay = day,
                 }
             );
-        }
 
         private static Appointment[] GetAppointmentsForDay(
             Appointment[] appointments,

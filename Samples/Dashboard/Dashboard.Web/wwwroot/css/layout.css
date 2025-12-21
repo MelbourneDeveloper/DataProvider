@@ -214,6 +214,23 @@
   color: var(--gray-500);
 }
 
+.sidebar-logout-btn {
+  margin-top: var(--space-3);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.sidebar.collapsed .sidebar-logout-btn span {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-logout-btn {
+  padding: var(--space-2);
+}
+
 .sidebar-toggle {
   position: absolute;
   right: -14px;

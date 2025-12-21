@@ -105,177 +105,165 @@ This service is framework-agnostic and can be integrated with any system via RES
 
 ## Database Schema
 
-Defined using the Migration SchemaBuilder (database-independent metadata):
+```mermaid
+erDiagram
+    %% ═══════════════════════════════════════════════════════════════
+    %% CORE AUTHENTICATION
+    %% ═══════════════════════════════════════════════════════════════
 
-```csharp
-using static Migration.PortableTypes;
+    gk_user {
+        text id PK "UUID"
+        text display_name "NOT NULL"
+        text email UK "Unique index"
+        text created_at "NOT NULL, ISO8601"
+        text last_login_at "ISO8601"
+        boolean is_active "NOT NULL, default 1"
+        json metadata "Extensibility"
+    }
 
-public static class GatekeeperSchema
-{
-    public static SchemaDefinition Build() => Schema.Define("gatekeeper")
+    gk_credential {
+        text id PK "Base64URL credential ID"
+        text user_id FK "NOT NULL"
+        blob public_key "NOT NULL, COSE format"
+        int sign_count "NOT NULL, default 0"
+        text aaguid "Authenticator AAGUID"
+        text credential_type "NOT NULL, 'public-key'"
+        json transports "['internal','usb','ble','nfc']"
+        text attestation_format
+        text created_at "NOT NULL"
+        text last_used_at
+        text device_name "User-friendly name"
+        boolean is_backup_eligible "BE flag"
+        boolean is_backed_up "BS flag"
+    }
 
-        // ═══════════════════════════════════════════════════════════════
-        // CORE AUTHENTICATION TABLES
-        // ═══════════════════════════════════════════════════════════════
+    gk_session {
+        text id PK "JWT JTI"
+        text user_id FK "NOT NULL"
+        text credential_id FK
+        text created_at "NOT NULL"
+        text expires_at "NOT NULL"
+        text last_activity_at "NOT NULL"
+        text ip_address
+        text user_agent
+        boolean is_revoked "NOT NULL, default 0"
+    }
 
-        // Users (minimal - no password!)
-        .Table("gk_user", t => t
-            .Column("id", Text, c => c.PrimaryKey())
-            .Column("display_name", Text, c => c.NotNull())
-            .Column("email", Text)
-            .Column("created_at", Text, c => c.NotNull())
-            .Column("last_login_at", Text)
-            .Column("is_active", Boolean, c => c.NotNull().Default("1"))
-            .Column("metadata", Json)  // Extensibility
-            .Index("idx_user_email", "email", unique: true))
+    gk_challenge {
+        text id PK "UUID"
+        text user_id "NULL for login"
+        blob challenge "NOT NULL, crypto random"
+        text type "NOT NULL, registration|authentication"
+        text created_at "NOT NULL"
+        text expires_at "NOT NULL, 5 min"
+    }
 
-        // WebAuthn Credentials (passkeys)
-        .Table("gk_credential", t => t
-            .Column("id", Text, c => c.PrimaryKey())  // Base64URL credential ID
-            .Column("user_id", Text, c => c.NotNull())
-            .Column("public_key", Blob, c => c.NotNull())  // COSE public key
-            .Column("sign_count", Int, c => c.NotNull().Default("0"))
-            .Column("aaguid", Text)  // Authenticator AAGUID
-            .Column("credential_type", Text, c => c.NotNull())  // 'public-key'
-            .Column("transports", Json)  // ['internal', 'usb', 'ble', 'nfc']
-            .Column("attestation_format", Text)
-            .Column("created_at", Text, c => c.NotNull())
-            .Column("last_used_at", Text)
-            .Column("device_name", Text)  // User-friendly name
-            .Column("is_backup_eligible", Boolean)  // BE flag
-            .Column("is_backed_up", Boolean)  // BS flag
-            .ForeignKey("user_id", "gk_user", "id", onDelete: ForeignKeyAction.Cascade)
-            .Index("idx_credential_user", "user_id"))
+    %% ═══════════════════════════════════════════════════════════════
+    %% RBAC
+    %% ═══════════════════════════════════════════════════════════════
 
-        // Sessions (stateful for revocation support)
-        .Table("gk_session", t => t
-            .Column("id", Text, c => c.PrimaryKey())
-            .Column("user_id", Text, c => c.NotNull())
-            .Column("credential_id", Text)
-            .Column("created_at", Text, c => c.NotNull())
-            .Column("expires_at", Text, c => c.NotNull())
-            .Column("last_activity_at", Text, c => c.NotNull())
-            .Column("ip_address", Text)
-            .Column("user_agent", Text)
-            .Column("is_revoked", Boolean, c => c.NotNull().Default("0"))
-            .ForeignKey("user_id", "gk_user", "id", onDelete: ForeignKeyAction.Cascade)
-            .ForeignKey("credential_id", "gk_credential", "id")
-            .Index("idx_session_user", "user_id")
-            .Index("idx_session_expires", "expires_at"))
+    gk_role {
+        text id PK
+        text name UK "NOT NULL, unique"
+        text description
+        boolean is_system "NOT NULL, default 0"
+        text created_at "NOT NULL"
+        text parent_role_id FK "Role hierarchy"
+    }
 
-        // WebAuthn Challenge Store (temporary, for registration/login)
-        .Table("gk_challenge", t => t
-            .Column("id", Text, c => c.PrimaryKey())
-            .Column("user_id", Text)  // NULL for login challenges
-            .Column("challenge", Blob, c => c.NotNull())
-            .Column("type", Text, c => c.NotNull())  // 'registration' or 'authentication'
-            .Column("created_at", Text, c => c.NotNull())
-            .Column("expires_at", Text, c => c.NotNull()))
+    gk_user_role {
+        text user_id PK,FK "Composite PK"
+        text role_id PK,FK "Composite PK"
+        text granted_at "NOT NULL"
+        text granted_by FK
+        text expires_at "Temporal grants"
+    }
 
-        // ═══════════════════════════════════════════════════════════════
-        // RBAC TABLES
-        // ═══════════════════════════════════════════════════════════════
+    gk_permission {
+        text id PK
+        text code UK "NOT NULL, e.g. patient:read"
+        text resource_type "NOT NULL"
+        text action "NOT NULL, read|write|delete"
+        text description
+        text created_at "NOT NULL"
+    }
 
-        // Roles
-        .Table("gk_role", t => t
-            .Column("id", Text, c => c.PrimaryKey())
-            .Column("name", Text, c => c.NotNull())
-            .Column("description", Text)
-            .Column("is_system", Boolean, c => c.NotNull().Default("0"))  // Cannot delete system roles
-            .Column("created_at", Text, c => c.NotNull())
-            .Column("parent_role_id", Text)  // Role hierarchy
-            .ForeignKey("parent_role_id", "gk_role", "id")
-            .Index("idx_role_name", "name", unique: true))
+    gk_role_permission {
+        text role_id PK,FK "Composite PK"
+        text permission_id PK,FK "Composite PK"
+        text granted_at "NOT NULL"
+    }
 
-        // User-Role assignments
-        .Table("gk_user_role", t => t
-            .Column("user_id", Text, c => c.NotNull())
-            .Column("role_id", Text, c => c.NotNull())
-            .Column("granted_at", Text, c => c.NotNull())
-            .Column("granted_by", Text)
-            .Column("expires_at", Text)  // Optional temporal grants
-            .CompositePrimaryKey("user_id", "role_id")
-            .ForeignKey("user_id", "gk_user", "id", onDelete: ForeignKeyAction.Cascade)
-            .ForeignKey("role_id", "gk_role", "id", onDelete: ForeignKeyAction.Cascade)
-            .ForeignKey("granted_by", "gk_user", "id"))
+    gk_user_permission {
+        text user_id FK "NOT NULL"
+        text permission_id FK "NOT NULL"
+        text scope_type "all|record|query"
+        text scope_value "Record ID or LQL query"
+        text granted_at "NOT NULL"
+        text granted_by FK
+        text expires_at
+        text reason "Audit trail"
+    }
 
-        // Permissions (the actual capabilities)
-        .Table("gk_permission", t => t
-            .Column("id", Text, c => c.PrimaryKey())
-            .Column("code", Text, c => c.NotNull())  // e.g., 'patient:read', 'order:write'
-            .Column("resource_type", Text, c => c.NotNull())  // e.g., 'patient', 'order', 'menu'
-            .Column("action", Text, c => c.NotNull())  // e.g., 'read', 'write', 'delete', 'access'
-            .Column("description", Text)
-            .Column("created_at", Text, c => c.NotNull())
-            .Index("idx_permission_code", "code", unique: true)
-            .Index("idx_permission_resource", "resource_type"))
+    %% ═══════════════════════════════════════════════════════════════
+    %% FINE-GRAINED ACCESS CONTROL
+    %% ═══════════════════════════════════════════════════════════════
 
-        // Role-Permission assignments
-        .Table("gk_role_permission", t => t
-            .Column("role_id", Text, c => c.NotNull())
-            .Column("permission_id", Text, c => c.NotNull())
-            .Column("granted_at", Text, c => c.NotNull())
-            .CompositePrimaryKey("role_id", "permission_id")
-            .ForeignKey("role_id", "gk_role", "id", onDelete: ForeignKeyAction.Cascade)
-            .ForeignKey("permission_id", "gk_permission", "id", onDelete: ForeignKeyAction.Cascade))
+    gk_resource_grant {
+        text id PK
+        text user_id FK "NOT NULL"
+        text resource_type "NOT NULL, e.g. patient"
+        text resource_id "NOT NULL, e.g. patient-uuid"
+        text permission_id FK "NOT NULL"
+        text granted_at "NOT NULL"
+        text granted_by FK
+        text expires_at
+    }
 
-        // Direct user-permission grants (bypass roles for exceptions)
-        .Table("gk_user_permission", t => t
-            .Column("user_id", Text, c => c.NotNull())
-            .Column("permission_id", Text, c => c.NotNull())
-            .Column("scope_type", Text)  // 'all', 'record', 'query'
-            .Column("scope_value", Text)  // Record ID, LQL query, or NULL for all
-            .Column("granted_at", Text, c => c.NotNull())
-            .Column("granted_by", Text)
-            .Column("expires_at", Text)
-            .Column("reason", Text)  // Why this exception was granted
-            .ForeignKey("user_id", "gk_user", "id", onDelete: ForeignKeyAction.Cascade)
-            .ForeignKey("permission_id", "gk_permission", "id", onDelete: ForeignKeyAction.Cascade)
-            .ForeignKey("granted_by", "gk_user", "id")
-            .Index("idx_user_permission", ["user_id", "permission_id", "scope_value"], unique: true))
+    gk_policy {
+        text id PK
+        text name UK "NOT NULL"
+        text description
+        text resource_type "NOT NULL"
+        text action "NOT NULL"
+        json condition "NOT NULL, JSON expression"
+        text effect "NOT NULL, allow|deny"
+        int priority "NOT NULL, default 0"
+        boolean is_active "NOT NULL, default 1"
+        text created_at "NOT NULL"
+    }
 
-        // ═══════════════════════════════════════════════════════════════
-        // FINE-GRAINED ACCESS CONTROL
-        // ═══════════════════════════════════════════════════════════════
+    %% ═══════════════════════════════════════════════════════════════
+    %% RELATIONSHIPS
+    %% ═══════════════════════════════════════════════════════════════
 
-        // Resource-level permissions (record-level access)
-        .Table("gk_resource_grant", t => t
-            .Column("id", Text, c => c.PrimaryKey())
-            .Column("user_id", Text, c => c.NotNull())
-            .Column("resource_type", Text, c => c.NotNull())  // e.g., 'order', 'patient'
-            .Column("resource_id", Text, c => c.NotNull())  // e.g., '123456', 'patient-uuid'
-            .Column("permission_id", Text, c => c.NotNull())
-            .Column("granted_at", Text, c => c.NotNull())
-            .Column("granted_by", Text)
-            .Column("expires_at", Text)
-            .ForeignKey("user_id", "gk_user", "id", onDelete: ForeignKeyAction.Cascade)
-            .ForeignKey("permission_id", "gk_permission", "id")
-            .ForeignKey("granted_by", "gk_user", "id")
-            .Index("idx_resource_grant_user", "user_id")
-            .Index("idx_resource_grant_resource", ["resource_type", "resource_id"])
-            .Unique("uq_resource_grant", "user_id", "resource_type", "resource_id", "permission_id"))
+    gk_user ||--o{ gk_credential : "has passkeys"
+    gk_user ||--o{ gk_session : "has sessions"
+    gk_credential ||--o{ gk_session : "authenticates"
 
-        // Policies (conditional access rules)
-        .Table("gk_policy", t => t
-            .Column("id", Text, c => c.PrimaryKey())
-            .Column("name", Text, c => c.NotNull())
-            .Column("description", Text)
-            .Column("resource_type", Text, c => c.NotNull())
-            .Column("action", Text, c => c.NotNull())
-            .Column("condition", Json, c => c.NotNull())  // JSON condition expression
-            .Column("effect", Text, c => c.NotNull().Default("'allow'"))  // 'allow' or 'deny'
-            .Column("priority", Int, c => c.NotNull().Default("0"))  // Higher = evaluated first
-            .Column("is_active", Boolean, c => c.NotNull().Default("1"))
-            .Column("created_at", Text, c => c.NotNull())
-            .Index("idx_policy_name", "name", unique: true))
+    gk_user ||--o{ gk_user_role : "assigned to"
+    gk_role ||--o{ gk_user_role : "has members"
+    gk_user ||--o{ gk_user_role : "grants (granted_by)"
 
-        .Build();
-}
+    gk_role ||--o| gk_role : "inherits from (parent)"
 
-// Example policy conditions (stored as JSON in 'condition' field):
-// { "user.department": "finance", "resource.status": "draft" }
-// { "time.hour": { "$gte": 9, "$lte": 17 } }
-// { "user.id": { "$eq": "resource.owner_id" } }
+    gk_role ||--o{ gk_role_permission : "has"
+    gk_permission ||--o{ gk_role_permission : "granted to"
+
+    gk_user ||--o{ gk_user_permission : "has direct"
+    gk_permission ||--o{ gk_user_permission : "granted directly"
+    gk_user ||--o{ gk_user_permission : "grants (granted_by)"
+
+    gk_user ||--o{ gk_resource_grant : "has access to"
+    gk_permission ||--o{ gk_resource_grant : "defines access"
+    gk_user ||--o{ gk_resource_grant : "grants (granted_by)"
+```
+
+**Policy Condition Examples** (stored as JSON):
+```json
+{ "user.department": "finance", "resource.status": "draft" }
+{ "time.hour": { "$gte": 9, "$lte": 17 } }
+{ "user.id": { "$eq": "resource.owner_id" } }
 ```
 
 ---
