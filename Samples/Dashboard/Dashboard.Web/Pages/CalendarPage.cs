@@ -99,9 +99,9 @@ namespace Dashboard.Pages
                 children: new[]
                 {
                     RenderHeader(state, setState),
-                    state.Loading ? RenderLoadingState() :
-                    state.Error != null ? RenderError(state.Error) :
-                    RenderCalendarContent(state, setState, onEditAppointment),
+                    state.Loading ? RenderLoadingState()
+                    : state.Error != null ? RenderError(state.Error)
+                    : RenderCalendarContent(state, setState, onEditAppointment),
                 }
             );
         }
@@ -142,7 +142,10 @@ namespace Dashboard.Pages
             }
         }
 
-        private static ReactElement RenderHeader(CalendarState state, Action<CalendarState> setState)
+        private static ReactElement RenderHeader(
+            CalendarState state,
+            Action<CalendarState> setState
+        )
         {
             var monthName = MonthNames[state.Month - 1];
             return Div(
@@ -155,7 +158,10 @@ namespace Dashboard.Pages
                             H(2, className: "page-title", children: new[] { Text("Schedule") }),
                             P(
                                 className: "page-description",
-                                children: new[] { Text("View and manage appointments on the calendar") }
+                                children: new[]
+                                {
+                                    Text("View and manage appointments on the calendar"),
+                                }
                             ),
                         }
                     ),
@@ -277,10 +283,7 @@ namespace Dashboard.Pages
                 {
                     Div(
                         className: "flex-1",
-                        children: new[]
-                        {
-                            RenderCalendarGrid(state, setState),
-                        }
+                        children: new[] { RenderCalendarGrid(state, setState) }
                     ),
                     state.SelectedDay > 0
                         ? RenderDayDetails(state, setState, onEditAppointment)
@@ -297,12 +300,14 @@ namespace Dashboard.Pages
             var firstDay = new DateTime(state.Year, state.Month, 1);
             var startDayOfWeek = (int)firstDay.DayOfWeek;
 
-            var headerCells = DayNames.Select(day =>
-                Div(
-                    className: "calendar-header-cell text-center font-semibold p-2",
-                    children: new[] { Text(day) }
+            var headerCells = DayNames
+                .Select(day =>
+                    Div(
+                        className: "calendar-header-cell text-center font-semibold p-2",
+                        children: new[] { Text(day) }
+                    )
                 )
-            ).ToArray();
+                .ToArray();
 
             var dayCells = new ReactElement[42]; // 6 rows * 7 days
             var today = DateTime.Now;
@@ -319,8 +324,16 @@ namespace Dashboard.Pages
                 }
                 else
                 {
-                    var appointments = GetAppointmentsForDay(state.Appointments, state.Year, state.Month, dayNum);
-                    var isToday = state.Year == today.Year && state.Month == today.Month && dayNum == today.Day;
+                    var appointments = GetAppointmentsForDay(
+                        state.Appointments,
+                        state.Year,
+                        state.Month,
+                        dayNum
+                    );
+                    var isToday =
+                        state.Year == today.Year
+                        && state.Month == today.Month
+                        && dayNum == today.Day;
                     var isSelected = dayNum == state.SelectedDay;
                     var dayNumCaptured = dayNum;
 
@@ -344,7 +357,10 @@ namespace Dashboard.Pages
                             appointments.Length > 0
                                 ? Div(
                                     className: "calendar-appointments-preview",
-                                    children: appointments.Take(3).Select(a => RenderAppointmentDot(a)).ToArray()
+                                    children: appointments
+                                        .Take(3)
+                                        .Select(a => RenderAppointmentDot(a))
+                                        .ToArray()
                                 )
                                 : null,
                             appointments.Length > 3
@@ -362,14 +378,8 @@ namespace Dashboard.Pages
                 className: "card calendar-grid-container",
                 children: new[]
                 {
-                    Div(
-                        className: "calendar-grid-header grid grid-cols-7",
-                        children: headerCells
-                    ),
-                    Div(
-                        className: "calendar-grid grid grid-cols-7",
-                        children: dayCells
-                    ),
+                    Div(className: "calendar-grid-header grid grid-cols-7", children: headerCells),
+                    Div(className: "calendar-grid grid grid-cols-7", children: dayCells),
                 }
             );
         }
@@ -391,11 +401,7 @@ namespace Dashboard.Pages
             return Span(className: dotClass);
         }
 
-        private static void SelectDay(
-            CalendarState state,
-            Action<CalendarState> setState,
-            int day
-        )
+        private static void SelectDay(CalendarState state, Action<CalendarState> setState, int day)
         {
             setState(
                 new CalendarState
@@ -496,7 +502,9 @@ namespace Dashboard.Pages
                         )
                         : Div(
                             className: "p-4 space-y-3",
-                            children: appointments.Select(a => RenderDayAppointment(a, onEditAppointment)).ToArray()
+                            children: appointments
+                                .Select(a => RenderDayAppointment(a, onEditAppointment))
+                                .ToArray()
                         ),
                 }
             );
@@ -524,7 +532,10 @@ namespace Dashboard.Pages
                                 {
                                     Div(
                                         className: "font-semibold",
-                                        children: new[] { Text(appointment.ServiceType ?? "Appointment") }
+                                        children: new[]
+                                        {
+                                            Text(appointment.ServiceType ?? "Appointment"),
+                                        }
                                     ),
                                     Div(
                                         className: "text-sm text-gray-500",
@@ -542,8 +553,23 @@ namespace Dashboard.Pages
                         className: "text-sm text-gray-600 mb-2",
                         children: new[]
                         {
-                            Div(children: new[] { Text("Patient: " + FormatReference(appointment.PatientReference)) }),
-                            Div(children: new[] { Text("Provider: " + FormatReference(appointment.PractitionerReference)) }),
+                            Div(
+                                children: new[]
+                                {
+                                    Text(
+                                        "Patient: " + FormatReference(appointment.PatientReference)
+                                    ),
+                                }
+                            ),
+                            Div(
+                                children: new[]
+                                {
+                                    Text(
+                                        "Provider: "
+                                            + FormatReference(appointment.PractitionerReference)
+                                    ),
+                                }
+                            ),
                         }
                     ),
                     Div(

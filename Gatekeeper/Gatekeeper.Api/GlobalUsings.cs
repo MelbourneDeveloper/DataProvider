@@ -19,6 +19,11 @@ global using GetChallengeByIdOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetChallengeById>,
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.GetChallengeById>, Selecta.SqlError>;
+// Additional query result type aliases
+global using GetCredentialByIdOk = Outcome.Result<
+    System.Collections.Immutable.ImmutableList<Generated.GetCredentialById>,
+    Selecta.SqlError
+>.Ok<System.Collections.Immutable.ImmutableList<Generated.GetCredentialById>, Selecta.SqlError>;
 global using GetSessionByIdOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetSessionById>,
     Selecta.SqlError
@@ -28,11 +33,6 @@ global using GetUserByEmailOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetUserByEmail>,
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.GetUserByEmail>, Selecta.SqlError>;
-// Additional query result type aliases
-global using GetCredentialByIdOk = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.GetCredentialById>,
-    Selecta.SqlError
->.Ok<System.Collections.Immutable.ImmutableList<Generated.GetCredentialById>, Selecta.SqlError>;
 global using GetUserByIdOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetUserById>,
     Selecta.SqlError

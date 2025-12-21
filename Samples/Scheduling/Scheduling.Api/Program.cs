@@ -335,21 +335,21 @@ app.MapPut(
         using var cmd = conn.CreateCommand();
         cmd.Transaction = transaction;
         cmd.CommandText = """
-            UPDATE fhir_Appointment
-            SET ServiceCategory = @serviceCategory,
-                ServiceType = @serviceType,
-                ReasonCode = @reasonCode,
-                Priority = @priority,
-                Description = @description,
-                StartTime = @start,
-                EndTime = @end,
-                MinutesDuration = @duration,
-                PatientReference = @patientRef,
-                PractitionerReference = @practitionerRef,
-                Comment = @comment,
-                Status = @status
-            WHERE Id = @id
-            """;
+        UPDATE fhir_Appointment
+        SET ServiceCategory = @serviceCategory,
+            ServiceType = @serviceType,
+            ReasonCode = @reasonCode,
+            Priority = @priority,
+            Description = @description,
+            StartTime = @start,
+            EndTime = @end,
+            MinutesDuration = @duration,
+            PatientReference = @patientRef,
+            PractitionerReference = @practitionerRef,
+            Comment = @comment,
+            Status = @status
+        WHERE Id = @id
+        """;
         cmd.Parameters.AddWithValue("@id", id);
         cmd.Parameters.AddWithValue("@serviceCategory", request.ServiceCategory ?? string.Empty);
         cmd.Parameters.AddWithValue("@serviceType", request.ServiceType ?? string.Empty);

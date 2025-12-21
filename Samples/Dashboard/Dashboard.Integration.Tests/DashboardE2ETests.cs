@@ -270,21 +270,13 @@ public sealed class E2EFixture : IAsyncLifetime
         {
             try
             {
-                // Try to hit the login/begin endpoint with an empty POST
-                // API returns 400 if user not registered, which is valid (API is working)
+                // Discoverable credentials flow - empty body returns valid options
                 var response = await client.PostAsync(
                     $"{GatekeeperUrl}/auth/login/begin",
-                    new StringContent(
-                        """{"Email": "test@test.com"}""",
-                        System.Text.Encoding.UTF8,
-                        "application/json"
-                    )
+                    new StringContent("{}", System.Text.Encoding.UTF8, "application/json")
                 );
-                // Accept 200 (success) or 400 (user not registered) - both mean API is running
-                if (
-                    response.IsSuccessStatusCode
-                    || response.StatusCode == HttpStatusCode.BadRequest
-                )
+                // 200 OK means API is running and discoverable credentials work
+                if (response.IsSuccessStatusCode)
                     return;
             }
             catch
@@ -294,7 +286,9 @@ public sealed class E2EFixture : IAsyncLifetime
             await Task.Delay(500);
         }
 
-        throw new TimeoutException($"Gatekeeper API at {GatekeeperUrl} did not start within {maxRetries * 500}ms");
+        throw new TimeoutException(
+            $"Gatekeeper API at {GatekeeperUrl} did not start within {maxRetries * 500}ms"
+        );
     }
 
     private static IHost CreateDashboardHost()
@@ -1700,7 +1694,10 @@ public sealed class DashboardE2ETests
         // First create an appointment to edit
         var uniqueServiceType = $"EditApptTest{DateTime.UtcNow.Ticks % 100000}";
         var startTime = DateTime.UtcNow.AddDays(7).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-        var endTime = DateTime.UtcNow.AddDays(7).AddMinutes(30).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var endTime = DateTime
+            .UtcNow.AddDays(7)
+            .AddMinutes(30)
+            .ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
         var createResponse = await client.PostAsync(
             $"{E2EFixture.SchedulingUrl}/Appointment",
             new StringContent(
@@ -1824,8 +1821,24 @@ public sealed class DashboardE2ETests
 
         // Create an appointment for today - use LOCAL time since browser calendar uses local timezone
         var today = DateTime.Now;
-        var startTime = new DateTime(today.Year, today.Month, today.Day, 14, 0, 0, DateTimeKind.Local).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-        var endTime = new DateTime(today.Year, today.Month, today.Day, 14, 30, 0, DateTimeKind.Local).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var startTime = new DateTime(
+            today.Year,
+            today.Month,
+            today.Day,
+            14,
+            0,
+            0,
+            DateTimeKind.Local
+        ).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var endTime = new DateTime(
+            today.Year,
+            today.Month,
+            today.Day,
+            14,
+            30,
+            0,
+            DateTimeKind.Local
+        ).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
         var uniqueServiceType = $"CalTest{DateTime.Now.Ticks % 100000}";
 
         var createResponse = await client.PostAsync(
@@ -1837,7 +1850,9 @@ public sealed class DashboardE2ETests
             )
         );
         createResponse.EnsureSuccessStatusCode();
-        Console.WriteLine($"[TEST] Created appointment with ServiceType: {uniqueServiceType}, Start: {startTime}");
+        Console.WriteLine(
+            $"[TEST] Created appointment with ServiceType: {uniqueServiceType}, Start: {startTime}"
+        );
 
         var page = await _fixture.Browser!.NewPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
@@ -1899,8 +1914,24 @@ public sealed class DashboardE2ETests
 
         // Create an appointment for today
         var today = DateTime.UtcNow;
-        var startTime = new DateTime(today.Year, today.Month, today.Day, 15, 0, 0, DateTimeKind.Utc).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-        var endTime = new DateTime(today.Year, today.Month, today.Day, 15, 30, 0, DateTimeKind.Utc).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var startTime = new DateTime(
+            today.Year,
+            today.Month,
+            today.Day,
+            15,
+            0,
+            0,
+            DateTimeKind.Utc
+        ).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var endTime = new DateTime(
+            today.Year,
+            today.Month,
+            today.Day,
+            15,
+            30,
+            0,
+            DateTimeKind.Utc
+        ).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
         var uniqueServiceType = $"CalEdit{DateTime.UtcNow.Ticks % 100000}";
 
         var createResponse = await client.PostAsync(
@@ -2050,21 +2081,14 @@ public sealed class DashboardE2ETests
     }
 
     /// <summary>
-    /// CRITICAL TEST: Login page sign-in flow must NOT throw JSON parsing errors.
-    /// This test catches the "undefined is not valid JSON" bug.
-    /// Bug: Dashboard does JSON.parse(beginData.OptionsJson) but API returns Options (not OptionsJson).
+    /// CRITICAL TEST: Login page uses discoverable credentials (no email required).
+    /// The login page should NOT show an email field for sign-in mode.
     /// </summary>
     [Fact]
-    public async Task LoginPage_SignIn_DoesNotThrowJsonParseError()
+    public async Task LoginPage_DoesNotRequireEmailForSignIn()
     {
         var page = await _fixture.Browser!.NewPageAsync();
-        var consoleErrors = new List<string>();
-        page.Console += (_, msg) =>
-        {
-            Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
-            if (msg.Type == "error")
-                consoleErrors.Add(msg.Text);
-        };
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
 
         // Navigate to Dashboard WITHOUT testMode - should show login page
         await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
@@ -2080,39 +2104,268 @@ public sealed class DashboardE2ETests
         Assert.Contains("Healthcare Dashboard", pageContent);
         Assert.Contains("Sign in with your passkey", pageContent);
 
-        // Enter email
-        await page.FillAsync("input[type='email']", "test@example.com");
+        // CRITICAL: Login mode should NOT have email input field
+        // Email is only needed for registration, not for discoverable credential login
+        var emailInputVisible = await page.IsVisibleAsync("input[type='email']");
+        Assert.False(
+            emailInputVisible,
+            "Login mode should NOT show email field - discoverable credentials don't need email!"
+        );
 
-        // Click Sign in with Passkey - this triggers the auth flow
-        // The flow calls /auth/login/begin which returns { ChallengeId, Options }
-        // Dashboard code does: JSON.parse(beginData.OptionsJson) -- OptionsJson is UNDEFINED!
-        // This causes "undefined is not valid JSON" error
-        await page.ClickAsync("button[type='submit']");
+        // Should have a sign-in button
+        var signInButton = page.Locator("button:has-text('Sign in with Passkey')");
+        await signInButton.WaitForAsync(new LocatorWaitForOptions { Timeout = 5000 });
+        Assert.True(await signInButton.IsVisibleAsync());
 
-        // Wait for the auth flow to attempt and potentially error
-        await Task.Delay(2000);
+        await page.CloseAsync();
+    }
 
-        // Check if there's a JSON parsing error shown in the UI
+    /// <summary>
+    /// CRITICAL TEST: Registration page requires email and display name.
+    /// </summary>
+    [Fact]
+    public async Task LoginPage_RegistrationRequiresEmailAndDisplayName()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
+
+        // Navigate to Dashboard WITHOUT testMode
+        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
+
+        // Wait for login page
+        await page.WaitForSelectorAsync(
+            ".login-card",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Click "Register" to switch to registration mode
+        await page.ClickAsync("button:has-text('Register')");
+        await Task.Delay(500);
+
+        // Verify we're in registration mode
+        var pageContent = await page.ContentAsync();
+        Assert.Contains("Create your account", pageContent);
+
+        // Registration mode SHOULD have email and display name fields
+        var emailInput = page.Locator("input[type='email']");
+        var displayNameInput = page.Locator("input#displayName");
+
+        Assert.True(await emailInput.IsVisibleAsync(), "Registration mode should have email input");
+        Assert.True(
+            await displayNameInput.IsVisibleAsync(),
+            "Registration mode should have display name input"
+        );
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Gatekeeper API /auth/login/begin returns valid response for discoverable credentials.
+    /// This verifies the API contract: empty body should return { ChallengeId, OptionsJson }.
+    /// </summary>
+    [Fact]
+    public async Task GatekeeperApi_LoginBegin_ReturnsValidDiscoverableCredentialOptions()
+    {
+        using var client = new HttpClient();
+
+        // Call /auth/login/begin with empty body (discoverable credentials flow)
+        var response = await client.PostAsync(
+            $"{E2EFixture.GatekeeperUrl}/auth/login/begin",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json")
+        );
+
+        // Should return 200 OK
+        Assert.True(
+            response.IsSuccessStatusCode,
+            $"Expected 200 OK but got {response.StatusCode}: {await response.Content.ReadAsStringAsync()}"
+        );
+
+        var json = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"[API TEST] Response: {json}");
+
+        // Parse and verify response structure
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        // Must have ChallengeId
+        Assert.True(
+            root.TryGetProperty("ChallengeId", out var challengeId),
+            "Response must have ChallengeId property"
+        );
+        Assert.False(
+            string.IsNullOrEmpty(challengeId.GetString()),
+            "ChallengeId must not be empty"
+        );
+
+        // Must have OptionsJson (string containing JSON)
+        Assert.True(
+            root.TryGetProperty("OptionsJson", out var optionsJson),
+            "Response must have OptionsJson property"
+        );
+        var optionsJsonStr = optionsJson.GetString();
+        Assert.False(string.IsNullOrEmpty(optionsJsonStr), "OptionsJson must not be empty");
+
+        // OptionsJson should be valid JSON that can be parsed
+        using var optionsDoc = System.Text.Json.JsonDocument.Parse(optionsJsonStr!);
+        var options = optionsDoc.RootElement;
+
+        // Verify critical WebAuthn fields
+        Assert.True(options.TryGetProperty("challenge", out _), "Options must have challenge");
+        Assert.True(options.TryGetProperty("rpId", out _), "Options must have rpId");
+
+        // For discoverable credentials, allowCredentials should be empty array
+        if (options.TryGetProperty("allowCredentials", out var allowCreds))
+        {
+            Assert.Equal(System.Text.Json.JsonValueKind.Array, allowCreds.ValueKind);
+            Assert.Equal(0, allowCreds.GetArrayLength());
+            Console.WriteLine(
+                "[API TEST] allowCredentials is empty array - correct for discoverable credentials!"
+            );
+        }
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Gatekeeper API /auth/register/begin returns valid response.
+    /// </summary>
+    [Fact]
+    public async Task GatekeeperApi_RegisterBegin_ReturnsValidOptions()
+    {
+        using var client = new HttpClient();
+
+        // Call /auth/register/begin with email and display name
+        var response = await client.PostAsync(
+            $"{E2EFixture.GatekeeperUrl}/auth/register/begin",
+            new StringContent(
+                """{"Email": "test-e2e@example.com", "DisplayName": "E2E Test User"}""",
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
+
+        // Should return 200 OK
+        Assert.True(
+            response.IsSuccessStatusCode,
+            $"Expected 200 OK but got {response.StatusCode}: {await response.Content.ReadAsStringAsync()}"
+        );
+
+        var json = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"[API TEST] Response: {json}");
+
+        // Parse and verify response structure
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        // Must have ChallengeId
+        Assert.True(
+            root.TryGetProperty("ChallengeId", out var challengeId),
+            "Response must have ChallengeId property"
+        );
+        Assert.False(
+            string.IsNullOrEmpty(challengeId.GetString()),
+            "ChallengeId must not be empty"
+        );
+
+        // Must have OptionsJson
+        Assert.True(
+            root.TryGetProperty("OptionsJson", out var optionsJson),
+            "Response must have OptionsJson property"
+        );
+        var optionsJsonStr = optionsJson.GetString();
+        Assert.False(string.IsNullOrEmpty(optionsJsonStr), "OptionsJson must not be empty");
+
+        // OptionsJson should be valid JSON
+        using var optionsDoc = System.Text.Json.JsonDocument.Parse(optionsJsonStr!);
+        var options = optionsDoc.RootElement;
+
+        // Verify critical WebAuthn registration fields
+        Assert.True(options.TryGetProperty("challenge", out _), "Options must have challenge");
+        Assert.True(options.TryGetProperty("rp", out _), "Options must have rp (relying party)");
+        Assert.True(options.TryGetProperty("user", out _), "Options must have user");
+        Assert.True(
+            options.TryGetProperty("pubKeyCredParams", out _),
+            "Options must have pubKeyCredParams"
+        );
+
+        // Verify resident key is required for discoverable credentials
+        if (options.TryGetProperty("authenticatorSelection", out var authSelection))
+        {
+            if (authSelection.TryGetProperty("residentKey", out var residentKey))
+            {
+                Assert.Equal("required", residentKey.GetString());
+                Console.WriteLine(
+                    "[API TEST] residentKey is 'required' - correct for discoverable credentials!"
+                );
+            }
+        }
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Dashboard sign-in flow calls API and handles response correctly.
+    /// Tests the full flow: button click -> API call -> no JSON parse errors.
+    /// </summary>
+    [Fact]
+    public async Task LoginPage_SignInButton_CallsApiWithoutJsonErrors()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        var consoleErrors = new List<string>();
+        var networkRequests = new List<string>();
+
+        page.Console += (_, msg) =>
+        {
+            Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
+            if (msg.Type == "error")
+                consoleErrors.Add(msg.Text);
+        };
+
+        page.Request += (_, request) =>
+        {
+            if (request.Url.Contains("/auth/"))
+            {
+                networkRequests.Add($"{request.Method} {request.Url}");
+                Console.WriteLine($"[NETWORK] {request.Method} {request.Url}");
+            }
+        };
+
+        // Navigate to Dashboard WITHOUT testMode
+        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
+
+        // Wait for login page
+        await page.WaitForSelectorAsync(
+            ".login-card",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Click Sign in with Passkey button
+        await page.ClickAsync("button:has-text('Sign in with Passkey')");
+
+        // Wait for API call and potential error handling
+        await Task.Delay(3000);
+
+        // Verify the API was called
+        Assert.Contains(networkRequests, r => r.Contains("/auth/login/begin"));
+
+        // Check for JSON parse errors in console
+        var hasJsonParseError = consoleErrors.Any(e =>
+            e.Contains("undefined") || e.Contains("is not valid JSON") || e.Contains("SyntaxError")
+        );
+
+        // Check for JSON parse errors in UI
         var errorVisible = await page.IsVisibleAsync(".login-error");
         var errorText = errorVisible ? await page.TextContentAsync(".login-error") : null;
-        Console.WriteLine($"[AUTH TEST] Error visible: {errorVisible}, text: {errorText}");
 
-        // Check for JSON parse errors - these indicate the bug
-        var hasJsonParseError =
-            (errorText?.Contains("undefined") == true)
-            || (errorText?.Contains("is not valid JSON") == true)
-            || (errorText?.Contains("SyntaxError") == true)
-            || consoleErrors.Any(e =>
-                e.Contains("undefined") || e.Contains("JSON") || e.Contains("SyntaxError")
-            );
+        var hasUiJsonError =
+            errorText?.Contains("undefined") == true
+            || errorText?.Contains("is not valid JSON") == true
+            || errorText?.Contains("SyntaxError") == true;
 
-        // TEST MUST FAIL if there's a JSON parse error
-        // The fix is to change Dashboard code from JSON.parse(beginData.OptionsJson)
-        // to use beginData.Options directly (it's already an object, not a string)
         Assert.False(
-            hasJsonParseError,
-            $"Sign-in threw JSON parse error! Dashboard expects OptionsJson but API returns Options. Error: {errorText}"
+            hasJsonParseError || hasUiJsonError,
+            $"Sign-in flow had JSON parse errors! Console: [{string.Join(", ", consoleErrors)}], UI: [{errorText}]"
         );
+
+        // The WebAuthn prompt will fail in headless mode (no authenticator), but that's expected
+        // The important thing is no JSON parsing errors
+        Console.WriteLine($"[TEST] API called, no JSON errors. UI error (expected): {errorText}");
 
         await page.CloseAsync();
     }

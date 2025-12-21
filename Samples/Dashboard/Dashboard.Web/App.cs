@@ -174,7 +174,10 @@ namespace Dashboard
             }
 
             // Handle editing appointment
-            if ((view == "appointments" || view == "calendar") && state.EditingAppointmentId != null)
+            if (
+                (view == "appointments" || view == "calendar")
+                && state.EditingAppointmentId != null
+            )
             {
                 return EditAppointmentPage.Render(
                     state.EditingAppointmentId,

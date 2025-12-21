@@ -78,7 +78,11 @@ namespace Dashboard.Pages
             }
             else
             {
-                content = RenderAppointmentList(state.Appointments, state.StatusFilter, onEditAppointment);
+                content = RenderAppointmentList(
+                    state.Appointments,
+                    state.StatusFilter,
+                    onEditAppointment
+                );
             }
 
             return Div(
@@ -328,13 +332,16 @@ namespace Dashboard.Pages
             Action<string> onEditAppointment
         )
         {
-            var filtered = statusFilter == null
-                ? appointments
-                : appointments.Where(a => a.Status == statusFilter).ToArray();
+            var filtered =
+                statusFilter == null
+                    ? appointments
+                    : appointments.Where(a => a.Status == statusFilter).ToArray();
 
             return Div(
                 className: "data-list",
-                children: filtered.Select(a => RenderAppointmentCard(a, onEditAppointment)).ToArray()
+                children: filtered
+                    .Select(a => RenderAppointmentCard(a, onEditAppointment))
+                    .ToArray()
             );
         }
 
