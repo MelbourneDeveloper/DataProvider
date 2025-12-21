@@ -2,7 +2,8 @@ namespace Gatekeeper.Api.Tests;
 
 using System.Globalization;
 using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Gatekeeper.Api;
 
 /// <summary>
 /// Integration tests for Gatekeeper authorization endpoints.
@@ -50,7 +51,7 @@ public sealed class AuthorizationTests : IClassFixture<GatekeeperTestFixture>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         var doc = JsonDocument.Parse(content);
-        Assert.True(doc.RootElement.GetProperty("Allowed").GetBoolean());
+        Assert.True(doc.RootElement.GetProperty("Allowed").GetBoolean(), $"Response: {content}");
         Assert.Contains("user:profile", doc.RootElement.GetProperty("Reason").GetString());
     }
 
@@ -340,36 +341,30 @@ public sealed class AuthorizationTests : IClassFixture<GatekeeperTestFixture>
 public sealed class GatekeeperTestFixture : IDisposable
 {
     private readonly WebApplicationFactory<Program> _factory;
-    private readonly string _connectionString;
     private readonly byte[] _signingKey;
 
     public GatekeeperTestFixture()
     {
-        var dbPath = Path.Combine(Path.GetTempPath(), $"gatekeeper-test-{Guid.NewGuid()}.db");
-        _connectionString = $"Data Source={dbPath};Foreign Keys=True";
+        // Use full absolute path for the test database
+        var dbPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"gatekeeper-test-{Guid.NewGuid()}.db"));
         _signingKey = new byte[32];
 
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
-            builder.ConfigureAppConfiguration(
-                (_, config) =>
-                {
-                    config.AddInMemoryCollection(
-                        new Dictionary<string, string?>
-                        {
-                            ["DbPath"] = dbPath,
-                            ["Jwt:SigningKey"] = Convert.ToBase64String(_signingKey),
-                        }
-                    );
-                }
-            );
+            builder.UseSetting("DbPath", dbPath);
+            builder.UseSetting("Jwt:SigningKey", Convert.ToBase64String(_signingKey));
         });
 
-        // Make a request to trigger database initialization before direct DB access
+        // Initialize database by making HTTP requests through the factory
+        // This ensures the app creates and seeds the database before we access it directly
         using var client = _factory.CreateClient();
-        // Wait for schema to be created by making a simple request
-        client.GetAsync("/auth/session").GetAwaiter().GetResult();
+        // Make a request that forces full app initialization
+        _ = client.PostAsJsonAsync("/auth/login/begin", new { }).GetAwaiter().GetResult();
     }
+
+    /// <summary>Gets the connection string from the app's DbConfig singleton.</summary>
+    private string GetConnectionString() =>
+        _factory.Services.GetRequiredService<DbConfig>().ConnectionString;
 
     /// <summary>Creates a fresh HTTP client for testing.</summary>
     public HttpClient CreateClient() => _factory.CreateClient();
@@ -389,25 +384,33 @@ public sealed class GatekeeperTestFixture : IDisposable
     /// </summary>
     public async Task<(string Token, string UserId)> CreateTestUserAndGetTokenWithId(string email)
     {
-        using var conn = new SqliteConnection(_connectionString);
+        using var conn = new SqliteConnection(GetConnectionString());
         await conn.OpenAsync().ConfigureAwait(false);
 
         var userId = Guid.NewGuid().ToString();
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
 
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = """
-            INSERT OR IGNORE INTO gk_user (id, display_name, email, created_at, is_active)
-            VALUES (@id, @name, @email, @now, 1);
-
-            INSERT OR IGNORE INTO gk_user_role (user_id, role_id, granted_at)
-            VALUES (@id, 'role-user', @now);
+        // Insert user
+        using var userCmd = conn.CreateCommand();
+        userCmd.CommandText = """
+            INSERT INTO gk_user (id, display_name, email, created_at, is_active)
+            VALUES (@id, @name, @email, @now, 1)
             """;
-        cmd.Parameters.AddWithValue("@id", userId);
-        cmd.Parameters.AddWithValue("@name", "Test User");
-        cmd.Parameters.AddWithValue("@email", email);
-        cmd.Parameters.AddWithValue("@now", now);
-        await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        userCmd.Parameters.AddWithValue("@id", userId);
+        userCmd.Parameters.AddWithValue("@name", "Test User");
+        userCmd.Parameters.AddWithValue("@email", email);
+        userCmd.Parameters.AddWithValue("@now", now);
+        await userCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+
+        // Link user to role
+        using var roleCmd = conn.CreateCommand();
+        roleCmd.CommandText = """
+            INSERT INTO gk_user_role (user_id, role_id, granted_at)
+            VALUES (@id, 'role-user', @now)
+            """;
+        roleCmd.Parameters.AddWithValue("@id", userId);
+        roleCmd.Parameters.AddWithValue("@now", now);
+        await roleCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
 
         var token = TokenService.CreateToken(
             userId,
@@ -426,25 +429,33 @@ public sealed class GatekeeperTestFixture : IDisposable
     /// </summary>
     public async Task<string> CreateAdminUserAndGetToken(string email)
     {
-        using var conn = new SqliteConnection(_connectionString);
+        using var conn = new SqliteConnection(GetConnectionString());
         await conn.OpenAsync().ConfigureAwait(false);
 
         var userId = Guid.NewGuid().ToString();
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
 
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = """
-            INSERT OR IGNORE INTO gk_user (id, display_name, email, created_at, is_active)
-            VALUES (@id, @name, @email, @now, 1);
-
-            INSERT OR IGNORE INTO gk_user_role (user_id, role_id, granted_at)
-            VALUES (@id, 'role-admin', @now);
+        // Insert user
+        using var userCmd = conn.CreateCommand();
+        userCmd.CommandText = """
+            INSERT INTO gk_user (id, display_name, email, created_at, is_active)
+            VALUES (@id, @name, @email, @now, 1)
             """;
-        cmd.Parameters.AddWithValue("@id", userId);
-        cmd.Parameters.AddWithValue("@name", "Admin User");
-        cmd.Parameters.AddWithValue("@email", email);
-        cmd.Parameters.AddWithValue("@now", now);
-        await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        userCmd.Parameters.AddWithValue("@id", userId);
+        userCmd.Parameters.AddWithValue("@name", "Admin User");
+        userCmd.Parameters.AddWithValue("@email", email);
+        userCmd.Parameters.AddWithValue("@now", now);
+        await userCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+
+        // Link user to admin role
+        using var roleCmd = conn.CreateCommand();
+        roleCmd.CommandText = """
+            INSERT INTO gk_user_role (user_id, role_id, granted_at)
+            VALUES (@id, 'role-admin', @now)
+            """;
+        roleCmd.Parameters.AddWithValue("@id", userId);
+        roleCmd.Parameters.AddWithValue("@now", now);
+        await roleCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
 
         var token = TokenService.CreateToken(
             userId,
@@ -468,7 +479,7 @@ public sealed class GatekeeperTestFixture : IDisposable
         string permissionCode
     )
     {
-        using var conn = new SqliteConnection(_connectionString);
+        using var conn = new SqliteConnection(GetConnectionString());
         await conn.OpenAsync().ConfigureAwait(false);
 
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
@@ -516,7 +527,7 @@ public sealed class GatekeeperTestFixture : IDisposable
         string permissionCode
     )
     {
-        using var conn = new SqliteConnection(_connectionString);
+        using var conn = new SqliteConnection(GetConnectionString());
         await conn.OpenAsync().ConfigureAwait(false);
 
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);

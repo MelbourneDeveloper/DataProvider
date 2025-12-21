@@ -342,13 +342,28 @@ public sealed class TokenServiceTests
         using var conn = CreateInMemoryDb();
 
         var jti = Guid.NewGuid().ToString();
+        var userId = "user-test";
+
+        // Insert user first (foreign key requirement)
+        using var userCmd = conn.CreateCommand();
+        userCmd.CommandText = """
+            INSERT INTO gk_user (id, display_name, created_at)
+            VALUES (@userId, 'Test User', @now);
+            """;
+        userCmd.Parameters.AddWithValue("@userId", userId);
+        userCmd.Parameters.AddWithValue(
+            "@now",
+            DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
+        );
+        await userCmd.ExecuteNonQueryAsync();
 
         // Insert session
         using var insertCmd = conn.CreateCommand();
         insertCmd.CommandText = """
             INSERT INTO gk_session (id, user_id, created_at, expires_at, last_activity_at, is_revoked)
-            VALUES (@jti, 'user-test', @now, @exp, @now, 0);
+            VALUES (@jti, @userId, @now, @exp, @now, 0);
             """;
+        insertCmd.Parameters.AddWithValue("@userId", userId);
         insertCmd.Parameters.AddWithValue("@jti", jti);
         insertCmd.Parameters.AddWithValue(
             "@now",
