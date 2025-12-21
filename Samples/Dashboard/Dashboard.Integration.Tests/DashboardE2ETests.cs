@@ -2371,7 +2371,7 @@ public sealed class DashboardE2ETests
     }
 
     [Fact]
-    public async Task SignOutButton_IsVisibleInSidebar()
+    public async Task UserMenu_ClickShowsDropdownWithSignOut()
     {
         var page = await _fixture.Browser!.NewPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
@@ -2382,13 +2382,25 @@ public sealed class DashboardE2ETests
             new PageWaitForSelectorOptions { Timeout = 20000 }
         );
 
-        // Sign out button should be visible in the sidebar footer
+        // User menu button should be visible in header
+        var userMenuButton = await page.QuerySelectorAsync("[data-testid='user-menu-button']");
+        Assert.NotNull(userMenuButton);
+
+        // Click the user menu button to open dropdown
+        await userMenuButton.ClickAsync();
+
+        // Wait for dropdown to appear
+        await page.WaitForSelectorAsync(
+            "[data-testid='user-dropdown']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+
+        // Sign out button should be visible in the dropdown
         var signOutButton = await page.QuerySelectorAsync("[data-testid='logout-button']");
         Assert.NotNull(signOutButton);
 
-        // Verify the button is visible
         var isVisible = await signOutButton.IsVisibleAsync();
-        Assert.True(isVisible, "Sign out button should be visible in sidebar");
+        Assert.True(isVisible, "Sign out button should be visible in dropdown menu");
 
         await page.CloseAsync();
     }
@@ -2423,7 +2435,16 @@ public sealed class DashboardE2ETests
             new PageWaitForSelectorOptions { Timeout = 20000 }
         );
 
-        // Click sign out button
+        // Click user menu button in header to open dropdown
+        await page.ClickAsync("[data-testid='user-menu-button']");
+
+        // Wait for dropdown to appear
+        await page.WaitForSelectorAsync(
+            "[data-testid='user-dropdown']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+
+        // Click sign out button in dropdown
         await page.ClickAsync("[data-testid='logout-button']");
 
         // Should show login page after sign out
@@ -2464,7 +2485,7 @@ public sealed class DashboardE2ETests
     }
 
     [Fact]
-    public async Task SignOutButton_DisplaysUserInitials()
+    public async Task UserMenu_DisplaysUserInitialsAndNameInDropdown()
     {
         var page = await _fixture.Browser!.NewPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
@@ -2490,13 +2511,115 @@ public sealed class DashboardE2ETests
             new PageWaitForSelectorOptions { Timeout = 20000 }
         );
 
-        // Verify the user's name is displayed
-        var userNameText = await page.TextContentAsync(".sidebar-user-name");
+        // Verify initials in header avatar button (should be "AS" for Alice Smith)
+        var avatarText = await page.TextContentAsync("[data-testid='user-menu-button']");
+        Assert.Equal("AS", avatarText?.Trim());
+
+        // Click the user menu button to open dropdown
+        await page.ClickAsync("[data-testid='user-menu-button']");
+
+        // Wait for dropdown to appear
+        await page.WaitForSelectorAsync(
+            "[data-testid='user-dropdown']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+
+        // Verify the user's name is displayed in dropdown header
+        var userNameText = await page.TextContentAsync(".user-dropdown-name");
         Assert.Contains("Alice Smith", userNameText);
 
-        // Verify initials in avatar (should be "AS" for Alice Smith)
-        var avatarText = await page.TextContentAsync(".sidebar-user .avatar");
-        Assert.Equal("AS", avatarText?.Trim());
+        // Verify email is displayed
+        var emailText = await page.TextContentAsync(".user-dropdown-email");
+        Assert.Contains("alice@example.com", emailText);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: First-time sign-in must work WITHOUT browser refresh.
+    /// This test simulates a successful WebAuthn login by injecting the token and calling
+    /// the onLogin callback, then verifies the app transitions to dashboard immediately.
+    /// BUG: Previously, first-time sign-in required a page refresh to work.
+    /// </summary>
+    [Fact]
+    public async Task FirstTimeSignIn_TransitionsToDashboard_WithoutRefresh()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
+
+        // Navigate to Dashboard WITHOUT testMode - should show login page
+        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
+
+        // Wait for login page to appear
+        await page.WaitForSelectorAsync(
+            "[data-testid='login-page']",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Verify we're on the login page
+        var loginPageVisible = await page.IsVisibleAsync("[data-testid='login-page']");
+        Assert.True(loginPageVisible, "Should start on login page");
+
+        // Simulate what happens after successful WebAuthn authentication:
+        // 1. Token is stored in localStorage
+        // 2. onLogin callback is called which sets isAuthenticated=true
+        // This is what the LoginPage component does after successful auth (lines 2250-2252 in index.html)
+        await page.EvaluateAsync(
+            @"() => {
+                // Store token and user (what setAuthToken and setAuthUser do)
+                localStorage.setItem('gatekeeper_token', 'simulated-jwt-token');
+                localStorage.setItem('gatekeeper_user', JSON.stringify({
+                    userId: 'test-user-123',
+                    displayName: 'Test User',
+                    email: 'test@example.com'
+                }));
+
+                // Trigger the React state update by finding and calling the onLogin prop
+                // This simulates what happens when LoginPage calls onLogin({ userId, displayName, email })
+                // The App component's handleLogin sets isAuthenticated=true
+
+                // We need to dispatch a custom event that the app listens for,
+                // OR we can use window.__loginCallback if exposed for testing
+                if (window.__triggerLogin) {
+                    window.__triggerLogin({
+                        userId: 'test-user-123',
+                        displayName: 'Test User',
+                        email: 'test@example.com'
+                    });
+                }
+            }"
+        );
+
+        // Wait a bit for React to re-render
+        await Task.Delay(500);
+
+        // Check if sidebar is now visible (indicates successful transition to dashboard)
+        // If this times out, the bug exists - app didn't transition without refresh
+        try
+        {
+            await page.WaitForSelectorAsync(
+                ".sidebar",
+                new PageWaitForSelectorOptions { Timeout = 5000 }
+            );
+
+            // Verify login page is gone
+            var loginPageStillVisible = await page.IsVisibleAsync("[data-testid='login-page']");
+            Assert.False(loginPageStillVisible, "Login page should be hidden after successful login");
+
+            // Verify sidebar is visible (dashboard state)
+            var sidebarVisible = await page.IsVisibleAsync(".sidebar");
+            Assert.True(sidebarVisible, "Sidebar should be visible after login without refresh");
+        }
+        catch (TimeoutException)
+        {
+            // If we get here, the bug exists - first-time sign-in doesn't work without refresh
+            Assert.Fail(
+                "FIRST-TIME SIGN-IN BUG: App did not transition to dashboard after login. " +
+                "User must refresh the browser for login to take effect. " +
+                "Fix: Expose window.__triggerLogin in App component for testing, " +
+                "or verify onLogin callback properly triggers React state update."
+            );
+        }
 
         await page.CloseAsync();
     }

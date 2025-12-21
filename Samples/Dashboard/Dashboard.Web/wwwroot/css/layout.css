@@ -172,8 +172,10 @@
 }
 
 .sidebar-footer {
-  padding: var(--space-4) var(--space-4);
+  padding: var(--space-4);
+  padding-bottom: var(--space-6);
   border-top: 1px solid var(--gray-100);
+  margin-top: auto;
 }
 
 .sidebar-user {
@@ -221,6 +223,19 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
+  background: var(--red-50, #fef2f2);
+  color: var(--red-600, #dc2626);
+  border: 1px solid var(--red-200, #fecaca);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.sidebar-logout-btn:hover {
+  background: var(--red-100, #fee2e2);
+  border-color: var(--red-300, #fca5a5);
 }
 
 .sidebar.collapsed .sidebar-logout-btn span {

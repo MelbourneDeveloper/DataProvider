@@ -319,16 +319,17 @@ public sealed class SyncEndpointTests
         using var factory = new ClinicalApiFactory();
         var client = factory.CreateClient();
 
-        var response = await client.GetAsync("/sync/records?status=pending");
+        // Records in sync log are "available" for clients to pull
+        var response = await client.GetAsync("/sync/records?status=available");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<JsonElement>();
 
-        // All returned records should have pending status
+        // All returned records should have available status
         var records = result.GetProperty("records");
         foreach (var record in records.EnumerateArray())
         {
-            Assert.Equal("pending", record.GetProperty("status").GetString());
+            Assert.Equal("available", record.GetProperty("status").GetString());
         }
     }
 

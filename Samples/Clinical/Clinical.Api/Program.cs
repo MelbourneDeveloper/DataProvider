@@ -541,11 +541,11 @@ app.MapGet(
     {
         using var conn = getConn();
         var changesResult = SyncLogRepository.FetchChanges(conn, 0, 1000);
-        var (pendingCount, failedCount, lastSyncTime) = changesResult switch
+
+        var (totalCount, lastSyncTime) = changesResult switch
         {
             SyncLogListOk(var logs) => (
-                logs.Count(l => l.Operation == SyncOperation.Insert),
-                0,
+                logs.Count,
                 logs.Count > 0
                     ? logs.Max(l => l.Timestamp)
                     : DateTime.UtcNow.ToString(
@@ -554,7 +554,6 @@ app.MapGet(
                     )
             ),
             SyncLogListError => (
-                0,
                 0,
                 DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture)
             ),
@@ -566,8 +565,8 @@ app.MapGet(
                 service = "Clinical.Api",
                 status = "healthy",
                 lastSyncTime,
-                pendingCount,
-                failedCount,
+                totalRecords = totalCount,
+                failedCount = 0,
             }
         );
     }
@@ -612,12 +611,15 @@ static object BuildSyncRecordsResponse(
     int pageSize
 )
 {
+    // Records in _sync_log are captured changes available for clients to pull.
+    // Status "available" means the record is in the log and ready for sync.
+    // Clients track their own position via fromVersion parameter.
     var records = logs.Select(l => new
     {
         id = l.Version.ToString(CultureInfo.InvariantCulture),
         entityType = l.TableName,
         entityId = l.PkValue,
-        status = "pending",
+        status = "available",
         lastAttempt = l.Timestamp,
         operation = l.Operation,
     });

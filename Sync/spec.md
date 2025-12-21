@@ -398,53 +398,48 @@ Product
 
 ### 7.5 Sync Tracking
 
-To know which records have been synced (preventing re-sync of unchanged data):
+**The client tracks its own sync position.** When pulling changes, the client tells the server which version it last synced to via the `fromVersion` parameter. The server returns all changes after that version.
 
-#### 7.5.1 Tracking Strategies
+#### 7.5.1 Client-Side Position Tracking
 
-| Strategy | Description | Storage |
-|----------|-------------|---------|
-| **version** | Track last synced `_sync_log` version per mapping | `_sync_mapping_state` |
-| **hash** | Store hash of synced payload, resync on change | `_sync_record_hashes` |
-| **timestamp** | Track last sync timestamp per record | Column on source table |
-| **external** | Application manages tracking externally | None |
-
-#### 7.5.2 Tracking Tables
+The client stores its sync position in `_sync_state`:
 
 ```sql
--- Per-mapping sync state (version strategy)
-CREATE TABLE _sync_mapping_state (
-    mapping_id TEXT PRIMARY KEY,
-    last_synced_version INTEGER NOT NULL DEFAULT 0,
-    last_sync_timestamp TEXT NOT NULL,
-    records_synced INTEGER NOT NULL DEFAULT 0
-);
-
--- Per-record hash tracking (hash strategy)
-CREATE TABLE _sync_record_hashes (
-    mapping_id TEXT NOT NULL,
-    source_pk TEXT NOT NULL,           -- JSON pk_value
-    payload_hash TEXT NOT NULL,        -- SHA-256 of canonical JSON
-    synced_at TEXT NOT NULL,
-    PRIMARY KEY (mapping_id, source_pk)
-);
+-- Client tracks its own position
+SELECT value FROM _sync_state WHERE key = 'last_server_version';
+-- Returns: "42" (last version successfully pulled from server)
 ```
+
+When pulling:
+```
+GET /sync/changes?fromVersion=42&limit=100
+```
+
+The server returns changes with version > 42. After successfully applying the batch, the client updates its position:
+
+```sql
+UPDATE _sync_state SET value = '142' WHERE key = 'last_server_version';
+```
+
+#### 7.5.2 Why Client Tracks Position (Not Server)
+
+- **Simplicity**: No server-side per-client state management
+- **Offline-first**: Client knows exactly what it has, even offline
+- **Scalability**: Server doesn't need to track millions of clients
+- **Reliability**: Client is source of truth for its own state
 
 #### 7.5.3 Sync Decision Logic
 
 ```
-For each change in batch:
-1. Look up mapping for source table
-2. If no mapping exists: skip (table not configured for sync)
-3. If mapping.filter exists: evaluate LQL filter, skip if false
-4. Check sync tracking:
-   - version: compare change.version > mapping_state.last_synced_version
-   - hash: compare payload_hash != stored_hash
-   - timestamp: compare change.timestamp > record.last_synced_at
-5. If already synced: skip
-6. Apply column mappings and transformations
-7. Apply to target table(s)
-8. Update sync tracking state
+CLIENT PULL:
+1. Read last_server_version from _sync_state
+2. Request changes from server: GET /sync/changes?fromVersion={last_server_version}
+3. For each change in batch:
+   a. Look up mapping for source table
+   b. If no mapping: skip (or apply identity mapping)
+   c. Apply column mappings and transformations
+   d. Apply to local table(s)
+4. Update last_server_version to max version in batch
 ```
 
 ### 7.6 Direction Control
@@ -978,22 +973,6 @@ INSERT INTO _sync_state VALUES ('origin_id', '');  -- Set on first sync init
 INSERT INTO _sync_state VALUES ('last_server_version', '0');
 INSERT INTO _sync_state VALUES ('last_push_version', '0');
 
--- Mapping sync state (Section 7)
-CREATE TABLE _sync_mapping_state (
-    mapping_id TEXT PRIMARY KEY,
-    last_synced_version INTEGER NOT NULL DEFAULT 0,
-    last_sync_timestamp TEXT NOT NULL,
-    records_synced INTEGER NOT NULL DEFAULT 0
-);
-
--- Per-record hash tracking (Section 7)
-CREATE TABLE _sync_record_hashes (
-    mapping_id TEXT NOT NULL,
-    source_pk TEXT NOT NULL,
-    payload_hash TEXT NOT NULL,
-    synced_at TEXT NOT NULL,
-    PRIMARY KEY (mapping_id, source_pk)
-);
 ```
 
 ### Appendix B: Server Client Tracking (for tombstone retention)

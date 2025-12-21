@@ -2363,9 +2363,34 @@
         );
       };
 
-      // Header Component
-      const Header = ({ title, searchQuery, onSearchChange }) => (
-        React.createElement('header', { className: 'header' },
+      // Header Component with User Dropdown
+      const Header = ({ title, searchQuery, onSearchChange, currentUser, onLogout }) => {
+        const [dropdownOpen, setDropdownOpen] = React.useState(false);
+
+        // Get user initials
+        const getInitials = (name) => {
+          if (!name) return '??';
+          const parts = name.trim().split(/\s+/);
+          if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+          return name.slice(0, 2).toUpperCase();
+        };
+
+        const userName = currentUser?.displayName || currentUser?.email || 'User';
+        const userEmail = currentUser?.email || '';
+        const userInitials = getInitials(userName);
+
+        // Close dropdown when clicking outside
+        React.useEffect(() => {
+          const handleClickOutside = (e) => {
+            if (dropdownOpen && !e.target.closest('.user-menu')) {
+              setDropdownOpen(false);
+            }
+          };
+          document.addEventListener('click', handleClickOutside);
+          return () => document.removeEventListener('click', handleClickOutside);
+        }, [dropdownOpen]);
+
+        return React.createElement('header', { className: 'header' },
           React.createElement('div', { className: 'header-left' },
             React.createElement('h1', { className: 'header-title' }, title)
           ),
@@ -2385,11 +2410,32 @@
                 React.createElement(Icons.Bell),
                 React.createElement('span', { className: 'header-action-badge' })
               ),
-              React.createElement('div', { className: 'avatar avatar-md' }, 'JD')
+              React.createElement('div', { className: 'user-menu' },
+                React.createElement('button', {
+                  className: 'avatar avatar-md user-menu-trigger',
+                  onClick: (e) => { e.stopPropagation(); setDropdownOpen(!dropdownOpen); },
+                  'data-testid': 'user-menu-button'
+                }, userInitials),
+                dropdownOpen && React.createElement('div', { className: 'user-dropdown', 'data-testid': 'user-dropdown' },
+                  React.createElement('div', { className: 'user-dropdown-header' },
+                    React.createElement('div', { className: 'user-dropdown-name' }, userName),
+                    React.createElement('div', { className: 'user-dropdown-email' }, userEmail)
+                  ),
+                  React.createElement('div', { className: 'user-dropdown-divider' }),
+                  React.createElement('button', {
+                    className: 'user-dropdown-item user-dropdown-logout',
+                    onClick: (e) => { e.stopPropagation(); onLogout(); },
+                    'data-testid': 'logout-button'
+                  },
+                    React.createElement(Icons.LogOut),
+                    React.createElement('span', null, 'Sign Out')
+                  )
+                )
+              )
             )
           )
-        )
-      );
+        );
+      };
 
       // Edit Patient Page
       const EditPatientPage = ({ patientId, onCancel }) => {
@@ -2923,30 +2969,6 @@
           setIsAuthenticated(true);
         };
 
-        const handleLogout = async () => {
-          // Call Gatekeeper to revoke the token server-side
-          const token = getAuthToken();
-          if (token) {
-            try {
-              await fetch(`${GATEKEEPER_API}/auth/logout`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
-              });
-            } catch (err) {
-              console.warn('[Auth] Logout request failed (token may already be expired):', err);
-            }
-          }
-          // Clear local storage regardless of server response
-          clearAuth();
-          setCurrentUser(null);
-          setIsAuthenticated(false);
-        };
-
-        // If not authenticated, show login page
-        if (!isAuthenticated) {
-          return React.createElement(LoginPage, { onLogin: handleLogin });
-        }
-
         // Parse initial state from URL hash for deep linking support
         const parseHashRoute = () => {
           const hash = window.location.hash.slice(1); // Remove #
@@ -2965,6 +2987,8 @@
         };
 
         const initialRoute = parseHashRoute();
+
+        // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL RETURNS (React Rules of Hooks)
         const [activeView, setActiveViewState] = React.useState(initialRoute.view);
         const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
         const [searchQuery, setSearchQuery] = React.useState('');
@@ -2972,6 +2996,64 @@
         const [editingPatientId, setEditingPatientIdState] = React.useState(initialRoute.patientId);
         const [editingPractitionerId, setEditingPractitionerIdState] = React.useState(initialRoute.practitionerId);
         const [editingAppointmentId, setEditingAppointmentIdState] = React.useState(initialRoute.appointmentId);
+
+        // Expose login trigger for E2E testing (allows tests to simulate successful WebAuthn)
+        React.useEffect(() => {
+          window.__triggerLogin = handleLogin;
+          return () => { delete window.__triggerLogin; };
+        }, []);
+
+        // Listen for browser back/forward buttons (popstate event)
+        React.useEffect(() => {
+          const handlePopState = (event) => {
+            if (event.state) {
+              setActiveViewState(event.state.view || 'dashboard');
+              setEditingPatientIdState(event.state.patientId || null);
+              setEditingPractitionerIdState(event.state.practitionerId || null);
+              setEditingAppointmentIdState(event.state.appointmentId || null);
+            } else {
+              // No state - parse from hash (handles direct URL entry)
+              const route = parseHashRoute();
+              setActiveViewState(route.view);
+              setEditingPatientIdState(route.patientId);
+              setEditingPractitionerIdState(route.practitionerId);
+              setEditingAppointmentIdState(route.appointmentId);
+            }
+          };
+          window.addEventListener('popstate', handlePopState);
+          // Set initial state in history
+          if (!window.history.state) {
+            window.history.replaceState(initialRoute, '', window.location.hash || '#dashboard');
+          }
+          return () => window.removeEventListener('popstate', handlePopState);
+        }, []);
+
+        // Clear navigation options after page renders
+        React.useEffect(() => {
+          if (Object.keys(navigationOptions).length > 0) {
+            const timer = setTimeout(() => setNavigationOptions({}), 100);
+            return () => clearTimeout(timer);
+          }
+        }, [navigationOptions]);
+
+        const handleLogout = async () => {
+          // Call Gatekeeper to revoke the token server-side
+          const token = getAuthToken();
+          if (token) {
+            try {
+              await fetch(`${GATEKEEPER_API}/auth/logout`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+            } catch (err) {
+              console.warn('[Auth] Logout request failed (token may already be expired):', err);
+            }
+          }
+          // Clear local storage regardless of server response
+          clearAuth();
+          setCurrentUser(null);
+          setIsAuthenticated(false);
+        };
 
         // Update URL hash when navigation changes (pushes to browser history)
         const updateUrlHash = (view, editId = null, editType = null) => {
@@ -3008,31 +3090,6 @@
           }
         };
 
-        // Listen for browser back/forward buttons (popstate event)
-        React.useEffect(() => {
-          const handlePopState = (event) => {
-            if (event.state) {
-              setActiveViewState(event.state.view || 'dashboard');
-              setEditingPatientIdState(event.state.patientId || null);
-              setEditingPractitionerIdState(event.state.practitionerId || null);
-              setEditingAppointmentIdState(event.state.appointmentId || null);
-            } else {
-              // No state - parse from hash (handles direct URL entry)
-              const route = parseHashRoute();
-              setActiveViewState(route.view);
-              setEditingPatientIdState(route.patientId);
-              setEditingPractitionerIdState(route.practitionerId);
-              setEditingAppointmentIdState(route.appointmentId);
-            }
-          };
-          window.addEventListener('popstate', handlePopState);
-          // Set initial state in history
-          if (!window.history.state) {
-            window.history.replaceState(initialRoute, '', window.location.hash || '#dashboard');
-          }
-          return () => window.removeEventListener('popstate', handlePopState);
-        }, []);
-
         // Navigation handler that supports options
         const handleNavigate = (view, options = {}) => {
           setActiveViewState(view);
@@ -3043,13 +3100,10 @@
           updateUrlHash(view);
         };
 
-        // Clear navigation options after page renders
-        React.useEffect(() => {
-          if (Object.keys(navigationOptions).length > 0) {
-            const timer = setTimeout(() => setNavigationOptions({}), 100);
-            return () => clearTimeout(timer);
-          }
-        }, [navigationOptions]);
+        // If not authenticated, show login page
+        if (!isAuthenticated) {
+          return React.createElement(LoginPage, { onLogin: handleLogin });
+        }
 
         const getPageTitle = () => {
           if (editingPatientId) return 'Edit Patient';
@@ -3148,7 +3202,9 @@
             React.createElement(Header, {
               title: getPageTitle(),
               searchQuery,
-              onSearchChange: setSearchQuery
+              onSearchChange: setSearchQuery,
+              currentUser,
+              onLogout: handleLogout
             }),
             React.createElement('main', { className: 'main-content' }, renderPage())
           )
