@@ -574,7 +574,7 @@ app.MapGet(
 
 app.MapGet(
     "/sync/records",
-    (string? status, string? search, int? page, int? pageSize, Func<SqliteConnection> getConn) =>
+    (string? search, int? page, int? pageSize, Func<SqliteConnection> getConn) =>
     {
         using var conn = getConn();
         var currentPage = page ?? 1;
@@ -584,7 +584,7 @@ app.MapGet(
         return changesResult switch
         {
             SyncLogListOk(var logs) => Results.Ok(
-                BuildSyncRecordsResponse(logs, status, search, currentPage, size)
+                BuildSyncRecordsResponse(logs, search, currentPage, size)
             ),
             SyncLogListError(var err) => Results.Problem(SyncHelpers.ToMessage(err)),
         };
@@ -605,29 +605,21 @@ app.Run();
 
 static object BuildSyncRecordsResponse(
     IReadOnlyList<SyncLogEntry> logs,
-    string? statusFilter,
     string? search,
     int page,
     int pageSize
 )
 {
-    // Records in _sync_log are captured changes available for clients to pull.
-    // Status "available" means the record is in the log and ready for sync.
-    // Clients track their own position via fromVersion parameter.
+    // Records in _sync_log are captured changes ready for clients to pull.
+    // Clients track their own sync position via fromVersion parameter.
     var records = logs.Select(l => new
     {
         id = l.Version.ToString(CultureInfo.InvariantCulture),
         entityType = l.TableName,
         entityId = l.PkValue,
-        status = "available",
         lastAttempt = l.Timestamp,
         operation = l.Operation,
     });
-
-    if (!string.IsNullOrEmpty(statusFilter))
-    {
-        records = records.Where(r => r.status == statusFilter);
-    }
 
     if (!string.IsNullOrEmpty(search))
     {

@@ -1879,7 +1879,6 @@
 
       // Sync Dashboard Page - requires sync:admin permission
       const SyncPage = () => {
-        const [statusFilter, setStatusFilter] = React.useState('all');
         const [serviceFilter, setServiceFilter] = React.useState('all');
         const [searchQuery, setSearchQuery] = React.useState('');
         const [refreshKey, setRefreshKey] = React.useState(0);
@@ -1926,31 +1925,38 @@
         }, [refreshKey]);
 
         const filteredRecords = syncRecords.filter(record => {
-          const matchesStatus = statusFilter === 'all' || record.status === statusFilter;
           const matchesService = serviceFilter === 'all' || record.service === serviceFilter;
           const matchesSearch = searchQuery === '' ||
             record.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
             record.entityId.toLowerCase().includes(searchQuery.toLowerCase()) ||
             record.entityType.toLowerCase().includes(searchQuery.toLowerCase());
-          return matchesStatus && matchesService && matchesSearch;
+          return matchesService && matchesSearch;
         });
 
-        const getStatusIcon = (status) => {
-          switch (status) {
-            case 'synced': return React.createElement(Icons.CheckCircle);
-            case 'pending': return React.createElement(Icons.Clock);
-            case 'failed': return React.createElement(Icons.XCircle);
-            case 'conflict': return React.createElement(Icons.AlertCircle);
+        const getOperationIcon = (operation) => {
+          // operation is 0=Insert, 1=Update, 2=Delete
+          switch (operation) {
+            case 0: return React.createElement(Icons.Plus);
+            case 1: return React.createElement(Icons.Edit);
+            case 2: return React.createElement(Icons.Trash);
             default: return React.createElement(Icons.Clock);
           }
         };
 
-        const getStatusClass = (status) => {
-          switch (status) {
-            case 'synced': return 'status-success';
-            case 'pending': return 'status-warning';
-            case 'failed': return 'status-error';
-            case 'conflict': return 'status-error';
+        const getOperationLabel = (operation) => {
+          switch (operation) {
+            case 0: return 'insert';
+            case 1: return 'update';
+            case 2: return 'delete';
+            default: return 'unknown';
+          }
+        };
+
+        const getOperationClass = (operation) => {
+          switch (operation) {
+            case 0: return 'status-success';
+            case 1: return 'status-warning';
+            case 2: return 'status-error';
             default: return '';
           }
         };
@@ -2046,21 +2052,6 @@
             ),
             React.createElement('div', { className: 'card-body', style: { display: 'flex', gap: '16px', flexWrap: 'wrap' } },
               React.createElement('div', { className: 'form-group', style: { minWidth: '200px' } },
-                React.createElement('label', { className: 'form-label' }, 'Status'),
-                React.createElement('select', {
-                  className: 'input',
-                  value: statusFilter,
-                  onChange: e => setStatusFilter(e.target.value),
-                  'data-testid': 'status-filter'
-                },
-                  React.createElement('option', { value: 'all' }, 'All Statuses'),
-                  React.createElement('option', { value: 'synced' }, 'Synced'),
-                  React.createElement('option', { value: 'pending' }, 'Pending'),
-                  React.createElement('option', { value: 'failed' }, 'Failed'),
-                  React.createElement('option', { value: 'conflict' }, 'Conflict')
-                )
-              ),
-              React.createElement('div', { className: 'form-group', style: { minWidth: '200px' } },
                 React.createElement('label', { className: 'form-label' }, 'Service'),
                 React.createElement('select', {
                   className: 'input',
@@ -2100,45 +2091,27 @@
               React.createElement('table', { className: 'table', 'data-testid': 'sync-records-table' },
                 React.createElement('thead', null,
                   React.createElement('tr', null,
-                    React.createElement('th', null, 'Status'),
-                    React.createElement('th', null, 'Record ID'),
+                    React.createElement('th', null, 'Operation'),
+                    React.createElement('th', null, 'Version'),
                     React.createElement('th', null, 'Service'),
                     React.createElement('th', null, 'Entity'),
-                    React.createElement('th', null, 'Last Attempt'),
-                    React.createElement('th', null, 'Error'),
-                    React.createElement('th', null, 'Actions')
+                    React.createElement('th', null, 'Timestamp')
                   )
                 ),
                 React.createElement('tbody', null,
                   filteredRecords.map(record =>
                     React.createElement('tr', { key: record.id, 'data-testid': `sync-record-${record.id}` },
                       React.createElement('td', null,
-                        React.createElement('span', { className: `status-indicator ${getStatusClass(record.status)}` },
-                          getStatusIcon(record.status),
+                        React.createElement('span', { className: `status-indicator ${getOperationClass(record.operation)}` },
+                          getOperationIcon(record.operation),
                           ' ',
-                          record.status
+                          getOperationLabel(record.operation)
                         )
                       ),
                       React.createElement('td', null, record.id),
                       React.createElement('td', null, record.service === 'clinical' ? 'Clinical.Api' : 'Scheduling.Api'),
                       React.createElement('td', null, `${record.entityType} (${record.entityId})`),
-                      React.createElement('td', null, formatTime(record.lastAttempt)),
-                      React.createElement('td', null,
-                        record.error ? React.createElement('span', { className: 'text-error', title: record.error },
-                          record.error.substring(0, 30) + (record.error.length > 30 ? '...' : '')
-                        ) : '-'
-                      ),
-                      React.createElement('td', null,
-                        (record.status === 'failed' || record.status === 'conflict') &&
-                          React.createElement('button', {
-                            className: 'btn btn-sm btn-secondary',
-                            onClick: () => handleRetry(record.id, record.service),
-                            'data-testid': `retry-${record.id}`
-                          },
-                            React.createElement(Icons.RefreshCw),
-                            ' Retry'
-                          )
-                      )
+                      React.createElement('td', null, formatTime(record.lastAttempt))
                     )
                   )
                 )

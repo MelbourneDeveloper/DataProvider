@@ -310,30 +310,6 @@ public sealed class SyncEndpointTests
     }
 
     /// <summary>
-    /// Tests GET /sync/records with status filter.
-    /// REQUIRED BY: Sync Dashboard status filter dropdown.
-    /// </summary>
-    [Fact]
-    public async Task GetSyncRecords_FiltersbyStatus()
-    {
-        using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
-
-        // Records in sync log are "available" for clients to pull
-        var response = await client.GetAsync("/sync/records?status=available");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<JsonElement>();
-
-        // All returned records should have available status
-        var records = result.GetProperty("records");
-        foreach (var record in records.EnumerateArray())
-        {
-            Assert.Equal("available", record.GetProperty("status").GetString());
-        }
-    }
-
-    /// <summary>
     /// Tests GET /sync/records with search query.
     /// REQUIRED BY: Sync Dashboard search input.
     /// </summary>
@@ -422,7 +398,7 @@ public sealed class SyncEndpointTests
         Assert.True(firstRecord.TryGetProperty("id", out _), "Missing 'id' field");
         Assert.True(firstRecord.TryGetProperty("entityType", out _), "Missing 'entityType' field");
         Assert.True(firstRecord.TryGetProperty("entityId", out _), "Missing 'entityId' field");
-        Assert.True(firstRecord.TryGetProperty("status", out _), "Missing 'status' field");
+        Assert.True(firstRecord.TryGetProperty("operation", out _), "Missing 'operation' field");
         Assert.True(
             firstRecord.TryGetProperty("lastAttempt", out _),
             "Missing 'lastAttempt' field"

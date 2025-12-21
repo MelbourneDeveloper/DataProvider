@@ -62,7 +62,7 @@ if (triggerResult is Result<bool, SyncError>.Error<bool, SyncError> triggerErr)
 
 ## Architecture Overview
 
-This repository contains multiple related, but distinct suites:
+This repository contains four major components:
 
 **DataProvider** - Source generator creating compile-time safe extension methods from SQL files
 - Core library in `DataProvider/DataProvider/` - base types, config records, code generation
@@ -77,11 +77,27 @@ This repository contains multiple related, but distinct suites:
 - CLI tool: `LqlCli.SQLite/`
 - Browser playground: `Lql.Browser/`
 
+**Sync Framework** - Offline-first bidirectional synchronization
+- Core engine in `Sync/Sync/` - SyncCoordinator, ConflictResolver, BatchManager
+- Database implementations: `Sync.SQLite/`, `Sync.Postgres/`
+- HTTP layer: `Sync.Http/` - REST endpoints with SSE subscriptions
+- Key components: TriggerGenerator, ChangeApplier, MappingEngine
+- Comprehensive tests: `Sync.Tests/`, `Sync.SQLite.Tests/`, `Sync.Postgres.Tests/`
+
+**Gatekeeper** - Authentication and authorization microservice
+- API in `Gatekeeper/Gatekeeper.Api/` - WebAuthn passkey auth, RBAC, record-level permissions
+- Schema in `Gatekeeper/Gatekeeper.Migration/` - Uses DataProvider migrations
+- Key files: `TokenService.cs`, `AuthorizationService.cs`, `Program.cs`
+- Tests: `Gatekeeper/Gatekeeper.Api.Tests/`
+
 **Shared Libraries** in `Other/`:
 - `Results/` - `Result<TValue, TError>` type for functional error handling
 - `Selecta/` - SQL parsing and AST utilities
 
-**Samples**
+**Samples** - Healthcare microservices demonstrating the suite
+- `Samples/Clinical/` - FHIR-compliant clinical API (Patient, Encounter, Condition)
+- `Samples/Scheduling/` - FHIR-compliant scheduling API (Practitioner, Appointment)
+- `Samples/Dashboard/` - React/H5 dashboard
 - Medical: All medical data MUST conform to the [FHIR spec](https://build.fhir.org/resourcelist.html).
 
 ## Project Configuration

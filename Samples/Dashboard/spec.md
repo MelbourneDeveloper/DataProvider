@@ -91,10 +91,11 @@ Administrative dashboard for monitoring and managing sync operations across micr
 2. **Sync Records Browser**: View, filter, and search sync records by:
    - Microservice (source system)
    - Sync record ID
-   - Status (pending, synced, failed, conflict)
+   - Status (available) - records in the sync log ready for clients to pull
    - Date range
-3. **Error Investigation**: Drill into failed sync records to see error details
-4. **Manual Retry**: Trigger retry of failed sync operations
+3. **Sync Log Inspection**: View captured changes in the sync log
+
+**Note**: The server doesn't track per-client sync status. Clients track their own position using `fromVersion` parameter. Records in the sync log have status "available" meaning they're captured and ready for any client to pull.
 
 **Route**: `#sync` (requires `sync:admin` permission)
 

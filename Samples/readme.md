@@ -1,6 +1,12 @@
 # Healthcare Samples
 
-Two FHIR-compliant microservices with bidirectional sync and a React dashboard.
+A complete demonstration of the DataProvider suite: two FHIR-compliant microservices with bidirectional sync and a React dashboard.
+
+This sample showcases:
+- **DataProvider** - Compile-time safe SQL queries for all database operations
+- **Sync Framework** - Bidirectional data synchronization between Clinical and Scheduling domains
+- **LQL** - Lambda Query Language for complex queries
+- **FHIR Compliance** - All medical data follows [FHIR R5 spec](https://build.fhir.org/resourcelist.html)
 
 ## Quick Start
 
@@ -87,5 +93,22 @@ Samples/
 - .NET 9, ASP.NET Core Minimal API
 - SQLite (both domains)
 - DataProvider (SQL→extension methods)
+- Sync Framework (bidirectional sync)
 - LQL (Lambda Query Language)
 - H5 transpiler + React 18
+
+## Testing
+
+```bash
+# Run all sample tests
+dotnet test --filter "FullyQualifiedName~Samples"
+
+# Integration tests (requires APIs running)
+dotnet test --filter "FullyQualifiedName~Dashboard.Integration.Tests"
+```
+
+## Learn More
+
+- [DataProvider Documentation](../DataProvider/README.md)
+- [Sync Framework Documentation](../Sync/README.md)
+- [LQL Documentation](../Lql/README.md)
