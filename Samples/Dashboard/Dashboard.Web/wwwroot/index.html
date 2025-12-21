@@ -118,13 +118,33 @@
       // API Configuration
       const CLINICAL_API = window.dashboardConfig?.CLINICAL_API_URL || 'http://localhost:5080';
       const SCHEDULING_API = window.dashboardConfig?.SCHEDULING_API_URL || 'http://localhost:5001';
+      const GATEKEEPER_API = window.dashboardConfig?.GATEKEEPER_API_URL || 'http://localhost:5002';
 
-      // API helper
-      const fetchApi = async (url) => {
+      // Auth token storage
+      const AUTH_TOKEN_KEY = 'gatekeeper_token';
+      const AUTH_USER_KEY = 'gatekeeper_user';
+
+      const getAuthToken = () => localStorage.getItem(AUTH_TOKEN_KEY);
+      const setAuthToken = (token) => localStorage.setItem(AUTH_TOKEN_KEY, token);
+      const getAuthUser = () => {
+        const user = localStorage.getItem(AUTH_USER_KEY);
+        return user ? JSON.parse(user) : null;
+      };
+      const setAuthUser = (user) => localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+      const clearAuth = () => {
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        localStorage.removeItem(AUTH_USER_KEY);
+      };
+
+      // API helper (with optional auth)
+      const fetchApi = async (url, requireAuth = false) => {
         try {
-          const response = await fetch(url, {
-            headers: { 'Accept': 'application/json' }
-          });
+          const headers = { 'Accept': 'application/json' };
+          const token = getAuthToken();
+          if (token && requireAuth) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+          const response = await fetch(url, { headers });
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           return await response.json();
         } catch (error) {
@@ -152,11 +172,16 @@
         return { data, loading, error };
       };
 
-      // POST API helper
-      const postApi = async (url, data) => {
+      // POST API helper (with optional auth)
+      const postApi = async (url, data, requireAuth = false) => {
+        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+        const token = getAuthToken();
+        if (token && requireAuth) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
         const response = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          headers,
           body: JSON.stringify(data)
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -1359,7 +1384,7 @@
       };
 
       // Appointments Page
-      const AppointmentsPage = ({ openAddModal: initialOpenModal }) => {
+      const AppointmentsPage = ({ openAddModal: initialOpenModal, onEditAppointment }) => {
         const [filter, setFilter] = React.useState('all');
         const [showAddModal, setShowAddModal] = React.useState(false);
         const [refreshKey, setRefreshKey] = React.useState(0);
@@ -1384,7 +1409,12 @@
           { key: 'date', header: 'Date/Time', render: a => a.Start || a.StartTime || '-' },
           { key: 'status', header: 'Status', render: a => React.createElement('span', {
             className: `badge ${a.Status === 'booked' ? 'badge-primary' : a.Status === 'fulfilled' ? 'badge-success' : a.Status === 'cancelled' ? 'badge-danger' : 'badge-secondary'}`
-          }, a.Status || 'pending') }
+          }, a.Status || 'pending') },
+          { key: 'actions', header: 'Actions', render: a => React.createElement('button', {
+            className: 'btn btn-secondary btn-sm',
+            onClick: (e) => { e.stopPropagation(); onEditAppointment && onEditAppointment(a.Id); },
+            'data-testid': `edit-appointment-${a.Id}`
+          }, React.createElement(Icons.Edit)) }
         ];
 
         return React.createElement('div', { className: 'page' },
@@ -1442,27 +1472,453 @@
         )
       );
 
+      // Calendar Page - Schedule view with monthly calendar
+      const CalendarPage = ({ onEditAppointment }) => {
+        const appointments = useFetch(`${SCHEDULING_API}/Appointment`);
+        const [currentDate, setCurrentDate] = React.useState(new Date());
+        const [selectedDay, setSelectedDay] = React.useState(null);
+
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'];
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+        const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
+
+        const navigateMonth = (delta) => {
+          const newDate = new Date(currentDate);
+          newDate.setMonth(newDate.getMonth() + delta);
+          setCurrentDate(newDate);
+          setSelectedDay(null);
+        };
+
+        const goToToday = () => {
+          const today = new Date();
+          setCurrentDate(today);
+          setSelectedDay(today.getDate());
+        };
+
+        const getAppointmentsForDay = (day) => {
+          if (!appointments.data) return [];
+          const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          return appointments.data.filter(apt => apt.StartTime && apt.StartTime.startsWith(dateStr));
+        };
+
+        const formatTime = (dateStr) => {
+          if (!dateStr || dateStr.length < 16) return 'N/A';
+          return dateStr.substring(11, 16);
+        };
+
+        const today = new Date();
+        const isToday = (day) => day === today.getDate() && currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear();
+        const daysInMonth = getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth());
+        const firstDay = getFirstDayOfMonth(currentDate.getFullYear(), currentDate.getMonth());
+
+        const dayElements = [];
+        for (let i = 0; i < 42; i++) {
+          const dayNum = i - firstDay + 1;
+          if (dayNum < 1 || dayNum > daysInMonth) {
+            dayElements.push(React.createElement('div', { key: i, className: 'calendar-cell empty' }));
+          } else {
+            const dayAppointments = getAppointmentsForDay(dayNum);
+            const cellClasses = ['calendar-cell'];
+            if (isToday(dayNum)) cellClasses.push('today');
+            if (selectedDay === dayNum) cellClasses.push('selected');
+            if (dayAppointments.length > 0) cellClasses.push('has-appointments');
+            dayElements.push(React.createElement('div', {
+              key: i,
+              className: cellClasses.join(' '),
+              onClick: () => setSelectedDay(dayNum)
+            },
+              React.createElement('div', { className: 'calendar-day-number' }, dayNum),
+              dayAppointments.length > 0 ? React.createElement('div', { className: 'calendar-appointments-preview' },
+                dayAppointments.slice(0, 3).map((apt, idx) =>
+                  React.createElement('span', { key: idx, className: `calendar-dot ${apt.Status === 'booked' ? 'blue' : apt.Status === 'fulfilled' ? 'green' : 'gray'}` })
+                )
+              ) : null,
+              dayAppointments.length > 3 ? React.createElement('span', { className: 'calendar-more-indicator' }, `+${dayAppointments.length - 3}`) : null
+            ));
+          }
+        }
+
+        const selectedAppointments = selectedDay ? getAppointmentsForDay(selectedDay) : [];
+
+        return React.createElement('div', { className: 'page' },
+          React.createElement('div', { className: 'page-header flex justify-between items-center mb-6' },
+            React.createElement('div', null,
+              React.createElement('h2', { className: 'page-title' }, 'Schedule'),
+              React.createElement('p', { className: 'page-description' }, 'View and manage appointments on the calendar')
+            ),
+            React.createElement('div', { className: 'flex items-center gap-4' },
+              React.createElement('button', { className: 'btn btn-secondary btn-sm', onClick: () => navigateMonth(-1) }, React.createElement(Icons.ChevronLeft)),
+              React.createElement('span', { className: 'text-lg font-semibold' }, `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`),
+              React.createElement('button', { className: 'btn btn-secondary btn-sm', onClick: () => navigateMonth(1) }, React.createElement(Icons.ChevronRight)),
+              React.createElement('button', { className: 'btn btn-primary btn-sm ml-4', onClick: goToToday }, 'Today')
+            )
+          ),
+          React.createElement('div', { className: 'flex gap-6' },
+            React.createElement('div', { className: 'flex-1' },
+              React.createElement('div', { className: 'card calendar-grid-container' },
+                React.createElement('div', { className: 'calendar-grid-header grid grid-cols-7' },
+                  dayNames.map(day => React.createElement('div', { key: day, className: 'calendar-header-cell text-center font-semibold p-2' }, day))
+                ),
+                React.createElement('div', { className: 'calendar-grid grid grid-cols-7' }, dayElements)
+              )
+            ),
+            React.createElement('div', { className: 'card calendar-details-panel', style: { width: '320px', minHeight: '400px' } },
+              selectedDay ? React.createElement('div', null,
+                React.createElement('div', { className: 'flex justify-between items-center mb-4 p-4 border-b' },
+                  React.createElement('h4', { className: 'font-semibold' }, `${monthNames[currentDate.getMonth()]} ${selectedDay}, ${currentDate.getFullYear()}`),
+                  React.createElement('button', { className: 'btn btn-secondary btn-sm', onClick: () => setSelectedDay(null) }, React.createElement(Icons.Close))
+                ),
+                selectedAppointments.length === 0 ?
+                  React.createElement('div', { className: 'empty-state p-6' },
+                    React.createElement(Icons.Calendar),
+                    React.createElement('p', { className: 'empty-state-description mt-4' }, 'No appointments scheduled')
+                  ) :
+                  React.createElement('div', { className: 'p-4 space-y-3' },
+                    selectedAppointments.map((apt, idx) =>
+                      React.createElement('div', { key: idx, className: 'calendar-appointment-item p-3 rounded-lg border' },
+                        React.createElement('div', { className: 'flex justify-between items-start mb-2' },
+                          React.createElement('div', null,
+                            React.createElement('div', { className: 'font-semibold' }, apt.ServiceType || 'Appointment'),
+                            React.createElement('div', { className: 'text-sm text-gray-500' }, `${formatTime(apt.StartTime)} - ${formatTime(apt.EndTime)}`)
+                          ),
+                          React.createElement('span', { className: `badge ${apt.Status === 'booked' ? 'badge-primary' : apt.Status === 'fulfilled' ? 'badge-success' : 'badge-gray'}` }, apt.Status || 'unknown')
+                        ),
+                        React.createElement('div', { className: 'text-sm text-gray-600 mb-2' },
+                          React.createElement('div', null, `Patient: ${apt.PatientReference || 'N/A'}`),
+                          React.createElement('div', null, `Provider: ${apt.PractitionerReference || 'N/A'}`)
+                        ),
+                        React.createElement('div', { className: 'flex gap-2 mt-2' },
+                          React.createElement('button', {
+                            className: 'btn btn-primary btn-sm flex-1',
+                            onClick: () => onEditAppointment && onEditAppointment(apt.Id)
+                          }, React.createElement(Icons.Edit), ' Edit')
+                        )
+                      )
+                    )
+                  )
+              ) : React.createElement('div', { className: 'empty-state p-6' },
+                React.createElement(Icons.Calendar),
+                React.createElement('h4', { className: 'empty-state-title mt-4' }, 'Select a Day'),
+                React.createElement('p', { className: 'empty-state-description' }, 'Click on a day to view appointments')
+              )
+            )
+          )
+        );
+      };
+
+      // Edit Appointment Page
+      const EditAppointmentPage = ({ appointmentId, onCancel }) => {
+        const [appointment, setAppointment] = React.useState(null);
+        const [loading, setLoading] = React.useState(true);
+        const [saving, setSaving] = React.useState(false);
+        const [error, setError] = React.useState(null);
+        const [success, setSuccess] = React.useState(null);
+        const [formData, setFormData] = React.useState({
+          ServiceCategory: '',
+          ServiceType: '',
+          ReasonCode: '',
+          Priority: '',
+          Description: '',
+          Start: '',
+          End: '',
+          PatientReference: '',
+          PractitionerReference: '',
+          Comment: '',
+          Status: ''
+        });
+
+        React.useEffect(() => {
+          const fetchAppointment = async () => {
+            try {
+              const response = await fetch(`${SCHEDULING_API}/Appointment/${appointmentId}`);
+              if (!response.ok) throw new Error('Failed to load appointment');
+              const data = await response.json();
+              setAppointment(data);
+              setFormData({
+                ServiceCategory: data.ServiceCategory || '',
+                ServiceType: data.ServiceType || '',
+                ReasonCode: data.ReasonCode || '',
+                Priority: data.Priority || 'routine',
+                Description: data.Description || '',
+                Start: data.Start || data.StartTime || '',
+                End: data.End || data.EndTime || '',
+                PatientReference: data.PatientReference || '',
+                PractitionerReference: data.PractitionerReference || '',
+                Comment: data.Comment || '',
+                Status: data.Status || 'booked'
+              });
+            } catch (err) {
+              setError(err.message);
+            } finally {
+              setLoading(false);
+            }
+          };
+          fetchAppointment();
+        }, [appointmentId]);
+
+        const handleSubmit = async (e) => {
+          e.preventDefault();
+          setSaving(true);
+          setError(null);
+          setSuccess(null);
+          try {
+            const response = await fetch(`${SCHEDULING_API}/Appointment/${appointmentId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(formData)
+            });
+            if (!response.ok) throw new Error('Failed to update appointment');
+            const updated = await response.json();
+            setAppointment(updated);
+            setSuccess('Appointment updated successfully');
+          } catch (err) {
+            setError(err.message);
+          } finally {
+            setSaving(false);
+          }
+        };
+
+        const handleChange = (field, value) => {
+          setFormData(prev => ({ ...prev, [field]: value }));
+          setError(null);
+          setSuccess(null);
+        };
+
+        if (loading) {
+          return React.createElement('div', { className: 'page' },
+            React.createElement('div', { className: 'page-header' },
+              React.createElement('h2', { className: 'page-title' }, 'Edit Appointment'),
+              React.createElement('p', { className: 'page-description' }, 'Loading appointment data...')
+            ),
+            React.createElement('div', { className: 'card' },
+              React.createElement('div', { className: 'flex items-center justify-center p-8' }, 'Loading...')
+            )
+          );
+        }
+
+        if (error && !appointment) {
+          return React.createElement('div', { className: 'page' },
+            React.createElement('div', { className: 'page-header' },
+              React.createElement('h2', { className: 'page-title' }, 'Edit Appointment'),
+              React.createElement('p', { className: 'page-description' }, 'Error loading appointment')
+            ),
+            React.createElement('div', { className: 'card', style: { borderLeft: '4px solid var(--error)' } },
+              React.createElement('div', { className: 'flex items-center gap-3 p-4' },
+                React.createElement(Icons.AlertCircle),
+                `Error loading appointment: ${error}. Use the sidebar to navigate.`
+              )
+            )
+          );
+        }
+
+        return React.createElement('div', { className: 'page', 'data-testid': 'edit-appointment-page' },
+          React.createElement('div', { className: 'page-header' },
+            React.createElement('h2', { className: 'page-title' }, 'Edit Appointment'),
+            React.createElement('p', { className: 'page-description' }, `Update details for ${formData.ServiceType || 'appointment'}`)
+          ),
+          React.createElement('div', { className: 'card' },
+            error && React.createElement('div', { className: 'alert alert-error mb-4' },
+              React.createElement(Icons.AlertCircle), ` ${error}`
+            ),
+            success && React.createElement('div', { className: 'alert alert-success mb-4' },
+              success
+            ),
+            React.createElement('form', { className: 'form', onSubmit: handleSubmit },
+              // Service Information Section
+              React.createElement('div', { className: 'form-section mb-6' },
+                React.createElement('h4', { className: 'form-section-title mb-4' }, 'Service Information'),
+                React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Service Category'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'input',
+                      id: 'appointment-service-category',
+                      value: formData.ServiceCategory,
+                      onChange: e => handleChange('ServiceCategory', e.target.value)
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Service Type'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'input',
+                      id: 'appointment-service-type',
+                      value: formData.ServiceType,
+                      onChange: e => handleChange('ServiceType', e.target.value)
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Priority'),
+                    React.createElement('select', {
+                      className: 'input',
+                      value: formData.Priority,
+                      onChange: e => handleChange('Priority', e.target.value)
+                    },
+                      React.createElement('option', { value: 'routine' }, 'Routine'),
+                      React.createElement('option', { value: 'urgent' }, 'Urgent'),
+                      React.createElement('option', { value: 'asap' }, 'ASAP'),
+                      React.createElement('option', { value: 'stat' }, 'STAT')
+                    )
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Status'),
+                    React.createElement('select', {
+                      className: 'input',
+                      value: formData.Status,
+                      onChange: e => handleChange('Status', e.target.value)
+                    },
+                      React.createElement('option', { value: 'booked' }, 'Booked'),
+                      React.createElement('option', { value: 'arrived' }, 'Arrived'),
+                      React.createElement('option', { value: 'fulfilled' }, 'Fulfilled'),
+                      React.createElement('option', { value: 'cancelled' }, 'Cancelled'),
+                      React.createElement('option', { value: 'noshow' }, 'No-show')
+                    )
+                  )
+                )
+              ),
+              // Timing Section
+              React.createElement('div', { className: 'form-section mb-6' },
+                React.createElement('h4', { className: 'form-section-title mb-4' }, 'Timing'),
+                React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Start Time'),
+                    React.createElement('input', {
+                      type: 'datetime-local',
+                      className: 'input',
+                      value: formData.Start ? formData.Start.substring(0, 16) : '',
+                      onChange: e => handleChange('Start', e.target.value ? e.target.value + ':00.000Z' : '')
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'End Time'),
+                    React.createElement('input', {
+                      type: 'datetime-local',
+                      className: 'input',
+                      value: formData.End ? formData.End.substring(0, 16) : '',
+                      onChange: e => handleChange('End', e.target.value ? e.target.value + ':00.000Z' : '')
+                    })
+                  )
+                )
+              ),
+              // References Section
+              React.createElement('div', { className: 'form-section mb-6' },
+                React.createElement('h4', { className: 'form-section-title mb-4' }, 'References'),
+                React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Patient Reference'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'input',
+                      value: formData.PatientReference,
+                      onChange: e => handleChange('PatientReference', e.target.value),
+                      placeholder: 'Patient/123'
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Practitioner Reference'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'input',
+                      value: formData.PractitionerReference,
+                      onChange: e => handleChange('PractitionerReference', e.target.value),
+                      placeholder: 'Practitioner/456'
+                    })
+                  )
+                )
+              ),
+              // Additional Info Section
+              React.createElement('div', { className: 'form-section mb-6' },
+                React.createElement('h4', { className: 'form-section-title mb-4' }, 'Additional Information'),
+                React.createElement('div', { className: 'grid grid-cols-1 gap-4' },
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Description'),
+                    React.createElement('textarea', {
+                      className: 'input',
+                      rows: 2,
+                      value: formData.Description,
+                      onChange: e => handleChange('Description', e.target.value)
+                    })
+                  ),
+                  React.createElement('div', { className: 'form-group' },
+                    React.createElement('label', { className: 'form-label' }, 'Comment'),
+                    React.createElement('textarea', {
+                      className: 'input',
+                      rows: 2,
+                      value: formData.Comment,
+                      onChange: e => handleChange('Comment', e.target.value)
+                    })
+                  )
+                )
+              ),
+              // Form Actions
+              React.createElement('div', { className: 'flex gap-4 justify-end' },
+                React.createElement('button', {
+                  type: 'button',
+                  className: 'btn btn-secondary',
+                  onClick: onCancel
+                }, 'Cancel'),
+                React.createElement('button', {
+                  type: 'submit',
+                  className: 'btn btn-primary',
+                  disabled: saving
+                }, saving ? 'Saving...' : 'Save Changes')
+              )
+            )
+          )
+        );
+      };
+
       // Sync Dashboard Page - requires sync:admin permission
       const SyncPage = () => {
         const [statusFilter, setStatusFilter] = React.useState('all');
         const [serviceFilter, setServiceFilter] = React.useState('all');
         const [searchQuery, setSearchQuery] = React.useState('');
         const [refreshKey, setRefreshKey] = React.useState(0);
+        const [syncServices, setSyncServices] = React.useState([]);
+        const [syncRecords, setSyncRecords] = React.useState([]);
+        const [loading, setLoading] = React.useState(true);
+        const [error, setError] = React.useState(null);
 
-        // Mock sync status data - will be replaced with real API calls
-        const syncServices = [
-          { id: 'clinical', name: 'Clinical.Api', url: CLINICAL_API, status: 'healthy', lastSync: new Date().toISOString(), recordCount: 1247 },
-          { id: 'scheduling', name: 'Scheduling.Api', url: SCHEDULING_API, status: 'healthy', lastSync: new Date().toISOString(), recordCount: 892 }
-        ];
+        // Fetch real sync status from APIs
+        React.useEffect(() => {
+          const fetchSyncData = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+              // Fetch status from both services
+              const [clinicalStatus, schedulingStatus, clinicalRecords, schedulingRecords] = await Promise.all([
+                fetch(`${CLINICAL_API}/sync/status`).then(r => r.ok ? r.json() : { status: 'error', service: 'Clinical.Api', pendingCount: 0, failedCount: 0, lastSyncTime: null }),
+                fetch(`${SCHEDULING_API}/sync/status`).then(r => r.ok ? r.json() : { status: 'error', service: 'Scheduling.Api', pendingCount: 0, failedCount: 0, lastSyncTime: null }),
+                fetch(`${CLINICAL_API}/sync/records`).then(r => r.ok ? r.json() : { records: [], total: 0 }),
+                fetch(`${SCHEDULING_API}/sync/records`).then(r => r.ok ? r.json() : { records: [], total: 0 })
+              ]);
 
-        // Mock sync records - will be replaced with real API calls to /sync/records
-        const [syncRecords] = React.useState([
-          { id: 'sync-001', service: 'clinical', entityType: 'Patient', entityId: 'patient-123', status: 'synced', lastAttempt: new Date(Date.now() - 60000).toISOString(), error: null },
-          { id: 'sync-002', service: 'clinical', entityType: 'Patient', entityId: 'patient-456', status: 'synced', lastAttempt: new Date(Date.now() - 120000).toISOString(), error: null },
-          { id: 'sync-003', service: 'scheduling', entityType: 'Appointment', entityId: 'appt-789', status: 'pending', lastAttempt: new Date(Date.now() - 180000).toISOString(), error: null },
-          { id: 'sync-004', service: 'clinical', entityType: 'Encounter', entityId: 'enc-101', status: 'failed', lastAttempt: new Date(Date.now() - 240000).toISOString(), error: 'Connection timeout after 30s' },
-          { id: 'sync-005', service: 'scheduling', entityType: 'Practitioner', entityId: 'pract-202', status: 'conflict', lastAttempt: new Date(Date.now() - 300000).toISOString(), error: 'Version mismatch: local v3, remote v5' }
-        ]);
+              setSyncServices([
+                { id: 'clinical', name: 'Clinical.Api', url: CLINICAL_API, status: clinicalStatus.status || 'healthy', lastSync: clinicalStatus.lastSyncTime || new Date().toISOString(), recordCount: clinicalRecords.total || 0, pendingCount: clinicalStatus.pendingCount || 0, failedCount: clinicalStatus.failedCount || 0 },
+                { id: 'scheduling', name: 'Scheduling.Api', url: SCHEDULING_API, status: schedulingStatus.status || 'healthy', lastSync: schedulingStatus.lastSyncTime || new Date().toISOString(), recordCount: schedulingRecords.total || 0, pendingCount: schedulingStatus.pendingCount || 0, failedCount: schedulingStatus.failedCount || 0 }
+              ]);
+
+              // Combine records from both services
+              const allRecords = [
+                ...(clinicalRecords.records || []).map(r => ({ ...r, service: 'clinical' })),
+                ...(schedulingRecords.records || []).map(r => ({ ...r, service: 'scheduling' }))
+              ];
+              setSyncRecords(allRecords);
+            } catch (err) {
+              console.error('[Sync] Error fetching sync data:', err);
+              setError('Failed to fetch sync data. Services may be unavailable.');
+              setSyncServices([]);
+              setSyncRecords([]);
+            } finally {
+              setLoading(false);
+            }
+          };
+          fetchSyncData();
+        }, [refreshKey]);
 
         const filteredRecords = syncRecords.filter(record => {
           const matchesStatus = statusFilter === 'all' || record.status === statusFilter;
@@ -1494,10 +1950,19 @@
           }
         };
 
-        const handleRetry = (recordId) => {
-          console.log('[Sync] Retry requested for record:', recordId);
-          // TODO: Call POST /sync/records/{id}/retry
-          alert('Retry triggered for ' + recordId);
+        const handleRetry = async (recordId, service) => {
+          console.log('[Sync] Retry requested for record:', recordId, 'service:', service);
+          const apiUrl = service === 'clinical' ? CLINICAL_API : SCHEDULING_API;
+          try {
+            const response = await fetch(`${apiUrl}/sync/records/${recordId}/retry`, { method: 'POST' });
+            if (response.ok) {
+              setRefreshKey(prev => prev + 1);
+            } else {
+              console.error('[Sync] Retry failed:', response.status);
+            }
+          } catch (err) {
+            console.error('[Sync] Retry error:', err);
+          }
         };
 
         const handleRefresh = () => {
@@ -1520,17 +1985,31 @@
               React.createElement('button', {
                 className: 'btn btn-primary',
                 onClick: handleRefresh,
+                disabled: loading,
                 'data-testid': 'refresh-sync-btn'
               },
                 React.createElement(Icons.RefreshCw),
-                ' Refresh'
+                loading ? ' Loading...' : ' Refresh'
               )
             )
           ),
 
+          // Error message
+          error && React.createElement('div', { className: 'alert alert-error', style: { marginBottom: '24px' } }, error),
+
+          // Loading state
+          loading && React.createElement('div', { className: 'card', style: { marginBottom: '24px', textAlign: 'center', padding: '40px' } },
+            React.createElement('p', null, 'Loading sync data...')
+          ),
+
           // Service Status Cards
-          React.createElement('div', { className: 'metrics-grid', style: { marginBottom: '24px' } },
-            syncServices.map(service =>
+          !loading && React.createElement('div', { className: 'metrics-grid', style: { marginBottom: '24px' } },
+            syncServices.length === 0
+              ? React.createElement('div', { className: 'metric-card' },
+                  React.createElement('div', { className: 'metric-value' }, 'No services available'),
+                  React.createElement('div', { className: 'metric-label' }, 'Services may be offline')
+                )
+              : syncServices.map(service =>
               React.createElement('div', {
                 key: service.id,
                 className: 'metric-card',
@@ -1648,7 +2127,7 @@
                         (record.status === 'failed' || record.status === 'conflict') &&
                           React.createElement('button', {
                             className: 'btn btn-sm btn-secondary',
-                            onClick: () => handleRetry(record.id),
+                            onClick: () => handleRetry(record.id, record.service),
                             'data-testid': `retry-${record.id}`
                           },
                             React.createElement(Icons.RefreshCw),
@@ -1660,10 +2139,140 @@
                 )
               )
             ),
-            filteredRecords.length === 0 && React.createElement('div', { className: 'empty-state' },
+            filteredRecords.length === 0 && React.createElement('div', { className: 'empty-state', 'data-testid': 'sync-empty-state' },
               React.createElement('div', { className: 'empty-state-icon' }, React.createElement(Icons.CheckCircle)),
-              React.createElement('h4', { className: 'empty-state-title' }, 'No matching records'),
-              React.createElement('p', { className: 'empty-state-description' }, 'Adjust your filters to see sync records.')
+              React.createElement('h4', { className: 'empty-state-title' }, syncRecords.length === 0 ? 'No sync records' : 'No matching records'),
+              React.createElement('p', { className: 'empty-state-description' }, syncRecords.length === 0 ? 'No data has been synced yet. Create some records to see sync activity.' : 'Adjust your filters to see sync records.')
+            )
+          )
+        );
+      };
+
+      // Login Page Component - WebAuthn Passkey Authentication
+      const LoginPage = ({ onLogin }) => {
+        const [mode, setMode] = React.useState('login');
+        const [email, setEmail] = React.useState('');
+        const [displayName, setDisplayName] = React.useState('');
+        const [loading, setLoading] = React.useState(false);
+        const [error, setError] = React.useState(null);
+        const [success, setSuccess] = React.useState(null);
+
+        const base64UrlEncode = (buffer) => {
+          const bytes = new Uint8Array(buffer);
+          let binary = '';
+          for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+          return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+        };
+
+        const base64UrlDecode = (str) => {
+          str = str.replace(/-/g, '+').replace(/_/g, '/');
+          while (str.length % 4) str += '=';
+          const binary = atob(str);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+          return bytes.buffer;
+        };
+
+        const handleRegister = async (e) => {
+          e.preventDefault();
+          setLoading(true); setError(null); setSuccess(null);
+          try {
+            const beginRes = await fetch(`${GATEKEEPER_API}/auth/register/begin`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ Email: email, DisplayName: displayName })
+            });
+            if (!beginRes.ok) throw new Error((await beginRes.json()).Error || 'Registration failed');
+            const beginData = await beginRes.json();
+            const opts = JSON.parse(beginData.OptionsJson);
+            opts.challenge = base64UrlDecode(opts.challenge);
+            opts.user.id = base64UrlDecode(opts.user.id);
+            if (opts.excludeCredentials) opts.excludeCredentials = opts.excludeCredentials.map(c => ({ ...c, id: base64UrlDecode(c.id) }));
+            // Server already sets residentKey=required, don't override authenticatorSelection
+            // Longer timeout for Chrome (2 minutes)
+            opts.timeout = 120000;
+            const cred = await navigator.credentials.create({ publicKey: opts });
+            // fido2-net-lib expects specific JSON property names (camelCase with uppercase JSON)
+            const attestation = {
+              id: base64UrlEncode(cred.rawId), rawId: base64UrlEncode(cred.rawId), type: cred.type,
+              response: { attestationObject: base64UrlEncode(cred.response.attestationObject), clientDataJSON: base64UrlEncode(cred.response.clientDataJSON) }
+            };
+            const completeRes = await fetch(`${GATEKEEPER_API}/auth/register/complete`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ChallengeId: beginData.ChallengeId, OptionsJson: beginData.OptionsJson, AttestationResponse: attestation })
+            });
+            if (!completeRes.ok) throw new Error((await completeRes.json()).Error || 'Registration failed');
+            setSuccess('Registration successful! You can now login.'); setMode('login');
+          } catch (err) { setError(err.message); } finally { setLoading(false); }
+        };
+
+        const handleLogin = async (e) => {
+          e.preventDefault();
+          setLoading(true); setError(null);
+          try {
+            // Use discoverable credentials - no email needed!
+            // The browser will prompt user to select from stored passkeys
+            const beginRes = await fetch(`${GATEKEEPER_API}/auth/login/begin`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({})
+            });
+            if (!beginRes.ok) throw new Error((await beginRes.json()).Error || 'Login failed');
+            const beginData = await beginRes.json();
+            const opts = JSON.parse(beginData.OptionsJson);
+            opts.challenge = base64UrlDecode(opts.challenge);
+            // For discoverable credentials, remove allowCredentials entirely
+            // This lets the browser show ALL stored passkeys for this origin (RP domain)
+            // With resident keys, the passkey contains the user identity
+            delete opts.allowCredentials;
+            // Longer timeout for Chrome (2 minutes)
+            opts.timeout = 120000;
+            const assertion = await navigator.credentials.get({ publicKey: opts });
+            // fido2-net-lib expects specific JSON property names (camelCase with uppercase JSON)
+            const assertionData = {
+              id: base64UrlEncode(assertion.rawId), rawId: base64UrlEncode(assertion.rawId), type: assertion.type,
+              response: {
+                authenticatorData: base64UrlEncode(assertion.response.authenticatorData),
+                clientDataJSON: base64UrlEncode(assertion.response.clientDataJSON),
+                signature: base64UrlEncode(assertion.response.signature),
+                userHandle: assertion.response.userHandle ? base64UrlEncode(assertion.response.userHandle) : null
+              }
+            };
+            const completeRes = await fetch(`${GATEKEEPER_API}/auth/login/complete`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ChallengeId: beginData.ChallengeId, OptionsJson: beginData.OptionsJson, AssertionResponse: assertionData })
+            });
+            if (!completeRes.ok) throw new Error((await completeRes.json()).Error || 'Login failed');
+            const result = await completeRes.json();
+            setAuthToken(result.Token);
+            setAuthUser({ userId: result.UserId, displayName: result.DisplayName, email: result.Email });
+            onLogin({ userId: result.UserId, displayName: result.DisplayName, email: result.Email });
+          } catch (err) { setError(err.message); } finally { setLoading(false); }
+        };
+
+        return React.createElement('div', { className: 'login-page' },
+          React.createElement('div', { className: 'login-card' },
+            React.createElement('div', { className: 'login-header' },
+              React.createElement('div', { className: 'login-logo' }, React.createElement(Icons.Activity)),
+              React.createElement('h1', null, 'Healthcare Dashboard'),
+              React.createElement('p', null, mode === 'login' ? 'Sign in with your passkey' : 'Create your account')
+            ),
+            error && React.createElement('div', { className: 'login-error' }, error),
+            success && React.createElement('div', { className: 'login-success' }, success),
+            React.createElement('form', { onSubmit: mode === 'login' ? handleLogin : handleRegister },
+              mode === 'register' && React.createElement('div', { className: 'form-group' },
+                React.createElement('label', { htmlFor: 'email' }, 'Email'),
+                React.createElement('input', { type: 'email', id: 'email', value: email, onChange: (e) => setEmail(e.target.value), placeholder: 'you@example.com', required: true, disabled: loading })
+              ),
+              mode === 'register' && React.createElement('div', { className: 'form-group' },
+                React.createElement('label', { htmlFor: 'displayName' }, 'Display Name'),
+                React.createElement('input', { type: 'text', id: 'displayName', value: displayName, onChange: (e) => setDisplayName(e.target.value), placeholder: 'Your Name', required: true, disabled: loading })
+              ),
+              React.createElement('button', { type: 'submit', className: 'btn btn-primary login-btn', disabled: loading },
+                loading ? 'Please wait...' : (mode === 'login' ? 'Sign in with Passkey' : 'Register with Passkey'))
+            ),
+            React.createElement('div', { className: 'login-footer' },
+              mode === 'login'
+                ? React.createElement('p', null, "Don't have an account? ", React.createElement('button', { type: 'button', className: 'link-btn', onClick: () => { setMode('register'); setError(null); setSuccess(null); } }, 'Register'))
+                : React.createElement('p', null, 'Already have an account? ', React.createElement('button', { type: 'button', className: 'link-btn', onClick: () => { setMode('login'); setError(null); setSuccess(null); } }, 'Sign in'))
             )
           )
         );
@@ -1680,7 +2289,8 @@
           ]},
           { title: 'Scheduling', items: [
             { id: 'practitioners', label: 'Practitioners', icon: Icons.UserDoctor },
-            { id: 'appointments', label: 'Appointments', icon: Icons.Calendar }
+            { id: 'appointments', label: 'Appointments', icon: Icons.Clipboard },
+            { id: 'calendar', label: 'Schedule', icon: Icons.Calendar }
           ]},
           { title: 'Administration', items: [
             { id: 'sync', label: 'Sync Dashboard', icon: Icons.Sync }
@@ -2272,18 +2882,48 @@
 
       // Main App Component
       const App = () => {
+        // Test mode bypass - allows E2E tests to skip authentication
+        // Check URL params or window config for test mode
+        const isTestMode = () => {
+          const urlParams = new URLSearchParams(window.location.search);
+          return urlParams.get('testMode') === 'true' || window.dashboardConfig?.testMode === true;
+        };
+
+        // Auth state - check localStorage on mount (or bypass in test mode)
+        const [isAuthenticated, setIsAuthenticated] = React.useState(() => isTestMode() || !!getAuthToken());
+        const [currentUser, setCurrentUser] = React.useState(() => isTestMode() ? { userId: 'test', displayName: 'Test User', email: 'test@example.com' } : getAuthUser());
+
+        const handleLogin = (user) => {
+          setCurrentUser(user);
+          setIsAuthenticated(true);
+        };
+
+        const handleLogout = () => {
+          clearAuth();
+          setCurrentUser(null);
+          setIsAuthenticated(false);
+        };
+
+        // If not authenticated, show login page
+        if (!isAuthenticated) {
+          return React.createElement(LoginPage, { onLogin: handleLogin });
+        }
+
         // Parse initial state from URL hash for deep linking support
         const parseHashRoute = () => {
           const hash = window.location.hash.slice(1); // Remove #
-          if (!hash) return { view: 'dashboard', patientId: null, practitionerId: null };
+          if (!hash) return { view: 'dashboard', patientId: null, practitionerId: null, appointmentId: null };
           const parts = hash.split('/');
           if (parts[0] === 'patients' && parts[1] === 'edit' && parts[2]) {
-            return { view: 'patients', patientId: parts[2], practitionerId: null };
+            return { view: 'patients', patientId: parts[2], practitionerId: null, appointmentId: null };
           }
           if (parts[0] === 'practitioners' && parts[1] === 'edit' && parts[2]) {
-            return { view: 'practitioners', patientId: null, practitionerId: parts[2] };
+            return { view: 'practitioners', patientId: null, practitionerId: parts[2], appointmentId: null };
           }
-          return { view: parts[0] || 'dashboard', patientId: null, practitionerId: null };
+          if (parts[0] === 'appointments' && parts[1] === 'edit' && parts[2]) {
+            return { view: 'appointments', patientId: null, practitionerId: null, appointmentId: parts[2] };
+          }
+          return { view: parts[0] || 'dashboard', patientId: null, practitionerId: null, appointmentId: null };
         };
 
         const initialRoute = parseHashRoute();
@@ -2293,6 +2933,7 @@
         const [navigationOptions, setNavigationOptions] = React.useState({});
         const [editingPatientId, setEditingPatientIdState] = React.useState(initialRoute.patientId);
         const [editingPractitionerId, setEditingPractitionerIdState] = React.useState(initialRoute.practitionerId);
+        const [editingAppointmentId, setEditingAppointmentIdState] = React.useState(initialRoute.appointmentId);
 
         // Update URL hash when navigation changes (pushes to browser history)
         const updateUrlHash = (view, editId = null, editType = null) => {
@@ -2322,6 +2963,13 @@
           }
         };
 
+        const setEditingAppointmentId = (appointmentId) => {
+          setEditingAppointmentIdState(appointmentId);
+          if (appointmentId) {
+            updateUrlHash('appointments', appointmentId, 'appointment');
+          }
+        };
+
         // Listen for browser back/forward buttons (popstate event)
         React.useEffect(() => {
           const handlePopState = (event) => {
@@ -2329,12 +2977,14 @@
               setActiveViewState(event.state.view || 'dashboard');
               setEditingPatientIdState(event.state.patientId || null);
               setEditingPractitionerIdState(event.state.practitionerId || null);
+              setEditingAppointmentIdState(event.state.appointmentId || null);
             } else {
               // No state - parse from hash (handles direct URL entry)
               const route = parseHashRoute();
               setActiveViewState(route.view);
               setEditingPatientIdState(route.patientId);
               setEditingPractitionerIdState(route.practitionerId);
+              setEditingAppointmentIdState(route.appointmentId);
             }
           };
           window.addEventListener('popstate', handlePopState);
@@ -2351,6 +3001,7 @@
           setNavigationOptions(options);
           setEditingPatientIdState(null); // Clear editing state when navigating
           setEditingPractitionerIdState(null);
+          setEditingAppointmentIdState(null);
           updateUrlHash(view);
         };
 
@@ -2365,6 +3016,7 @@
         const getPageTitle = () => {
           if (editingPatientId) return 'Edit Patient';
           if (editingPractitionerId) return 'Edit Practitioner';
+          if (editingAppointmentId) return 'Edit Appointment';
           return {
             dashboard: 'Dashboard',
             patients: 'Patients',
@@ -2372,6 +3024,7 @@
             conditions: 'Conditions',
             practitioners: 'Practitioners',
             appointments: 'Appointments',
+            calendar: 'Schedule',
             sync: 'Sync Dashboard',
             settings: 'Settings'
           }[activeView] || 'Healthcare';
@@ -2385,6 +3038,11 @@
         const handleEditPractitioner = (practitionerId) => {
           setEditingPractitionerIdState(practitionerId);
           updateUrlHash('practitioners', practitionerId, 'practitioner');
+        };
+
+        const handleEditAppointment = (appointmentId) => {
+          setEditingAppointmentIdState(appointmentId);
+          updateUrlHash('appointments', appointmentId, 'appointment');
         };
 
         // Use history.back() so browser back button and in-app cancel behave the same
@@ -2409,6 +3067,14 @@
             });
           }
 
+          // Handle editing appointment
+          if (activeView === 'appointments' && editingAppointmentId) {
+            return React.createElement(EditAppointmentPage, {
+              appointmentId: editingAppointmentId,
+              onCancel: handleCancelEdit
+            });
+          }
+
           switch (activeView) {
             case 'dashboard': return React.createElement(DashboardPage, { onNavigate: handleNavigate });
             case 'patients': return React.createElement(PatientsPage, {
@@ -2419,7 +3085,11 @@
               openAddModal: navigationOptions.openAddModal,
               onEditPractitioner: handleEditPractitioner
             });
-            case 'appointments': return React.createElement(AppointmentsPage, { openAddModal: navigationOptions.openAddModal });
+            case 'appointments': return React.createElement(AppointmentsPage, {
+              openAddModal: navigationOptions.openAddModal,
+              onEditAppointment: handleEditAppointment
+            });
+            case 'calendar': return React.createElement(CalendarPage, { onEditAppointment: handleEditAppointment });
             case 'encounters': return React.createElement(PlaceholderPage, { title: 'Encounters', description: 'Manage patient encounters and visits' });
             case 'conditions': return React.createElement(PlaceholderPage, { title: 'Conditions', description: 'View and manage patient conditions' });
             case 'sync': return React.createElement(SyncPage);

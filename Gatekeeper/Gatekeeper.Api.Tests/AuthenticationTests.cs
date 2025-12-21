@@ -27,23 +27,22 @@ public sealed class AuthenticationTests : IClassFixture<WebApplicationFactory<Pr
         Assert.True(doc.RootElement.TryGetProperty("ChallengeId", out var challengeId));
         Assert.False(string.IsNullOrEmpty(challengeId.GetString()));
 
-        Assert.True(doc.RootElement.TryGetProperty("Options", out var options));
-        Assert.True(options.TryGetProperty("challenge", out _));
+        // API returns OptionsJson as a JSON string (for JS to parse)
+        Assert.True(doc.RootElement.TryGetProperty("OptionsJson", out var optionsJson));
+        var parsedOptions = JsonDocument.Parse(optionsJson.GetString()!);
+        Assert.True(parsedOptions.RootElement.TryGetProperty("challenge", out _));
     }
 
     [Fact]
-    public async Task LoginBegin_WithNoEmail_ReturnsDiscoverableCredentialOptions()
+    public async Task LoginBegin_WithNoCredentials_ReturnsBadRequest()
     {
-        var response = await _client.PostAsJsonAsync("/auth/login/begin", new { });
+        // Login without registered credentials should fail with helpful message
+        var response = await _client.PostAsJsonAsync("/auth/login/begin", new { Email = "nobody@example.com" });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
-        var doc = JsonDocument.Parse(content);
-
-        Assert.True(doc.RootElement.TryGetProperty("ChallengeId", out _));
-        Assert.True(doc.RootElement.TryGetProperty("Options", out var options));
-        Assert.True(options.TryGetProperty("challenge", out _));
+        Assert.Contains("No passkey registered", content);
     }
 
     [Fact]

@@ -15,6 +15,7 @@ public sealed class E2EFixture : IAsyncLifetime
 {
     private Process? _clinicalProcess;
     private Process? _schedulingProcess;
+    private Process? _gatekeeperProcess;
     private IHost? _dashboardHost;
 
     /// <summary>
@@ -38,9 +39,20 @@ public sealed class E2EFixture : IAsyncLifetime
     public const string SchedulingUrl = "http://localhost:5001";
 
     /// <summary>
-    /// Dashboard URL - SAME as real app default.
+    /// Gatekeeper Auth API URL - SAME as real app default.
     /// </summary>
-    public const string DashboardUrl = "http://localhost:5173";
+    public const string GatekeeperUrl = "http://localhost:5002";
+
+    /// <summary>
+    /// Dashboard URL - SAME as real app default.
+    /// Uses testMode=true to bypass authentication in tests.
+    /// </summary>
+    public const string DashboardUrl = "http://localhost:5173?testMode=true";
+
+    /// <summary>
+    /// Dashboard URL without test mode - for auth tests.
+    /// </summary>
+    public const string DashboardUrlNoTestMode = "http://localhost:5173";
 
     /// <summary>
     /// Start all services ONCE for all tests.
@@ -50,6 +62,7 @@ public sealed class E2EFixture : IAsyncLifetime
         // Kill any existing processes on our ports first
         await KillProcessOnPortAsync(5080);
         await KillProcessOnPortAsync(5001);
+        await KillProcessOnPortAsync(5002);
         await KillProcessOnPortAsync(5173);
 
         // Find the project directories relative to the test assembly
@@ -57,13 +70,17 @@ public sealed class E2EFixture : IAsyncLifetime
         var samplesDir = Path.GetFullPath(
             Path.Combine(testAssemblyDir, "..", "..", "..", "..", "..")
         );
+        var rootDir = Path.GetFullPath(Path.Combine(samplesDir, ".."));
         var clinicalProjectDir = Path.Combine(samplesDir, "Clinical", "Clinical.Api");
         var schedulingProjectDir = Path.Combine(samplesDir, "Scheduling", "Scheduling.Api");
+        var gatekeeperProjectDir = Path.Combine(rootDir, "Gatekeeper", "Gatekeeper.Api");
 
         Console.WriteLine($"[E2E] Test assembly dir: {testAssemblyDir}");
         Console.WriteLine($"[E2E] Samples dir: {samplesDir}");
         Console.WriteLine($"[E2E] Clinical dir: {clinicalProjectDir}");
         Console.WriteLine($"[E2E] Clinical dir exists: {Directory.Exists(clinicalProjectDir)}");
+        Console.WriteLine($"[E2E] Gatekeeper dir: {gatekeeperProjectDir}");
+        Console.WriteLine($"[E2E] Gatekeeper dir exists: {Directory.Exists(gatekeeperProjectDir)}");
 
         // Start Clinical API using pre-built DLL with correct content root
         var clinicalDll = Path.Combine(
@@ -89,12 +106,25 @@ public sealed class E2EFixture : IAsyncLifetime
         Console.WriteLine($"[E2E] Scheduling DLL exists: {File.Exists(schedulingDll)}");
         _schedulingProcess = StartApiFromDll(schedulingDll, schedulingProjectDir, SchedulingUrl);
 
+        // Start Gatekeeper Auth API using pre-built DLL with correct content root
+        var gatekeeperDll = Path.Combine(
+            gatekeeperProjectDir,
+            "bin",
+            "Debug",
+            "net9.0",
+            "Gatekeeper.Api.dll"
+        );
+        Console.WriteLine($"[E2E] Gatekeeper DLL: {gatekeeperDll}");
+        Console.WriteLine($"[E2E] Gatekeeper DLL exists: {File.Exists(gatekeeperDll)}");
+        _gatekeeperProcess = StartApiFromDll(gatekeeperDll, gatekeeperProjectDir, GatekeeperUrl);
+
         // Give the processes a moment to start before polling
         await Task.Delay(2000);
 
         // Wait for APIs to be ready
         await WaitForApiAsync(ClinicalUrl, "/fhir/Patient/");
         await WaitForApiAsync(SchedulingUrl, "/Practitioner");
+        await WaitForGatekeeperApiAsync();
 
         // Start Dashboard static file server on port 5173 - NO config injection
         _dashboardHost = CreateDashboardHost();
@@ -125,6 +155,7 @@ public sealed class E2EFixture : IAsyncLifetime
 
         StopProcess(_clinicalProcess);
         StopProcess(_schedulingProcess);
+        StopProcess(_gatekeeperProcess);
     }
 
     private static Process StartApiFromDll(string dllPath, string contentRoot, string url)
@@ -228,6 +259,42 @@ public sealed class E2EFixture : IAsyncLifetime
         }
 
         throw new TimeoutException($"API at {baseUrl} did not start within {maxRetries * 500}ms");
+    }
+
+    private static async Task WaitForGatekeeperApiAsync()
+    {
+        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+        var maxRetries = 120;
+
+        for (var i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                // Try to hit the login/begin endpoint with an empty POST
+                // API returns 400 if user not registered, which is valid (API is working)
+                var response = await client.PostAsync(
+                    $"{GatekeeperUrl}/auth/login/begin",
+                    new StringContent(
+                        """{"Email": "test@test.com"}""",
+                        System.Text.Encoding.UTF8,
+                        "application/json"
+                    )
+                );
+                // Accept 200 (success) or 400 (user not registered) - both mean API is running
+                if (
+                    response.IsSuccessStatusCode
+                    || response.StatusCode == HttpStatusCode.BadRequest
+                )
+                    return;
+            }
+            catch
+            { /* not ready yet */
+            }
+
+            await Task.Delay(500);
+        }
+
+        throw new TimeoutException($"Gatekeeper API at {GatekeeperUrl} did not start within {maxRetries * 500}ms");
     }
 
     private static IHost CreateDashboardHost()
@@ -1617,6 +1684,435 @@ public sealed class DashboardE2ETests
         var content = await page.ContentAsync();
         Assert.Contains("Sync Dashboard", content);
         Assert.Contains("Monitor and manage sync operations", content);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Edit Appointment button opens edit page and updates appointment via API.
+    /// Uses Playwright to load REAL Dashboard, click Edit, modify form, and PUT to REAL API.
+    /// </summary>
+    [Fact]
+    public async Task EditAppointmentButton_OpensEditPage_AndUpdatesAppointment()
+    {
+        using var client = new HttpClient();
+
+        // First create an appointment to edit
+        var uniqueServiceType = $"EditApptTest{DateTime.UtcNow.Ticks % 100000}";
+        var startTime = DateTime.UtcNow.AddDays(7).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var endTime = DateTime.UtcNow.AddDays(7).AddMinutes(30).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var createResponse = await client.PostAsync(
+            $"{E2EFixture.SchedulingUrl}/Appointment",
+            new StringContent(
+                $$$"""{"ServiceCategory": "General", "ServiceType": "{{{uniqueServiceType}}}", "Priority": "routine", "Start": "{{{startTime}}}", "End": "{{{endTime}}}", "PatientReference": "Patient/1", "PractitionerReference": "Practitioner/1"}""",
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
+        createResponse.EnsureSuccessStatusCode();
+        var createdAppointmentJson = await createResponse.Content.ReadAsStringAsync();
+
+        // Extract appointment ID from response
+        var appointmentIdMatch = System.Text.RegularExpressions.Regex.Match(
+            createdAppointmentJson,
+            "\"Id\"\\s*:\\s*\"([^\"]+)\""
+        );
+        Assert.True(appointmentIdMatch.Success, "Should get appointment ID from creation response");
+        var appointmentId = appointmentIdMatch.Groups[1].Value;
+
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Navigate to Appointments page
+        await page.ClickAsync("text=Appointments");
+        await page.WaitForSelectorAsync(
+            $"text={uniqueServiceType}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Click Edit button for the created appointment (in the same table row)
+        var editButton = await page.QuerySelectorAsync(
+            $"tr:has-text('{uniqueServiceType}') .btn-secondary"
+        );
+        Assert.NotNull(editButton);
+        await editButton.ClickAsync();
+
+        // Wait for edit page to load
+        await page.WaitForSelectorAsync(
+            "text=Edit Appointment",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+
+        // Modify the appointment's service type
+        var newServiceType = $"Edited{DateTime.UtcNow.Ticks % 100000}";
+        await page.FillAsync("#appointment-service-type", newServiceType);
+
+        // Submit the form
+        await page.ClickAsync("button:has-text('Save Changes')");
+
+        // Wait for success message
+        await page.WaitForSelectorAsync(
+            "text=Appointment updated successfully",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Verify via API that appointment was actually updated
+        var updatedAppointmentJson = await client.GetStringAsync(
+            $"{E2EFixture.SchedulingUrl}/Appointment/{appointmentId}"
+        );
+        Assert.Contains(newServiceType, updatedAppointmentJson);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Calendar page displays appointments in calendar grid.
+    /// Uses Playwright to navigate to calendar and verify appointments are shown.
+    /// </summary>
+    [Fact]
+    public async Task CalendarPage_DisplaysAppointmentsInCalendarGrid()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        // Navigate directly to calendar page via hash URL
+        await page.GotoAsync($"{E2EFixture.DashboardUrl}#calendar");
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Wait for calendar grid container to appear
+        await page.WaitForSelectorAsync(
+            ".calendar-grid-container",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Verify calendar grid is displayed
+        var content = await page.ContentAsync();
+        Assert.Contains("calendar-grid", content);
+
+        // Verify day names are displayed
+        Assert.Contains("Sun", content);
+        Assert.Contains("Mon", content);
+        Assert.Contains("Tue", content);
+        Assert.Contains("Wed", content);
+        Assert.Contains("Thu", content);
+        Assert.Contains("Fri", content);
+        Assert.Contains("Sat", content);
+
+        // Verify navigation controls exist
+        Assert.Contains("Today", content);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Calendar page allows clicking on a day to view appointments.
+    /// Uses Playwright to click on a day and verify the details panel shows.
+    /// </summary>
+    [Fact]
+    public async Task CalendarPage_ClickOnDay_ShowsAppointmentDetails()
+    {
+        using var client = new HttpClient();
+
+        // Create an appointment for today - use LOCAL time since browser calendar uses local timezone
+        var today = DateTime.Now;
+        var startTime = new DateTime(today.Year, today.Month, today.Day, 14, 0, 0, DateTimeKind.Local).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var endTime = new DateTime(today.Year, today.Month, today.Day, 14, 30, 0, DateTimeKind.Local).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var uniqueServiceType = $"CalTest{DateTime.Now.Ticks % 100000}";
+
+        var createResponse = await client.PostAsync(
+            $"{E2EFixture.SchedulingUrl}/Appointment",
+            new StringContent(
+                $$$"""{"ServiceCategory": "General", "ServiceType": "{{{uniqueServiceType}}}", "Priority": "routine", "Start": "{{{startTime}}}", "End": "{{{endTime}}}", "PatientReference": "Patient/1", "PractitionerReference": "Practitioner/1"}""",
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
+        createResponse.EnsureSuccessStatusCode();
+        Console.WriteLine($"[TEST] Created appointment with ServiceType: {uniqueServiceType}, Start: {startTime}");
+
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Navigate to Calendar page
+        await page.ClickAsync("text=Schedule");
+        await page.WaitForSelectorAsync(
+            ".calendar-grid",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Wait for appointments to load - today's cell should have has-appointments class
+        await page.WaitForSelectorAsync(
+            ".calendar-cell.today.has-appointments",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Click on today's cell (it has the "today" class and now has appointments)
+        var todayCell = page.Locator(".calendar-cell.today").First;
+        await todayCell.ClickAsync();
+
+        // Wait for the details panel to update (look for date header)
+        await page.WaitForSelectorAsync(
+            ".calendar-details-panel h4",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+
+        // Debug: output the details panel content
+        var detailsContent = await page.Locator(".calendar-details-panel").InnerTextAsync();
+        Console.WriteLine($"[TEST] Details panel content: {detailsContent}");
+
+        // Wait for the appointment content to appear in the details panel
+        await page.WaitForSelectorAsync(
+            $"text={uniqueServiceType}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Verify the appointment is displayed in the details panel
+        var content = await page.ContentAsync();
+        Assert.Contains(uniqueServiceType, content);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Calendar page Edit button opens edit appointment page.
+    /// Uses Playwright to click Edit from calendar day details and verify navigation.
+    /// </summary>
+    [Fact]
+    public async Task CalendarPage_EditButton_OpensEditAppointmentPage()
+    {
+        using var client = new HttpClient();
+
+        // Create an appointment for today
+        var today = DateTime.UtcNow;
+        var startTime = new DateTime(today.Year, today.Month, today.Day, 15, 0, 0, DateTimeKind.Utc).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var endTime = new DateTime(today.Year, today.Month, today.Day, 15, 30, 0, DateTimeKind.Utc).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var uniqueServiceType = $"CalEdit{DateTime.UtcNow.Ticks % 100000}";
+
+        var createResponse = await client.PostAsync(
+            $"{E2EFixture.SchedulingUrl}/Appointment",
+            new StringContent(
+                $$$"""{"ServiceCategory": "General", "ServiceType": "{{{uniqueServiceType}}}", "Priority": "routine", "Start": "{{{startTime}}}", "End": "{{{endTime}}}", "PatientReference": "Patient/1", "PractitionerReference": "Practitioner/1"}""",
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
+        createResponse.EnsureSuccessStatusCode();
+
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Navigate to Calendar page
+        await page.ClickAsync("text=Schedule");
+        await page.WaitForSelectorAsync(
+            ".calendar-grid",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Click on today's cell
+        await page.ClickAsync(".calendar-cell.today");
+
+        // Wait for the details panel
+        await page.WaitForSelectorAsync(
+            ".calendar-details-panel",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+
+        // Wait for the specific appointment to appear
+        await page.WaitForSelectorAsync(
+            $"text={uniqueServiceType}",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+
+        // Click the Edit button in the calendar appointment item
+        var editButton = await page.QuerySelectorAsync(
+            $".calendar-appointment-item:has-text('{uniqueServiceType}') button:has-text('Edit')"
+        );
+        Assert.NotNull(editButton);
+        await editButton.ClickAsync();
+
+        // Wait for edit page to load
+        await page.WaitForSelectorAsync(
+            "text=Edit Appointment",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+
+        // Verify we're on the edit page with the correct data
+        var content = await page.ContentAsync();
+        Assert.Contains("Edit Appointment", content);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Calendar navigation (previous/next month) works.
+    /// Uses Playwright to click navigation buttons and verify month changes.
+    /// </summary>
+    [Fact]
+    public async Task CalendarPage_NavigationButtons_ChangeMonth()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        await page.GotoAsync(E2EFixture.DashboardUrl);
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Navigate to Calendar page
+        await page.ClickAsync("text=Schedule");
+        await page.WaitForSelectorAsync(
+            ".calendar-grid",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Get the current month displayed
+        var currentMonthYear = await page.TextContentAsync(".text-lg.font-semibold");
+        Assert.NotNull(currentMonthYear);
+
+        // Click next month button - use locator within the header flex container
+        var headerControls = page.Locator(".page-header .flex.items-center.gap-4");
+        var nextButton = headerControls.Locator("button.btn-secondary").Nth(1);
+        await nextButton.ClickAsync();
+        await Task.Delay(300);
+
+        // Verify month changed
+        var newMonthYear = await page.TextContentAsync(".text-lg.font-semibold");
+        Assert.NotEqual(currentMonthYear, newMonthYear);
+
+        // Click previous month button twice to go back
+        var prevButton = headerControls.Locator("button.btn-secondary").First;
+        await prevButton.ClickAsync();
+        await Task.Delay(300);
+        await prevButton.ClickAsync();
+        await Task.Delay(300);
+
+        // Verify month changed again
+        var finalMonthYear = await page.TextContentAsync(".text-lg.font-semibold");
+        Assert.NotEqual(newMonthYear, finalMonthYear);
+
+        // Click "Today" button
+        await page.ClickAsync("button:has-text('Today')");
+        await Task.Delay(500);
+
+        // Should be back to current month
+        var todayContent = await page.ContentAsync();
+        Assert.Contains("today", todayContent); // Calendar cell should have "today" class
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Deep linking to calendar page works.
+    /// Navigating directly to #calendar loads the calendar view.
+    /// </summary>
+    [Fact]
+    public async Task CalendarPage_DeepLinkingWorks()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+
+        // Navigate directly to calendar page via hash
+        await page.GotoAsync($"{E2EFixture.DashboardUrl}#calendar");
+        await page.WaitForSelectorAsync(
+            ".calendar-grid",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Verify we're on the calendar page
+        var content = await page.ContentAsync();
+        Assert.Contains("Schedule", content);
+        Assert.Contains("View and manage appointments on the calendar", content);
+        Assert.Contains("calendar-grid", content);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Login page sign-in flow must NOT throw JSON parsing errors.
+    /// This test catches the "undefined is not valid JSON" bug.
+    /// Bug: Dashboard does JSON.parse(beginData.OptionsJson) but API returns Options (not OptionsJson).
+    /// </summary>
+    [Fact]
+    public async Task LoginPage_SignIn_DoesNotThrowJsonParseError()
+    {
+        var page = await _fixture.Browser!.NewPageAsync();
+        var consoleErrors = new List<string>();
+        page.Console += (_, msg) =>
+        {
+            Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
+            if (msg.Type == "error")
+                consoleErrors.Add(msg.Text);
+        };
+
+        // Navigate to Dashboard WITHOUT testMode - should show login page
+        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
+
+        // Wait for login page to appear
+        await page.WaitForSelectorAsync(
+            ".login-card",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+
+        // Verify login page is shown
+        var pageContent = await page.ContentAsync();
+        Assert.Contains("Healthcare Dashboard", pageContent);
+        Assert.Contains("Sign in with your passkey", pageContent);
+
+        // Enter email
+        await page.FillAsync("input[type='email']", "test@example.com");
+
+        // Click Sign in with Passkey - this triggers the auth flow
+        // The flow calls /auth/login/begin which returns { ChallengeId, Options }
+        // Dashboard code does: JSON.parse(beginData.OptionsJson) -- OptionsJson is UNDEFINED!
+        // This causes "undefined is not valid JSON" error
+        await page.ClickAsync("button[type='submit']");
+
+        // Wait for the auth flow to attempt and potentially error
+        await Task.Delay(2000);
+
+        // Check if there's a JSON parsing error shown in the UI
+        var errorVisible = await page.IsVisibleAsync(".login-error");
+        var errorText = errorVisible ? await page.TextContentAsync(".login-error") : null;
+        Console.WriteLine($"[AUTH TEST] Error visible: {errorVisible}, text: {errorText}");
+
+        // Check for JSON parse errors - these indicate the bug
+        var hasJsonParseError =
+            (errorText?.Contains("undefined") == true)
+            || (errorText?.Contains("is not valid JSON") == true)
+            || (errorText?.Contains("SyntaxError") == true)
+            || consoleErrors.Any(e =>
+                e.Contains("undefined") || e.Contains("JSON") || e.Contains("SyntaxError")
+            );
+
+        // TEST MUST FAIL if there's a JSON parse error
+        // The fix is to change Dashboard code from JSON.parse(beginData.OptionsJson)
+        // to use beginData.Options directly (it's already an object, not a string)
+        Assert.False(
+            hasJsonParseError,
+            $"Sign-in threw JSON parse error! Dashboard expects OptionsJson but API returns Options. Error: {errorText}"
+        );
 
         await page.CloseAsync();
     }

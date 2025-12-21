@@ -170,4 +170,155 @@ public sealed class SyncEndpointTests
             }
         );
     }
+
+    // ========== SYNC DASHBOARD ENDPOINT TESTS ==========
+    // These tests verify the endpoints required by the Sync Dashboard UI.
+
+    /// <summary>
+    /// Tests GET /sync/status endpoint - returns service sync health status.
+    /// REQUIRED BY: Sync Dashboard service status cards.
+    /// </summary>
+    [Fact]
+    public async Task GetSyncStatus_ReturnsServiceStatus()
+    {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/sync/status");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        // Should return service health info
+        Assert.True(result.TryGetProperty("service", out var service));
+        Assert.Equal("Scheduling.Api", service.GetString());
+
+        Assert.True(result.TryGetProperty("status", out var status));
+        var statusValue = status.GetString();
+        Assert.True(
+            statusValue == "healthy" || statusValue == "degraded" || statusValue == "unhealthy",
+            $"Status should be healthy, degraded, or unhealthy but was '{statusValue}'"
+        );
+
+        Assert.True(result.TryGetProperty("lastSyncTime", out _));
+        Assert.True(result.TryGetProperty("pendingCount", out _));
+        Assert.True(result.TryGetProperty("failedCount", out _));
+    }
+
+    /// <summary>
+    /// Tests GET /sync/records endpoint - returns paginated sync records.
+    /// REQUIRED BY: Sync Dashboard sync records table.
+    /// </summary>
+    [Fact]
+    public async Task GetSyncRecords_ReturnsPaginatedRecords()
+    {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
+        // Create some data to generate sync records
+        var practitionerRequest = new
+        {
+            Identifier = "NPI-SyncRec",
+            NameFamily = "SyncRecordTest",
+            NameGiven = "Doctor",
+        };
+        await client.PostAsJsonAsync("/Practitioner", practitionerRequest);
+
+        var response = await client.GetAsync("/sync/records");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        // Should return paginated response
+        Assert.True(result.TryGetProperty("records", out var records));
+        Assert.True(records.GetArrayLength() > 0);
+
+        Assert.True(result.TryGetProperty("total", out _));
+        Assert.True(result.TryGetProperty("page", out _));
+        Assert.True(result.TryGetProperty("pageSize", out _));
+    }
+
+    /// <summary>
+    /// Tests GET /sync/records with status filter.
+    /// REQUIRED BY: Sync Dashboard status filter dropdown.
+    /// </summary>
+    [Fact]
+    public async Task GetSyncRecords_FiltersByStatus()
+    {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/sync/records?status=pending");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        // All returned records should have pending status
+        var records = result.GetProperty("records");
+        foreach (var record in records.EnumerateArray())
+        {
+            Assert.Equal("pending", record.GetProperty("status").GetString());
+        }
+    }
+
+    /// <summary>
+    /// Tests POST /sync/records/{id}/retry endpoint - retries failed sync.
+    /// REQUIRED BY: Sync Dashboard retry button.
+    /// </summary>
+    [Fact]
+    public async Task PostSyncRetry_AcceptsRetryRequest()
+    {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
+        // Test that the endpoint exists and accepts the request
+        var response = await client.PostAsync("/sync/records/test-record-id/retry", null);
+
+        // Should return 200 OK, 404 Not Found (if record doesn't exist), or 202 Accepted
+        Assert.True(
+            response.StatusCode == HttpStatusCode.OK
+                || response.StatusCode == HttpStatusCode.NotFound
+                || response.StatusCode == HttpStatusCode.Accepted,
+            $"Expected OK, NotFound, or Accepted but got {response.StatusCode}"
+        );
+    }
+
+    /// <summary>
+    /// Tests that sync records include required fields for dashboard display.
+    /// REQUIRED BY: Sync Dashboard table columns.
+    /// </summary>
+    [Fact]
+    public async Task GetSyncRecords_ContainsRequiredFields()
+    {
+        using var factory = new SchedulingApiFactory();
+        var client = factory.CreateClient();
+
+        // Create data to generate sync records
+        var practitionerRequest = new
+        {
+            Identifier = "NPI-Fields",
+            NameFamily = "FieldTest",
+            NameGiven = "Doctor",
+        };
+        await client.PostAsJsonAsync("/Practitioner", practitionerRequest);
+
+        var response = await client.GetAsync("/sync/records");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var records = result.GetProperty("records");
+        Assert.True(records.GetArrayLength() > 0);
+
+        var firstRecord = records[0];
+
+        // Required fields for Sync Dashboard UI
+        Assert.True(firstRecord.TryGetProperty("id", out _), "Missing 'id' field");
+        Assert.True(firstRecord.TryGetProperty("entityType", out _), "Missing 'entityType' field");
+        Assert.True(firstRecord.TryGetProperty("entityId", out _), "Missing 'entityId' field");
+        Assert.True(firstRecord.TryGetProperty("status", out _), "Missing 'status' field");
+        Assert.True(
+            firstRecord.TryGetProperty("lastAttempt", out _),
+            "Missing 'lastAttempt' field"
+        );
+    }
 }

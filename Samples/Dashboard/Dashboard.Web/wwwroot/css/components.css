@@ -1416,3 +1416,243 @@
   box-shadow: var(--shadow-lg);
   color: var(--white);
 }
+
+/* === CALENDAR === */
+.calendar-grid-container {
+  padding: var(--space-4);
+}
+
+.calendar-grid-header {
+  margin-bottom: var(--space-2);
+}
+
+.calendar-header-cell {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.calendar-grid {
+  gap: var(--space-1);
+}
+
+.calendar-cell {
+  min-height: 100px;
+  padding: var(--space-2);
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-cell:hover {
+  border-color: var(--primary-blue);
+  box-shadow: var(--shadow-sm);
+}
+
+.calendar-cell.empty {
+  background: var(--gray-50);
+  border-color: transparent;
+  cursor: default;
+}
+
+.calendar-cell.empty:hover {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.calendar-cell.today {
+  border-color: var(--primary-blue);
+  background: var(--primary-blue-subtle);
+}
+
+.calendar-cell.selected {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 2px var(--primary-blue-glow);
+}
+
+.calendar-cell.has-appointments .calendar-day-number {
+  font-weight: var(--font-weight-bold);
+}
+
+.calendar-day-number {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-700);
+  margin-bottom: var(--space-1);
+}
+
+.calendar-cell.today .calendar-day-number {
+  color: var(--primary-blue-dark);
+  font-weight: var(--font-weight-bold);
+}
+
+.calendar-appointments-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: auto;
+}
+
+.calendar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.calendar-dot.blue {
+  background: var(--primary-blue);
+}
+
+.calendar-dot.teal {
+  background: var(--teal-dark);
+}
+
+.calendar-dot.green {
+  background: var(--success);
+}
+
+.calendar-dot.red {
+  background: var(--error);
+}
+
+.calendar-dot.gray {
+  background: var(--gray-400);
+}
+
+.calendar-more-indicator {
+  font-size: var(--font-size-2xs);
+  color: var(--gray-500);
+  font-weight: var(--font-weight-medium);
+}
+
+.calendar-details-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.calendar-appointment-item {
+  background: var(--gray-50);
+  transition: all var(--transition-fast);
+}
+
+.calendar-appointment-item:hover {
+  background: var(--gray-100);
+}
+
+.space-y-3 > * + * {
+  margin-top: var(--space-3);
+}
+
+/* === LOGIN PAGE === */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary-blue-subtle) 0%, var(--teal-soft) 50%, var(--white) 100%);
+  padding: var(--space-4);
+}
+
+.login-card {
+  background: var(--white);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-xl);
+  padding: var(--space-8);
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.login-logo {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--teal-bold) 100%);
+  border-radius: var(--radius-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-4);
+}
+
+.login-logo .icon {
+  width: 32px;
+  height: 32px;
+  color: var(--white);
+}
+
+.login-header h1 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--gray-900);
+  margin: 0 0 var(--space-2);
+}
+
+.login-header p {
+  font-size: var(--font-size-sm);
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.login-error {
+  background: var(--error-bg);
+  border: 1px solid var(--error);
+  color: var(--error);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+.login-success {
+  background: var(--success-bg);
+  border: 1px solid var(--success);
+  color: var(--success);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+.login-btn {
+  width: 100%;
+  margin-top: var(--space-4);
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--gray-100);
+}
+
+.login-footer p {
+  font-size: var(--font-size-sm);
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--primary-blue);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.link-btn:hover {
+  color: var(--primary-blue-dark);
+}

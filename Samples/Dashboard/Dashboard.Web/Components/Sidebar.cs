@@ -139,8 +139,14 @@ namespace Dashboard.Components
                         {
                             Id = "appointments",
                             Label = "Appointments",
-                            Icon = Icons.Calendar,
+                            Icon = Icons.Clipboard,
                             Badge = 3,
+                        },
+                        new NavItem
+                        {
+                            Id = "calendar",
+                            Label = "Schedule",
+                            Icon = Icons.Calendar,
                         },
                     },
                 },

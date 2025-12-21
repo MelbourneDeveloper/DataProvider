@@ -25,6 +25,9 @@ namespace Dashboard
 
         /// <summary>Patient ID being edited (null if not editing).</summary>
         public string EditingPatientId { get; set; }
+
+        /// <summary>Appointment ID being edited (null if not editing).</summary>
+        public string EditingAppointmentId { get; set; }
     }
 
     /// <summary>
@@ -45,6 +48,7 @@ namespace Dashboard
                     SearchQuery = "",
                     NotificationCount = 3,
                     EditingPatientId = null,
+                    EditingAppointmentId = null,
                 }
             );
 
@@ -67,6 +71,7 @@ namespace Dashboard
                                 SearchQuery = state.SearchQuery,
                                 NotificationCount = state.NotificationCount,
                                 EditingPatientId = null,
+                                EditingAppointmentId = null,
                             };
                             setState(newState);
                         },
@@ -80,6 +85,7 @@ namespace Dashboard
                                 SearchQuery = state.SearchQuery,
                                 NotificationCount = state.NotificationCount,
                                 EditingPatientId = state.EditingPatientId,
+                                EditingAppointmentId = state.EditingAppointmentId,
                             };
                             setState(newState);
                         }
@@ -102,6 +108,7 @@ namespace Dashboard
                                         SearchQuery = query,
                                         NotificationCount = state.NotificationCount,
                                         EditingPatientId = state.EditingPatientId,
+                                        EditingAppointmentId = state.EditingAppointmentId,
                                     };
                                     setState(newState);
                                 },
@@ -134,6 +141,8 @@ namespace Dashboard
                 return "Practitioners";
             if (view == "appointments")
                 return "Appointments";
+            if (view == "calendar")
+                return "Schedule";
             if (view == "settings")
                 return "Settings";
             return "Healthcare";
@@ -157,6 +166,28 @@ namespace Dashboard
                             SearchQuery = state.SearchQuery,
                             NotificationCount = state.NotificationCount,
                             EditingPatientId = null,
+                            EditingAppointmentId = null,
+                        };
+                        setState(newState);
+                    }
+                );
+            }
+
+            // Handle editing appointment
+            if ((view == "appointments" || view == "calendar") && state.EditingAppointmentId != null)
+            {
+                return EditAppointmentPage.Render(
+                    state.EditingAppointmentId,
+                    () =>
+                    {
+                        var newState = new AppState
+                        {
+                            ActiveView = view,
+                            SidebarCollapsed = state.SidebarCollapsed,
+                            SearchQuery = state.SearchQuery,
+                            NotificationCount = state.NotificationCount,
+                            EditingPatientId = null,
+                            EditingAppointmentId = null,
                         };
                         setState(newState);
                     }
@@ -176,6 +207,7 @@ namespace Dashboard
                         SearchQuery = state.SearchQuery,
                         NotificationCount = state.NotificationCount,
                         EditingPatientId = patientId,
+                        EditingAppointmentId = null,
                     };
                     setState(newState);
                 });
@@ -183,7 +215,37 @@ namespace Dashboard
             if (view == "practitioners")
                 return PractitionersPage.Render();
             if (view == "appointments")
-                return AppointmentsPage.Render();
+            {
+                return AppointmentsPage.Render(appointmentId =>
+                {
+                    var newState = new AppState
+                    {
+                        ActiveView = "appointments",
+                        SidebarCollapsed = state.SidebarCollapsed,
+                        SearchQuery = state.SearchQuery,
+                        NotificationCount = state.NotificationCount,
+                        EditingPatientId = null,
+                        EditingAppointmentId = appointmentId,
+                    };
+                    setState(newState);
+                });
+            }
+            if (view == "calendar")
+            {
+                return CalendarPage.Render(appointmentId =>
+                {
+                    var newState = new AppState
+                    {
+                        ActiveView = "calendar",
+                        SidebarCollapsed = state.SidebarCollapsed,
+                        SearchQuery = state.SearchQuery,
+                        NotificationCount = state.NotificationCount,
+                        EditingPatientId = null,
+                        EditingAppointmentId = appointmentId,
+                    };
+                    setState(newState);
+                });
+            }
             if (view == "encounters")
                 return RenderPlaceholderPage("Encounters", "Manage patient encounters and visits");
             if (view == "conditions")

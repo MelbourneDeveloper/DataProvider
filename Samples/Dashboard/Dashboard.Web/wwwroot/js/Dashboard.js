@@ -52398,6 +52398,61 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                     return $tcs.task;
                 },
                 /**
+                 * Updates an existing appointment.
+                 *
+                 * @static
+                 * @public
+                 * @this Dashboard.Api.ApiClient
+                 * @memberof Dashboard.Api.ApiClient
+                 * @param   {string}                           id             
+                 * @param   {System.Object}                    appointment
+                 * @return  {System.Threading.Tasks.Task$1}
+                 */
+                UpdateAppointmentAsync: function (id, appointment) {
+                    var $s = 0,
+                        $t1, 
+                        $tr1, 
+                        $jff, 
+                        $tcs = new System.Threading.Tasks.TaskCompletionSource(), 
+                        $rv, 
+                        response, 
+                        $ae, 
+                        $asyncBody = H5.fn.bind(this, function () {
+                            try {
+                                for (;;) {
+                                    $s = System.Array.min([0,1], $s);
+                                    switch ($s) {
+                                        case 0: {
+                                            $t1 = Dashboard.Api.ApiClient.PutAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Appointment/" + (id || ""), appointment);
+                                            $s = 1;
+                                            if ($t1.isCompleted()) {
+                                                continue;
+                                            }
+                                            $t1.continue($asyncBody);
+                                            return;
+                                        }
+                                        case 1: {
+                                            $tr1 = $t1.getAwaitedResult();
+                                            response = $tr1;
+                                            $tcs.setResult(Dashboard.Api.ApiClient.ParseJson(Object, response));
+                                            return;
+                                        }
+                                        default: {
+                                            $tcs.setResult(null);
+                                            return;
+                                        }
+                                    }
+                                }
+                            } catch($ae1) {
+                                $ae = System.Exception.create($ae1);
+                                $tcs.setException($ae);
+                            }
+                        }, arguments);
+
+                    $asyncBody();
+                    return $tcs.task;
+                },
+                /**
                  * Fetches appointments for a patient.
                  *
                  * @static
@@ -52722,22 +52777,22 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                  */
                 Render: function () {
                     var $t;
-                    var stateResult = Dashboard.React.Hooks.UseState(Dashboard.AppState, ($t = new Dashboard.AppState(), $t.ActiveView = "dashboard", $t.SidebarCollapsed = false, $t.SearchQuery = "", $t.NotificationCount = 3, $t.EditingPatientId = null, $t));
+                    var stateResult = Dashboard.React.Hooks.UseState(Dashboard.AppState, ($t = new Dashboard.AppState(), $t.ActiveView = "dashboard", $t.SidebarCollapsed = false, $t.SearchQuery = "", $t.NotificationCount = 3, $t.EditingPatientId = null, $t.EditingAppointmentId = null, $t));
 
                     var state = stateResult.State;
                     var setState = stateResult.SetState;
 
                     return Dashboard.React.Elements.Div("app", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Sidebar.Render(state.ActiveView, function (view) {
                         var $t1;
-                        var newState = ($t1 = new Dashboard.AppState(), $t1.ActiveView = view, $t1.SidebarCollapsed = state.SidebarCollapsed, $t1.SearchQuery = state.SearchQuery, $t1.NotificationCount = state.NotificationCount, $t1.EditingPatientId = null, $t1);
+                        var newState = ($t1 = new Dashboard.AppState(), $t1.ActiveView = view, $t1.SidebarCollapsed = state.SidebarCollapsed, $t1.SearchQuery = state.SearchQuery, $t1.NotificationCount = state.NotificationCount, $t1.EditingPatientId = null, $t1.EditingAppointmentId = null, $t1);
                         setState(newState);
                     }, state.SidebarCollapsed, function () {
                         var $t1;
-                        var newState = ($t1 = new Dashboard.AppState(), $t1.ActiveView = state.ActiveView, $t1.SidebarCollapsed = !state.SidebarCollapsed, $t1.SearchQuery = state.SearchQuery, $t1.NotificationCount = state.NotificationCount, $t1.EditingPatientId = state.EditingPatientId, $t1);
+                        var newState = ($t1 = new Dashboard.AppState(), $t1.ActiveView = state.ActiveView, $t1.SidebarCollapsed = !state.SidebarCollapsed, $t1.SearchQuery = state.SearchQuery, $t1.NotificationCount = state.NotificationCount, $t1.EditingPatientId = state.EditingPatientId, $t1.EditingAppointmentId = state.EditingAppointmentId, $t1);
                         setState(newState);
                     }), Dashboard.React.Elements.Div("main-wrapper", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Header.Render(Dashboard.App.GetPageTitle(state.ActiveView), state.SearchQuery, function (query) {
                         var $t1;
-                        var newState = ($t1 = new Dashboard.AppState(), $t1.ActiveView = state.ActiveView, $t1.SidebarCollapsed = state.SidebarCollapsed, $t1.SearchQuery = query, $t1.NotificationCount = state.NotificationCount, $t1.EditingPatientId = state.EditingPatientId, $t1);
+                        var newState = ($t1 = new Dashboard.AppState(), $t1.ActiveView = state.ActiveView, $t1.SidebarCollapsed = state.SidebarCollapsed, $t1.SearchQuery = query, $t1.NotificationCount = state.NotificationCount, $t1.EditingPatientId = state.EditingPatientId, $t1.EditingAppointmentId = state.EditingAppointmentId, $t1);
                         setState(newState);
                     }, state.NotificationCount), Dashboard.React.Elements.Main("main-content", System.Array.init([Dashboard.App.RenderPage(state, setState)], Object))], Object))], Object));
                 },
@@ -52763,6 +52818,9 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                     if (H5.referenceEquals(view, "appointments")) {
                         return "Appointments";
                     }
+                    if (H5.referenceEquals(view, "calendar")) {
+                        return "Schedule";
+                    }
                     if (H5.referenceEquals(view, "settings")) {
                         return "Settings";
                     }
@@ -52774,7 +52832,15 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                     if (H5.referenceEquals(view, "patients") && state.EditingPatientId != null) {
                         return Dashboard.Pages.EditPatientPage.Render(state.EditingPatientId, function () {
                             var $t;
-                            var newState = ($t = new Dashboard.AppState(), $t.ActiveView = "patients", $t.SidebarCollapsed = state.SidebarCollapsed, $t.SearchQuery = state.SearchQuery, $t.NotificationCount = state.NotificationCount, $t.EditingPatientId = null, $t);
+                            var newState = ($t = new Dashboard.AppState(), $t.ActiveView = "patients", $t.SidebarCollapsed = state.SidebarCollapsed, $t.SearchQuery = state.SearchQuery, $t.NotificationCount = state.NotificationCount, $t.EditingPatientId = null, $t.EditingAppointmentId = null, $t);
+                            setState(newState);
+                        });
+                    }
+
+                    if ((H5.referenceEquals(view, "appointments") || H5.referenceEquals(view, "calendar")) && state.EditingAppointmentId != null) {
+                        return Dashboard.Pages.EditAppointmentPage.Render(state.EditingAppointmentId, function () {
+                            var $t;
+                            var newState = ($t = new Dashboard.AppState(), $t.ActiveView = view, $t.SidebarCollapsed = state.SidebarCollapsed, $t.SearchQuery = state.SearchQuery, $t.NotificationCount = state.NotificationCount, $t.EditingPatientId = null, $t.EditingAppointmentId = null, $t);
                             setState(newState);
                         });
                     }
@@ -52785,7 +52851,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                     if (H5.referenceEquals(view, "patients")) {
                         return Dashboard.Pages.PatientsPage.Render(function (patientId) {
                             var $t;
-                            var newState = ($t = new Dashboard.AppState(), $t.ActiveView = "patients", $t.SidebarCollapsed = state.SidebarCollapsed, $t.SearchQuery = state.SearchQuery, $t.NotificationCount = state.NotificationCount, $t.EditingPatientId = patientId, $t);
+                            var newState = ($t = new Dashboard.AppState(), $t.ActiveView = "patients", $t.SidebarCollapsed = state.SidebarCollapsed, $t.SearchQuery = state.SearchQuery, $t.NotificationCount = state.NotificationCount, $t.EditingPatientId = patientId, $t.EditingAppointmentId = null, $t);
                             setState(newState);
                         });
                     }
@@ -52793,7 +52859,18 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                         return Dashboard.Pages.PractitionersPage.Render();
                     }
                     if (H5.referenceEquals(view, "appointments")) {
-                        return Dashboard.Pages.AppointmentsPage.Render();
+                        return Dashboard.Pages.AppointmentsPage.Render(function (appointmentId) {
+                            var $t;
+                            var newState = ($t = new Dashboard.AppState(), $t.ActiveView = "appointments", $t.SidebarCollapsed = state.SidebarCollapsed, $t.SearchQuery = state.SearchQuery, $t.NotificationCount = state.NotificationCount, $t.EditingPatientId = null, $t.EditingAppointmentId = appointmentId, $t);
+                            setState(newState);
+                        });
+                    }
+                    if (H5.referenceEquals(view, "calendar")) {
+                        return Dashboard.Pages.CalendarPage.Render(function (appointmentId) {
+                            var $t;
+                            var newState = ($t = new Dashboard.AppState(), $t.ActiveView = "calendar", $t.SidebarCollapsed = state.SidebarCollapsed, $t.SearchQuery = state.SearchQuery, $t.NotificationCount = state.NotificationCount, $t.EditingPatientId = null, $t.EditingAppointmentId = appointmentId, $t);
+                            setState(newState);
+                        });
                     }
                     if (H5.referenceEquals(view, "encounters")) {
                         return Dashboard.App.RenderPlaceholderPage("Encounters", "Manage patient encounters and visits");
@@ -52873,7 +52950,17 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
              * @function EditingPatientId
              * @type string
              */
-            EditingPatientId: null
+            EditingPatientId: null,
+            /**
+             * Appointment ID being edited (null if not editing).
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.AppState
+             * @function EditingAppointmentId
+             * @type string
+             */
+            EditingAppointmentId: null
         }
     });
 
@@ -53580,7 +53667,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                 },
                 GetNavSections: function () {
                     var $t, $t1;
-                    return System.Array.init([($t = new Dashboard.Components.NavSection(), $t.Title = "Overview", $t.Items = System.Array.init([($t1 = new Dashboard.Components.NavItem(), $t1.Id = "dashboard", $t1.Label = "Dashboard", $t1.Icon = Dashboard.Components.Icons.Home, $t1)], Dashboard.Components.NavItem), $t), ($t = new Dashboard.Components.NavSection(), $t.Title = "Clinical", $t.Items = System.Array.init([($t1 = new Dashboard.Components.NavItem(), $t1.Id = "patients", $t1.Label = "Patients", $t1.Icon = Dashboard.Components.Icons.Users, $t1), ($t1 = new Dashboard.Components.NavItem(), $t1.Id = "encounters", $t1.Label = "Encounters", $t1.Icon = Dashboard.Components.Icons.Clipboard, $t1), ($t1 = new Dashboard.Components.NavItem(), $t1.Id = "conditions", $t1.Label = "Conditions", $t1.Icon = Dashboard.Components.Icons.Heart, $t1), ($t1 = new Dashboard.Components.NavItem(), $t1.Id = "medications", $t1.Label = "Medications", $t1.Icon = Dashboard.Components.Icons.Pill, $t1)], Dashboard.Components.NavItem), $t), ($t = new Dashboard.Components.NavSection(), $t.Title = "Scheduling", $t.Items = System.Array.init([($t1 = new Dashboard.Components.NavItem(), $t1.Id = "practitioners", $t1.Label = "Practitioners", $t1.Icon = Dashboard.Components.Icons.UserDoctor, $t1), ($t1 = new Dashboard.Components.NavItem(), $t1.Id = "appointments", $t1.Label = "Appointments", $t1.Icon = Dashboard.Components.Icons.Calendar, $t1.Badge = 3, $t1)], Dashboard.Components.NavItem), $t), ($t = new Dashboard.Components.NavSection(), $t.Title = "System", $t.Items = System.Array.init([($t1 = new Dashboard.Components.NavItem(), $t1.Id = "settings", $t1.Label = "Settings", $t1.Icon = Dashboard.Components.Icons.Settings, $t1)], Dashboard.Components.NavItem), $t)], Dashboard.Components.NavSection);
+                    return System.Array.init([($t = new Dashboard.Components.NavSection(), $t.Title = "Overview", $t.Items = System.Array.init([($t1 = new Dashboard.Components.NavItem(), $t1.Id = "dashboard", $t1.Label = "Dashboard", $t1.Icon = Dashboard.Components.Icons.Home, $t1)], Dashboard.Components.NavItem), $t), ($t = new Dashboard.Components.NavSection(), $t.Title = "Clinical", $t.Items = System.Array.init([($t1 = new Dashboard.Components.NavItem(), $t1.Id = "patients", $t1.Label = "Patients", $t1.Icon = Dashboard.Components.Icons.Users, $t1), ($t1 = new Dashboard.Components.NavItem(), $t1.Id = "encounters", $t1.Label = "Encounters", $t1.Icon = Dashboard.Components.Icons.Clipboard, $t1), ($t1 = new Dashboard.Components.NavItem(), $t1.Id = "conditions", $t1.Label = "Conditions", $t1.Icon = Dashboard.Components.Icons.Heart, $t1), ($t1 = new Dashboard.Components.NavItem(), $t1.Id = "medications", $t1.Label = "Medications", $t1.Icon = Dashboard.Components.Icons.Pill, $t1)], Dashboard.Components.NavItem), $t), ($t = new Dashboard.Components.NavSection(), $t.Title = "Scheduling", $t.Items = System.Array.init([($t1 = new Dashboard.Components.NavItem(), $t1.Id = "practitioners", $t1.Label = "Practitioners", $t1.Icon = Dashboard.Components.Icons.UserDoctor, $t1), ($t1 = new Dashboard.Components.NavItem(), $t1.Id = "appointments", $t1.Label = "Appointments", $t1.Icon = Dashboard.Components.Icons.Clipboard, $t1.Badge = 3, $t1), ($t1 = new Dashboard.Components.NavItem(), $t1.Id = "calendar", $t1.Label = "Schedule", $t1.Icon = Dashboard.Components.Icons.Calendar, $t1)], Dashboard.Components.NavItem), $t), ($t = new Dashboard.Components.NavSection(), $t.Title = "System", $t.Items = System.Array.init([($t1 = new Dashboard.Components.NavItem(), $t1.Id = "settings", $t1.Label = "Settings", $t1.Icon = Dashboard.Components.Icons.Settings, $t1)], Dashboard.Components.NavItem), $t)], Dashboard.Components.NavSection);
                 },
                 RenderHeader: function (collapsed) {
                     return Dashboard.React.Elements.Div("sidebar-header", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.A("#", "sidebar-logo", void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("sidebar-logo-icon", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Icons.Activity()], Object)), Dashboard.React.Elements.Span("sidebar-logo-text", void 0, void 0, System.Array.init([Dashboard.React.Elements.Text("HealthCare")], Object))], Object))], Object));
@@ -53684,9 +53771,13 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                  * @public
                  * @this Dashboard.Pages.AppointmentsPage
                  * @memberof Dashboard.Pages.AppointmentsPage
+                 * @param   {System.Action}    onEditAppointment
                  * @return  {Object}
                  */
-                Render: function () {
+                Render: function (onEditAppointment) {
+                    return Dashboard.Pages.AppointmentsPage.RenderInternal(onEditAppointment);
+                },
+                RenderInternal: function (onEditAppointment) {
                     var $t;
                     var stateResult = Dashboard.React.Hooks.UseState(Dashboard.Pages.AppointmentsState, ($t = new Dashboard.Pages.AppointmentsState(), $t.Appointments = System.Array.init(0, null, Object), $t.Loading = true, $t.Error = null, $t.StatusFilter = null, $t));
 
@@ -53705,7 +53796,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                     } else if (state.Appointments.length === 0) {
                         content = Dashboard.Pages.AppointmentsPage.RenderEmpty();
                     } else {
-                        content = Dashboard.Pages.AppointmentsPage.RenderAppointmentList(state.Appointments);
+                        content = Dashboard.Pages.AppointmentsPage.RenderAppointmentList(state.Appointments, state.StatusFilter, onEditAppointment);
                     }
 
                     return Dashboard.React.Elements.Div("page", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("page-header flex justify-between items-center", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div(void 0, void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.H(2, "page-title", System.Array.init([Dashboard.React.Elements.Text("Appointments")], Object)), Dashboard.React.Elements.P("page-description", void 0, System.Array.init([Dashboard.React.Elements.Text("Manage scheduled appointments from the Scheduling domain")], Object))], Object)), Dashboard.React.Elements.Button("btn btn-primary", void 0, false, "button", System.Array.init([Dashboard.Components.Icons.Plus(), Dashboard.React.Elements.Text("New Appointment")], Object))], Object)), Dashboard.React.Elements.Div("card mb-6", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("tabs", void 0, void 0, void 0, System.Array.init([Dashboard.Pages.AppointmentsPage.RenderTab("All", null, state.StatusFilter, function (s) {
@@ -53802,10 +53893,16 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                         return Dashboard.React.Elements.Div("card", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("flex items-center gap-4", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("skeleton", void 0, { width: "60px", height: "60px", borderRadius: "var(--radius-lg)" }, void 0), Dashboard.React.Elements.Div("flex-1", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("skeleton", void 0, { width: "200px", height: "20px" }, void 0), Dashboard.React.Elements.Div("skeleton mt-2", void 0, { width: "150px", height: "16px" }, void 0)], Object)), Dashboard.React.Elements.Div("skeleton", void 0, { width: "100px", height: "32px" }, void 0)], Object))], Object));
                     }).ToArray(Object));
                 },
-                RenderAppointmentList: function (appointments) {
-                    return Dashboard.React.Elements.Div("data-list", void 0, void 0, void 0, System.Linq.Enumerable.from(appointments, Object).select(Dashboard.Pages.AppointmentsPage.RenderAppointmentCard).ToArray(Object));
+                RenderAppointmentList: function (appointments, statusFilter, onEditAppointment) {
+                    var filtered = statusFilter == null ? appointments : System.Linq.Enumerable.from(appointments, Object).where(function (a) {
+                            return H5.referenceEquals(a.Status, statusFilter);
+                        }).ToArray(Object);
+
+                    return Dashboard.React.Elements.Div("data-list", void 0, void 0, void 0, System.Linq.Enumerable.from(filtered, Object).select(function (a) {
+                            return Dashboard.Pages.AppointmentsPage.RenderAppointmentCard(a, onEditAppointment);
+                        }).ToArray(Object));
                 },
-                RenderAppointmentCard: function (appointment) {
+                RenderAppointmentCard: function (appointment, onEditAppointment) {
                     var $t;
                     var descElement;
                     if (appointment.Description != null) {
@@ -53814,7 +53911,9 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                         descElement = Dashboard.React.Elements.Text("");
                     }
 
-                    return Dashboard.React.Elements.Div("card-glass mb-4", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("flex items-start gap-4", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("metric-icon blue", void 0, { width: "60px", height: "60px" }, void 0, System.Array.init([Dashboard.React.Elements.Div("text-center", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("text-lg font-bold", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Text(Dashboard.Pages.AppointmentsPage.FormatTime(appointment.StartTime))], Object)), Dashboard.React.Elements.Div("text-xs", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Text(appointment.MinutesDuration + "min")], Object))], Object))], Object)), Dashboard.React.Elements.Div("flex-1", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("flex items-center gap-2", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.H(4, "font-semibold", System.Array.init([Dashboard.React.Elements.Text(($t = appointment.ServiceType, $t != null ? $t : "Appointment"))], Object)), Dashboard.Pages.AppointmentsPage.RenderStatusBadge(appointment.Status), Dashboard.Pages.AppointmentsPage.RenderPriorityBadge(appointment.Priority)], Object)), Dashboard.React.Elements.Div("text-sm text-gray-600 mt-1", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Icons.Users(), Dashboard.React.Elements.Text(" Patient: " + (Dashboard.Pages.AppointmentsPage.FormatReference(appointment.PatientReference) || ""))], Object)), Dashboard.React.Elements.Div("text-sm text-gray-600", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Icons.UserDoctor(), Dashboard.React.Elements.Text(" Provider: " + (Dashboard.Pages.AppointmentsPage.FormatReference(appointment.PractitionerReference) || ""))], Object)), descElement], Object)), Dashboard.React.Elements.Div("flex flex-col gap-2", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Button("btn btn-primary btn-sm", void 0, false, "button", System.Array.init([Dashboard.React.Elements.Text("Check In")], Object)), Dashboard.React.Elements.Button("btn btn-secondary btn-sm", void 0, false, "button", System.Array.init([Dashboard.Components.Icons.Edit()], Object))], Object))], Object))], Object));
+                    return Dashboard.React.Elements.Div("card-glass mb-4", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("flex items-start gap-4", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("metric-icon blue", void 0, { width: "60px", height: "60px" }, void 0, System.Array.init([Dashboard.React.Elements.Div("text-center", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("text-lg font-bold", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Text(Dashboard.Pages.AppointmentsPage.FormatTime(appointment.StartTime))], Object)), Dashboard.React.Elements.Div("text-xs", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Text(appointment.MinutesDuration + "min")], Object))], Object))], Object)), Dashboard.React.Elements.Div("flex-1", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("flex items-center gap-2", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.H(4, "font-semibold", System.Array.init([Dashboard.React.Elements.Text(($t = appointment.ServiceType, $t != null ? $t : "Appointment"))], Object)), Dashboard.Pages.AppointmentsPage.RenderStatusBadge(appointment.Status), Dashboard.Pages.AppointmentsPage.RenderPriorityBadge(appointment.Priority)], Object)), Dashboard.React.Elements.Div("text-sm text-gray-600 mt-1", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Icons.Users(), Dashboard.React.Elements.Text(" Patient: " + (Dashboard.Pages.AppointmentsPage.FormatReference(appointment.PatientReference) || ""))], Object)), Dashboard.React.Elements.Div("text-sm text-gray-600", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Icons.UserDoctor(), Dashboard.React.Elements.Text(" Provider: " + (Dashboard.Pages.AppointmentsPage.FormatReference(appointment.PractitionerReference) || ""))], Object)), descElement], Object)), Dashboard.React.Elements.Div("flex flex-col gap-2", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Button("btn btn-primary btn-sm", void 0, false, "button", System.Array.init([Dashboard.React.Elements.Text("Check In")], Object)), Dashboard.React.Elements.Button("btn btn-secondary btn-sm", function () {
+                        onEditAppointment(appointment.Id);
+                    }, false, "button", System.Array.init([Dashboard.Components.Icons.Edit()], Object))], Object))], Object))], Object));
                 },
                 RenderStatusBadge: function (status) {
                     var badgeClass;
@@ -53934,6 +54033,369 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
              * @type string
              */
             StatusFilter: null
+        }
+    });
+
+    /**
+     * Calendar-based schedule view page.
+     *
+     * @static
+     * @abstract
+     * @public
+     * @class Dashboard.Pages.CalendarPage
+     */
+    H5.define("Dashboard.Pages.CalendarPage", {
+        statics: {
+            fields: {
+                MonthNames: null,
+                DayNames: null
+            },
+            ctors: {
+                init: function () {
+                    this.MonthNames = System.Array.init(["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], System.String);
+                    this.DayNames = System.Array.init(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], System.String);
+                }
+            },
+            methods: {
+                /**
+                 * Renders the calendar page.
+                 *
+                 * @static
+                 * @public
+                 * @this Dashboard.Pages.CalendarPage
+                 * @memberof Dashboard.Pages.CalendarPage
+                 * @param   {System.Action}    onEditAppointment
+                 * @return  {Object}
+                 */
+                Render: function (onEditAppointment) {
+                    var $t;
+                    var now = System.DateTime.getNow();
+                    var stateResult = Dashboard.React.Hooks.UseState(Dashboard.Pages.CalendarState, ($t = new Dashboard.Pages.CalendarState(), $t.Appointments = System.Array.init(0, null, Object), $t.Loading = true, $t.Error = null, $t.Year = System.DateTime.getYear(now), $t.Month = System.DateTime.getMonth(now), $t.SelectedDay = 0, $t));
+
+                    var state = stateResult.State;
+                    var setState = stateResult.SetState;
+
+                    Dashboard.React.Hooks.UseEffect$1(function () {
+                        Dashboard.Pages.CalendarPage.LoadAppointments(setState, state);
+                    }, System.Array.init(0, null, System.Object));
+
+                    return Dashboard.React.Elements.Div("page", void 0, void 0, void 0, System.Array.init([Dashboard.Pages.CalendarPage.RenderHeader(state, setState), state.Loading ? Dashboard.Pages.CalendarPage.RenderLoadingState() : state.Error != null ? Dashboard.Pages.CalendarPage.RenderError(state.Error) : Dashboard.Pages.CalendarPage.RenderCalendarContent(state, setState, onEditAppointment)], Object));
+                },
+                LoadAppointments: function (setState, currentState) {
+                    var $s = 0,
+                        $t1, 
+                        $tr1, 
+                        $jff, 
+                        $rv, 
+                        appointments, 
+                        $t, 
+                        ex, 
+                        $ae, 
+                        $ae1, 
+                        $asyncBody = H5.fn.bind(this, function () {
+                            try {
+                                for (;;) {
+                                    $s = System.Array.min([1,2,3,4], $s);
+                                    switch ($s) {
+
+                                        case 1: {
+                                            $t1 = Dashboard.Api.ApiClient.GetAppointmentsAsync();
+                                            $s = 2;
+                                            if ($t1.isCompleted()) {
+                                                continue;
+                                            }
+                                            $t1.continue($asyncBody);
+                                            return;
+                                        }
+                                        case 2: {
+                                            $tr1 = $t1.getAwaitedResult();
+                                            appointments = $tr1;
+                                            setState(($t = new Dashboard.Pages.CalendarState(), $t.Appointments = appointments, $t.Loading = false, $t.Error = null, $t.Year = currentState.Year, $t.Month = currentState.Month, $t.SelectedDay = currentState.SelectedDay, $t));
+                                            $s = 4;
+                                            continue;
+                                        }
+                                        case 3: {
+                                            setState(($t = new Dashboard.Pages.CalendarState(), $t.Appointments = System.Array.init(0, null, Object), $t.Loading = false, $t.Error = ex.Message, $t.Year = currentState.Year, $t.Month = currentState.Month, $t.SelectedDay = currentState.SelectedDay, $t));
+                                            $ae = null;
+                                            $s = 4;
+                                            continue;
+                                        }
+                                        case 4: {
+                                            return;
+                                        }
+                                        default: {
+                                            return;
+                                        }
+                                    }
+                                }
+                            } catch($ae1) {
+                                $ae = System.Exception.create($ae1);
+                                if ( $s >= 1 && $s <= 2 ) {
+                                    ex = $ae;
+                                    $s = 3;
+                                    $asyncBody();
+                                    return;
+                                }
+                                throw $ae;
+                            }
+                        }, arguments);
+
+                    $asyncBody();
+                },
+                RenderHeader: function (state, setState) {
+                    var monthName = Dashboard.Pages.CalendarPage.MonthNames[System.Array.index(((state.Month - 1) | 0), Dashboard.Pages.CalendarPage.MonthNames)];
+                    return Dashboard.React.Elements.Div("page-header flex justify-between items-center mb-6", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div(void 0, void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.H(2, "page-title", System.Array.init([Dashboard.React.Elements.Text("Schedule")], Object)), Dashboard.React.Elements.P("page-description", void 0, System.Array.init([Dashboard.React.Elements.Text("View and manage appointments on the calendar")], Object))], Object)), Dashboard.React.Elements.Div("flex items-center gap-4", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Button("btn btn-secondary btn-sm", function () {
+                        Dashboard.Pages.CalendarPage.NavigateMonth(state, setState, -1);
+                    }, false, "button", System.Array.init([Dashboard.Components.Icons.ChevronLeft()], Object)), Dashboard.React.Elements.Span("text-lg font-semibold", void 0, void 0, System.Array.init([Dashboard.React.Elements.Text((monthName || "") + " " + state.Year)], Object)), Dashboard.React.Elements.Button("btn btn-secondary btn-sm", function () {
+                        Dashboard.Pages.CalendarPage.NavigateMonth(state, setState, 1);
+                    }, false, "button", System.Array.init([Dashboard.Components.Icons.ChevronRight()], Object)), Dashboard.React.Elements.Button("btn btn-primary btn-sm ml-4", function () {
+                        Dashboard.Pages.CalendarPage.GoToToday(state, setState);
+                    }, false, "button", System.Array.init([Dashboard.React.Elements.Text("Today")], Object))], Object))], Object));
+                },
+                NavigateMonth: function (state, setState, delta) {
+                    var $t;
+                    var newMonth = (state.Month + delta) | 0;
+                    var newYear = state.Year;
+
+                    if (newMonth < 1) {
+                        newMonth = 12;
+                        newYear = (newYear - 1) | 0;
+                    } else if (newMonth > 12) {
+                        newMonth = 1;
+                        newYear = (newYear + 1) | 0;
+                    }
+
+                    setState(($t = new Dashboard.Pages.CalendarState(), $t.Appointments = state.Appointments, $t.Loading = state.Loading, $t.Error = state.Error, $t.Year = newYear, $t.Month = newMonth, $t.SelectedDay = 0, $t));
+                },
+                GoToToday: function (state, setState) {
+                    var $t;
+                    var now = System.DateTime.getNow();
+                    setState(($t = new Dashboard.Pages.CalendarState(), $t.Appointments = state.Appointments, $t.Loading = state.Loading, $t.Error = state.Error, $t.Year = System.DateTime.getYear(now), $t.Month = System.DateTime.getMonth(now), $t.SelectedDay = System.DateTime.getDay(now), $t));
+                },
+                RenderLoadingState: function () {
+                    return Dashboard.React.Elements.Div("card", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("flex items-center justify-center p-8", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Text("Loading calendar...")], Object))], Object));
+                },
+                RenderError: function (message) {
+                    return Dashboard.React.Elements.Div("card", void 0, { borderLeft: "4px solid var(--error)" }, void 0, System.Array.init([Dashboard.React.Elements.Div("flex items-center gap-3 p-4", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Icons.X(), Dashboard.React.Elements.Text("Error loading appointments: " + (message || ""))], Object))], Object));
+                },
+                RenderCalendarContent: function (state, setState, onEditAppointment) {
+                    return Dashboard.React.Elements.Div("flex gap-6", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("flex-1", void 0, void 0, void 0, System.Array.init([Dashboard.Pages.CalendarPage.RenderCalendarGrid(state, setState)], Object)), state.SelectedDay > 0 ? Dashboard.Pages.CalendarPage.RenderDayDetails(state, setState, onEditAppointment) : Dashboard.Pages.CalendarPage.RenderNoSelection()], Object));
+                },
+                RenderCalendarGrid: function (state, setState) {
+                    var daysInMonth = System.DateTime.getDaysInMonth(state.Year, state.Month);
+                    var firstDay = System.DateTime.create(state.Year, state.Month, 1);
+                    var startDayOfWeek = System.DateTime.getDayOfWeek(firstDay);
+
+                    var headerCells = System.Linq.Enumerable.from(Dashboard.Pages.CalendarPage.DayNames, System.String).select(function (day) {
+                            return Dashboard.React.Elements.Div("calendar-header-cell text-center font-semibold p-2", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Text(day)], Object));
+                        }).ToArray(Object);
+
+                    var dayCells = System.Array.init(42, null, Object);
+                    var today = System.DateTime.getNow();
+
+                    for (var i = 0; i < 42; i = (i + 1) | 0) {
+                        var dayNum = (((i - startDayOfWeek) | 0) + 1) | 0;
+                        if (dayNum < 1 || dayNum > daysInMonth) {
+                            dayCells[System.Array.index(i, dayCells)] = Dashboard.React.Elements.Div("calendar-cell empty", void 0, void 0, void 0, System.Array.init(0, null, Object));
+                        } else {
+                            var appointments = Dashboard.Pages.CalendarPage.GetAppointmentsForDay(state.Appointments, state.Year, state.Month, dayNum);
+                            var isToday = state.Year === System.DateTime.getYear(today) && state.Month === System.DateTime.getMonth(today) && dayNum === System.DateTime.getDay(today);
+                            var isSelected = dayNum === state.SelectedDay;
+                            var dayNumCaptured = { v : dayNum };
+
+                            var cellClasses = "calendar-cell";
+                            if (isToday) {
+                                cellClasses = (cellClasses || "") + " today";
+                            }
+                            if (isSelected) {
+                                cellClasses = (cellClasses || "") + " selected";
+                            }
+                            if (appointments.length > 0) {
+                                cellClasses = (cellClasses || "") + " has-appointments";
+                            }
+
+                            dayCells[System.Array.index(i, dayCells)] = Dashboard.React.Elements.Div(cellClasses, void 0, void 0, (function ($me, dayNumCaptured) {
+                                return function () {
+                                    Dashboard.Pages.CalendarPage.SelectDay(state, setState, dayNumCaptured.v);
+                                };
+                            })(this, dayNumCaptured), System.Array.init([Dashboard.React.Elements.Div("calendar-day-number", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Text(H5.toString(dayNum))], Object)), appointments.length > 0 ? Dashboard.React.Elements.Div("calendar-appointments-preview", void 0, void 0, void 0, System.Linq.Enumerable.from(appointments, Object).take(3).select(function (a) {
+                                return Dashboard.Pages.CalendarPage.RenderAppointmentDot(a);
+                            }).ToArray(Object)) : null, appointments.length > 3 ? Dashboard.React.Elements.Span("calendar-more-indicator", void 0, void 0, System.Array.init([Dashboard.React.Elements.Text("+" + (((appointments.length - 3) | 0)))], Object)) : null], Object));
+                        }
+                    }
+
+                    return Dashboard.React.Elements.Div("card calendar-grid-container", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("calendar-grid-header grid grid-cols-7", void 0, void 0, void 0, headerCells), Dashboard.React.Elements.Div("calendar-grid grid grid-cols-7", void 0, void 0, void 0, dayCells)], Object));
+                },
+                RenderAppointmentDot: function (appointment) {
+                    var dotClass = "calendar-dot";
+                    if (H5.referenceEquals(appointment.Status, "booked")) {
+                        dotClass = (dotClass || "") + " blue";
+                    } else {
+                        if (H5.referenceEquals(appointment.Status, "arrived")) {
+                            dotClass = (dotClass || "") + " teal";
+                        } else {
+                            if (H5.referenceEquals(appointment.Status, "fulfilled")) {
+                                dotClass = (dotClass || "") + " green";
+                            } else {
+                                if (H5.referenceEquals(appointment.Status, "cancelled")) {
+                                    dotClass = (dotClass || "") + " red";
+                                } else {
+                                    dotClass = (dotClass || "") + " gray";
+                                }
+                            }
+                        }
+                    }
+
+                    return Dashboard.React.Elements.Span(dotClass, void 0, void 0);
+                },
+                SelectDay: function (state, setState, day) {
+                    var $t;
+                    setState(($t = new Dashboard.Pages.CalendarState(), $t.Appointments = state.Appointments, $t.Loading = state.Loading, $t.Error = state.Error, $t.Year = state.Year, $t.Month = state.Month, $t.SelectedDay = day, $t));
+                },
+                GetAppointmentsForDay: function (appointments, year, month, day) {
+                    var targetDate = System.DateTime.format(System.DateTime.create(year, month, day), "yyyy-MM-dd");
+                    return System.Linq.Enumerable.from(appointments, Object).where(function (a) {
+                            return a.StartTime != null && System.String.startsWith(a.StartTime, targetDate);
+                        }).orderBy(function (a) {
+                        return a.StartTime;
+                    }).ToArray(Object);
+                },
+                RenderNoSelection: function () {
+                    return Dashboard.React.Elements.Div("card calendar-details-panel", void 0, { width: "320px", minHeight: "400px" }, void 0, System.Array.init([Dashboard.React.Elements.Div("empty-state p-6", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Icons.Calendar(), Dashboard.React.Elements.H(4, "empty-state-title mt-4", System.Array.init([Dashboard.React.Elements.Text("Select a Day")], Object)), Dashboard.React.Elements.P("empty-state-description", void 0, System.Array.init([Dashboard.React.Elements.Text("Click on a day to view appointments")], Object))], Object))], Object));
+                },
+                RenderDayDetails: function (state, setState, onEditAppointment) {
+                    var appointments = Dashboard.Pages.CalendarPage.GetAppointmentsForDay(state.Appointments, state.Year, state.Month, state.SelectedDay);
+
+                    var monthName = Dashboard.Pages.CalendarPage.MonthNames[System.Array.index(((state.Month - 1) | 0), Dashboard.Pages.CalendarPage.MonthNames)];
+                    var dateStr = (monthName || "") + " " + state.SelectedDay + ", " + state.Year;
+
+                    return Dashboard.React.Elements.Div("card calendar-details-panel", void 0, { width: "320px", minHeight: "400px" }, void 0, System.Array.init([Dashboard.React.Elements.Div("flex justify-between items-center mb-4 p-4 border-b", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.H(4, "font-semibold", System.Array.init([Dashboard.React.Elements.Text(dateStr)], Object)), Dashboard.React.Elements.Button("btn btn-secondary btn-sm", function () {
+                        Dashboard.Pages.CalendarPage.SelectDay(state, setState, 0);
+                    }, false, "button", System.Array.init([Dashboard.Components.Icons.X()], Object))], Object)), appointments.length === 0 ? Dashboard.React.Elements.Div("empty-state p-6", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Icons.Calendar(), Dashboard.React.Elements.P("empty-state-description mt-4", void 0, System.Array.init([Dashboard.React.Elements.Text("No appointments scheduled")], Object))], Object)) : Dashboard.React.Elements.Div("p-4 space-y-3", void 0, void 0, void 0, System.Linq.Enumerable.from(appointments, Object).select(function (a) {
+                            return Dashboard.Pages.CalendarPage.RenderDayAppointment(a, onEditAppointment);
+                        }).ToArray(Object))], Object));
+                },
+                RenderDayAppointment: function (appointment, onEditAppointment) {
+                    var $t, $t1;
+                    var time = Dashboard.Pages.CalendarPage.FormatTime(appointment.StartTime);
+                    var endTime = Dashboard.Pages.CalendarPage.FormatTime(appointment.EndTime);
+                    var statusClass = Dashboard.Pages.CalendarPage.GetStatusClass(appointment.Status);
+
+                    return Dashboard.React.Elements.Div("calendar-appointment-item p-3 rounded-lg border", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("flex justify-between items-start mb-2", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div(void 0, void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("font-semibold", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Text(($t = appointment.ServiceType, $t != null ? $t : "Appointment"))], Object)), Dashboard.React.Elements.Div("text-sm text-gray-500", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Text((time || "") + " - " + (endTime || ""))], Object))], Object)), Dashboard.React.Elements.Span("badge " + (statusClass || ""), void 0, void 0, System.Array.init([Dashboard.React.Elements.Text(($t1 = appointment.Status, $t1 != null ? $t1 : "unknown"))], Object))], Object)), Dashboard.React.Elements.Div("text-sm text-gray-600 mb-2", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div(void 0, void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Text("Patient: " + (Dashboard.Pages.CalendarPage.FormatReference(appointment.PatientReference) || ""))], Object)), Dashboard.React.Elements.Div(void 0, void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Text("Provider: " + (Dashboard.Pages.CalendarPage.FormatReference(appointment.PractitionerReference) || ""))], Object))], Object)), Dashboard.React.Elements.Div("flex gap-2", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Button("btn btn-primary btn-sm flex-1", function () {
+                        onEditAppointment(appointment.Id);
+                    }, false, "button", System.Array.init([Dashboard.Components.Icons.Edit(), Dashboard.React.Elements.Text("Edit")], Object))], Object))], Object));
+                },
+                FormatTime: function (dateTime) {
+                    if (System.String.isNullOrEmpty(dateTime)) {
+                        return "N/A";
+                    }
+                    if (dateTime.length > 16) {
+                        return dateTime.substr(11, 5);
+                    }
+                    return dateTime;
+                },
+                FormatReference: function (reference) {
+                    if (System.String.isNullOrEmpty(reference)) {
+                        return "N/A";
+                    }
+                    var parts = System.String.split(reference, [47].map(function (i) {{ return String.fromCharCode(i); }}));
+                    if (parts.length > 1) {
+                        var id = parts[System.Array.index(1, parts)];
+                        var length = Math.min(8, id.length);
+                        return (id.substr(0, length) || "") + "...";
+                    }
+                    return reference;
+                },
+                GetStatusClass: function (status) {
+                    if (H5.referenceEquals(status, "booked")) {
+                        return "badge-primary";
+                    }
+                    if (H5.referenceEquals(status, "arrived")) {
+                        return "badge-teal";
+                    }
+                    if (H5.referenceEquals(status, "fulfilled")) {
+                        return "badge-success";
+                    }
+                    if (H5.referenceEquals(status, "cancelled")) {
+                        return "badge-error";
+                    }
+                    if (H5.referenceEquals(status, "noshow")) {
+                        return "badge-warning";
+                    }
+                    return "badge-gray";
+                }
+            }
+        }
+    });
+
+    /**
+     * Calendar page state class.
+     *
+     * @public
+     * @class Dashboard.Pages.CalendarState
+     */
+    H5.define("Dashboard.Pages.CalendarState", {
+        fields: {
+            /**
+             * List of appointments.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.CalendarState
+             * @function Appointments
+             * @type Array.<Object>
+             */
+            Appointments: null,
+            /**
+             * Whether loading.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.CalendarState
+             * @function Loading
+             * @type boolean
+             */
+            Loading: false,
+            /**
+             * Error message if any.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.CalendarState
+             * @function Error
+             * @type string
+             */
+            Error: null,
+            /**
+             * Current view year.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.CalendarState
+             * @function Year
+             * @type number
+             */
+            Year: 0,
+            /**
+             * Current view month (1-12).
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.CalendarState
+             * @function Month
+             * @type number
+             */
+            Month: 0,
+            /**
+             * Selected day for details view.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.CalendarState
+             * @function SelectedDay
+             * @type number
+             */
+            SelectedDay: 0
         }
     });
 
@@ -54154,6 +54616,540 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
              * @type string
              */
             Error: null
+        }
+    });
+
+    /**
+     * Edit appointment page component.
+     *
+     * @static
+     * @abstract
+     * @public
+     * @class Dashboard.Pages.EditAppointmentPage
+     */
+    H5.define("Dashboard.Pages.EditAppointmentPage", {
+        statics: {
+            methods: {
+                /**
+                 * Renders the edit appointment page.
+                 *
+                 * @static
+                 * @public
+                 * @this Dashboard.Pages.EditAppointmentPage
+                 * @memberof Dashboard.Pages.EditAppointmentPage
+                 * @param   {string}           appointmentId    
+                 * @param   {System.Action}    onBack
+                 * @return  {Object}
+                 */
+                Render: function (appointmentId, onBack) {
+                    var $t;
+                    var stateResult = Dashboard.React.Hooks.UseState(Dashboard.Pages.EditAppointmentState, ($t = new Dashboard.Pages.EditAppointmentState(), $t.Appointment = null, $t.Loading = true, $t.Saving = false, $t.Error = null, $t.Success = null, $t.ServiceCategory = "", $t.ServiceType = "", $t.ReasonCode = "", $t.Priority = "routine", $t.Description = "", $t.StartDate = "", $t.StartTime = "", $t.EndDate = "", $t.EndTime = "", $t.PatientReference = "", $t.PractitionerReference = "", $t.Comment = "", $t.Status = "booked", $t));
+
+                    var state = stateResult.State;
+                    var setState = stateResult.SetState;
+
+                    Dashboard.React.Hooks.UseEffect$1(function () {
+                        Dashboard.Pages.EditAppointmentPage.LoadAppointment(appointmentId, setState);
+                    }, System.Array.init([appointmentId], System.Object));
+
+                    if (state.Loading) {
+                        return Dashboard.Pages.EditAppointmentPage.RenderLoadingState();
+                    }
+
+                    if (state.Error != null && state.Appointment == null) {
+                        return Dashboard.Pages.EditAppointmentPage.RenderErrorState(state.Error, onBack);
+                    }
+
+                    return Dashboard.React.Elements.Div("page", void 0, void 0, void 0, System.Array.init([Dashboard.Pages.EditAppointmentPage.RenderHeader(state.Appointment, onBack), Dashboard.Pages.EditAppointmentPage.RenderForm(state, setState, onBack)], Object));
+                },
+                LoadAppointment: function (appointmentId, setState) {
+                    var $s = 0,
+                        $t1, 
+                        $tr1, 
+                        $jff, 
+                        $rv, 
+                        appointment, 
+                        startParts, 
+                        endParts, 
+                        $t, 
+                        $t2, 
+                        $t3, 
+                        $t4, 
+                        $t5, 
+                        $t6, 
+                        $t7, 
+                        $t8, 
+                        $t9, 
+                        ex, 
+                        $ae, 
+                        $ae1, 
+                        $asyncBody = H5.fn.bind(this, function () {
+                            try {
+                                for (;;) {
+                                    $s = System.Array.min([1,2,3,4], $s);
+                                    switch ($s) {
+
+                                        case 1: {
+                                            $t1 = Dashboard.Api.ApiClient.GetAppointmentAsync(appointmentId);
+                                            $s = 2;
+                                            if ($t1.isCompleted()) {
+                                                continue;
+                                            }
+                                            $t1.continue($asyncBody);
+                                            return;
+                                        }
+                                        case 2: {
+                                            $tr1 = $t1.getAwaitedResult();
+                                            appointment = $tr1;
+                                            startParts = Dashboard.Pages.EditAppointmentPage.ParseDateTime(appointment.StartTime);
+                                            endParts = Dashboard.Pages.EditAppointmentPage.ParseDateTime(appointment.EndTime);
+
+                                            setState(($t = new Dashboard.Pages.EditAppointmentState(), $t.Appointment = appointment, $t.Loading = false, $t.Saving = false, $t.Error = null, $t.Success = null, $t.ServiceCategory = ($t1 = appointment.ServiceCategory, $t1 != null ? $t1 : ""), $t.ServiceType = ($t2 = appointment.ServiceType, $t2 != null ? $t2 : ""), $t.ReasonCode = ($t3 = appointment.ReasonCode, $t3 != null ? $t3 : ""), $t.Priority = ($t4 = appointment.Priority, $t4 != null ? $t4 : "routine"), $t.Description = ($t5 = appointment.Description, $t5 != null ? $t5 : ""), $t.StartDate = startParts.Item1, $t.StartTime = startParts.Item2, $t.EndDate = endParts.Item1, $t.EndTime = endParts.Item2, $t.PatientReference = ($t6 = appointment.PatientReference, $t6 != null ? $t6 : ""), $t.PractitionerReference = ($t7 = appointment.PractitionerReference, $t7 != null ? $t7 : ""), $t.Comment = ($t8 = appointment.Comment, $t8 != null ? $t8 : ""), $t.Status = ($t9 = appointment.Status, $t9 != null ? $t9 : "booked"), $t));
+                                            $s = 4;
+                                            continue;
+                                        }
+                                        case 3: {
+                                            setState(($t = new Dashboard.Pages.EditAppointmentState(), $t.Appointment = null, $t.Loading = false, $t.Saving = false, $t.Error = ex.Message, $t.Success = null, $t.ServiceCategory = "", $t.ServiceType = "", $t.ReasonCode = "", $t.Priority = "routine", $t.Description = "", $t.StartDate = "", $t.StartTime = "", $t.EndDate = "", $t.EndTime = "", $t.PatientReference = "", $t.PractitionerReference = "", $t.Comment = "", $t.Status = "booked", $t));
+                                            $ae = null;
+                                            $s = 4;
+                                            continue;
+                                        }
+                                        case 4: {
+                                            return;
+                                        }
+                                        default: {
+                                            return;
+                                        }
+                                    }
+                                }
+                            } catch($ae1) {
+                                $ae = System.Exception.create($ae1);
+                                if ( $s >= 1 && $s <= 2 ) {
+                                    ex = $ae;
+                                    $s = 3;
+                                    $asyncBody();
+                                    return;
+                                }
+                                throw $ae;
+                            }
+                        }, arguments);
+
+                    $asyncBody();
+                },
+                ParseDateTime: function (isoDateTime) {
+                    if (System.String.isNullOrEmpty(isoDateTime)) {
+                        return new (System.ValueTuple$2(System.String,System.String)).$ctor1("", "");
+                    }
+
+                    if (isoDateTime.length >= 16) {
+                        var datePart = isoDateTime.substr(0, 10);
+                        var timePart = isoDateTime.substr(11, 5);
+                        return new (System.ValueTuple$2(System.String,System.String)).$ctor1(datePart, timePart);
+                    }
+
+                    return new (System.ValueTuple$2(System.String,System.String)).$ctor1("", "");
+                },
+                CombineDateTime: function (date, time) {
+                    if (System.String.isNullOrEmpty(date) || System.String.isNullOrEmpty(time)) {
+                        return "";
+                    }
+                    return (date || "") + "T" + (time || "") + ":00.000Z";
+                },
+                SaveAppointment: function (state, setState, onBack) {
+                    var $s = 0,
+                        $t1, 
+                        $tr1, 
+                        $jff, 
+                        $rv, 
+                        $t, 
+                        updateData, 
+                        updatedAppointment, 
+                        startParts, 
+                        endParts, 
+                        $t2, 
+                        $t3, 
+                        $t4, 
+                        $t5, 
+                        $t6, 
+                        $t7, 
+                        $t8, 
+                        $t9, 
+                        ex, 
+                        $ae, 
+                        $ae1, 
+                        $asyncBody = H5.fn.bind(this, function () {
+                            try {
+                                for (;;) {
+                                    $s = System.Array.min([0,1,2,3,4], $s);
+                                    switch ($s) {
+                                        case 0: {
+                                            setState(($t = new Dashboard.Pages.EditAppointmentState(), $t.Appointment = state.Appointment, $t.Loading = false, $t.Saving = true, $t.Error = null, $t.Success = null, $t.ServiceCategory = state.ServiceCategory, $t.ServiceType = state.ServiceType, $t.ReasonCode = state.ReasonCode, $t.Priority = state.Priority, $t.Description = state.Description, $t.StartDate = state.StartDate, $t.StartTime = state.StartTime, $t.EndDate = state.EndDate, $t.EndTime = state.EndTime, $t.PatientReference = state.PatientReference, $t.PractitionerReference = state.PractitionerReference, $t.Comment = state.Comment, $t.Status = state.Status, $t));
+                                            $s = 1;
+                                            continue;
+                                        }
+                                        case 1: {
+                                            updateData = { ServiceCategory: state.ServiceCategory, ServiceType: state.ServiceType, ReasonCode: System.String.isNullOrWhiteSpace(state.ReasonCode) ? null : state.ReasonCode, Priority: state.Priority, Description: System.String.isNullOrWhiteSpace(state.Description) ? null : state.Description, Start: Dashboard.Pages.EditAppointmentPage.CombineDateTime(state.StartDate, state.StartTime), End: Dashboard.Pages.EditAppointmentPage.CombineDateTime(state.EndDate, state.EndTime), PatientReference: state.PatientReference, PractitionerReference: state.PractitionerReference, Comment: System.String.isNullOrWhiteSpace(state.Comment) ? null : state.Comment, Status: state.Status };
+
+                                            $t1 = Dashboard.Api.ApiClient.UpdateAppointmentAsync(state.Appointment.Id, updateData);
+                                            $s = 2;
+                                            if ($t1.isCompleted()) {
+                                                continue;
+                                            }
+                                            $t1.continue($asyncBody);
+                                            return;
+                                        }
+                                        case 2: {
+                                            $tr1 = $t1.getAwaitedResult();
+                                            updatedAppointment = $tr1;
+
+                                            startParts = Dashboard.Pages.EditAppointmentPage.ParseDateTime(updatedAppointment.StartTime);
+                                            endParts = Dashboard.Pages.EditAppointmentPage.ParseDateTime(updatedAppointment.EndTime);
+
+                                            setState(($t = new Dashboard.Pages.EditAppointmentState(), $t.Appointment = updatedAppointment, $t.Loading = false, $t.Saving = false, $t.Error = null, $t.Success = "Appointment updated successfully!", $t.ServiceCategory = ($t1 = updatedAppointment.ServiceCategory, $t1 != null ? $t1 : ""), $t.ServiceType = ($t2 = updatedAppointment.ServiceType, $t2 != null ? $t2 : ""), $t.ReasonCode = ($t3 = updatedAppointment.ReasonCode, $t3 != null ? $t3 : ""), $t.Priority = ($t4 = updatedAppointment.Priority, $t4 != null ? $t4 : "routine"), $t.Description = ($t5 = updatedAppointment.Description, $t5 != null ? $t5 : ""), $t.StartDate = startParts.Item1, $t.StartTime = startParts.Item2, $t.EndDate = endParts.Item1, $t.EndTime = endParts.Item2, $t.PatientReference = ($t6 = updatedAppointment.PatientReference, $t6 != null ? $t6 : ""), $t.PractitionerReference = ($t7 = updatedAppointment.PractitionerReference, $t7 != null ? $t7 : ""), $t.Comment = ($t8 = updatedAppointment.Comment, $t8 != null ? $t8 : ""), $t.Status = ($t9 = updatedAppointment.Status, $t9 != null ? $t9 : "booked"), $t));
+                                            $s = 4;
+                                            continue;
+                                        }
+                                        case 3: {
+                                            setState(($t = new Dashboard.Pages.EditAppointmentState(), $t.Appointment = state.Appointment, $t.Loading = false, $t.Saving = false, $t.Error = ex.Message, $t.Success = null, $t.ServiceCategory = state.ServiceCategory, $t.ServiceType = state.ServiceType, $t.ReasonCode = state.ReasonCode, $t.Priority = state.Priority, $t.Description = state.Description, $t.StartDate = state.StartDate, $t.StartTime = state.StartTime, $t.EndDate = state.EndDate, $t.EndTime = state.EndTime, $t.PatientReference = state.PatientReference, $t.PractitionerReference = state.PractitionerReference, $t.Comment = state.Comment, $t.Status = state.Status, $t));
+                                            $ae = null;
+                                            $s = 4;
+                                            continue;
+                                        }
+                                        case 4: {
+                                            return;
+                                        }
+                                        default: {
+                                            return;
+                                        }
+                                    }
+                                }
+                            } catch($ae1) {
+                                $ae = System.Exception.create($ae1);
+                                if ( $s >= 1 && $s <= 2 ) {
+                                    ex = $ae;
+                                    $s = 3;
+                                    $asyncBody();
+                                    return;
+                                }
+                                throw $ae;
+                            }
+                        }, arguments);
+
+                    $asyncBody();
+                },
+                RenderLoadingState: function () {
+                    return Dashboard.React.Elements.Div("page", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("page-header", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.H(2, "page-title", System.Array.init([Dashboard.React.Elements.Text("Edit Appointment")], Object)), Dashboard.React.Elements.P("page-description", void 0, System.Array.init([Dashboard.React.Elements.Text("Loading appointment data...")], Object))], Object)), Dashboard.React.Elements.Div("card", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("flex items-center justify-center p-8", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Text("Loading...")], Object))], Object))], Object));
+                },
+                RenderErrorState: function (error, onBack) {
+                    return Dashboard.React.Elements.Div("page", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div("page-header flex justify-between items-center", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div(void 0, void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.H(2, "page-title", System.Array.init([Dashboard.React.Elements.Text("Edit Appointment")], Object)), Dashboard.React.Elements.P("page-description", void 0, System.Array.init([Dashboard.React.Elements.Text("Error loading appointment")], Object))], Object)), Dashboard.React.Elements.Button("btn btn-secondary", onBack, false, "button", System.Array.init([Dashboard.Components.Icons.ChevronLeft(), Dashboard.React.Elements.Text("Back to Appointments")], Object))], Object)), Dashboard.React.Elements.Div("card", void 0, { borderLeft: "4px solid var(--error)" }, void 0, System.Array.init([Dashboard.React.Elements.Div("flex items-center gap-3 p-4", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Icons.X(), Dashboard.React.Elements.Text("Error loading appointment: " + (error || ""))], Object))], Object))], Object));
+                },
+                RenderHeader: function (appointment, onBack) {
+                    var $t;
+                    var title = ($t = appointment.ServiceType, $t != null ? $t : "Appointment");
+                    return Dashboard.React.Elements.Div("page-header flex justify-between items-center", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Div(void 0, void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.H(2, "page-title", System.Array.init([Dashboard.React.Elements.Text("Edit Appointment")], Object)), Dashboard.React.Elements.P("page-description", void 0, System.Array.init([Dashboard.React.Elements.Text("Update details for " + (title || ""))], Object))], Object)), Dashboard.React.Elements.Button("btn btn-secondary", onBack, false, "button", System.Array.init([Dashboard.Components.Icons.ChevronLeft(), Dashboard.React.Elements.Text("Back to Appointments")], Object))], Object));
+                },
+                RenderForm: function (state, setState, onBack) {
+                    return Dashboard.React.Elements.Div("card", void 0, void 0, void 0, System.Array.init([state.Error != null ? Dashboard.React.Elements.Div("alert alert-error mb-4", void 0, void 0, void 0, System.Array.init([Dashboard.Components.Icons.X(), Dashboard.React.Elements.Text(state.Error)], Object)) : null, state.Success != null ? Dashboard.React.Elements.Div("alert alert-success mb-4", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Text(state.Success)], Object)) : null, Dashboard.React.Elements.Form("form", function () {
+                        Dashboard.Pages.EditAppointmentPage.SaveAppointment(state, setState, onBack);
+                    }, System.Array.init([Dashboard.Pages.EditAppointmentPage.RenderFormSection("Appointment Details", System.Array.init([Dashboard.Pages.EditAppointmentPage.RenderInputField("Service Category", "appointment-service-category", state.ServiceCategory, "e.g., General Practice", function (v) {
+                        Dashboard.Pages.EditAppointmentPage.UpdateField(state, setState, "ServiceCategory", v);
+                    }), Dashboard.Pages.EditAppointmentPage.RenderInputField("Service Type", "appointment-service-type", state.ServiceType, "e.g., Checkup, Follow-up", function (v) {
+                        Dashboard.Pages.EditAppointmentPage.UpdateField(state, setState, "ServiceType", v);
+                    }), Dashboard.Pages.EditAppointmentPage.RenderInputField("Reason", "appointment-reason", state.ReasonCode, "Reason for appointment", function (v) {
+                        Dashboard.Pages.EditAppointmentPage.UpdateField(state, setState, "ReasonCode", v);
+                    }), Dashboard.Pages.EditAppointmentPage.RenderSelectField("Priority", "appointment-priority", state.Priority, System.Array.init([new (System.ValueTuple$2(System.String,System.String)).$ctor1("routine", "Routine"), new (System.ValueTuple$2(System.String,System.String)).$ctor1("urgent", "Urgent"), new (System.ValueTuple$2(System.String,System.String)).$ctor1("asap", "ASAP"), new (System.ValueTuple$2(System.String,System.String)).$ctor1("stat", "STAT")], System.ValueTuple$2(System.String,System.String)), function (v) {
+                        Dashboard.Pages.EditAppointmentPage.UpdateField(state, setState, "Priority", v);
+                    }), Dashboard.Pages.EditAppointmentPage.RenderSelectField("Status", "appointment-status", state.Status, System.Array.init([new (System.ValueTuple$2(System.String,System.String)).$ctor1("booked", "Booked"), new (System.ValueTuple$2(System.String,System.String)).$ctor1("arrived", "Arrived"), new (System.ValueTuple$2(System.String,System.String)).$ctor1("fulfilled", "Fulfilled"), new (System.ValueTuple$2(System.String,System.String)).$ctor1("cancelled", "Cancelled"), new (System.ValueTuple$2(System.String,System.String)).$ctor1("noshow", "No Show")], System.ValueTuple$2(System.String,System.String)), function (v) {
+                        Dashboard.Pages.EditAppointmentPage.UpdateField(state, setState, "Status", v);
+                    }), Dashboard.Pages.EditAppointmentPage.RenderTextareaField("Description", "appointment-description", state.Description, "Additional details", function (v) {
+                        Dashboard.Pages.EditAppointmentPage.UpdateField(state, setState, "Description", v);
+                    })], Object)), Dashboard.Pages.EditAppointmentPage.RenderFormSection("Schedule", System.Array.init([Dashboard.Pages.EditAppointmentPage.RenderInputField("Start Date", "appointment-start-date", state.StartDate, "YYYY-MM-DD", function (v) {
+                        Dashboard.Pages.EditAppointmentPage.UpdateField(state, setState, "StartDate", v);
+                    }, "date"), Dashboard.Pages.EditAppointmentPage.RenderInputField("Start Time", "appointment-start-time", state.StartTime, "HH:MM", function (v) {
+                        Dashboard.Pages.EditAppointmentPage.UpdateField(state, setState, "StartTime", v);
+                    }, "time"), Dashboard.Pages.EditAppointmentPage.RenderInputField("End Date", "appointment-end-date", state.EndDate, "YYYY-MM-DD", function (v) {
+                        Dashboard.Pages.EditAppointmentPage.UpdateField(state, setState, "EndDate", v);
+                    }, "date"), Dashboard.Pages.EditAppointmentPage.RenderInputField("End Time", "appointment-end-time", state.EndTime, "HH:MM", function (v) {
+                        Dashboard.Pages.EditAppointmentPage.UpdateField(state, setState, "EndTime", v);
+                    }, "time")], Object)), Dashboard.Pages.EditAppointmentPage.RenderFormSection("Participants", System.Array.init([Dashboard.Pages.EditAppointmentPage.RenderInputField("Patient Reference", "appointment-patient", state.PatientReference, "Patient/[id]", function (v) {
+                        Dashboard.Pages.EditAppointmentPage.UpdateField(state, setState, "PatientReference", v);
+                    }), Dashboard.Pages.EditAppointmentPage.RenderInputField("Practitioner Reference", "appointment-practitioner", state.PractitionerReference, "Practitioner/[id]", function (v) {
+                        Dashboard.Pages.EditAppointmentPage.UpdateField(state, setState, "PractitionerReference", v);
+                    })], Object)), Dashboard.Pages.EditAppointmentPage.RenderFormSection("Notes", System.Array.init([Dashboard.Pages.EditAppointmentPage.RenderTextareaField("Comment", "appointment-comment", state.Comment, "Any additional comments", function (v) {
+                        Dashboard.Pages.EditAppointmentPage.UpdateField(state, setState, "Comment", v);
+                    })], Object)), Dashboard.Pages.EditAppointmentPage.RenderFormActions(state, onBack)], Object))], Object));
+                },
+                RenderFormSection: function (title, fields) {
+                    return Dashboard.React.Elements.Div("form-section mb-6", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.H(4, "form-section-title mb-4", System.Array.init([Dashboard.React.Elements.Text(title)], Object)), Dashboard.React.Elements.Div("grid grid-cols-2 gap-4", void 0, void 0, void 0, fields)], Object));
+                },
+                RenderInputField: function (label, id, value, placeholder, onChange, type) {
+                    if (type === void 0) { type = "text"; }
+                    return Dashboard.React.Elements.Div("form-group", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Label(id, "form-label", System.Array.init([Dashboard.React.Elements.Text(label)], Object)), Dashboard.React.Elements.Input("input", type, value, placeholder, onChange, false)], Object));
+                },
+                RenderTextareaField: function (label, id, value, placeholder, onChange) {
+                    return Dashboard.React.Elements.Div("form-group col-span-2", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Label(id, "form-label", System.Array.init([Dashboard.React.Elements.Text(label)], Object)), Dashboard.React.Elements.TextArea("input", value, placeholder, 3, onChange)], Object));
+                },
+                RenderSelectField: function (label, id, value, options, onChange) {
+                    var optionElements = System.Array.init(options.length, null, Object);
+                    for (var i = 0; i < options.length; i = (i + 1) | 0) {
+                        optionElements[System.Array.index(i, optionElements)] = Dashboard.React.Elements.Option(options[System.Array.index(i, options)].Item1, options[System.Array.index(i, options)].Item2);
+                    }
+
+                    return Dashboard.React.Elements.Div("form-group", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Label(id, "form-label", System.Array.init([Dashboard.React.Elements.Text(label)], Object)), Dashboard.React.Elements.Select("input", value, onChange, optionElements)], Object));
+                },
+                RenderFormActions: function (state, onBack) {
+                    return Dashboard.React.Elements.Div("form-actions flex justify-end gap-4 mt-6", void 0, void 0, void 0, System.Array.init([Dashboard.React.Elements.Button("btn btn-secondary", onBack, state.Saving, "button", System.Array.init([Dashboard.React.Elements.Text("Cancel")], Object)), Dashboard.React.Elements.Button("btn btn-primary", void 0, state.Saving, "submit", System.Array.init([Dashboard.React.Elements.Text(state.Saving ? "Saving..." : "Save Changes")], Object))], Object));
+                },
+                UpdateField: function (state, setState, field, value) {
+                    var $t;
+                    var newState = ($t = new Dashboard.Pages.EditAppointmentState(), $t.Appointment = state.Appointment, $t.Loading = state.Loading, $t.Saving = state.Saving, $t.Error = null, $t.Success = null, $t.ServiceCategory = state.ServiceCategory, $t.ServiceType = state.ServiceType, $t.ReasonCode = state.ReasonCode, $t.Priority = state.Priority, $t.Description = state.Description, $t.StartDate = state.StartDate, $t.StartTime = state.StartTime, $t.EndDate = state.EndDate, $t.EndTime = state.EndTime, $t.PatientReference = state.PatientReference, $t.PractitionerReference = state.PractitionerReference, $t.Comment = state.Comment, $t.Status = state.Status, $t);
+
+                    if (H5.referenceEquals(field, "ServiceCategory")) {
+                        newState.ServiceCategory = value;
+                    } else {
+                        if (H5.referenceEquals(field, "ServiceType")) {
+                            newState.ServiceType = value;
+                        } else {
+                            if (H5.referenceEquals(field, "ReasonCode")) {
+                                newState.ReasonCode = value;
+                            } else {
+                                if (H5.referenceEquals(field, "Priority")) {
+                                    newState.Priority = value;
+                                } else {
+                                    if (H5.referenceEquals(field, "Description")) {
+                                        newState.Description = value;
+                                    } else {
+                                        if (H5.referenceEquals(field, "StartDate")) {
+                                            newState.StartDate = value;
+                                        } else {
+                                            if (H5.referenceEquals(field, "StartTime")) {
+                                                newState.StartTime = value;
+                                            } else {
+                                                if (H5.referenceEquals(field, "EndDate")) {
+                                                    newState.EndDate = value;
+                                                } else {
+                                                    if (H5.referenceEquals(field, "EndTime")) {
+                                                        newState.EndTime = value;
+                                                    } else {
+                                                        if (H5.referenceEquals(field, "PatientReference")) {
+                                                            newState.PatientReference = value;
+                                                        } else {
+                                                            if (H5.referenceEquals(field, "PractitionerReference")) {
+                                                                newState.PractitionerReference = value;
+                                                            } else {
+                                                                if (H5.referenceEquals(field, "Comment")) {
+                                                                    newState.Comment = value;
+                                                                } else {
+                                                                    if (H5.referenceEquals(field, "Status")) {
+                                                                        newState.Status = value;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    setState(newState);
+                }
+            }
+        }
+    });
+
+    /**
+     * Edit appointment page state class.
+     *
+     * @public
+     * @class Dashboard.Pages.EditAppointmentState
+     */
+    H5.define("Dashboard.Pages.EditAppointmentState", {
+        fields: {
+            /**
+             * Appointment being edited.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function Appointment
+             * @type Object
+             */
+            Appointment: null,
+            /**
+             * Whether loading.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function Loading
+             * @type boolean
+             */
+            Loading: false,
+            /**
+             * Whether saving.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function Saving
+             * @type boolean
+             */
+            Saving: false,
+            /**
+             * Error message if any.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function Error
+             * @type string
+             */
+            Error: null,
+            /**
+             * Success message if any.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function Success
+             * @type string
+             */
+            Success: null,
+            /**
+             * Form field: Service category.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function ServiceCategory
+             * @type string
+             */
+            ServiceCategory: null,
+            /**
+             * Form field: Service type.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function ServiceType
+             * @type string
+             */
+            ServiceType: null,
+            /**
+             * Form field: Reason code.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function ReasonCode
+             * @type string
+             */
+            ReasonCode: null,
+            /**
+             * Form field: Priority.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function Priority
+             * @type string
+             */
+            Priority: null,
+            /**
+             * Form field: Description.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function Description
+             * @type string
+             */
+            Description: null,
+            /**
+             * Form field: Start date.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function StartDate
+             * @type string
+             */
+            StartDate: null,
+            /**
+             * Form field: Start time.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function StartTime
+             * @type string
+             */
+            StartTime: null,
+            /**
+             * Form field: End date.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function EndDate
+             * @type string
+             */
+            EndDate: null,
+            /**
+             * Form field: End time.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function EndTime
+             * @type string
+             */
+            EndTime: null,
+            /**
+             * Form field: Patient reference.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function PatientReference
+             * @type string
+             */
+            PatientReference: null,
+            /**
+             * Form field: Practitioner reference.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function PractitionerReference
+             * @type string
+             */
+            PractitionerReference: null,
+            /**
+             * Form field: Comment.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function Comment
+             * @type string
+             */
+            Comment: null,
+            /**
+             * Form field: Status.
+             *
+             * @instance
+             * @public
+             * @memberof Dashboard.Pages.EditAppointmentState
+             * @function Status
+             * @type string
+             */
+            Status: null
         }
     });
 
@@ -56232,7 +57228,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
 
     var $m = H5.setMetadata,
         $n = ["System","Dashboard","Dashboard.React","Dashboard.Pages","Dashboard.Components","System.Threading.Tasks"];
-    $m("Dashboard.AppState", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"ActiveView","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_ActiveView","t":8,"rt":$n[0].String,"fg":"ActiveView"},"s":{"a":2,"n":"set_ActiveView","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"ActiveView"},"fn":"ActiveView"},{"a":2,"n":"EditingPatientId","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_EditingPatientId","t":8,"rt":$n[0].String,"fg":"EditingPatientId"},"s":{"a":2,"n":"set_EditingPatientId","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"EditingPatientId"},"fn":"EditingPatientId"},{"a":2,"n":"NotificationCount","t":16,"rt":$n[0].Int32,"g":{"a":2,"n":"get_NotificationCount","t":8,"rt":$n[0].Int32,"fg":"NotificationCount","box":function ($v) { return H5.box($v, System.Int32);}},"s":{"a":2,"n":"set_NotificationCount","t":8,"p":[$n[0].Int32],"rt":$n[0].Void,"fs":"NotificationCount"},"fn":"NotificationCount"},{"a":2,"n":"SearchQuery","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_SearchQuery","t":8,"rt":$n[0].String,"fg":"SearchQuery"},"s":{"a":2,"n":"set_SearchQuery","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"SearchQuery"},"fn":"SearchQuery"},{"a":2,"n":"SidebarCollapsed","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_SidebarCollapsed","t":8,"rt":$n[0].Boolean,"fg":"SidebarCollapsed","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_SidebarCollapsed","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"SidebarCollapsed"},"fn":"SidebarCollapsed"},{"a":1,"backing":true,"n":"<ActiveView>k__BackingField","t":4,"rt":$n[0].String,"sn":"ActiveView"},{"a":1,"backing":true,"n":"<EditingPatientId>k__BackingField","t":4,"rt":$n[0].String,"sn":"EditingPatientId"},{"a":1,"backing":true,"n":"<NotificationCount>k__BackingField","t":4,"rt":$n[0].Int32,"sn":"NotificationCount","box":function ($v) { return H5.box($v, System.Int32);}},{"a":1,"backing":true,"n":"<SearchQuery>k__BackingField","t":4,"rt":$n[0].String,"sn":"SearchQuery"},{"a":1,"backing":true,"n":"<SidebarCollapsed>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"SidebarCollapsed","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}}]}; }, $n);
+    $m("Dashboard.AppState", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"ActiveView","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_ActiveView","t":8,"rt":$n[0].String,"fg":"ActiveView"},"s":{"a":2,"n":"set_ActiveView","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"ActiveView"},"fn":"ActiveView"},{"a":2,"n":"EditingAppointmentId","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_EditingAppointmentId","t":8,"rt":$n[0].String,"fg":"EditingAppointmentId"},"s":{"a":2,"n":"set_EditingAppointmentId","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"EditingAppointmentId"},"fn":"EditingAppointmentId"},{"a":2,"n":"EditingPatientId","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_EditingPatientId","t":8,"rt":$n[0].String,"fg":"EditingPatientId"},"s":{"a":2,"n":"set_EditingPatientId","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"EditingPatientId"},"fn":"EditingPatientId"},{"a":2,"n":"NotificationCount","t":16,"rt":$n[0].Int32,"g":{"a":2,"n":"get_NotificationCount","t":8,"rt":$n[0].Int32,"fg":"NotificationCount","box":function ($v) { return H5.box($v, System.Int32);}},"s":{"a":2,"n":"set_NotificationCount","t":8,"p":[$n[0].Int32],"rt":$n[0].Void,"fs":"NotificationCount"},"fn":"NotificationCount"},{"a":2,"n":"SearchQuery","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_SearchQuery","t":8,"rt":$n[0].String,"fg":"SearchQuery"},"s":{"a":2,"n":"set_SearchQuery","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"SearchQuery"},"fn":"SearchQuery"},{"a":2,"n":"SidebarCollapsed","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_SidebarCollapsed","t":8,"rt":$n[0].Boolean,"fg":"SidebarCollapsed","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_SidebarCollapsed","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"SidebarCollapsed"},"fn":"SidebarCollapsed"},{"a":1,"backing":true,"n":"<ActiveView>k__BackingField","t":4,"rt":$n[0].String,"sn":"ActiveView"},{"a":1,"backing":true,"n":"<EditingAppointmentId>k__BackingField","t":4,"rt":$n[0].String,"sn":"EditingAppointmentId"},{"a":1,"backing":true,"n":"<EditingPatientId>k__BackingField","t":4,"rt":$n[0].String,"sn":"EditingPatientId"},{"a":1,"backing":true,"n":"<NotificationCount>k__BackingField","t":4,"rt":$n[0].Int32,"sn":"NotificationCount","box":function ($v) { return H5.box($v, System.Int32);}},{"a":1,"backing":true,"n":"<SearchQuery>k__BackingField","t":4,"rt":$n[0].String,"sn":"SearchQuery"},{"a":1,"backing":true,"n":"<SidebarCollapsed>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"SidebarCollapsed","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}}]}; }, $n);
     $m("Dashboard.App", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"GetPageTitle","is":true,"t":8,"pi":[{"n":"view","pt":$n[0].String,"ps":0}],"sn":"GetPageTitle","rt":$n[0].String,"p":[$n[0].String]},{"a":2,"n":"Render","is":true,"t":8,"sn":"Render","rt":Object},{"a":1,"n":"RenderPage","is":true,"t":8,"pi":[{"n":"state","pt":$n[1].AppState,"ps":0},{"n":"setState","pt":Function,"ps":1}],"sn":"RenderPage","rt":Object,"p":[$n[1].AppState,Function]},{"a":1,"n":"RenderPlaceholderPage","is":true,"t":8,"pi":[{"n":"title","pt":$n[0].String,"ps":0},{"n":"description","pt":$n[0].String,"ps":1}],"sn":"RenderPlaceholderPage","rt":Object,"p":[$n[0].String,$n[0].String]}]}; }, $n);
     $m("Dashboard.Program", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"GetConfigValue","is":true,"t":8,"pi":[{"n":"key","pt":$n[0].String,"ps":0},{"n":"defaultValue","pt":$n[0].String,"ps":1}],"sn":"GetConfigValue","rt":$n[0].String,"p":[$n[0].String,$n[0].String]},{"a":1,"n":"HideLoadingScreen","is":true,"t":8,"sn":"HideLoadingScreen","rt":$n[0].Void},{"a":1,"n":"Log","is":true,"t":8,"pi":[{"n":"message","pt":$n[0].String,"ps":0}],"sn":"Log","rt":$n[0].Void,"p":[$n[0].String]},{"a":2,"n":"Main","is":true,"t":8,"sn":"Main","rt":$n[0].Void}]}; }, $n);
     $m("Dashboard.React.Elements", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"A","is":true,"t":8,"pi":[{"n":"href","pt":$n[0].String,"ps":0},{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"target","dv":null,"o":true,"pt":$n[0].String,"ps":2},{"n":"onClick","dv":null,"o":true,"pt":Function,"ps":3},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":4}],"sn":"A","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,Function,System.Array.type(Object)]},{"a":2,"n":"Article","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Article","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Aside","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Aside","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Button","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"onClick","dv":null,"o":true,"pt":Function,"ps":1},{"n":"disabled","dv":false,"o":true,"pt":$n[0].Boolean,"ps":2},{"n":"type","dv":"button","o":true,"pt":$n[0].String,"ps":3},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":4}],"sn":"Button","rt":Object,"p":[$n[0].String,Function,$n[0].Boolean,$n[0].String,System.Array.type(Object)]},{"a":1,"n":"CreateElement","is":true,"t":8,"pi":[{"n":"tag","pt":$n[0].String,"ps":0},{"n":"className","pt":$n[0].String,"ps":1},{"n":"id","pt":$n[0].String,"ps":2},{"n":"style","pt":$n[0].Object,"ps":3},{"n":"onClick","pt":Function,"ps":4},{"n":"children","pt":System.Array.type(Object),"ps":5}],"sn":"CreateElement","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].Object,Function,System.Array.type(Object)]},{"a":2,"n":"Div","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"id","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"style","dv":null,"o":true,"pt":$n[0].Object,"ps":2},{"n":"onClick","dv":null,"o":true,"pt":Function,"ps":3},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":4}],"sn":"Div","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].Object,Function,System.Array.type(Object)]},{"a":2,"n":"Footer","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Footer","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Form","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"onSubmit","dv":null,"o":true,"pt":Function,"ps":1},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":2}],"sn":"Form","rt":Object,"p":[$n[0].String,Function,System.Array.type(Object)]},{"a":2,"n":"Fragment","is":true,"t":8,"pi":[{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":0}],"sn":"Fragment","rt":Object,"p":[System.Array.type(Object)]},{"a":2,"n":"H","is":true,"t":8,"pi":[{"n":"level","pt":$n[0].Int32,"ps":0},{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":2}],"sn":"H","rt":Object,"p":[$n[0].Int32,$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Header","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Header","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Img","is":true,"t":8,"pi":[{"n":"src","pt":$n[0].String,"ps":0},{"n":"alt","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":2},{"n":"style","dv":null,"o":true,"pt":$n[0].Object,"ps":3}],"sn":"Img","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].Object]},{"a":2,"n":"Input","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"type","dv":"text","o":true,"pt":$n[0].String,"ps":1},{"n":"value","dv":null,"o":true,"pt":$n[0].String,"ps":2},{"n":"placeholder","dv":null,"o":true,"pt":$n[0].String,"ps":3},{"n":"onChange","dv":null,"o":true,"pt":Function,"ps":4},{"n":"disabled","dv":false,"o":true,"pt":$n[0].Boolean,"ps":5}],"sn":"Input","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].String,Function,$n[0].Boolean]},{"a":2,"n":"Label","is":true,"t":8,"pi":[{"n":"htmlFor","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":2}],"sn":"Label","rt":Object,"p":[$n[0].String,$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Li","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"onClick","dv":null,"o":true,"pt":Function,"ps":1},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":2}],"sn":"Li","rt":Object,"p":[$n[0].String,Function,System.Array.type(Object)]},{"a":2,"n":"Main","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Main","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Nav","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Nav","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Option","is":true,"t":8,"pi":[{"n":"value","pt":$n[0].String,"ps":0},{"n":"label","pt":$n[0].String,"ps":1}],"sn":"Option","rt":Object,"p":[$n[0].String,$n[0].String]},{"a":2,"n":"P","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"style","dv":null,"o":true,"pt":$n[0].Object,"ps":1},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":2}],"sn":"P","rt":Object,"p":[$n[0].String,$n[0].Object,System.Array.type(Object)]},{"a":2,"n":"Path","is":true,"t":8,"pi":[{"n":"d","pt":$n[0].String,"ps":0},{"n":"fill","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"stroke","dv":null,"o":true,"pt":$n[0].String,"ps":2},{"n":"strokeWidth","dv":0,"o":true,"pt":$n[0].Int32,"ps":3}],"sn":"Path","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].Int32]},{"a":2,"n":"Section","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Section","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Select","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"value","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"onChange","dv":null,"o":true,"pt":Function,"ps":2},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":3}],"sn":"Select","rt":Object,"p":[$n[0].String,$n[0].String,Function,System.Array.type(Object)]},{"a":2,"n":"Span","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"id","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"style","dv":null,"o":true,"pt":$n[0].Object,"ps":2},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":3}],"sn":"Span","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].Object,System.Array.type(Object)]},{"a":2,"n":"Svg","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"width","dv":0,"o":true,"pt":$n[0].Int32,"ps":1},{"n":"height","dv":0,"o":true,"pt":$n[0].Int32,"ps":2},{"n":"viewBox","dv":null,"o":true,"pt":$n[0].String,"ps":3},{"n":"fill","dv":null,"o":true,"pt":$n[0].String,"ps":4},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":5}],"sn":"Svg","rt":Object,"p":[$n[0].String,$n[0].Int32,$n[0].Int32,$n[0].String,$n[0].String,System.Array.type(Object)]},{"a":2,"n":"TBody","is":true,"t":8,"pi":[{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":0}],"sn":"TBody","rt":Object,"p":[System.Array.type(Object)]},{"a":2,"n":"THead","is":true,"t":8,"pi":[{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":0}],"sn":"THead","rt":Object,"p":[System.Array.type(Object)]},{"a":2,"n":"Table","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Table","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Td","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Td","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Text","is":true,"t":8,"pi":[{"n":"content","pt":$n[0].String,"ps":0}],"sn":"Text","rt":Object,"p":[$n[0].String]},{"a":2,"n":"TextArea","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"value","dv":null,"o":true,"pt":$n[0].String,"ps":1},{"n":"placeholder","dv":null,"o":true,"pt":$n[0].String,"ps":2},{"n":"rows","dv":0,"o":true,"pt":$n[0].Int32,"ps":3},{"n":"onChange","dv":null,"o":true,"pt":Function,"ps":4}],"sn":"TextArea","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].Int32,Function]},{"a":2,"n":"Th","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Th","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":2,"n":"Tr","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"onClick","dv":null,"o":true,"pt":Function,"ps":1},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":2}],"sn":"Tr","rt":Object,"p":[$n[0].String,Function,System.Array.type(Object)]},{"a":2,"n":"Ul","is":true,"t":8,"pi":[{"n":"className","dv":null,"o":true,"pt":$n[0].String,"ps":0},{"n":"children","ip":true,"pt":System.Array.type(Object),"ps":1}],"sn":"Ul","rt":Object,"p":[$n[0].String,System.Array.type(Object)]}]}; }, $n);
@@ -56241,9 +57237,13 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
     $m("Dashboard.React.Hooks", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"UseCallback","is":true,"t":8,"pi":[{"n":"callback","pt":System.Object,"ps":0},{"n":"deps","pt":$n[0].Array.type(System.Object),"ps":1}],"tpc":1,"tprm":["T"],"sn":"UseCallback","rt":System.Object,"p":[System.Object,$n[0].Array.type(System.Object)]},{"a":2,"n":"UseContext","is":true,"t":8,"pi":[{"n":"context","pt":$n[0].Object,"ps":0}],"tpc":1,"tprm":["T"],"sn":"UseContext","rt":System.Object,"p":[$n[0].Object]},{"a":2,"n":"UseEffect","is":true,"t":8,"pi":[{"n":"effect","pt":Function,"ps":0},{"n":"deps","dv":null,"o":true,"pt":$n[0].Array.type(System.Object),"ps":1}],"sn":"UseEffect$1","rt":$n[0].Void,"p":[Function,$n[0].Array.type(System.Object)]},{"a":2,"n":"UseEffect","is":true,"t":8,"pi":[{"n":"effect","pt":Function,"ps":0},{"n":"cleanup","pt":Function,"ps":1},{"n":"deps","dv":null,"o":true,"pt":$n[0].Array.type(System.Object),"ps":2}],"sn":"UseEffect","rt":$n[0].Void,"p":[Function,Function,$n[0].Array.type(System.Object)]},{"a":2,"n":"UseMemo","is":true,"t":8,"pi":[{"n":"factory","pt":Function,"ps":0},{"n":"deps","pt":$n[0].Array.type(System.Object),"ps":1}],"tpc":1,"tprm":["T"],"sn":"UseMemo","rt":System.Object,"p":[Function,$n[0].Array.type(System.Object)]},{"a":2,"n":"UseRef","is":true,"t":8,"pi":[{"n":"initialValue","dv":null,"o":true,"pt":System.Object,"ps":0}],"tpc":1,"tprm":["T"],"sn":"UseRef","rt":Object(System.Object),"p":[System.Object]},{"a":2,"n":"UseState","is":true,"t":8,"pi":[{"n":"initialValue","pt":System.Object,"ps":0}],"tpc":1,"tprm":["T"],"sn":"UseState","rt":$n[2].StateResult$1(System.Object),"p":[System.Object]},{"a":2,"n":"UseStateFunc","is":true,"t":8,"pi":[{"n":"initialValue","pt":System.Object,"ps":0}],"tpc":1,"tprm":["T"],"sn":"UseStateFunc","rt":$n[2].StateFuncResult$1(System.Object),"p":[System.Object]}]}; }, $n);
     $m("Dashboard.React.ReactInterop", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"CreateElement","is":true,"t":8,"pi":[{"n":"component","pt":Function,"ps":0},{"n":"props","dv":null,"o":true,"pt":$n[0].Object,"ps":1},{"n":"children","ip":true,"pt":$n[0].Array.type(System.Object),"ps":2}],"sn":"CreateElement","rt":Object,"p":[Function,$n[0].Object,$n[0].Array.type(System.Object)]},{"a":2,"n":"CreateElement","is":true,"t":8,"pi":[{"n":"type","pt":$n[0].String,"ps":0},{"n":"props","dv":null,"o":true,"pt":$n[0].Object,"ps":1},{"n":"children","ip":true,"pt":$n[0].Array.type(System.Object),"ps":2}],"sn":"CreateElement$1","rt":Object,"p":[$n[0].String,$n[0].Object,$n[0].Array.type(System.Object)]},{"a":2,"n":"RenderApp","is":true,"t":8,"pi":[{"n":"element","pt":Object,"ps":0},{"n":"containerId","dv":"root","o":true,"pt":$n[0].String,"ps":1}],"sn":"RenderApp","rt":$n[0].Void,"p":[Object,$n[0].String]}]}; }, $n);
     $m("Dashboard.Pages.AppointmentsState", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Appointments","t":16,"rt":System.Array.type(Object),"g":{"a":2,"n":"get_Appointments","t":8,"rt":System.Array.type(Object),"fg":"Appointments"},"s":{"a":2,"n":"set_Appointments","t":8,"p":[System.Array.type(Object)],"rt":$n[0].Void,"fs":"Appointments"},"fn":"Appointments"},{"a":2,"n":"Error","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Error","t":8,"rt":$n[0].String,"fg":"Error"},"s":{"a":2,"n":"set_Error","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Error"},"fn":"Error"},{"a":2,"n":"Loading","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Loading","t":8,"rt":$n[0].Boolean,"fg":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Loading","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Loading"},"fn":"Loading"},{"a":2,"n":"StatusFilter","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_StatusFilter","t":8,"rt":$n[0].String,"fg":"StatusFilter"},"s":{"a":2,"n":"set_StatusFilter","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"StatusFilter"},"fn":"StatusFilter"},{"a":1,"backing":true,"n":"<Appointments>k__BackingField","t":4,"rt":System.Array.type(Object),"sn":"Appointments"},{"a":1,"backing":true,"n":"<Error>k__BackingField","t":4,"rt":$n[0].String,"sn":"Error"},{"a":1,"backing":true,"n":"<Loading>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<StatusFilter>k__BackingField","t":4,"rt":$n[0].String,"sn":"StatusFilter"}]}; }, $n);
-    $m("Dashboard.Pages.AppointmentsPage", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"FilterByStatus","is":true,"t":8,"pi":[{"n":"status","pt":$n[0].String,"ps":0},{"n":"currentState","pt":$n[3].AppointmentsState,"ps":1},{"n":"setState","pt":Function,"ps":2}],"sn":"FilterByStatus","rt":$n[0].Void,"p":[$n[0].String,$n[3].AppointmentsState,Function]},{"a":1,"n":"FormatReference","is":true,"t":8,"pi":[{"n":"reference","pt":$n[0].String,"ps":0}],"sn":"FormatReference","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"FormatTime","is":true,"t":8,"pi":[{"n":"dateTime","pt":$n[0].String,"ps":0}],"sn":"FormatTime","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"LoadAppointments","is":true,"t":8,"pi":[{"n":"setState","pt":Function,"ps":0}],"sn":"LoadAppointments","rt":$n[0].Void,"p":[Function]},{"a":2,"n":"Render","is":true,"t":8,"sn":"Render","rt":Object},{"a":1,"n":"RenderAppointmentCard","is":true,"t":8,"pi":[{"n":"appointment","pt":Object,"ps":0}],"sn":"RenderAppointmentCard","rt":Object,"p":[Object]},{"a":1,"n":"RenderAppointmentList","is":true,"t":8,"pi":[{"n":"appointments","pt":System.Array.type(Object),"ps":0}],"sn":"RenderAppointmentList","rt":Object,"p":[System.Array.type(Object)]},{"a":1,"n":"RenderEmpty","is":true,"t":8,"sn":"RenderEmpty","rt":Object},{"a":1,"n":"RenderError","is":true,"t":8,"pi":[{"n":"message","pt":$n[0].String,"ps":0}],"sn":"RenderError","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderLoadingList","is":true,"t":8,"sn":"RenderLoadingList","rt":Object},{"a":1,"n":"RenderPriorityBadge","is":true,"t":8,"pi":[{"n":"priority","pt":$n[0].String,"ps":0}],"sn":"RenderPriorityBadge","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderStatusBadge","is":true,"t":8,"pi":[{"n":"status","pt":$n[0].String,"ps":0}],"sn":"RenderStatusBadge","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderTab","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"status","pt":$n[0].String,"ps":1},{"n":"currentFilter","pt":$n[0].String,"ps":2},{"n":"onSelect","pt":Function,"ps":3}],"sn":"RenderTab","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,Function]}]}; }, $n);
+    $m("Dashboard.Pages.AppointmentsPage", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"FilterByStatus","is":true,"t":8,"pi":[{"n":"status","pt":$n[0].String,"ps":0},{"n":"currentState","pt":$n[3].AppointmentsState,"ps":1},{"n":"setState","pt":Function,"ps":2}],"sn":"FilterByStatus","rt":$n[0].Void,"p":[$n[0].String,$n[3].AppointmentsState,Function]},{"a":1,"n":"FormatReference","is":true,"t":8,"pi":[{"n":"reference","pt":$n[0].String,"ps":0}],"sn":"FormatReference","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"FormatTime","is":true,"t":8,"pi":[{"n":"dateTime","pt":$n[0].String,"ps":0}],"sn":"FormatTime","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"LoadAppointments","is":true,"t":8,"pi":[{"n":"setState","pt":Function,"ps":0}],"sn":"LoadAppointments","rt":$n[0].Void,"p":[Function]},{"a":2,"n":"Render","is":true,"t":8,"pi":[{"n":"onEditAppointment","pt":Function,"ps":0}],"sn":"Render","rt":Object,"p":[Function]},{"a":1,"n":"RenderAppointmentCard","is":true,"t":8,"pi":[{"n":"appointment","pt":Object,"ps":0},{"n":"onEditAppointment","pt":Function,"ps":1}],"sn":"RenderAppointmentCard","rt":Object,"p":[Object,Function]},{"a":1,"n":"RenderAppointmentList","is":true,"t":8,"pi":[{"n":"appointments","pt":System.Array.type(Object),"ps":0},{"n":"statusFilter","pt":$n[0].String,"ps":1},{"n":"onEditAppointment","pt":Function,"ps":2}],"sn":"RenderAppointmentList","rt":Object,"p":[System.Array.type(Object),$n[0].String,Function]},{"a":1,"n":"RenderEmpty","is":true,"t":8,"sn":"RenderEmpty","rt":Object},{"a":1,"n":"RenderError","is":true,"t":8,"pi":[{"n":"message","pt":$n[0].String,"ps":0}],"sn":"RenderError","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderInternal","is":true,"t":8,"pi":[{"n":"onEditAppointment","pt":Function,"ps":0}],"sn":"RenderInternal","rt":Object,"p":[Function]},{"a":1,"n":"RenderLoadingList","is":true,"t":8,"sn":"RenderLoadingList","rt":Object},{"a":1,"n":"RenderPriorityBadge","is":true,"t":8,"pi":[{"n":"priority","pt":$n[0].String,"ps":0}],"sn":"RenderPriorityBadge","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderStatusBadge","is":true,"t":8,"pi":[{"n":"status","pt":$n[0].String,"ps":0}],"sn":"RenderStatusBadge","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderTab","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"status","pt":$n[0].String,"ps":1},{"n":"currentFilter","pt":$n[0].String,"ps":2},{"n":"onSelect","pt":Function,"ps":3}],"sn":"RenderTab","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,Function]}]}; }, $n);
+    $m("Dashboard.Pages.CalendarState", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Appointments","t":16,"rt":System.Array.type(Object),"g":{"a":2,"n":"get_Appointments","t":8,"rt":System.Array.type(Object),"fg":"Appointments"},"s":{"a":2,"n":"set_Appointments","t":8,"p":[System.Array.type(Object)],"rt":$n[0].Void,"fs":"Appointments"},"fn":"Appointments"},{"a":2,"n":"Error","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Error","t":8,"rt":$n[0].String,"fg":"Error"},"s":{"a":2,"n":"set_Error","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Error"},"fn":"Error"},{"a":2,"n":"Loading","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Loading","t":8,"rt":$n[0].Boolean,"fg":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Loading","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Loading"},"fn":"Loading"},{"a":2,"n":"Month","t":16,"rt":$n[0].Int32,"g":{"a":2,"n":"get_Month","t":8,"rt":$n[0].Int32,"fg":"Month","box":function ($v) { return H5.box($v, System.Int32);}},"s":{"a":2,"n":"set_Month","t":8,"p":[$n[0].Int32],"rt":$n[0].Void,"fs":"Month"},"fn":"Month"},{"a":2,"n":"SelectedDay","t":16,"rt":$n[0].Int32,"g":{"a":2,"n":"get_SelectedDay","t":8,"rt":$n[0].Int32,"fg":"SelectedDay","box":function ($v) { return H5.box($v, System.Int32);}},"s":{"a":2,"n":"set_SelectedDay","t":8,"p":[$n[0].Int32],"rt":$n[0].Void,"fs":"SelectedDay"},"fn":"SelectedDay"},{"a":2,"n":"Year","t":16,"rt":$n[0].Int32,"g":{"a":2,"n":"get_Year","t":8,"rt":$n[0].Int32,"fg":"Year","box":function ($v) { return H5.box($v, System.Int32);}},"s":{"a":2,"n":"set_Year","t":8,"p":[$n[0].Int32],"rt":$n[0].Void,"fs":"Year"},"fn":"Year"},{"a":1,"backing":true,"n":"<Appointments>k__BackingField","t":4,"rt":System.Array.type(Object),"sn":"Appointments"},{"a":1,"backing":true,"n":"<Error>k__BackingField","t":4,"rt":$n[0].String,"sn":"Error"},{"a":1,"backing":true,"n":"<Loading>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<Month>k__BackingField","t":4,"rt":$n[0].Int32,"sn":"Month","box":function ($v) { return H5.box($v, System.Int32);}},{"a":1,"backing":true,"n":"<SelectedDay>k__BackingField","t":4,"rt":$n[0].Int32,"sn":"SelectedDay","box":function ($v) { return H5.box($v, System.Int32);}},{"a":1,"backing":true,"n":"<Year>k__BackingField","t":4,"rt":$n[0].Int32,"sn":"Year","box":function ($v) { return H5.box($v, System.Int32);}}]}; }, $n);
+    $m("Dashboard.Pages.CalendarPage", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"FormatReference","is":true,"t":8,"pi":[{"n":"reference","pt":$n[0].String,"ps":0}],"sn":"FormatReference","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"FormatTime","is":true,"t":8,"pi":[{"n":"dateTime","pt":$n[0].String,"ps":0}],"sn":"FormatTime","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"GetAppointmentsForDay","is":true,"t":8,"pi":[{"n":"appointments","pt":System.Array.type(Object),"ps":0},{"n":"year","pt":$n[0].Int32,"ps":1},{"n":"month","pt":$n[0].Int32,"ps":2},{"n":"day","pt":$n[0].Int32,"ps":3}],"sn":"GetAppointmentsForDay","rt":System.Array.type(Object),"p":[System.Array.type(Object),$n[0].Int32,$n[0].Int32,$n[0].Int32]},{"a":1,"n":"GetStatusClass","is":true,"t":8,"pi":[{"n":"status","pt":$n[0].String,"ps":0}],"sn":"GetStatusClass","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"GoToToday","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].CalendarState,"ps":0},{"n":"setState","pt":Function,"ps":1}],"sn":"GoToToday","rt":$n[0].Void,"p":[$n[3].CalendarState,Function]},{"a":1,"n":"LoadAppointments","is":true,"t":8,"pi":[{"n":"setState","pt":Function,"ps":0},{"n":"currentState","pt":$n[3].CalendarState,"ps":1}],"sn":"LoadAppointments","rt":$n[0].Void,"p":[Function,$n[3].CalendarState]},{"a":1,"n":"NavigateMonth","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].CalendarState,"ps":0},{"n":"setState","pt":Function,"ps":1},{"n":"delta","pt":$n[0].Int32,"ps":2}],"sn":"NavigateMonth","rt":$n[0].Void,"p":[$n[3].CalendarState,Function,$n[0].Int32]},{"a":2,"n":"Render","is":true,"t":8,"pi":[{"n":"onEditAppointment","pt":Function,"ps":0}],"sn":"Render","rt":Object,"p":[Function]},{"a":1,"n":"RenderAppointmentDot","is":true,"t":8,"pi":[{"n":"appointment","pt":Object,"ps":0}],"sn":"RenderAppointmentDot","rt":Object,"p":[Object]},{"a":1,"n":"RenderCalendarContent","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].CalendarState,"ps":0},{"n":"setState","pt":Function,"ps":1},{"n":"onEditAppointment","pt":Function,"ps":2}],"sn":"RenderCalendarContent","rt":Object,"p":[$n[3].CalendarState,Function,Function]},{"a":1,"n":"RenderCalendarGrid","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].CalendarState,"ps":0},{"n":"setState","pt":Function,"ps":1}],"sn":"RenderCalendarGrid","rt":Object,"p":[$n[3].CalendarState,Function]},{"a":1,"n":"RenderDayAppointment","is":true,"t":8,"pi":[{"n":"appointment","pt":Object,"ps":0},{"n":"onEditAppointment","pt":Function,"ps":1}],"sn":"RenderDayAppointment","rt":Object,"p":[Object,Function]},{"a":1,"n":"RenderDayDetails","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].CalendarState,"ps":0},{"n":"setState","pt":Function,"ps":1},{"n":"onEditAppointment","pt":Function,"ps":2}],"sn":"RenderDayDetails","rt":Object,"p":[$n[3].CalendarState,Function,Function]},{"a":1,"n":"RenderError","is":true,"t":8,"pi":[{"n":"message","pt":$n[0].String,"ps":0}],"sn":"RenderError","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderHeader","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].CalendarState,"ps":0},{"n":"setState","pt":Function,"ps":1}],"sn":"RenderHeader","rt":Object,"p":[$n[3].CalendarState,Function]},{"a":1,"n":"RenderLoadingState","is":true,"t":8,"sn":"RenderLoadingState","rt":Object},{"a":1,"n":"RenderNoSelection","is":true,"t":8,"sn":"RenderNoSelection","rt":Object},{"a":1,"n":"SelectDay","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].CalendarState,"ps":0},{"n":"setState","pt":Function,"ps":1},{"n":"day","pt":$n[0].Int32,"ps":2}],"sn":"SelectDay","rt":$n[0].Void,"p":[$n[3].CalendarState,Function,$n[0].Int32]},{"a":1,"n":"DayNames","is":true,"t":4,"rt":$n[0].Array.type(System.String),"sn":"DayNames","ro":true},{"a":1,"n":"MonthNames","is":true,"t":4,"rt":$n[0].Array.type(System.String),"sn":"MonthNames","ro":true}]}; }, $n);
     $m("Dashboard.Pages.DashboardState", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"AppointmentCount","t":16,"rt":$n[0].Int32,"g":{"a":2,"n":"get_AppointmentCount","t":8,"rt":$n[0].Int32,"fg":"AppointmentCount","box":function ($v) { return H5.box($v, System.Int32);}},"s":{"a":2,"n":"set_AppointmentCount","t":8,"p":[$n[0].Int32],"rt":$n[0].Void,"fs":"AppointmentCount"},"fn":"AppointmentCount"},{"a":2,"n":"EncounterCount","t":16,"rt":$n[0].Int32,"g":{"a":2,"n":"get_EncounterCount","t":8,"rt":$n[0].Int32,"fg":"EncounterCount","box":function ($v) { return H5.box($v, System.Int32);}},"s":{"a":2,"n":"set_EncounterCount","t":8,"p":[$n[0].Int32],"rt":$n[0].Void,"fs":"EncounterCount"},"fn":"EncounterCount"},{"a":2,"n":"Error","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Error","t":8,"rt":$n[0].String,"fg":"Error"},"s":{"a":2,"n":"set_Error","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Error"},"fn":"Error"},{"a":2,"n":"Loading","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Loading","t":8,"rt":$n[0].Boolean,"fg":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Loading","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Loading"},"fn":"Loading"},{"a":2,"n":"PatientCount","t":16,"rt":$n[0].Int32,"g":{"a":2,"n":"get_PatientCount","t":8,"rt":$n[0].Int32,"fg":"PatientCount","box":function ($v) { return H5.box($v, System.Int32);}},"s":{"a":2,"n":"set_PatientCount","t":8,"p":[$n[0].Int32],"rt":$n[0].Void,"fs":"PatientCount"},"fn":"PatientCount"},{"a":2,"n":"PractitionerCount","t":16,"rt":$n[0].Int32,"g":{"a":2,"n":"get_PractitionerCount","t":8,"rt":$n[0].Int32,"fg":"PractitionerCount","box":function ($v) { return H5.box($v, System.Int32);}},"s":{"a":2,"n":"set_PractitionerCount","t":8,"p":[$n[0].Int32],"rt":$n[0].Void,"fs":"PractitionerCount"},"fn":"PractitionerCount"},{"a":1,"backing":true,"n":"<AppointmentCount>k__BackingField","t":4,"rt":$n[0].Int32,"sn":"AppointmentCount","box":function ($v) { return H5.box($v, System.Int32);}},{"a":1,"backing":true,"n":"<EncounterCount>k__BackingField","t":4,"rt":$n[0].Int32,"sn":"EncounterCount","box":function ($v) { return H5.box($v, System.Int32);}},{"a":1,"backing":true,"n":"<Error>k__BackingField","t":4,"rt":$n[0].String,"sn":"Error"},{"a":1,"backing":true,"n":"<Loading>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<PatientCount>k__BackingField","t":4,"rt":$n[0].Int32,"sn":"PatientCount","box":function ($v) { return H5.box($v, System.Int32);}},{"a":1,"backing":true,"n":"<PractitionerCount>k__BackingField","t":4,"rt":$n[0].Int32,"sn":"PractitionerCount","box":function ($v) { return H5.box($v, System.Int32);}}]}; }, $n);
     $m("Dashboard.Pages.DashboardPage", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"LoadData","is":true,"t":8,"pi":[{"n":"setState","pt":Function,"ps":0}],"sn":"LoadData","rt":$n[0].Void,"p":[Function]},{"a":2,"n":"Render","is":true,"t":8,"sn":"Render","rt":Object},{"a":1,"n":"RenderActionButton","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"icon","pt":Function,"ps":1},{"n":"variant","pt":$n[0].String,"ps":2}],"sn":"RenderActionButton","rt":Object,"p":[$n[0].String,Function,$n[0].String]},{"a":1,"n":"RenderActivityItem","is":true,"t":8,"pi":[{"n":"title","pt":$n[0].String,"ps":0},{"n":"subtitle","pt":$n[0].String,"ps":1},{"n":"time","pt":$n[0].String,"ps":2}],"sn":"RenderActivityItem","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String]},{"a":1,"n":"RenderError","is":true,"t":8,"pi":[{"n":"message","pt":$n[0].String,"ps":0}],"sn":"RenderError","rt":Object,"p":[$n[0].String]},{"a":1,"n":"RenderQuickActions","is":true,"t":8,"sn":"RenderQuickActions","rt":Object},{"a":1,"n":"RenderRecentActivity","is":true,"t":8,"sn":"RenderRecentActivity","rt":Object}]}; }, $n);
+    $m("Dashboard.Pages.EditAppointmentState", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Appointment","t":16,"rt":Object,"g":{"a":2,"n":"get_Appointment","t":8,"rt":Object,"fg":"Appointment"},"s":{"a":2,"n":"set_Appointment","t":8,"p":[Object],"rt":$n[0].Void,"fs":"Appointment"},"fn":"Appointment"},{"a":2,"n":"Comment","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Comment","t":8,"rt":$n[0].String,"fg":"Comment"},"s":{"a":2,"n":"set_Comment","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Comment"},"fn":"Comment"},{"a":2,"n":"Description","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Description","t":8,"rt":$n[0].String,"fg":"Description"},"s":{"a":2,"n":"set_Description","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Description"},"fn":"Description"},{"a":2,"n":"EndDate","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_EndDate","t":8,"rt":$n[0].String,"fg":"EndDate"},"s":{"a":2,"n":"set_EndDate","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"EndDate"},"fn":"EndDate"},{"a":2,"n":"EndTime","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_EndTime","t":8,"rt":$n[0].String,"fg":"EndTime"},"s":{"a":2,"n":"set_EndTime","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"EndTime"},"fn":"EndTime"},{"a":2,"n":"Error","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Error","t":8,"rt":$n[0].String,"fg":"Error"},"s":{"a":2,"n":"set_Error","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Error"},"fn":"Error"},{"a":2,"n":"Loading","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Loading","t":8,"rt":$n[0].Boolean,"fg":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Loading","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Loading"},"fn":"Loading"},{"a":2,"n":"PatientReference","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_PatientReference","t":8,"rt":$n[0].String,"fg":"PatientReference"},"s":{"a":2,"n":"set_PatientReference","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"PatientReference"},"fn":"PatientReference"},{"a":2,"n":"PractitionerReference","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_PractitionerReference","t":8,"rt":$n[0].String,"fg":"PractitionerReference"},"s":{"a":2,"n":"set_PractitionerReference","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"PractitionerReference"},"fn":"PractitionerReference"},{"a":2,"n":"Priority","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Priority","t":8,"rt":$n[0].String,"fg":"Priority"},"s":{"a":2,"n":"set_Priority","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Priority"},"fn":"Priority"},{"a":2,"n":"ReasonCode","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_ReasonCode","t":8,"rt":$n[0].String,"fg":"ReasonCode"},"s":{"a":2,"n":"set_ReasonCode","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"ReasonCode"},"fn":"ReasonCode"},{"a":2,"n":"Saving","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Saving","t":8,"rt":$n[0].Boolean,"fg":"Saving","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Saving","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Saving"},"fn":"Saving"},{"a":2,"n":"ServiceCategory","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_ServiceCategory","t":8,"rt":$n[0].String,"fg":"ServiceCategory"},"s":{"a":2,"n":"set_ServiceCategory","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"ServiceCategory"},"fn":"ServiceCategory"},{"a":2,"n":"ServiceType","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_ServiceType","t":8,"rt":$n[0].String,"fg":"ServiceType"},"s":{"a":2,"n":"set_ServiceType","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"ServiceType"},"fn":"ServiceType"},{"a":2,"n":"StartDate","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_StartDate","t":8,"rt":$n[0].String,"fg":"StartDate"},"s":{"a":2,"n":"set_StartDate","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"StartDate"},"fn":"StartDate"},{"a":2,"n":"StartTime","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_StartTime","t":8,"rt":$n[0].String,"fg":"StartTime"},"s":{"a":2,"n":"set_StartTime","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"StartTime"},"fn":"StartTime"},{"a":2,"n":"Status","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Status","t":8,"rt":$n[0].String,"fg":"Status"},"s":{"a":2,"n":"set_Status","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Status"},"fn":"Status"},{"a":2,"n":"Success","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Success","t":8,"rt":$n[0].String,"fg":"Success"},"s":{"a":2,"n":"set_Success","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Success"},"fn":"Success"},{"a":1,"backing":true,"n":"<Appointment>k__BackingField","t":4,"rt":Object,"sn":"Appointment"},{"a":1,"backing":true,"n":"<Comment>k__BackingField","t":4,"rt":$n[0].String,"sn":"Comment"},{"a":1,"backing":true,"n":"<Description>k__BackingField","t":4,"rt":$n[0].String,"sn":"Description"},{"a":1,"backing":true,"n":"<EndDate>k__BackingField","t":4,"rt":$n[0].String,"sn":"EndDate"},{"a":1,"backing":true,"n":"<EndTime>k__BackingField","t":4,"rt":$n[0].String,"sn":"EndTime"},{"a":1,"backing":true,"n":"<Error>k__BackingField","t":4,"rt":$n[0].String,"sn":"Error"},{"a":1,"backing":true,"n":"<Loading>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<PatientReference>k__BackingField","t":4,"rt":$n[0].String,"sn":"PatientReference"},{"a":1,"backing":true,"n":"<PractitionerReference>k__BackingField","t":4,"rt":$n[0].String,"sn":"PractitionerReference"},{"a":1,"backing":true,"n":"<Priority>k__BackingField","t":4,"rt":$n[0].String,"sn":"Priority"},{"a":1,"backing":true,"n":"<ReasonCode>k__BackingField","t":4,"rt":$n[0].String,"sn":"ReasonCode"},{"a":1,"backing":true,"n":"<Saving>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Saving","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<ServiceCategory>k__BackingField","t":4,"rt":$n[0].String,"sn":"ServiceCategory"},{"a":1,"backing":true,"n":"<ServiceType>k__BackingField","t":4,"rt":$n[0].String,"sn":"ServiceType"},{"a":1,"backing":true,"n":"<StartDate>k__BackingField","t":4,"rt":$n[0].String,"sn":"StartDate"},{"a":1,"backing":true,"n":"<StartTime>k__BackingField","t":4,"rt":$n[0].String,"sn":"StartTime"},{"a":1,"backing":true,"n":"<Status>k__BackingField","t":4,"rt":$n[0].String,"sn":"Status"},{"a":1,"backing":true,"n":"<Success>k__BackingField","t":4,"rt":$n[0].String,"sn":"Success"}]}; }, $n);
+    $m("Dashboard.Pages.EditAppointmentPage", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"CombineDateTime","is":true,"t":8,"pi":[{"n":"date","pt":$n[0].String,"ps":0},{"n":"time","pt":$n[0].String,"ps":1}],"sn":"CombineDateTime","rt":$n[0].String,"p":[$n[0].String,$n[0].String]},{"a":1,"n":"LoadAppointment","is":true,"t":8,"pi":[{"n":"appointmentId","pt":$n[0].String,"ps":0},{"n":"setState","pt":Function,"ps":1}],"sn":"LoadAppointment","rt":$n[0].Void,"p":[$n[0].String,Function]},{"a":1,"n":"ParseDateTime","is":true,"t":8,"pi":[{"n":"isoDateTime","pt":$n[0].String,"ps":0}],"sn":"ParseDateTime","rt":$n[0].ValueTuple$2(System.String,System.String),"p":[$n[0].String]},{"a":2,"n":"Render","is":true,"t":8,"pi":[{"n":"appointmentId","pt":$n[0].String,"ps":0},{"n":"onBack","pt":Function,"ps":1}],"sn":"Render","rt":Object,"p":[$n[0].String,Function]},{"a":1,"n":"RenderErrorState","is":true,"t":8,"pi":[{"n":"error","pt":$n[0].String,"ps":0},{"n":"onBack","pt":Function,"ps":1}],"sn":"RenderErrorState","rt":Object,"p":[$n[0].String,Function]},{"a":1,"n":"RenderForm","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].EditAppointmentState,"ps":0},{"n":"setState","pt":Function,"ps":1},{"n":"onBack","pt":Function,"ps":2}],"sn":"RenderForm","rt":Object,"p":[$n[3].EditAppointmentState,Function,Function]},{"a":1,"n":"RenderFormActions","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].EditAppointmentState,"ps":0},{"n":"onBack","pt":Function,"ps":1}],"sn":"RenderFormActions","rt":Object,"p":[$n[3].EditAppointmentState,Function]},{"a":1,"n":"RenderFormSection","is":true,"t":8,"pi":[{"n":"title","pt":$n[0].String,"ps":0},{"n":"fields","pt":System.Array.type(Object),"ps":1}],"sn":"RenderFormSection","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":1,"n":"RenderHeader","is":true,"t":8,"pi":[{"n":"appointment","pt":Object,"ps":0},{"n":"onBack","pt":Function,"ps":1}],"sn":"RenderHeader","rt":Object,"p":[Object,Function]},{"a":1,"n":"RenderInputField","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"id","pt":$n[0].String,"ps":1},{"n":"value","pt":$n[0].String,"ps":2},{"n":"placeholder","pt":$n[0].String,"ps":3},{"n":"onChange","pt":Function,"ps":4},{"n":"type","dv":"text","o":true,"pt":$n[0].String,"ps":5}],"sn":"RenderInputField","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].String,Function,$n[0].String]},{"a":1,"n":"RenderLoadingState","is":true,"t":8,"sn":"RenderLoadingState","rt":Object},{"a":1,"n":"RenderSelectField","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"id","pt":$n[0].String,"ps":1},{"n":"value","pt":$n[0].String,"ps":2},{"n":"options","pt":$n[0].Array.type(System.ValueTuple$2(System.String,System.String)),"ps":3},{"n":"onChange","pt":Function,"ps":4}],"sn":"RenderSelectField","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].Array.type(System.ValueTuple$2(System.String,System.String)),Function]},{"a":1,"n":"RenderTextareaField","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"id","pt":$n[0].String,"ps":1},{"n":"value","pt":$n[0].String,"ps":2},{"n":"placeholder","pt":$n[0].String,"ps":3},{"n":"onChange","pt":Function,"ps":4}],"sn":"RenderTextareaField","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].String,Function]},{"a":1,"n":"SaveAppointment","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].EditAppointmentState,"ps":0},{"n":"setState","pt":Function,"ps":1},{"n":"onBack","pt":Function,"ps":2}],"sn":"SaveAppointment","rt":$n[0].Void,"p":[$n[3].EditAppointmentState,Function,Function]},{"a":1,"n":"UpdateField","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].EditAppointmentState,"ps":0},{"n":"setState","pt":Function,"ps":1},{"n":"field","pt":$n[0].String,"ps":2},{"n":"value","pt":$n[0].String,"ps":3}],"sn":"UpdateField","rt":$n[0].Void,"p":[$n[3].EditAppointmentState,Function,$n[0].String,$n[0].String]}]}; }, $n);
     $m("Dashboard.Pages.EditPatientState", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Active","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Active","t":8,"rt":$n[0].Boolean,"fg":"Active","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Active","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Active"},"fn":"Active"},{"a":2,"n":"AddressLine","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_AddressLine","t":8,"rt":$n[0].String,"fg":"AddressLine"},"s":{"a":2,"n":"set_AddressLine","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"AddressLine"},"fn":"AddressLine"},{"a":2,"n":"BirthDate","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_BirthDate","t":8,"rt":$n[0].String,"fg":"BirthDate"},"s":{"a":2,"n":"set_BirthDate","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"BirthDate"},"fn":"BirthDate"},{"a":2,"n":"City","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_City","t":8,"rt":$n[0].String,"fg":"City"},"s":{"a":2,"n":"set_City","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"City"},"fn":"City"},{"a":2,"n":"Country","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Country","t":8,"rt":$n[0].String,"fg":"Country"},"s":{"a":2,"n":"set_Country","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Country"},"fn":"Country"},{"a":2,"n":"Email","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Email","t":8,"rt":$n[0].String,"fg":"Email"},"s":{"a":2,"n":"set_Email","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Email"},"fn":"Email"},{"a":2,"n":"Error","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Error","t":8,"rt":$n[0].String,"fg":"Error"},"s":{"a":2,"n":"set_Error","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Error"},"fn":"Error"},{"a":2,"n":"FamilyName","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_FamilyName","t":8,"rt":$n[0].String,"fg":"FamilyName"},"s":{"a":2,"n":"set_FamilyName","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"FamilyName"},"fn":"FamilyName"},{"a":2,"n":"Gender","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Gender","t":8,"rt":$n[0].String,"fg":"Gender"},"s":{"a":2,"n":"set_Gender","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Gender"},"fn":"Gender"},{"a":2,"n":"GivenName","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_GivenName","t":8,"rt":$n[0].String,"fg":"GivenName"},"s":{"a":2,"n":"set_GivenName","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"GivenName"},"fn":"GivenName"},{"a":2,"n":"Loading","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Loading","t":8,"rt":$n[0].Boolean,"fg":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Loading","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Loading"},"fn":"Loading"},{"a":2,"n":"Patient","t":16,"rt":Object,"g":{"a":2,"n":"get_Patient","t":8,"rt":Object,"fg":"Patient"},"s":{"a":2,"n":"set_Patient","t":8,"p":[Object],"rt":$n[0].Void,"fs":"Patient"},"fn":"Patient"},{"a":2,"n":"Phone","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Phone","t":8,"rt":$n[0].String,"fg":"Phone"},"s":{"a":2,"n":"set_Phone","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Phone"},"fn":"Phone"},{"a":2,"n":"PostalCode","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_PostalCode","t":8,"rt":$n[0].String,"fg":"PostalCode"},"s":{"a":2,"n":"set_PostalCode","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"PostalCode"},"fn":"PostalCode"},{"a":2,"n":"Saving","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Saving","t":8,"rt":$n[0].Boolean,"fg":"Saving","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Saving","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Saving"},"fn":"Saving"},{"a":2,"n":"State","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_State","t":8,"rt":$n[0].String,"fg":"State"},"s":{"a":2,"n":"set_State","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"State"},"fn":"State"},{"a":2,"n":"Success","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Success","t":8,"rt":$n[0].String,"fg":"Success"},"s":{"a":2,"n":"set_Success","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Success"},"fn":"Success"},{"a":1,"backing":true,"n":"<Active>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Active","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<AddressLine>k__BackingField","t":4,"rt":$n[0].String,"sn":"AddressLine"},{"a":1,"backing":true,"n":"<BirthDate>k__BackingField","t":4,"rt":$n[0].String,"sn":"BirthDate"},{"a":1,"backing":true,"n":"<City>k__BackingField","t":4,"rt":$n[0].String,"sn":"City"},{"a":1,"backing":true,"n":"<Country>k__BackingField","t":4,"rt":$n[0].String,"sn":"Country"},{"a":1,"backing":true,"n":"<Email>k__BackingField","t":4,"rt":$n[0].String,"sn":"Email"},{"a":1,"backing":true,"n":"<Error>k__BackingField","t":4,"rt":$n[0].String,"sn":"Error"},{"a":1,"backing":true,"n":"<FamilyName>k__BackingField","t":4,"rt":$n[0].String,"sn":"FamilyName"},{"a":1,"backing":true,"n":"<Gender>k__BackingField","t":4,"rt":$n[0].String,"sn":"Gender"},{"a":1,"backing":true,"n":"<GivenName>k__BackingField","t":4,"rt":$n[0].String,"sn":"GivenName"},{"a":1,"backing":true,"n":"<Loading>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<Patient>k__BackingField","t":4,"rt":Object,"sn":"Patient"},{"a":1,"backing":true,"n":"<Phone>k__BackingField","t":4,"rt":$n[0].String,"sn":"Phone"},{"a":1,"backing":true,"n":"<PostalCode>k__BackingField","t":4,"rt":$n[0].String,"sn":"PostalCode"},{"a":1,"backing":true,"n":"<Saving>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Saving","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<State>k__BackingField","t":4,"rt":$n[0].String,"sn":"State"},{"a":1,"backing":true,"n":"<Success>k__BackingField","t":4,"rt":$n[0].String,"sn":"Success"}]}; }, $n);
     $m("Dashboard.Pages.EditPatientPage", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"LoadPatient","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0},{"n":"setState","pt":Function,"ps":1}],"sn":"LoadPatient","rt":$n[0].Void,"p":[$n[0].String,Function]},{"a":2,"n":"Render","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0},{"n":"onBack","pt":Function,"ps":1}],"sn":"Render","rt":Object,"p":[$n[0].String,Function]},{"a":1,"n":"RenderCheckboxField","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"id","pt":$n[0].String,"ps":1},{"n":"value","pt":$n[0].Boolean,"ps":2},{"n":"onChange","pt":Function,"ps":3}],"sn":"RenderCheckboxField","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].Boolean,Function]},{"a":1,"n":"RenderErrorState","is":true,"t":8,"pi":[{"n":"error","pt":$n[0].String,"ps":0},{"n":"onBack","pt":Function,"ps":1}],"sn":"RenderErrorState","rt":Object,"p":[$n[0].String,Function]},{"a":1,"n":"RenderForm","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].EditPatientState,"ps":0},{"n":"setState","pt":Function,"ps":1},{"n":"onBack","pt":Function,"ps":2}],"sn":"RenderForm","rt":Object,"p":[$n[3].EditPatientState,Function,Function]},{"a":1,"n":"RenderFormActions","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].EditPatientState,"ps":0},{"n":"onBack","pt":Function,"ps":1}],"sn":"RenderFormActions","rt":Object,"p":[$n[3].EditPatientState,Function]},{"a":1,"n":"RenderFormSection","is":true,"t":8,"pi":[{"n":"title","pt":$n[0].String,"ps":0},{"n":"fields","pt":System.Array.type(Object),"ps":1}],"sn":"RenderFormSection","rt":Object,"p":[$n[0].String,System.Array.type(Object)]},{"a":1,"n":"RenderHeader","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0},{"n":"onBack","pt":Function,"ps":1}],"sn":"RenderHeader","rt":Object,"p":[Object,Function]},{"a":1,"n":"RenderInputField","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"id","pt":$n[0].String,"ps":1},{"n":"value","pt":$n[0].String,"ps":2},{"n":"placeholder","pt":$n[0].String,"ps":3},{"n":"onChange","pt":Function,"ps":4},{"n":"type","dv":"text","o":true,"pt":$n[0].String,"ps":5}],"sn":"RenderInputField","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].String,Function,$n[0].String]},{"a":1,"n":"RenderLoadingState","is":true,"t":8,"sn":"RenderLoadingState","rt":Object},{"a":1,"n":"RenderSelectField","is":true,"t":8,"pi":[{"n":"label","pt":$n[0].String,"ps":0},{"n":"id","pt":$n[0].String,"ps":1},{"n":"value","pt":$n[0].String,"ps":2},{"n":"options","pt":$n[0].Array.type(System.ValueTuple$2(System.String,System.String)),"ps":3},{"n":"onChange","pt":Function,"ps":4}],"sn":"RenderSelectField","rt":Object,"p":[$n[0].String,$n[0].String,$n[0].String,$n[0].Array.type(System.ValueTuple$2(System.String,System.String)),Function]},{"a":1,"n":"SavePatient","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].EditPatientState,"ps":0},{"n":"setState","pt":Function,"ps":1},{"n":"onBack","pt":Function,"ps":2}],"sn":"SavePatient","rt":$n[0].Void,"p":[$n[3].EditPatientState,Function,Function]},{"a":1,"n":"UpdateActive","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].EditPatientState,"ps":0},{"n":"setState","pt":Function,"ps":1},{"n":"value","pt":$n[0].Boolean,"ps":2}],"sn":"UpdateActive","rt":$n[0].Void,"p":[$n[3].EditPatientState,Function,$n[0].Boolean]},{"a":1,"n":"UpdateField","is":true,"t":8,"pi":[{"n":"state","pt":$n[3].EditPatientState,"ps":0},{"n":"setState","pt":Function,"ps":1},{"n":"field","pt":$n[0].String,"ps":2},{"n":"value","pt":$n[0].String,"ps":3}],"sn":"UpdateField","rt":$n[0].Void,"p":[$n[3].EditPatientState,Function,$n[0].String,$n[0].String]}]}; }, $n);
     $m("Dashboard.Pages.PatientsState", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Error","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Error","t":8,"rt":$n[0].String,"fg":"Error"},"s":{"a":2,"n":"set_Error","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Error"},"fn":"Error"},{"a":2,"n":"Loading","t":16,"rt":$n[0].Boolean,"g":{"a":2,"n":"get_Loading","t":8,"rt":$n[0].Boolean,"fg":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},"s":{"a":2,"n":"set_Loading","t":8,"p":[$n[0].Boolean],"rt":$n[0].Void,"fs":"Loading"},"fn":"Loading"},{"a":2,"n":"Patients","t":16,"rt":System.Array.type(Object),"g":{"a":2,"n":"get_Patients","t":8,"rt":System.Array.type(Object),"fg":"Patients"},"s":{"a":2,"n":"set_Patients","t":8,"p":[System.Array.type(Object)],"rt":$n[0].Void,"fs":"Patients"},"fn":"Patients"},{"a":2,"n":"SearchQuery","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_SearchQuery","t":8,"rt":$n[0].String,"fg":"SearchQuery"},"s":{"a":2,"n":"set_SearchQuery","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"SearchQuery"},"fn":"SearchQuery"},{"a":2,"n":"SelectedPatient","t":16,"rt":Object,"g":{"a":2,"n":"get_SelectedPatient","t":8,"rt":Object,"fg":"SelectedPatient"},"s":{"a":2,"n":"set_SelectedPatient","t":8,"p":[Object],"rt":$n[0].Void,"fs":"SelectedPatient"},"fn":"SelectedPatient"},{"a":1,"backing":true,"n":"<Error>k__BackingField","t":4,"rt":$n[0].String,"sn":"Error"},{"a":1,"backing":true,"n":"<Loading>k__BackingField","t":4,"rt":$n[0].Boolean,"sn":"Loading","box":function ($v) { return H5.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"backing":true,"n":"<Patients>k__BackingField","t":4,"rt":System.Array.type(Object),"sn":"Patients"},{"a":1,"backing":true,"n":"<SearchQuery>k__BackingField","t":4,"rt":$n[0].String,"sn":"SearchQuery"},{"a":1,"backing":true,"n":"<SelectedPatient>k__BackingField","t":4,"rt":Object,"sn":"SelectedPatient"}]}; }, $n);
@@ -56260,5 +57260,5 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
     $m("Dashboard.Components.NavItem", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Badge","t":16,"rt":$n[0].Nullable$1(System.Int32),"g":{"a":2,"n":"get_Badge","t":8,"rt":$n[0].Nullable$1(System.Int32),"fg":"Badge","box":function ($v) { return H5.box($v, System.Int32, System.Nullable.toString, System.Nullable.getHashCode);}},"s":{"a":2,"n":"set_Badge","t":8,"p":[$n[0].Nullable$1(System.Int32)],"rt":$n[0].Void,"fs":"Badge"},"fn":"Badge"},{"a":2,"n":"Icon","t":16,"rt":Function,"g":{"a":2,"n":"get_Icon","t":8,"rt":Function,"fg":"Icon"},"s":{"a":2,"n":"set_Icon","t":8,"p":[Function],"rt":$n[0].Void,"fs":"Icon"},"fn":"Icon"},{"a":2,"n":"Id","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Id","t":8,"rt":$n[0].String,"fg":"Id"},"s":{"a":2,"n":"set_Id","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Id"},"fn":"Id"},{"a":2,"n":"Label","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Label","t":8,"rt":$n[0].String,"fg":"Label"},"s":{"a":2,"n":"set_Label","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Label"},"fn":"Label"},{"a":1,"backing":true,"n":"<Badge>k__BackingField","t":4,"rt":$n[0].Nullable$1(System.Int32),"sn":"Badge","box":function ($v) { return H5.box($v, System.Int32, System.Nullable.toString, System.Nullable.getHashCode);}},{"a":1,"backing":true,"n":"<Icon>k__BackingField","t":4,"rt":Function,"sn":"Icon"},{"a":1,"backing":true,"n":"<Id>k__BackingField","t":4,"rt":$n[0].String,"sn":"Id"},{"a":1,"backing":true,"n":"<Label>k__BackingField","t":4,"rt":$n[0].String,"sn":"Label"}]}; }, $n);
     $m("Dashboard.Components.NavSection", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Items","t":16,"rt":System.Array.type(Dashboard.Components.NavItem),"g":{"a":2,"n":"get_Items","t":8,"rt":System.Array.type(Dashboard.Components.NavItem),"fg":"Items"},"s":{"a":2,"n":"set_Items","t":8,"p":[System.Array.type(Dashboard.Components.NavItem)],"rt":$n[0].Void,"fs":"Items"},"fn":"Items"},{"a":2,"n":"Title","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Title","t":8,"rt":$n[0].String,"fg":"Title"},"s":{"a":2,"n":"set_Title","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Title"},"fn":"Title"},{"a":1,"backing":true,"n":"<Items>k__BackingField","t":4,"rt":System.Array.type(Dashboard.Components.NavItem),"sn":"Items"},{"a":1,"backing":true,"n":"<Title>k__BackingField","t":4,"rt":$n[0].String,"sn":"Title"}]}; }, $n);
     $m("Dashboard.Components.Sidebar", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"GetNavSections","is":true,"t":8,"sn":"GetNavSections","rt":System.Array.type(Dashboard.Components.NavSection)},{"a":2,"n":"Render","is":true,"t":8,"pi":[{"n":"activeView","pt":$n[0].String,"ps":0},{"n":"onNavigate","pt":Function,"ps":1},{"n":"collapsed","pt":$n[0].Boolean,"ps":2},{"n":"onToggle","pt":Function,"ps":3}],"sn":"Render","rt":Object,"p":[$n[0].String,Function,$n[0].Boolean,Function]},{"a":1,"n":"RenderFooter","is":true,"t":8,"pi":[{"n":"collapsed","pt":$n[0].Boolean,"ps":0}],"sn":"RenderFooter","rt":Object,"p":[$n[0].Boolean]},{"a":1,"n":"RenderHeader","is":true,"t":8,"pi":[{"n":"collapsed","pt":$n[0].Boolean,"ps":0}],"sn":"RenderHeader","rt":Object,"p":[$n[0].Boolean]},{"a":1,"n":"RenderNavItem","is":true,"t":8,"pi":[{"n":"item","pt":$n[4].NavItem,"ps":0},{"n":"activeView","pt":$n[0].String,"ps":1},{"n":"onNavigate","pt":Function,"ps":2}],"sn":"RenderNavItem","rt":Object,"p":[$n[4].NavItem,$n[0].String,Function]},{"a":1,"n":"RenderSection","is":true,"t":8,"pi":[{"n":"section","pt":$n[4].NavSection,"ps":0},{"n":"activeView","pt":$n[0].String,"ps":1},{"n":"onNavigate","pt":Function,"ps":2}],"sn":"RenderSection","rt":Object,"p":[$n[4].NavSection,$n[0].String,Function]}]}; }, $n);
-    $m("Dashboard.Api.ApiClient", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"Configure","is":true,"t":8,"pi":[{"n":"clinicalUrl","pt":$n[0].String,"ps":0},{"n":"schedulingUrl","pt":$n[0].String,"ps":1}],"sn":"Configure","rt":$n[0].Void,"p":[$n[0].String,$n[0].String]},{"a":2,"n":"CreatePatientAsync","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0}],"sn":"CreatePatientAsync","rt":$n[5].Task$1(Object),"p":[Object]},{"a":1,"n":"EncodeUri","is":true,"t":8,"pi":[{"n":"value","pt":$n[0].String,"ps":0}],"sn":"EncodeUri","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"FetchAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0}],"sn":"FetchAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String]},{"a":2,"n":"GetAppointmentAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetAppointmentAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetAppointmentsAsync","is":true,"t":8,"sn":"GetAppointmentsAsync","rt":$n[5].Task$1(System.Array.type(Object))},{"a":2,"n":"GetConditionsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetConditionsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetEncountersAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetEncountersAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetMedicationsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetMedicationsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPatientAppointmentsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetPatientAppointmentsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPatientAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetPatientAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetPatientsAsync","is":true,"t":8,"sn":"GetPatientsAsync","rt":$n[5].Task$1(System.Array.type(Object))},{"a":2,"n":"GetPractitionerAppointmentsAsync","is":true,"t":8,"pi":[{"n":"practitionerId","pt":$n[0].String,"ps":0}],"sn":"GetPractitionerAppointmentsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPractitionerAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetPractitionerAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetPractitionersAsync","is":true,"t":8,"sn":"GetPractitionersAsync","rt":$n[5].Task$1(System.Array.type(Object))},{"a":1,"n":"ParseJson","is":true,"t":8,"pi":[{"n":"json","pt":$n[0].String,"ps":0}],"tpc":1,"tprm":["T"],"sn":"ParseJson","rt":System.Object,"p":[$n[0].String]},{"a":1,"n":"PostAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0},{"n":"data","pt":$n[0].Object,"ps":1}],"sn":"PostAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String,$n[0].Object]},{"a":1,"n":"PutAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0},{"n":"data","pt":$n[0].Object,"ps":1}],"sn":"PutAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String,$n[0].Object]},{"a":2,"n":"SearchPatientsAsync","is":true,"t":8,"pi":[{"n":"query","pt":$n[0].String,"ps":0}],"sn":"SearchPatientsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"SearchPractitionersAsync","is":true,"t":8,"pi":[{"n":"specialty","pt":$n[0].String,"ps":0}],"sn":"SearchPractitionersAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"UpdatePatientAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0},{"n":"patient","pt":Object,"ps":1}],"sn":"UpdatePatientAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String,Object]},{"a":1,"n":"_clinicalBaseUrl","is":true,"t":4,"rt":$n[0].String,"sn":"_clinicalBaseUrl"},{"a":1,"n":"_schedulingBaseUrl","is":true,"t":4,"rt":$n[0].String,"sn":"_schedulingBaseUrl"}]}; }, $n);
+    $m("Dashboard.Api.ApiClient", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"Configure","is":true,"t":8,"pi":[{"n":"clinicalUrl","pt":$n[0].String,"ps":0},{"n":"schedulingUrl","pt":$n[0].String,"ps":1}],"sn":"Configure","rt":$n[0].Void,"p":[$n[0].String,$n[0].String]},{"a":2,"n":"CreatePatientAsync","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0}],"sn":"CreatePatientAsync","rt":$n[5].Task$1(Object),"p":[Object]},{"a":1,"n":"EncodeUri","is":true,"t":8,"pi":[{"n":"value","pt":$n[0].String,"ps":0}],"sn":"EncodeUri","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"FetchAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0}],"sn":"FetchAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String]},{"a":2,"n":"GetAppointmentAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetAppointmentAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetAppointmentsAsync","is":true,"t":8,"sn":"GetAppointmentsAsync","rt":$n[5].Task$1(System.Array.type(Object))},{"a":2,"n":"GetConditionsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetConditionsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetEncountersAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetEncountersAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetMedicationsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetMedicationsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPatientAppointmentsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetPatientAppointmentsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPatientAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetPatientAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetPatientsAsync","is":true,"t":8,"sn":"GetPatientsAsync","rt":$n[5].Task$1(System.Array.type(Object))},{"a":2,"n":"GetPractitionerAppointmentsAsync","is":true,"t":8,"pi":[{"n":"practitionerId","pt":$n[0].String,"ps":0}],"sn":"GetPractitionerAppointmentsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPractitionerAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetPractitionerAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetPractitionersAsync","is":true,"t":8,"sn":"GetPractitionersAsync","rt":$n[5].Task$1(System.Array.type(Object))},{"a":1,"n":"ParseJson","is":true,"t":8,"pi":[{"n":"json","pt":$n[0].String,"ps":0}],"tpc":1,"tprm":["T"],"sn":"ParseJson","rt":System.Object,"p":[$n[0].String]},{"a":1,"n":"PostAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0},{"n":"data","pt":$n[0].Object,"ps":1}],"sn":"PostAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String,$n[0].Object]},{"a":1,"n":"PutAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0},{"n":"data","pt":$n[0].Object,"ps":1}],"sn":"PutAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String,$n[0].Object]},{"a":2,"n":"SearchPatientsAsync","is":true,"t":8,"pi":[{"n":"query","pt":$n[0].String,"ps":0}],"sn":"SearchPatientsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"SearchPractitionersAsync","is":true,"t":8,"pi":[{"n":"specialty","pt":$n[0].String,"ps":0}],"sn":"SearchPractitionersAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"UpdateAppointmentAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0},{"n":"appointment","pt":$n[0].Object,"ps":1}],"sn":"UpdateAppointmentAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String,$n[0].Object]},{"a":2,"n":"UpdatePatientAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0},{"n":"patient","pt":Object,"ps":1}],"sn":"UpdatePatientAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String,Object]},{"a":1,"n":"_clinicalBaseUrl","is":true,"t":4,"rt":$n[0].String,"sn":"_clinicalBaseUrl"},{"a":1,"n":"_schedulingBaseUrl","is":true,"t":4,"rt":$n[0].String,"sn":"_schedulingBaseUrl"}]}; }, $n);
 });

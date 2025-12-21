@@ -29,6 +29,10 @@ global using GetUserByEmailOk = Outcome.Result<
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.GetUserByEmail>, Selecta.SqlError>;
 // Additional query result type aliases
+global using GetCredentialByIdOk = Outcome.Result<
+    System.Collections.Immutable.ImmutableList<Generated.GetCredentialById>,
+    Selecta.SqlError
+>.Ok<System.Collections.Immutable.ImmutableList<Generated.GetCredentialById>, Selecta.SqlError>;
 global using GetUserByIdOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetUserById>,
     Selecta.SqlError

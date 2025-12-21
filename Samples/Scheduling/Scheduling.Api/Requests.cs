@@ -42,3 +42,20 @@ internal sealed record CreateAppointmentRequest(
     string PractitionerReference,
     string? Comment
 );
+
+/// <summary>
+/// Update appointment request.
+/// </summary>
+internal sealed record UpdateAppointmentRequest(
+    string ServiceCategory,
+    string ServiceType,
+    string? ReasonCode,
+    string Priority,
+    string? Description,
+    string Start,
+    string End,
+    string PatientReference,
+    string PractitionerReference,
+    string? Comment,
+    string Status
+);

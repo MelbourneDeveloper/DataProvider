@@ -28,7 +28,6 @@ This service is framework-agnostic and can be integrated with any system via RES
 - [SimpleWebAuthn Documentation](https://simplewebauthn.dev/docs/packages/browser/)
 - [SimpleWebAuthn Server Package](https://simplewebauthn.dev/docs/packages/server)
 - [Complete React + WebAuthn Guide](https://medium.com/@siddhantahire98/building-a-modern-authentication-system-with-webauthn-passkeys-a-complete-guide-65cac3511049)
-- [Corbado React WebAuthn](https://www.corbado.com/webauthn/react)
 
 ### Access Control Design
 - [NocoBase RBAC Design Guide](https://www.nocobase.com/en/blog/how-to-design-rbac-role-based-access-control-system)

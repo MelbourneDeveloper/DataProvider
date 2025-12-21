@@ -155,6 +155,15 @@ namespace Dashboard.Api
         }
 
         /// <summary>
+        /// Updates an existing appointment.
+        /// </summary>
+        public static async Task<Appointment> UpdateAppointmentAsync(string id, object appointment)
+        {
+            var response = await PutAsync(_schedulingBaseUrl + "/Appointment/" + id, appointment);
+            return ParseJson<Appointment>(response);
+        }
+
+        /// <summary>
         /// Fetches appointments for a patient.
         /// </summary>
         public static async Task<Appointment[]> GetPatientAppointmentsAsync(string patientId)

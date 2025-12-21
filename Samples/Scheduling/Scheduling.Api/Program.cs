@@ -319,6 +319,80 @@ app.MapPost(
     }
 );
 
+app.MapPut(
+    "/Appointment/{id}",
+    async (string id, UpdateAppointmentRequest request, Func<SqliteConnection> getConn) =>
+    {
+        using var conn = getConn();
+        var transaction = (SqliteTransaction)
+            await conn.BeginTransactionAsync().ConfigureAwait(false);
+        await using var _ = transaction.ConfigureAwait(false);
+
+        var start = DateTime.Parse(request.Start, CultureInfo.InvariantCulture);
+        var end = DateTime.Parse(request.End, CultureInfo.InvariantCulture);
+        var durationMinutes = (int)(end - start).TotalMinutes;
+
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = transaction;
+        cmd.CommandText = """
+            UPDATE fhir_Appointment
+            SET ServiceCategory = @serviceCategory,
+                ServiceType = @serviceType,
+                ReasonCode = @reasonCode,
+                Priority = @priority,
+                Description = @description,
+                StartTime = @start,
+                EndTime = @end,
+                MinutesDuration = @duration,
+                PatientReference = @patientRef,
+                PractitionerReference = @practitionerRef,
+                Comment = @comment,
+                Status = @status
+            WHERE Id = @id
+            """;
+        cmd.Parameters.AddWithValue("@id", id);
+        cmd.Parameters.AddWithValue("@serviceCategory", request.ServiceCategory ?? string.Empty);
+        cmd.Parameters.AddWithValue("@serviceType", request.ServiceType ?? string.Empty);
+        cmd.Parameters.AddWithValue("@reasonCode", request.ReasonCode ?? string.Empty);
+        cmd.Parameters.AddWithValue("@priority", request.Priority);
+        cmd.Parameters.AddWithValue("@description", request.Description ?? string.Empty);
+        cmd.Parameters.AddWithValue("@start", request.Start);
+        cmd.Parameters.AddWithValue("@end", request.End);
+        cmd.Parameters.AddWithValue("@duration", durationMinutes);
+        cmd.Parameters.AddWithValue("@patientRef", request.PatientReference);
+        cmd.Parameters.AddWithValue("@practitionerRef", request.PractitionerReference);
+        cmd.Parameters.AddWithValue("@comment", request.Comment ?? string.Empty);
+        cmd.Parameters.AddWithValue("@status", request.Status);
+
+        var rowsAffected = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+
+        if (rowsAffected > 0)
+        {
+            await transaction.CommitAsync().ConfigureAwait(false);
+            return Results.Ok(
+                new
+                {
+                    Id = id,
+                    Status = request.Status,
+                    ServiceCategory = request.ServiceCategory,
+                    ServiceType = request.ServiceType,
+                    ReasonCode = request.ReasonCode,
+                    Priority = request.Priority,
+                    Description = request.Description,
+                    Start = request.Start,
+                    End = request.End,
+                    MinutesDuration = durationMinutes,
+                    PatientReference = request.PatientReference,
+                    PractitionerReference = request.PractitionerReference,
+                    Comment = request.Comment,
+                }
+            );
+        }
+
+        return Results.NotFound();
+    }
+);
+
 app.MapPatch(
     "/Appointment/{id}/status",
     async (string id, string status, Func<SqliteConnection> getConn) =>
@@ -406,7 +480,117 @@ app.MapGet(
     }
 );
 
+app.MapGet(
+    "/sync/status",
+    (Func<SqliteConnection> getConn) =>
+    {
+        using var conn = getConn();
+        var changesResult = SyncLogRepository.FetchChanges(conn, 0, 1000);
+        var (pendingCount, failedCount, lastSyncTime) = changesResult switch
+        {
+            SyncLogListOk(var logs) => (
+                logs.Count(l => l.Operation == SyncOperation.Insert),
+                0,
+                logs.Count > 0
+                    ? logs.Max(l => l.Timestamp)
+                    : DateTime.UtcNow.ToString(
+                        "yyyy-MM-ddTHH:mm:ss.fffZ",
+                        CultureInfo.InvariantCulture
+                    )
+            ),
+            SyncLogListError => (
+                0,
+                0,
+                DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture)
+            ),
+        };
+
+        return Results.Ok(
+            new
+            {
+                service = "Scheduling.Api",
+                status = "healthy",
+                lastSyncTime,
+                pendingCount,
+                failedCount,
+            }
+        );
+    }
+);
+
+app.MapGet(
+    "/sync/records",
+    (string? status, string? search, int? page, int? pageSize, Func<SqliteConnection> getConn) =>
+    {
+        using var conn = getConn();
+        var currentPage = page ?? 1;
+        var size = pageSize ?? 50;
+        var changesResult = SyncLogRepository.FetchChanges(conn, 0, 1000);
+
+        return changesResult switch
+        {
+            SyncLogListOk(var logs) => Results.Ok(
+                BuildSyncRecordsResponse(logs, status, search, currentPage, size)
+            ),
+            SyncLogListError(var err) => Results.Problem(SyncHelpers.ToMessage(err)),
+        };
+    }
+);
+
+app.MapPost(
+    "/sync/records/{id}/retry",
+    (string id) =>
+    {
+        // For now, just acknowledge the retry request
+        // Real implementation would mark the record for re-sync
+        return Results.Accepted();
+    }
+);
+
 app.Run();
+
+static object BuildSyncRecordsResponse(
+    IReadOnlyList<SyncLogEntry> logs,
+    string? statusFilter,
+    string? search,
+    int page,
+    int pageSize
+)
+{
+    var records = logs.Select(l => new
+    {
+        id = l.Version.ToString(CultureInfo.InvariantCulture),
+        entityType = l.TableName,
+        entityId = l.PkValue,
+        status = "pending",
+        lastAttempt = l.Timestamp,
+        operation = l.Operation,
+    });
+
+    if (!string.IsNullOrEmpty(statusFilter))
+    {
+        records = records.Where(r => r.status == statusFilter);
+    }
+
+    if (!string.IsNullOrEmpty(search))
+    {
+        records = records.Where(r =>
+            r.entityId.Contains(search, StringComparison.OrdinalIgnoreCase)
+        );
+    }
+
+    var recordList = records.ToList();
+    var total = recordList.Count;
+    var pagedRecords = recordList.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+    return new
+    {
+        records = pagedRecords,
+        total,
+        page,
+        pageSize,
+    };
+}
 
 namespace Scheduling.Api
 {

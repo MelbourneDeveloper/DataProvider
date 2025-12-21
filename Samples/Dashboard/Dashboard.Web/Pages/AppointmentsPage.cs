@@ -35,7 +35,12 @@ namespace Dashboard.Pages
         /// <summary>
         /// Renders the appointments page.
         /// </summary>
-        public static ReactElement Render()
+        public static ReactElement Render(Action<string> onEditAppointment)
+        {
+            return RenderInternal(onEditAppointment);
+        }
+
+        private static ReactElement RenderInternal(Action<string> onEditAppointment)
         {
             var stateResult = UseState(
                 new AppointmentsState
@@ -73,7 +78,7 @@ namespace Dashboard.Pages
             }
             else
             {
-                content = RenderAppointmentList(state.Appointments);
+                content = RenderAppointmentList(state.Appointments, state.StatusFilter, onEditAppointment);
             }
 
             return Div(
@@ -317,13 +322,26 @@ namespace Dashboard.Pages
                     .ToArray()
             );
 
-        private static ReactElement RenderAppointmentList(Appointment[] appointments) =>
-            Div(
-                className: "data-list",
-                children: appointments.Select(RenderAppointmentCard).ToArray()
-            );
+        private static ReactElement RenderAppointmentList(
+            Appointment[] appointments,
+            string statusFilter,
+            Action<string> onEditAppointment
+        )
+        {
+            var filtered = statusFilter == null
+                ? appointments
+                : appointments.Where(a => a.Status == statusFilter).ToArray();
 
-        private static ReactElement RenderAppointmentCard(Appointment appointment)
+            return Div(
+                className: "data-list",
+                children: filtered.Select(a => RenderAppointmentCard(a, onEditAppointment)).ToArray()
+            );
+        }
+
+        private static ReactElement RenderAppointmentCard(
+            Appointment appointment,
+            Action<string> onEditAppointment
+        )
         {
             ReactElement descElement;
             if (appointment.Description != null)
@@ -433,6 +451,7 @@ namespace Dashboard.Pages
                                     ),
                                     Button(
                                         className: "btn btn-secondary btn-sm",
+                                        onClick: () => onEditAppointment(appointment.Id),
                                         children: new[] { Icons.Edit() }
                                     ),
                                 }

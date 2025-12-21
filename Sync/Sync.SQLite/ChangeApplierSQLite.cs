@@ -78,9 +78,83 @@ public static class ChangeApplierSQLite
         return new BoolSyncOk(true);
     }
 
-    private static BoolSyncResult ApplyUpdate(SqliteConnection connection, SyncLogEntry entry) =>
-        // For simplicity, UPDATE uses same UPSERT logic as INSERT
-        ApplyInsert(connection, entry);
+    [SuppressMessage(
+        "Security",
+        "CA2100:Review SQL queries for security vulnerabilities",
+        Justification = "Table names come from internal sync log, not user input"
+    )]
+    private static BoolSyncResult ApplyUpdate(SqliteConnection connection, SyncLogEntry entry)
+    {
+        if (string.IsNullOrEmpty(entry.Payload))
+        {
+            return new BoolSyncError(new SyncErrorDatabase("Update requires payload"));
+        }
+
+        var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(entry.Payload);
+        if (data == null || data.Count == 0)
+        {
+            return new BoolSyncError(new SyncErrorDatabase("Invalid payload JSON"));
+        }
+
+        // Extract PK info
+        var pkData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(entry.PkValue);
+        if (pkData == null || pkData.Count == 0)
+        {
+            return new BoolSyncError(new SyncErrorDatabase("Invalid pk_value JSON"));
+        }
+
+        var pkColumn = pkData.Keys.First();
+        var pkValue = JsonElementToValue(pkData[pkColumn]);
+
+        // Check for version-based conflict resolution
+        // If record has a Version column, only apply if incoming version is newer
+        if (data.TryGetValue("Version", out var incomingVersionElement))
+        {
+            var incomingVersion = incomingVersionElement.TryGetInt64(out var v) ? v : 0;
+
+            using var checkCmd = connection.CreateCommand();
+            checkCmd.CommandText = $"SELECT Version FROM {entry.TableName} WHERE {pkColumn} = @pk";
+            checkCmd.Parameters.AddWithValue("@pk", pkValue);
+
+            var existingVersionObj = checkCmd.ExecuteScalar();
+            if (existingVersionObj is long existingVersion && existingVersion >= incomingVersion)
+            {
+                // Existing version is same or newer - skip this update (conflict resolution: server wins)
+                // This prevents older changes from overwriting newer data
+                return new BoolSyncOk(true); // Return success but don't apply
+            }
+        }
+        else
+        {
+            // No Version column - use timestamp-based conflict resolution
+            using var checkCmd = connection.CreateCommand();
+            checkCmd.CommandText = $"SELECT 1 FROM {entry.TableName} WHERE {pkColumn} = @pk";
+            checkCmd.Parameters.AddWithValue("@pk", pkValue);
+
+            var exists = checkCmd.ExecuteScalar() is not null;
+            if (exists && !string.IsNullOrEmpty(entry.Timestamp))
+            {
+                // For timestamp comparison, we'd need to store last-modified timestamp
+                // For now, if record exists and no version, apply the update (last-write-wins)
+            }
+        }
+
+        // Apply the update using UPSERT
+        var columns = string.Join(", ", data.Keys);
+        var parameters = string.Join(", ", data.Keys.Select(k => $"@{k}"));
+
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText =
+            $"INSERT OR REPLACE INTO {entry.TableName} ({columns}) VALUES ({parameters})";
+
+        foreach (var kvp in data)
+        {
+            cmd.Parameters.AddWithValue($"@{kvp.Key}", JsonElementToValue(kvp.Value));
+        }
+
+        cmd.ExecuteNonQuery();
+        return new BoolSyncOk(true);
+    }
 
     [SuppressMessage(
         "Security",
