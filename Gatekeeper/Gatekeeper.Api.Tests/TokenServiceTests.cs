@@ -266,25 +266,27 @@ public sealed class TokenServiceTests
         // Insert user and revoked session using DataProvider methods
         using var tx = conn.BeginTransaction();
         await tx.Insertgk_userAsync(
-            "user-revoked",
-            "Revoked User",
-            null!, // email
-            now,
-            null!, // last_login_at
-            1, // is_active
-            null! // metadata
-        ).ConfigureAwait(false);
+                "user-revoked",
+                "Revoked User",
+                null!, // email
+                now,
+                null!, // last_login_at
+                1, // is_active
+                null! // metadata
+            )
+            .ConfigureAwait(false);
         await tx.Insertgk_sessionAsync(
-            jti,
-            "user-revoked",
-            null!, // credential_id
-            now,
-            exp,
-            now,
-            null!, // ip_address
-            null!, // user_agent
-            1 // is_revoked = true
-        ).ConfigureAwait(false);
+                jti,
+                "user-revoked",
+                null!, // credential_id
+                now,
+                exp,
+                now,
+                null!, // ip_address
+                null!, // user_agent
+                1 // is_revoked = true
+            )
+            .ConfigureAwait(false);
         tx.Commit();
 
         var result = await TokenService.ValidateTokenAsync(
@@ -325,25 +327,27 @@ public sealed class TokenServiceTests
         // Insert user and revoked session using DataProvider methods
         using var tx = conn.BeginTransaction();
         await tx.Insertgk_userAsync(
-            "user-revoked2",
-            "Revoked User 2",
-            null!, // email
-            now,
-            null!, // last_login_at
-            1, // is_active
-            null! // metadata
-        ).ConfigureAwait(false);
+                "user-revoked2",
+                "Revoked User 2",
+                null!, // email
+                now,
+                null!, // last_login_at
+                1, // is_active
+                null! // metadata
+            )
+            .ConfigureAwait(false);
         await tx.Insertgk_sessionAsync(
-            jti,
-            "user-revoked2",
-            null!, // credential_id
-            now,
-            exp,
-            now,
-            null!, // ip_address
-            null!, // user_agent
-            1 // is_revoked = true
-        ).ConfigureAwait(false);
+                jti,
+                "user-revoked2",
+                null!, // credential_id
+                now,
+                exp,
+                now,
+                null!, // ip_address
+                null!, // user_agent
+                1 // is_revoked = true
+            )
+            .ConfigureAwait(false);
         tx.Commit();
 
         // With checkRevocation: false, should still validate
@@ -370,25 +374,27 @@ public sealed class TokenServiceTests
         // Insert user and session using DataProvider methods
         using var tx = conn.BeginTransaction();
         await tx.Insertgk_userAsync(
-            userId,
-            "Test User",
-            null!, // email
-            now,
-            null!, // last_login_at
-            1, // is_active
-            null! // metadata
-        ).ConfigureAwait(false);
+                userId,
+                "Test User",
+                null!, // email
+                now,
+                null!, // last_login_at
+                1, // is_active
+                null! // metadata
+            )
+            .ConfigureAwait(false);
         await tx.Insertgk_sessionAsync(
-            jti,
-            userId,
-            null!, // credential_id
-            now,
-            exp,
-            now,
-            null!, // ip_address
-            null!, // user_agent
-            0 // is_revoked = false
-        ).ConfigureAwait(false);
+                jti,
+                userId,
+                null!, // credential_id
+                now,
+                exp,
+                now,
+                null!, // ip_address
+                null!, // user_agent
+                0 // is_revoked = false
+            )
+            .ConfigureAwait(false);
         tx.Commit();
 
         // Revoke

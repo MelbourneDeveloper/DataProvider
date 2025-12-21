@@ -1,10 +1,10 @@
 namespace Gatekeeper.Api.Tests;
 
 using System.Globalization;
+using Gatekeeper.Api;
 using Generated;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
-using Gatekeeper.Api;
 
 /// <summary>
 /// Integration tests for Gatekeeper authorization endpoints.
@@ -347,7 +347,9 @@ public sealed class GatekeeperTestFixture : IDisposable
     public GatekeeperTestFixture()
     {
         // Use full absolute path for the test database
-        var dbPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"gatekeeper-test-{Guid.NewGuid()}.db"));
+        var dbPath = Path.GetFullPath(
+            Path.Combine(Path.GetTempPath(), $"gatekeeper-test-{Guid.NewGuid()}.db")
+        );
         _signingKey = new byte[32];
 
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
@@ -403,23 +405,25 @@ public sealed class GatekeeperTestFixture : IDisposable
 
         // Insert user using DataProvider generated method
         await tx.Insertgk_userAsync(
-            userId,
-            "Test User",
-            email,
-            now,
-            null, // last_login_at
-            1, // is_active
-            null // metadata
-        ).ConfigureAwait(false);
+                userId,
+                "Test User",
+                email,
+                now,
+                null, // last_login_at
+                1, // is_active
+                null // metadata
+            )
+            .ConfigureAwait(false);
 
         // Link user to role using DataProvider generated method
         await tx.Insertgk_user_roleAsync(
-            userId,
-            "role-user",
-            now,
-            null, // granted_by
-            null // expires_at
-        ).ConfigureAwait(false);
+                userId,
+                "role-user",
+                now,
+                null, // granted_by
+                null // expires_at
+            )
+            .ConfigureAwait(false);
 
         tx.Commit();
 
@@ -454,23 +458,25 @@ public sealed class GatekeeperTestFixture : IDisposable
 
         // Insert user using DataProvider generated method
         await tx.Insertgk_userAsync(
-            userId,
-            "Admin User",
-            email,
-            now,
-            null, // last_login_at
-            1, // is_active
-            null // metadata
-        ).ConfigureAwait(false);
+                userId,
+                "Admin User",
+                email,
+                now,
+                null, // last_login_at
+                1, // is_active
+                null // metadata
+            )
+            .ConfigureAwait(false);
 
         // Link user to admin role using DataProvider generated method
         await tx.Insertgk_user_roleAsync(
-            userId,
-            "role-admin",
-            now,
-            null, // granted_by
-            null // expires_at
-        ).ConfigureAwait(false);
+                userId,
+                "role-admin",
+                now,
+                null, // granted_by
+                null // expires_at
+            )
+            .ConfigureAwait(false);
 
         tx.Commit();
 
@@ -512,25 +518,27 @@ public sealed class GatekeeperTestFixture : IDisposable
 
         // First ensure the permission exists using DataProvider generated method
         await tx.Insertgk_permissionAsync(
-            permId,
-            permissionCode,
-            resourceType,
-            action,
-            null, // description
-            now
-        ).ConfigureAwait(false);
+                permId,
+                permissionCode,
+                resourceType,
+                action,
+                null, // description
+                now
+            )
+            .ConfigureAwait(false);
 
         // Then grant access using DataProvider generated method
         await tx.Insertgk_resource_grantAsync(
-            grantId,
-            userId,
-            resourceType,
-            resourceId,
-            permId,
-            now,
-            null, // granted_by
-            null // expires_at
-        ).ConfigureAwait(false);
+                grantId,
+                userId,
+                resourceType,
+                resourceId,
+                permId,
+                now,
+                null, // granted_by
+                null // expires_at
+            )
+            .ConfigureAwait(false);
 
         tx.Commit();
 
@@ -562,25 +570,27 @@ public sealed class GatekeeperTestFixture : IDisposable
 
         // First ensure the permission exists using DataProvider generated method
         await tx.Insertgk_permissionAsync(
-            permId,
-            permissionCode,
-            resourceType,
-            action,
-            null, // description
-            now
-        ).ConfigureAwait(false);
+                permId,
+                permissionCode,
+                resourceType,
+                action,
+                null, // description
+                now
+            )
+            .ConfigureAwait(false);
 
         // Then grant access with expired timestamp using DataProvider generated method
         await tx.Insertgk_resource_grantAsync(
-            grantId,
-            userId,
-            resourceType,
-            resourceId,
-            permId,
-            now,
-            null, // granted_by
-            expired // expires_at
-        ).ConfigureAwait(false);
+                grantId,
+                userId,
+                resourceType,
+                resourceId,
+                permId,
+                now,
+                null, // granted_by
+                expired // expires_at
+            )
+            .ConfigureAwait(false);
 
         tx.Commit();
 

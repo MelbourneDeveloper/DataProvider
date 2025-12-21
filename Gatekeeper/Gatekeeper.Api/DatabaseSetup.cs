@@ -34,7 +34,12 @@ public static class DatabaseSetup
                 var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
                 // DDL may contain multiple statements (CREATE TABLE + CREATE INDEX)
                 // SQLite ExecuteNonQuery only executes the first statement, so split them
-                foreach (var statement in ddl.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                foreach (
+                    var statement in ddl.Split(
+                        ';',
+                        StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                    )
+                )
                 {
                     if (string.IsNullOrWhiteSpace(statement))
                     {
