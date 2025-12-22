@@ -141,14 +141,15 @@
       // Dev token (all-zeros key, expires 2035) with clinician and scheduler roles
       const DEV_DASHBOARD_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYXNoYm9hcmQtdXNlciIsImp0aSI6IjE1MTMwYTg0LTY4NTktNGNmMy05MjA3LTMyMGJhYWRiNzhjNSIsInJvbGVzIjpbImNsaW5pY2lhbiIsInNjaGVkdWxlciJdLCJleHAiOjIwODE5MjIxMDQsImlhdCI6MTc2NjM4OTMwNH0.mk66XyKaLWukzZOmGNwss74lSlXobt6Em0NoEbXRdKU';
 
-      // Set dev token in local dev mode (always) to ensure auth works
-      // In production, rely on actual login flow
-      if (isTestModeInit || isLocalDev) {
+      // Set dev token ONLY in test mode (testMode=true URL param)
+      // For localhost dev without testMode, user must log in (or use existing token)
+      // This allows login page tests to work properly
+      if (isTestModeInit) {
         const devToken = window.dashboardConfig?.DEV_TOKEN || DEV_DASHBOARD_TOKEN;
         localStorage.setItem(AUTH_TOKEN_KEY, devToken);
-        console.log('[Dashboard] Dev/Test mode: dev token set');
+        console.log('[Dashboard] Test mode: dev token set');
       } else {
-        console.log('[Dashboard] Production mode: using existing auth state');
+        console.log('[Dashboard] Normal mode: using existing auth state');
       }
 
       const getAuthToken = () => localStorage.getItem(AUTH_TOKEN_KEY);
@@ -1946,7 +1947,7 @@
       // Sync Dashboard Page - requires sync:admin permission
       const SyncPage = () => {
         const [serviceFilter, setServiceFilter] = React.useState('all');
-        const [statusFilter, setStatusFilter] = React.useState('all');
+        const [actionFilter, setActionFilter] = React.useState('all');
         const [searchQuery, setSearchQuery] = React.useState('');
         const [refreshKey, setRefreshKey] = React.useState(0);
         const [syncServices, setSyncServices] = React.useState([]);
@@ -1993,12 +1994,12 @@
 
         const filteredRecords = syncRecords.filter(record => {
           const matchesService = serviceFilter === 'all' || record.service === serviceFilter;
-          const matchesStatus = statusFilter === 'all' || record.status === statusFilter;
+          const matchesAction = actionFilter === 'all' || record.operation === parseInt(actionFilter);
           const matchesSearch = searchQuery === '' ||
-            record.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            record.entityId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            record.entityType.toLowerCase().includes(searchQuery.toLowerCase());
-          return matchesService && matchesStatus && matchesSearch;
+            String(record.id).toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (record.entityId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (record.entityType || '').toLowerCase().includes(searchQuery.toLowerCase());
+          return matchesService && matchesAction && matchesSearch;
         });
 
         const getOperationIcon = (operation) => {
@@ -2129,17 +2130,17 @@
                 )
               ),
               React.createElement('div', { className: 'form-group', style: { minWidth: '150px' } },
-                React.createElement('label', { className: 'form-label' }, 'Status'),
+                React.createElement('label', { className: 'form-label' }, 'Action'),
                 React.createElement('select', {
                   className: 'input',
-                  value: statusFilter,
-                  onChange: e => setStatusFilter(e.target.value),
-                  'data-testid': 'status-filter'
+                  value: actionFilter,
+                  onChange: e => setActionFilter(e.target.value),
+                  'data-testid': 'action-filter'
                 },
-                  React.createElement('option', { value: 'all' }, 'All Statuses'),
-                  React.createElement('option', { value: 'pending' }, 'Pending'),
-                  React.createElement('option', { value: 'synced' }, 'Synced'),
-                  React.createElement('option', { value: 'failed' }, 'Failed')
+                  React.createElement('option', { value: 'all' }, 'All Actions'),
+                  React.createElement('option', { value: '0' }, 'Insert'),
+                  React.createElement('option', { value: '1' }, 'Update'),
+                  React.createElement('option', { value: '2' }, 'Delete')
                 )
               ),
               React.createElement('div', { className: 'form-group', style: { minWidth: '300px', flex: 1 } },
@@ -3033,10 +3034,11 @@
         const [editingAppointmentId, setEditingAppointmentIdState] = React.useState(initialRoute.appointmentId);
 
         // Expose login trigger for E2E testing (allows tests to simulate successful WebAuthn)
+        // NOTE: No dependency array - must update on every render to avoid stale closure
         React.useEffect(() => {
           window.__triggerLogin = handleLogin;
           return () => { delete window.__triggerLogin; };
-        }, []);
+        });
 
         // Listen for browser back/forward buttons (popstate event)
         React.useEffect(() => {

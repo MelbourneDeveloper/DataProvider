@@ -1,9 +1,10 @@
-
 using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
+using Outcome;
 
 namespace Gatekeeper.Api.Tests;
+
 /// <summary>
 /// Integration tests for Gatekeeper authorization endpoints.
 /// Tests RBAC permission checks, resource grants, and bulk evaluation.
@@ -286,20 +287,6 @@ public sealed class AuthorizationTests : IClassFixture<GatekeeperTestFixture>
         // Grant access to a specific patient record
         await _fixture.GrantResourceAccess(userId, "patient", "patient-123", "patient:read");
 
-        // Debug: verify grant is in database - check raw SQL to bypass parameter ordering issue
-        using var debugConn = _fixture.OpenConnection();
-        using var cmd = debugConn.CreateCommand();
-        cmd.CommandText = "SELECT COUNT(*) FROM gk_resource_grant WHERE user_id = @uid";
-        cmd.Parameters.AddWithValue("@uid", userId);
-        var rawGrantCount = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
-
-        // Also check permission table
-        using var permCmd = debugConn.CreateCommand();
-        permCmd.CommandText = "SELECT COUNT(*) FROM gk_permission WHERE code = 'patient:read'";
-        var permCount = Convert.ToInt32(permCmd.ExecuteScalar(), CultureInfo.InvariantCulture);
-
-        var grantCount = rawGrantCount;
-
         var response = await client.GetAsync(
             "/authz/check?permission=patient:read&resourceType=patient&resourceId=patient-123"
         );
@@ -307,10 +294,7 @@ public sealed class AuthorizationTests : IClassFixture<GatekeeperTestFixture>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         var doc = JsonDocument.Parse(content);
-        Assert.True(
-            doc.RootElement.GetProperty("Allowed").GetBoolean(),
-            $"Expected Allowed=true. Response: {content}, UserId: {userId}, RawGrantCount: {rawGrantCount}, PermCount: {permCount}"
-        );
+        Assert.True(doc.RootElement.GetProperty("Allowed").GetBoolean());
         Assert.Contains("resource-grant", doc.RootElement.GetProperty("Reason").GetString());
     }
 
@@ -540,22 +524,43 @@ public sealed class GatekeeperTestFixture : IDisposable
 
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
         var grantId = Guid.NewGuid().ToString();
-        var permId = $"perm-{permissionCode}-{Guid.NewGuid():N}";
-        var action = permissionCode.Split(':').LastOrDefault() ?? "read";
 
-        // First ensure the permission exists using DataProvider generated method
-        await tx.Insertgk_permissionAsync(
-                permId,
-                permissionCode,
-                resourceType,
-                action,
-                null, // description
-                now
-            )
-            .ConfigureAwait(false);
+        // Look up existing permission by code, or create new one
+        using var lookupCmd = conn.CreateCommand();
+        lookupCmd.Transaction = (SqliteTransaction)tx;
+        lookupCmd.CommandText = "SELECT id FROM gk_permission WHERE code = @code";
+        lookupCmd.Parameters.AddWithValue("@code", permissionCode);
+        var existingPermId = lookupCmd.ExecuteScalar() as string;
 
-        // Then grant access using DataProvider generated method
-        await tx.Insertgk_resource_grantAsync(
+        string permId;
+        if (existingPermId != null)
+        {
+            permId = existingPermId;
+        }
+        else
+        {
+            // Create new permission if it doesn't exist
+            permId = $"perm-{permissionCode.Replace(':', '-')}-{Guid.NewGuid():N}";
+            var action = permissionCode.Split(':').LastOrDefault() ?? "read";
+
+            var permResult = await tx.Insertgk_permissionAsync(
+                    permId,
+                    permissionCode,
+                    resourceType,
+                    action,
+                    null, // description
+                    now
+                )
+                .ConfigureAwait(false);
+
+            if (permResult is Result<long, SqlError>.Error<long, SqlError> permErr)
+            {
+                throw new InvalidOperationException($"Failed to insert permission: {permErr.Value.Message}");
+            }
+        }
+
+        // Grant access using DataProvider generated method
+        var grantResult = await tx.Insertgk_resource_grantAsync(
                 grantId,
                 userId,
                 resourceType,
@@ -566,6 +571,11 @@ public sealed class GatekeeperTestFixture : IDisposable
                 null // expires_at
             )
             .ConfigureAwait(false);
+
+        if (grantResult is Result<long, SqlError>.Error<long, SqlError> grantErr)
+        {
+            throw new InvalidOperationException($"Failed to insert grant: {grantErr.Value.Message}");
+        }
 
         tx.Commit();
 
@@ -592,21 +602,37 @@ public sealed class GatekeeperTestFixture : IDisposable
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
         var expired = DateTime.UtcNow.AddHours(-1).ToString("o", CultureInfo.InvariantCulture);
         var grantId = Guid.NewGuid().ToString();
-        var permId = $"perm-{permissionCode}-{Guid.NewGuid():N}";
-        var action = permissionCode.Split(':').LastOrDefault() ?? "read";
 
-        // First ensure the permission exists using DataProvider generated method
-        await tx.Insertgk_permissionAsync(
-                permId,
-                permissionCode,
-                resourceType,
-                action,
-                null, // description
-                now
-            )
-            .ConfigureAwait(false);
+        // Look up existing permission by code, or create new one
+        using var lookupCmd = conn.CreateCommand();
+        lookupCmd.Transaction = (SqliteTransaction)tx;
+        lookupCmd.CommandText = "SELECT id FROM gk_permission WHERE code = @code";
+        lookupCmd.Parameters.AddWithValue("@code", permissionCode);
+        var existingPermId = lookupCmd.ExecuteScalar() as string;
 
-        // Then grant access with expired timestamp using DataProvider generated method
+        string permId;
+        if (existingPermId != null)
+        {
+            permId = existingPermId;
+        }
+        else
+        {
+            // Create new permission if it doesn't exist
+            permId = $"perm-{permissionCode.Replace(':', '-')}-{Guid.NewGuid():N}";
+            var action = permissionCode.Split(':').LastOrDefault() ?? "read";
+
+            await tx.Insertgk_permissionAsync(
+                    permId,
+                    permissionCode,
+                    resourceType,
+                    action,
+                    null, // description
+                    now
+                )
+                .ConfigureAwait(false);
+        }
+
+        // Grant access with expired timestamp using DataProvider generated method
         await tx.Insertgk_resource_grantAsync(
                 grantId,
                 userId,

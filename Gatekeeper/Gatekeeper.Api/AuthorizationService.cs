@@ -24,17 +24,26 @@ public static class AuthorizationService
         // Step 1: Check resource-level grants first (most specific)
         if (!string.IsNullOrEmpty(resourceType) && !string.IsNullOrEmpty(resourceId))
         {
-            // Generated param order: resource_id, permission_code, resource_type, now, user_id
-            var grantResult = await conn.CheckResourceGrantAsync(
-                    resourceId,
-                    permissionCode,
-                    resourceType,
-                    now,
-                    userId
-                )
-                .ConfigureAwait(false);
+            // Use raw SQL instead of generated method due to non-deterministic param ordering bug
+            using var checkCmd = conn.CreateCommand();
+            checkCmd.CommandText = @"
+                SELECT rg.id, rg.user_id, rg.resource_type, rg.resource_id, rg.permission_id,
+                       rg.granted_at, rg.granted_by, rg.expires_at, p.code as permission_code
+                FROM gk_resource_grant rg
+                JOIN gk_permission p ON rg.permission_id = p.id
+                WHERE rg.user_id = @user_id
+                  AND rg.resource_type = @resource_type
+                  AND rg.resource_id = @resource_id
+                  AND p.code = @permission_code
+                  AND (rg.expires_at IS NULL OR rg.expires_at > @now)";
+            checkCmd.Parameters.AddWithValue("@user_id", userId);
+            checkCmd.Parameters.AddWithValue("@resource_type", resourceType);
+            checkCmd.Parameters.AddWithValue("@resource_id", resourceId);
+            checkCmd.Parameters.AddWithValue("@permission_code", permissionCode);
+            checkCmd.Parameters.AddWithValue("@now", now);
 
-            if (grantResult is CheckResourceGrantOk { Value.Count: > 0 })
+            using var checkReader = await checkCmd.ExecuteReaderAsync().ConfigureAwait(false);
+            if (await checkReader.ReadAsync().ConfigureAwait(false))
             {
                 return (true, $"resource-grant:{resourceType}/{resourceId}");
             }

@@ -42,12 +42,12 @@ if (triggerResult is Result<bool, SyncError>.Error<bool, SyncError> triggerErr)
 ```
 - **Skipping tests = ⛔️ ILLEGAL** - Failing tests = OK. Aggressively unskip tests
 - **Test at the highest level** - Avoid mocks. Only full integration testing
+- **Keep files under 450 LOC and functions under 20 LOC**
 - **Always use type aliases (using) for result types** - Don't write like this: `new Result<string, SqlError>.Ok`
 - **No singletons** - Inject `Func` into static methods
 - **Immutable types!** - Use records. Don't use `List<T>`. Use `ImmutableList` `FrozenSet` or `ImmutableArray`
 - **NO REGEX** - Parse SQL with ANTLR .g4 grammars or SqlParserCS library
 - **All public members require XMLDOC** - Except in test projects
-- **Keep files under 450 LOC**
 - **One type per file** (except small records)
 - **No commented-out code** - Delete it
 - **No consecutive Console.WriteLine** - Use single string interpolation
