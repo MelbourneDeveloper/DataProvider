@@ -1,9 +1,9 @@
+using Dashboard.Tests.TestLib;
+using Dashboard.Tests.Tests;
+using H5;
+
 namespace Dashboard.Tests
 {
-    using Dashboard.Tests.TestLib;
-    using Dashboard.Tests.Tests;
-    using H5;
-
     /// <summary>
     /// Test entry point - runs all dashboard tests in the browser.
     /// </summary>

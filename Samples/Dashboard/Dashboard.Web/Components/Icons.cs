@@ -1,8 +1,8 @@
+using Dashboard.React;
+using static Dashboard.React.Elements;
+
 namespace Dashboard.Components
 {
-    using Dashboard.React;
-    using static Dashboard.React.Elements;
-
     /// <summary>
     /// SVG icon components.
     /// </summary>

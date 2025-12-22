@@ -1,11 +1,9 @@
-namespace Gatekeeper.Api.Tests;
 
 using System.Globalization;
-using Gatekeeper.Api;
-using Generated;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 
+namespace Gatekeeper.Api.Tests;
 /// <summary>
 /// Integration tests for Gatekeeper authorization endpoints.
 /// Tests RBAC permission checks, resource grants, and bulk evaluation.
@@ -288,6 +286,20 @@ public sealed class AuthorizationTests : IClassFixture<GatekeeperTestFixture>
         // Grant access to a specific patient record
         await _fixture.GrantResourceAccess(userId, "patient", "patient-123", "patient:read");
 
+        // Debug: verify grant is in database - check raw SQL to bypass parameter ordering issue
+        using var debugConn = _fixture.OpenConnection();
+        using var cmd = debugConn.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM gk_resource_grant WHERE user_id = @uid";
+        cmd.Parameters.AddWithValue("@uid", userId);
+        var rawGrantCount = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+
+        // Also check permission table
+        using var permCmd = debugConn.CreateCommand();
+        permCmd.CommandText = "SELECT COUNT(*) FROM gk_permission WHERE code = 'patient:read'";
+        var permCount = Convert.ToInt32(permCmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+
+        var grantCount = rawGrantCount;
+
         var response = await client.GetAsync(
             "/authz/check?permission=patient:read&resourceType=patient&resourceId=patient-123"
         );
@@ -295,7 +307,10 @@ public sealed class AuthorizationTests : IClassFixture<GatekeeperTestFixture>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         var doc = JsonDocument.Parse(content);
-        Assert.True(doc.RootElement.GetProperty("Allowed").GetBoolean());
+        Assert.True(
+            doc.RootElement.GetProperty("Allowed").GetBoolean(),
+            $"Expected Allowed=true. Response: {content}, UserId: {userId}, RawGrantCount: {rawGrantCount}, PermCount: {permCount}"
+        );
         Assert.Contains("resource-grant", doc.RootElement.GetProperty("Reason").GetString());
     }
 

@@ -1,8 +1,8 @@
-namespace Migration;
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+namespace Migration;
 /// <summary>
 /// Serializes and deserializes schema definitions to/from JSON.
 /// Used for capturing existing database schemas and storing as metadata.

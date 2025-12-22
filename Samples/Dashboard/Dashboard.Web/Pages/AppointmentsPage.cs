@@ -1,14 +1,14 @@
+using System;
+using System.Linq;
+using Dashboard.Api;
+using Dashboard.Components;
+using Dashboard.Models;
+using Dashboard.React;
+using static Dashboard.React.Elements;
+using static Dashboard.React.Hooks;
+
 namespace Dashboard.Pages
 {
-    using System;
-    using System.Linq;
-    using Dashboard.Api;
-    using Dashboard.Components;
-    using Dashboard.Models;
-    using Dashboard.React;
-    using static Dashboard.React.Elements;
-    using static Dashboard.React.Hooks;
-
     /// <summary>
     /// Appointments page state class.
     /// </summary>
@@ -35,7 +35,8 @@ namespace Dashboard.Pages
         /// <summary>
         /// Renders the appointments page.
         /// </summary>
-        public static ReactElement Render(Action<string> onEditAppointment) => RenderInternal(onEditAppointment);
+        public static ReactElement Render(Action<string> onEditAppointment) =>
+            RenderInternal(onEditAppointment);
 
         private static ReactElement RenderInternal(Action<string> onEditAppointment)
         {

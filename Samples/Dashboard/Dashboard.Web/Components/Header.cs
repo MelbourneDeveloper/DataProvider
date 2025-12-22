@@ -1,9 +1,9 @@
+using System;
+using Dashboard.React;
+using static Dashboard.React.Elements;
+
 namespace Dashboard.Components
 {
-    using System;
-    using Dashboard.React;
-    using static Dashboard.React.Elements;
-
     /// <summary>
     /// Header component with search and actions.
     /// </summary>

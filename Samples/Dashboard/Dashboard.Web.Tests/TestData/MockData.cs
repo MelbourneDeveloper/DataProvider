@@ -1,7 +1,7 @@
+using System.Collections.Generic;
+
 namespace Dashboard.Tests.TestData
 {
-    using System.Collections.Generic;
-
     /// <summary>
     /// Mock data for dashboard tests.
     /// </summary>

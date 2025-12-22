@@ -1,8 +1,7 @@
+using Migration;
+using static Migration.PortableTypes;
+
 namespace Gatekeeper.Migration;
-
-using global::Migration;
-using static global::Migration.PortableTypes;
-
 /// <summary>
 /// Database schema for Gatekeeper authentication and authorization service.
 /// </summary>
@@ -27,7 +26,7 @@ public static class GatekeeperSchema
                         .Column("email", Text)
                         .Column("created_at", Text, c => c.NotNull())
                         .Column("last_login_at", Text)
-                        .Column("is_active", Boolean, c => c.NotNull().Default("1"))
+                        .Column("is_active", PortableTypes.Boolean, c => c.NotNull().Default("1"))
                         .Column("metadata", Json)
                         .Index("idx_user_email", "email", unique: true)
             )
@@ -46,8 +45,8 @@ public static class GatekeeperSchema
                         .Column("created_at", Text, c => c.NotNull())
                         .Column("last_used_at", Text)
                         .Column("device_name", Text)
-                        .Column("is_backup_eligible", Boolean)
-                        .Column("is_backed_up", Boolean)
+                        .Column("is_backup_eligible", PortableTypes.Boolean)
+                        .Column("is_backed_up", PortableTypes.Boolean)
                         .ForeignKey("user_id", "gk_user", "id", onDelete: ForeignKeyAction.Cascade)
                         .Index("idx_credential_user", "user_id")
             )
@@ -63,7 +62,7 @@ public static class GatekeeperSchema
                         .Column("last_activity_at", Text, c => c.NotNull())
                         .Column("ip_address", Text)
                         .Column("user_agent", Text)
-                        .Column("is_revoked", Boolean, c => c.NotNull().Default("0"))
+                        .Column("is_revoked", PortableTypes.Boolean, c => c.NotNull().Default("0"))
                         .ForeignKey("user_id", "gk_user", "id", onDelete: ForeignKeyAction.Cascade)
                         .ForeignKey("credential_id", "gk_credential", "id")
                         .Index("idx_session_user", "user_id")
@@ -91,7 +90,7 @@ public static class GatekeeperSchema
                     t.Column("id", Text, c => c.PrimaryKey())
                         .Column("name", Text, c => c.NotNull())
                         .Column("description", Text)
-                        .Column("is_system", Boolean, c => c.NotNull().Default("0"))
+                        .Column("is_system", PortableTypes.Boolean, c => c.NotNull().Default("0"))
                         .Column("created_at", Text, c => c.NotNull())
                         .Column("parent_role_id", Text)
                         .ForeignKey("parent_role_id", "gk_role", "id")
@@ -207,7 +206,7 @@ public static class GatekeeperSchema
                         .Column("condition", Json, c => c.NotNull())
                         .Column("effect", Text, c => c.NotNull().Default("'allow'"))
                         .Column("priority", Int, c => c.NotNull().Default("0"))
-                        .Column("is_active", Boolean, c => c.NotNull().Default("1"))
+                        .Column("is_active", PortableTypes.Boolean, c => c.NotNull().Default("1"))
                         .Column("created_at", Text, c => c.NotNull())
                         .Index("idx_policy_name", "name", unique: true)
             )

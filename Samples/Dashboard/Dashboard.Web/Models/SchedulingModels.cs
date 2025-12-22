@@ -1,7 +1,7 @@
+using H5;
+
 namespace Dashboard.Models
 {
-    using H5;
-
     /// <summary>
     /// FHIR Practitioner resource model.
     /// </summary>

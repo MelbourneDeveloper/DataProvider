@@ -111,7 +111,126 @@ public static class DatabaseSetup
             ("@now", now)
         );
 
+        SeedClinicalSchedulingPermissions(conn, now, logger);
+
         logger.LogInformation("Default data seeded successfully");
+    }
+
+    private static void SeedClinicalSchedulingPermissions(
+        SqliteConnection conn,
+        string now,
+        ILogger logger
+    )
+    {
+        logger.LogInformation("Seeding Clinical and Scheduling permissions");
+
+        // Clinical domain permissions
+        ExecuteNonQuery(
+            conn,
+            """
+            INSERT INTO gk_permission (id, code, resource_type, action, description, created_at)
+            VALUES
+                ('perm-patient-read', 'patient:read', 'patient', 'read', 'Read patient records', @now),
+                ('perm-patient-create', 'patient:create', 'patient', 'create', 'Create patient records', @now),
+                ('perm-patient-update', 'patient:update', 'patient', 'update', 'Update patient records', @now),
+                ('perm-patient-all', 'patient:*', 'patient', '*', 'Full patient access', @now),
+                ('perm-encounter-read', 'encounter:read', 'encounter', 'read', 'Read encounters', @now),
+                ('perm-encounter-create', 'encounter:create', 'encounter', 'create', 'Create encounters', @now),
+                ('perm-encounter-all', 'encounter:*', 'encounter', '*', 'Full encounter access', @now),
+                ('perm-condition-read', 'condition:read', 'condition', 'read', 'Read conditions', @now),
+                ('perm-condition-create', 'condition:create', 'condition', 'create', 'Create conditions', @now),
+                ('perm-condition-all', 'condition:*', 'condition', '*', 'Full condition access', @now),
+                ('perm-medicationrequest-read', 'medicationrequest:read', 'medicationrequest', 'read', 'Read medication requests', @now),
+                ('perm-medicationrequest-create', 'medicationrequest:create', 'medicationrequest', 'create', 'Create medication requests', @now),
+                ('perm-medicationrequest-all', 'medicationrequest:*', 'medicationrequest', '*', 'Full medication request access', @now)
+            """,
+            ("@now", now)
+        );
+
+        // Scheduling domain permissions
+        ExecuteNonQuery(
+            conn,
+            """
+            INSERT INTO gk_permission (id, code, resource_type, action, description, created_at)
+            VALUES
+                ('perm-practitioner-read', 'practitioner:read', 'practitioner', 'read', 'Read practitioners', @now),
+                ('perm-practitioner-create', 'practitioner:create', 'practitioner', 'create', 'Create practitioners', @now),
+                ('perm-practitioner-update', 'practitioner:update', 'practitioner', 'update', 'Update practitioners', @now),
+                ('perm-practitioner-all', 'practitioner:*', 'practitioner', '*', 'Full practitioner access', @now),
+                ('perm-appointment-read', 'appointment:read', 'appointment', 'read', 'Read appointments', @now),
+                ('perm-appointment-create', 'appointment:create', 'appointment', 'create', 'Create appointments', @now),
+                ('perm-appointment-update', 'appointment:update', 'appointment', 'update', 'Update appointments', @now),
+                ('perm-appointment-all', 'appointment:*', 'appointment', '*', 'Full appointment access', @now)
+            """,
+            ("@now", now)
+        );
+
+        // Sync permissions
+        ExecuteNonQuery(
+            conn,
+            """
+            INSERT INTO gk_permission (id, code, resource_type, action, description, created_at)
+            VALUES
+                ('perm-sync-read', 'sync:read', 'sync', 'read', 'Read sync data', @now),
+                ('perm-sync-write', 'sync:write', 'sync', 'write', 'Write sync data', @now),
+                ('perm-sync-all', 'sync:*', 'sync', '*', 'Full sync access', @now)
+            """,
+            ("@now", now)
+        );
+
+        // Clinical roles
+        ExecuteNonQuery(
+            conn,
+            """
+            INSERT INTO gk_role (id, name, description, is_system, created_at)
+            VALUES
+                ('role-clinician', 'clinician', 'Clinical staff with patient access', 1, @now),
+                ('role-scheduler', 'scheduler', 'Scheduling staff with appointment access', 1, @now),
+                ('role-sync-client', 'sync-client', 'Sync service account', 1, @now)
+            """,
+            ("@now", now)
+        );
+
+        // Assign permissions to clinician role
+        ExecuteNonQuery(
+            conn,
+            """
+            INSERT INTO gk_role_permission (role_id, permission_id, granted_at)
+            VALUES
+                ('role-clinician', 'perm-patient-all', @now),
+                ('role-clinician', 'perm-encounter-all', @now),
+                ('role-clinician', 'perm-condition-all', @now),
+                ('role-clinician', 'perm-medicationrequest-all', @now),
+                ('role-clinician', 'perm-practitioner-read', @now),
+                ('role-clinician', 'perm-appointment-read', @now)
+            """,
+            ("@now", now)
+        );
+
+        // Assign permissions to scheduler role
+        ExecuteNonQuery(
+            conn,
+            """
+            INSERT INTO gk_role_permission (role_id, permission_id, granted_at)
+            VALUES
+                ('role-scheduler', 'perm-practitioner-all', @now),
+                ('role-scheduler', 'perm-appointment-all', @now),
+                ('role-scheduler', 'perm-patient-read', @now)
+            """,
+            ("@now", now)
+        );
+
+        // Assign permissions to sync-client role
+        ExecuteNonQuery(
+            conn,
+            """
+            INSERT INTO gk_role_permission (role_id, permission_id, granted_at)
+            VALUES ('role-sync-client', 'perm-sync-all', @now)
+            """,
+            ("@now", now)
+        );
+
+        logger.LogInformation("Clinical and Scheduling permissions seeded successfully");
     }
 
     private static void ExecuteNonQuery(

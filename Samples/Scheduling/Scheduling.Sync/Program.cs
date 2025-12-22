@@ -2,17 +2,32 @@ using Scheduling.Sync;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-// Configure sync service
-builder.Services.AddHostedService<SchedulingSyncWorker>();
+// Support environment variable override for testing
+// Default path navigates from bin/Debug/net9.0 up to Scheduling.Api/bin/Debug/net9.0
+var schedulingDbPath =
+    Environment.GetEnvironmentVariable("SCHEDULING_DB_PATH")
+    ?? Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Scheduling.Api", "bin", "Debug", "net9.0", "scheduling.db");
+var clinicalApiUrl =
+    Environment.GetEnvironmentVariable("CLINICAL_API_URL") ?? "http://localhost:5080";
 
-builder.Services.AddSingleton(() =>
+Console.WriteLine($"[Scheduling.Sync] Using database: {schedulingDbPath}");
+Console.WriteLine($"[Scheduling.Sync] Clinical API URL: {clinicalApiUrl}");
+
+// Configure sync service with SQLite (same as Scheduling.Api)
+builder.Services.AddSingleton<Func<SqliteConnection>>(_ =>
+    () =>
+    {
+        var conn = new SqliteConnection($"Data Source={schedulingDbPath}");
+        conn.Open();
+        return conn;
+    }
+);
+
+builder.Services.AddHostedService(sp =>
 {
-    var connectionString =
-        Environment.GetEnvironmentVariable("SCHEDULING_DB")
-        ?? "Host=localhost;Database=scheduling;Username=clinic;Password=clinic123";
-    var conn = new NpgsqlConnection(connectionString);
-    conn.Open();
-    return conn;
+    var logger = sp.GetRequiredService<ILogger<SchedulingSyncWorker>>();
+    var getConn = sp.GetRequiredService<Func<SqliteConnection>>();
+    return new SchedulingSyncWorker(logger, getConn, clinicalApiUrl);
 });
 
 var host = builder.Build();

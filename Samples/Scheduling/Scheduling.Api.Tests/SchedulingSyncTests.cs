@@ -1,9 +1,9 @@
-namespace Scheduling.Api.Tests;
-
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 
+namespace Scheduling.Api.Tests;
 /// <summary>
 /// Sync tests for Scheduling domain.
 /// </summary>
@@ -12,6 +12,7 @@ public sealed class SchedulingSyncTests : IDisposable
     private readonly WebApplicationFactory<Program> _schedulingFactory;
     private readonly HttpClient _schedulingClient;
     private readonly string _schedulingDbPath;
+    private static readonly string AuthToken = TestTokenHelper.GenerateSchedulerToken();
 
     /// <summary>
     /// Creates test instance with Scheduling API running.
@@ -28,6 +29,10 @@ public sealed class SchedulingSyncTests : IDisposable
         );
 
         _schedulingClient = _schedulingFactory.CreateClient();
+        _schedulingClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            AuthToken
+        );
     }
 
     /// <summary>

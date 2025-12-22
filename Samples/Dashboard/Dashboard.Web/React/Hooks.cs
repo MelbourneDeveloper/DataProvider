@@ -1,8 +1,8 @@
+using System;
+using H5;
+
 namespace Dashboard.React
 {
-    using System;
-    using H5;
-
     /// <summary>
     /// State tuple for useState hook.
     /// </summary>

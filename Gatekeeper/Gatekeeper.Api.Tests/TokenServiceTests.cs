@@ -1,9 +1,8 @@
-namespace Gatekeeper.Api.Tests;
 
 using System.Globalization;
-using Generated;
 using Microsoft.Data.Sqlite;
 
+namespace Gatekeeper.Api.Tests;
 /// <summary>
 /// Unit tests for TokenService JWT creation, validation, and revocation.
 /// </summary>

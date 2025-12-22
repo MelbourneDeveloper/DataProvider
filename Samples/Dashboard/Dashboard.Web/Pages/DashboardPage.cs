@@ -1,12 +1,12 @@
+using System;
+using Dashboard.Api;
+using Dashboard.Components;
+using Dashboard.React;
+using static Dashboard.React.Elements;
+using static Dashboard.React.Hooks;
+
 namespace Dashboard.Pages
 {
-    using System;
-    using Dashboard.Api;
-    using Dashboard.Components;
-    using Dashboard.React;
-    using static Dashboard.React.Elements;
-    using static Dashboard.React.Hooks;
-
     /// <summary>
     /// Dashboard state class.
     /// </summary>

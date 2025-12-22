@@ -6,11 +6,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Sync\Sync\Sync.csproj" />
-    <ProjectReference Include="..\..\..\Sync\Sync.Postgres\Sync.Postgres.csproj" />
+    <ProjectReference Include="..\..\..\Sync\Sync.SQLite\Sync.SQLite.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
   </ItemGroup>
 

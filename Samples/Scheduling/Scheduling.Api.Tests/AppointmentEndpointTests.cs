@@ -1,15 +1,27 @@
-namespace Scheduling.Api.Tests;
-
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 
+namespace Scheduling.Api.Tests;
 /// <summary>
 /// E2E tests for Appointment FHIR endpoints - REAL database, NO mocks.
 /// Each test creates its own isolated factory and database.
 /// </summary>
 public sealed class AppointmentEndpointTests
 {
+    private static readonly string AuthToken = TestTokenHelper.GenerateSchedulerToken();
+
+    private static HttpClient CreateAuthenticatedClient(SchedulingApiFactory factory)
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            AuthToken
+        );
+        return client;
+    }
+
     private static async Task<string> CreateTestPractitionerAsync(HttpClient client)
     {
         var request = new
@@ -29,7 +41,7 @@ public sealed class AppointmentEndpointTests
     public async Task GetUpcomingAppointments_ReturnsEmptyList_WhenNoAppointments()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         var response = await client.GetAsync("/Appointment");
 
@@ -42,7 +54,7 @@ public sealed class AppointmentEndpointTests
     public async Task CreateAppointment_ReturnsCreated_WithValidData()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var practitionerId = await CreateTestPractitionerAsync(client);
         var request = new
         {
@@ -72,7 +84,7 @@ public sealed class AppointmentEndpointTests
     public async Task CreateAppointment_CalculatesDuration()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var practitionerId = await CreateTestPractitionerAsync(client);
         var request = new
         {
@@ -95,7 +107,7 @@ public sealed class AppointmentEndpointTests
     public async Task CreateAppointment_WithAllPriorities()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var priorities = new[] { "routine", "urgent", "asap", "stat" };
 
         foreach (var priority in priorities)
@@ -124,7 +136,7 @@ public sealed class AppointmentEndpointTests
     public async Task GetAppointmentById_ReturnsAppointment_WhenExists()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var practitionerId = await CreateTestPractitionerAsync(client);
         var createRequest = new
         {
@@ -152,7 +164,7 @@ public sealed class AppointmentEndpointTests
     public async Task GetAppointmentById_ReturnsNotFound_WhenNotExists()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         var response = await client.GetAsync("/Appointment/nonexistent-id-12345");
 
@@ -163,7 +175,7 @@ public sealed class AppointmentEndpointTests
     public async Task UpdateAppointmentStatus_UpdatesStatus()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var practitionerId = await CreateTestPractitionerAsync(client);
         var createRequest = new
         {
@@ -194,7 +206,7 @@ public sealed class AppointmentEndpointTests
     public async Task UpdateAppointmentStatus_ReturnsNotFound_WhenNotExists()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         var response = await client.PatchAsync(
             "/Appointment/nonexistent-id/status?status=cancelled",
@@ -208,7 +220,7 @@ public sealed class AppointmentEndpointTests
     public async Task GetAppointmentsByPatient_ReturnsPatientAppointments()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var practitionerId = await CreateTestPractitionerAsync(client);
         var patientId = Guid.NewGuid().ToString();
         var request = new
@@ -236,7 +248,7 @@ public sealed class AppointmentEndpointTests
     public async Task GetAppointmentsByPractitioner_ReturnsPractitionerAppointments()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var practitionerId = await CreateTestPractitionerAsync(client);
         var request = new
         {
@@ -263,7 +275,7 @@ public sealed class AppointmentEndpointTests
     public async Task CreateAppointment_SetsCreatedTimestamp()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var practitionerId = await CreateTestPractitionerAsync(client);
         var request = new
         {
@@ -288,7 +300,7 @@ public sealed class AppointmentEndpointTests
     public async Task CreateAppointment_WithComment()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var practitionerId = await CreateTestPractitionerAsync(client);
         var request = new
         {
@@ -315,7 +327,7 @@ public sealed class AppointmentEndpointTests
     public async Task CreateAppointment_GeneratesUniqueIds()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var practitionerId = await CreateTestPractitionerAsync(client);
         var request = new
         {

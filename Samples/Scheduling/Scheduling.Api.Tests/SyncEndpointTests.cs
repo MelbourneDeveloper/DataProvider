@@ -1,9 +1,9 @@
-namespace Scheduling.Api.Tests;
-
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 
+namespace Scheduling.Api.Tests;
 /// <summary>
 /// E2E tests for Sync endpoints - REAL database, NO mocks.
 /// Tests sync log generation and origin tracking.
@@ -11,11 +11,23 @@ using System.Text.Json;
 /// </summary>
 public sealed class SyncEndpointTests
 {
+    private static readonly string AuthToken = TestTokenHelper.GenerateSchedulerToken();
+
+    private static HttpClient CreateAuthenticatedClient(SchedulingApiFactory factory)
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            AuthToken
+        );
+        return client;
+    }
+
     [Fact]
     public async Task GetSyncOrigin_ReturnsOriginId()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         var response = await client.GetAsync("/sync/origin");
 
@@ -30,7 +42,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncChanges_ReturnsEmptyList_WhenNoChanges()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         var response = await client.GetAsync("/sync/changes?fromVersion=999999");
 
@@ -43,7 +55,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncChanges_ReturnChanges_AfterPractitionerCreated()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var practitionerRequest = new
         {
             Identifier = "NPI-Sync",
@@ -66,7 +78,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncChanges_RespectsLimitParameter()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         for (var i = 0; i < 5; i++)
         {
             var practitionerRequest = new
@@ -90,7 +102,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncChanges_TracksPractitionerChanges()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var practitionerRequest = new
         {
             Identifier = "NPI-TrackPrac",
@@ -113,7 +125,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncChanges_TracksAppointmentChanges()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var practitionerRequest = new
         {
             Identifier = "NPI-TrackAppt",
@@ -147,7 +159,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncChanges_ContainsOperation()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var practitionerRequest = new
         {
             Identifier = "NPI-Op",
@@ -182,7 +194,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncStatus_ReturnsServiceStatus()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         var response = await client.GetAsync("/sync/status");
 
@@ -213,7 +225,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncRecords_ReturnsPaginatedRecords()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         // Create some data to generate sync records
         var practitionerRequest = new
@@ -246,7 +258,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncRecords_FiltersByStatus()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         var response = await client.GetAsync("/sync/records?status=pending");
 
@@ -269,7 +281,7 @@ public sealed class SyncEndpointTests
     public async Task PostSyncRetry_AcceptsRetryRequest()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         // Test that the endpoint exists and accepts the request
         var response = await client.PostAsync("/sync/records/test-record-id/retry", null);
@@ -291,7 +303,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncRecords_ContainsRequiredFields()
     {
         using var factory = new SchedulingApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         // Create data to generate sync records
         var practitionerRequest = new

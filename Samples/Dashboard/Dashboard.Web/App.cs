@@ -1,11 +1,11 @@
+using Dashboard.Components;
+using Dashboard.Pages;
+using Dashboard.React;
+using static Dashboard.React.Elements;
+using static Dashboard.React.Hooks;
+
 namespace Dashboard
 {
-    using Dashboard.Components;
-    using Dashboard.Pages;
-    using Dashboard.React;
-    using static Dashboard.React.Elements;
-    using static Dashboard.React.Hooks;
-
     /// <summary>
     /// Application state class.
     /// </summary>

@@ -1,4 +1,4 @@
--- Get upcoming appointments
+-- Get all booked appointments (no limit - calendar needs all appointments)
 SELECT
     Id,
     Status,
@@ -17,4 +17,3 @@ SELECT
 FROM fhir_Appointment
 WHERE Status = 'booked'
 ORDER BY StartTime
-LIMIT 50

@@ -51673,12 +51673,16 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
         statics: {
             fields: {
                 _clinicalBaseUrl: null,
-                _schedulingBaseUrl: null
+                _schedulingBaseUrl: null,
+                _clinicalToken: null,
+                _schedulingToken: null
             },
             ctors: {
                 init: function () {
                     this._clinicalBaseUrl = "http://localhost:5080";
                     this._schedulingBaseUrl = "http://localhost:5001";
+                    this._clinicalToken = "";
+                    this._schedulingToken = "";
                 }
             },
             methods: {
@@ -51696,6 +51700,21 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                 Configure: function (clinicalUrl, schedulingUrl) {
                     Dashboard.Api.ApiClient._clinicalBaseUrl = clinicalUrl;
                     Dashboard.Api.ApiClient._schedulingBaseUrl = schedulingUrl;
+                },
+                /**
+                 * Sets the authentication tokens for the microservices.
+                 *
+                 * @static
+                 * @public
+                 * @this Dashboard.Api.ApiClient
+                 * @memberof Dashboard.Api.ApiClient
+                 * @param   {string}    clinicalToken      
+                 * @param   {string}    schedulingToken
+                 * @return  {void}
+                 */
+                SetTokens: function (clinicalToken, schedulingToken) {
+                    Dashboard.Api.ApiClient._clinicalToken = clinicalToken;
+                    Dashboard.Api.ApiClient._schedulingToken = schedulingToken;
                 },
                 /**
                  * Fetches all patients from the Clinical API.
@@ -51721,7 +51740,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.FetchAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient");
+                                            $t1 = Dashboard.Api.ApiClient.FetchClinicalAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient");
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -51775,7 +51794,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.FetchAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/" + (id || ""));
+                                            $t1 = Dashboard.Api.ApiClient.FetchClinicalAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/" + (id || ""));
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -51829,7 +51848,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.FetchAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/_search?q=" + (Dashboard.Api.ApiClient.EncodeUri(query) || ""));
+                                            $t1 = Dashboard.Api.ApiClient.FetchClinicalAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/_search?q=" + (Dashboard.Api.ApiClient.EncodeUri(query) || ""));
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -51883,7 +51902,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.FetchAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/" + (patientId || "") + "/Encounter");
+                                            $t1 = Dashboard.Api.ApiClient.FetchClinicalAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/" + (patientId || "") + "/Encounter");
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -51937,7 +51956,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.FetchAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/" + (patientId || "") + "/Condition");
+                                            $t1 = Dashboard.Api.ApiClient.FetchClinicalAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/" + (patientId || "") + "/Condition");
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -51991,7 +52010,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.FetchAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/" + (patientId || "") + "/MedicationRequest");
+                                            $t1 = Dashboard.Api.ApiClient.FetchClinicalAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/" + (patientId || "") + "/MedicationRequest");
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -52045,7 +52064,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.PostAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/", patient);
+                                            $t1 = Dashboard.Api.ApiClient.PostClinicalAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/", patient);
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -52100,7 +52119,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.PutAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/" + (id || ""), patient);
+                                            $t1 = Dashboard.Api.ApiClient.PutClinicalAsync((Dashboard.Api.ApiClient._clinicalBaseUrl || "") + "/fhir/Patient/" + (id || ""), patient);
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -52153,7 +52172,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.FetchAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Practitioner");
+                                            $t1 = Dashboard.Api.ApiClient.FetchSchedulingAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Practitioner");
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -52207,7 +52226,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.FetchAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Practitioner/" + (id || ""));
+                                            $t1 = Dashboard.Api.ApiClient.FetchSchedulingAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Practitioner/" + (id || ""));
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -52261,7 +52280,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.FetchAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Practitioner/_search?specialty=" + (Dashboard.Api.ApiClient.EncodeUri(specialty) || ""));
+                                            $t1 = Dashboard.Api.ApiClient.FetchSchedulingAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Practitioner/_search?specialty=" + (Dashboard.Api.ApiClient.EncodeUri(specialty) || ""));
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -52314,7 +52333,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.FetchAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Appointment");
+                                            $t1 = Dashboard.Api.ApiClient.FetchSchedulingAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Appointment");
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -52368,7 +52387,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.FetchAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Appointment/" + (id || ""));
+                                            $t1 = Dashboard.Api.ApiClient.FetchSchedulingAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Appointment/" + (id || ""));
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -52423,7 +52442,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.PutAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Appointment/" + (id || ""), appointment);
+                                            $t1 = Dashboard.Api.ApiClient.PutSchedulingAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Appointment/" + (id || ""), appointment);
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -52477,7 +52496,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.FetchAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Patient/" + (patientId || "") + "/Appointment");
+                                            $t1 = Dashboard.Api.ApiClient.FetchSchedulingAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Patient/" + (patientId || "") + "/Appointment");
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -52531,7 +52550,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = Dashboard.Api.ApiClient.FetchAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Practitioner/" + (practitionerId || "") + "/Appointment");
+                                            $t1 = Dashboard.Api.ApiClient.FetchSchedulingAsync((Dashboard.Api.ApiClient._schedulingBaseUrl || "") + "/Practitioner/" + (practitionerId || "") + "/Appointment");
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -52560,7 +52579,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                     $asyncBody();
                     return $tcs.task;
                 },
-                FetchAsync: function (url) {
+                FetchClinicalAsync: function (url) {
                     var $s = 0,
                         $t1, 
                         $tr1, 
@@ -52577,7 +52596,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1,2], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = fetch(url, { method: "GET", headers: { Accept: "application/json" } });
+                                            $t1 = fetch(url, { method: "GET", headers: { Accept: "application/json", Authorization: "Bearer " + (Dashboard.Api.ApiClient._clinicalToken || "") } });
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -52590,7 +52609,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                             response = $tr1;
 
                                             if (!response.Ok) {
-                                                throw new System.Exception("HTTP " + response.Status + ": " + (response.StatusText || ""));
+                                                throw new System.Exception("HTTP " + response.Status);
                                             }
 
                                             $t2 = response.Text();
@@ -52621,7 +52640,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                     $asyncBody();
                     return $tcs.task;
                 },
-                PostAsync: function (url, data) {
+                FetchSchedulingAsync: function (url) {
                     var $s = 0,
                         $t1, 
                         $tr1, 
@@ -52638,7 +52657,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1,2], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = fetch(url, { method: "POST", headers: { Accept: "application/json", ContentType: "application/json" }, body: JSON.stringify(H5.unbox(data)) });
+                                            $t1 = fetch(url, { method: "GET", headers: { Accept: "application/json", Authorization: "Bearer " + (Dashboard.Api.ApiClient._schedulingToken || "") } });
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -52651,7 +52670,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                             response = $tr1;
 
                                             if (!response.Ok) {
-                                                throw new System.Exception("HTTP " + response.Status + ": " + (response.StatusText || ""));
+                                                throw new System.Exception("HTTP " + response.Status);
                                             }
 
                                             $t2 = response.Text();
@@ -52682,7 +52701,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                     $asyncBody();
                     return $tcs.task;
                 },
-                PutAsync: function (url, data) {
+                PostClinicalAsync: function (url, data) {
                     var $s = 0,
                         $t1, 
                         $tr1, 
@@ -52699,7 +52718,7 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                     $s = System.Array.min([0,1,2], $s);
                                     switch ($s) {
                                         case 0: {
-                                            $t1 = fetch(url, { method: "PUT", headers: { Accept: "application/json", ContentType: "application/json" }, body: JSON.stringify(H5.unbox(data)) });
+                                            $t1 = fetch(url, { method: "POST", headers: { Accept: "application/json", ContentType: "application/json", Authorization: "Bearer " + (Dashboard.Api.ApiClient._clinicalToken || "") }, body: JSON.stringify(H5.unbox(data)) });
                                             $s = 1;
                                             if ($t1.isCompleted()) {
                                                 continue;
@@ -52712,7 +52731,129 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
                                             response = $tr1;
 
                                             if (!response.Ok) {
-                                                throw new System.Exception("HTTP " + response.Status + ": " + (response.StatusText || ""));
+                                                throw new System.Exception("HTTP " + response.Status);
+                                            }
+
+                                            $t2 = response.Text();
+                                            $s = 2;
+                                            if ($t2.isCompleted()) {
+                                                continue;
+                                            }
+                                            $t2.continue($asyncBody);
+                                            return;
+                                        }
+                                        case 2: {
+                                            $tr2 = $t2.getAwaitedResult();
+                                            $tcs.setResult($tr2);
+                                            return;
+                                        }
+                                        default: {
+                                            $tcs.setResult(null);
+                                            return;
+                                        }
+                                    }
+                                }
+                            } catch($ae1) {
+                                $ae = System.Exception.create($ae1);
+                                $tcs.setException($ae);
+                            }
+                        }, arguments);
+
+                    $asyncBody();
+                    return $tcs.task;
+                },
+                PutClinicalAsync: function (url, data) {
+                    var $s = 0,
+                        $t1, 
+                        $tr1, 
+                        $t2, 
+                        $tr2, 
+                        $jff, 
+                        $tcs = new System.Threading.Tasks.TaskCompletionSource(), 
+                        $rv, 
+                        response, 
+                        $ae, 
+                        $asyncBody = H5.fn.bind(this, function () {
+                            try {
+                                for (;;) {
+                                    $s = System.Array.min([0,1,2], $s);
+                                    switch ($s) {
+                                        case 0: {
+                                            $t1 = fetch(url, { method: "PUT", headers: { Accept: "application/json", ContentType: "application/json", Authorization: "Bearer " + (Dashboard.Api.ApiClient._clinicalToken || "") }, body: JSON.stringify(H5.unbox(data)) });
+                                            $s = 1;
+                                            if ($t1.isCompleted()) {
+                                                continue;
+                                            }
+                                            $t1.continue($asyncBody);
+                                            return;
+                                        }
+                                        case 1: {
+                                            $tr1 = $t1.getAwaitedResult();
+                                            response = $tr1;
+
+                                            if (!response.Ok) {
+                                                throw new System.Exception("HTTP " + response.Status);
+                                            }
+
+                                            $t2 = response.Text();
+                                            $s = 2;
+                                            if ($t2.isCompleted()) {
+                                                continue;
+                                            }
+                                            $t2.continue($asyncBody);
+                                            return;
+                                        }
+                                        case 2: {
+                                            $tr2 = $t2.getAwaitedResult();
+                                            $tcs.setResult($tr2);
+                                            return;
+                                        }
+                                        default: {
+                                            $tcs.setResult(null);
+                                            return;
+                                        }
+                                    }
+                                }
+                            } catch($ae1) {
+                                $ae = System.Exception.create($ae1);
+                                $tcs.setException($ae);
+                            }
+                        }, arguments);
+
+                    $asyncBody();
+                    return $tcs.task;
+                },
+                PutSchedulingAsync: function (url, data) {
+                    var $s = 0,
+                        $t1, 
+                        $tr1, 
+                        $t2, 
+                        $tr2, 
+                        $jff, 
+                        $tcs = new System.Threading.Tasks.TaskCompletionSource(), 
+                        $rv, 
+                        response, 
+                        $ae, 
+                        $asyncBody = H5.fn.bind(this, function () {
+                            try {
+                                for (;;) {
+                                    $s = System.Array.min([0,1,2], $s);
+                                    switch ($s) {
+                                        case 0: {
+                                            $t1 = fetch(url, { method: "PUT", headers: { Accept: "application/json", ContentType: "application/json", Authorization: "Bearer " + (Dashboard.Api.ApiClient._schedulingToken || "") }, body: JSON.stringify(H5.unbox(data)) });
+                                            $s = 1;
+                                            if ($t1.isCompleted()) {
+                                                continue;
+                                            }
+                                            $t1.continue($asyncBody);
+                                            return;
+                                        }
+                                        case 1: {
+                                            $tr1 = $t1.getAwaitedResult();
+                                            response = $tr1;
+
+                                            if (!response.Ok) {
+                                                throw new System.Exception("HTTP " + response.Status);
                                             }
 
                                             $t2 = response.Text();
@@ -56260,6 +56401,9 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
 
             Dashboard.Api.ApiClient.Configure(clinicalUrl, schedulingUrl);
 
+            var authToken = Dashboard.Program.GetConfigValue("AUTH_TOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYXNoYm9hcmQtdXNlciIsImp0aSI6IjE1MTMwYTg0LTY4NTktNGNmMy05MjA3LTMyMGJhYWRiNzhjNSIsInJvbGVzIjpbImNsaW5pY2lhbiIsInNjaGVkdWxlciJdLCJleHAiOjIwODE5MjIxMDQsImlhdCI6MTc2NjM4OTMwNH0.mk66XyKaLWukzZOmGNwss74lSlXobt6Em0NoEbXRdKU");
+            Dashboard.Api.ApiClient.SetTokens(authToken, authToken);
+
             Dashboard.Program.Log("Healthcare Dashboard starting...");
             Dashboard.Program.Log("Clinical API: " + (clinicalUrl || ""));
             Dashboard.Program.Log("Scheduling API: " + (schedulingUrl || ""));
@@ -57260,5 +57404,5 @@ H5.assembly("Dashboard.Web", function ($asm, globals) {
     $m("Dashboard.Components.NavItem", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Badge","t":16,"rt":$n[0].Nullable$1(System.Int32),"g":{"a":2,"n":"get_Badge","t":8,"rt":$n[0].Nullable$1(System.Int32),"fg":"Badge","box":function ($v) { return H5.box($v, System.Int32, System.Nullable.toString, System.Nullable.getHashCode);}},"s":{"a":2,"n":"set_Badge","t":8,"p":[$n[0].Nullable$1(System.Int32)],"rt":$n[0].Void,"fs":"Badge"},"fn":"Badge"},{"a":2,"n":"Icon","t":16,"rt":Function,"g":{"a":2,"n":"get_Icon","t":8,"rt":Function,"fg":"Icon"},"s":{"a":2,"n":"set_Icon","t":8,"p":[Function],"rt":$n[0].Void,"fs":"Icon"},"fn":"Icon"},{"a":2,"n":"Id","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Id","t":8,"rt":$n[0].String,"fg":"Id"},"s":{"a":2,"n":"set_Id","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Id"},"fn":"Id"},{"a":2,"n":"Label","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Label","t":8,"rt":$n[0].String,"fg":"Label"},"s":{"a":2,"n":"set_Label","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Label"},"fn":"Label"},{"a":1,"backing":true,"n":"<Badge>k__BackingField","t":4,"rt":$n[0].Nullable$1(System.Int32),"sn":"Badge","box":function ($v) { return H5.box($v, System.Int32, System.Nullable.toString, System.Nullable.getHashCode);}},{"a":1,"backing":true,"n":"<Icon>k__BackingField","t":4,"rt":Function,"sn":"Icon"},{"a":1,"backing":true,"n":"<Id>k__BackingField","t":4,"rt":$n[0].String,"sn":"Id"},{"a":1,"backing":true,"n":"<Label>k__BackingField","t":4,"rt":$n[0].String,"sn":"Label"}]}; }, $n);
     $m("Dashboard.Components.NavSection", function () { return {"att":1048577,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":2,"n":"Items","t":16,"rt":System.Array.type(Dashboard.Components.NavItem),"g":{"a":2,"n":"get_Items","t":8,"rt":System.Array.type(Dashboard.Components.NavItem),"fg":"Items"},"s":{"a":2,"n":"set_Items","t":8,"p":[System.Array.type(Dashboard.Components.NavItem)],"rt":$n[0].Void,"fs":"Items"},"fn":"Items"},{"a":2,"n":"Title","t":16,"rt":$n[0].String,"g":{"a":2,"n":"get_Title","t":8,"rt":$n[0].String,"fg":"Title"},"s":{"a":2,"n":"set_Title","t":8,"p":[$n[0].String],"rt":$n[0].Void,"fs":"Title"},"fn":"Title"},{"a":1,"backing":true,"n":"<Items>k__BackingField","t":4,"rt":System.Array.type(Dashboard.Components.NavItem),"sn":"Items"},{"a":1,"backing":true,"n":"<Title>k__BackingField","t":4,"rt":$n[0].String,"sn":"Title"}]}; }, $n);
     $m("Dashboard.Components.Sidebar", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":1,"n":"GetNavSections","is":true,"t":8,"sn":"GetNavSections","rt":System.Array.type(Dashboard.Components.NavSection)},{"a":2,"n":"Render","is":true,"t":8,"pi":[{"n":"activeView","pt":$n[0].String,"ps":0},{"n":"onNavigate","pt":Function,"ps":1},{"n":"collapsed","pt":$n[0].Boolean,"ps":2},{"n":"onToggle","pt":Function,"ps":3}],"sn":"Render","rt":Object,"p":[$n[0].String,Function,$n[0].Boolean,Function]},{"a":1,"n":"RenderFooter","is":true,"t":8,"pi":[{"n":"collapsed","pt":$n[0].Boolean,"ps":0}],"sn":"RenderFooter","rt":Object,"p":[$n[0].Boolean]},{"a":1,"n":"RenderHeader","is":true,"t":8,"pi":[{"n":"collapsed","pt":$n[0].Boolean,"ps":0}],"sn":"RenderHeader","rt":Object,"p":[$n[0].Boolean]},{"a":1,"n":"RenderNavItem","is":true,"t":8,"pi":[{"n":"item","pt":$n[4].NavItem,"ps":0},{"n":"activeView","pt":$n[0].String,"ps":1},{"n":"onNavigate","pt":Function,"ps":2}],"sn":"RenderNavItem","rt":Object,"p":[$n[4].NavItem,$n[0].String,Function]},{"a":1,"n":"RenderSection","is":true,"t":8,"pi":[{"n":"section","pt":$n[4].NavSection,"ps":0},{"n":"activeView","pt":$n[0].String,"ps":1},{"n":"onNavigate","pt":Function,"ps":2}],"sn":"RenderSection","rt":Object,"p":[$n[4].NavSection,$n[0].String,Function]}]}; }, $n);
-    $m("Dashboard.Api.ApiClient", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"Configure","is":true,"t":8,"pi":[{"n":"clinicalUrl","pt":$n[0].String,"ps":0},{"n":"schedulingUrl","pt":$n[0].String,"ps":1}],"sn":"Configure","rt":$n[0].Void,"p":[$n[0].String,$n[0].String]},{"a":2,"n":"CreatePatientAsync","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0}],"sn":"CreatePatientAsync","rt":$n[5].Task$1(Object),"p":[Object]},{"a":1,"n":"EncodeUri","is":true,"t":8,"pi":[{"n":"value","pt":$n[0].String,"ps":0}],"sn":"EncodeUri","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"FetchAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0}],"sn":"FetchAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String]},{"a":2,"n":"GetAppointmentAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetAppointmentAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetAppointmentsAsync","is":true,"t":8,"sn":"GetAppointmentsAsync","rt":$n[5].Task$1(System.Array.type(Object))},{"a":2,"n":"GetConditionsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetConditionsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetEncountersAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetEncountersAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetMedicationsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetMedicationsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPatientAppointmentsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetPatientAppointmentsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPatientAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetPatientAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetPatientsAsync","is":true,"t":8,"sn":"GetPatientsAsync","rt":$n[5].Task$1(System.Array.type(Object))},{"a":2,"n":"GetPractitionerAppointmentsAsync","is":true,"t":8,"pi":[{"n":"practitionerId","pt":$n[0].String,"ps":0}],"sn":"GetPractitionerAppointmentsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPractitionerAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetPractitionerAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetPractitionersAsync","is":true,"t":8,"sn":"GetPractitionersAsync","rt":$n[5].Task$1(System.Array.type(Object))},{"a":1,"n":"ParseJson","is":true,"t":8,"pi":[{"n":"json","pt":$n[0].String,"ps":0}],"tpc":1,"tprm":["T"],"sn":"ParseJson","rt":System.Object,"p":[$n[0].String]},{"a":1,"n":"PostAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0},{"n":"data","pt":$n[0].Object,"ps":1}],"sn":"PostAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String,$n[0].Object]},{"a":1,"n":"PutAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0},{"n":"data","pt":$n[0].Object,"ps":1}],"sn":"PutAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String,$n[0].Object]},{"a":2,"n":"SearchPatientsAsync","is":true,"t":8,"pi":[{"n":"query","pt":$n[0].String,"ps":0}],"sn":"SearchPatientsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"SearchPractitionersAsync","is":true,"t":8,"pi":[{"n":"specialty","pt":$n[0].String,"ps":0}],"sn":"SearchPractitionersAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"UpdateAppointmentAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0},{"n":"appointment","pt":$n[0].Object,"ps":1}],"sn":"UpdateAppointmentAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String,$n[0].Object]},{"a":2,"n":"UpdatePatientAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0},{"n":"patient","pt":Object,"ps":1}],"sn":"UpdatePatientAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String,Object]},{"a":1,"n":"_clinicalBaseUrl","is":true,"t":4,"rt":$n[0].String,"sn":"_clinicalBaseUrl"},{"a":1,"n":"_schedulingBaseUrl","is":true,"t":4,"rt":$n[0].String,"sn":"_schedulingBaseUrl"}]}; }, $n);
+    $m("Dashboard.Api.ApiClient", function () { return {"att":1048961,"a":2,"s":true,"m":[{"a":2,"n":"Configure","is":true,"t":8,"pi":[{"n":"clinicalUrl","pt":$n[0].String,"ps":0},{"n":"schedulingUrl","pt":$n[0].String,"ps":1}],"sn":"Configure","rt":$n[0].Void,"p":[$n[0].String,$n[0].String]},{"a":2,"n":"CreatePatientAsync","is":true,"t":8,"pi":[{"n":"patient","pt":Object,"ps":0}],"sn":"CreatePatientAsync","rt":$n[5].Task$1(Object),"p":[Object]},{"a":1,"n":"EncodeUri","is":true,"t":8,"pi":[{"n":"value","pt":$n[0].String,"ps":0}],"sn":"EncodeUri","rt":$n[0].String,"p":[$n[0].String]},{"a":1,"n":"FetchClinicalAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0}],"sn":"FetchClinicalAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String]},{"a":1,"n":"FetchSchedulingAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0}],"sn":"FetchSchedulingAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String]},{"a":2,"n":"GetAppointmentAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetAppointmentAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetAppointmentsAsync","is":true,"t":8,"sn":"GetAppointmentsAsync","rt":$n[5].Task$1(System.Array.type(Object))},{"a":2,"n":"GetConditionsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetConditionsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetEncountersAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetEncountersAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetMedicationsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetMedicationsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPatientAppointmentsAsync","is":true,"t":8,"pi":[{"n":"patientId","pt":$n[0].String,"ps":0}],"sn":"GetPatientAppointmentsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPatientAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetPatientAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetPatientsAsync","is":true,"t":8,"sn":"GetPatientsAsync","rt":$n[5].Task$1(System.Array.type(Object))},{"a":2,"n":"GetPractitionerAppointmentsAsync","is":true,"t":8,"pi":[{"n":"practitionerId","pt":$n[0].String,"ps":0}],"sn":"GetPractitionerAppointmentsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"GetPractitionerAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0}],"sn":"GetPractitionerAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String]},{"a":2,"n":"GetPractitionersAsync","is":true,"t":8,"sn":"GetPractitionersAsync","rt":$n[5].Task$1(System.Array.type(Object))},{"a":1,"n":"ParseJson","is":true,"t":8,"pi":[{"n":"json","pt":$n[0].String,"ps":0}],"tpc":1,"tprm":["T"],"sn":"ParseJson","rt":System.Object,"p":[$n[0].String]},{"a":1,"n":"PostClinicalAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0},{"n":"data","pt":$n[0].Object,"ps":1}],"sn":"PostClinicalAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String,$n[0].Object]},{"a":1,"n":"PutClinicalAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0},{"n":"data","pt":$n[0].Object,"ps":1}],"sn":"PutClinicalAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String,$n[0].Object]},{"a":1,"n":"PutSchedulingAsync","is":true,"t":8,"pi":[{"n":"url","pt":$n[0].String,"ps":0},{"n":"data","pt":$n[0].Object,"ps":1}],"sn":"PutSchedulingAsync","rt":$n[5].Task$1(System.String),"p":[$n[0].String,$n[0].Object]},{"a":2,"n":"SearchPatientsAsync","is":true,"t":8,"pi":[{"n":"query","pt":$n[0].String,"ps":0}],"sn":"SearchPatientsAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"SearchPractitionersAsync","is":true,"t":8,"pi":[{"n":"specialty","pt":$n[0].String,"ps":0}],"sn":"SearchPractitionersAsync","rt":$n[5].Task$1(System.Array.type(Object)),"p":[$n[0].String]},{"a":2,"n":"SetTokens","is":true,"t":8,"pi":[{"n":"clinicalToken","pt":$n[0].String,"ps":0},{"n":"schedulingToken","pt":$n[0].String,"ps":1}],"sn":"SetTokens","rt":$n[0].Void,"p":[$n[0].String,$n[0].String]},{"a":2,"n":"UpdateAppointmentAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0},{"n":"appointment","pt":$n[0].Object,"ps":1}],"sn":"UpdateAppointmentAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String,$n[0].Object]},{"a":2,"n":"UpdatePatientAsync","is":true,"t":8,"pi":[{"n":"id","pt":$n[0].String,"ps":0},{"n":"patient","pt":Object,"ps":1}],"sn":"UpdatePatientAsync","rt":$n[5].Task$1(Object),"p":[$n[0].String,Object]},{"a":1,"n":"_clinicalBaseUrl","is":true,"t":4,"rt":$n[0].String,"sn":"_clinicalBaseUrl"},{"a":1,"n":"_clinicalToken","is":true,"t":4,"rt":$n[0].String,"sn":"_clinicalToken"},{"a":1,"n":"_schedulingBaseUrl","is":true,"t":4,"rt":$n[0].String,"sn":"_schedulingBaseUrl"},{"a":1,"n":"_schedulingToken","is":true,"t":4,"rt":$n[0].String,"sn":"_schedulingToken"}]}; }, $n);
 });

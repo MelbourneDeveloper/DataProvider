@@ -1,10 +1,9 @@
-namespace Clinical.Api.Tests;
-
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Xunit;
 
+namespace Clinical.Api.Tests;
 /// <summary>
 /// E2E tests for Patient FHIR endpoints - REAL database, NO mocks.
 /// Uses shared factory for all tests - starts once, runs all tests, shuts down.
@@ -12,12 +11,20 @@ using Xunit;
 public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
 {
     private readonly HttpClient _client;
+    private readonly string _authToken = TestTokenHelper.GenerateClinicianToken();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PatientEndpointTests"/> class.
     /// </summary>
     /// <param name="factory">Shared factory instance.</param>
-    public PatientEndpointTests(ClinicalApiFactory factory) => _client = factory.CreateClient();
+    public PatientEndpointTests(ClinicalApiFactory factory)
+    {
+        _client = factory.CreateClient();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            _authToken
+        );
+    }
 
     [Fact]
     public async Task GetPatients_ReturnsOk()
