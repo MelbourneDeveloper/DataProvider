@@ -12,6 +12,9 @@
         <Rule Id="CA1002" Action="None" />
         <Rule Id="CA1062" Action="None" />
         <Rule Id="CA1002" Action="None" />
+        <Rule Id="CA1034" Action="None" />
+        <!-- Perhaps false positive? https://github.com/dotnet/roslyn-analyzers/issues/7150 -->
+        <Rule Id="CA1848" Action="None" />
         <!-- Mark assemblies with assembly version -->
         <Rule Id="CA1017" Action="None" />
         <Rule Id="IDE0037" Action="Error" />
@@ -69,8 +72,6 @@
         <Rule Id="CA1032" Action="Error" />
         <!-- Implement standard exception constructors -->
         <Rule Id="CA1033" Action="Error" />
-        <!-- Interface methods should be callable by child types -->
-        <Rule Id="CA1034" Action="Error" />
         <!-- Nested types should not be visible -->
         <Rule Id="CA1036" Action="Error" />
         <!-- Override methods on comparable types -->
@@ -207,8 +208,6 @@
         <Rule Id="CA1846" Action="Error" />
         <!-- Prefer 'AsSpan' over 'Substring' -->
         <Rule Id="CA1847" Action="Error" />
-        <!-- Use char literal for a single character lookup -->
-        <Rule Id="CA1848" Action="Error" />
         <!-- Use the LoggerMessage delegates -->
         <Rule Id="CA1849" Action="Error" />
         <!-- Call async methods when in an async method -->

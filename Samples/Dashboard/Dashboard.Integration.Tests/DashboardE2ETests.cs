@@ -2604,7 +2604,10 @@ public sealed class DashboardE2ETests
 
             // Verify login page is gone
             var loginPageStillVisible = await page.IsVisibleAsync("[data-testid='login-page']");
-            Assert.False(loginPageStillVisible, "Login page should be hidden after successful login");
+            Assert.False(
+                loginPageStillVisible,
+                "Login page should be hidden after successful login"
+            );
 
             // Verify sidebar is visible (dashboard state)
             var sidebarVisible = await page.IsVisibleAsync(".sidebar");
@@ -2614,10 +2617,10 @@ public sealed class DashboardE2ETests
         {
             // If we get here, the bug exists - first-time sign-in doesn't work without refresh
             Assert.Fail(
-                "FIRST-TIME SIGN-IN BUG: App did not transition to dashboard after login. " +
-                "User must refresh the browser for login to take effect. " +
-                "Fix: Expose window.__triggerLogin in App component for testing, " +
-                "or verify onLogin callback properly triggers React state update."
+                "FIRST-TIME SIGN-IN BUG: App did not transition to dashboard after login. "
+                    + "User must refresh the browser for login to take effect. "
+                    + "Fix: Expose window.__triggerLogin in App component for testing, "
+                    + "or verify onLogin callback properly triggers React state update."
             );
         }
 

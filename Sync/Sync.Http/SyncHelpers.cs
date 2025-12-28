@@ -1,5 +1,3 @@
-#pragma warning disable CA1848 // Use the LoggerMessage delegates for performance
-
 using Microsoft.Data.Sqlite;
 using Npgsql;
 

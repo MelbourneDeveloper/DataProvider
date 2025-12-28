@@ -210,13 +210,13 @@ curl "http://localhost:5000/sync/subscribe?tableName=Person&pkValue=1"
 
 #### 1. Start PostgreSQL with Docker
 
+From the repository root:
+
 ```bash
 docker-compose up -d
 ```
 
-The included `docker-compose.yml` provides:
-- Main database: `localhost:5432` (user: syncuser, password: syncpass)
-- Test database: `localhost:5433` (user: testuser, password: testpass)
+This starts a single PostgreSQL container on `localhost:5432` (user: postgres, password: postgres, database: gigs). The C# migrations handle schema creation.
 
 #### 2. Initialize Schema
 
@@ -225,7 +225,7 @@ using Npgsql;
 using Sync.Postgres;
 
 using var connection = new NpgsqlConnection(
-    "Host=localhost;Port=5432;Database=syncdb;Username=syncuser;Password=syncpass");
+    "Host=localhost;Port=5432;Database=gigs;Username=postgres;Password=postgres");
 connection.Open();
 
 PostgresSyncSchema.CreateSchema(connection);

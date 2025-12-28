@@ -8,7 +8,7 @@
         <Description>SQLite source generator for DataProvider</Description>
         <!-- Exclude from Directory.Build.props analyzer packages -->
         <!-- Temporarily disable strict rules for source generator to build -->
-        <NoWarn>CA1849;CA2100;EPC13;CA1305;CA1307;</NoWarn>
+        <NoWarn>CA1849;CA2100;EPC13;CA1307;</NoWarn>
         <IsRoslynComponent>true</IsRoslynComponent>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     </PropertyGroup>

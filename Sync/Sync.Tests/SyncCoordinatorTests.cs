@@ -1,5 +1,3 @@
-#pragma warning disable CA1848 // Use LoggerMessage delegates for performance
-
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;

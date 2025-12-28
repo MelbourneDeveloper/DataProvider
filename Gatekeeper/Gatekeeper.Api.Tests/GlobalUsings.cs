@@ -8,11 +8,11 @@ global using Microsoft.AspNetCore.Mvc.Testing;
 global using Outcome;
 global using Selecta;
 global using Xunit;
-global using GetRolePermissionsOk = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.GetRolePermissions>,
-    Selecta.SqlError
->.Ok<System.Collections.Immutable.ImmutableList<Generated.GetRolePermissions>, Selecta.SqlError>;
 global using GetRolePermissionsError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetRolePermissions>,
     Selecta.SqlError
 >.Error<System.Collections.Immutable.ImmutableList<Generated.GetRolePermissions>, Selecta.SqlError>;
+global using GetRolePermissionsOk = Outcome.Result<
+    System.Collections.Immutable.ImmutableList<Generated.GetRolePermissions>,
+    Selecta.SqlError
+>.Ok<System.Collections.Immutable.ImmutableList<Generated.GetRolePermissions>, Selecta.SqlError>;

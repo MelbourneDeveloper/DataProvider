@@ -1,5 +1,3 @@
-#pragma warning disable CA1848 // Use LoggerMessage delegates for performance - sync operations are not high-throughput
-
 using Microsoft.Extensions.Logging;
 
 namespace Sync;

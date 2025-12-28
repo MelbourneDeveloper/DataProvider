@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Gatekeeper.Migration</RootNamespace>
-    <NoWarn>$(NoWarn);CA1848;CA2254</NoWarn>
+    <NoWarn>$(NoWarn);CA2254</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
