@@ -60,7 +60,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
         Assert.IsType<long>(line.LineId);
         Assert.IsType<long>(line.InvoiceId);
         Assert.IsType<string>(line.Description);
-        Assert.IsType<double>(line.Quantity);
+        Assert.IsType<long>(line.Quantity);
         Assert.IsType<double>(line.UnitPrice);
         Assert.IsType<double>(line.Amount);
     }
@@ -149,7 +149,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
         Assert.IsType<long>(item.ItemId);
         Assert.IsType<long>(item.OrderId);
         Assert.IsType<string>(item.ProductName);
-        Assert.IsType<double>(item.Quantity);
+        Assert.IsType<long>(item.Quantity);
         Assert.IsType<double>(item.Price);
         Assert.IsType<double>(item.Subtotal);
     }
@@ -481,7 +481,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
                 Id INTEGER PRIMARY KEY,
                 InvoiceId INT NOT NULL,
                 Description TEXT NOT NULL,
-                Quantity REAL NOT NULL,
+                Quantity INTEGER NOT NULL,
                 UnitPrice REAL NOT NULL,
                 Amount REAL NOT NULL,
                 DiscountPercentage REAL NULL,
@@ -522,7 +522,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
                 Id INTEGER PRIMARY KEY,
                 OrderId INT NOT NULL,
                 ProductName TEXT NOT NULL,
-                Quantity REAL NOT NULL,
+                Quantity INTEGER NOT NULL,
                 Price REAL NOT NULL,
                 Subtotal REAL NOT NULL,
                 FOREIGN KEY (OrderId) REFERENCES Orders (Id)
@@ -591,7 +591,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
                 Id INTEGER PRIMARY KEY,
                 InvoiceId INT NOT NULL,
                 Description TEXT NOT NULL,
-                Quantity REAL NOT NULL,
+                Quantity INTEGER NOT NULL,
                 UnitPrice REAL NOT NULL,
                 Amount REAL NOT NULL,
                 DiscountPercentage REAL NULL,
@@ -632,7 +632,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
                 Id INTEGER PRIMARY KEY,
                 OrderId INT NOT NULL,
                 ProductName TEXT NOT NULL,
-                Quantity REAL NOT NULL,
+                Quantity INTEGER NOT NULL,
                 Price REAL NOT NULL,
                 Subtotal REAL NOT NULL,
                 FOREIGN KEY (OrderId) REFERENCES Orders (Id)

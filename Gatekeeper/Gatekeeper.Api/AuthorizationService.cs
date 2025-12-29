@@ -24,13 +24,12 @@ public static class AuthorizationService
         // Step 1: Check resource-level grants first (most specific)
         if (!string.IsNullOrEmpty(resourceType) && !string.IsNullOrEmpty(resourceId))
         {
-            // Generated param order: user_id, resource_type, resource_id, now, permission_code
             var grantResult = await conn.CheckResourceGrantAsync(
-                    userId,
-                    resourceType,
-                    resourceId,
-                    now,
-                    permissionCode
+                    user_id: userId,
+                    permission_code: permissionCode,
+                    resource_type: resourceType,
+                    resource_id: resourceId,
+                    now: now
                 )
                 .ConfigureAwait(false);
 
