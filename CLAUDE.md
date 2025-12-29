@@ -44,6 +44,8 @@ if (triggerResult is Result<bool, SyncError>.Error<bool, SyncError> triggerErr)
 - **Test at the highest level** - Avoid mocks. Only full integration testing
 - **Keep files under 450 LOC and functions under 20 LOC**
 - **Always use type aliases (using) for result types** - Don't write like this: `new Result<string, SqlError>.Ok`
+- **All tables must have a SINGLE primary key**
+- **Primary keys MUST be UUIDs**
 - **No singletons** - Inject `Func` into static methods
 - **Immutable types!** - Use records. Don't use `List<T>`. Use `ImmutableList` `FrozenSet` or `ImmutableArray`
 - **NO REGEX** - Parse SQL with ANTLR .g4 grammars or SqlParserCS library

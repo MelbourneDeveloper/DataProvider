@@ -327,17 +327,17 @@ public static class DataAccessGenerator
         sb.AppendLine("    /// </summary>");
         sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"    public static async Task<Result<long, SqlError>> Insert{table.Name}Async(this IDbTransaction transaction, {parameterList})"
+            $"    public static async Task<Result<int, SqlError>> Insert{table.Name}Async(this IDbTransaction transaction, {parameterList})"
         );
         sb.AppendLine("    {");
 
-        // Generate INSERT SQL
+        // Generate INSERT SQL (no last_insert_rowid - all PKs are UUIDs)
         var columnNames = string.Join(", ", insertableColumns.Select(c => c.Name));
         var parameterNames = string.Join(", ", insertableColumns.Select(c => $"@{c.Name}"));
 
         sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"        const string sql = \"INSERT INTO {table.Name} ({columnNames}) VALUES ({parameterNames}); SELECT last_insert_rowid()\";"
+            $"        const string sql = \"INSERT INTO {table.Name} ({columnNames}) VALUES ({parameterNames})\";"
         );
         sb.AppendLine();
         sb.AppendLine("        try");
@@ -377,24 +377,17 @@ public static class DataAccessGenerator
 
         sb.AppendLine();
         sb.AppendLine(
-            "                var result = await command.ExecuteScalarAsync().ConfigureAwait(false);"
-        );
-        sb.AppendLine("                if (result == null || result == DBNull.Value)");
-        sb.AppendLine(
-            "                    return new Result<long, SqlError>.Error<long, SqlError>(new SqlError(\"Insert failed: no ID returned\"));"
+            "                var rowsAffected = await command.ExecuteNonQueryAsync().ConfigureAwait(false);"
         );
         sb.AppendLine(
-            "                var newId = Convert.ToInt64(result, CultureInfo.InvariantCulture);"
-        );
-        sb.AppendLine(
-            "                return new Result<long, SqlError>.Ok<long, SqlError>(newId);"
+            "                return new Result<int, SqlError>.Ok<int, SqlError>(rowsAffected);"
         );
         sb.AppendLine("            }");
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");
         sb.AppendLine("        {");
         sb.AppendLine(
-            "            return new Result<long, SqlError>.Error<long, SqlError>(new SqlError(\"Insert failed\", ex));"
+            "            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Insert failed\", ex));"
         );
         sb.AppendLine("        }");
         sb.AppendLine("    }");

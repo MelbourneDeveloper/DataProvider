@@ -68,6 +68,7 @@ public sealed class E2EFixture : IAsyncLifetime
         await KillProcessOnPortAsync(5001);
         await KillProcessOnPortAsync(5002);
         await KillProcessOnPortAsync(5173);
+        await Task.Delay(2000);
 
         var testAssemblyDir = Path.GetDirectoryName(typeof(E2EFixture).Assembly.Location)!;
         var samplesDir = Path.GetFullPath(
@@ -138,22 +139,38 @@ public sealed class E2EFixture : IAsyncLifetime
 
     /// <summary>
     /// Stop all services ONCE after all tests.
+    /// Order matters: stop sync workers FIRST to prevent connection errors.
     /// </summary>
     public async Task DisposeAsync()
     {
-        if (Browser is not null)
-            await Browser.CloseAsync();
+        try
+        {
+            if (Browser is not null)
+                await Browser.CloseAsync();
+        }
+        catch { }
         Playwright?.Dispose();
 
-        if (_dashboardHost is not null)
-            await _dashboardHost.StopAsync();
+        StopProcess(_clinicalSyncProcess);
+        StopProcess(_schedulingSyncProcess);
+        await Task.Delay(1000);
+
+        try
+        {
+            if (_dashboardHost is not null)
+                await _dashboardHost.StopAsync(TimeSpan.FromSeconds(5));
+        }
+        catch { }
         _dashboardHost?.Dispose();
 
         StopProcess(_clinicalProcess);
         StopProcess(_schedulingProcess);
         StopProcess(_gatekeeperProcess);
-        StopProcess(_clinicalSyncProcess);
-        StopProcess(_schedulingSyncProcess);
+
+        await KillProcessOnPortAsync(5080);
+        await KillProcessOnPortAsync(5001);
+        await KillProcessOnPortAsync(5002);
+        await KillProcessOnPortAsync(5173);
     }
 
     private static Process StartApiFromDll(string dllPath, string contentRoot, string url)
@@ -244,21 +261,44 @@ public sealed class E2EFixture : IAsyncLifetime
 
     private static async Task KillProcessOnPortAsync(int port)
     {
+        // Try multiple times to ensure port is released
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "/bin/sh",
+                    Arguments = $"-c \"lsof -ti :{port} | xargs kill -9 2>/dev/null || true\"",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+                using var process = Process.Start(psi);
+                if (process is not null)
+                    await process.WaitForExitAsync();
+            }
+            catch { }
+            await Task.Delay(1000);
+
+            // Verify port is free
+            if (await IsPortAvailableAsync(port))
+                return;
+        }
+    }
+
+    private static Task<bool> IsPortAvailableAsync(int port)
+    {
         try
         {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "/bin/sh",
-                Arguments = $"-c \"lsof -ti :{port} | xargs kill -9 2>/dev/null || true\"",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            };
-            using var process = Process.Start(psi);
-            if (process is not null)
-                await process.WaitForExitAsync();
-            await Task.Delay(500);
+            using var listener = new System.Net.Sockets.TcpListener(IPAddress.Loopback, port);
+            listener.Start();
+            listener.Stop();
+            return Task.FromResult(true);
         }
-        catch { }
+        catch
+        {
+            return Task.FromResult(false);
+        }
     }
 
     private static async Task WaitForApiAsync(string baseUrl, string healthEndpoint)
@@ -384,16 +424,9 @@ public sealed class E2EFixture : IAsyncLifetime
 }
 
 /// <summary>
-/// Collection definition for E2E tests that must run sequentially.
-/// Used for tests with browser navigation history, auth state, etc.
+/// Single collection definition for ALL E2E tests.
+/// All tests share ONE E2EFixture instance to prevent port conflicts.
+/// Tests within this collection run sequentially by default.
 /// </summary>
 [CollectionDefinition("E2E Tests")]
 public sealed class E2ECollection : ICollectionFixture<E2EFixture>;
-
-/// <summary>
-/// Collection definition for E2E tests that can run in parallel.
-/// Used for tests that create unique data and don't depend on shared state.
-/// Tests in different collections run in parallel with each other.
-/// </summary>
-[CollectionDefinition("E2E Tests Parallel")]
-public sealed class E2ECollectionParallel : ICollectionFixture<E2EFixture>;

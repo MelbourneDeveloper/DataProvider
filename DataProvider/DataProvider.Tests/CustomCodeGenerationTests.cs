@@ -621,14 +621,14 @@ public class UsersRepository : IUsersRepository
     {
         using var connection = new SqliteConnection(_connectionString);
         await connection.OpenAsync();
-        
-        var sql = ""INSERT INTO Users (Name, Email) VALUES (@Name, @Email); SELECT last_insert_rowid()"";
+
+        var sql = ""INSERT INTO Users (Name, Email) VALUES (@Name, @Email)"";
         using var command = new SqliteCommand(sql, connection);
         command.Parameters.AddWithValue(""@Name"", entity.Name);
         command.Parameters.AddWithValue(""@Email"", entity.Email);
-        
-        var newId = Convert.ToInt32(await command.ExecuteScalarAsync());
-        return entity with { Id = newId };
+
+        await command.ExecuteNonQueryAsync();
+        return entity;
     }
     public async Task<UserEntity> UpdateAsync(UserEntity entity)
     {
@@ -798,13 +798,13 @@ public record {entityName}(
     {{
         using var connection = new SqliteConnection(_connectionString);
         await connection.OpenAsync();
-        
-        var sql = ""INSERT INTO {table.Name} ({columnNames}) VALUES ({parameterNames}); SELECT last_insert_rowid()"";
+
+        var sql = ""INSERT INTO {table.Name} ({columnNames}) VALUES ({parameterNames})"";
         using var command = new SqliteCommand(sql, connection);
 {string.Join("\n", insertableColumns.Select(c => $"        command.Parameters.AddWithValue(\"@{c.Name}\", entity.{c.Name});"))}
-        
-        var newId = Convert.ToInt32(await command.ExecuteScalarAsync());
-        return entity with {{ Id = newId }};
+
+        await command.ExecuteNonQueryAsync();
+        return entity;
     }}";
     }
 

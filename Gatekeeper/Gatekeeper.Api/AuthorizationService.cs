@@ -24,26 +24,15 @@ public static class AuthorizationService
         // Step 1: Check resource-level grants first (most specific)
         if (!string.IsNullOrEmpty(resourceType) && !string.IsNullOrEmpty(resourceId))
         {
-            // Use raw SQL instead of generated method due to non-deterministic param ordering bug
-            using var checkCmd = conn.CreateCommand();
-            checkCmd.CommandText = @"
-                SELECT rg.id, rg.user_id, rg.resource_type, rg.resource_id, rg.permission_id,
-                       rg.granted_at, rg.granted_by, rg.expires_at, p.code as permission_code
-                FROM gk_resource_grant rg
-                JOIN gk_permission p ON rg.permission_id = p.id
-                WHERE rg.user_id = @user_id
-                  AND rg.resource_type = @resource_type
-                  AND rg.resource_id = @resource_id
-                  AND p.code = @permission_code
-                  AND (rg.expires_at IS NULL OR rg.expires_at > @now)";
-            checkCmd.Parameters.AddWithValue("@user_id", userId);
-            checkCmd.Parameters.AddWithValue("@resource_type", resourceType);
-            checkCmd.Parameters.AddWithValue("@resource_id", resourceId);
-            checkCmd.Parameters.AddWithValue("@permission_code", permissionCode);
-            checkCmd.Parameters.AddWithValue("@now", now);
+            var grantResult = await conn.CheckResourceGrantAsync(
+                now: now,
+                resource_id: resourceId,
+                user_id: userId,
+                resource_type: resourceType,
+                permission_code: permissionCode
+            ).ConfigureAwait(false);
 
-            using var checkReader = await checkCmd.ExecuteReaderAsync().ConfigureAwait(false);
-            if (await checkReader.ReadAsync().ConfigureAwait(false))
+            if (grantResult is CheckResourceGrantOk grantOk && grantOk.Value.Count > 0)
             {
                 return (true, $"resource-grant:{resourceType}/{resourceId}");
             }

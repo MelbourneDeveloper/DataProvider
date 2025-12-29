@@ -141,13 +141,19 @@
       // Dev token (all-zeros key, expires 2035) with clinician and scheduler roles
       const DEV_DASHBOARD_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYXNoYm9hcmQtdXNlciIsImp0aSI6IjE1MTMwYTg0LTY4NTktNGNmMy05MjA3LTMyMGJhYWRiNzhjNSIsInJvbGVzIjpbImNsaW5pY2lhbiIsInNjaGVkdWxlciJdLCJleHAiOjIwODE5MjIxMDQsImlhdCI6MTc2NjM4OTMwNH0.mk66XyKaLWukzZOmGNwss74lSlXobt6Em0NoEbXRdKU';
 
-      // Set dev token ONLY in test mode (testMode=true URL param)
+      // Set dev token and user ONLY in test mode (testMode=true URL param)
       // For localhost dev without testMode, user must log in (or use existing token)
       // This allows login page tests to work properly
       if (isTestModeInit) {
         const devToken = window.dashboardConfig?.DEV_TOKEN || DEV_DASHBOARD_TOKEN;
         localStorage.setItem(AUTH_TOKEN_KEY, devToken);
-        console.log('[Dashboard] Test mode: dev token set');
+        // Only set default test user if no user already in localStorage
+        if (!localStorage.getItem(AUTH_USER_KEY)) {
+          localStorage.setItem(AUTH_USER_KEY, JSON.stringify({
+            userId: 'test', displayName: 'Test User', email: 'test@example.com'
+          }));
+        }
+        console.log('[Dashboard] Test mode: auth state initialized');
       } else {
         console.log('[Dashboard] Normal mode: using existing auth state');
       }
@@ -2173,13 +2179,14 @@
                     React.createElement('th', null, 'Operation'),
                     React.createElement('th', null, 'Version'),
                     React.createElement('th', null, 'Service'),
-                    React.createElement('th', null, 'Entity'),
+                    React.createElement('th', null, 'Table'),
+                    React.createElement('th', null, 'Entity ID'),
                     React.createElement('th', null, 'Timestamp')
                   )
                 ),
                 React.createElement('tbody', null,
                   filteredRecords.map(record =>
-                    React.createElement('tr', { key: record.id, 'data-testid': `sync-record-${record.id}` },
+                    React.createElement('tr', { key: record.id, 'data-testid': `sync-record-${record.id}`, 'data-service': record.service, 'data-operation': record.operation },
                       React.createElement('td', null,
                         React.createElement('span', { className: `status-indicator ${getOperationClass(record.operation)}` },
                           getOperationIcon(record.operation),
@@ -2188,8 +2195,9 @@
                         )
                       ),
                       React.createElement('td', null, record.id),
-                      React.createElement('td', null, record.service === 'clinical' ? 'Clinical.Api' : 'Scheduling.Api'),
-                      React.createElement('td', null, `${record.entityType} (${record.entityId})`),
+                      React.createElement('td', { 'data-testid': 'record-service' }, record.service === 'clinical' ? 'Clinical.Api' : 'Scheduling.Api'),
+                      React.createElement('td', { 'data-testid': 'record-table' }, record.entityType),
+                      React.createElement('td', { 'data-testid': 'record-entity-id' }, record.entityId),
                       React.createElement('td', null, formatTime(record.lastAttempt))
                     )
                   )
@@ -2989,20 +2997,15 @@
 
       // Main App Component
       const App = () => {
-        // Test mode bypass - allows E2E tests to skip authentication
-        // Check URL params or window config for test mode
-        const isTestMode = () => {
-          const urlParams = new URLSearchParams(window.location.search);
-          return urlParams.get('testMode') === 'true' || window.dashboardConfig?.testMode === true;
-        };
-
-        // Auth state - check localStorage on mount (or bypass in test mode)
-        const [isAuthenticated, setIsAuthenticated] = React.useState(() => isTestMode() || !!getAuthToken());
-        const [currentUser, setCurrentUser] = React.useState(() => isTestMode() ? { userId: 'test', displayName: 'Test User', email: 'test@example.com' } : getAuthUser());
+        // Auth state - read from localStorage (testMode sets these values on page load)
+        const [isAuthenticated, setIsAuthenticated] = React.useState(() => !!getAuthToken());
+        const [currentUser, setCurrentUser] = React.useState(() => getAuthUser());
 
         const handleLogin = (user) => {
+          console.log('[Dashboard] handleLogin called with user:', user);
           setCurrentUser(user);
           setIsAuthenticated(true);
+          console.log('[Dashboard] handleLogin completed, isAuthenticated should now be true');
         };
 
         // Parse initial state from URL hash for deep linking support

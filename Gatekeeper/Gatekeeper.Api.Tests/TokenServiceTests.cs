@@ -1,6 +1,8 @@
-
 using System.Globalization;
+using Gatekeeper.Migration;
 using Microsoft.Data.Sqlite;
+using Migration;
+using Migration.SQLite;
 
 namespace Gatekeeper.Api.Tests;
 /// <summary>
@@ -370,40 +372,44 @@ public sealed class TokenServiceTests
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
         var exp = DateTime.UtcNow.AddHours(1).ToString("o", CultureInfo.InvariantCulture);
 
-        // Insert user and session using DataProvider methods
+        // Insert user and session using raw SQL (TEXT PK doesn't return rowid)
         using var tx = conn.BeginTransaction();
-        await tx.Insertgk_userAsync(
-                userId,
-                "Test User",
-                null!, // email
-                now,
-                null!, // last_login_at
-                1, // is_active
-                null! // metadata
-            )
-            .ConfigureAwait(false);
-        await tx.Insertgk_sessionAsync(
-                jti,
-                userId,
-                null!, // credential_id
-                now,
-                exp,
-                now,
-                null!, // ip_address
-                null!, // user_agent
-                0 // is_revoked = false
-            )
-            .ConfigureAwait(false);
+
+        using var userCmd = conn.CreateCommand();
+        userCmd.Transaction = tx;
+        userCmd.CommandText = @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
+                                VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
+        userCmd.Parameters.AddWithValue("@id", userId);
+        userCmd.Parameters.AddWithValue("@name", "Test User");
+        userCmd.Parameters.AddWithValue("@email", DBNull.Value);
+        userCmd.Parameters.AddWithValue("@now", now);
+        await userCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+
+        using var sessionCmd = conn.CreateCommand();
+        sessionCmd.Transaction = tx;
+        sessionCmd.CommandText = @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
+                                   VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 0)";
+        sessionCmd.Parameters.AddWithValue("@id", jti);
+        sessionCmd.Parameters.AddWithValue("@user_id", userId);
+        sessionCmd.Parameters.AddWithValue("@created", now);
+        sessionCmd.Parameters.AddWithValue("@expires", exp);
+        sessionCmd.Parameters.AddWithValue("@activity", now);
+        await sessionCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+
         tx.Commit();
 
         // Revoke
         await TokenService.RevokeTokenAsync(conn, jti);
 
-        // Verify
-        using var checkCmd = conn.CreateCommand();
-        checkCmd.CommandText = "SELECT is_revoked FROM gk_session WHERE id = @jti";
-        checkCmd.Parameters.AddWithValue("@jti", jti);
-        var isRevoked = await checkCmd.ExecuteScalarAsync();
+        // Verify using DataProvider generated method
+        var revokedResult = await conn.GetSessionRevokedAsync(jti);
+        var isRevoked = revokedResult switch
+        {
+            GetSessionRevokedOk ok => ok.Value.FirstOrDefault()?.is_revoked ?? -1L,
+            GetSessionRevokedError err => throw new InvalidOperationException(
+                $"GetSessionRevoked failed: {err.Value.Message}, {err.Value.InnerException?.Message}"
+            ),
+        };
 
         Assert.Equal(1L, isRevoked);
     }
@@ -453,31 +459,30 @@ public sealed class TokenServiceTests
         var conn = new SqliteConnection("Data Source=:memory:");
         conn.Open();
 
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = """
-            CREATE TABLE IF NOT EXISTS gk_user (
-                id TEXT PRIMARY KEY,
-                display_name TEXT NOT NULL,
-                email TEXT,
-                created_at TEXT NOT NULL,
-                last_login_at TEXT,
-                is_active INTEGER NOT NULL DEFAULT 1,
-                metadata TEXT
-            );
+        // Use the GatekeeperSchema migration to create only the needed tables
+        // gk_credential is needed because gk_session has a FK to it
+        var schema = GatekeeperSchema.Build();
+        var neededTables = new[] { "gk_user", "gk_credential", "gk_session" };
 
-            CREATE TABLE IF NOT EXISTS gk_session (
-                id TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL REFERENCES gk_user(id) ON DELETE CASCADE,
-                credential_id TEXT,
-                created_at TEXT NOT NULL,
-                expires_at TEXT NOT NULL,
-                last_activity_at TEXT NOT NULL,
-                ip_address TEXT,
-                user_agent TEXT,
-                is_revoked INTEGER NOT NULL DEFAULT 0
-            );
-            """;
-        cmd.ExecuteNonQuery();
+        foreach (var table in schema.Tables.Where(t => neededTables.Contains(t.Name)))
+        {
+            var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
+            foreach (
+                var statement in ddl.Split(
+                    ';',
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                )
+            )
+            {
+                if (string.IsNullOrWhiteSpace(statement))
+                {
+                    continue;
+                }
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = statement;
+                cmd.ExecuteNonQuery();
+            }
+        }
 
         return conn;
     }

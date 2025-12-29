@@ -37,31 +37,64 @@ internal sealed class SchedulingSyncWorker : BackgroundService
 
     /// <summary>
     /// Main sync loop - polls Clinical domain for patient changes and applies mappings.
+    /// FAULT TOLERANT: This worker NEVER crashes. It handles all errors gracefully and retries indefinitely.
     /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation(
-            "Scheduling sync worker starting. Polling {Endpoint} every {Interval}s",
-            _clinicalEndpoint,
-            _pollIntervalSeconds
-        );
+        _logger.LogInformation("[SYNC-START] Scheduling.Sync worker starting at {Time}. Target: {Url}, Poll interval: {Interval}s", DateTimeOffset.Now, _clinicalEndpoint, _pollIntervalSeconds);
 
-        // Initial delay to let APIs start
-        await Task.Delay(2000, stoppingToken);
+        var consecutiveFailures = 0;
+        const int maxConsecutiveFailuresBeforeWarning = 3;
 
+        // Main sync loop - NEVER exits except on cancellation
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
                 await SyncPatientDataAsync(stoppingToken).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                _logger.LogError(ex, "Error during sync cycle");
-            }
 
-            await Task.Delay(TimeSpan.FromSeconds(_pollIntervalSeconds), stoppingToken);
+                // Reset failure counter on success
+                if (consecutiveFailures > 0)
+                {
+                    _logger.LogInformation("[SYNC-RECOVERED] Sync recovered after {Count} consecutive failures", consecutiveFailures);
+                    consecutiveFailures = 0;
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(_pollIntervalSeconds), stoppingToken).ConfigureAwait(false);
+            }
+            catch (HttpRequestException ex)
+            {
+                consecutiveFailures++;
+                var retryDelay = Math.Min(5 * consecutiveFailures, 30); // Exponential backoff up to 30s
+
+                if (consecutiveFailures >= maxConsecutiveFailuresBeforeWarning)
+                {
+                    _logger.LogWarning("[SYNC-FAULT] Clinical.Api unreachable for {Count} consecutive attempts. Error: {Message}. Retrying in {Delay}s...", consecutiveFailures, ex.Message, retryDelay);
+                }
+                else
+                {
+                    _logger.LogInformation("[SYNC-RETRY] Clinical.Api not reachable ({Message}). Attempt {Count}, retrying in {Delay}s...", ex.Message, consecutiveFailures, retryDelay);
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(retryDelay), stoppingToken).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                _logger.LogInformation("[SYNC-SHUTDOWN] Sync worker shutting down gracefully");
+                break;
+            }
+            catch (Exception ex)
+            {
+                consecutiveFailures++;
+                var retryDelay = Math.Min(10 * consecutiveFailures, 60); // Longer backoff for unknown errors
+
+                _logger.LogError(ex, "[SYNC-ERROR] Unexpected error during sync (attempt {Count}). Retrying in {Delay}s. Error type: {Type}", consecutiveFailures, retryDelay, ex.GetType().Name);
+
+                await Task.Delay(TimeSpan.FromSeconds(retryDelay), stoppingToken).ConfigureAwait(false);
+            }
         }
+
+        _logger.LogInformation("[SYNC-EXIT] Scheduling.Sync worker exited at {Time}", DateTimeOffset.Now);
     }
 
     /// <summary>

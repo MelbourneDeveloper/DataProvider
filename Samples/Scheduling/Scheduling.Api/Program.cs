@@ -71,6 +71,9 @@ using (var conn = new SqliteConnection(connectionString))
 // Enable CORS
 app.UseCors("Dashboard");
 
+// Health endpoint for sync service startup checks
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "Scheduling.Api" }));
+
 // Get HttpClientFactory for auth filters
 var httpClientFactory = app.Services.GetRequiredService<IHttpClientFactory>();
 Func<HttpClient> getGatekeeperClient = () => httpClientFactory.CreateClient("Gatekeeper");

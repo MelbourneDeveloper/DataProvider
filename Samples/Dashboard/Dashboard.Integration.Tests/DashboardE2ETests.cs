@@ -6,7 +6,7 @@ namespace Dashboard.Integration.Tests;
 /// Core Dashboard E2E tests.
 /// Uses EXACTLY the same ports as the real app.
 /// </summary>
-[Collection("E2E Tests Parallel")]
+[Collection("E2E Tests")]
 [Trait("Category", "E2E")]
 public sealed class DashboardE2ETests
 {

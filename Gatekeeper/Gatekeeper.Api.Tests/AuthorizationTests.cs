@@ -439,9 +439,7 @@ public sealed class GatekeeperTestFixture : IDisposable
         tx.Commit();
 
         // Force WAL checkpoint to ensure changes are visible to other connections
-        using var wal = conn.CreateCommand();
-        wal.CommandText = "PRAGMA wal_checkpoint(FULL)";
-        wal.ExecuteNonQuery();
+        _ = await conn.WalCheckpointAsync().ConfigureAwait(false);
 
         var token = TokenService.CreateToken(
             userId,
@@ -492,9 +490,7 @@ public sealed class GatekeeperTestFixture : IDisposable
         tx.Commit();
 
         // Force WAL checkpoint to ensure changes are visible to other connections
-        using var wal = conn.CreateCommand();
-        wal.CommandText = "PRAGMA wal_checkpoint(FULL)";
-        wal.ExecuteNonQuery();
+        _ = await conn.WalCheckpointAsync().ConfigureAwait(false);
 
         var token = TokenService.CreateToken(
             userId,
@@ -520,44 +516,26 @@ public sealed class GatekeeperTestFixture : IDisposable
     )
     {
         using var conn = OpenConnection();
-        using var tx = conn.BeginTransaction();
 
+        // Look up existing permission by code BEFORE starting transaction
+        var permLookupResult = await conn.GetPermissionByCodeAsync(permissionCode)
+            .ConfigureAwait(false);
+        var existingPerm = permLookupResult switch
+        {
+            GetPermissionByCodeOk ok => ok.Value.FirstOrDefault(),
+            GetPermissionByCodeError err => throw new InvalidOperationException(
+                $"Permission lookup failed: {err.Value.Message}, Exception: {err.Value.InnerException?.Message}"
+            ),
+        };
+
+        var permId = existingPerm?.id
+            ?? throw new InvalidOperationException(
+                $"Permission '{permissionCode}' not found in seeded database"
+            );
+
+        using var tx = conn.BeginTransaction();
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
         var grantId = Guid.NewGuid().ToString();
-
-        // Look up existing permission by code, or create new one
-        using var lookupCmd = conn.CreateCommand();
-        lookupCmd.Transaction = (SqliteTransaction)tx;
-        lookupCmd.CommandText = "SELECT id FROM gk_permission WHERE code = @code";
-        lookupCmd.Parameters.AddWithValue("@code", permissionCode);
-        var existingPermId = lookupCmd.ExecuteScalar() as string;
-
-        string permId;
-        if (existingPermId != null)
-        {
-            permId = existingPermId;
-        }
-        else
-        {
-            // Create new permission if it doesn't exist
-            permId = $"perm-{permissionCode.Replace(':', '-')}-{Guid.NewGuid():N}";
-            var action = permissionCode.Split(':').LastOrDefault() ?? "read";
-
-            var permResult = await tx.Insertgk_permissionAsync(
-                    permId,
-                    permissionCode,
-                    resourceType,
-                    action,
-                    null, // description
-                    now
-                )
-                .ConfigureAwait(false);
-
-            if (permResult is Result<long, SqlError>.Error<long, SqlError> permErr)
-            {
-                throw new InvalidOperationException($"Failed to insert permission: {permErr.Value.Message}");
-            }
-        }
 
         // Grant access using DataProvider generated method
         var grantResult = await tx.Insertgk_resource_grantAsync(
@@ -572,7 +550,7 @@ public sealed class GatekeeperTestFixture : IDisposable
             )
             .ConfigureAwait(false);
 
-        if (grantResult is Result<long, SqlError>.Error<long, SqlError> grantErr)
+        if (grantResult is Result<int, SqlError>.Error<int, SqlError> grantErr)
         {
             throw new InvalidOperationException($"Failed to insert grant: {grantErr.Value.Message}");
         }
@@ -580,9 +558,7 @@ public sealed class GatekeeperTestFixture : IDisposable
         tx.Commit();
 
         // Force WAL checkpoint to ensure changes are visible to other connections
-        using var wal = conn.CreateCommand();
-        wal.CommandText = "PRAGMA wal_checkpoint(FULL)";
-        wal.ExecuteNonQuery();
+        _ = await conn.WalCheckpointAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -597,40 +573,27 @@ public sealed class GatekeeperTestFixture : IDisposable
     )
     {
         using var conn = OpenConnection();
-        using var tx = conn.BeginTransaction();
 
+        // Look up existing permission by code BEFORE starting transaction
+        var permLookupResult = await conn.GetPermissionByCodeAsync(permissionCode)
+            .ConfigureAwait(false);
+        var existingPerm = permLookupResult switch
+        {
+            GetPermissionByCodeOk ok => ok.Value.FirstOrDefault(),
+            GetPermissionByCodeError err => throw new InvalidOperationException(
+                $"Permission lookup failed: {err.Value.Message}"
+            ),
+        };
+
+        var permId = existingPerm?.id
+            ?? throw new InvalidOperationException(
+                $"Permission '{permissionCode}' not found in seeded database"
+            );
+
+        using var tx = conn.BeginTransaction();
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
         var expired = DateTime.UtcNow.AddHours(-1).ToString("o", CultureInfo.InvariantCulture);
         var grantId = Guid.NewGuid().ToString();
-
-        // Look up existing permission by code, or create new one
-        using var lookupCmd = conn.CreateCommand();
-        lookupCmd.Transaction = (SqliteTransaction)tx;
-        lookupCmd.CommandText = "SELECT id FROM gk_permission WHERE code = @code";
-        lookupCmd.Parameters.AddWithValue("@code", permissionCode);
-        var existingPermId = lookupCmd.ExecuteScalar() as string;
-
-        string permId;
-        if (existingPermId != null)
-        {
-            permId = existingPermId;
-        }
-        else
-        {
-            // Create new permission if it doesn't exist
-            permId = $"perm-{permissionCode.Replace(':', '-')}-{Guid.NewGuid():N}";
-            var action = permissionCode.Split(':').LastOrDefault() ?? "read";
-
-            await tx.Insertgk_permissionAsync(
-                    permId,
-                    permissionCode,
-                    resourceType,
-                    action,
-                    null, // description
-                    now
-                )
-                .ConfigureAwait(false);
-        }
 
         // Grant access with expired timestamp using DataProvider generated method
         await tx.Insertgk_resource_grantAsync(
@@ -648,9 +611,7 @@ public sealed class GatekeeperTestFixture : IDisposable
         tx.Commit();
 
         // Force WAL checkpoint to ensure changes are visible to other connections
-        using var wal = conn.CreateCommand();
-        wal.CommandText = "PRAGMA wal_checkpoint(FULL)";
-        wal.ExecuteNonQuery();
+        _ = await conn.WalCheckpointAsync().ConfigureAwait(false);
     }
 
     /// <summary>Disposes the test fixture.</summary>

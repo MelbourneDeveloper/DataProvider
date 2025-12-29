@@ -16,10 +16,10 @@ public static class MapFunctions
     /// <returns>Order instance</returns>
     public static Generated.Order MapOrder(IDataReader reader) =>
         new(
-            reader.GetInt64(reader.GetOrdinal("Id")),
+            reader.GetString(reader.GetOrdinal("Id")),
             reader.GetString(reader.GetOrdinal("OrderNumber")),
             reader.GetString(reader.GetOrdinal("OrderDate")),
-            reader.GetInt64(reader.GetOrdinal("CustomerId")),
+            reader.GetString(reader.GetOrdinal("CustomerId")),
             reader.GetDouble(reader.GetOrdinal("TotalAmount")),
             reader.GetString(reader.GetOrdinal("Status")),
             []
@@ -32,7 +32,7 @@ public static class MapFunctions
     /// <returns>Customer instance</returns>
     public static Generated.Customer MapCustomer(IDataReader reader) =>
         new(
-            reader.GetInt64(reader.GetOrdinal("Id")),
+            reader.GetString(reader.GetOrdinal("Id")),
             reader.GetString(reader.GetOrdinal("CustomerName")),
             reader.IsDBNull(reader.GetOrdinal("Email"))
                 ? null

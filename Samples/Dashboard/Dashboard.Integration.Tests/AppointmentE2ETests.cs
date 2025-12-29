@@ -6,7 +6,7 @@ namespace Dashboard.Integration.Tests;
 /// <summary>
 /// E2E tests for appointment-related functionality.
 /// </summary>
-[Collection("E2E Tests Parallel")]
+[Collection("E2E Tests")]
 [Trait("Category", "E2E")]
 public sealed class AppointmentE2ETests
 {

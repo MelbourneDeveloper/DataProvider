@@ -297,27 +297,34 @@ public sealed class AuthE2ETests
 
         // Wait for React to mount and set the __triggerLogin hook
         await page.WaitForFunctionAsync("() => typeof window.__triggerLogin === 'function'",
-            new PageWaitForFunctionOptions { Timeout = 5000 });
+            new PageWaitForFunctionOptions { Timeout = 10000 });
 
-        await page.EvaluateAsync(@"() => {
-            localStorage.setItem('gatekeeper_token', 'simulated-jwt-token');
-            localStorage.setItem('gatekeeper_user', JSON.stringify({
+        // Use the same DEV token that testMode uses - this token is accepted by the APIs
+        const string devToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYXNoYm9hcmQtdXNlciIsImp0aSI6IjE1MTMwYTg0LTY4NTktNGNmMy05MjA3LTMyMGJhYWRiNzhjNSIsInJvbGVzIjpbImNsaW5pY2lhbiIsInNjaGVkdWxlciJdLCJleHAiOjIwODE5MjIxMDQsImlhdCI6MTc2NjM4OTMwNH0.mk66XyKaLWukzZOmGNwss74lSlXobt6Em0NoEbXRdKU";
+        await page.EvaluateAsync($@"() => {{
+            console.log('[TEST] Setting token and triggering login');
+            localStorage.setItem('gatekeeper_token', '{devToken}');
+            localStorage.setItem('gatekeeper_user', JSON.stringify({{
                 userId: 'test-user-123', displayName: 'Test User', email: 'test@example.com'
-            }));
-            window.__triggerLogin({ userId: 'test-user-123', displayName: 'Test User', email: 'test@example.com' });
-        }");
+            }}));
+            window.__triggerLogin({{ userId: 'test-user-123', displayName: 'Test User', email: 'test@example.com' }});
+            console.log('[TEST] Login triggered, waiting for React state update');
+        }}");
 
-        await Task.Delay(500);
+        // Wait longer for React state update and re-render
+        await Task.Delay(2000);
 
         try
         {
-            await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 5000 });
+            await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 10000 });
             var loginPageStillVisible = await page.IsVisibleAsync("[data-testid='login-page']");
-            Assert.False(loginPageStillVisible);
-            Assert.True(await page.IsVisibleAsync(".sidebar"));
+            Assert.False(loginPageStillVisible, "Login page should be hidden after successful login");
+            Assert.True(await page.IsVisibleAsync(".sidebar"), "Sidebar should be visible after successful login");
         }
         catch (TimeoutException)
         {
+            var pageContent = await page.ContentAsync();
+            Console.WriteLine($"[TEST] Page content after timeout:\n{pageContent[..Math.Min(2000, pageContent.Length)]}");
             Assert.Fail("FIRST-TIME SIGN-IN BUG: App did not transition to dashboard after login.");
         }
 

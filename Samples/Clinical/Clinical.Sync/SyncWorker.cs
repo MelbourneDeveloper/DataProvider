@@ -31,30 +31,64 @@ internal sealed class SyncWorker : BackgroundService
 
     /// <summary>
     /// Executes the sync worker background service.
+    /// FAULT TOLERANT: This worker NEVER crashes. It handles all errors gracefully and retries indefinitely.
     /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.Log(
-            LogLevel.Information,
-            "Clinical.Sync worker starting at {Time}",
-            DateTimeOffset.Now
-        );
+        _logger.Log(LogLevel.Information, "[SYNC-START] Clinical.Sync worker starting at {Time}. Target: {Url}", DateTimeOffset.Now, _schedulingApiUrl);
 
-        await Task.Delay(2000, stoppingToken).ConfigureAwait(false);
+        var consecutiveFailures = 0;
+        const int maxConsecutiveFailuresBeforeWarning = 3;
 
+        // Main sync loop - NEVER exits except on cancellation
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
                 await PerformSync(stoppingToken).ConfigureAwait(false);
+
+                // Reset failure counter on success
+                if (consecutiveFailures > 0)
+                {
+                    _logger.Log(LogLevel.Information, "[SYNC-RECOVERED] Sync recovered after {Count} consecutive failures", consecutiveFailures);
+                    consecutiveFailures = 0;
+                }
+
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken).ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (HttpRequestException ex)
             {
-                _logger.Log(LogLevel.Error, ex, "Error during sync operation");
-                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken).ConfigureAwait(false);
+                consecutiveFailures++;
+                var retryDelay = Math.Min(5 * consecutiveFailures, 30); // Exponential backoff up to 30s
+
+                if (consecutiveFailures >= maxConsecutiveFailuresBeforeWarning)
+                {
+                    _logger.Log(LogLevel.Warning, "[SYNC-FAULT] Scheduling.Api unreachable for {Count} consecutive attempts. Error: {Message}. Retrying in {Delay}s...", consecutiveFailures, ex.Message, retryDelay);
+                }
+                else
+                {
+                    _logger.Log(LogLevel.Information, "[SYNC-RETRY] Scheduling.Api not reachable ({Message}). Attempt {Count}, retrying in {Delay}s...", ex.Message, consecutiveFailures, retryDelay);
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(retryDelay), stoppingToken).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                _logger.Log(LogLevel.Information, "[SYNC-SHUTDOWN] Sync worker shutting down gracefully");
+                break;
+            }
+            catch (Exception ex)
+            {
+                consecutiveFailures++;
+                var retryDelay = Math.Min(10 * consecutiveFailures, 60); // Longer backoff for unknown errors
+
+                _logger.Log(LogLevel.Error, ex, "[SYNC-ERROR] Unexpected error during sync (attempt {Count}). Retrying in {Delay}s. Error type: {Type}", consecutiveFailures, retryDelay, ex.GetType().Name);
+
+                await Task.Delay(TimeSpan.FromSeconds(retryDelay), stoppingToken).ConfigureAwait(false);
             }
         }
+
+        _logger.Log(LogLevel.Information, "[SYNC-EXIT] Clinical.Sync worker exited at {Time}", DateTimeOffset.Now);
     }
 
     private async Task PerformSync(CancellationToken cancellationToken)
