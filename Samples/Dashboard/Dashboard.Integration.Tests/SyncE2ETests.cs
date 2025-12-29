@@ -221,7 +221,16 @@ public sealed class SyncE2ETests
 
         // Filter to Insert operations only (operation = 0)
         await page.SelectOptionAsync("[data-testid='action-filter']", "0");
-        await Task.Delay(500);
+
+        // Wait for React to apply the filter - verify no Update operations are visible
+        await page.WaitForFunctionAsync(
+            @"() => {
+                const rows = document.querySelectorAll('[data-testid=""sync-records-table""] tbody tr');
+                if (rows.length === 0) return true; // No rows = filter applied (or empty)
+                return Array.from(rows).every(row => row.getAttribute('data-operation') === '0');
+            }",
+            new PageWaitForFunctionOptions { Timeout = 5000 }
+        );
 
         var insertRows = await page.QuerySelectorAllAsync(
             "[data-testid='sync-records-table'] tbody tr"
@@ -244,7 +253,13 @@ public sealed class SyncE2ETests
 
         // Reset filter
         await page.SelectOptionAsync("[data-testid='action-filter']", "all");
-        await Task.Delay(500);
+
+        // Wait for React to apply the reset filter
+        await page.WaitForFunctionAsync(
+            $"() => document.querySelector('[data-testid=\"action-filter\"]').value === 'all'",
+            new PageWaitForFunctionOptions { Timeout = 5000 }
+        );
+        await Task.Delay(300); // Small buffer for React re-render
 
         var allRows = await page.QuerySelectorAllAsync(
             "[data-testid='sync-records-table'] tbody tr"
@@ -297,7 +312,19 @@ public sealed class SyncE2ETests
         // Apply both filters: Clinical + Insert
         await page.SelectOptionAsync("[data-testid='service-filter']", "clinical");
         await page.SelectOptionAsync("[data-testid='action-filter']", "0");
-        await Task.Delay(500);
+
+        // Wait for React to apply both filters
+        await page.WaitForFunctionAsync(
+            @"() => {
+                const rows = document.querySelectorAll('[data-testid=""sync-records-table""] tbody tr');
+                if (rows.length === 0) return true; // No rows = filters applied (or empty)
+                return Array.from(rows).every(row =>
+                    row.getAttribute('data-service') === 'clinical' &&
+                    row.getAttribute('data-operation') === '0'
+                );
+            }",
+            new PageWaitForFunctionOptions { Timeout = 5000 }
+        );
 
         var filteredRows = await page.QuerySelectorAllAsync(
             "[data-testid='sync-records-table'] tbody tr"
@@ -317,7 +344,19 @@ public sealed class SyncE2ETests
 
         // Try Scheduling + Insert
         await page.SelectOptionAsync("[data-testid='service-filter']", "scheduling");
-        await Task.Delay(500);
+
+        // Wait for React to apply the service filter change
+        await page.WaitForFunctionAsync(
+            @"() => {
+                const rows = document.querySelectorAll('[data-testid=""sync-records-table""] tbody tr');
+                if (rows.length === 0) return true;
+                return Array.from(rows).every(row =>
+                    row.getAttribute('data-service') === 'scheduling' &&
+                    row.getAttribute('data-operation') === '0'
+                );
+            }",
+            new PageWaitForFunctionOptions { Timeout = 5000 }
+        );
 
         var schedulingInsertRows = await page.QuerySelectorAllAsync(
             "[data-testid='sync-records-table'] tbody tr"

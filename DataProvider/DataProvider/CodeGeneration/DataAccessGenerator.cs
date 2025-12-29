@@ -313,7 +313,7 @@ public static class DataAccessGenerator
             insertableColumns.Select(c =>
                 string.Create(
                     CultureInfo.InvariantCulture,
-                    $"{c.CSharpType} {EscapeReservedKeyword(c.Name)}"
+                    $"{c.CSharpType}{(c.IsNullable && c.CSharpType == "string" ? "?" : "")} {EscapeReservedKeyword(c.Name)}"
                 )
             )
         );
@@ -338,6 +338,11 @@ public static class DataAccessGenerator
         sb.AppendLine(
             CultureInfo.InvariantCulture,
             $"        const string sql = \"INSERT INTO {table.Name} ({columnNames}) VALUES ({parameterNames})\";"
+        );
+        sb.AppendLine();
+        sb.AppendLine("        if (transaction.Connection is null)");
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Transaction has no connection\"));"
         );
         sb.AppendLine();
         sb.AppendLine("        try");
@@ -572,6 +577,11 @@ public static class DataAccessGenerator
             $"        const string sql = \"UPDATE {table.Name} SET {setClause} WHERE {whereClause}\";"
         );
         sb.AppendLine();
+        sb.AppendLine("        if (transaction.Connection is null)");
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Transaction has no connection\"));"
+        );
+        sb.AppendLine();
         sb.AppendLine("        try");
         sb.AppendLine("        {");
 
@@ -730,6 +740,11 @@ public static class DataAccessGenerator
         sb.AppendLine("    {");
         sb.AppendLine("        if (batch.Count == 0)");
         sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(0);");
+        sb.AppendLine();
+        sb.AppendLine("        if (transaction.Connection is null)");
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Transaction has no connection\"));"
+        );
         sb.AppendLine();
 
         // Build the SQL with placeholders
@@ -920,6 +935,11 @@ public static class DataAccessGenerator
         sb.AppendLine("    {");
         sb.AppendLine("        if (batch.Count == 0)");
         sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(0);");
+        sb.AppendLine();
+        sb.AppendLine("        if (transaction.Connection is null)");
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Transaction has no connection\"));"
+        );
         sb.AppendLine();
 
         // Build the SQL with placeholders - database-specific upsert syntax

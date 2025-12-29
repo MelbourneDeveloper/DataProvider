@@ -97,7 +97,9 @@ public static class DatabaseSetup
                    ('perm-user-profile', 'user:profile', 'user', 'read', 'View own profile', @now),
                    ('perm-user-credentials', 'user:credentials', 'user', 'manage', 'Manage own passkeys', @now),
                    ('perm-patient-read', 'patient:read', 'patient', 'read', 'Read patient records', @now),
-                   ('perm-order-read', 'order:read', 'order', 'read', 'Read order records', @now)
+                   ('perm-order-read', 'order:read', 'order', 'read', 'Read order records', @now),
+                   ('perm-sync-read', 'sync:read', 'sync', 'read', 'Read sync data', @now),
+                   ('perm-sync-write', 'sync:write', 'sync', 'write', 'Write sync data', @now)
             """,
             ("@now", now)
         );
@@ -107,6 +109,8 @@ public static class DatabaseSetup
             """
             INSERT INTO gk_role_permission (role_id, permission_id, granted_at)
             VALUES ('role-admin', 'perm-admin-all', @now),
+                   ('role-admin', 'perm-sync-read', @now),
+                   ('role-admin', 'perm-sync-write', @now),
                    ('role-user', 'perm-user-profile', @now),
                    ('role-user', 'perm-user-credentials', @now)
             """,
