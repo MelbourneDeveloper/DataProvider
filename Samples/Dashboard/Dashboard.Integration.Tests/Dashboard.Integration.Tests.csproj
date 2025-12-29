@@ -31,4 +31,9 @@
     <None Include="../Dashboard.Web/wwwroot/**/*" CopyToOutputDirectory="PreserveNewest" LinkBase="wwwroot" />
   </ItemGroup>
 
+  <!-- Ensure xunit.runner.json is copied to output directory -->
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
