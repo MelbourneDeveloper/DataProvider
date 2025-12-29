@@ -1,9 +1,9 @@
-namespace Clinical.Api.Tests;
-
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 
+namespace Clinical.Api.Tests;
 /// <summary>
 /// E2E tests for Sync endpoints - REAL database, NO mocks.
 /// Tests sync log generation and origin tracking.
@@ -11,11 +11,23 @@ using System.Text.Json;
 /// </summary>
 public sealed class SyncEndpointTests
 {
+    private static readonly string AuthToken = TestTokenHelper.GenerateClinicianToken();
+
+    private static HttpClient CreateAuthenticatedClient(ClinicalApiFactory factory)
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            AuthToken
+        );
+        return client;
+    }
+
     [Fact]
     public async Task GetSyncOrigin_ReturnsOriginId()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         var response = await client.GetAsync("/sync/origin");
 
@@ -30,7 +42,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncChanges_ReturnsEmptyList_WhenNoChanges()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         var response = await client.GetAsync("/sync/changes?fromVersion=999999");
 
@@ -43,7 +55,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncChanges_ReturnChanges_AfterPatientCreated()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientRequest = new
         {
             Active = true,
@@ -66,7 +78,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncChanges_RespectsLimitParameter()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         for (var i = 0; i < 5; i++)
         {
             var patientRequest = new
@@ -91,7 +103,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncChanges_ContainsTableName()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientRequest = new
         {
             Active = true,
@@ -112,7 +124,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncChanges_ContainsOperation()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientRequest = new
         {
             Active = true,
@@ -141,7 +153,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncChanges_TracksEncounterChanges()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientRequest = new
         {
             Active = true,
@@ -172,7 +184,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncChanges_TracksConditionChanges()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientRequest = new
         {
             Active = true,
@@ -204,7 +216,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncChanges_TracksMedicationRequestChanges()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientRequest = new
         {
             Active = true,
@@ -252,7 +264,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncStatus_ReturnsServiceStatus()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         var response = await client.GetAsync("/sync/status");
 
@@ -271,8 +283,7 @@ public sealed class SyncEndpointTests
         );
 
         Assert.True(result.TryGetProperty("lastSyncTime", out _));
-        Assert.True(result.TryGetProperty("pendingCount", out _));
-        Assert.True(result.TryGetProperty("failedCount", out _));
+        Assert.True(result.TryGetProperty("totalRecords", out _));
     }
 
     /// <summary>
@@ -283,7 +294,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncRecords_ReturnsPaginatedRecords()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         // Create some data to generate sync records
         var patientRequest = new
@@ -317,7 +328,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncRecords_SearchByEntityId()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         // Create a patient with known ID pattern
         var patientRequest = new
@@ -349,7 +360,7 @@ public sealed class SyncEndpointTests
     public async Task PostSyncRetry_RetriesFailedRecord()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         // First we need a failed sync record to retry
         // For now, test that the endpoint exists and accepts the request
@@ -373,7 +384,7 @@ public sealed class SyncEndpointTests
     public async Task GetSyncRecords_ContainsRequiredFields()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
 
         // Create data to generate sync records
         var patientRequest = new

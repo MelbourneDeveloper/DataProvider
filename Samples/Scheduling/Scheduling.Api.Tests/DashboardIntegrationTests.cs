@@ -1,5 +1,6 @@
-namespace Scheduling.Api.Tests;
+using System.Net.Http.Headers;
 
+namespace Scheduling.Api.Tests;
 /// <summary>
 /// Tests that verify the Dashboard can actually connect to Scheduling API.
 /// These tests MUST FAIL if CORS is not configured for Dashboard origin.
@@ -7,15 +8,24 @@ namespace Scheduling.Api.Tests;
 public sealed class DashboardIntegrationTests : IClassFixture<SchedulingApiFactory>
 {
     private readonly HttpClient _client;
+    private readonly string _authToken = TestTokenHelper.GenerateSchedulerToken();
 
     /// <summary>
     /// The actual URL where Dashboard runs (for CORS origin testing).
     /// </summary>
     private const string DashboardOrigin = "http://localhost:5173";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DashboardIntegrationTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared factory instance.</param>
     public DashboardIntegrationTests(SchedulingApiFactory factory)
     {
         _client = factory.CreateClient();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            _authToken
+        );
     }
 
     #region CORS Tests
@@ -31,6 +41,7 @@ public sealed class DashboardIntegrationTests : IClassFixture<SchedulingApiFacto
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/Practitioner");
         request.Headers.Add("Origin", DashboardOrigin);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
 
         var response = await _client.SendAsync(request);
 

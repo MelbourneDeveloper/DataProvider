@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Clinical.Api\Clinical.Api.csproj" />
+    <ProjectReference Include="..\..\Shared\Authorization\Authorization.csproj" />
   </ItemGroup>
 
 </Project>

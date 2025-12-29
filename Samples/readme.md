@@ -6,7 +6,9 @@ This sample showcases:
 - **DataProvider** - Compile-time safe SQL queries for all database operations
 - **Sync Framework** - Bidirectional data synchronization between Clinical and Scheduling domains
 - **LQL** - Lambda Query Language for complex queries
-- **FHIR Compliance** - All medical data follows [FHIR R5 spec](https://build.fhir.org/resourcelist.html)
+- **FHIR Compliance** 
+   - All medical data follows [FHIR R5 spec](https://build.fhir.org/resourcelist.html)
+   - Follows the FHIR [access control rules](https://build.fhir.org/security.html).
 
 ## Quick Start
 

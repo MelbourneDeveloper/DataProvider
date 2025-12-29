@@ -696,9 +696,9 @@ public sealed class DataProviderIntegrationTests : IDisposable
         // Arrange
         await SetupTestDatabase();
         var predicate = PredicateBuilder.False<Customer>();
-        predicate = predicate.Or(c => c.Id == 1);
-        predicate = predicate.Or(c => c.Id == 2);
-        var query = SelectStatement.From<Customer>("Customer").Where(predicate).OrderBy(c => c.Id);
+        predicate = predicate.Or(c => c.CustomerName == "Acme Corp");
+        predicate = predicate.Or(c => c.CustomerName == "Tech Solutions");
+        var query = SelectStatement.From<Customer>("Customer").Where(predicate).OrderBy(c => c.CustomerName);
 
         // Act
         var statement = query.ToSqlStatement();
@@ -708,8 +708,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         Assert.True(result is CustomerReadOnlyListOk);
         var customers = ((CustomerReadOnlyListOk)result).Value;
         Assert.Equal(2, customers.Count);
-        Assert.Equal(1, customers[0].Id);
-        Assert.Equal(2, customers[1].Id);
+        Assert.Equal("Acme Corp", customers[0].CustomerName);
+        Assert.Equal("Tech Solutions", customers[1].CustomerName);
     }
 
     /// <summary>
@@ -721,8 +721,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         // Arrange
         await SetupTestDatabase();
         var predicate = PredicateBuilder.True<Customer>();
-        predicate = predicate.And(c => c.Id >= 1);
-        predicate = predicate.And(c => c.Id <= 1);
+        predicate = predicate.And(c => c.CustomerName == "Acme Corp");
+        predicate = predicate.And(c => c.Email != null);
         var query = SelectStatement.From<Customer>("Customer").Where(predicate);
 
         // Act
@@ -733,7 +733,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
         Assert.True(result is CustomerReadOnlyListOk);
         var customers = ((CustomerReadOnlyListOk)result).Value;
         Assert.Single(customers);
-        Assert.Equal(1, customers[0].Id);
+        Assert.Equal("Acme Corp", customers[0].CustomerName);
     }
 
     /// <summary>
@@ -745,7 +745,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
         // Arrange
         await SetupTestDatabase();
         var predicate = PredicateBuilder.True<Customer>();
-        predicate = predicate.And(c => c.Id == 1);
+        predicate = predicate.And(c => c.CustomerName == "Acme Corp");
         predicate = predicate.Not();
         var query = SelectStatement.From<Customer>("Customer").Where(predicate);
 
@@ -757,7 +757,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
         Assert.True(result is CustomerReadOnlyListOk);
         var customers = ((CustomerReadOnlyListOk)result).Value;
         Assert.Single(customers);
-        Assert.Equal(2, customers[0].Id);
+        Assert.Equal("Tech Solutions", customers[0].CustomerName);
     }
 
     /// <summary>
@@ -768,14 +768,14 @@ public sealed class DataProviderIntegrationTests : IDisposable
     {
         // Arrange
         await SetupTestDatabase();
-        var searchIds = new[] { 1, 3, 5 }; // Only ID 1 exists in test data
+        var searchNames = new[] { "Acme Corp", "Unknown Corp", "Missing Inc" }; // Only "Acme Corp" exists in test data
         var predicate = PredicateBuilder.False<Customer>();
 
         // Act - simulate building dynamic OR conditions
-        foreach (var id in searchIds)
+        foreach (var name in searchNames)
         {
-            var tempId = id; // Capture for closure
-            predicate = predicate.Or(c => c.Id == tempId);
+            var tempName = name; // Capture for closure
+            predicate = predicate.Or(c => c.CustomerName == tempName);
         }
 
         var query = SelectStatement.From<Customer>("Customer").Where(predicate);
@@ -785,8 +785,8 @@ public sealed class DataProviderIntegrationTests : IDisposable
         // Assert
         Assert.True(result is CustomerReadOnlyListOk);
         var customers = ((CustomerReadOnlyListOk)result).Value;
-        Assert.Single(customers); // Only customer with ID 1 exists
-        Assert.Equal(1, customers[0].Id);
+        Assert.Single(customers); // Only customer "Acme Corp" exists
+        Assert.Equal("Acme Corp", customers[0].CustomerName);
     }
 
     /// <summary>
@@ -800,11 +800,11 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var predicate = PredicateBuilder.True<Customer>();
 
         // Act - simulate building dynamic AND conditions for filtering
-        predicate = predicate.And(c => c.Id >= 1);
-        predicate = predicate.And(c => c.Id <= 2);
+        predicate = predicate.And(c => c.Id != null);
         predicate = predicate.And(c => c.Email != null);
+        predicate = predicate.And(c => c.CustomerName != null);
 
-        var query = SelectStatement.From<Customer>("Customer").Where(predicate).OrderBy(c => c.Id);
+        var query = SelectStatement.From<Customer>("Customer").Where(predicate).OrderBy(c => c.CustomerName);
         var statement = query.ToSqlStatement();
         var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
 

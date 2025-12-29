@@ -1,9 +1,9 @@
+using System;
+using System.Threading.Tasks;
+using H5;
+
 namespace Dashboard.Tests.TestLib
 {
-    using System;
-    using System.Threading.Tasks;
-    using H5;
-
     /// <summary>
     /// C# wrapper for React Testing Library.
     /// Provides render, query, and interaction methods.

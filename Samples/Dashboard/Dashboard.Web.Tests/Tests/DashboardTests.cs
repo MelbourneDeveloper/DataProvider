@@ -1,10 +1,10 @@
+using System.Threading.Tasks;
+using Dashboard.Tests.TestData;
+using Dashboard.Tests.TestLib;
+using static Dashboard.Tests.TestLib.TestRunner;
+
 namespace Dashboard.Tests.Tests
 {
-    using System.Threading.Tasks;
-    using Dashboard.Tests.TestData;
-    using Dashboard.Tests.TestLib;
-    using static Dashboard.Tests.TestLib.TestRunner;
-
     /// <summary>
     /// Comprehensive end-to-end tests for the Healthcare Dashboard.
     /// Tests the ENTIRE application from the root App component.

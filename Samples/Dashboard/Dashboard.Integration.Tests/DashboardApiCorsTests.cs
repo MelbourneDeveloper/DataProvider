@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 
 namespace Dashboard.Integration.Tests;
@@ -99,7 +102,52 @@ public sealed class DashboardApiCorsTests : IAsyncLifetime
     {
         _clinicalClient = _clinicalFactory.CreateClient();
         _schedulingClient = _schedulingFactory.CreateClient();
+
+        // Add auth headers for all requests (uses dev mode signing key - 32 zeros)
+        var token = GenerateTestToken();
+        _clinicalClient.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        _schedulingClient.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
         return Task.CompletedTask;
+    }
+
+    private static readonly string[] TestRoles = ["admin", "user"];
+
+    private static string GenerateTestToken()
+    {
+        var signingKey = new byte[32]; // 32 zeros = dev mode key
+        var header = Base64UrlEncode(Encoding.UTF8.GetBytes("""{"alg":"HS256","typ":"JWT"}"""));
+        var expiration = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds();
+        var payload = Base64UrlEncode(
+            Encoding.UTF8.GetBytes(
+                JsonSerializer.Serialize(
+                    new
+                    {
+                        sub = "cors-test-user",
+                        name = "CORS Test User",
+                        email = "corstest@example.com",
+                        jti = Guid.NewGuid().ToString(),
+                        exp = expiration,
+                        roles = TestRoles,
+                    }
+                )
+            )
+        );
+        var signature = ComputeHmacSignature(header, payload, signingKey);
+        return $"{header}.{payload}.{signature}";
+    }
+
+    private static string Base64UrlEncode(byte[] input) =>
+        Convert.ToBase64String(input).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+    private static string ComputeHmacSignature(string header, string payload, byte[] key)
+    {
+        var data = Encoding.UTF8.GetBytes($"{header}.{payload}");
+        using var hmac = new HMACSHA256(key);
+        var hash = hmac.ComputeHash(data);
+        return Base64UrlEncode(hash);
     }
 
     public async Task DisposeAsync()

@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Scheduling.Api\Scheduling.Api.csproj" />
+    <ProjectReference Include="..\..\Shared\Authorization\Authorization.csproj" />
   </ItemGroup>
 
 </Project>

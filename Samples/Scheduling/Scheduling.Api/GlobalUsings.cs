@@ -86,9 +86,9 @@ global using GetUpcomingAppointmentsOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetUpcomingAppointments>,
     Selecta.SqlError
 >;
-global using InsertError = Outcome.Result<long, Selecta.SqlError>.Error<long, Selecta.SqlError>;
+global using InsertError = Outcome.Result<int, Selecta.SqlError>.Error<int, Selecta.SqlError>;
 // Insert result type aliases
-global using InsertOk = Outcome.Result<long, Selecta.SqlError>.Ok<long, Selecta.SqlError>;
+global using InsertOk = Outcome.Result<int, Selecta.SqlError>.Ok<int, Selecta.SqlError>;
 global using SearchPractitionersError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.SearchPractitionersBySpecialty>,
     Selecta.SqlError

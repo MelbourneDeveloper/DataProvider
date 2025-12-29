@@ -24,6 +24,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Gatekeeper.Api\Gatekeeper.Api.csproj" />
+    <ProjectReference Include="..\Gatekeeper.Migration\Gatekeeper.Migration.csproj" />
+    <ProjectReference Include="..\..\Migration\Migration.SQLite\Migration.SQLite.csproj" />
   </ItemGroup>
 
 </Project>

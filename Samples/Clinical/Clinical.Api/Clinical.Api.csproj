@@ -20,6 +20,7 @@
     <ProjectReference Include="..\..\..\Other\Selecta\Selecta.csproj" />
     <ProjectReference Include="..\..\..\Migration\Migration\Migration.csproj" />
     <ProjectReference Include="..\..\..\Migration\Migration.SQLite\Migration.SQLite.csproj" />
+    <ProjectReference Include="..\..\Shared\Authorization\Authorization.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,10 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using H5;
+
 namespace Dashboard.Tests.TestLib
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using H5;
-
     /// <summary>
     /// Test runner for browser-based tests.
     /// </summary>

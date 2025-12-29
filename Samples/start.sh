@@ -59,6 +59,18 @@ dotnet run --urls "http://localhost:5001" &
 cd "$SCRIPT_DIR/../Gatekeeper/Gatekeeper.Api"
 dotnet run --urls "http://localhost:5002" &
 
+# Wait for APIs to start and create their databases
+echo "Waiting for APIs to initialize..."
+sleep 5
+
+# Start Clinical Sync service
+cd "$SCRIPT_DIR/Clinical/Clinical.Sync"
+dotnet run &
+
+# Start Scheduling Sync service
+cd "$SCRIPT_DIR/Scheduling/Scheduling.Sync"
+dotnet run &
+
 # Build and serve Dashboard
 cd "$SCRIPT_DIR/Dashboard/Dashboard.Web"
 echo "Building Dashboard..."
@@ -75,6 +87,8 @@ echo "Services running:"
 echo "  Clinical API:   http://localhost:5080"
 echo "  Scheduling API: http://localhost:5001"
 echo "  Gatekeeper API: http://localhost:5002"
+echo "  Clinical Sync:  (background)"
+echo "  Scheduling Sync:(background)"
 echo "  Dashboard:      http://localhost:5173"
 echo ""
 echo "Press Ctrl+C to stop all services"

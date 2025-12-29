@@ -49,3 +49,11 @@ global using GetUserRolesOk = Outcome.Result<
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.GetUserRoles>, Selecta.SqlError>;
 // Insert result type alias
+global using CountSystemRolesOk = Outcome.Result<
+    System.Collections.Immutable.ImmutableList<Generated.CountSystemRoles>,
+    Selecta.SqlError
+>.Ok<System.Collections.Immutable.ImmutableList<Generated.CountSystemRoles>, Selecta.SqlError>;
+global using GetSessionRevokedOk = Outcome.Result<
+    System.Collections.Immutable.ImmutableList<Generated.GetSessionRevoked>,
+    Selecta.SqlError
+>.Ok<System.Collections.Immutable.ImmutableList<Generated.GetSessionRevoked>, Selecta.SqlError>;

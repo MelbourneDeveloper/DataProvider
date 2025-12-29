@@ -23,7 +23,6 @@
             "generateInsert": true,
             "generateUpdate": true,
             "generateDelete": true,
-            "excludeColumns": ["Id"],
             "primaryKeyColumns": ["Id"]
         },
         {
@@ -32,7 +31,6 @@
             "generateInsert": true,
             "generateUpdate": true,
             "generateDelete": true,
-            "excludeColumns": ["Id"],
             "primaryKeyColumns": ["Id"]
         },
         {
@@ -41,7 +39,6 @@
             "generateInsert": true,
             "generateUpdate": true,
             "generateDelete": true,
-            "excludeColumns": ["Id"],
             "primaryKeyColumns": ["Id"]
         },
         {
@@ -50,7 +47,6 @@
             "generateInsert": true,
             "generateUpdate": true,
             "generateDelete": true,
-            "excludeColumns": ["Id"],
             "primaryKeyColumns": ["Id"]
         },
         {
@@ -59,7 +55,6 @@
             "generateInsert": true,
             "generateUpdate": true,
             "generateDelete": true,
-            "excludeColumns": ["Id"],
             "primaryKeyColumns": ["Id"]
         },
         {
@@ -68,7 +63,6 @@
             "generateInsert": true,
             "generateUpdate": true,
             "generateDelete": true,
-            "excludeColumns": ["Id"],
             "primaryKeyColumns": ["Id"]
         }
     ],

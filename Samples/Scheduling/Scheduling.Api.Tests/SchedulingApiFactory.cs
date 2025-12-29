@@ -1,8 +1,8 @@
-namespace Scheduling.Api.Tests;
 
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 
+namespace Scheduling.Api.Tests;
 /// <summary>
 /// WebApplicationFactory for Scheduling.Api e2e testing.
 /// Just configures a temp database path - Program.cs does ALL initialization.
