@@ -417,3 +417,5 @@ Samples/Dashboard/Dashboard.Web/wwwroot/js/vendor/
 .timestamp
 
 Samples/Dashboard/Dashboard.Web/wwwroot/js/Dashboard.js
+# Samples/Dashboard/Dashboard.Web.Tests/wwwroot/react-dom.development.js
+# Samples/Dashboard/Dashboard.Web.Tests/wwwroot/react.development.js

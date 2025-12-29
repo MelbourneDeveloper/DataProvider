@@ -264,30 +264,30 @@ public sealed class TokenServiceTests
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
         var exp = DateTime.UtcNow.AddHours(1).ToString("o", CultureInfo.InvariantCulture);
 
-        // Insert user and revoked session using DataProvider methods
+        // Insert user and revoked session using raw SQL (consistent with other tests)
         using var tx = conn.BeginTransaction();
-        await tx.Insertgk_userAsync(
-                "user-revoked",
-                "Revoked User",
-                null!, // email
-                now,
-                null!, // last_login_at
-                1, // is_active
-                null! // metadata
-            )
-            .ConfigureAwait(false);
-        await tx.Insertgk_sessionAsync(
-                jti,
-                "user-revoked",
-                null!, // credential_id
-                now,
-                exp,
-                now,
-                null!, // ip_address
-                null!, // user_agent
-                1 // is_revoked = true
-            )
-            .ConfigureAwait(false);
+
+        using var userCmd = conn.CreateCommand();
+        userCmd.Transaction = tx;
+        userCmd.CommandText = @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
+                                VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
+        userCmd.Parameters.AddWithValue("@id", "user-revoked");
+        userCmd.Parameters.AddWithValue("@name", "Revoked User");
+        userCmd.Parameters.AddWithValue("@email", DBNull.Value);
+        userCmd.Parameters.AddWithValue("@now", now);
+        await userCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+
+        using var sessionCmd = conn.CreateCommand();
+        sessionCmd.Transaction = tx;
+        sessionCmd.CommandText = @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
+                                   VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 1)";
+        sessionCmd.Parameters.AddWithValue("@id", jti);
+        sessionCmd.Parameters.AddWithValue("@user_id", "user-revoked");
+        sessionCmd.Parameters.AddWithValue("@created", now);
+        sessionCmd.Parameters.AddWithValue("@expires", exp);
+        sessionCmd.Parameters.AddWithValue("@activity", now);
+        await sessionCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+
         tx.Commit();
 
         var result = await TokenService.ValidateTokenAsync(
@@ -325,30 +325,30 @@ public sealed class TokenServiceTests
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
         var exp = DateTime.UtcNow.AddHours(1).ToString("o", CultureInfo.InvariantCulture);
 
-        // Insert user and revoked session using DataProvider methods
+        // Insert user and revoked session using raw SQL (consistent with other tests)
         using var tx = conn.BeginTransaction();
-        await tx.Insertgk_userAsync(
-                "user-revoked2",
-                "Revoked User 2",
-                null!, // email
-                now,
-                null!, // last_login_at
-                1, // is_active
-                null! // metadata
-            )
-            .ConfigureAwait(false);
-        await tx.Insertgk_sessionAsync(
-                jti,
-                "user-revoked2",
-                null!, // credential_id
-                now,
-                exp,
-                now,
-                null!, // ip_address
-                null!, // user_agent
-                1 // is_revoked = true
-            )
-            .ConfigureAwait(false);
+
+        using var userCmd = conn.CreateCommand();
+        userCmd.Transaction = tx;
+        userCmd.CommandText = @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
+                                VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
+        userCmd.Parameters.AddWithValue("@id", "user-revoked2");
+        userCmd.Parameters.AddWithValue("@name", "Revoked User 2");
+        userCmd.Parameters.AddWithValue("@email", DBNull.Value);
+        userCmd.Parameters.AddWithValue("@now", now);
+        await userCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+
+        using var sessionCmd = conn.CreateCommand();
+        sessionCmd.Transaction = tx;
+        sessionCmd.CommandText = @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
+                                   VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 1)";
+        sessionCmd.Parameters.AddWithValue("@id", jti);
+        sessionCmd.Parameters.AddWithValue("@user_id", "user-revoked2");
+        sessionCmd.Parameters.AddWithValue("@created", now);
+        sessionCmd.Parameters.AddWithValue("@expires", exp);
+        sessionCmd.Parameters.AddWithValue("@activity", now);
+        await sessionCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+
         tx.Commit();
 
         // With checkRevocation: false, should still validate

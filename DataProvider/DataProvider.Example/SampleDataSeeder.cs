@@ -20,10 +20,10 @@ internal static class SampleDataSeeder
         var customer1Result = await transaction
             .InsertCustomerAsync("Acme Corp", "contact@acme.com", "555-0100", "2024-01-01")
             .ConfigureAwait(false);
-        if (customer1Result is not LongSqlOk customer1Success)
+        if (customer1Result is not IntSqlOk customer1Success)
             return (
                 flowControl: false,
-                value: new StringSqlError((customer1Result as LongSqlError)!.Value)
+                value: new StringSqlError((customer1Result as IntSqlError)!.Value)
             );
 
         var customer2Result = await transaction
@@ -34,10 +34,10 @@ internal static class SampleDataSeeder
                 "2024-01-02"
             )
             .ConfigureAwait(false);
-        if (customer2Result is not LongSqlOk customer2Success)
+        if (customer2Result is not IntSqlOk customer2Success)
             return (
                 flowControl: false,
-                value: new StringSqlError((customer2Result as LongSqlError)!.Value)
+                value: new StringSqlError((customer2Result as IntSqlError)!.Value)
             );
 
         // Insert Invoice
@@ -52,10 +52,10 @@ internal static class SampleDataSeeder
                 "Sample invoice"
             )
             .ConfigureAwait(false);
-        if (invoiceResult is not LongSqlOk invoiceSuccess)
+        if (invoiceResult is not IntSqlOk invoiceSuccess)
             return (
                 flowControl: false,
-                value: new StringSqlError((invoiceResult as LongSqlError)!.Value)
+                value: new StringSqlError((invoiceResult as IntSqlError)!.Value)
             );
 
         // Insert InvoiceLines
@@ -70,10 +70,10 @@ internal static class SampleDataSeeder
                 null
             )
             .ConfigureAwait(false);
-        if (invoiceLine1Result is not LongSqlOk)
+        if (invoiceLine1Result is not IntSqlOk)
             return (
                 flowControl: false,
-                value: new StringSqlError((invoiceLine1Result as LongSqlError)!.Value)
+                value: new StringSqlError((invoiceLine1Result as IntSqlError)!.Value)
             );
 
         var invoiceLine2Result = await transaction
@@ -87,10 +87,10 @@ internal static class SampleDataSeeder
                 "First year"
             )
             .ConfigureAwait(false);
-        if (invoiceLine2Result is not LongSqlOk)
+        if (invoiceLine2Result is not IntSqlOk)
             return (
                 flowControl: false,
-                value: new StringSqlError((invoiceLine2Result as LongSqlError)!.Value)
+                value: new StringSqlError((invoiceLine2Result as IntSqlError)!.Value)
             );
 
         // Insert Addresses
@@ -104,10 +104,10 @@ internal static class SampleDataSeeder
                 "USA"
             )
             .ConfigureAwait(false);
-        if (address1Result is not LongSqlOk)
+        if (address1Result is not IntSqlOk)
             return (
                 flowControl: false,
-                value: new StringSqlError((address1Result as LongSqlError)!.Value)
+                value: new StringSqlError((address1Result as IntSqlError)!.Value)
             );
 
         var address2Result = await transaction
@@ -120,10 +120,10 @@ internal static class SampleDataSeeder
                 "USA"
             )
             .ConfigureAwait(false);
-        if (address2Result is not LongSqlOk)
+        if (address2Result is not IntSqlOk)
             return (
                 flowControl: false,
-                value: new StringSqlError((address2Result as LongSqlError)!.Value)
+                value: new StringSqlError((address2Result as IntSqlError)!.Value)
             );
 
         var address3Result = await transaction
@@ -136,20 +136,20 @@ internal static class SampleDataSeeder
                 "USA"
             )
             .ConfigureAwait(false);
-        if (address3Result is not LongSqlOk)
+        if (address3Result is not IntSqlOk)
             return (
                 flowControl: false,
-                value: new StringSqlError((address3Result as LongSqlError)!.Value)
+                value: new StringSqlError((address3Result as IntSqlError)!.Value)
             );
 
         // Insert Orders
         var order1Result = await transaction
             .InsertOrdersAsync("ORD-001", "2024-01-10", customer1Success.Value, 500.00, "Completed")
             .ConfigureAwait(false);
-        if (order1Result is not LongSqlOk order1Success)
+        if (order1Result is not IntSqlOk order1Success)
             return (
                 flowControl: false,
-                value: new StringSqlError((order1Result as LongSqlError)!.Value)
+                value: new StringSqlError((order1Result as IntSqlError)!.Value)
             );
 
         var order2Result = await transaction
@@ -161,38 +161,38 @@ internal static class SampleDataSeeder
                 "Processing"
             )
             .ConfigureAwait(false);
-        if (order2Result is not LongSqlOk order2Success)
+        if (order2Result is not IntSqlOk order2Success)
             return (
                 flowControl: false,
-                value: new StringSqlError((order2Result as LongSqlError)!.Value)
+                value: new StringSqlError((order2Result as IntSqlError)!.Value)
             );
 
         // Insert OrderItems
         var orderItem1Result = await transaction
             .InsertOrderItemAsync(order1Success.Value, "Widget A", 2, 100.00, 200.00)
             .ConfigureAwait(false);
-        if (orderItem1Result is not LongSqlOk)
+        if (orderItem1Result is not IntSqlOk)
             return (
                 flowControl: false,
-                value: new StringSqlError((orderItem1Result as LongSqlError)!.Value)
+                value: new StringSqlError((orderItem1Result as IntSqlError)!.Value)
             );
 
         var orderItem2Result = await transaction
             .InsertOrderItemAsync(order1Success.Value, "Widget B", 3, 100.00, 300.00)
             .ConfigureAwait(false);
-        if (orderItem2Result is not LongSqlOk)
+        if (orderItem2Result is not IntSqlOk)
             return (
                 flowControl: false,
-                value: new StringSqlError((orderItem2Result as LongSqlError)!.Value)
+                value: new StringSqlError((orderItem2Result as IntSqlError)!.Value)
             );
 
         var orderItem3Result = await transaction
             .InsertOrderItemAsync(order2Success.Value, "Service Package", 1, 750.00, 750.00)
             .ConfigureAwait(false);
-        if (orderItem3Result is not LongSqlOk)
+        if (orderItem3Result is not IntSqlOk)
             return (
                 flowControl: false,
-                value: new StringSqlError((orderItem3Result as LongSqlError)!.Value)
+                value: new StringSqlError((orderItem3Result as IntSqlError)!.Value)
             );
 
         return (flowControl: true, value: new StringSqlOk("Sample data seeded successfully"));

@@ -30,7 +30,11 @@ public sealed class DashboardPlaywrightTests : IAsyncLifetime
     {
         _playwright = await Playwright.CreateAsync();
         _browser = await _playwright.Chromium.LaunchAsync(
-            new BrowserTypeLaunchOptions { Headless = true }
+            new BrowserTypeLaunchOptions
+            {
+                Headless = true,
+                Args = ["--allow-file-access-from-files", "--disable-web-security"],
+            }
         );
 
         var testHtmlPath = FindTestHtml();

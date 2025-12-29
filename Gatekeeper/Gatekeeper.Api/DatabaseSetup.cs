@@ -95,7 +95,9 @@ public static class DatabaseSetup
             INSERT INTO gk_permission (id, code, resource_type, action, description, created_at)
             VALUES ('perm-admin-all', 'admin:*', 'admin', '*', 'Full admin access', @now),
                    ('perm-user-profile', 'user:profile', 'user', 'read', 'View own profile', @now),
-                   ('perm-user-credentials', 'user:credentials', 'user', 'manage', 'Manage own passkeys', @now)
+                   ('perm-user-credentials', 'user:credentials', 'user', 'manage', 'Manage own passkeys', @now),
+                   ('perm-patient-read', 'patient:read', 'patient', 'read', 'Read patient records', @now),
+                   ('perm-order-read', 'order:read', 'order', 'read', 'Read order records', @now)
             """,
             ("@now", now)
         );

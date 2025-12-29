@@ -800,7 +800,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var predicate = PredicateBuilder.True<Customer>();
 
         // Act - simulate building dynamic AND conditions for filtering
-        predicate = predicate.And(c => c.Id != null);
+        predicate = predicate.And(c => c.Id >= 1);
         predicate = predicate.And(c => c.Email != null);
         predicate = predicate.And(c => c.CustomerName != null);
 

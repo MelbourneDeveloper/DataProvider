@@ -350,16 +350,24 @@ public sealed class E2EFixture : IAsyncLifetime
         return client;
     }
 
-    private static string GenerateTestToken()
+    /// <summary>
+    /// Generates a test JWT token with the specified user details.
+    /// Uses the same all-zeros signing key that the APIs use in dev mode.
+    /// </summary>
+    public static string GenerateTestToken(
+        string userId = "e2e-test-user",
+        string displayName = "E2E Test User",
+        string email = "e2etest@example.com"
+    )
     {
         var signingKey = new byte[32];
         var header = Base64UrlEncode(Encoding.UTF8.GetBytes("""{"alg":"HS256","typ":"JWT"}"""));
         var expiration = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds();
         var payload = Base64UrlEncode(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new
         {
-            sub = "e2e-test-user",
-            name = "E2E Test User",
-            email = "e2etest@example.com",
+            sub = userId,
+            name = displayName,
+            email,
             jti = Guid.NewGuid().ToString(),
             exp = expiration,
             roles = new[] { "admin", "user" },
