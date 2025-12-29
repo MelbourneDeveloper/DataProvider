@@ -79,6 +79,12 @@ public sealed class E2EFixture : IAsyncLifetime
         var schedulingProjectDir = Path.Combine(samplesDir, "Scheduling", "Scheduling.Api");
         var gatekeeperProjectDir = Path.Combine(rootDir, "Gatekeeper", "Gatekeeper.Api");
 
+        // Delete existing databases to ensure fresh state for each test run
+        // This prevents sync version mismatch issues between runs
+        DeleteDatabaseIfExists(clinicalProjectDir, "clinical.db");
+        DeleteDatabaseIfExists(schedulingProjectDir, "scheduling.db");
+        DeleteDatabaseIfExists(gatekeeperProjectDir, "gatekeeper.db");
+
         Console.WriteLine($"[E2E] Test assembly dir: {testAssemblyDir}");
         Console.WriteLine($"[E2E] Samples dir: {samplesDir}");
         Console.WriteLine($"[E2E] Clinical dir: {clinicalProjectDir}");
@@ -146,6 +152,7 @@ public sealed class E2EFixture : IAsyncLifetime
             {
                 ["CLINICAL_DB_PATH"] = clinicalDbPath,
                 ["SCHEDULING_API_URL"] = SchedulingUrl,
+                ["POLL_INTERVAL_SECONDS"] = "5", // Fast polling for E2E tests
             };
             _clinicalSyncProcess = StartSyncWorker(
                 clinicalSyncDll,
@@ -168,6 +175,7 @@ public sealed class E2EFixture : IAsyncLifetime
             {
                 ["SCHEDULING_DB_PATH"] = schedulingDbPath,
                 ["CLINICAL_API_URL"] = ClinicalUrl,
+                ["POLL_INTERVAL_SECONDS"] = "5", // Fast polling for E2E tests
             };
             _schedulingSyncProcess = StartSyncWorker(
                 schedulingSyncDll,
@@ -354,6 +362,23 @@ public sealed class E2EFixture : IAsyncLifetime
         catch
         {
             return Task.FromResult(false);
+        }
+    }
+
+    private static void DeleteDatabaseIfExists(string projectDir, string dbName)
+    {
+        var dbPath = Path.Combine(projectDir, "bin", "Debug", "net9.0", dbName);
+        if (File.Exists(dbPath))
+        {
+            try
+            {
+                File.Delete(dbPath);
+                Console.WriteLine($"[E2E] Deleted database: {dbPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[E2E] Could not delete {dbPath}: {ex.Message}");
+            }
         }
     }
 

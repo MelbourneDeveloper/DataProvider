@@ -356,7 +356,7 @@ public static class DataAccessGenerator
         );
         sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            using (var command = new {commandType}(sql, ({connectionType})transaction.Connection, ({transactionType})transaction))"
+            $"            using (var command = new {commandType}(sql, ({connectionType})transaction.Connection!, ({transactionType})transaction))"
         );
         sb.AppendLine("            {");
 
@@ -593,7 +593,7 @@ public static class DataAccessGenerator
         );
         sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            using (var command = new {commandType}(sql, ({connectionType})transaction.Connection, ({transactionType})transaction))"
+            $"            using (var command = new {commandType}(sql, ({connectionType})transaction.Connection!, ({transactionType})transaction))"
         );
         sb.AppendLine("            {");
 
@@ -792,7 +792,7 @@ public static class DataAccessGenerator
         );
         sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"        using (var command = new {commandType}(sql.ToString(), ({connectionType})transaction.Connection, ({transactionType})transaction))"
+            $"        using (var command = new {commandType}(sql.ToString(), ({connectionType})transaction.Connection!, ({transactionType})transaction))"
         );
         sb.AppendLine("        {");
         sb.AppendLine("            for (int i = 0; i < parameters.Count; i++)");
@@ -1019,7 +1019,7 @@ public static class DataAccessGenerator
         );
         sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"        using (var command = new {commandType}(sql.ToString(), ({connectionType})transaction.Connection, ({transactionType})transaction))"
+            $"        using (var command = new {commandType}(sql.ToString(), ({connectionType})transaction.Connection!, ({transactionType})transaction))"
         );
         sb.AppendLine("        {");
         sb.AppendLine("            for (int i = 0; i < parameters.Count; i++)");
