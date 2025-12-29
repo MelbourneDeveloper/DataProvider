@@ -1,16 +1,22 @@
 using Microsoft.Data.Sqlite;
 using Xunit;
-
 using TestRecordListError = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<DataProvider.Tests.DbTransactionExtensionsTests.TestRecord>,
     Selecta.SqlError
->.Error<System.Collections.Generic.IReadOnlyList<DataProvider.Tests.DbTransactionExtensionsTests.TestRecord>, Selecta.SqlError>;
+>.Error<
+    System.Collections.Generic.IReadOnlyList<DataProvider.Tests.DbTransactionExtensionsTests.TestRecord>,
+    Selecta.SqlError
+>;
 using TestRecordListOk = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<DataProvider.Tests.DbTransactionExtensionsTests.TestRecord>,
     Selecta.SqlError
->.Ok<System.Collections.Generic.IReadOnlyList<DataProvider.Tests.DbTransactionExtensionsTests.TestRecord>, Selecta.SqlError>;
+>.Ok<
+    System.Collections.Generic.IReadOnlyList<DataProvider.Tests.DbTransactionExtensionsTests.TestRecord>,
+    Selecta.SqlError
+>;
 
 namespace DataProvider.Tests;
+
 /// <summary>
 /// Tests for DbTransactionExtensions Query method to improve coverage
 /// </summary>

@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace Scheduling.Api.Tests;
+
 /// <summary>
 /// E2E tests for Sync endpoints - REAL database, NO mocks.
 /// Tests sync log generation and origin tracking.

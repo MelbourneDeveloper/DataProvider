@@ -6,7 +6,18 @@ var builder = Host.CreateApplicationBuilder(args);
 // Default path navigates from bin/Debug/net9.0 up to Scheduling.Api/bin/Debug/net9.0
 var schedulingDbPath =
     Environment.GetEnvironmentVariable("SCHEDULING_DB_PATH")
-    ?? Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Scheduling.Api", "bin", "Debug", "net9.0", "scheduling.db");
+    ?? Path.Combine(
+        AppContext.BaseDirectory,
+        "..",
+        "..",
+        "..",
+        "..",
+        "Scheduling.Api",
+        "bin",
+        "Debug",
+        "net9.0",
+        "scheduling.db"
+    );
 var clinicalApiUrl =
     Environment.GetEnvironmentVariable("CLINICAL_API_URL") ?? "http://localhost:5080";
 

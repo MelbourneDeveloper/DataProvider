@@ -5,6 +5,7 @@ using Migration;
 using Migration.SQLite;
 
 namespace Gatekeeper.Api.Tests;
+
 /// <summary>
 /// Unit tests for TokenService JWT creation, validation, and revocation.
 /// </summary>
@@ -269,7 +270,8 @@ public sealed class TokenServiceTests
 
         using var userCmd = conn.CreateCommand();
         userCmd.Transaction = tx;
-        userCmd.CommandText = @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
+        userCmd.CommandText =
+            @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
                                 VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
         userCmd.Parameters.AddWithValue("@id", "user-revoked");
         userCmd.Parameters.AddWithValue("@name", "Revoked User");
@@ -279,7 +281,8 @@ public sealed class TokenServiceTests
 
         using var sessionCmd = conn.CreateCommand();
         sessionCmd.Transaction = tx;
-        sessionCmd.CommandText = @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
+        sessionCmd.CommandText =
+            @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
                                    VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 1)";
         sessionCmd.Parameters.AddWithValue("@id", jti);
         sessionCmd.Parameters.AddWithValue("@user_id", "user-revoked");
@@ -330,7 +333,8 @@ public sealed class TokenServiceTests
 
         using var userCmd = conn.CreateCommand();
         userCmd.Transaction = tx;
-        userCmd.CommandText = @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
+        userCmd.CommandText =
+            @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
                                 VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
         userCmd.Parameters.AddWithValue("@id", "user-revoked2");
         userCmd.Parameters.AddWithValue("@name", "Revoked User 2");
@@ -340,7 +344,8 @@ public sealed class TokenServiceTests
 
         using var sessionCmd = conn.CreateCommand();
         sessionCmd.Transaction = tx;
-        sessionCmd.CommandText = @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
+        sessionCmd.CommandText =
+            @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
                                    VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 1)";
         sessionCmd.Parameters.AddWithValue("@id", jti);
         sessionCmd.Parameters.AddWithValue("@user_id", "user-revoked2");
@@ -377,7 +382,8 @@ public sealed class TokenServiceTests
 
         using var userCmd = conn.CreateCommand();
         userCmd.Transaction = tx;
-        userCmd.CommandText = @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
+        userCmd.CommandText =
+            @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
                                 VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
         userCmd.Parameters.AddWithValue("@id", userId);
         userCmd.Parameters.AddWithValue("@name", "Test User");
@@ -387,7 +393,8 @@ public sealed class TokenServiceTests
 
         using var sessionCmd = conn.CreateCommand();
         sessionCmd.Transaction = tx;
-        sessionCmd.CommandText = @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
+        sessionCmd.CommandText =
+            @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
                                    VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 0)";
         sessionCmd.Parameters.AddWithValue("@id", jti);
         sessionCmd.Parameters.AddWithValue("@user_id", userId);

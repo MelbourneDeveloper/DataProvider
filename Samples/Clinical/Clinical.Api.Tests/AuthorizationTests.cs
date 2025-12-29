@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace Clinical.Api.Tests;
+
 /// <summary>
 /// Authorization tests for Clinical.Api endpoints.
 /// Tests that endpoints require proper authentication and permissions.

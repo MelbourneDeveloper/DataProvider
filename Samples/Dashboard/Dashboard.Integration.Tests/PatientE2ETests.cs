@@ -27,9 +27,15 @@ public sealed class PatientE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         await page.ClickAsync("text=Patients");
-        await page.WaitForSelectorAsync("text=TestPatient", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "text=TestPatient",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         var content = await page.ContentAsync();
         Assert.Contains("TestPatient", content);
@@ -48,11 +54,20 @@ public sealed class PatientE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         await page.ClickAsync("text=Patients");
-        await page.WaitForSelectorAsync("[data-testid='add-patient-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         await page.ClickAsync("[data-testid='add-patient-btn']");
-        await page.WaitForSelectorAsync(".modal", new PageWaitForSelectorOptions { Timeout = 5000 });
+        await page.WaitForSelectorAsync(
+            ".modal",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
 
         var uniqueName = $"E2ECreated{DateTime.UtcNow.Ticks % 100000}";
         await page.FillAsync("[data-testid='patient-given-name']", uniqueName);
@@ -60,7 +75,10 @@ public sealed class PatientE2ETests
         await page.SelectOptionAsync("[data-testid='patient-gender']", "male");
         await page.ClickAsync("[data-testid='submit-patient']");
 
-        await page.WaitForSelectorAsync($"text={uniqueName}", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            $"text={uniqueName}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         using var client = E2EFixture.CreateAuthenticatedClient();
         var response = await client.GetStringAsync($"{E2EFixture.ClinicalUrl}/fhir/Patient/");
@@ -78,11 +96,20 @@ public sealed class PatientE2ETests
         var page = await _fixture.Browser!.NewPageAsync();
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         await page.ClickAsync("text=Patient Search");
-        await page.WaitForSelectorAsync("input[placeholder*='Search']", new PageWaitForSelectorOptions { Timeout = 5000 });
+        await page.WaitForSelectorAsync(
+            "input[placeholder*='Search']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
         await page.FillAsync("input[placeholder*='Search']", "E2ETest");
-        await page.WaitForSelectorAsync("text=TestPatient", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "text=TestPatient",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         var content = await page.ContentAsync();
         Assert.Contains("TestPatient", content);
@@ -103,7 +130,10 @@ public sealed class PatientE2ETests
             $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
             new StringContent(
                 $$$"""{"Active": true, "GivenName": "{{{uniqueName}}}", "FamilyName": "ApiCreated", "Gender": "female"}""",
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
 
         var listResponse = await client.GetStringAsync($"{E2EFixture.ClinicalUrl}/fhir/Patient/");
@@ -123,7 +153,10 @@ public sealed class PatientE2ETests
             $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
             new StringContent(
                 $$$"""{"Active": true, "GivenName": "{{{uniqueName}}}", "FamilyName": "ToBeEdited", "Gender": "female"}""",
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
         var createdPatientJson = await createResponse.Content.ReadAsStringAsync();
 
@@ -135,20 +168,37 @@ public sealed class PatientE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         await page.ClickAsync("text=Patients");
-        await page.WaitForSelectorAsync("[data-testid='add-patient-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         await page.FillAsync("input[placeholder*='Search']", uniqueName);
-        await page.WaitForSelectorAsync($"text={uniqueName}", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            $"text={uniqueName}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         await page.ClickAsync($"[data-testid='edit-patient-{patientId}']");
-        await page.WaitForSelectorAsync("[data-testid='edit-patient-page']", new PageWaitForSelectorOptions { Timeout = 5000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='edit-patient-page']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
 
         var newFamilyName = $"Edited{DateTime.UtcNow.Ticks % 100000}";
         await page.FillAsync("[data-testid='edit-family-name']", newFamilyName);
         await page.ClickAsync("[data-testid='save-patient']");
-        await page.WaitForSelectorAsync("[data-testid='edit-success']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='edit-success']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
-        var updatedPatientJson = await client.GetStringAsync($"{E2EFixture.ClinicalUrl}/fhir/Patient/{patientId}");
+        var updatedPatientJson = await client.GetStringAsync(
+            $"{E2EFixture.ClinicalUrl}/fhir/Patient/{patientId}"
+        );
         Assert.Contains(newFamilyName, updatedPatientJson);
 
         await page.CloseAsync();
@@ -167,7 +217,10 @@ public sealed class PatientE2ETests
             $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
             new StringContent(
                 $$$"""{"Active": true, "GivenName": "{{{uniqueName}}}", "FamilyName": "Original", "Gender": "male"}""",
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
         var createdPatientJson = await createResponse.Content.ReadAsStringAsync();
 
@@ -179,10 +232,15 @@ public sealed class PatientE2ETests
             $"{E2EFixture.ClinicalUrl}/fhir/Patient/{patientId}",
             new StringContent(
                 $$$"""{"Active": true, "GivenName": "{{{uniqueName}}}", "FamilyName": "{{{updatedFamilyName}}}", "Gender": "male", "Email": "updated@test.com"}""",
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         updateResponse.EnsureSuccessStatusCode();
 
-        var getResponse = await client.GetStringAsync($"{E2EFixture.ClinicalUrl}/fhir/Patient/{patientId}");
+        var getResponse = await client.GetStringAsync(
+            $"{E2EFixture.ClinicalUrl}/fhir/Patient/{patientId}"
+        );
         Assert.Contains(updatedFamilyName, getResponse);
         Assert.Contains("updated@test.com", getResponse);
     }

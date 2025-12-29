@@ -1,8 +1,8 @@
-
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Clinical.Api.Tests;
+
 /// <summary>
 /// WebApplicationFactory for Clinical.Api e2e testing.
 /// Just configures a temp database path - Program.cs does ALL initialization.

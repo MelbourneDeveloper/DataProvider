@@ -2,6 +2,7 @@ using Migration;
 using static Migration.PortableTypes;
 
 namespace Gatekeeper.Migration;
+
 /// <summary>
 /// Database schema for Gatekeeper authentication and authorization service.
 /// </summary>

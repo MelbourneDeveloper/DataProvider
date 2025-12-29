@@ -112,7 +112,10 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Patient> UpdatePatientAsync(string id, Patient patient)
         {
-            var response = await PutClinicalAsync(_clinicalBaseUrl + "/fhir/Patient/" + id, patient);
+            var response = await PutClinicalAsync(
+                _clinicalBaseUrl + "/fhir/Patient/" + id,
+                patient
+            );
             return ParseJson<Patient>(response);
         }
 
@@ -170,7 +173,10 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Appointment> UpdateAppointmentAsync(string id, object appointment)
         {
-            var response = await PutSchedulingAsync(_schedulingBaseUrl + "/Appointment/" + id, appointment);
+            var response = await PutSchedulingAsync(
+                _schedulingBaseUrl + "/Appointment/" + id,
+                appointment
+            );
             return ParseJson<Appointment>(response);
         }
 
@@ -205,7 +211,15 @@ namespace Dashboard.Api
             var response = await Script.Call<Task<Response>>(
                 "fetch",
                 url,
-                new { method = "GET", headers = new { Accept = "application/json", Authorization = "Bearer " + _clinicalToken } }
+                new
+                {
+                    method = "GET",
+                    headers = new
+                    {
+                        Accept = "application/json",
+                        Authorization = "Bearer " + _clinicalToken,
+                    },
+                }
             );
 
             if (!response.Ok)
@@ -221,7 +235,15 @@ namespace Dashboard.Api
             var response = await Script.Call<Task<Response>>(
                 "fetch",
                 url,
-                new { method = "GET", headers = new { Accept = "application/json", Authorization = "Bearer " + _schedulingToken } }
+                new
+                {
+                    method = "GET",
+                    headers = new
+                    {
+                        Accept = "application/json",
+                        Authorization = "Bearer " + _schedulingToken,
+                    },
+                }
             );
 
             if (!response.Ok)
@@ -240,7 +262,12 @@ namespace Dashboard.Api
                 new
                 {
                     method = "POST",
-                    headers = new { Accept = "application/json", ContentType = "application/json", Authorization = "Bearer " + _clinicalToken },
+                    headers = new
+                    {
+                        Accept = "application/json",
+                        ContentType = "application/json",
+                        Authorization = "Bearer " + _clinicalToken,
+                    },
                     body = Script.Call<string>("JSON.stringify", data),
                 }
             );
@@ -261,7 +288,12 @@ namespace Dashboard.Api
                 new
                 {
                     method = "PUT",
-                    headers = new { Accept = "application/json", ContentType = "application/json", Authorization = "Bearer " + _clinicalToken },
+                    headers = new
+                    {
+                        Accept = "application/json",
+                        ContentType = "application/json",
+                        Authorization = "Bearer " + _clinicalToken,
+                    },
                     body = Script.Call<string>("JSON.stringify", data),
                 }
             );
@@ -282,7 +314,12 @@ namespace Dashboard.Api
                 new
                 {
                     method = "PUT",
-                    headers = new { Accept = "application/json", ContentType = "application/json", Authorization = "Bearer " + _schedulingToken },
+                    headers = new
+                    {
+                        Accept = "application/json",
+                        ContentType = "application/json",
+                        Authorization = "Bearer " + _schedulingToken,
+                    },
                     body = Script.Call<string>("JSON.stringify", data),
                 }
             );

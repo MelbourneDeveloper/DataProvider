@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace Scheduling.Api.Tests;
+
 /// <summary>
 /// E2E tests for Appointment FHIR endpoints - REAL database, NO mocks.
 /// Each test creates its own isolated factory and database.

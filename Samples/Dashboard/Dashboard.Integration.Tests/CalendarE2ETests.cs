@@ -26,8 +26,14 @@ public sealed class CalendarE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync($"{E2EFixture.DashboardUrl}#calendar");
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
-        await page.WaitForSelectorAsync(".calendar-grid-container", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+        await page.WaitForSelectorAsync(
+            ".calendar-grid-container",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         var content = await page.ContentAsync();
         Assert.Contains("calendar-grid", content);
@@ -47,33 +53,65 @@ public sealed class CalendarE2ETests
         using var client = E2EFixture.CreateAuthenticatedClient();
 
         var today = DateTime.Now;
-        var startTime = new DateTime(today.Year, today.Month, today.Day, 14, 0, 0, DateTimeKind.Local)
-            .ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-        var endTime = new DateTime(today.Year, today.Month, today.Day, 14, 30, 0, DateTimeKind.Local)
-            .ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var startTime = new DateTime(
+            today.Year,
+            today.Month,
+            today.Day,
+            14,
+            0,
+            0,
+            DateTimeKind.Local
+        ).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var endTime = new DateTime(
+            today.Year,
+            today.Month,
+            today.Day,
+            14,
+            30,
+            0,
+            DateTimeKind.Local
+        ).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
         var uniqueServiceType = $"CalTest{DateTime.Now.Ticks % 100000}";
 
         var createResponse = await client.PostAsync(
             $"{E2EFixture.SchedulingUrl}/Appointment",
             new StringContent(
                 $$$"""{"ServiceCategory": "General", "ServiceType": "{{{uniqueServiceType}}}", "Priority": "routine", "Start": "{{{startTime}}}", "End": "{{{endTime}}}", "PatientReference": "Patient/1", "PractitionerReference": "Practitioner/1"}""",
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
 
         var page = await _fixture.Browser!.NewPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         await page.ClickAsync("text=Schedule");
-        await page.WaitForSelectorAsync(".calendar-grid", new PageWaitForSelectorOptions { Timeout = 10000 });
-        await page.WaitForSelectorAsync(".calendar-cell.today.has-appointments", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            ".calendar-grid",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        await page.WaitForSelectorAsync(
+            ".calendar-cell.today.has-appointments",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         var todayCell = page.Locator(".calendar-cell.today").First;
         await todayCell.ClickAsync();
 
-        await page.WaitForSelectorAsync(".calendar-details-panel h4", new PageWaitForSelectorOptions { Timeout = 5000 });
-        await page.WaitForSelectorAsync($"text={uniqueServiceType}", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            ".calendar-details-panel h4",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+        await page.WaitForSelectorAsync(
+            $"text={uniqueServiceType}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         var content = await page.ContentAsync();
         Assert.Contains(uniqueServiceType, content);
@@ -90,37 +128,71 @@ public sealed class CalendarE2ETests
         using var client = E2EFixture.CreateAuthenticatedClient();
 
         var today = DateTime.Now;
-        var startTime = new DateTime(today.Year, today.Month, today.Day, 15, 0, 0, DateTimeKind.Local)
-            .ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-        var endTime = new DateTime(today.Year, today.Month, today.Day, 15, 30, 0, DateTimeKind.Local)
-            .ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var startTime = new DateTime(
+            today.Year,
+            today.Month,
+            today.Day,
+            15,
+            0,
+            0,
+            DateTimeKind.Local
+        ).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var endTime = new DateTime(
+            today.Year,
+            today.Month,
+            today.Day,
+            15,
+            30,
+            0,
+            DateTimeKind.Local
+        ).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
         var uniqueServiceType = $"CalEdit{DateTime.Now.Ticks % 100000}";
 
         var createResponse = await client.PostAsync(
             $"{E2EFixture.SchedulingUrl}/Appointment",
             new StringContent(
                 $$$"""{"ServiceCategory": "General", "ServiceType": "{{{uniqueServiceType}}}", "Priority": "routine", "Start": "{{{startTime}}}", "End": "{{{endTime}}}", "PatientReference": "Patient/1", "PractitionerReference": "Practitioner/1"}""",
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
 
         var page = await _fixture.Browser!.NewPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         await page.ClickAsync("text=Schedule");
-        await page.WaitForSelectorAsync(".calendar-grid", new PageWaitForSelectorOptions { Timeout = 10000 });
-        await page.WaitForSelectorAsync(".calendar-cell.today.has-appointments", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            ".calendar-grid",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        await page.WaitForSelectorAsync(
+            ".calendar-cell.today.has-appointments",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         var todayCell = page.Locator(".calendar-cell.today").First;
         await todayCell.ClickAsync();
-        await page.WaitForSelectorAsync($"text={uniqueServiceType}", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            $"text={uniqueServiceType}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
-        var editButton = await page.QuerySelectorAsync($".calendar-appointment-item:has-text('{uniqueServiceType}') button:has-text('Edit')");
+        var editButton = await page.QuerySelectorAsync(
+            $".calendar-appointment-item:has-text('{uniqueServiceType}') button:has-text('Edit')"
+        );
         Assert.NotNull(editButton);
         await editButton.ClickAsync();
 
-        await page.WaitForSelectorAsync("text=Edit Appointment", new PageWaitForSelectorOptions { Timeout = 5000 });
+        await page.WaitForSelectorAsync(
+            "text=Edit Appointment",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
 
         var content = await page.ContentAsync();
         Assert.Contains("Edit Appointment", content);
@@ -138,9 +210,15 @@ public sealed class CalendarE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         await page.ClickAsync("text=Schedule");
-        await page.WaitForSelectorAsync(".calendar-grid", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            ".calendar-grid",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         var currentMonthYear = await page.TextContentAsync(".text-lg.font-semibold");
         Assert.NotNull(currentMonthYear);
@@ -178,7 +256,10 @@ public sealed class CalendarE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync($"{E2EFixture.DashboardUrl}#calendar");
-        await page.WaitForSelectorAsync(".calendar-grid", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".calendar-grid",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
 
         var content = await page.ContentAsync();
         Assert.Contains("Schedule", content);

@@ -426,10 +426,7 @@ public static class SchemaVerifier
     /// <summary>
     /// Verifies a SQLite index matches its definition.
     /// </summary>
-    public static void VerifySqliteIndex(
-        SqliteConnection conn,
-        IndexDefinition expected
-    )
+    public static void VerifySqliteIndex(SqliteConnection conn, IndexDefinition expected)
     {
         using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT sql FROM sqlite_master WHERE type='index' AND name=@name";

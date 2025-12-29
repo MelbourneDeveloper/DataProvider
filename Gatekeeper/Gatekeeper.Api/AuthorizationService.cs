@@ -1,9 +1,9 @@
-
 using System.Text;
 
 #pragma warning disable CS8509 // Non-exhaustive switch
 
 namespace Gatekeeper.Api;
+
 /// <summary>
 /// Service for evaluating authorization decisions.
 /// </summary>
@@ -25,12 +25,13 @@ public static class AuthorizationService
         if (!string.IsNullOrEmpty(resourceType) && !string.IsNullOrEmpty(resourceId))
         {
             var grantResult = await conn.CheckResourceGrantAsync(
-                now: now,
-                resource_id: resourceId,
-                user_id: userId,
-                resource_type: resourceType,
-                permission_code: permissionCode
-            ).ConfigureAwait(false);
+                    now: now,
+                    resource_id: resourceId,
+                    user_id: userId,
+                    resource_type: resourceType,
+                    permission_code: permissionCode
+                )
+                .ConfigureAwait(false);
 
             if (grantResult is CheckResourceGrantOk grantOk && grantOk.Value.Count > 0)
             {

@@ -76,7 +76,8 @@ Func<HttpClient> getGatekeeperClient = () => httpClientFactory.CreateClient("Gat
 
 var patientGroup = app.MapGroup("/fhir/Patient").WithTags("Patient");
 
-patientGroup.MapGet(
+patientGroup
+    .MapGet(
         "/",
         async (
             bool? active,
@@ -110,7 +111,8 @@ patientGroup.MapGet(
         )
     );
 
-patientGroup.MapGet(
+patientGroup
+    .MapGet(
         "/{id}",
         async (string id, Func<SqliteConnection> getConn) =>
         {
@@ -134,7 +136,8 @@ patientGroup.MapGet(
         )
     );
 
-patientGroup.MapPost(
+patientGroup
+    .MapPost(
         "/",
         async (CreatePatientRequest request, Func<SqliteConnection> getConn) =>
         {
@@ -153,15 +156,15 @@ patientGroup.MapPost(
                     request.Active ? 1L : 0L,
                     request.GivenName,
                     request.FamilyName,
-                    request.BirthDate!,
-                    request.Gender!,
-                    request.Phone!,
-                    request.Email!,
-                    request.AddressLine!,
-                    request.City!,
-                    request.State!,
-                    request.PostalCode!,
-                    request.Country!,
+                    request.BirthDate ?? string.Empty,
+                    request.Gender ?? string.Empty,
+                    request.Phone ?? string.Empty,
+                    request.Email ?? string.Empty,
+                    request.AddressLine ?? string.Empty,
+                    request.City ?? string.Empty,
+                    request.State ?? string.Empty,
+                    request.PostalCode ?? string.Empty,
+                    request.Country ?? string.Empty,
                     now,
                     1L
                 )
@@ -208,7 +211,8 @@ patientGroup.MapPost(
         )
     );
 
-patientGroup.MapPut(
+patientGroup
+    .MapPut(
         "/{id}",
         async (string id, UpdatePatientRequest request, Func<SqliteConnection> getConn) =>
         {
@@ -297,7 +301,8 @@ patientGroup.MapPut(
         )
     );
 
-patientGroup.MapGet(
+patientGroup
+    .MapGet(
         "/_search",
         async (string q, Func<SqliteConnection> getConn) =>
         {
@@ -321,7 +326,8 @@ patientGroup.MapGet(
 
 var encounterGroup = patientGroup.MapGroup("/{patientId}/Encounter").WithTags("Encounter");
 
-encounterGroup.MapGet(
+encounterGroup
+    .MapGet(
         "/",
         async (string patientId, Func<SqliteConnection> getConn) =>
         {
@@ -343,7 +349,8 @@ encounterGroup.MapGet(
         )
     );
 
-encounterGroup.MapPost(
+encounterGroup
+    .MapPost(
         "/",
         async (string patientId, CreateEncounterRequest request, Func<SqliteConnection> getConn) =>
         {
@@ -414,7 +421,8 @@ encounterGroup.MapPost(
 
 var conditionGroup = patientGroup.MapGroup("/{patientId}/Condition").WithTags("Condition");
 
-conditionGroup.MapGet(
+conditionGroup
+    .MapGet(
         "/",
         async (string patientId, Func<SqliteConnection> getConn) =>
         {
@@ -436,7 +444,8 @@ conditionGroup.MapGet(
         )
     );
 
-conditionGroup.MapPost(
+conditionGroup
+    .MapPost(
         "/",
         async (string patientId, CreateConditionRequest request, Func<SqliteConnection> getConn) =>
         {
@@ -518,7 +527,8 @@ var medicationGroup = patientGroup
     .MapGroup("/{patientId}/MedicationRequest")
     .WithTags("MedicationRequest");
 
-medicationGroup.MapGet(
+medicationGroup
+    .MapGet(
         "/",
         async (string patientId, Func<SqliteConnection> getConn) =>
         {
@@ -540,7 +550,8 @@ medicationGroup.MapGet(
         )
     );
 
-medicationGroup.MapPost(
+medicationGroup
+    .MapPost(
         "/",
         async (
             string patientId,
@@ -683,7 +694,10 @@ app.MapGet(
                 ),
                 SyncLogListError => (
                     0,
-                    DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture)
+                    DateTime.UtcNow.ToString(
+                        "yyyy-MM-ddTHH:mm:ss.fffZ",
+                        CultureInfo.InvariantCulture
+                    )
                 ),
             };
 

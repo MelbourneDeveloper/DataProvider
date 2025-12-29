@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace Clinical.Api.Tests;
+
 /// <summary>
 /// E2E tests for Patient FHIR endpoints - REAL database, NO mocks.
 /// Uses shared factory for all tests - starts once, runs all tests, shuts down.
