@@ -541,7 +541,10 @@ public sealed class SyncFailureIsolationTests : IDisposable
         // Verify all appointments on server
         using var countCmd = _serverConn.CreateCommand();
         countCmd.CommandText = "SELECT COUNT(*) FROM fhir_Appointment";
-        var serverCount = Convert.ToInt32(countCmd.ExecuteScalar());
+        var serverCount = Convert.ToInt32(
+            countCmd.ExecuteScalar(),
+            System.Globalization.CultureInfo.InvariantCulture
+        );
 
         Assert.Equal(3, serverCount);
     }

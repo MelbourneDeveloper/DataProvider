@@ -14,10 +14,6 @@ global using MigrationApplyResultOk = Outcome.Result<bool, Migration.MigrationEr
     bool,
     Migration.MigrationError
 >;
-global using OperationsResult = Outcome.Result<
-    System.Collections.Generic.IReadOnlyList<Migration.SchemaOperation>,
-    Migration.MigrationError
->;
 global using OperationsResultOk = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<Migration.SchemaOperation>,
     Migration.MigrationError

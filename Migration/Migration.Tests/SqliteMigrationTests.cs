@@ -800,7 +800,9 @@ public sealed class SqliteMigrationTests
             .Build();
 
         // Act
-        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var emptySchema = (
+            (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+        ).Value;
         var operations = (
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
         ).Value;
@@ -821,7 +823,8 @@ public sealed class SqliteMigrationTests
 
         // Verify index exists
         using var cmd = connection.CreateCommand();
-        cmd.CommandText = "SELECT sql FROM sqlite_master WHERE type='index' AND name='uq_artists_name'";
+        cmd.CommandText =
+            "SELECT sql FROM sqlite_master WHERE type='index' AND name='uq_artists_name'";
         var indexDef = cmd.ExecuteScalar() as string;
 
         Assert.NotNull(indexDef);
@@ -847,7 +850,9 @@ public sealed class SqliteMigrationTests
             )
             .Build();
 
-        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var emptySchema = (
+            (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+        ).Value;
         var operations = (
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
         ).Value;
@@ -905,7 +910,9 @@ public sealed class SqliteMigrationTests
             .Build();
 
         // Act
-        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var emptySchema = (
+            (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+        ).Value;
         var operations = (
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
         ).Value;
@@ -1042,9 +1049,19 @@ public sealed class SqliteMigrationTests
             .Build();
 
         // Apply v1
-        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
-        var v1Ops = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)).Value;
-        _ = MigrationRunner.Apply(connection, v1Ops, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+        var emptySchema = (
+            (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+        ).Value;
+        var v1Ops = (
+            (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
+        ).Value;
+        _ = MigrationRunner.Apply(
+            connection,
+            v1Ops,
+            SqliteDdlGenerator.Generate,
+            MigrationOptions.Default,
+            _logger
+        );
 
         // v2 changes to expression index (different name since it's semantically different)
         var v2 = Schema
@@ -1059,9 +1076,12 @@ public sealed class SqliteMigrationTests
             .Build();
 
         // Act - Calculate upgrade operations
-        var currentSchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var currentSchema = (
+            (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+        ).Value;
         var upgradeOps = (
-            (OperationsResultOk)SchemaDiff.Calculate(currentSchema, v2, allowDestructive: true, logger: _logger)
+            (OperationsResultOk)
+                SchemaDiff.Calculate(currentSchema, v2, allowDestructive: true, logger: _logger)
         ).Value;
 
         // Assert - Should have drop old index + create new expression index
@@ -1082,7 +1102,8 @@ public sealed class SqliteMigrationTests
 
         // Verify new expression index exists
         using var cmd = connection.CreateCommand();
-        cmd.CommandText = "SELECT sql FROM sqlite_master WHERE type='index' AND name='uq_artists_name_ci'";
+        cmd.CommandText =
+            "SELECT sql FROM sqlite_master WHERE type='index' AND name='uq_artists_name_ci'";
         var indexDef = cmd.ExecuteScalar() as string;
         Assert.NotNull(indexDef);
         Assert.Contains("lower", indexDef);
@@ -1107,9 +1128,19 @@ public sealed class SqliteMigrationTests
             .Build();
 
         // Apply v1
-        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
-        var v1Ops = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)).Value;
-        _ = MigrationRunner.Apply(connection, v1Ops, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+        var emptySchema = (
+            (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+        ).Value;
+        var v1Ops = (
+            (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
+        ).Value;
+        _ = MigrationRunner.Apply(
+            connection,
+            v1Ops,
+            SqliteDdlGenerator.Generate,
+            MigrationOptions.Default,
+            _logger
+        );
 
         // v2 changes back to simple column index (different name)
         var v2 = Schema
@@ -1124,9 +1155,12 @@ public sealed class SqliteMigrationTests
             .Build();
 
         // Act
-        var currentSchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var currentSchema = (
+            (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+        ).Value;
         var upgradeOps = (
-            (OperationsResultOk)SchemaDiff.Calculate(currentSchema, v2, allowDestructive: true, logger: _logger)
+            (OperationsResultOk)
+                SchemaDiff.Calculate(currentSchema, v2, allowDestructive: true, logger: _logger)
         ).Value;
 
         // Assert - Should have drop + create
@@ -1146,7 +1180,8 @@ public sealed class SqliteMigrationTests
 
         // Verify new column index exists (no lower() function)
         using var cmd = connection.CreateCommand();
-        cmd.CommandText = "SELECT sql FROM sqlite_master WHERE type='index' AND name='idx_venues_name'";
+        cmd.CommandText =
+            "SELECT sql FROM sqlite_master WHERE type='index' AND name='idx_venues_name'";
         var indexDef = cmd.ExecuteScalar() as string;
         Assert.NotNull(indexDef);
         Assert.DoesNotContain("lower", indexDef);
@@ -1169,14 +1204,28 @@ public sealed class SqliteMigrationTests
                 "events",
                 t =>
                     t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
-                        .Column("created_at", PortableTypes.DateTime(), c => c.NotNull().DefaultLql("now()"))
+                        .Column(
+                            "created_at",
+                            PortableTypes.DateTime(),
+                            c => c.NotNull().DefaultLql("now()")
+                        )
             )
             .Build();
 
         // Act
-        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
-        var operations = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)).Value;
-        var result = MigrationRunner.Apply(connection, operations, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+        var emptySchema = (
+            (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+        ).Value;
+        var operations = (
+            (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
+        ).Value;
+        var result = MigrationRunner.Apply(
+            connection,
+            operations,
+            SqliteDdlGenerator.Generate,
+            MigrationOptions.Default,
+            _logger
+        );
 
         // Assert
         Assert.True(result is MigrationApplyResultOk);
@@ -1213,15 +1262,33 @@ public sealed class SqliteMigrationTests
                 "flags",
                 t =>
                     t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
-                        .Column("is_active", PortableTypes.Boolean, c => c.NotNull().DefaultLql("true"))
-                        .Column("is_deleted", PortableTypes.Boolean, c => c.NotNull().DefaultLql("false"))
+                        .Column(
+                            "is_active",
+                            PortableTypes.Boolean,
+                            c => c.NotNull().DefaultLql("true")
+                        )
+                        .Column(
+                            "is_deleted",
+                            PortableTypes.Boolean,
+                            c => c.NotNull().DefaultLql("false")
+                        )
             )
             .Build();
 
         // Act
-        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
-        var operations = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)).Value;
-        var result = MigrationRunner.Apply(connection, operations, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+        var emptySchema = (
+            (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+        ).Value;
+        var operations = (
+            (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
+        ).Value;
+        var result = MigrationRunner.Apply(
+            connection,
+            operations,
+            SqliteDdlGenerator.Generate,
+            MigrationOptions.Default,
+            _logger
+        );
 
         // Assert
         Assert.True(result is MigrationApplyResultOk);
@@ -1262,14 +1329,28 @@ public sealed class SqliteMigrationTests
                     t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
                         .Column("count", PortableTypes.Int, c => c.NotNull().DefaultLql("0"))
                         .Column("priority", PortableTypes.Int, c => c.NotNull().DefaultLql("100"))
-                        .Column("rate", PortableTypes.Decimal(5, 2), c => c.NotNull().DefaultLql("1.5"))
+                        .Column(
+                            "rate",
+                            PortableTypes.Decimal(5, 2),
+                            c => c.NotNull().DefaultLql("1.5")
+                        )
             )
             .Build();
 
         // Act
-        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
-        var operations = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)).Value;
-        var result = MigrationRunner.Apply(connection, operations, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+        var emptySchema = (
+            (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+        ).Value;
+        var operations = (
+            (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
+        ).Value;
+        var result = MigrationRunner.Apply(
+            connection,
+            operations,
+            SqliteDdlGenerator.Generate,
+            MigrationOptions.Default,
+            _logger
+        );
 
         // Assert
         Assert.True(result is MigrationApplyResultOk);
@@ -1301,15 +1382,33 @@ public sealed class SqliteMigrationTests
                 "items",
                 t =>
                     t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
-                        .Column("status", PortableTypes.VarChar(20), c => c.NotNull().DefaultLql("'pending'"))
-                        .Column("category", PortableTypes.VarChar(50), c => c.DefaultLql("'uncategorized'"))
+                        .Column(
+                            "status",
+                            PortableTypes.VarChar(20),
+                            c => c.NotNull().DefaultLql("'pending'")
+                        )
+                        .Column(
+                            "category",
+                            PortableTypes.VarChar(50),
+                            c => c.DefaultLql("'uncategorized'")
+                        )
             )
             .Build();
 
         // Act
-        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
-        var operations = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)).Value;
-        var result = MigrationRunner.Apply(connection, operations, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+        var emptySchema = (
+            (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+        ).Value;
+        var operations = (
+            (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
+        ).Value;
+        var result = MigrationRunner.Apply(
+            connection,
+            operations,
+            SqliteDdlGenerator.Generate,
+            MigrationOptions.Default,
+            _logger
+        );
 
         // Assert
         Assert.True(result is MigrationApplyResultOk);
@@ -1345,9 +1444,19 @@ public sealed class SqliteMigrationTests
             .Build();
 
         // Act
-        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
-        var operations = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)).Value;
-        var result = MigrationRunner.Apply(connection, operations, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+        var emptySchema = (
+            (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+        ).Value;
+        var operations = (
+            (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
+        ).Value;
+        var result = MigrationRunner.Apply(
+            connection,
+            operations,
+            SqliteDdlGenerator.Generate,
+            MigrationOptions.Default,
+            _logger
+        );
 
         // Assert
         Assert.True(result is MigrationApplyResultOk);
@@ -1366,7 +1475,10 @@ public sealed class SqliteMigrationTests
         {
             var uuid = reader.GetString(0);
             Assert.NotNull(uuid);
-            Assert.Matches(@"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", uuid);
+            Assert.Matches(
+                @"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                uuid
+            );
             uuids.Add(uuid);
         }
 
@@ -1388,14 +1500,28 @@ public sealed class SqliteMigrationTests
                 "logs",
                 t =>
                     t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
-                        .Column("log_date", PortableTypes.Date, c => c.NotNull().DefaultLql("current_date()"))
+                        .Column(
+                            "log_date",
+                            PortableTypes.Date,
+                            c => c.NotNull().DefaultLql("current_date()")
+                        )
             )
             .Build();
 
         // Act
-        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
-        var operations = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)).Value;
-        var result = MigrationRunner.Apply(connection, operations, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+        var emptySchema = (
+            (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+        ).Value;
+        var operations = (
+            (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
+        ).Value;
+        var result = MigrationRunner.Apply(
+            connection,
+            operations,
+            SqliteDdlGenerator.Generate,
+            MigrationOptions.Default,
+            _logger
+        );
 
         // Assert
         Assert.True(result is MigrationApplyResultOk);
@@ -1425,17 +1551,39 @@ public sealed class SqliteMigrationTests
                 "orders",
                 t =>
                     t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey().DefaultLql("gen_uuid()"))
-                        .Column("status", PortableTypes.VarChar(20), c => c.NotNull().DefaultLql("'pending'"))
+                        .Column(
+                            "status",
+                            PortableTypes.VarChar(20),
+                            c => c.NotNull().DefaultLql("'pending'")
+                        )
                         .Column("quantity", PortableTypes.Int, c => c.NotNull().DefaultLql("1"))
-                        .Column("is_urgent", PortableTypes.Boolean, c => c.NotNull().DefaultLql("false"))
-                        .Column("created_at", PortableTypes.DateTime(), c => c.NotNull().DefaultLql("now()"))
+                        .Column(
+                            "is_urgent",
+                            PortableTypes.Boolean,
+                            c => c.NotNull().DefaultLql("false")
+                        )
+                        .Column(
+                            "created_at",
+                            PortableTypes.DateTime(),
+                            c => c.NotNull().DefaultLql("now()")
+                        )
             )
             .Build();
 
         // Act
-        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
-        var operations = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)).Value;
-        var result = MigrationRunner.Apply(connection, operations, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+        var emptySchema = (
+            (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+        ).Value;
+        var operations = (
+            (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
+        ).Value;
+        var result = MigrationRunner.Apply(
+            connection,
+            operations,
+            SqliteDdlGenerator.Generate,
+            MigrationOptions.Default,
+            _logger
+        );
 
         // Assert
         Assert.True(result is MigrationApplyResultOk);
@@ -1456,10 +1604,10 @@ public sealed class SqliteMigrationTests
         var isUrgent = reader.GetInt64(3);
         var createdAt = reader.GetString(4);
 
-        Assert.Matches(@"^[0-9a-f-]{36}$", id);      // UUID format
-        Assert.Equal("pending", status);             // String default
-        Assert.Equal(1, quantity);                   // Numeric default
-        Assert.Equal(0, isUrgent);                   // Boolean false = 0
-        Assert.NotEmpty(createdAt);                  // Timestamp generated
+        Assert.Matches(@"^[0-9a-f-]{36}$", id); // UUID format
+        Assert.Equal("pending", status); // String default
+        Assert.Equal(1, quantity); // Numeric default
+        Assert.Equal(0, isUrgent); // Boolean false = 0
+        Assert.NotEmpty(createdAt); // Timestamp generated
     }
 }

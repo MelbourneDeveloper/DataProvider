@@ -11,16 +11,12 @@ public sealed class LqlDefaultTranslatorTests
     // =========================================================================
 
     [Fact]
-    public void ToPostgres_NullInput_ThrowsArgumentNullException()
-    {
+    public void ToPostgres_NullInput_ThrowsArgumentNullException() =>
         Assert.Throws<ArgumentNullException>(() => LqlDefaultTranslator.ToPostgres(null!));
-    }
 
     [Fact]
-    public void ToSqlite_NullInput_ThrowsArgumentNullException()
-    {
+    public void ToSqlite_NullInput_ThrowsArgumentNullException() =>
         Assert.Throws<ArgumentNullException>(() => LqlDefaultTranslator.ToSqlite(null!));
-    }
 
     // =========================================================================
     // TIMESTAMP FUNCTIONS - now(), current_timestamp(), current_date(), current_time()

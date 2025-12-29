@@ -410,7 +410,10 @@ coverage-report/
 coverage-results/
 
 
-
 Samples/Dashboard/Dashboard.Web/wwwroot/js/vendor/
 
 *.db
+*.g.cs
+.timestamp
+
+Samples/Dashboard/Dashboard.Web/wwwroot/js/Dashboard.js

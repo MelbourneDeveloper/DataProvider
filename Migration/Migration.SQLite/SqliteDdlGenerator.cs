@@ -92,9 +92,10 @@ public static class SqliteDdlGenerator
             sb.AppendLine(";");
             var unique = index.IsUnique ? "UNIQUE " : "";
             // Expression indexes use Expressions verbatim, column indexes quote column names
-            var indexItems = index.Expressions.Count > 0
-                ? string.Join(", ", index.Expressions)
-                : string.Join(", ", index.Columns.Select(c => $"[{c}]"));
+            var indexItems =
+                index.Expressions.Count > 0
+                    ? string.Join(", ", index.Expressions)
+                    : string.Join(", ", index.Columns.Select(c => $"[{c}]"));
             var filter = index.Filter is not null ? $" WHERE {index.Filter}" : "";
             sb.Append(
                 CultureInfo.InvariantCulture,
@@ -150,9 +151,10 @@ public static class SqliteDdlGenerator
     {
         var unique = op.Index.IsUnique ? "UNIQUE " : "";
         // Expression indexes use Expressions verbatim, column indexes quote column names
-        var indexItems = op.Index.Expressions.Count > 0
-            ? string.Join(", ", op.Index.Expressions)
-            : string.Join(", ", op.Index.Columns.Select(c => $"[{c}]"));
+        var indexItems =
+            op.Index.Expressions.Count > 0
+                ? string.Join(", ", op.Index.Expressions)
+                : string.Join(", ", op.Index.Columns.Select(c => $"[{c}]"));
         var filter = op.Index.Filter is not null ? $" WHERE {op.Index.Filter}" : "";
 
         return $"CREATE {unique}INDEX IF NOT EXISTS [{op.Index.Name}] ON [{op.TableName}] ({indexItems}){filter}";
@@ -201,5 +203,4 @@ public static class SqliteDdlGenerator
             ForeignKeyAction.Restrict => "RESTRICT",
             _ => "NO ACTION",
         };
-
 }

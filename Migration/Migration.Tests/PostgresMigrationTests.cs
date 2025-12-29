@@ -1107,7 +1107,11 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
                 "events",
                 t =>
                     t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey())
-                        .Column("created_at", PortableTypes.DateTimeOffset, c => c.NotNull().DefaultLql("now()"))
+                        .Column(
+                            "created_at",
+                            PortableTypes.DateTimeOffset,
+                            c => c.NotNull().DefaultLql("now()")
+                        )
             )
             .Build();
 
@@ -1131,12 +1135,14 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
 
         // Insert a row without specifying created_at - should use default
         using var insertCmd = _connection.CreateCommand();
-        insertCmd.CommandText = "INSERT INTO events (id) VALUES ('11111111-1111-1111-1111-111111111111')";
+        insertCmd.CommandText =
+            "INSERT INTO events (id) VALUES ('11111111-1111-1111-1111-111111111111')";
         insertCmd.ExecuteNonQuery();
 
         // Verify the default was applied - should be a recent timestamp
         using var selectCmd = _connection.CreateCommand();
-        selectCmd.CommandText = "SELECT created_at FROM events WHERE id = '11111111-1111-1111-1111-111111111111'";
+        selectCmd.CommandText =
+            "SELECT created_at FROM events WHERE id = '11111111-1111-1111-1111-111111111111'";
         var createdAt = (DateTime)selectCmd.ExecuteScalar()!;
 
         // Should be within last few seconds
@@ -1178,7 +1184,8 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
 
         // Insert rows without specifying id - should generate unique UUIDs
         using var insertCmd = _connection.CreateCommand();
-        insertCmd.CommandText = @"
+        insertCmd.CommandText =
+            @"
             INSERT INTO items (name) VALUES ('Item 1');
             INSERT INTO items (name) VALUES ('Item 2');
             INSERT INTO items (name) VALUES ('Item 3');
@@ -1212,8 +1219,16 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
                 "flags",
                 t =>
                     t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey())
-                        .Column("is_active", PortableTypes.Boolean, c => c.NotNull().DefaultLql("true"))
-                        .Column("is_deleted", PortableTypes.Boolean, c => c.NotNull().DefaultLql("false"))
+                        .Column(
+                            "is_active",
+                            PortableTypes.Boolean,
+                            c => c.NotNull().DefaultLql("true")
+                        )
+                        .Column(
+                            "is_deleted",
+                            PortableTypes.Boolean,
+                            c => c.NotNull().DefaultLql("false")
+                        )
             )
             .Build();
 
@@ -1237,7 +1252,8 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
 
         // Insert without specifying booleans
         using var insertCmd = _connection.CreateCommand();
-        insertCmd.CommandText = "INSERT INTO flags (id) VALUES ('11111111-1111-1111-1111-111111111111')";
+        insertCmd.CommandText =
+            "INSERT INTO flags (id) VALUES ('11111111-1111-1111-1111-111111111111')";
         insertCmd.ExecuteNonQuery();
 
         // Verify defaults
@@ -1245,7 +1261,7 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         selectCmd.CommandText = "SELECT is_active, is_deleted FROM flags";
         using var reader = selectCmd.ExecuteReader();
         Assert.True(reader.Read());
-        Assert.True(reader.GetBoolean(0));  // is_active = true
+        Assert.True(reader.GetBoolean(0)); // is_active = true
         Assert.False(reader.GetBoolean(1)); // is_deleted = false
     }
 
@@ -1261,7 +1277,11 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
                 t =>
                     t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey())
                         .Column("count", PortableTypes.Int, c => c.NotNull().DefaultLql("0"))
-                        .Column("score", PortableTypes.Decimal(10, 2), c => c.NotNull().DefaultLql("100"))
+                        .Column(
+                            "score",
+                            PortableTypes.Decimal(10, 2),
+                            c => c.NotNull().DefaultLql("100")
+                        )
                         .Column("rate", PortableTypes.Double, c => c.NotNull().DefaultLql("0.5"))
             )
             .Build();
@@ -1286,7 +1306,8 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
 
         // Insert without specifying values
         using var insertCmd = _connection.CreateCommand();
-        insertCmd.CommandText = "INSERT INTO counters (id) VALUES ('11111111-1111-1111-1111-111111111111')";
+        insertCmd.CommandText =
+            "INSERT INTO counters (id) VALUES ('11111111-1111-1111-1111-111111111111')";
         insertCmd.ExecuteNonQuery();
 
         // Verify defaults
@@ -1310,8 +1331,16 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
                 "statuses",
                 t =>
                     t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey())
-                        .Column("status", PortableTypes.VarChar(50), c => c.NotNull().DefaultLql("'pending'"))
-                        .Column("category", PortableTypes.VarChar(50), c => c.NotNull().DefaultLql("'default'"))
+                        .Column(
+                            "status",
+                            PortableTypes.VarChar(50),
+                            c => c.NotNull().DefaultLql("'pending'")
+                        )
+                        .Column(
+                            "category",
+                            PortableTypes.VarChar(50),
+                            c => c.NotNull().DefaultLql("'default'")
+                        )
             )
             .Build();
 
@@ -1335,7 +1364,8 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
 
         // Insert without specifying strings
         using var insertCmd = _connection.CreateCommand();
-        insertCmd.CommandText = "INSERT INTO statuses (id) VALUES ('11111111-1111-1111-1111-111111111111')";
+        insertCmd.CommandText =
+            "INSERT INTO statuses (id) VALUES ('11111111-1111-1111-1111-111111111111')";
         insertCmd.ExecuteNonQuery();
 
         // Verify defaults
@@ -1359,12 +1389,28 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
                 t =>
                     t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey().DefaultLql("gen_uuid()"))
                         .Column("name", PortableTypes.VarChar(100), c => c.NotNull())
-                        .Column("created_at", PortableTypes.DateTimeOffset, c => c.NotNull().DefaultLql("now()"))
-                        .Column("is_active", PortableTypes.Boolean, c => c.NotNull().DefaultLql("true"))
-                        .Column("is_archived", PortableTypes.Boolean, c => c.NotNull().DefaultLql("false"))
+                        .Column(
+                            "created_at",
+                            PortableTypes.DateTimeOffset,
+                            c => c.NotNull().DefaultLql("now()")
+                        )
+                        .Column(
+                            "is_active",
+                            PortableTypes.Boolean,
+                            c => c.NotNull().DefaultLql("true")
+                        )
+                        .Column(
+                            "is_archived",
+                            PortableTypes.Boolean,
+                            c => c.NotNull().DefaultLql("false")
+                        )
                         .Column("count", PortableTypes.Int, c => c.NotNull().DefaultLql("0"))
                         .Column("priority", PortableTypes.Int, c => c.NotNull().DefaultLql("5"))
-                        .Column("status", PortableTypes.VarChar(20), c => c.NotNull().DefaultLql("'active'"))
+                        .Column(
+                            "status",
+                            PortableTypes.VarChar(20),
+                            c => c.NotNull().DefaultLql("'active'")
+                        )
             )
             .Build();
 
@@ -1393,7 +1439,8 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
 
         // Verify all defaults
         using var selectCmd = _connection.CreateCommand();
-        selectCmd.CommandText = "SELECT id, created_at, is_active, is_archived, count, priority, status FROM comprehensive_defaults";
+        selectCmd.CommandText =
+            "SELECT id, created_at, is_active, is_archived, count, priority, status FROM comprehensive_defaults";
         using var reader = selectCmd.ExecuteReader();
         Assert.True(reader.Read());
 
@@ -1403,7 +1450,7 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         var createdAt = reader.GetDateTime(1);
         Assert.True((DateTime.UtcNow - createdAt).TotalSeconds < 10);
 
-        Assert.True(reader.GetBoolean(2));  // is_active
+        Assert.True(reader.GetBoolean(2)); // is_active
         Assert.False(reader.GetBoolean(3)); // is_archived
         Assert.Equal(0, reader.GetInt32(4)); // count
         Assert.Equal(5, reader.GetInt32(5)); // priority

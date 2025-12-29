@@ -27,10 +27,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         Assert.Single(ops);
         Assert.IsType<CreateTableOperation>(ops[0]);
@@ -57,10 +55,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(schema, schema);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         Assert.Empty(ops);
     }
@@ -89,10 +85,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         Assert.Single(ops);
         Assert.IsType<AddColumnOperation>(ops[0]);
@@ -132,10 +126,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         Assert.Single(ops);
         Assert.IsType<CreateIndexOperation>(ops[0]);
@@ -184,10 +176,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         Assert.Single(ops);
         Assert.IsType<AddForeignKeyOperation>(ops[0]);
@@ -218,10 +208,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired, allowDestructive: false);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         Assert.Empty(ops);
     }
@@ -249,10 +237,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired, allowDestructive: true);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         Assert.Single(ops);
         Assert.IsType<DropTableOperation>(ops[0]);
@@ -284,10 +270,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired, allowDestructive: false);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         Assert.Empty(ops);
     }
@@ -316,10 +300,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired, allowDestructive: true);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         Assert.Single(ops);
         Assert.IsType<DropColumnOperation>(ops[0]);
@@ -358,10 +340,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired, allowDestructive: false);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         Assert.Empty(ops);
     }
@@ -397,10 +377,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired, allowDestructive: true);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         Assert.Single(ops);
         Assert.IsType<DropIndexOperation>(ops[0]);
@@ -449,10 +427,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired, allowDestructive: true);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         Assert.Single(ops);
         Assert.IsType<DropForeignKeyOperation>(ops[0]);
@@ -480,10 +456,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         Assert.Equal(2, ops.Count);
         Assert.IsType<CreateTableOperation>(ops[0]);
@@ -514,10 +488,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         // Should recognize USERS and users as the same table, just add the column
         Assert.Single(ops);
@@ -554,10 +526,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         // Should recognize EMAIL and email as the same column
         Assert.Empty(ops);
@@ -588,10 +558,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         Assert.Equal(3, ops.Count);
         Assert.All(ops, op => Assert.IsType<CreateTableOperation>(op));
@@ -641,10 +609,8 @@ public sealed class SchemaDiffTests
         var result = SchemaDiff.Calculate(current, desired, allowDestructive: true);
 
         // Assert
-        Assert.True(result is OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>);
-        var ops = (
-            (OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>)result
-        ).Value;
+        Assert.True(result is OperationsResultOk);
+        var ops = ((OperationsResultOk)result).Value;
 
         // Should have: add column (new_field), create index, drop column (old_field),
         // create table (new_table), drop table (obsolete_table)

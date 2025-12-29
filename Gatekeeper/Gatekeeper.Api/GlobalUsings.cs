@@ -1,7 +1,6 @@
 #pragma warning disable IDE0005 // Using directive is unnecessary (some are unused but needed for tests)
 
 global using System;
-global using System.Collections.Immutable;
 global using System.Globalization;
 global using System.Text.Json;
 global using Fido2NetLib;
@@ -37,6 +36,10 @@ global using GetUserCredentialsOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetUserCredentials>,
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.GetUserCredentials>, Selecta.SqlError>;
+global using GetUserCredentialsError = Outcome.Result<
+    System.Collections.Immutable.ImmutableList<Generated.GetUserCredentials>,
+    Selecta.SqlError
+>.Error<System.Collections.Immutable.ImmutableList<Generated.GetUserCredentials>, Selecta.SqlError>;
 global using GetUserPermissionsOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetUserPermissions>,
     Selecta.SqlError

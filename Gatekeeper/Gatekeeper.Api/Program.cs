@@ -110,7 +110,7 @@ authGroup.MapPost(
                         Convert.FromBase64String(c.id)
                     ))
                     .ToList(),
-                _ => [],
+                GetUserCredentialsError _ => [],
             };
 
             var user = new Fido2User

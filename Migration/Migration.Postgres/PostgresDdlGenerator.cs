@@ -8,11 +8,7 @@ namespace Migration.Postgres;
 /// <param name="Success">Whether the migration completed without errors.</param>
 /// <param name="TablesCreated">Number of tables successfully created or already existing.</param>
 /// <param name="Errors">List of table names and error messages for any failures.</param>
-public sealed record MigrationResult(
-    bool Success,
-    int TablesCreated,
-    IReadOnlyList<string> Errors
-);
+public sealed record MigrationResult(bool Success, int TablesCreated, IReadOnlyList<string> Errors);
 
 /// <summary>
 /// PostgreSQL DDL generator for schema operations.
@@ -30,7 +26,7 @@ public static class PostgresDdlGenerator
     /// <param name="onTableFailed">Optional callback for each table that failed (table name, exception).</param>
     /// <returns>Migration result with success status and any errors.</returns>
     public static MigrationResult MigrateSchema(
-        System.Data.IDbConnection connection,
+        IDbConnection connection,
         SchemaDefinition schema,
         Action<string>? onTableCreated = null,
         Action<string, Exception>? onTableFailed = null
@@ -148,9 +144,10 @@ public static class PostgresDdlGenerator
             sb.AppendLine(";");
             var unique = index.IsUnique ? "UNIQUE " : "";
             // Expression indexes use Expressions verbatim, column indexes quote column names
-            var indexItems = index.Expressions.Count > 0
-                ? string.Join(", ", index.Expressions)
-                : string.Join(", ", index.Columns.Select(c => $"\"{c}\""));
+            var indexItems =
+                index.Expressions.Count > 0
+                    ? string.Join(", ", index.Expressions)
+                    : string.Join(", ", index.Columns.Select(c => $"\"{c}\""));
             var filter = index.Filter is not null ? $" WHERE {index.Filter}" : "";
             sb.Append(
                 CultureInfo.InvariantCulture,
@@ -218,9 +215,10 @@ public static class PostgresDdlGenerator
     {
         var unique = op.Index.IsUnique ? "UNIQUE " : "";
         // Expression indexes use Expressions verbatim, column indexes quote column names
-        var indexItems = op.Index.Expressions.Count > 0
-            ? string.Join(", ", op.Index.Expressions)
-            : string.Join(", ", op.Index.Columns.Select(c => $"\"{c}\""));
+        var indexItems =
+            op.Index.Expressions.Count > 0
+                ? string.Join(", ", op.Index.Expressions)
+                : string.Join(", ", op.Index.Columns.Select(c => $"\"{c}\""));
         var filter = op.Index.Filter is not null ? $" WHERE {op.Index.Filter}" : "";
 
         return $"CREATE {unique}INDEX IF NOT EXISTS \"{op.Index.Name}\" ON \"{op.Schema}\".\"{op.TableName}\" ({indexItems}){filter}";
@@ -310,5 +308,4 @@ public static class PostgresDdlGenerator
             ForeignKeyAction.Restrict => "RESTRICT",
             _ => "NO ACTION",
         };
-
 }

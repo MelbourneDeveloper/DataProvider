@@ -216,10 +216,11 @@ internal static class Program
                     try
                     {
                         var tableCode = await GenerateTableOperationsAsync(
-                            cfg.ConnectionString,
-                            table,
-                            outDir.FullName
-                        ).ConfigureAwait(false);
+                                cfg.ConnectionString,
+                                table,
+                                outDir.FullName
+                            )
+                            .ConfigureAwait(false);
 
                         if (tableCode is Result<string, SqlError>.Error<string, SqlError> err)
                         {
@@ -247,7 +248,8 @@ internal static class Program
     private static async Task<Result<string, SqlError>> GenerateTableOperationsAsync(
         string connectionString,
         TableConfigItem table,
-        string outDir)
+        string outDir
+    )
     {
         await using var conn = new NpgsqlConnection(connectionString);
         await conn.OpenAsync().ConfigureAwait(false);
@@ -290,23 +292,28 @@ internal static class Program
                 if (table.ExcludeColumns.Contains(colName, StringComparer.OrdinalIgnoreCase))
                     continue;
 
-                columns.Add(new DatabaseColumn
-                {
-                    Name = colName,
-                    SqlType = dataType,
-                    CSharpType = MapPostgresTypeToCSharp(dataType, isNullable),
-                    IsNullable = isNullable,
-                    IsPrimaryKey = isPk,
-                    IsIdentity = isIdentity,
-                    IsComputed = colDefault?.StartsWith("nextval", StringComparison.OrdinalIgnoreCase) == true,
-                });
+                columns.Add(
+                    new DatabaseColumn
+                    {
+                        Name = colName,
+                        SqlType = dataType,
+                        CSharpType = MapPostgresTypeToCSharp(dataType, isNullable),
+                        IsNullable = isNullable,
+                        IsPrimaryKey = isPk,
+                        IsIdentity = isIdentity,
+                        IsComputed =
+                            colDefault?.StartsWith("nextval", StringComparison.OrdinalIgnoreCase)
+                            == true,
+                    }
+                );
             }
         }
 
         if (columns.Count == 0)
         {
             return new Result<string, SqlError>.Error<string, SqlError>(
-                new SqlError($"No columns found for table {table.Schema}.{table.Name}"));
+                new SqlError($"No columns found for table {table.Schema}.{table.Name}")
+            );
         }
 
         var sb = new StringBuilder();
@@ -371,18 +378,25 @@ internal static class Program
         StringBuilder sb,
         TableConfigItem table,
         List<DatabaseColumn> columns,
-        string pascalName)
+        string pascalName
+    )
     {
         // Get insertable columns (exclude auto-generated ones)
         var insertable = columns.Where(c => !c.IsIdentity && !c.IsComputed).ToList();
-        var parameters = string.Join(", ", insertable.Select(c =>
-            $"{c.CSharpType} {ToCamelCase(c.Name)}"));
+        var parameters = string.Join(
+            ", ",
+            insertable.Select(c => $"{c.CSharpType} {ToCamelCase(c.Name)}")
+        );
 
         sb.AppendLine();
         sb.AppendLine($"    /// <summary>");
-        sb.AppendLine($"    /// Inserts a row into {table.Name}. Returns inserted id or null on conflict.");
+        sb.AppendLine(
+            $"    /// Inserts a row into {table.Name}. Returns inserted id or null on conflict."
+        );
         sb.AppendLine($"    /// </summary>");
-        sb.AppendLine($"    public static async Task<Result<Guid?, SqlError>> Insert{pascalName}Async(");
+        sb.AppendLine(
+            $"    public static async Task<Result<Guid?, SqlError>> Insert{pascalName}Async("
+        );
         sb.AppendLine($"        this NpgsqlConnection conn,");
         sb.AppendLine($"        {parameters})");
         sb.AppendLine("    {");
@@ -405,21 +419,31 @@ internal static class Program
             var paramName = ToCamelCase(col.Name);
             if (col.IsNullable)
             {
-                sb.AppendLine($"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName} ?? (object)DBNull.Value);");
+                sb.AppendLine(
+                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName} ?? (object)DBNull.Value);"
+                );
             }
             else
             {
-                sb.AppendLine($"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName});");
+                sb.AppendLine(
+                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName});"
+                );
             }
         }
 
         sb.AppendLine();
-        sb.AppendLine("            var result = await cmd.ExecuteScalarAsync().ConfigureAwait(false);");
-        sb.AppendLine("            return new Result<Guid?, SqlError>.Ok<Guid?, SqlError>(result is Guid g ? g : null);");
+        sb.AppendLine(
+            "            var result = await cmd.ExecuteScalarAsync().ConfigureAwait(false);"
+        );
+        sb.AppendLine(
+            "            return new Result<Guid?, SqlError>.Ok<Guid?, SqlError>(result is Guid g ? g : null);"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");
         sb.AppendLine("        {");
-        sb.AppendLine("            return new Result<Guid?, SqlError>.Error<Guid?, SqlError>(SqlError.FromException(ex));");
+        sb.AppendLine(
+            "            return new Result<Guid?, SqlError>.Error<Guid?, SqlError>(SqlError.FromException(ex));"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("    }");
     }
@@ -428,28 +452,42 @@ internal static class Program
         StringBuilder sb,
         TableConfigItem table,
         List<DatabaseColumn> columns,
-        string pascalName)
+        string pascalName
+    )
     {
         var pkCols = columns.Where(c => c.IsPrimaryKey).ToList();
-        var updateable = columns.Where(c => !c.IsPrimaryKey && !c.IsIdentity && !c.IsComputed).ToList();
+        var updateable = columns
+            .Where(c => !c.IsPrimaryKey && !c.IsIdentity && !c.IsComputed)
+            .ToList();
 
-        if (pkCols.Count == 0 || updateable.Count == 0) return;
+        if (pkCols.Count == 0 || updateable.Count == 0)
+            return;
 
         var allParams = pkCols.Concat(updateable).ToList();
-        var parameters = string.Join(", ", allParams.Select(c =>
-            $"{c.CSharpType} {ToCamelCase(c.Name)}"));
+        var parameters = string.Join(
+            ", ",
+            allParams.Select(c => $"{c.CSharpType} {ToCamelCase(c.Name)}")
+        );
 
         sb.AppendLine();
         sb.AppendLine($"    /// <summary>");
         sb.AppendLine($"    /// Updates a row in {table.Name} by primary key.");
         sb.AppendLine($"    /// </summary>");
-        sb.AppendLine($"    public static async Task<Result<int, SqlError>> Update{pascalName}Async(");
+        sb.AppendLine(
+            $"    public static async Task<Result<int, SqlError>> Update{pascalName}Async("
+        );
         sb.AppendLine($"        this NpgsqlConnection conn,");
         sb.AppendLine($"        {parameters})");
         sb.AppendLine("    {");
 
-        var setClauses = string.Join(", ", updateable.Select(c => $"{c.Name} = @{ToCamelCase(c.Name)}"));
-        var whereClauses = string.Join(" AND ", pkCols.Select(c => $"{c.Name} = @{ToCamelCase(c.Name)}"));
+        var setClauses = string.Join(
+            ", ",
+            updateable.Select(c => $"{c.Name} = @{ToCamelCase(c.Name)}")
+        );
+        var whereClauses = string.Join(
+            " AND ",
+            pkCols.Select(c => $"{c.Name} = @{ToCamelCase(c.Name)}")
+        );
 
         sb.AppendLine($"        const string sql = @\"");
         sb.AppendLine($"            UPDATE {table.Schema}.{table.Name}");
@@ -465,21 +503,29 @@ internal static class Program
             var paramName = ToCamelCase(col.Name);
             if (col.IsNullable)
             {
-                sb.AppendLine($"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName} ?? (object)DBNull.Value);");
+                sb.AppendLine(
+                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName} ?? (object)DBNull.Value);"
+                );
             }
             else
             {
-                sb.AppendLine($"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName});");
+                sb.AppendLine(
+                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName});"
+                );
             }
         }
 
         sb.AppendLine();
-        sb.AppendLine("            var rows = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);");
+        sb.AppendLine(
+            "            var rows = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);"
+        );
         sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(rows);");
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");
         sb.AppendLine("        {");
-        sb.AppendLine("            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.FromException(ex));");
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.FromException(ex));"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("    }");
     }
@@ -488,26 +534,37 @@ internal static class Program
         StringBuilder sb,
         TableConfigItem table,
         List<DatabaseColumn> columns,
-        string pascalName)
+        string pascalName
+    )
     {
         var pkCols = columns.Where(c => c.IsPrimaryKey).ToList();
-        if (pkCols.Count == 0) return;
+        if (pkCols.Count == 0)
+            return;
 
-        var parameters = string.Join(", ", pkCols.Select(c =>
-            $"{c.CSharpType} {ToCamelCase(c.Name)}"));
+        var parameters = string.Join(
+            ", ",
+            pkCols.Select(c => $"{c.CSharpType} {ToCamelCase(c.Name)}")
+        );
 
         sb.AppendLine();
         sb.AppendLine($"    /// <summary>");
         sb.AppendLine($"    /// Deletes a row from {table.Name} by primary key.");
         sb.AppendLine($"    /// </summary>");
-        sb.AppendLine($"    public static async Task<Result<int, SqlError>> Delete{pascalName}Async(");
+        sb.AppendLine(
+            $"    public static async Task<Result<int, SqlError>> Delete{pascalName}Async("
+        );
         sb.AppendLine($"        this NpgsqlConnection conn,");
         sb.AppendLine($"        {parameters})");
         sb.AppendLine("    {");
 
-        var whereClauses = string.Join(" AND ", pkCols.Select(c => $"{c.Name} = @{ToCamelCase(c.Name)}"));
+        var whereClauses = string.Join(
+            " AND ",
+            pkCols.Select(c => $"{c.Name} = @{ToCamelCase(c.Name)}")
+        );
 
-        sb.AppendLine($"        const string sql = @\"DELETE FROM {table.Schema}.{table.Name} WHERE {whereClauses}\";");
+        sb.AppendLine(
+            $"        const string sql = @\"DELETE FROM {table.Schema}.{table.Name} WHERE {whereClauses}\";"
+        );
         sb.AppendLine();
         sb.AppendLine("        try");
         sb.AppendLine("        {");
@@ -515,16 +572,22 @@ internal static class Program
 
         foreach (var col in pkCols)
         {
-            sb.AppendLine($"            cmd.Parameters.AddWithValue(\"{ToCamelCase(col.Name)}\", {ToCamelCase(col.Name)});");
+            sb.AppendLine(
+                $"            cmd.Parameters.AddWithValue(\"{ToCamelCase(col.Name)}\", {ToCamelCase(col.Name)});"
+            );
         }
 
         sb.AppendLine();
-        sb.AppendLine("            var rows = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);");
+        sb.AppendLine(
+            "            var rows = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);"
+        );
         sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(rows);");
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");
         sb.AppendLine("        {");
-        sb.AppendLine("            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.FromException(ex));");
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.FromException(ex));"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("    }");
     }
@@ -533,26 +596,36 @@ internal static class Program
         StringBuilder sb,
         TableConfigItem table,
         List<DatabaseColumn> columns,
-        string pascalName)
+        string pascalName
+    )
     {
         // Get insertable columns (exclude auto-generated ones)
         var insertable = columns.Where(c => !c.IsIdentity && !c.IsComputed).ToList();
-        if (insertable.Count == 0) return;
+        if (insertable.Count == 0)
+            return;
 
         // Build tuple type for the IEnumerable parameter
-        var tupleType = string.Join(", ", insertable.Select(c =>
-            $"{c.CSharpType} {ToPascalCase(c.Name)}"));
+        var tupleType = string.Join(
+            ", ",
+            insertable.Select(c => $"{c.CSharpType} {ToPascalCase(c.Name)}")
+        );
 
         sb.AppendLine();
         sb.AppendLine($"    /// <summary>");
-        sb.AppendLine($"    /// Bulk inserts rows into {table.Name} using batched multi-row VALUES.");
+        sb.AppendLine(
+            $"    /// Bulk inserts rows into {table.Name} using batched multi-row VALUES."
+        );
         sb.AppendLine($"    /// Uses ON CONFLICT DO NOTHING to skip duplicates.");
         sb.AppendLine($"    /// </summary>");
         sb.AppendLine($"    /// <param name=\"conn\">Open database connection.</param>");
         sb.AppendLine($"    /// <param name=\"records\">Records to insert as tuples.</param>");
-        sb.AppendLine($"    /// <param name=\"batchSize\">Max rows per batch (default 1000).</param>");
+        sb.AppendLine(
+            $"    /// <param name=\"batchSize\">Max rows per batch (default 1000).</param>"
+        );
         sb.AppendLine($"    /// <returns>Total rows inserted.</returns>");
-        sb.AppendLine($"    public static async Task<Result<int, SqlError>> BulkInsert{pascalName}Async(");
+        sb.AppendLine(
+            $"    public static async Task<Result<int, SqlError>> BulkInsert{pascalName}Async("
+        );
         sb.AppendLine($"        this NpgsqlConnection conn,");
         sb.AppendLine($"        IEnumerable<({tupleType})> records,");
         sb.AppendLine($"        int batchSize = 1000)");
@@ -567,33 +640,51 @@ internal static class Program
         sb.AppendLine("                batch.Add(record);");
         sb.AppendLine("                if (batch.Count >= batchSize)");
         sb.AppendLine("                {");
-        sb.AppendLine($"                    var result = await ExecuteBulkInsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);");
-        sb.AppendLine("                    if (result is Result<int, SqlError>.Error<int, SqlError> err)");
+        sb.AppendLine(
+            $"                    var result = await ExecuteBulkInsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);"
+        );
+        sb.AppendLine(
+            "                    if (result is Result<int, SqlError>.Error<int, SqlError> err)"
+        );
         sb.AppendLine("                        return err;");
-        sb.AppendLine("                    totalInserted += ((Result<int, SqlError>.Ok<int, SqlError>)result).Value;");
+        sb.AppendLine(
+            "                    totalInserted += ((Result<int, SqlError>.Ok<int, SqlError>)result).Value;"
+        );
         sb.AppendLine("                    batch.Clear();");
         sb.AppendLine("                }");
         sb.AppendLine("            }");
         sb.AppendLine();
         sb.AppendLine("            if (batch.Count > 0)");
         sb.AppendLine("            {");
-        sb.AppendLine($"                var finalResult = await ExecuteBulkInsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);");
-        sb.AppendLine("                if (finalResult is Result<int, SqlError>.Error<int, SqlError> finalErr)");
+        sb.AppendLine(
+            $"                var finalResult = await ExecuteBulkInsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);"
+        );
+        sb.AppendLine(
+            "                if (finalResult is Result<int, SqlError>.Error<int, SqlError> finalErr)"
+        );
         sb.AppendLine("                    return finalErr;");
-        sb.AppendLine("                totalInserted += ((Result<int, SqlError>.Ok<int, SqlError>)finalResult).Value;");
+        sb.AppendLine(
+            "                totalInserted += ((Result<int, SqlError>.Ok<int, SqlError>)finalResult).Value;"
+        );
         sb.AppendLine("            }");
         sb.AppendLine();
-        sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(totalInserted);");
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Ok<int, SqlError>(totalInserted);"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");
         sb.AppendLine("        {");
-        sb.AppendLine("            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.FromException(ex));");
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.FromException(ex));"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine();
 
         // Generate batch execution helper
-        sb.AppendLine($"    private static async Task<Result<int, SqlError>> ExecuteBulkInsert{pascalName}BatchAsync(");
+        sb.AppendLine(
+            $"    private static async Task<Result<int, SqlError>> ExecuteBulkInsert{pascalName}BatchAsync("
+        );
         sb.AppendLine($"        NpgsqlConnection conn,");
         sb.AppendLine($"        List<({tupleType})> batch)");
         sb.AppendLine("    {");
@@ -602,14 +693,19 @@ internal static class Program
         sb.AppendLine();
 
         var colNames = string.Join(", ", insertable.Select(c => c.Name));
-        sb.AppendLine($"        var sql = new System.Text.StringBuilder(\"INSERT INTO {table.Schema}.{table.Name} ({colNames}) VALUES \");");
+        sb.AppendLine(
+            $"        var sql = new System.Text.StringBuilder(\"INSERT INTO {table.Schema}.{table.Name} ({colNames}) VALUES \");"
+        );
         sb.AppendLine();
         sb.AppendLine("        for (int i = 0; i < batch.Count; i++)");
         sb.AppendLine("        {");
         sb.AppendLine("            if (i > 0) sql.Append(\", \");");
 
         // Build VALUES placeholders
-        var placeholders = string.Join(", ", insertable.Select((c, idx) => $"@p\" + (i * {insertable.Count} + {idx}) + \""));
+        var placeholders = string.Join(
+            ", ",
+            insertable.Select((c, idx) => $"@p\" + (i * {insertable.Count} + {idx}) + \"")
+        );
         sb.AppendLine($"            sql.Append(\"({placeholders})\");");
         sb.AppendLine("        }");
         sb.AppendLine("        sql.Append(\" ON CONFLICT DO NOTHING\");");
@@ -626,11 +722,15 @@ internal static class Program
             var propName = ToPascalCase(col.Name);
             if (col.IsNullable)
             {
-                sb.AppendLine($"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName} ?? (object)DBNull.Value);");
+                sb.AppendLine(
+                    $"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName} ?? (object)DBNull.Value);"
+                );
             }
             else
             {
-                sb.AppendLine($"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName});");
+                sb.AppendLine(
+                    $"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName});"
+                );
             }
         }
 
@@ -645,28 +745,38 @@ internal static class Program
         StringBuilder sb,
         TableConfigItem table,
         List<DatabaseColumn> columns,
-        string pascalName)
+        string pascalName
+    )
     {
         // Get insertable columns (exclude auto-generated ones)
         var insertable = columns.Where(c => !c.IsIdentity && !c.IsComputed).ToList();
         var pkCols = columns.Where(c => c.IsPrimaryKey).ToList();
 
-        if (insertable.Count == 0 || pkCols.Count == 0) return;
+        if (insertable.Count == 0 || pkCols.Count == 0)
+            return;
 
         // Build tuple type for the IEnumerable parameter
-        var tupleType = string.Join(", ", insertable.Select(c =>
-            $"{c.CSharpType} {ToPascalCase(c.Name)}"));
+        var tupleType = string.Join(
+            ", ",
+            insertable.Select(c => $"{c.CSharpType} {ToPascalCase(c.Name)}")
+        );
 
         sb.AppendLine();
         sb.AppendLine($"    /// <summary>");
-        sb.AppendLine($"    /// Bulk upserts rows into {table.Name} using batched multi-row VALUES.");
+        sb.AppendLine(
+            $"    /// Bulk upserts rows into {table.Name} using batched multi-row VALUES."
+        );
         sb.AppendLine($"    /// Uses ON CONFLICT DO UPDATE to insert or update existing rows.");
         sb.AppendLine($"    /// </summary>");
         sb.AppendLine($"    /// <param name=\"conn\">Open database connection.</param>");
         sb.AppendLine($"    /// <param name=\"records\">Records to upsert as tuples.</param>");
-        sb.AppendLine($"    /// <param name=\"batchSize\">Max rows per batch (default 1000).</param>");
+        sb.AppendLine(
+            $"    /// <param name=\"batchSize\">Max rows per batch (default 1000).</param>"
+        );
         sb.AppendLine($"    /// <returns>Total rows affected.</returns>");
-        sb.AppendLine($"    public static async Task<Result<int, SqlError>> BulkUpsert{pascalName}Async(");
+        sb.AppendLine(
+            $"    public static async Task<Result<int, SqlError>> BulkUpsert{pascalName}Async("
+        );
         sb.AppendLine($"        this NpgsqlConnection conn,");
         sb.AppendLine($"        IEnumerable<({tupleType})> records,");
         sb.AppendLine($"        int batchSize = 1000)");
@@ -681,33 +791,51 @@ internal static class Program
         sb.AppendLine("                batch.Add(record);");
         sb.AppendLine("                if (batch.Count >= batchSize)");
         sb.AppendLine("                {");
-        sb.AppendLine($"                    var result = await ExecuteBulkUpsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);");
-        sb.AppendLine("                    if (result is Result<int, SqlError>.Error<int, SqlError> err)");
+        sb.AppendLine(
+            $"                    var result = await ExecuteBulkUpsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);"
+        );
+        sb.AppendLine(
+            "                    if (result is Result<int, SqlError>.Error<int, SqlError> err)"
+        );
         sb.AppendLine("                        return err;");
-        sb.AppendLine("                    totalAffected += ((Result<int, SqlError>.Ok<int, SqlError>)result).Value;");
+        sb.AppendLine(
+            "                    totalAffected += ((Result<int, SqlError>.Ok<int, SqlError>)result).Value;"
+        );
         sb.AppendLine("                    batch.Clear();");
         sb.AppendLine("                }");
         sb.AppendLine("            }");
         sb.AppendLine();
         sb.AppendLine("            if (batch.Count > 0)");
         sb.AppendLine("            {");
-        sb.AppendLine($"                var finalResult = await ExecuteBulkUpsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);");
-        sb.AppendLine("                if (finalResult is Result<int, SqlError>.Error<int, SqlError> finalErr)");
+        sb.AppendLine(
+            $"                var finalResult = await ExecuteBulkUpsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);"
+        );
+        sb.AppendLine(
+            "                if (finalResult is Result<int, SqlError>.Error<int, SqlError> finalErr)"
+        );
         sb.AppendLine("                    return finalErr;");
-        sb.AppendLine("                totalAffected += ((Result<int, SqlError>.Ok<int, SqlError>)finalResult).Value;");
+        sb.AppendLine(
+            "                totalAffected += ((Result<int, SqlError>.Ok<int, SqlError>)finalResult).Value;"
+        );
         sb.AppendLine("            }");
         sb.AppendLine();
-        sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(totalAffected);");
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Ok<int, SqlError>(totalAffected);"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");
         sb.AppendLine("        {");
-        sb.AppendLine("            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.FromException(ex));");
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.FromException(ex));"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine();
 
         // Generate batch execution helper
-        sb.AppendLine($"    private static async Task<Result<int, SqlError>> ExecuteBulkUpsert{pascalName}BatchAsync(");
+        sb.AppendLine(
+            $"    private static async Task<Result<int, SqlError>> ExecuteBulkUpsert{pascalName}BatchAsync("
+        );
         sb.AppendLine($"        NpgsqlConnection conn,");
         sb.AppendLine($"        List<({tupleType})> batch)");
         sb.AppendLine("    {");
@@ -720,21 +848,28 @@ internal static class Program
         var updateCols = insertable.Where(c => !c.IsPrimaryKey).ToList();
         var updateSet = string.Join(", ", updateCols.Select(c => $"{c.Name} = EXCLUDED.{c.Name}"));
 
-        sb.AppendLine($"        var sql = new System.Text.StringBuilder(\"INSERT INTO {table.Schema}.{table.Name} ({colNames}) VALUES \");");
+        sb.AppendLine(
+            $"        var sql = new System.Text.StringBuilder(\"INSERT INTO {table.Schema}.{table.Name} ({colNames}) VALUES \");"
+        );
         sb.AppendLine();
         sb.AppendLine("        for (int i = 0; i < batch.Count; i++)");
         sb.AppendLine("        {");
         sb.AppendLine("            if (i > 0) sql.Append(\", \");");
 
         // Build VALUES placeholders
-        var placeholders = string.Join(", ", insertable.Select((c, idx) => $"@p\" + (i * {insertable.Count} + {idx}) + \""));
+        var placeholders = string.Join(
+            ", ",
+            insertable.Select((c, idx) => $"@p\" + (i * {insertable.Count} + {idx}) + \"")
+        );
         sb.AppendLine($"            sql.Append(\"({placeholders})\");");
         sb.AppendLine("        }");
 
         // Add ON CONFLICT DO UPDATE clause
         if (updateCols.Count > 0)
         {
-            sb.AppendLine($"        sql.Append(\" ON CONFLICT ({pkColNames}) DO UPDATE SET {updateSet}\");");
+            sb.AppendLine(
+                $"        sql.Append(\" ON CONFLICT ({pkColNames}) DO UPDATE SET {updateSet}\");"
+            );
         }
         else
         {
@@ -755,11 +890,15 @@ internal static class Program
             var propName = ToPascalCase(col.Name);
             if (col.IsNullable)
             {
-                sb.AppendLine($"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName} ?? (object)DBNull.Value);");
+                sb.AppendLine(
+                    $"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName} ?? (object)DBNull.Value);"
+                );
             }
             else
             {
-                sb.AppendLine($"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName});");
+                sb.AppendLine(
+                    $"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName});"
+                );
             }
         }
 

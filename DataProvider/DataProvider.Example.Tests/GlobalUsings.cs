@@ -1,3 +1,4 @@
+global using Generated;
 // Type aliases for Result types to reduce verbosity in DataProvider.Example.Tests
 global using CustomerListError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.Customer>,

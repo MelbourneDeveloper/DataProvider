@@ -398,7 +398,7 @@ public static class PostgresSchemaInspector
         {
             switch (ch)
             {
-                case '(' :
+                case '(':
                     depth++;
                     current.Append(ch);
                     break;

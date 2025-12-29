@@ -1,5 +1,4 @@
 using DataProvider.CodeGeneration;
-using Outcome;
 using Xunit;
 
 namespace DataProvider.Tests;
@@ -83,8 +82,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkInsertMethod(table);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("BulkInsertProductsAsync", code);
         Assert.Contains("IEnumerable<(", code);
         Assert.Contains("INSERT INTO Products", code);
@@ -98,8 +97,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkInsertMethod(null!);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Error<string, SqlError>);
-        var error = ((Result<string, SqlError>.Error<string, SqlError>)result).Value;
+        Assert.True(result is StringError);
+        var error = ((StringError)result).Value;
         Assert.Contains("table cannot be null", error.Message);
     }
 
@@ -113,8 +112,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkInsertMethod(table);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("BulkInsertOrdersAsync", code);
         Assert.Contains("CustomerId", code);
         Assert.Contains("Total", code);
@@ -131,8 +130,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkInsertMethod(table);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("ExecuteBulkInsertProductsBatchAsync", code);
         Assert.Contains("StringBuilder", code);
         Assert.Contains("parameters.Add", code);
@@ -148,8 +147,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkInsertMethod(table, batchSize: 500);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("const int batchSize = 500;", code);
     }
 
@@ -163,8 +162,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkUpsertMethod(table);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("BulkUpsertProductsAsync", code);
         Assert.Contains("INSERT OR REPLACE INTO Products", code);
     }
@@ -183,8 +182,8 @@ public sealed class BulkOperationsTests
         );
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("ON CONFLICT", code);
         Assert.Contains("DO UPDATE SET", code);
         Assert.Contains("EXCLUDED.", code);
@@ -198,14 +197,11 @@ public sealed class BulkOperationsTests
         var table = CreateTestTable();
 
         // Act
-        var result = DataAccessGenerator.GenerateBulkUpsertMethod(
-            table,
-            databaseType: "SQLite"
-        );
+        var result = DataAccessGenerator.GenerateBulkUpsertMethod(table, databaseType: "SQLite");
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("INSERT OR REPLACE INTO", code);
         Assert.DoesNotContain("ON CONFLICT", code);
     }
@@ -217,8 +213,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkUpsertMethod(null!);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Error<string, SqlError>);
-        var error = ((Result<string, SqlError>.Error<string, SqlError>)result).Value;
+        Assert.True(result is StringError);
+        var error = ((StringError)result).Value;
         Assert.Contains("table cannot be null", error.Message);
     }
 
@@ -251,8 +247,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkUpsertMethod(table);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Empty(code);
     }
 
@@ -266,8 +262,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkInsertMethod(table);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("try", code);
         Assert.Contains("catch (Exception ex)", code);
         Assert.Contains("Result<int, SqlError>.Error", code);
@@ -284,8 +280,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkUpsertMethod(table);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("try", code);
         Assert.Contains("catch (Exception ex)", code);
         Assert.Contains("Result<int, SqlError>.Error", code);
@@ -302,8 +298,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkInsertMethod(table);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("@p", code);
         Assert.Contains("AddWithValue", code);
         Assert.Contains("DBNull.Value", code);
@@ -319,8 +315,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkUpsertMethod(table, databaseType: "Postgres");
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("Id", code);
         Assert.Contains("Name", code);
         Assert.Contains("Price", code);
@@ -337,8 +333,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkInsertMethod(table);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("Guid Id", code);
         Assert.Contains("string Name", code);
         Assert.Contains("decimal Price", code);
@@ -355,8 +351,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkInsertMethod(table);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("?? (object)DBNull.Value", code);
     }
 
@@ -370,8 +366,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkUpsertMethod(table, databaseType: "Postgres");
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("Name = EXCLUDED.Name", code);
         Assert.Contains("Price = EXCLUDED.Price", code);
         Assert.Contains("Category = EXCLUDED.Category", code);
@@ -388,8 +384,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkInsertMethod(table);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("async Task<Result<int, SqlError>>", code);
         Assert.Contains("await", code);
         Assert.Contains("ConfigureAwait(false)", code);
@@ -405,8 +401,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkInsertMethod(table);
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("this IDbTransaction transaction", code);
     }
 
@@ -451,8 +447,8 @@ public sealed class BulkOperationsTests
         var result = DataAccessGenerator.GenerateBulkUpsertMethod(table, databaseType: "Postgres");
 
         // Assert
-        Assert.True(result is Result<string, SqlError>.Ok<string, SqlError>);
-        var code = ((Result<string, SqlError>.Ok<string, SqlError>)result).Value;
+        Assert.True(result is StringOk);
+        var code = ((StringOk)result).Value;
         Assert.Contains("ON CONFLICT (OrderId, ProductId)", code);
         Assert.Contains("Quantity = EXCLUDED.Quantity", code);
         Assert.Contains("UnitPrice = EXCLUDED.UnitPrice", code);

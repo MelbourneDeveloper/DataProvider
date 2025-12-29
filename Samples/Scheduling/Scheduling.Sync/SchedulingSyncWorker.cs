@@ -6,7 +6,12 @@ namespace Scheduling.Sync;
 /// Background worker that syncs patient data from Clinical domain to Scheduling domain.
 /// Applies column mappings defined in SyncMappings.json.
 /// </summary>
+/// <remarks>
+/// Instantiated by the DI container as a hosted service.
+/// </remarks>
+#pragma warning disable CA1812 // Instantiated by DI
 internal sealed class SchedulingSyncWorker : BackgroundService
+#pragma warning restore CA1812
 {
     private readonly ILogger<SchedulingSyncWorker> _logger;
     private readonly Func<NpgsqlConnection> _getConnection;
@@ -48,14 +53,15 @@ internal sealed class SchedulingSyncWorker : BackgroundService
         {
             try
             {
-                await SyncPatientDataAsync(stoppingToken);
+                await SyncPatientDataAsync(stoppingToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during sync cycle");
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(_pollIntervalSeconds), stoppingToken);
+            await Task.Delay(TimeSpan.FromSeconds(_pollIntervalSeconds), stoppingToken)
+                .ConfigureAwait(false);
         }
     }
 
@@ -75,7 +81,9 @@ internal sealed class SchedulingSyncWorker : BackgroundService
         var changesUrl = $"{_clinicalEndpoint}/sync/changes?fromVersion={lastVersion}&limit=100";
 
         using var httpClient = new HttpClient();
-        var response = await httpClient.GetAsync(changesUrl, cancellationToken);
+        var response = await httpClient
+            .GetAsync(new Uri(changesUrl), cancellationToken)
+            .ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -87,7 +95,9 @@ internal sealed class SchedulingSyncWorker : BackgroundService
             return;
         }
 
-        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        var content = await response
+            .Content.ReadAsStringAsync(cancellationToken)
+            .ConfigureAwait(false);
         var changes = JsonSerializer.Deserialize<SyncChange[]>(content);
 
         if (changes is null || changes.Length == 0)
@@ -192,7 +202,7 @@ internal sealed class SchedulingSyncWorker : BackgroundService
         }
     }
 
-    private long GetLastSyncVersion(NpgsqlConnection connection)
+    private static long GetLastSyncVersion(NpgsqlConnection connection)
     {
         using var cmd = connection.CreateCommand();
         cmd.CommandText = """
@@ -207,14 +217,17 @@ internal sealed class SchedulingSyncWorker : BackgroundService
         return result is string str && long.TryParse(str, out var version) ? version : 0;
     }
 
-    private void UpdateLastSyncVersion(NpgsqlConnection connection, long version)
+    private static void UpdateLastSyncVersion(NpgsqlConnection connection, long version)
     {
         using var cmd = connection.CreateCommand();
         cmd.CommandText = """
             INSERT INTO _sync_state (key, value) VALUES ('last_clinical_sync_version', @version)
             ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
             """;
-        cmd.Parameters.AddWithValue("@version", version.ToString());
+        cmd.Parameters.AddWithValue(
+            "@version",
+            version.ToString(System.Globalization.CultureInfo.InvariantCulture)
+        );
         cmd.ExecuteNonQuery();
     }
 }
@@ -222,4 +235,14 @@ internal sealed class SchedulingSyncWorker : BackgroundService
 /// <summary>
 /// Represents a sync change from the Clinical domain.
 /// </summary>
-public sealed record SyncChange(long Version, string TableName, string Operation, string? RowData);
+/// <remarks>
+/// Deserialized from JSON response from Clinical domain API.
+/// </remarks>
+#pragma warning disable CA1812 // Instantiated via JSON deserialization
+internal sealed record SyncChange(
+    long Version,
+    string TableName,
+    string Operation,
+    string? RowData
+);
+#pragma warning restore CA1812

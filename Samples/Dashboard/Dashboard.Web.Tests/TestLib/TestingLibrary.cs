@@ -13,7 +13,7 @@ namespace Dashboard.Tests.TestLib
         /// <summary>
         /// Renders a React component and returns a RenderResult for querying.
         /// </summary>
-        public static RenderResult Render(Dashboard.React.ReactElement element)
+        public static RenderResult Render(React.ReactElement element)
         {
             var result = Script.Call<object>("TestingLibrary.render", element);
             return new RenderResult(result);
@@ -151,7 +151,7 @@ namespace Dashboard.Tests.TestLib
         /// <summary>
         /// Re-renders the component with new props.
         /// </summary>
-        public void Rerender(Dashboard.React.ReactElement element)
+        public void Rerender(React.ReactElement element)
         {
             _ = Script.Get<object>(_result, "rerender");
             Script.Write("rerender(element)");

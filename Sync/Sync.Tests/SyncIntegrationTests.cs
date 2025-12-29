@@ -363,14 +363,20 @@ public sealed class SyncIntegrationTests : IDisposable
     {
         using var cmd = db.CreateCommand();
         cmd.CommandText = "SELECT COUNT(*) FROM _sync_log";
-        return Convert.ToInt32(cmd.ExecuteScalar(), System.Globalization.CultureInfo.InvariantCulture);
+        return Convert.ToInt32(
+            cmd.ExecuteScalar(),
+            System.Globalization.CultureInfo.InvariantCulture
+        );
     }
 
     private static long GetLastSyncVersion(SqliteConnection db)
     {
         using var cmd = db.CreateCommand();
         cmd.CommandText = "SELECT value FROM _sync_state WHERE key = 'last_server_version'";
-        return long.Parse((string)cmd.ExecuteScalar()!, System.Globalization.CultureInfo.InvariantCulture);
+        return long.Parse(
+            (string)cmd.ExecuteScalar()!,
+            System.Globalization.CultureInfo.InvariantCulture
+        );
     }
 
     private static void SetLastSyncVersion(SqliteConnection db, long version)
@@ -378,7 +384,10 @@ public sealed class SyncIntegrationTests : IDisposable
         using var cmd = db.CreateCommand();
         cmd.CommandText =
             "UPDATE _sync_state SET value = $version WHERE key = 'last_server_version'";
-        cmd.Parameters.AddWithValue("$version", version.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        cmd.Parameters.AddWithValue(
+            "$version",
+            version.ToString(System.Globalization.CultureInfo.InvariantCulture)
+        );
         cmd.ExecuteNonQuery();
     }
 

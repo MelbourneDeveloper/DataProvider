@@ -347,7 +347,10 @@ public static class SchemaVerifier
     public static void VerifySqliteTable(SqliteConnection conn, TableDefinition expected)
     {
         // 1. Table exists
-        Assert.True(SqliteTableExists(conn, expected.Name), $"Table '{expected.Name}' should exist");
+        Assert.True(
+            SqliteTableExists(conn, expected.Name),
+            $"Table '{expected.Name}' should exist"
+        );
 
         // 2. Get table DDL and verify structure
         var tableDdl = GetSqliteTableDdl(conn, expected.Name);
@@ -356,13 +359,13 @@ public static class SchemaVerifier
         // 3. Verify all columns
         foreach (var col in expected.Columns)
         {
-            VerifySqliteColumn(conn, expected.Name, col, tableDdl);
+            VerifySqliteColumn(conn, expected.Name, col);
         }
 
         // 4. Verify indexes
         foreach (var idx in expected.Indexes)
         {
-            VerifySqliteIndex(conn, expected.Name, idx);
+            VerifySqliteIndex(conn, idx);
         }
 
         // 5. Verify foreign keys are in DDL
@@ -378,8 +381,7 @@ public static class SchemaVerifier
     public static void VerifySqliteColumn(
         SqliteConnection conn,
         string tableName,
-        ColumnDefinition expected,
-        string tableDdl
+        ColumnDefinition expected
     )
     {
         using var cmd = conn.CreateCommand();
@@ -426,7 +428,6 @@ public static class SchemaVerifier
     /// </summary>
     public static void VerifySqliteIndex(
         SqliteConnection conn,
-        string tableName,
         IndexDefinition expected
     )
     {
@@ -511,7 +512,8 @@ public static class SchemaVerifier
             // Postgres
             using (var cmd = pgConn.CreateCommand())
             {
-                cmd.CommandText = $"SELECT \"{col.Name}\" FROM \"{schemaName}\".\"{table.Name}\" LIMIT 1";
+                cmd.CommandText =
+                    $"SELECT \"{col.Name}\" FROM \"{schemaName}\".\"{table.Name}\" LIMIT 1";
                 var value = cmd.ExecuteScalar();
                 Assert.NotNull(value);
             }
@@ -562,7 +564,11 @@ public static class SchemaVerifier
         return tables;
     }
 
-    private static List<string> GetPostgresColumns(NpgsqlConnection conn, string tableName, string schema)
+    private static List<string> GetPostgresColumns(
+        NpgsqlConnection conn,
+        string tableName,
+        string schema
+    )
     {
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
@@ -592,7 +598,8 @@ public static class SchemaVerifier
     private static List<string> GetSqliteTables(SqliteConnection conn)
     {
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'";
+        cmd.CommandText =
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'";
 
         var tables = new List<string>();
         using var reader = cmd.ExecuteReader();

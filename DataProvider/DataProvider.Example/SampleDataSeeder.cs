@@ -63,7 +63,7 @@ internal static class SampleDataSeeder
             .InsertInvoiceLineAsync(
                 invoiceSuccess.Value,
                 "Software License",
-                1.0,
+                1,
                 1000.00,
                 1000.00,
                 null,
@@ -80,7 +80,7 @@ internal static class SampleDataSeeder
             .InsertInvoiceLineAsync(
                 invoiceSuccess.Value,
                 "Support Package",
-                1.0,
+                1,
                 250.00,
                 250.00,
                 null,
@@ -169,7 +169,7 @@ internal static class SampleDataSeeder
 
         // Insert OrderItems
         var orderItem1Result = await transaction
-            .InsertOrderItemAsync(order1Success.Value, "Widget A", 2.0, 100.00, 200.00)
+            .InsertOrderItemAsync(order1Success.Value, "Widget A", 2, 100.00, 200.00)
             .ConfigureAwait(false);
         if (orderItem1Result is not LongSqlOk)
             return (
@@ -178,7 +178,7 @@ internal static class SampleDataSeeder
             );
 
         var orderItem2Result = await transaction
-            .InsertOrderItemAsync(order1Success.Value, "Widget B", 3.0, 100.00, 300.00)
+            .InsertOrderItemAsync(order1Success.Value, "Widget B", 3, 100.00, 300.00)
             .ConfigureAwait(false);
         if (orderItem2Result is not LongSqlOk)
             return (
@@ -187,7 +187,7 @@ internal static class SampleDataSeeder
             );
 
         var orderItem3Result = await transaction
-            .InsertOrderItemAsync(order2Success.Value, "Service Package", 1.0, 750.00, 750.00)
+            .InsertOrderItemAsync(order2Success.Value, "Service Package", 1, 750.00, 750.00)
             .ConfigureAwait(false);
         if (orderItem3Result is not LongSqlOk)
             return (

@@ -45,7 +45,11 @@ public sealed class MigrateSchemaTests : IAsyncLifetime
                 "public",
                 "countries",
                 t =>
-                    t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey().Default("gen_random_uuid()"))
+                    t.Column(
+                            "id",
+                            PortableTypes.Uuid,
+                            c => c.PrimaryKey().Default("gen_random_uuid()")
+                        )
                         .Column("name", PortableTypes.VarChar(100), c => c.NotNull())
                         .Column("code", PortableTypes.VarChar(10), c => c.NotNull())
                         .Unique("uq_countries_code", "code")
@@ -54,7 +58,11 @@ public sealed class MigrateSchemaTests : IAsyncLifetime
                 "public",
                 "regions",
                 t =>
-                    t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey().Default("gen_random_uuid()"))
+                    t.Column(
+                            "id",
+                            PortableTypes.Uuid,
+                            c => c.PrimaryKey().Default("gen_random_uuid()")
+                        )
                         .Column("name", PortableTypes.VarChar(100), c => c.NotNull())
                         .Column("country_id", PortableTypes.Uuid, c => c.NotNull())
                         .ForeignKey("country_id", "countries", "id", ForeignKeyAction.Cascade)
@@ -64,7 +72,11 @@ public sealed class MigrateSchemaTests : IAsyncLifetime
                 "public",
                 "suburbs",
                 t =>
-                    t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey().Default("gen_random_uuid()"))
+                    t.Column(
+                            "id",
+                            PortableTypes.Uuid,
+                            c => c.PrimaryKey().Default("gen_random_uuid()")
+                        )
                         .Column("name", PortableTypes.VarChar(100), c => c.NotNull())
                         .Column("region_id", PortableTypes.Uuid, c => c.NotNull())
                         .ForeignKey("region_id", "regions", "id", ForeignKeyAction.Cascade)
@@ -73,7 +85,11 @@ public sealed class MigrateSchemaTests : IAsyncLifetime
                 "public",
                 "venues",
                 t =>
-                    t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey().Default("gen_random_uuid()"))
+                    t.Column(
+                            "id",
+                            PortableTypes.Uuid,
+                            c => c.PrimaryKey().Default("gen_random_uuid()")
+                        )
                         .Column("name", PortableTypes.VarChar(200), c => c.NotNull())
                         .Column("suburb_id", PortableTypes.Uuid, c => c.NotNull())
                         .Column("address", PortableTypes.VarChar(300))
@@ -93,11 +109,14 @@ public sealed class MigrateSchemaTests : IAsyncLifetime
         var result = PostgresDdlGenerator.MigrateSchema(
             _connection,
             schema,
-            onTableCreated: name => tablesCreated.Add(name)
+            onTableCreated: tablesCreated.Add
         );
 
         // Assert
-        Assert.True(result.Success, $"Migration failed with errors: {string.Join(", ", result.Errors)}");
+        Assert.True(
+            result.Success,
+            $"Migration failed with errors: {string.Join(", ", result.Errors)}"
+        );
         Assert.Equal(4, result.TablesCreated);
         Assert.Empty(result.Errors);
         Assert.Contains("countries", tablesCreated);
@@ -135,16 +154,19 @@ public sealed class MigrateSchemaTests : IAsyncLifetime
     public void MigrateSchema_PartiallyMigrated_CreatesRemainingTables()
     {
         // Arrange - Create only the first two tables manually
-        ExecuteSql("""
+        ExecuteSql(
+            """
             CREATE TABLE IF NOT EXISTS "public"."countries" (
                 "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 "name" VARCHAR(100) NOT NULL,
                 "code" VARCHAR(10) NOT NULL,
                 CONSTRAINT "uq_countries_code" UNIQUE ("code")
             )
-            """);
+            """
+        );
 
-        ExecuteSql("""
+        ExecuteSql(
+            """
             CREATE TABLE IF NOT EXISTS "public"."regions" (
                 "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 "name" VARCHAR(100) NOT NULL,
@@ -152,7 +174,8 @@ public sealed class MigrateSchemaTests : IAsyncLifetime
                 CONSTRAINT "fk_regions_country" FOREIGN KEY ("country_id")
                     REFERENCES "public"."countries" ("id") ON DELETE CASCADE
             )
-            """);
+            """
+        );
 
         Assert.True(TableExists("countries"));
         Assert.True(TableExists("regions"));
@@ -166,7 +189,7 @@ public sealed class MigrateSchemaTests : IAsyncLifetime
         var result = PostgresDdlGenerator.MigrateSchema(
             _connection,
             schema,
-            onTableCreated: name => tablesCreated.Add(name)
+            onTableCreated: tablesCreated.Add
         );
 
         // Assert
@@ -186,12 +209,14 @@ public sealed class MigrateSchemaTests : IAsyncLifetime
     {
         // Arrange - Create a conflicting table that will cause FK failure
         // Create suburbs without its parent (regions) - this will cause venues to fail FK
-        ExecuteSql("""
+        ExecuteSql(
+            """
             CREATE TABLE IF NOT EXISTS "public"."orphan_suburbs" (
                 "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 "name" VARCHAR(100) NOT NULL
             )
-            """);
+            """
+        );
 
         // Create a schema where one table references a non-existent table
         var schemaWithBadFk = Schema
@@ -262,7 +287,7 @@ public sealed class MigrateSchemaTests : IAsyncLifetime
         var result = PostgresDdlGenerator.MigrateSchema(
             _connection,
             schemaWithBadTable,
-            onTableCreated: name => createdTables.Add(name),
+            onTableCreated: createdTables.Add,
             onTableFailed: (name, ex) => failedTables.Add((name, ex))
         );
 

@@ -161,7 +161,11 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
                 "events",
                 t =>
                     t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
-                        .Column("created_at", PortableTypes.DateTimeOffset, c => c.DefaultLql("now()"))
+                        .Column(
+                            "created_at",
+                            PortableTypes.DateTimeOffset,
+                            c => c.DefaultLql("now()")
+                        )
             )
             .Build();
 
@@ -250,7 +254,11 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
                 "daily_records",
                 t =>
                     t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
-                        .Column("record_date", PortableTypes.Date, c => c.DefaultLql("current_date()"))
+                        .Column(
+                            "record_date",
+                            PortableTypes.Date,
+                            c => c.DefaultLql("current_date()")
+                        )
             )
             .Build();
 
@@ -323,8 +331,16 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
                 t =>
                     t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
                         .Column("amount", PortableTypes.Decimal(10, 2), c => c.DefaultLql("99.99"))
-                        .Column("tax_rate", PortableTypes.Decimal(5, 4), c => c.DefaultLql("0.0825"))
-                        .Column("discount", PortableTypes.Decimal(5, 2), c => c.DefaultLql("-10.50"))
+                        .Column(
+                            "tax_rate",
+                            PortableTypes.Decimal(5, 4),
+                            c => c.DefaultLql("0.0825")
+                        )
+                        .Column(
+                            "discount",
+                            PortableTypes.Decimal(5, 2),
+                            c => c.DefaultLql("-10.50")
+                        )
             )
             .Build();
 
@@ -362,7 +378,11 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
                 t =>
                     t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
                         .Column("status", PortableTypes.VarChar(50), c => c.DefaultLql("'active'"))
-                        .Column("category", PortableTypes.VarChar(100), c => c.DefaultLql("'uncategorized'"))
+                        .Column(
+                            "category",
+                            PortableTypes.VarChar(100),
+                            c => c.DefaultLql("'uncategorized'")
+                        )
                         .Column("empty", PortableTypes.VarChar(10), c => c.DefaultLql("''"))
             )
             .Build();
@@ -378,8 +398,14 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
         Assert.Equal("active", QueryPg<string>("SELECT status FROM statuses WHERE id = 1"));
         Assert.Equal("active", QuerySqlite<string>("SELECT status FROM statuses WHERE id = 1"));
 
-        Assert.Equal("uncategorized", QueryPg<string>("SELECT category FROM statuses WHERE id = 1"));
-        Assert.Equal("uncategorized", QuerySqlite<string>("SELECT category FROM statuses WHERE id = 1"));
+        Assert.Equal(
+            "uncategorized",
+            QueryPg<string>("SELECT category FROM statuses WHERE id = 1")
+        );
+        Assert.Equal(
+            "uncategorized",
+            QuerySqlite<string>("SELECT category FROM statuses WHERE id = 1")
+        );
 
         Assert.Equal("", QueryPg<string>("SELECT empty FROM statuses WHERE id = 1"));
         Assert.Equal("", QuerySqlite<string>("SELECT empty FROM statuses WHERE id = 1"));
@@ -507,7 +533,11 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
                         .Column("retry_count", PortableTypes.Int, c => c.DefaultLql("0"))
                         .Column("priority", PortableTypes.Decimal(3, 1), c => c.DefaultLql("5.0"))
                         .Column("status", PortableTypes.VarChar(20), c => c.DefaultLql("'pending'"))
-                        .Column("created_at", PortableTypes.DateTimeOffset, c => c.DefaultLql("now()"))
+                        .Column(
+                            "created_at",
+                            PortableTypes.DateTimeOffset,
+                            c => c.DefaultLql("now()")
+                        )
             )
             .Build();
 
@@ -557,9 +587,17 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
         // Postgres
         var pgId = QueryPg<Guid>("SELECT id FROM audit_records WHERE action = 'user_login'");
         Assert.NotEqual(Guid.Empty, pgId);
-        Assert.True(QueryPg<bool>("SELECT is_success FROM audit_records WHERE action = 'user_login'"));
-        Assert.Equal(0, QueryPg<int>("SELECT retry_count FROM audit_records WHERE action = 'user_login'"));
-        Assert.Equal(5.0m, QueryPg<decimal>("SELECT priority FROM audit_records WHERE action = 'user_login'"));
+        Assert.True(
+            QueryPg<bool>("SELECT is_success FROM audit_records WHERE action = 'user_login'")
+        );
+        Assert.Equal(
+            0,
+            QueryPg<int>("SELECT retry_count FROM audit_records WHERE action = 'user_login'")
+        );
+        Assert.Equal(
+            5.0m,
+            QueryPg<decimal>("SELECT priority FROM audit_records WHERE action = 'user_login'")
+        );
         Assert.Equal(
             "pending",
             QueryPg<string>("SELECT status FROM audit_records WHERE action = 'user_login'")
@@ -570,10 +608,18 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
         );
 
         // SQLite
-        var sqliteId = QuerySqlite<string>("SELECT id FROM audit_records WHERE action = 'user_login'");
+        var sqliteId = QuerySqlite<string>(
+            "SELECT id FROM audit_records WHERE action = 'user_login'"
+        );
         Assert.True(Guid.TryParse(sqliteId, out _));
-        Assert.Equal(1, QuerySqlite<long>("SELECT is_success FROM audit_records WHERE action = 'user_login'"));
-        Assert.Equal(0, QuerySqlite<long>("SELECT retry_count FROM audit_records WHERE action = 'user_login'"));
+        Assert.Equal(
+            1,
+            QuerySqlite<long>("SELECT is_success FROM audit_records WHERE action = 'user_login'")
+        );
+        Assert.Equal(
+            0,
+            QuerySqlite<long>("SELECT retry_count FROM audit_records WHERE action = 'user_login'")
+        );
         Assert.Equal(
             5.0,
             QuerySqlite<double>("SELECT priority FROM audit_records WHERE action = 'user_login'"),
@@ -585,7 +631,9 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
         );
         Assert.False(
             string.IsNullOrEmpty(
-                QuerySqlite<string>("SELECT created_at FROM audit_records WHERE action = 'user_login'")
+                QuerySqlite<string>(
+                    "SELECT created_at FROM audit_records WHERE action = 'user_login'"
+                )
             )
         );
     }
@@ -720,8 +768,16 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
                 "precision_test",
                 t =>
                     t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
-                        .Column("tiny", PortableTypes.Decimal(10, 8), c => c.DefaultLql("0.00000001"))
-                        .Column("scientific", PortableTypes.Decimal(15, 10), c => c.DefaultLql("3.1415926535"))
+                        .Column(
+                            "tiny",
+                            PortableTypes.Decimal(10, 8),
+                            c => c.DefaultLql("0.00000001")
+                        )
+                        .Column(
+                            "scientific",
+                            PortableTypes.Decimal(15, 10),
+                            c => c.DefaultLql("3.1415926535")
+                        )
             )
             .Build();
 
@@ -734,10 +790,21 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(0.00000001m, QueryPg<decimal>("SELECT tiny FROM precision_test WHERE id = 1"));
-        Assert.Equal(0.00000001, QuerySqlite<double>("SELECT tiny FROM precision_test WHERE id = 1"), 8);
+        Assert.Equal(
+            0.00000001,
+            QuerySqlite<double>("SELECT tiny FROM precision_test WHERE id = 1"),
+            8
+        );
 
-        Assert.Equal(3.1415926535m, QueryPg<decimal>("SELECT scientific FROM precision_test WHERE id = 1"));
-        Assert.Equal(3.1415926535, QuerySqlite<double>("SELECT scientific FROM precision_test WHERE id = 1"), 10);
+        Assert.Equal(
+            3.1415926535m,
+            QueryPg<decimal>("SELECT scientific FROM precision_test WHERE id = 1")
+        );
+        Assert.Equal(
+            3.1415926535,
+            QuerySqlite<double>("SELECT scientific FROM precision_test WHERE id = 1"),
+            10
+        );
     }
 
     [Fact]
@@ -751,10 +818,26 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
                 "special_strings",
                 t =>
                     t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
-                        .Column("with_spaces", PortableTypes.VarChar(50), c => c.DefaultLql("'hello world'"))
-                        .Column("with_numbers", PortableTypes.VarChar(50), c => c.DefaultLql("'test123'"))
-                        .Column("with_hyphen", PortableTypes.VarChar(50), c => c.DefaultLql("'foo-bar-baz'"))
-                        .Column("with_underscore", PortableTypes.VarChar(50), c => c.DefaultLql("'snake_case_value'"))
+                        .Column(
+                            "with_spaces",
+                            PortableTypes.VarChar(50),
+                            c => c.DefaultLql("'hello world'")
+                        )
+                        .Column(
+                            "with_numbers",
+                            PortableTypes.VarChar(50),
+                            c => c.DefaultLql("'test123'")
+                        )
+                        .Column(
+                            "with_hyphen",
+                            PortableTypes.VarChar(50),
+                            c => c.DefaultLql("'foo-bar-baz'")
+                        )
+                        .Column(
+                            "with_underscore",
+                            PortableTypes.VarChar(50),
+                            c => c.DefaultLql("'snake_case_value'")
+                        )
             )
             .Build();
 
@@ -766,16 +849,37 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
         ExecuteSqlite("INSERT INTO special_strings (id) VALUES (1)");
 
         // Assert - Same string values on both platforms
-        Assert.Equal("hello world", QueryPg<string>("SELECT with_spaces FROM special_strings WHERE id = 1"));
-        Assert.Equal("hello world", QuerySqlite<string>("SELECT with_spaces FROM special_strings WHERE id = 1"));
+        Assert.Equal(
+            "hello world",
+            QueryPg<string>("SELECT with_spaces FROM special_strings WHERE id = 1")
+        );
+        Assert.Equal(
+            "hello world",
+            QuerySqlite<string>("SELECT with_spaces FROM special_strings WHERE id = 1")
+        );
 
-        Assert.Equal("test123", QueryPg<string>("SELECT with_numbers FROM special_strings WHERE id = 1"));
-        Assert.Equal("test123", QuerySqlite<string>("SELECT with_numbers FROM special_strings WHERE id = 1"));
+        Assert.Equal(
+            "test123",
+            QueryPg<string>("SELECT with_numbers FROM special_strings WHERE id = 1")
+        );
+        Assert.Equal(
+            "test123",
+            QuerySqlite<string>("SELECT with_numbers FROM special_strings WHERE id = 1")
+        );
 
-        Assert.Equal("foo-bar-baz", QueryPg<string>("SELECT with_hyphen FROM special_strings WHERE id = 1"));
-        Assert.Equal("foo-bar-baz", QuerySqlite<string>("SELECT with_hyphen FROM special_strings WHERE id = 1"));
+        Assert.Equal(
+            "foo-bar-baz",
+            QueryPg<string>("SELECT with_hyphen FROM special_strings WHERE id = 1")
+        );
+        Assert.Equal(
+            "foo-bar-baz",
+            QuerySqlite<string>("SELECT with_hyphen FROM special_strings WHERE id = 1")
+        );
 
-        Assert.Equal("snake_case_value", QueryPg<string>("SELECT with_underscore FROM special_strings WHERE id = 1"));
+        Assert.Equal(
+            "snake_case_value",
+            QueryPg<string>("SELECT with_underscore FROM special_strings WHERE id = 1")
+        );
         Assert.Equal(
             "snake_case_value",
             QuerySqlite<string>("SELECT with_underscore FROM special_strings WHERE id = 1")
@@ -872,7 +976,11 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
                 t =>
                     t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
                         .Column("ts1", PortableTypes.DateTimeOffset, c => c.DefaultLql("now()"))
-                        .Column("ts2", PortableTypes.DateTimeOffset, c => c.DefaultLql("current_timestamp()"))
+                        .Column(
+                            "ts2",
+                            PortableTypes.DateTimeOffset,
+                            c => c.DefaultLql("current_timestamp()")
+                        )
                         .Column("d", PortableTypes.Date, c => c.DefaultLql("current_date()"))
                         .Column("t", PortableTypes.Time(), c => c.DefaultLql("current_time()"))
             )
@@ -886,27 +994,47 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
         ExecuteSqlite("INSERT INTO time_test (id) VALUES (1)");
 
         // Assert - All time values are populated
-        Assert.True(QueryPg<DateTime>("SELECT ts1 FROM time_test WHERE id = 1") > DateTime.MinValue);
-        Assert.True(QueryPg<DateTime>("SELECT ts2 FROM time_test WHERE id = 1") > DateTime.MinValue);
+        Assert.True(
+            QueryPg<DateTime>("SELECT ts1 FROM time_test WHERE id = 1") > DateTime.MinValue
+        );
+        Assert.True(
+            QueryPg<DateTime>("SELECT ts2 FROM time_test WHERE id = 1") > DateTime.MinValue
+        );
         Assert.True(QueryPg<DateTime>("SELECT d FROM time_test WHERE id = 1") > DateTime.MinValue);
         var pgTime = QueryPg<TimeSpan>("SELECT t FROM time_test WHERE id = 1");
         Assert.True(pgTime >= TimeSpan.Zero);
 
         // SQLite returns strings for all temporal types
-        Assert.False(string.IsNullOrEmpty(QuerySqlite<string>("SELECT ts1 FROM time_test WHERE id = 1")));
-        Assert.False(string.IsNullOrEmpty(QuerySqlite<string>("SELECT ts2 FROM time_test WHERE id = 1")));
-        Assert.False(string.IsNullOrEmpty(QuerySqlite<string>("SELECT d FROM time_test WHERE id = 1")));
-        Assert.False(string.IsNullOrEmpty(QuerySqlite<string>("SELECT t FROM time_test WHERE id = 1")));
+        Assert.False(
+            string.IsNullOrEmpty(QuerySqlite<string>("SELECT ts1 FROM time_test WHERE id = 1"))
+        );
+        Assert.False(
+            string.IsNullOrEmpty(QuerySqlite<string>("SELECT ts2 FROM time_test WHERE id = 1"))
+        );
+        Assert.False(
+            string.IsNullOrEmpty(QuerySqlite<string>("SELECT d FROM time_test WHERE id = 1"))
+        );
+        Assert.False(
+            string.IsNullOrEmpty(QuerySqlite<string>("SELECT t FROM time_test WHERE id = 1"))
+        );
     }
 
     // =========================================================================
     // HELPER METHODS
     // =========================================================================
 
-    private void ApplySchema(NpgsqlConnection conn, SchemaDefinition schema, Func<SchemaOperation, string> generator)
+    private void ApplySchema(
+        NpgsqlConnection conn,
+        SchemaDefinition schema,
+        Func<SchemaOperation, string> generator
+    )
     {
-        var currentSchema = ((SchemaResultOk)PostgresSchemaInspector.Inspect(conn, "public", _logger)).Value;
-        var operations = ((OperationsResultOk)SchemaDiff.Calculate(currentSchema, schema, logger: _logger)).Value;
+        var currentSchema = (
+            (SchemaResultOk)PostgresSchemaInspector.Inspect(conn, "public", _logger)
+        ).Value;
+        var operations = (
+            (OperationsResultOk)SchemaDiff.Calculate(currentSchema, schema, logger: _logger)
+        ).Value;
         _ = MigrationRunner.Apply(conn, operations, generator, MigrationOptions.Default, _logger);
     }
 
@@ -917,7 +1045,9 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
     )
     {
         var currentSchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(conn, _logger)).Value;
-        var operations = ((OperationsResultOk)SchemaDiff.Calculate(currentSchema, schema, logger: _logger)).Value;
+        var operations = (
+            (OperationsResultOk)SchemaDiff.Calculate(currentSchema, schema, logger: _logger)
+        ).Value;
         _ = MigrationRunner.Apply(conn, operations, generator, MigrationOptions.Default, _logger);
     }
 
@@ -957,7 +1087,11 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
     /// Get PostgreSQL table DDL for verification via pg_get_tabledef or information_schema.
     /// Returns a string representation of the table structure for comparison.
     /// </summary>
-    private static string GetPostgresTableDdl(NpgsqlConnection conn, string tableName, string schema = "public")
+    private static string GetPostgresTableDdl(
+        NpgsqlConnection conn,
+        string tableName,
+        string schema = "public"
+    )
     {
         // Query column info from information_schema and build a normalized DDL representation
         using var cmd = conn.CreateCommand();
@@ -977,10 +1111,7 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
         cmd.Parameters.AddWithValue("@schema", schema);
         cmd.Parameters.AddWithValue("@table", tableName);
 
-        var ddlParts = new List<string>
-        {
-            $"CREATE TABLE {schema}.{tableName} ("
-        };
+        var ddlParts = new List<string> { $"CREATE TABLE {schema}.{tableName} (" };
 
         using var reader = cmd.ExecuteReader();
         var columns = new List<string>();
@@ -1048,7 +1179,11 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
     /// <summary>
     /// Check if a PostgreSQL table exists.
     /// </summary>
-    private static bool PostgresTableExists(NpgsqlConnection conn, string tableName, string schema = "public")
+    private static bool PostgresTableExists(
+        NpgsqlConnection conn,
+        string tableName,
+        string schema = "public"
+    )
     {
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
@@ -1076,7 +1211,11 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
     /// <summary>
     /// Get list of column names for a PostgreSQL table.
     /// </summary>
-    private static List<string> GetPostgresColumns(NpgsqlConnection conn, string tableName, string schema = "public")
+    private static List<string> GetPostgresColumns(
+        NpgsqlConnection conn,
+        string tableName,
+        string schema = "public"
+    )
     {
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """

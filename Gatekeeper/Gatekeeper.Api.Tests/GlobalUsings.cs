@@ -5,7 +5,6 @@ global using System.Net.Http.Json;
 global using System.Text.Json;
 global using Generated;
 global using Microsoft.AspNetCore.Mvc.Testing;
-global using Outcome;
 global using Selecta;
 global using Xunit;
 global using GetRolePermissionsError = Outcome.Result<

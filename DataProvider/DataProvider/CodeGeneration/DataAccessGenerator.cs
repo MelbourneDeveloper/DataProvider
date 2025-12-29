@@ -650,10 +650,7 @@ public static class DataAccessGenerator
         var tupleType = string.Join(
             ", ",
             insertableColumns.Select(c =>
-                string.Create(
-                    CultureInfo.InvariantCulture,
-                    $"{c.CSharpType} {c.Name}"
-                )
+                string.Create(CultureInfo.InvariantCulture, $"{c.CSharpType} {c.Name}")
             )
         );
 
@@ -672,10 +669,7 @@ public static class DataAccessGenerator
             $"    public static async Task<Result<int, SqlError>> BulkInsert{table.Name}Async(this IDbTransaction transaction, IEnumerable<({tupleType})> records)"
         );
         sb.AppendLine("    {");
-        sb.AppendLine(
-            CultureInfo.InvariantCulture,
-            $"        const int batchSize = {batchSize};"
-        );
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        const int batchSize = {batchSize};");
         sb.AppendLine("        var totalInserted = 0;");
         sb.AppendLine("        var batch = new List<(" + tupleType + ")>(batchSize);");
         sb.AppendLine();
@@ -690,9 +684,13 @@ public static class DataAccessGenerator
             CultureInfo.InvariantCulture,
             $"                    var result = await ExecuteBulkInsert{table.Name}BatchAsync(transaction, batch).ConfigureAwait(false);"
         );
-        sb.AppendLine("                    if (result is Result<int, SqlError>.Error<int, SqlError> err)");
+        sb.AppendLine(
+            "                    if (result is Result<int, SqlError>.Error<int, SqlError> err)"
+        );
         sb.AppendLine("                        return err;");
-        sb.AppendLine("                    totalInserted += ((Result<int, SqlError>.Ok<int, SqlError>)result).Value;");
+        sb.AppendLine(
+            "                    totalInserted += ((Result<int, SqlError>.Ok<int, SqlError>)result).Value;"
+        );
         sb.AppendLine("                    batch.Clear();");
         sb.AppendLine("                }");
         sb.AppendLine("            }");
@@ -703,16 +701,24 @@ public static class DataAccessGenerator
             CultureInfo.InvariantCulture,
             $"                var finalResult = await ExecuteBulkInsert{table.Name}BatchAsync(transaction, batch).ConfigureAwait(false);"
         );
-        sb.AppendLine("                if (finalResult is Result<int, SqlError>.Error<int, SqlError> finalErr)");
+        sb.AppendLine(
+            "                if (finalResult is Result<int, SqlError>.Error<int, SqlError> finalErr)"
+        );
         sb.AppendLine("                    return finalErr;");
-        sb.AppendLine("                totalInserted += ((Result<int, SqlError>.Ok<int, SqlError>)finalResult).Value;");
+        sb.AppendLine(
+            "                totalInserted += ((Result<int, SqlError>.Ok<int, SqlError>)finalResult).Value;"
+        );
         sb.AppendLine("            }");
         sb.AppendLine();
-        sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(totalInserted);");
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Ok<int, SqlError>(totalInserted);"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");
         sb.AppendLine("        {");
-        sb.AppendLine("            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Bulk insert failed\", ex));");
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Bulk insert failed\", ex));"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine();
@@ -748,7 +754,9 @@ public static class DataAccessGenerator
         // Build VALUES clause with parameter placeholders
         var paramPlaceholders = string.Join(
             ", ",
-            insertableColumns.Select((c, idx) => $"@p\" + (i * {insertableColumns.Count} + {idx}) + \"")
+            insertableColumns.Select(
+                (c, idx) => $"@p\" + (i * {insertableColumns.Count} + {idx}) + \""
+            )
         );
         sb.AppendLine(
             CultureInfo.InvariantCulture,
@@ -781,11 +789,17 @@ public static class DataAccessGenerator
         sb.AppendLine("        {");
         sb.AppendLine("            for (int i = 0; i < parameters.Count; i++)");
         sb.AppendLine("            {");
-        sb.AppendLine("                command.Parameters.AddWithValue(\"@p\" + i, parameters[i] ?? (object)DBNull.Value);");
+        sb.AppendLine(
+            "                command.Parameters.AddWithValue(\"@p\" + i, parameters[i] ?? (object)DBNull.Value);"
+        );
         sb.AppendLine("            }");
         sb.AppendLine();
-        sb.AppendLine("            var rowsAffected = await command.ExecuteNonQueryAsync().ConfigureAwait(false);");
-        sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(rowsAffected);");
+        sb.AppendLine(
+            "            var rowsAffected = await command.ExecuteNonQueryAsync().ConfigureAwait(false);"
+        );
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Ok<int, SqlError>(rowsAffected);"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("    }");
 
@@ -820,14 +834,13 @@ public static class DataAccessGenerator
             return new Result<string, SqlError>.Ok<string, SqlError>("");
 
         var sb = new StringBuilder();
-        var allColumns = primaryKeyColumns.Concat(insertableColumns.Where(c => !primaryKeyColumns.Any(pk => pk.Name == c.Name))).ToList();
+        var allColumns = primaryKeyColumns
+            .Concat(insertableColumns.Where(c => !primaryKeyColumns.Any(pk => pk.Name == c.Name)))
+            .ToList();
         var tupleType = string.Join(
             ", ",
             allColumns.Select(c =>
-                string.Create(
-                    CultureInfo.InvariantCulture,
-                    $"{c.CSharpType} {c.Name}"
-                )
+                string.Create(CultureInfo.InvariantCulture, $"{c.CSharpType} {c.Name}")
             )
         );
 
@@ -846,10 +859,7 @@ public static class DataAccessGenerator
             $"    public static async Task<Result<int, SqlError>> BulkUpsert{table.Name}Async(this IDbTransaction transaction, IEnumerable<({tupleType})> records)"
         );
         sb.AppendLine("    {");
-        sb.AppendLine(
-            CultureInfo.InvariantCulture,
-            $"        const int batchSize = {batchSize};"
-        );
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        const int batchSize = {batchSize};");
         sb.AppendLine("        var totalAffected = 0;");
         sb.AppendLine("        var batch = new List<(" + tupleType + ")>(batchSize);");
         sb.AppendLine();
@@ -864,9 +874,13 @@ public static class DataAccessGenerator
             CultureInfo.InvariantCulture,
             $"                    var result = await ExecuteBulkUpsert{table.Name}BatchAsync(transaction, batch).ConfigureAwait(false);"
         );
-        sb.AppendLine("                    if (result is Result<int, SqlError>.Error<int, SqlError> err)");
+        sb.AppendLine(
+            "                    if (result is Result<int, SqlError>.Error<int, SqlError> err)"
+        );
         sb.AppendLine("                        return err;");
-        sb.AppendLine("                    totalAffected += ((Result<int, SqlError>.Ok<int, SqlError>)result).Value;");
+        sb.AppendLine(
+            "                    totalAffected += ((Result<int, SqlError>.Ok<int, SqlError>)result).Value;"
+        );
         sb.AppendLine("                    batch.Clear();");
         sb.AppendLine("                }");
         sb.AppendLine("            }");
@@ -877,16 +891,24 @@ public static class DataAccessGenerator
             CultureInfo.InvariantCulture,
             $"                var finalResult = await ExecuteBulkUpsert{table.Name}BatchAsync(transaction, batch).ConfigureAwait(false);"
         );
-        sb.AppendLine("                if (finalResult is Result<int, SqlError>.Error<int, SqlError> finalErr)");
+        sb.AppendLine(
+            "                if (finalResult is Result<int, SqlError>.Error<int, SqlError> finalErr)"
+        );
         sb.AppendLine("                    return finalErr;");
-        sb.AppendLine("                totalAffected += ((Result<int, SqlError>.Ok<int, SqlError>)finalResult).Value;");
+        sb.AppendLine(
+            "                totalAffected += ((Result<int, SqlError>.Ok<int, SqlError>)finalResult).Value;"
+        );
         sb.AppendLine("            }");
         sb.AppendLine();
-        sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(totalAffected);");
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Ok<int, SqlError>(totalAffected);"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");
         sb.AppendLine("        {");
-        sb.AppendLine("            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Bulk upsert failed\", ex));");
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Bulk upsert failed\", ex));"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine();
@@ -910,8 +932,13 @@ public static class DataAccessGenerator
         // Build the SQL with placeholders - database-specific upsert syntax
         var columnNames = string.Join(", ", allColumns.Select(c => c.Name));
         var pkColumnNames = string.Join(", ", primaryKeyColumns.Select(c => c.Name));
-        var updateColumns = allColumns.Where(c => !primaryKeyColumns.Any(pk => pk.Name == c.Name)).ToList();
-        var updateSet = string.Join(", ", updateColumns.Select(c => $"{c.Name} = EXCLUDED.{c.Name}"));
+        var updateColumns = allColumns
+            .Where(c => !primaryKeyColumns.Any(pk => pk.Name == c.Name))
+            .ToList();
+        var updateSet = string.Join(
+            ", ",
+            updateColumns.Select(c => $"{c.Name} = EXCLUDED.{c.Name}")
+        );
 
         if (databaseType.Equals("Postgres", StringComparison.OrdinalIgnoreCase))
         {
@@ -957,7 +984,10 @@ public static class DataAccessGenerator
         sb.AppendLine("        }");
 
         // Add ON CONFLICT clause for Postgres
-        if (databaseType.Equals("Postgres", StringComparison.OrdinalIgnoreCase) && updateColumns.Count > 0)
+        if (
+            databaseType.Equals("Postgres", StringComparison.OrdinalIgnoreCase)
+            && updateColumns.Count > 0
+        )
         {
             sb.AppendLine();
             sb.AppendLine(
@@ -981,11 +1011,17 @@ public static class DataAccessGenerator
         sb.AppendLine("        {");
         sb.AppendLine("            for (int i = 0; i < parameters.Count; i++)");
         sb.AppendLine("            {");
-        sb.AppendLine("                command.Parameters.AddWithValue(\"@p\" + i, parameters[i] ?? (object)DBNull.Value);");
+        sb.AppendLine(
+            "                command.Parameters.AddWithValue(\"@p\" + i, parameters[i] ?? (object)DBNull.Value);"
+        );
         sb.AppendLine("            }");
         sb.AppendLine();
-        sb.AppendLine("            var rowsAffected = await command.ExecuteNonQueryAsync().ConfigureAwait(false);");
-        sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(rowsAffected);");
+        sb.AppendLine(
+            "            var rowsAffected = await command.ExecuteNonQueryAsync().ConfigureAwait(false);"
+        );
+        sb.AppendLine(
+            "            return new Result<int, SqlError>.Ok<int, SqlError>(rowsAffected);"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("    }");
 

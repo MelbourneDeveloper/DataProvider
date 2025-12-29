@@ -16,4 +16,4 @@ builder.Services.AddSingleton(() =>
 });
 
 var host = builder.Build();
-await host.RunAsync();
+await host.RunAsync().ConfigureAwait(false);
