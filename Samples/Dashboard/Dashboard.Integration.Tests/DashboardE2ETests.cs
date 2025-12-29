@@ -2050,38 +2050,45 @@ public sealed class DashboardE2ETests
         var loginPageVisible = await page.IsVisibleAsync("[data-testid='login-page']");
         Assert.True(loginPageVisible, "Should start on login page");
 
+        // Wait for React to mount and set the __triggerLogin hook
+        await page.WaitForFunctionAsync(
+            "() => typeof window.__triggerLogin === 'function'",
+            new PageWaitForFunctionOptions { Timeout = 10000 }
+        );
+
         // Simulate what happens after successful WebAuthn authentication:
         // 1. Token is stored in localStorage
         // 2. onLogin callback is called which sets isAuthenticated=true
-        // This is what the LoginPage component does after successful auth (lines 2250-2252 in index.html)
+        // This is what the LoginPage component does after successful auth
+        var testToken = E2EFixture.GenerateTestToken(
+            userId: "test-user-123",
+            displayName: "Test User",
+            email: "test@example.com"
+        );
         await page.EvaluateAsync(
-            @"() => {
-                // Store token and user (what setAuthToken and setAuthUser do)
-                localStorage.setItem('gatekeeper_token', 'simulated-jwt-token');
-                localStorage.setItem('gatekeeper_user', JSON.stringify({
+            $@"() => {{
+                console.log('[TEST] Setting token and triggering login');
+                // Store a properly-signed token and user (what setAuthToken and setAuthUser do)
+                localStorage.setItem('gatekeeper_token', '{testToken}');
+                localStorage.setItem('gatekeeper_user', JSON.stringify({{
                     userId: 'test-user-123',
                     displayName: 'Test User',
                     email: 'test@example.com'
-                }));
+                }}));
 
-                // Trigger the React state update by finding and calling the onLogin prop
-                // This simulates what happens when LoginPage calls onLogin({ userId, displayName, email })
-                // The App component's handleLogin sets isAuthenticated=true
-
-                // We need to dispatch a custom event that the app listens for,
-                // OR we can use window.__loginCallback if exposed for testing
-                if (window.__triggerLogin) {
-                    window.__triggerLogin({
-                        userId: 'test-user-123',
-                        displayName: 'Test User',
-                        email: 'test@example.com'
-                    });
-                }
-            }"
+                // Trigger the React state update by calling the exposed login handler
+                // This simulates what happens when LoginPage calls onLogin after successful auth
+                window.__triggerLogin({{
+                    userId: 'test-user-123',
+                    displayName: 'Test User',
+                    email: 'test@example.com'
+                }});
+                console.log('[TEST] Login triggered, waiting for React state update');
+            }}"
         );
 
-        // Wait a bit for React to re-render
-        await Task.Delay(500);
+        // Wait for React state update and re-render
+        await Task.Delay(2000);
 
         // Check if sidebar is now visible (indicates successful transition to dashboard)
         // If this times out, the bug exists - app didn't transition without refresh
@@ -2089,7 +2096,7 @@ public sealed class DashboardE2ETests
         {
             await page.WaitForSelectorAsync(
                 ".sidebar",
-                new PageWaitForSelectorOptions { Timeout = 5000 }
+                new PageWaitForSelectorOptions { Timeout = 10000 }
             );
 
             // Verify login page is gone
