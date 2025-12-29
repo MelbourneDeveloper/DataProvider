@@ -155,6 +155,52 @@ public sealed class TableBuilder
     }
 
     /// <summary>
+    /// Add an expression-based index (e.g., lower(name) for case-insensitive matching).
+    /// Expressions are emitted verbatim in the CREATE INDEX statement.
+    /// </summary>
+    public TableBuilder ExpressionIndex(
+        string name,
+        string expression,
+        bool unique = false,
+        string? filter = null
+    )
+    {
+        _indexes.Add(
+            new IndexDefinition
+            {
+                Name = name,
+                Expressions = [expression],
+                IsUnique = unique,
+                Filter = filter,
+            }
+        );
+        return this;
+    }
+
+    /// <summary>
+    /// Add a multi-expression index (e.g., lower(name), suburb_id for composite expression indexes).
+    /// Expressions are emitted verbatim in the CREATE INDEX statement.
+    /// </summary>
+    public TableBuilder ExpressionIndex(
+        string name,
+        string[] expressions,
+        bool unique = false,
+        string? filter = null
+    )
+    {
+        _indexes.Add(
+            new IndexDefinition
+            {
+                Name = name,
+                Expressions = expressions,
+                IsUnique = unique,
+                Filter = filter,
+            }
+        );
+        return this;
+    }
+
+    /// <summary>
     /// Add a foreign key to the table.
     /// </summary>
     public TableBuilder ForeignKey(
@@ -241,6 +287,7 @@ public sealed class ColumnBuilder
     private readonly PortableType _type;
     private bool _isNullable = true;
     private string? _defaultValue;
+    private string? _defaultLqlExpression;
     private bool _isIdentity;
     private long _identitySeed = 1;
     private long _identityIncrement = 1;
@@ -277,11 +324,22 @@ public sealed class ColumnBuilder
     }
 
     /// <summary>
-    /// Set default value expression.
+    /// Set default value expression (platform-specific SQL).
     /// </summary>
     public ColumnBuilder Default(string defaultValue)
     {
         _defaultValue = defaultValue;
+        return this;
+    }
+
+    /// <summary>
+    /// Set default value using LQL expression (platform-independent).
+    /// The expression will be translated to platform-specific SQL by DDL generators.
+    /// Common LQL functions: now(), gen_uuid(), lower(), upper(), coalesce().
+    /// </summary>
+    public ColumnBuilder DefaultLql(string lqlExpression)
+    {
+        _defaultLqlExpression = lqlExpression;
         return this;
     }
 
@@ -351,6 +409,7 @@ public sealed class ColumnBuilder
             Type = _type,
             IsNullable = _isNullable,
             DefaultValue = _defaultValue,
+            DefaultLqlExpression = _defaultLqlExpression,
             IsIdentity = _isIdentity,
             IdentitySeed = _identitySeed,
             IdentityIncrement = _identityIncrement,

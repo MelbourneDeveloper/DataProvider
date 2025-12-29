@@ -3,10 +3,67 @@ using System.Globalization;
 namespace Migration.Postgres;
 
 /// <summary>
+/// Result of a schema migration operation.
+/// </summary>
+/// <param name="Success">Whether the migration completed without errors.</param>
+/// <param name="TablesCreated">Number of tables successfully created or already existing.</param>
+/// <param name="Errors">List of table names and error messages for any failures.</param>
+public sealed record MigrationResult(
+    bool Success,
+    int TablesCreated,
+    IReadOnlyList<string> Errors
+);
+
+/// <summary>
 /// PostgreSQL DDL generator for schema operations.
 /// </summary>
 public static class PostgresDdlGenerator
 {
+    /// <summary>
+    /// Migrate a schema definition to PostgreSQL, creating all tables.
+    /// Each table is created independently - failures on one table don't block others.
+    /// Uses CREATE TABLE IF NOT EXISTS for idempotency.
+    /// </summary>
+    /// <param name="connection">Open database connection.</param>
+    /// <param name="schema">Schema definition to migrate.</param>
+    /// <param name="onTableCreated">Optional callback for each table created (table name).</param>
+    /// <param name="onTableFailed">Optional callback for each table that failed (table name, exception).</param>
+    /// <returns>Migration result with success status and any errors.</returns>
+    public static MigrationResult MigrateSchema(
+        System.Data.IDbConnection connection,
+        SchemaDefinition schema,
+        Action<string>? onTableCreated = null,
+        Action<string, Exception>? onTableFailed = null
+    )
+    {
+        var errors = new List<string>();
+        var tablesCreated = 0;
+
+        foreach (var table in schema.Tables)
+        {
+            try
+            {
+                var ddl = Generate(new CreateTableOperation(table));
+                using var cmd = connection.CreateCommand();
+                cmd.CommandText = ddl;
+                cmd.ExecuteNonQuery();
+                tablesCreated++;
+                onTableCreated?.Invoke(table.Name);
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"{table.Name}: {ex.Message}");
+                onTableFailed?.Invoke(table.Name, ex);
+            }
+        }
+
+        return new MigrationResult(
+            Success: errors.Count == 0,
+            TablesCreated: tablesCreated,
+            Errors: errors.AsReadOnly()
+        );
+    }
+
     /// <summary>
     /// Generate PostgreSQL DDL for a schema operation.
     /// </summary>
@@ -90,11 +147,14 @@ public static class PostgresDdlGenerator
         {
             sb.AppendLine(";");
             var unique = index.IsUnique ? "UNIQUE " : "";
-            var cols = string.Join(", ", index.Columns.Select(c => $"\"{c}\""));
+            // Expression indexes use Expressions verbatim, column indexes quote column names
+            var indexItems = index.Expressions.Count > 0
+                ? string.Join(", ", index.Expressions)
+                : string.Join(", ", index.Columns.Select(c => $"\"{c}\""));
             var filter = index.Filter is not null ? $" WHERE {index.Filter}" : "";
             sb.Append(
                 CultureInfo.InvariantCulture,
-                $"CREATE {unique}INDEX IF NOT EXISTS \"{index.Name}\" ON \"{table.Schema}\".\"{table.Name}\" ({cols}){filter}"
+                $"CREATE {unique}INDEX IF NOT EXISTS \"{index.Name}\" ON \"{table.Schema}\".\"{table.Name}\" ({indexItems}){filter}"
             );
         }
 
@@ -129,7 +189,13 @@ public static class PostgresDdlGenerator
             sb.Append(" NOT NULL");
         }
 
-        if (column.DefaultValue is not null)
+        // LQL expression takes precedence over raw SQL default
+        if (column.DefaultLqlExpression is not null)
+        {
+            var translated = LqlDefaultTranslator.ToPostgres(column.DefaultLqlExpression);
+            sb.Append(CultureInfo.InvariantCulture, $" DEFAULT {translated}");
+        }
+        else if (column.DefaultValue is not null)
         {
             sb.Append(CultureInfo.InvariantCulture, $" DEFAULT {column.DefaultValue}");
         }
@@ -151,10 +217,13 @@ public static class PostgresDdlGenerator
     private static string GenerateCreateIndex(CreateIndexOperation op)
     {
         var unique = op.Index.IsUnique ? "UNIQUE " : "";
-        var cols = string.Join(", ", op.Index.Columns.Select(c => $"\"{c}\""));
+        // Expression indexes use Expressions verbatim, column indexes quote column names
+        var indexItems = op.Index.Expressions.Count > 0
+            ? string.Join(", ", op.Index.Expressions)
+            : string.Join(", ", op.Index.Columns.Select(c => $"\"{c}\""));
         var filter = op.Index.Filter is not null ? $" WHERE {op.Index.Filter}" : "";
 
-        return $"CREATE {unique}INDEX IF NOT EXISTS \"{op.Index.Name}\" ON \"{op.Schema}\".\"{op.TableName}\" ({cols}){filter}";
+        return $"CREATE {unique}INDEX IF NOT EXISTS \"{op.Index.Name}\" ON \"{op.Schema}\".\"{op.TableName}\" ({indexItems}){filter}";
     }
 
     private static string GenerateAddForeignKey(AddForeignKeyOperation op)
@@ -241,4 +310,5 @@ public static class PostgresDdlGenerator
             ForeignKeyAction.Restrict => "RESTRICT",
             _ => "NO ACTION",
         };
+
 }

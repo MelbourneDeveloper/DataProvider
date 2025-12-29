@@ -62,6 +62,13 @@ public sealed record ColumnDefinition
     /// <summary>SQL default expression (platform-specific, e.g., "CURRENT_TIMESTAMP").</summary>
     public string? DefaultValue { get; init; }
 
+    /// <summary>
+    /// LQL default expression (platform-independent, e.g., "now()", "gen_uuid()").
+    /// When set, DDL generators translate this to platform-specific SQL.
+    /// Takes precedence over DefaultValue if both are set.
+    /// </summary>
+    public string? DefaultLqlExpression { get; init; }
+
     /// <summary>Auto-increment/identity column.</summary>
     public bool IsIdentity { get; init; }
 
@@ -125,14 +132,22 @@ public sealed record PrimaryKeyDefinition
 
 /// <summary>
 /// Index definition (unique or non-unique).
+/// Supports both column-based indexes (Columns) and expression-based indexes (Expressions).
+/// When Expressions is non-empty, it takes precedence over Columns.
 /// </summary>
 public sealed record IndexDefinition
 {
     /// <summary>Index name.</summary>
     public string Name { get; init; } = string.Empty;
 
-    /// <summary>Columns in the index.</summary>
+    /// <summary>Columns in the index (quoted as identifiers).</summary>
     public IReadOnlyList<string> Columns { get; init; } = [];
+
+    /// <summary>
+    /// LQL/SQL expressions for expression-based indexes (e.g., "lower(name)").
+    /// When non-empty, these are used instead of Columns and are emitted verbatim.
+    /// </summary>
+    public IReadOnlyList<string> Expressions { get; init; } = [];
 
     /// <summary>Whether the index enforces uniqueness.</summary>
     public bool IsUnique { get; init; }

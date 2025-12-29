@@ -622,4 +622,373 @@ public static class DataAccessGenerator
 
         return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
+
+    /// <summary>
+    /// Generates a bulk INSERT method for a database table.
+    /// Uses multi-row VALUES syntax for database-independent bulk inserts.
+    /// </summary>
+    /// <param name="table">Database table metadata</param>
+    /// <param name="batchSize">Maximum rows per batch (default 1000)</param>
+    /// <param name="connectionType">Database connection type</param>
+    /// <returns>Generated bulk INSERT method code</returns>
+    public static Result<string, SqlError> GenerateBulkInsertMethod(
+        DatabaseTable table,
+        int batchSize = 1000,
+        string connectionType = "SqliteConnection"
+    )
+    {
+        if (table == null)
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("table cannot be null")
+            );
+
+        var insertableColumns = table.InsertableColumns;
+        if (insertableColumns.Count == 0)
+            return new Result<string, SqlError>.Ok<string, SqlError>("");
+
+        var sb = new StringBuilder();
+        var tupleType = string.Join(
+            ", ",
+            insertableColumns.Select(c =>
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{c.CSharpType} {c.Name}"
+                )
+            )
+        );
+
+        sb.AppendLine();
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// Bulk inserts rows into the {table.Name} table using batched multi-row VALUES."
+        );
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine("    /// <param name=\"transaction\">Active database transaction.</param>");
+        sb.AppendLine("    /// <param name=\"records\">Records to insert.</param>");
+        sb.AppendLine("    /// <returns>Result with total rows inserted or SQL error.</returns>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    public static async Task<Result<int, SqlError>> BulkInsert{table.Name}Async(this IDbTransaction transaction, IEnumerable<({tupleType})> records)"
+        );
+        sb.AppendLine("    {");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"        const int batchSize = {batchSize};"
+        );
+        sb.AppendLine("        var totalInserted = 0;");
+        sb.AppendLine("        var batch = new List<(" + tupleType + ")>(batchSize);");
+        sb.AppendLine();
+        sb.AppendLine("        try");
+        sb.AppendLine("        {");
+        sb.AppendLine("            foreach (var record in records)");
+        sb.AppendLine("            {");
+        sb.AppendLine("                batch.Add(record);");
+        sb.AppendLine("                if (batch.Count >= batchSize)");
+        sb.AppendLine("                {");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"                    var result = await ExecuteBulkInsert{table.Name}BatchAsync(transaction, batch).ConfigureAwait(false);"
+        );
+        sb.AppendLine("                    if (result is Result<int, SqlError>.Error<int, SqlError> err)");
+        sb.AppendLine("                        return err;");
+        sb.AppendLine("                    totalInserted += ((Result<int, SqlError>.Ok<int, SqlError>)result).Value;");
+        sb.AppendLine("                    batch.Clear();");
+        sb.AppendLine("                }");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+        sb.AppendLine("            if (batch.Count > 0)");
+        sb.AppendLine("            {");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"                var finalResult = await ExecuteBulkInsert{table.Name}BatchAsync(transaction, batch).ConfigureAwait(false);"
+        );
+        sb.AppendLine("                if (finalResult is Result<int, SqlError>.Error<int, SqlError> finalErr)");
+        sb.AppendLine("                    return finalErr;");
+        sb.AppendLine("                totalInserted += ((Result<int, SqlError>.Ok<int, SqlError>)finalResult).Value;");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+        sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(totalInserted);");
+        sb.AppendLine("        }");
+        sb.AppendLine("        catch (Exception ex)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Bulk insert failed\", ex));");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Generate the batch execution helper method
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// Executes a single batch of bulk inserts for {table.Name}."
+        );
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    private static async Task<Result<int, SqlError>> ExecuteBulkInsert{table.Name}BatchAsync(IDbTransaction transaction, List<({tupleType})> batch)"
+        );
+        sb.AppendLine("    {");
+        sb.AppendLine("        if (batch.Count == 0)");
+        sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(0);");
+        sb.AppendLine();
+
+        // Build the SQL with placeholders
+        var columnNames = string.Join(", ", insertableColumns.Select(c => c.Name));
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"        var sql = new StringBuilder(\"INSERT INTO {table.Name} ({columnNames}) VALUES \");"
+        );
+        sb.AppendLine("        var parameters = new List<object?>();");
+        sb.AppendLine();
+        sb.AppendLine("        for (int i = 0; i < batch.Count; i++)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            if (i > 0) sql.Append(\", \");");
+
+        // Build VALUES clause with parameter placeholders
+        var paramPlaceholders = string.Join(
+            ", ",
+            insertableColumns.Select((c, idx) => $"@p\" + (i * {insertableColumns.Count} + {idx}) + \"")
+        );
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            sql.Append(\"({paramPlaceholders})\");"
+        );
+        sb.AppendLine("            var rec = batch[i];");
+
+        // Add parameters from tuple
+        for (int i = 0; i < insertableColumns.Count; i++)
+        {
+            var col = insertableColumns[i];
+            sb.AppendLine(
+                CultureInfo.InvariantCulture,
+                $"            parameters.Add(rec.{col.Name});"
+            );
+        }
+        sb.AppendLine("        }");
+        sb.AppendLine();
+
+        var commandType = connectionType.Replace("Connection", "Command", StringComparison.Ordinal);
+        var transactionType = connectionType.Replace(
+            "Connection",
+            "Transaction",
+            StringComparison.Ordinal
+        );
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"        using (var command = new {commandType}(sql.ToString(), ({connectionType})transaction.Connection, ({transactionType})transaction))"
+        );
+        sb.AppendLine("        {");
+        sb.AppendLine("            for (int i = 0; i < parameters.Count; i++)");
+        sb.AppendLine("            {");
+        sb.AppendLine("                command.Parameters.AddWithValue(\"@p\" + i, parameters[i] ?? (object)DBNull.Value);");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+        sb.AppendLine("            var rowsAffected = await command.ExecuteNonQueryAsync().ConfigureAwait(false);");
+        sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(rowsAffected);");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
+    }
+
+    /// <summary>
+    /// Generates a bulk UPSERT method for a database table.
+    /// Uses INSERT ... ON CONFLICT DO UPDATE for PostgreSQL, REPLACE INTO for SQLite.
+    /// </summary>
+    /// <param name="table">Database table metadata</param>
+    /// <param name="databaseType">Target database type (Postgres or SQLite)</param>
+    /// <param name="batchSize">Maximum rows per batch (default 1000)</param>
+    /// <param name="connectionType">Database connection type</param>
+    /// <returns>Generated bulk UPSERT method code</returns>
+    public static Result<string, SqlError> GenerateBulkUpsertMethod(
+        DatabaseTable table,
+        string databaseType = "SQLite",
+        int batchSize = 1000,
+        string connectionType = "SqliteConnection"
+    )
+    {
+        if (table == null)
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("table cannot be null")
+            );
+
+        var insertableColumns = table.InsertableColumns;
+        var primaryKeyColumns = table.PrimaryKeyColumns;
+
+        if (insertableColumns.Count == 0 || primaryKeyColumns.Count == 0)
+            return new Result<string, SqlError>.Ok<string, SqlError>("");
+
+        var sb = new StringBuilder();
+        var allColumns = primaryKeyColumns.Concat(insertableColumns.Where(c => !primaryKeyColumns.Any(pk => pk.Name == c.Name))).ToList();
+        var tupleType = string.Join(
+            ", ",
+            allColumns.Select(c =>
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{c.CSharpType} {c.Name}"
+                )
+            )
+        );
+
+        sb.AppendLine();
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// Bulk upserts rows into the {table.Name} table (insert or update on conflict)."
+        );
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine("    /// <param name=\"transaction\">Active database transaction.</param>");
+        sb.AppendLine("    /// <param name=\"records\">Records to upsert.</param>");
+        sb.AppendLine("    /// <returns>Result with total rows affected or SQL error.</returns>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    public static async Task<Result<int, SqlError>> BulkUpsert{table.Name}Async(this IDbTransaction transaction, IEnumerable<({tupleType})> records)"
+        );
+        sb.AppendLine("    {");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"        const int batchSize = {batchSize};"
+        );
+        sb.AppendLine("        var totalAffected = 0;");
+        sb.AppendLine("        var batch = new List<(" + tupleType + ")>(batchSize);");
+        sb.AppendLine();
+        sb.AppendLine("        try");
+        sb.AppendLine("        {");
+        sb.AppendLine("            foreach (var record in records)");
+        sb.AppendLine("            {");
+        sb.AppendLine("                batch.Add(record);");
+        sb.AppendLine("                if (batch.Count >= batchSize)");
+        sb.AppendLine("                {");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"                    var result = await ExecuteBulkUpsert{table.Name}BatchAsync(transaction, batch).ConfigureAwait(false);"
+        );
+        sb.AppendLine("                    if (result is Result<int, SqlError>.Error<int, SqlError> err)");
+        sb.AppendLine("                        return err;");
+        sb.AppendLine("                    totalAffected += ((Result<int, SqlError>.Ok<int, SqlError>)result).Value;");
+        sb.AppendLine("                    batch.Clear();");
+        sb.AppendLine("                }");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+        sb.AppendLine("            if (batch.Count > 0)");
+        sb.AppendLine("            {");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"                var finalResult = await ExecuteBulkUpsert{table.Name}BatchAsync(transaction, batch).ConfigureAwait(false);"
+        );
+        sb.AppendLine("                if (finalResult is Result<int, SqlError>.Error<int, SqlError> finalErr)");
+        sb.AppendLine("                    return finalErr;");
+        sb.AppendLine("                totalAffected += ((Result<int, SqlError>.Ok<int, SqlError>)finalResult).Value;");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+        sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(totalAffected);");
+        sb.AppendLine("        }");
+        sb.AppendLine("        catch (Exception ex)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Bulk upsert failed\", ex));");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Generate the batch execution helper method
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// Executes a single batch of bulk upserts for {table.Name}."
+        );
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    private static async Task<Result<int, SqlError>> ExecuteBulkUpsert{table.Name}BatchAsync(IDbTransaction transaction, List<({tupleType})> batch)"
+        );
+        sb.AppendLine("    {");
+        sb.AppendLine("        if (batch.Count == 0)");
+        sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(0);");
+        sb.AppendLine();
+
+        // Build the SQL with placeholders - database-specific upsert syntax
+        var columnNames = string.Join(", ", allColumns.Select(c => c.Name));
+        var pkColumnNames = string.Join(", ", primaryKeyColumns.Select(c => c.Name));
+        var updateColumns = allColumns.Where(c => !primaryKeyColumns.Any(pk => pk.Name == c.Name)).ToList();
+        var updateSet = string.Join(", ", updateColumns.Select(c => $"{c.Name} = EXCLUDED.{c.Name}"));
+
+        if (databaseType.Equals("Postgres", StringComparison.OrdinalIgnoreCase))
+        {
+            sb.AppendLine(
+                CultureInfo.InvariantCulture,
+                $"        var sql = new StringBuilder(\"INSERT INTO {table.Name} ({columnNames}) VALUES \");"
+            );
+        }
+        else
+        {
+            // SQLite uses INSERT OR REPLACE
+            sb.AppendLine(
+                CultureInfo.InvariantCulture,
+                $"        var sql = new StringBuilder(\"INSERT OR REPLACE INTO {table.Name} ({columnNames}) VALUES \");"
+            );
+        }
+
+        sb.AppendLine("        var parameters = new List<object?>();");
+        sb.AppendLine();
+        sb.AppendLine("        for (int i = 0; i < batch.Count; i++)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            if (i > 0) sql.Append(\", \");");
+
+        // Build VALUES clause with parameter placeholders
+        var paramPlaceholders = string.Join(
+            ", ",
+            allColumns.Select((c, idx) => $"@p\" + (i * {allColumns.Count} + {idx}) + \"")
+        );
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            sql.Append(\"({paramPlaceholders})\");"
+        );
+        sb.AppendLine("            var rec = batch[i];");
+
+        // Add parameters from tuple
+        foreach (var col in allColumns)
+        {
+            sb.AppendLine(
+                CultureInfo.InvariantCulture,
+                $"            parameters.Add(rec.{col.Name});"
+            );
+        }
+        sb.AppendLine("        }");
+
+        // Add ON CONFLICT clause for Postgres
+        if (databaseType.Equals("Postgres", StringComparison.OrdinalIgnoreCase) && updateColumns.Count > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine(
+                CultureInfo.InvariantCulture,
+                $"        sql.Append(\" ON CONFLICT ({pkColumnNames}) DO UPDATE SET {updateSet}\");"
+            );
+        }
+
+        sb.AppendLine();
+
+        var commandType = connectionType.Replace("Connection", "Command", StringComparison.Ordinal);
+        var transactionType = connectionType.Replace(
+            "Connection",
+            "Transaction",
+            StringComparison.Ordinal
+        );
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"        using (var command = new {commandType}(sql.ToString(), ({connectionType})transaction.Connection, ({transactionType})transaction))"
+        );
+        sb.AppendLine("        {");
+        sb.AppendLine("            for (int i = 0; i < parameters.Count; i++)");
+        sb.AppendLine("            {");
+        sb.AppendLine("                command.Parameters.AddWithValue(\"@p\" + i, parameters[i] ?? (object)DBNull.Value);");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+        sb.AppendLine("            var rowsAffected = await command.ExecuteNonQueryAsync().ConfigureAwait(false);");
+        sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(rowsAffected);");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
+    }
 }

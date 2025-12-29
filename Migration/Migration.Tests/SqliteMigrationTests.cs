@@ -776,4 +776,690 @@ public sealed class SqliteMigrationTests
         Assert.Equal(4, restored.Tables[0].Columns.Count);
         Assert.Single(restored.Tables[0].Indexes);
     }
+
+    // =============================================================================
+    // Expression Index Tests
+    // =============================================================================
+
+    [Fact]
+    public void ExpressionIndex_CreateWithLowerFunction_Success()
+    {
+        // Arrange - Create table with expression index for case-insensitive uniqueness
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+
+        var schema = Schema
+            .Define("Test")
+            .Table(
+                "Artists",
+                t =>
+                    t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
+                        .Column("Name", PortableTypes.VarChar(200), c => c.NotNull())
+                        .ExpressionIndex("uq_artists_name", "lower(Name)", unique: true)
+            )
+            .Build();
+
+        // Act
+        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var operations = (
+            (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
+        ).Value;
+
+        var result = MigrationRunner.Apply(
+            connection,
+            operations,
+            SqliteDdlGenerator.Generate,
+            MigrationOptions.Default,
+            _logger
+        );
+
+        // Assert - Migration succeeded
+        Assert.True(
+            result is MigrationApplyResultOk,
+            $"Migration failed: {(result as MigrationApplyResultError)?.Value}"
+        );
+
+        // Verify index exists
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT sql FROM sqlite_master WHERE type='index' AND name='uq_artists_name'";
+        var indexDef = cmd.ExecuteScalar() as string;
+
+        Assert.NotNull(indexDef);
+        Assert.Contains("UNIQUE", indexDef);
+        Assert.Contains("lower", indexDef);
+    }
+
+    [Fact]
+    public void ExpressionIndex_EnforcesCaseInsensitiveUniqueness()
+    {
+        // Arrange - Create table with expression index
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+
+        var schema = Schema
+            .Define("Test")
+            .Table(
+                "Venues",
+                t =>
+                    t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
+                        .Column("Name", PortableTypes.VarChar(200), c => c.NotNull())
+                        .ExpressionIndex("uq_venues_name", "lower(Name)", unique: true)
+            )
+            .Build();
+
+        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var operations = (
+            (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
+        ).Value;
+        _ = MigrationRunner.Apply(
+            connection,
+            operations,
+            SqliteDdlGenerator.Generate,
+            MigrationOptions.Default,
+            _logger
+        );
+
+        // Act - Insert first venue
+        using var insertCmd = connection.CreateCommand();
+        insertCmd.CommandText =
+            "INSERT INTO Venues (Id, Name) VALUES ('11111111-1111-1111-1111-111111111111', 'The Corner Hotel')";
+        insertCmd.ExecuteNonQuery();
+
+        // Try to insert duplicate with different case - should fail
+        using var duplicateCmd = connection.CreateCommand();
+        duplicateCmd.CommandText =
+            "INSERT INTO Venues (Id, Name) VALUES ('22222222-2222-2222-2222-222222222222', 'THE CORNER HOTEL')";
+
+        // Assert - Should throw unique constraint violation
+        var ex = Assert.Throws<SqliteException>(() => duplicateCmd.ExecuteNonQuery());
+        Assert.Contains("UNIQUE", ex.Message);
+    }
+
+    [Fact]
+    public void ExpressionIndex_MultiExpression_CompositeIndexSuccess()
+    {
+        // Arrange - Create table with multi-expression index
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+
+        var schema = Schema
+            .Define("Test")
+            .Table(
+                "Suburbs",
+                t =>
+                    t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
+                        .Column("Name", PortableTypes.VarChar(100), c => c.NotNull())
+            )
+            .Table(
+                "Places",
+                t =>
+                    t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
+                        .Column("Name", PortableTypes.VarChar(200), c => c.NotNull())
+                        .Column("SuburbId", PortableTypes.Uuid, c => c.NotNull())
+                        .ExpressionIndex(
+                            "uq_places_name_suburb",
+                            ["lower(Name)", "SuburbId"],
+                            unique: true
+                        )
+            )
+            .Build();
+
+        // Act
+        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var operations = (
+            (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
+        ).Value;
+
+        var result = MigrationRunner.Apply(
+            connection,
+            operations,
+            SqliteDdlGenerator.Generate,
+            MigrationOptions.Default,
+            _logger
+        );
+
+        // Assert
+        Assert.True(
+            result is MigrationApplyResultOk,
+            $"Migration failed: {(result as MigrationApplyResultError)?.Value}"
+        );
+
+        // Verify composite expression index exists
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText =
+            "SELECT sql FROM sqlite_master WHERE type='index' AND name='uq_places_name_suburb'";
+        var indexDef = cmd.ExecuteScalar() as string;
+
+        Assert.NotNull(indexDef);
+        Assert.Contains("UNIQUE", indexDef);
+        Assert.Contains("lower", indexDef);
+        Assert.Contains("SuburbId", indexDef);
+    }
+
+    [Fact]
+    public void ExpressionIndex_Idempotent_NoErrorOnRerun()
+    {
+        // Arrange
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+
+        var schema = Schema
+            .Define("Test")
+            .Table(
+                "Bands",
+                t =>
+                    t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
+                        .Column("Name", PortableTypes.VarChar(200), c => c.NotNull())
+                        .ExpressionIndex("uq_bands_name", "lower(Name)", unique: true)
+            )
+            .Build();
+
+        // Act - Run migration twice
+        for (var i = 0; i < 2; i++)
+        {
+            var currentSchema = (
+                (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+            ).Value;
+
+            var operations = (
+                (OperationsResultOk)SchemaDiff.Calculate(currentSchema, schema, logger: _logger)
+            ).Value;
+
+            var result = MigrationRunner.Apply(
+                connection,
+                operations,
+                SqliteDdlGenerator.Generate,
+                MigrationOptions.Default,
+                _logger
+            );
+
+            Assert.True(
+                result is MigrationApplyResultOk,
+                $"Migration {i + 1} failed: {(result as MigrationApplyResultError)?.Value}"
+            );
+
+            // Second run should have 0 operations (schema already matches)
+            if (i == 1)
+            {
+                Assert.Empty(operations);
+            }
+        }
+    }
+
+    [Fact]
+    public void ExpressionIndex_SchemaInspector_DetectsExpressionIndex()
+    {
+        // Arrange - Create expression index via raw SQL
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = """
+            CREATE TABLE artists (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL
+            );
+            CREATE UNIQUE INDEX uq_artists_name ON artists(lower(name));
+            """;
+        cmd.ExecuteNonQuery();
+
+        // Act - Inspect schema
+        var result = SqliteSchemaInspector.Inspect(connection, _logger);
+
+        // Assert
+        Assert.True(result is SchemaResultOk);
+        var schema = ((SchemaResultOk)result).Value;
+        var artists = schema.Tables.Single(t => t.Name == "artists");
+
+        Assert.Single(artists.Indexes);
+        var index = artists.Indexes[0];
+        Assert.Equal("uq_artists_name", index.Name);
+        Assert.True(index.IsUnique);
+        Assert.NotEmpty(index.Expressions);
+        Assert.Contains("lower(name)", index.Expressions);
+    }
+
+    // =============================================================================
+    // Index Conversion Tests (Column <-> Expression)
+    // =============================================================================
+
+    [Fact]
+    public void UpgradeIndex_ColumnToExpression_RequiresDropAndCreate()
+    {
+        // Arrange - Create table with regular column index
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+
+        var v1 = Schema
+            .Define("Test")
+            .Table(
+                "Artists",
+                t =>
+                    t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
+                        .Column("Name", PortableTypes.VarChar(200), c => c.NotNull())
+                        .Index("idx_artists_name", "Name", unique: true)
+            )
+            .Build();
+
+        // Apply v1
+        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var v1Ops = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)).Value;
+        _ = MigrationRunner.Apply(connection, v1Ops, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+
+        // v2 changes to expression index (different name since it's semantically different)
+        var v2 = Schema
+            .Define("Test")
+            .Table(
+                "Artists",
+                t =>
+                    t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
+                        .Column("Name", PortableTypes.VarChar(200), c => c.NotNull())
+                        .ExpressionIndex("uq_artists_name_ci", "lower(Name)", unique: true)
+            )
+            .Build();
+
+        // Act - Calculate upgrade operations
+        var currentSchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var upgradeOps = (
+            (OperationsResultOk)SchemaDiff.Calculate(currentSchema, v2, allowDestructive: true, logger: _logger)
+        ).Value;
+
+        // Assert - Should have drop old index + create new expression index
+        Assert.Equal(2, upgradeOps.Count);
+        Assert.Contains(upgradeOps, op => op is DropIndexOperation);
+        Assert.Contains(upgradeOps, op => op is CreateIndexOperation);
+
+        // Apply the upgrade
+        var result = MigrationRunner.Apply(
+            connection,
+            upgradeOps,
+            SqliteDdlGenerator.Generate,
+            MigrationOptions.Destructive,
+            _logger
+        );
+
+        Assert.True(result is MigrationApplyResultOk);
+
+        // Verify new expression index exists
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT sql FROM sqlite_master WHERE type='index' AND name='uq_artists_name_ci'";
+        var indexDef = cmd.ExecuteScalar() as string;
+        Assert.NotNull(indexDef);
+        Assert.Contains("lower", indexDef);
+    }
+
+    [Fact]
+    public void UpgradeIndex_ExpressionToColumn_RequiresDropAndCreate()
+    {
+        // Arrange - Create table with expression index
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+
+        var v1 = Schema
+            .Define("Test")
+            .Table(
+                "Venues",
+                t =>
+                    t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
+                        .Column("Name", PortableTypes.VarChar(200), c => c.NotNull())
+                        .ExpressionIndex("uq_venues_name", "lower(Name)", unique: true)
+            )
+            .Build();
+
+        // Apply v1
+        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var v1Ops = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)).Value;
+        _ = MigrationRunner.Apply(connection, v1Ops, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+
+        // v2 changes back to simple column index (different name)
+        var v2 = Schema
+            .Define("Test")
+            .Table(
+                "Venues",
+                t =>
+                    t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
+                        .Column("Name", PortableTypes.VarChar(200), c => c.NotNull())
+                        .Index("idx_venues_name", "Name", unique: true)
+            )
+            .Build();
+
+        // Act
+        var currentSchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var upgradeOps = (
+            (OperationsResultOk)SchemaDiff.Calculate(currentSchema, v2, allowDestructive: true, logger: _logger)
+        ).Value;
+
+        // Assert - Should have drop + create
+        Assert.Equal(2, upgradeOps.Count);
+        Assert.Contains(upgradeOps, op => op is DropIndexOperation);
+        Assert.Contains(upgradeOps, op => op is CreateIndexOperation);
+
+        var result = MigrationRunner.Apply(
+            connection,
+            upgradeOps,
+            SqliteDdlGenerator.Generate,
+            MigrationOptions.Destructive,
+            _logger
+        );
+
+        Assert.True(result is MigrationApplyResultOk);
+
+        // Verify new column index exists (no lower() function)
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT sql FROM sqlite_master WHERE type='index' AND name='idx_venues_name'";
+        var indexDef = cmd.ExecuteScalar() as string;
+        Assert.NotNull(indexDef);
+        Assert.DoesNotContain("lower", indexDef);
+    }
+
+    // =============================================================================
+    // LQL Default Value Tests - Platform-Independent Defaults
+    // =============================================================================
+
+    [Fact]
+    public void LqlDefault_NowFunction_TranslatesToCurrentTimestamp()
+    {
+        // Arrange
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+
+        var schema = Schema
+            .Define("Test")
+            .Table(
+                "events",
+                t =>
+                    t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
+                        .Column("created_at", PortableTypes.DateTime(), c => c.NotNull().DefaultLql("now()"))
+            )
+            .Build();
+
+        // Act
+        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var operations = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)).Value;
+        var result = MigrationRunner.Apply(connection, operations, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+
+        // Assert
+        Assert.True(result is MigrationApplyResultOk);
+
+        // Verify table DDL contains datetime('now') - the SQLite translation of now()
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT sql FROM sqlite_master WHERE type='table' AND name='events'";
+        var tableDef = cmd.ExecuteScalar() as string;
+        Assert.NotNull(tableDef);
+        Assert.Contains("(datetime('now'))", tableDef);
+
+        // Insert and verify default works
+        using var insertCmd = connection.CreateCommand();
+        insertCmd.CommandText = "INSERT INTO events (id) VALUES (1)";
+        insertCmd.ExecuteNonQuery();
+
+        using var selectCmd = connection.CreateCommand();
+        selectCmd.CommandText = "SELECT created_at FROM events WHERE id = 1";
+        var createdAt = selectCmd.ExecuteScalar() as string;
+        Assert.NotNull(createdAt);
+        Assert.NotEmpty(createdAt);
+    }
+
+    [Fact]
+    public void LqlDefault_BooleanTrue_TranslatesTo1()
+    {
+        // Arrange
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+
+        var schema = Schema
+            .Define("Test")
+            .Table(
+                "flags",
+                t =>
+                    t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
+                        .Column("is_active", PortableTypes.Boolean, c => c.NotNull().DefaultLql("true"))
+                        .Column("is_deleted", PortableTypes.Boolean, c => c.NotNull().DefaultLql("false"))
+            )
+            .Build();
+
+        // Act
+        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var operations = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)).Value;
+        var result = MigrationRunner.Apply(connection, operations, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+
+        // Assert
+        Assert.True(result is MigrationApplyResultOk);
+
+        // Verify table DDL contains 1 and 0 for boolean defaults
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT sql FROM sqlite_master WHERE type='table' AND name='flags'";
+        var tableDef = cmd.ExecuteScalar() as string;
+        Assert.NotNull(tableDef);
+        Assert.Contains("DEFAULT 1", tableDef); // true -> 1
+        Assert.Contains("DEFAULT 0", tableDef); // false -> 0
+
+        // Insert and verify defaults work
+        using var insertCmd = connection.CreateCommand();
+        insertCmd.CommandText = "INSERT INTO flags (id) VALUES (1)";
+        insertCmd.ExecuteNonQuery();
+
+        using var selectCmd = connection.CreateCommand();
+        selectCmd.CommandText = "SELECT is_active, is_deleted FROM flags WHERE id = 1";
+        using var reader = selectCmd.ExecuteReader();
+        Assert.True(reader.Read());
+        Assert.Equal(1, reader.GetInt64(0)); // is_active = true = 1
+        Assert.Equal(0, reader.GetInt64(1)); // is_deleted = false = 0
+    }
+
+    [Fact]
+    public void LqlDefault_NumericValues_PassThrough()
+    {
+        // Arrange
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+
+        var schema = Schema
+            .Define("Test")
+            .Table(
+                "counters",
+                t =>
+                    t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
+                        .Column("count", PortableTypes.Int, c => c.NotNull().DefaultLql("0"))
+                        .Column("priority", PortableTypes.Int, c => c.NotNull().DefaultLql("100"))
+                        .Column("rate", PortableTypes.Decimal(5, 2), c => c.NotNull().DefaultLql("1.5"))
+            )
+            .Build();
+
+        // Act
+        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var operations = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)).Value;
+        var result = MigrationRunner.Apply(connection, operations, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+
+        // Assert
+        Assert.True(result is MigrationApplyResultOk);
+
+        // Insert and verify defaults work
+        using var insertCmd = connection.CreateCommand();
+        insertCmd.CommandText = "INSERT INTO counters (id) VALUES (1)";
+        insertCmd.ExecuteNonQuery();
+
+        using var selectCmd = connection.CreateCommand();
+        selectCmd.CommandText = "SELECT count, priority, rate FROM counters WHERE id = 1";
+        using var reader = selectCmd.ExecuteReader();
+        Assert.True(reader.Read());
+        Assert.Equal(0, reader.GetInt64(0));
+        Assert.Equal(100, reader.GetInt64(1));
+        Assert.Equal(1.5, reader.GetDouble(2), 2);
+    }
+
+    [Fact]
+    public void LqlDefault_StringLiteral_PassThrough()
+    {
+        // Arrange
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+
+        var schema = Schema
+            .Define("Test")
+            .Table(
+                "items",
+                t =>
+                    t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
+                        .Column("status", PortableTypes.VarChar(20), c => c.NotNull().DefaultLql("'pending'"))
+                        .Column("category", PortableTypes.VarChar(50), c => c.DefaultLql("'uncategorized'"))
+            )
+            .Build();
+
+        // Act
+        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var operations = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)).Value;
+        var result = MigrationRunner.Apply(connection, operations, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+
+        // Assert
+        Assert.True(result is MigrationApplyResultOk);
+
+        // Insert and verify defaults work
+        using var insertCmd = connection.CreateCommand();
+        insertCmd.CommandText = "INSERT INTO items (id) VALUES (1)";
+        insertCmd.ExecuteNonQuery();
+
+        using var selectCmd = connection.CreateCommand();
+        selectCmd.CommandText = "SELECT status, category FROM items WHERE id = 1";
+        using var reader = selectCmd.ExecuteReader();
+        Assert.True(reader.Read());
+        Assert.Equal("pending", reader.GetString(0));
+        Assert.Equal("uncategorized", reader.GetString(1));
+    }
+
+    [Fact]
+    public void LqlDefault_GenUuid_GeneratesValidUuidFormat()
+    {
+        // Arrange
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+
+        var schema = Schema
+            .Define("Test")
+            .Table(
+                "records",
+                t =>
+                    t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey().DefaultLql("gen_uuid()"))
+                        .Column("name", PortableTypes.VarChar(100))
+            )
+            .Build();
+
+        // Act
+        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var operations = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)).Value;
+        var result = MigrationRunner.Apply(connection, operations, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+
+        // Assert
+        Assert.True(result is MigrationApplyResultOk);
+
+        // Insert multiple rows and verify UUIDs are generated and unique
+        using var insertCmd = connection.CreateCommand();
+        insertCmd.CommandText = "INSERT INTO records (name) VALUES ('test1'), ('test2'), ('test3')";
+        insertCmd.ExecuteNonQuery();
+
+        using var selectCmd = connection.CreateCommand();
+        selectCmd.CommandText = "SELECT id FROM records";
+        using var reader = selectCmd.ExecuteReader();
+
+        var uuids = new List<string>();
+        while (reader.Read())
+        {
+            var uuid = reader.GetString(0);
+            Assert.NotNull(uuid);
+            Assert.Matches(@"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", uuid);
+            uuids.Add(uuid);
+        }
+
+        // All UUIDs should be unique
+        Assert.Equal(3, uuids.Count);
+        Assert.Equal(3, uuids.Distinct().Count());
+    }
+
+    [Fact]
+    public void LqlDefault_CurrentDate_ReturnsDateOnly()
+    {
+        // Arrange
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+
+        var schema = Schema
+            .Define("Test")
+            .Table(
+                "logs",
+                t =>
+                    t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
+                        .Column("log_date", PortableTypes.Date, c => c.NotNull().DefaultLql("current_date()"))
+            )
+            .Build();
+
+        // Act
+        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var operations = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)).Value;
+        var result = MigrationRunner.Apply(connection, operations, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+
+        // Assert
+        Assert.True(result is MigrationApplyResultOk);
+
+        // Insert and verify default date
+        using var insertCmd = connection.CreateCommand();
+        insertCmd.CommandText = "INSERT INTO logs (id) VALUES (1)";
+        insertCmd.ExecuteNonQuery();
+
+        using var selectCmd = connection.CreateCommand();
+        selectCmd.CommandText = "SELECT log_date FROM logs WHERE id = 1";
+        var logDate = selectCmd.ExecuteScalar() as string;
+        Assert.NotNull(logDate);
+        Assert.Matches(@"^\d{4}-\d{2}-\d{2}$", logDate); // YYYY-MM-DD format
+    }
+
+    [Fact]
+    public void LqlDefault_MixedDefaults_AllWorkTogether()
+    {
+        // Arrange - A complex table with multiple LQL defaults
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+
+        var schema = Schema
+            .Define("Test")
+            .Table(
+                "orders",
+                t =>
+                    t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey().DefaultLql("gen_uuid()"))
+                        .Column("status", PortableTypes.VarChar(20), c => c.NotNull().DefaultLql("'pending'"))
+                        .Column("quantity", PortableTypes.Int, c => c.NotNull().DefaultLql("1"))
+                        .Column("is_urgent", PortableTypes.Boolean, c => c.NotNull().DefaultLql("false"))
+                        .Column("created_at", PortableTypes.DateTime(), c => c.NotNull().DefaultLql("now()"))
+            )
+            .Build();
+
+        // Act
+        var emptySchema = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+        var operations = ((OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)).Value;
+        var result = MigrationRunner.Apply(connection, operations, SqliteDdlGenerator.Generate, MigrationOptions.Default, _logger);
+
+        // Assert
+        Assert.True(result is MigrationApplyResultOk);
+
+        // Insert with no columns specified - all defaults should apply
+        using var insertCmd = connection.CreateCommand();
+        insertCmd.CommandText = "INSERT INTO orders DEFAULT VALUES";
+        insertCmd.ExecuteNonQuery();
+
+        using var selectCmd = connection.CreateCommand();
+        selectCmd.CommandText = "SELECT id, status, quantity, is_urgent, created_at FROM orders";
+        using var reader = selectCmd.ExecuteReader();
+        Assert.True(reader.Read());
+
+        var id = reader.GetString(0);
+        var status = reader.GetString(1);
+        var quantity = reader.GetInt64(2);
+        var isUrgent = reader.GetInt64(3);
+        var createdAt = reader.GetString(4);
+
+        Assert.Matches(@"^[0-9a-f-]{36}$", id);      // UUID format
+        Assert.Equal("pending", status);             // String default
+        Assert.Equal(1, quantity);                   // Numeric default
+        Assert.Equal(0, isUrgent);                   // Boolean false = 0
+        Assert.NotEmpty(createdAt);                  // Timestamp generated
+    }
 }
