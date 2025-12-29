@@ -23,6 +23,11 @@
     <AdditionalFiles Include="DataProvider.json" />
   </ItemGroup>
 
+  <!-- Create database with schema before code generation (needed after git clean) -->
+  <Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider">
+    <Exec Command='sqlite3 "$(MSBuildProjectDirectory)/scheduling-build.db" "CREATE TABLE IF NOT EXISTS fhir_Practitioner (Id TEXT PRIMARY KEY, Identifier TEXT NOT NULL, Active INTEGER NOT NULL DEFAULT 1, NameFamily TEXT NOT NULL, NameGiven TEXT NOT NULL, Qualification TEXT, Specialty TEXT, TelecomEmail TEXT, TelecomPhone TEXT); CREATE TABLE IF NOT EXISTS fhir_Schedule (Id TEXT PRIMARY KEY, Active INTEGER NOT NULL DEFAULT 1, PractitionerReference TEXT NOT NULL, PlanningHorizon INTEGER NOT NULL DEFAULT 30, Comment TEXT); CREATE TABLE IF NOT EXISTS fhir_Slot (Id TEXT PRIMARY KEY, ScheduleReference TEXT NOT NULL, Status TEXT NOT NULL, StartTime TEXT NOT NULL, EndTime TEXT NOT NULL, Overbooked INTEGER NOT NULL DEFAULT 0, Comment TEXT); CREATE TABLE IF NOT EXISTS fhir_Appointment (Id TEXT PRIMARY KEY, Status TEXT NOT NULL, ServiceCategory TEXT, ServiceType TEXT, ReasonCode TEXT, Priority TEXT NOT NULL, Description TEXT, StartTime TEXT NOT NULL, EndTime TEXT NOT NULL, MinutesDuration INTEGER NOT NULL, PatientReference TEXT NOT NULL, PractitionerReference TEXT NOT NULL, Created TEXT NOT NULL, Comment TEXT);"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
+  </Target>
+
   <!-- Generate C# from SQL using DataProvider.SQLite.Cli -->
   <Target Name="GenerateDataProvider" BeforeTargets="BeforeCompile;CoreCompile" Inputs="$(MSBuildProjectDirectory)/DataProvider.json;@(AdditionalFiles)" Outputs="$(MSBuildProjectDirectory)/Generated/.timestamp">
     <RemoveDir Directories="$(MSBuildProjectDirectory)/Generated" />

@@ -17,32 +17,37 @@ internal static class SampleDataSeeder
     )
     {
         // Insert Customers
+        var customer1Id = Guid.NewGuid().ToString();
         var customer1Result = await transaction
-            .InsertCustomerAsync("Acme Corp", "contact@acme.com", "555-0100", "2024-01-01")
+            .InsertCustomerAsync(customer1Id, "Acme Corp", "contact@acme.com", "555-0100", "2024-01-01")
             .ConfigureAwait(false);
-        if (customer1Result is not IntSqlOk customer1Success)
+        if (customer1Result is not IntSqlOk)
             return (
                 flowControl: false,
                 value: new StringSqlError((customer1Result as IntSqlError)!.Value)
             );
 
+        var customer2Id = Guid.NewGuid().ToString();
         var customer2Result = await transaction
             .InsertCustomerAsync(
+                customer2Id,
                 "Tech Solutions",
                 "info@techsolutions.com",
                 "555-0200",
                 "2024-01-02"
             )
             .ConfigureAwait(false);
-        if (customer2Result is not IntSqlOk customer2Success)
+        if (customer2Result is not IntSqlOk)
             return (
                 flowControl: false,
                 value: new StringSqlError((customer2Result as IntSqlError)!.Value)
             );
 
         // Insert Invoice
+        var invoiceId = Guid.NewGuid().ToString();
         var invoiceResult = await transaction
             .InsertInvoiceAsync(
+                invoiceId,
                 "INV-001",
                 "2024-01-15",
                 "Acme Corp",
@@ -52,7 +57,7 @@ internal static class SampleDataSeeder
                 "Sample invoice"
             )
             .ConfigureAwait(false);
-        if (invoiceResult is not IntSqlOk invoiceSuccess)
+        if (invoiceResult is not IntSqlOk)
             return (
                 flowControl: false,
                 value: new StringSqlError((invoiceResult as IntSqlError)!.Value)
@@ -61,7 +66,8 @@ internal static class SampleDataSeeder
         // Insert InvoiceLines
         var invoiceLine1Result = await transaction
             .InsertInvoiceLineAsync(
-                invoiceSuccess.Value,
+                Guid.NewGuid().ToString(),
+                invoiceId,
                 "Software License",
                 1,
                 1000.00,
@@ -78,7 +84,8 @@ internal static class SampleDataSeeder
 
         var invoiceLine2Result = await transaction
             .InsertInvoiceLineAsync(
-                invoiceSuccess.Value,
+                Guid.NewGuid().ToString(),
+                invoiceId,
                 "Support Package",
                 1,
                 250.00,
@@ -96,7 +103,8 @@ internal static class SampleDataSeeder
         // Insert Addresses
         var address1Result = await transaction
             .InsertAddressAsync(
-                customer1Success.Value,
+                Guid.NewGuid().ToString(),
+                customer1Id,
                 "123 Business Ave",
                 "New York",
                 "NY",
@@ -112,7 +120,8 @@ internal static class SampleDataSeeder
 
         var address2Result = await transaction
             .InsertAddressAsync(
-                customer1Success.Value,
+                Guid.NewGuid().ToString(),
+                customer1Id,
                 "456 Main St",
                 "Albany",
                 "NY",
@@ -128,7 +137,8 @@ internal static class SampleDataSeeder
 
         var address3Result = await transaction
             .InsertAddressAsync(
-                customer2Success.Value,
+                Guid.NewGuid().ToString(),
+                customer2Id,
                 "789 Tech Blvd",
                 "San Francisco",
                 "CA",
@@ -143,25 +153,28 @@ internal static class SampleDataSeeder
             );
 
         // Insert Orders
+        var order1Id = Guid.NewGuid().ToString();
         var order1Result = await transaction
-            .InsertOrdersAsync("ORD-001", "2024-01-10", customer1Success.Value, 500.00, "Completed")
+            .InsertOrdersAsync(order1Id, "ORD-001", "2024-01-10", customer1Id, 500.00, "Completed")
             .ConfigureAwait(false);
-        if (order1Result is not IntSqlOk order1Success)
+        if (order1Result is not IntSqlOk)
             return (
                 flowControl: false,
                 value: new StringSqlError((order1Result as IntSqlError)!.Value)
             );
 
+        var order2Id = Guid.NewGuid().ToString();
         var order2Result = await transaction
             .InsertOrdersAsync(
+                order2Id,
                 "ORD-002",
                 "2024-01-11",
-                customer2Success.Value,
+                customer2Id,
                 750.00,
                 "Processing"
             )
             .ConfigureAwait(false);
-        if (order2Result is not IntSqlOk order2Success)
+        if (order2Result is not IntSqlOk)
             return (
                 flowControl: false,
                 value: new StringSqlError((order2Result as IntSqlError)!.Value)
@@ -169,7 +182,7 @@ internal static class SampleDataSeeder
 
         // Insert OrderItems
         var orderItem1Result = await transaction
-            .InsertOrderItemAsync(order1Success.Value, "Widget A", 2, 100.00, 200.00)
+            .InsertOrderItemAsync(Guid.NewGuid().ToString(), order1Id, "Widget A", 2, 100.00, 200.00)
             .ConfigureAwait(false);
         if (orderItem1Result is not IntSqlOk)
             return (
@@ -178,7 +191,7 @@ internal static class SampleDataSeeder
             );
 
         var orderItem2Result = await transaction
-            .InsertOrderItemAsync(order1Success.Value, "Widget B", 3, 100.00, 300.00)
+            .InsertOrderItemAsync(Guid.NewGuid().ToString(), order1Id, "Widget B", 3, 100.00, 300.00)
             .ConfigureAwait(false);
         if (orderItem2Result is not IntSqlOk)
             return (
@@ -187,7 +200,7 @@ internal static class SampleDataSeeder
             );
 
         var orderItem3Result = await transaction
-            .InsertOrderItemAsync(order2Success.Value, "Service Package", 1, 750.00, 750.00)
+            .InsertOrderItemAsync(Guid.NewGuid().ToString(), order2Id, "Service Package", 1, 750.00, 750.00)
             .ConfigureAwait(false);
         if (orderItem3Result is not IntSqlOk)
             return (

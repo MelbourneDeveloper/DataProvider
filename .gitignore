@@ -370,9 +370,8 @@ Generated_Code/
 # ═══════════════════════════════════════════════════════════════════════════════
 # PROJECT-SPECIFIC: DataProvider
 # ═══════════════════════════════════════════════════════════════════════════════
-# SQLite databases (tests create these)
+# SQLite databases (created at build time and by tests)
 *.db
-invoices.db
 
 # Generated SQL files from DataProvider
 *.generated.sql
