@@ -28,9 +28,9 @@
     <AdditionalFiles Include="DataProvider.json" />
   </ItemGroup>
 
-  <!-- Create database with schema before code generation using Migration (no raw SQL) -->
+  <!-- Create database with schema before code generation using Migration.Cli -->
   <Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider">
-    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../Scheduling.BuildDb/Scheduling.BuildDb.csproj" -- "$(MSBuildProjectDirectory)/scheduling-build.db"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
+    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../../Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/scheduling-schema.yaml" --output "$(MSBuildProjectDirectory)/scheduling-build.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
   </Target>
 
   <!-- Generate C# from SQL using DataProvider.SQLite.Cli -->

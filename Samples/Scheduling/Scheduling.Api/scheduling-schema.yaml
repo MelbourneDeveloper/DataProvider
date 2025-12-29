@@ -1,0 +1,210 @@
+name: scheduling
+tables:
+  - name: fhir_Practitioner
+    schema: public
+    columns:
+      - name: Id
+        type: Text
+        isNullable: false
+      - name: Identifier
+        type: Text
+        isNullable: false
+      - name: Active
+        type: Int
+        isNullable: false
+        default: "1"
+      - name: NameFamily
+        type: Text
+        isNullable: false
+      - name: NameGiven
+        type: Text
+        isNullable: false
+      - name: Qualification
+        type: Text
+        isNullable: true
+      - name: Specialty
+        type: Text
+        isNullable: true
+      - name: TelecomEmail
+        type: Text
+        isNullable: true
+      - name: TelecomPhone
+        type: Text
+        isNullable: true
+    primaryKey:
+      columns:
+        - Id
+    indexes:
+      - name: idx_practitioner_identifier
+        columns: [Identifier]
+        unique: false
+      - name: idx_practitioner_specialty
+        columns: [Specialty]
+        unique: false
+
+  - name: fhir_Schedule
+    schema: public
+    columns:
+      - name: Id
+        type: Text
+        isNullable: false
+      - name: Active
+        type: Int
+        isNullable: false
+        default: "1"
+      - name: PractitionerReference
+        type: Text
+        isNullable: false
+      - name: PlanningHorizon
+        type: Int
+        isNullable: false
+        default: "30"
+      - name: Comment
+        type: Text
+        isNullable: true
+    primaryKey:
+      columns:
+        - Id
+    foreignKeys:
+      - columns:
+          - PractitionerReference
+        referencedTable: fhir_Practitioner
+        referencedSchema: public
+        referencedColumns:
+          - Id
+        onDelete: NoAction
+        onUpdate: NoAction
+    indexes:
+      - name: idx_schedule_practitioner
+        columns: [PractitionerReference]
+        unique: false
+
+  - name: fhir_Slot
+    schema: public
+    columns:
+      - name: Id
+        type: Text
+        isNullable: false
+      - name: ScheduleReference
+        type: Text
+        isNullable: false
+      - name: Status
+        type: Text
+        isNullable: false
+        checkConstraint: "Status IN ('free', 'busy', 'busy-unavailable', 'busy-tentative')"
+      - name: StartTime
+        type: Text
+        isNullable: false
+      - name: EndTime
+        type: Text
+        isNullable: false
+      - name: Overbooked
+        type: Int
+        isNullable: false
+        default: "0"
+      - name: Comment
+        type: Text
+        isNullable: true
+    primaryKey:
+      columns:
+        - Id
+    foreignKeys:
+      - columns:
+          - ScheduleReference
+        referencedTable: fhir_Schedule
+        referencedSchema: public
+        referencedColumns:
+          - Id
+        onDelete: NoAction
+        onUpdate: NoAction
+    indexes:
+      - name: idx_slot_schedule
+        columns: [ScheduleReference]
+        unique: false
+      - name: idx_slot_status
+        columns: [Status]
+        unique: false
+
+  - name: fhir_Appointment
+    schema: public
+    columns:
+      - name: Id
+        type: Text
+        isNullable: false
+      - name: Status
+        type: Text
+        isNullable: false
+        checkConstraint: "Status IN ('proposed', 'pending', 'booked', 'arrived', 'fulfilled', 'cancelled', 'noshow', 'entered-in-error', 'checked-in', 'waitlist')"
+      - name: ServiceCategory
+        type: Text
+        isNullable: true
+      - name: ServiceType
+        type: Text
+        isNullable: true
+      - name: ReasonCode
+        type: Text
+        isNullable: true
+      - name: Priority
+        type: Text
+        isNullable: false
+        checkConstraint: "Priority IN ('routine', 'urgent', 'asap', 'stat')"
+      - name: Description
+        type: Text
+        isNullable: true
+      - name: StartTime
+        type: Text
+        isNullable: false
+      - name: EndTime
+        type: Text
+        isNullable: false
+      - name: MinutesDuration
+        type: Int
+        isNullable: false
+      - name: PatientReference
+        type: Text
+        isNullable: false
+      - name: PractitionerReference
+        type: Text
+        isNullable: false
+      - name: Created
+        type: Text
+        isNullable: false
+      - name: Comment
+        type: Text
+        isNullable: true
+    primaryKey:
+      columns:
+        - Id
+    indexes:
+      - name: idx_appointment_status
+        columns: [Status]
+        unique: false
+      - name: idx_appointment_patient
+        columns: [PatientReference]
+        unique: false
+      - name: idx_appointment_practitioner
+        columns: [PractitionerReference]
+        unique: false
+
+  - name: sync_ScheduledPatient
+    schema: public
+    columns:
+      - name: PatientId
+        type: Text
+        isNullable: false
+      - name: DisplayName
+        type: Text
+        isNullable: false
+      - name: ContactPhone
+        type: Text
+        isNullable: true
+      - name: ContactEmail
+        type: Text
+        isNullable: true
+      - name: SyncedAt
+        type: Text
+        isNullable: false
+        default: "(datetime('now'))"
+    primaryKey:
+      columns:
+        - PatientId

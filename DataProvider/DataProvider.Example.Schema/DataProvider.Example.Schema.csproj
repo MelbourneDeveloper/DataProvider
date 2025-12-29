@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <RootNamespace>Gatekeeper.Migration</RootNamespace>
+    <NoWarn>$(NoWarn);CA1515</NoWarn>
   </PropertyGroup>
 
-  <!-- ONLY reference core Migration - NO generated code deps to avoid circular builds -->
+  <!-- CRITICAL: This project must have NO dependencies on generated code -->
+  <!-- It is built BEFORE code generation runs -->
   <ItemGroup>
     <ProjectReference Include="..\..\Migration\Migration\Migration.csproj" />
   </ItemGroup>

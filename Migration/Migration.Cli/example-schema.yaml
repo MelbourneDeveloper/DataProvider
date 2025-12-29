@@ -1,0 +1,199 @@
+name: example
+tables:
+  - name: Invoice
+    schema: public
+    columns:
+      - name: Id
+        type: Text
+        isNullable: false
+      - name: InvoiceNumber
+        type: Text
+        isNullable: false
+      - name: InvoiceDate
+        type: Text
+        isNullable: false
+      - name: CustomerName
+        type: Text
+        isNullable: false
+      - name: CustomerEmail
+        type: Text
+        isNullable: true
+      - name: TotalAmount
+        type: Double
+        isNullable: false
+      - name: DiscountAmount
+        type: Double
+        isNullable: true
+      - name: Notes
+        type: Text
+        isNullable: true
+    primaryKey:
+      columns:
+        - Id
+
+  - name: InvoiceLine
+    schema: public
+    columns:
+      - name: Id
+        type: Text
+        isNullable: false
+      - name: InvoiceId
+        type: Text
+        isNullable: false
+      - name: Description
+        type: Text
+        isNullable: false
+      - name: Quantity
+        type: Double
+        isNullable: false
+      - name: UnitPrice
+        type: Double
+        isNullable: false
+      - name: Amount
+        type: Double
+        isNullable: false
+      - name: DiscountPercentage
+        type: Double
+        isNullable: true
+      - name: Notes
+        type: Text
+        isNullable: true
+    primaryKey:
+      columns:
+        - Id
+    foreignKeys:
+      - columns:
+          - InvoiceId
+        referencedTable: Invoice
+        referencedSchema: public
+        referencedColumns:
+          - Id
+        onDelete: NoAction
+        onUpdate: NoAction
+
+  - name: Customer
+    schema: public
+    columns:
+      - name: Id
+        type: Text
+        isNullable: false
+      - name: CustomerName
+        type: Text
+        isNullable: false
+      - name: Email
+        type: Text
+        isNullable: true
+      - name: Phone
+        type: Text
+        isNullable: true
+      - name: CreatedDate
+        type: Text
+        isNullable: false
+    primaryKey:
+      columns:
+        - Id
+
+  - name: Address
+    schema: public
+    columns:
+      - name: Id
+        type: Text
+        isNullable: false
+      - name: CustomerId
+        type: Text
+        isNullable: false
+      - name: Street
+        type: Text
+        isNullable: false
+      - name: City
+        type: Text
+        isNullable: false
+      - name: State
+        type: Text
+        isNullable: false
+      - name: ZipCode
+        type: Text
+        isNullable: false
+      - name: Country
+        type: Text
+        isNullable: false
+    primaryKey:
+      columns:
+        - Id
+    foreignKeys:
+      - columns:
+          - CustomerId
+        referencedTable: Customer
+        referencedSchema: public
+        referencedColumns:
+          - Id
+        onDelete: NoAction
+        onUpdate: NoAction
+
+  - name: Orders
+    schema: public
+    columns:
+      - name: Id
+        type: Text
+        isNullable: false
+      - name: OrderNumber
+        type: Text
+        isNullable: false
+      - name: OrderDate
+        type: Text
+        isNullable: false
+      - name: CustomerId
+        type: Text
+        isNullable: false
+      - name: TotalAmount
+        type: Double
+        isNullable: false
+      - name: Status
+        type: Text
+        isNullable: false
+    primaryKey:
+      columns:
+        - Id
+    foreignKeys:
+      - columns:
+          - CustomerId
+        referencedTable: Customer
+        referencedSchema: public
+        referencedColumns:
+          - Id
+        onDelete: NoAction
+        onUpdate: NoAction
+
+  - name: OrderItem
+    schema: public
+    columns:
+      - name: Id
+        type: Text
+        isNullable: false
+      - name: OrderId
+        type: Text
+        isNullable: false
+      - name: ProductName
+        type: Text
+        isNullable: false
+      - name: Quantity
+        type: Double
+        isNullable: false
+      - name: Price
+        type: Double
+        isNullable: false
+      - name: Subtotal
+        type: Double
+        isNullable: false
+    primaryKey:
+      columns:
+        - Id
+    foreignKeys:
+      - columns:
+          - OrderId
+        referencedTable: Orders
+        referencedSchema: public
+        referencedColumns:
+          - Id
+        onDelete: NoAction
+        onUpdate: NoAction

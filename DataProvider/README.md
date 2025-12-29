@@ -30,6 +30,72 @@ A .NET source generator that creates compile-time safe database extension method
 <PackageReference Include="DataProvider.SqlServer" Version="*" />
 ```
 
+## Database Schema Setup (Migrations)
+
+DataProvider requires a database with schema to exist **before** code generation runs. The schema allows the generator to introspect table structures and generate correct types.
+
+### Required Build Order
+
+```
+1. Export C# Schema to YAML (if schema defined in code)
+2. Run Migration.Cli to create database from YAML
+3. Run DataProvider code generation
+```
+
+### Using Migration.Cli
+
+Migration.Cli is the **single canonical tool** for creating databases from schema definitions. All projects that need a build-time database MUST use this tool.
+
+```bash
+dotnet run --project Migration/Migration.Cli/Migration.Cli.csproj -- \
+    --schema path/to/schema.yaml \
+    --output path/to/database.db \
+    --provider sqlite
+```
+
+### MSBuild Integration
+
+Configure your `.csproj` to run migrations before code generation:
+
+```xml
+<!-- Create database with schema before code generation -->
+<Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider">
+    <Exec Command='dotnet run --project "$(SolutionDir)Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/schema.yaml" --output "$(MSBuildProjectDirectory)/build.db" --provider sqlite' />
+</Target>
+
+<!-- Generate C# from SQL using DataProvider.SQLite.Cli -->
+<Target Name="GenerateDataProvider" BeforeTargets="BeforeCompile;CoreCompile">
+    <Exec Command='dotnet run --project "$(SolutionDir)DataProvider/DataProvider.SQLite.Cli/DataProvider.SQLite.Cli.csproj" -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(MSBuildProjectDirectory)/Generated"' />
+</Target>
+```
+
+### YAML Schema Format
+
+See [this](Migration/migration_exe_spec.md)
+
+### Exporting C# Schemas to YAML
+
+If your schema is defined in C# code using the Migration fluent API:
+
+```csharp
+var schema = Schema.Define("my_schema")
+    .Table("Customer", t => t
+        .Column("Id", Text, c => c.PrimaryKey())
+        .Column("Name", Text, c => c.NotNull())
+    )
+    .Build();
+
+// Export to YAML
+SchemaYamlSerializer.ToYamlFile(schema, "schema.yaml");
+```
+
+### Forbidden Patterns
+
+- **NO raw SQL DDL files** - Use Migration.Cli with YAML
+- **NO individual BuildDb projects** - Use Migration.Cli (single tool)
+- **NO `schema.sql` files** - YAML schemas only
+- **NO code generation before schema creation** - Migration MUST run first
+
 ## Configuration
 
 Create a `DataProvider.json` file in your project root:

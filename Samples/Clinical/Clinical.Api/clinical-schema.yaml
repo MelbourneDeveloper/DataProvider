@@ -1,0 +1,302 @@
+name: clinical
+tables:
+  - name: fhir_Patient
+    schema: public
+    columns:
+      - name: Id
+        type: Text
+        isNullable: false
+      - name: Active
+        type: Int
+        isNullable: false
+        default: "1"
+      - name: GivenName
+        type: Text
+        isNullable: false
+      - name: FamilyName
+        type: Text
+        isNullable: false
+      - name: BirthDate
+        type: Text
+        isNullable: true
+      - name: Gender
+        type: Text
+        isNullable: true
+        checkConstraint: "Gender IN ('male', 'female', 'other', 'unknown')"
+      - name: Phone
+        type: Text
+        isNullable: true
+      - name: Email
+        type: Text
+        isNullable: true
+      - name: AddressLine
+        type: Text
+        isNullable: true
+      - name: City
+        type: Text
+        isNullable: true
+      - name: State
+        type: Text
+        isNullable: true
+      - name: PostalCode
+        type: Text
+        isNullable: true
+      - name: Country
+        type: Text
+        isNullable: true
+      - name: LastUpdated
+        type: Text
+        isNullable: false
+        default: "(datetime('now'))"
+      - name: VersionId
+        type: Int
+        isNullable: false
+        default: "1"
+    primaryKey:
+      columns:
+        - Id
+    indexes:
+      - name: idx_fhir_patient_family
+        columns: [FamilyName]
+        unique: false
+      - name: idx_fhir_patient_given
+        columns: [GivenName]
+        unique: false
+
+  - name: fhir_Encounter
+    schema: public
+    columns:
+      - name: Id
+        type: Text
+        isNullable: false
+      - name: Status
+        type: Text
+        isNullable: false
+        checkConstraint: "Status IN ('planned', 'arrived', 'triaged', 'in-progress', 'onleave', 'finished', 'cancelled', 'entered-in-error')"
+      - name: Class
+        type: Text
+        isNullable: false
+        checkConstraint: "Class IN ('ambulatory', 'emergency', 'inpatient', 'observation', 'virtual')"
+      - name: PatientId
+        type: Text
+        isNullable: false
+      - name: PractitionerId
+        type: Text
+        isNullable: true
+      - name: ServiceType
+        type: Text
+        isNullable: true
+      - name: ReasonCode
+        type: Text
+        isNullable: true
+      - name: PeriodStart
+        type: Text
+        isNullable: false
+      - name: PeriodEnd
+        type: Text
+        isNullable: true
+      - name: Notes
+        type: Text
+        isNullable: true
+      - name: LastUpdated
+        type: Text
+        isNullable: false
+        default: "(datetime('now'))"
+      - name: VersionId
+        type: Int
+        isNullable: false
+        default: "1"
+    primaryKey:
+      columns:
+        - Id
+    foreignKeys:
+      - columns:
+          - PatientId
+        referencedTable: fhir_Patient
+        referencedSchema: public
+        referencedColumns:
+          - Id
+        onDelete: NoAction
+        onUpdate: NoAction
+    indexes:
+      - name: idx_fhir_encounter_patient
+        columns: [PatientId]
+        unique: false
+
+  - name: fhir_Condition
+    schema: public
+    columns:
+      - name: Id
+        type: Text
+        isNullable: false
+      - name: ClinicalStatus
+        type: Text
+        isNullable: false
+        checkConstraint: "ClinicalStatus IN ('active', 'recurrence', 'relapse', 'inactive', 'remission', 'resolved')"
+      - name: VerificationStatus
+        type: Text
+        isNullable: true
+        checkConstraint: "VerificationStatus IN ('unconfirmed', 'provisional', 'differential', 'confirmed', 'refuted', 'entered-in-error')"
+      - name: Category
+        type: Text
+        isNullable: true
+        default: "'problem-list-item'"
+      - name: Severity
+        type: Text
+        isNullable: true
+        checkConstraint: "Severity IN ('mild', 'moderate', 'severe')"
+      - name: CodeSystem
+        type: Text
+        isNullable: false
+        default: "'http://hl7.org/fhir/sid/icd-10-cm'"
+      - name: CodeValue
+        type: Text
+        isNullable: false
+      - name: CodeDisplay
+        type: Text
+        isNullable: false
+      - name: SubjectReference
+        type: Text
+        isNullable: false
+      - name: EncounterReference
+        type: Text
+        isNullable: true
+      - name: OnsetDateTime
+        type: Text
+        isNullable: true
+      - name: RecordedDate
+        type: Text
+        isNullable: false
+        default: "(date('now'))"
+      - name: RecorderReference
+        type: Text
+        isNullable: true
+      - name: NoteText
+        type: Text
+        isNullable: true
+      - name: LastUpdated
+        type: Text
+        isNullable: false
+        default: "(datetime('now'))"
+      - name: VersionId
+        type: Int
+        isNullable: false
+        default: "1"
+    primaryKey:
+      columns:
+        - Id
+    foreignKeys:
+      - columns:
+          - SubjectReference
+        referencedTable: fhir_Patient
+        referencedSchema: public
+        referencedColumns:
+          - Id
+        onDelete: NoAction
+        onUpdate: NoAction
+    indexes:
+      - name: idx_fhir_condition_patient
+        columns: [SubjectReference]
+        unique: false
+
+  - name: fhir_MedicationRequest
+    schema: public
+    columns:
+      - name: Id
+        type: Text
+        isNullable: false
+      - name: Status
+        type: Text
+        isNullable: false
+        checkConstraint: "Status IN ('active', 'on-hold', 'cancelled', 'completed', 'entered-in-error', 'stopped', 'draft')"
+      - name: Intent
+        type: Text
+        isNullable: false
+        checkConstraint: "Intent IN ('proposal', 'plan', 'order', 'original-order', 'reflex-order', 'filler-order', 'instance-order', 'option')"
+      - name: PatientId
+        type: Text
+        isNullable: false
+      - name: PractitionerId
+        type: Text
+        isNullable: false
+      - name: EncounterId
+        type: Text
+        isNullable: true
+      - name: MedicationCode
+        type: Text
+        isNullable: false
+      - name: MedicationDisplay
+        type: Text
+        isNullable: false
+      - name: DosageInstruction
+        type: Text
+        isNullable: true
+      - name: Quantity
+        type: Double
+        isNullable: true
+      - name: Unit
+        type: Text
+        isNullable: true
+      - name: Refills
+        type: Int
+        isNullable: false
+        default: "0"
+      - name: AuthoredOn
+        type: Text
+        isNullable: false
+        default: "(datetime('now'))"
+      - name: LastUpdated
+        type: Text
+        isNullable: false
+        default: "(datetime('now'))"
+      - name: VersionId
+        type: Int
+        isNullable: false
+        default: "1"
+    primaryKey:
+      columns:
+        - Id
+    foreignKeys:
+      - columns:
+          - PatientId
+        referencedTable: fhir_Patient
+        referencedSchema: public
+        referencedColumns:
+          - Id
+        onDelete: NoAction
+        onUpdate: NoAction
+      - columns:
+          - EncounterId
+        referencedTable: fhir_Encounter
+        referencedSchema: public
+        referencedColumns:
+          - Id
+        onDelete: NoAction
+        onUpdate: NoAction
+    indexes:
+      - name: idx_fhir_medication_patient
+        columns: [PatientId]
+        unique: false
+
+  - name: sync_Provider
+    schema: public
+    columns:
+      - name: ProviderId
+        type: Text
+        isNullable: false
+      - name: FirstName
+        type: Text
+        isNullable: false
+      - name: LastName
+        type: Text
+        isNullable: false
+      - name: Specialty
+        type: Text
+        isNullable: true
+      - name: SyncedAt
+        type: Text
+        isNullable: false
+        default: "(datetime('now'))"
+    primaryKey:
+      columns:
+        - ProviderId

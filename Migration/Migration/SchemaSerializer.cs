@@ -4,12 +4,12 @@ using System.Text.Json.Serialization;
 namespace Migration;
 
 /// <summary>
-/// Serializes and deserializes schema definitions to/from JSON.
+/// Serializes and deserializes schema definitions to/from JSON and YAML.
 /// Used for capturing existing database schemas and storing as metadata.
 /// </summary>
 public static class SchemaSerializer
 {
-    private static readonly JsonSerializerOptions Options = new()
+    private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -20,19 +20,37 @@ public static class SchemaSerializer
     /// <summary>
     /// Serialize a schema definition to JSON string.
     /// </summary>
-    /// <param name="schema">Schema to serialize</param>
-    /// <returns>JSON representation of the schema</returns>
+    /// <param name="schema">Schema to serialize.</param>
+    /// <returns>JSON representation of the schema.</returns>
     public static string ToJson(SchemaDefinition schema) =>
-        JsonSerializer.Serialize(schema, Options);
+        JsonSerializer.Serialize(schema, JsonOptions);
 
     /// <summary>
     /// Deserialize a schema definition from JSON string.
     /// </summary>
-    /// <param name="json">JSON string</param>
-    /// <returns>Deserialized schema definition</returns>
+    /// <param name="json">JSON string.</param>
+    /// <returns>Deserialized schema definition.</returns>
     public static SchemaDefinition FromJson(string json) =>
-        JsonSerializer.Deserialize<SchemaDefinition>(json, Options)
+        JsonSerializer.Deserialize<SchemaDefinition>(json, JsonOptions)
         ?? throw new JsonException("Failed to deserialize schema");
+
+    /// <summary>
+    /// Serialize a schema definition to YAML string.
+    /// Delegates to SchemaYamlSerializer.
+    /// </summary>
+    /// <param name="schema">Schema to serialize.</param>
+    /// <returns>YAML representation of the schema.</returns>
+    public static string ToYaml(SchemaDefinition schema) =>
+        SchemaYamlSerializer.ToYaml(schema);
+
+    /// <summary>
+    /// Deserialize a schema definition from YAML string.
+    /// Delegates to SchemaYamlSerializer.
+    /// </summary>
+    /// <param name="yaml">YAML string.</param>
+    /// <returns>Deserialized schema definition.</returns>
+    public static SchemaDefinition FromYaml(string yaml) =>
+        SchemaYamlSerializer.FromYaml(yaml);
 }
 
 /// <summary>

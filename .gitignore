@@ -387,3 +387,9 @@ Samples/Dashboard/Dashboard.Web/wwwroot/js/vendor/
 
 # Dashboard compiled JS (H5/Bridge output)
 Samples/Dashboard/Dashboard.Web/wwwroot/js/Dashboard.js
+
+# Generated YAML schema files (exported from C# at build time)
+DataProvider/DataProvider.Example/example-schema.yaml
+Samples/Clinical/Clinical.Api/clinical-schema.yaml
+Samples/Scheduling/Scheduling.Api/scheduling-schema.yaml
+Gatekeeper/Gatekeeper.Api/gatekeeper-schema.yaml

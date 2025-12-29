@@ -1,7 +1,7 @@
 using Migration;
 using static Migration.PortableTypes;
 
-namespace Scheduling.Api;
+namespace Scheduling.Schema;
 
 /// <summary>
 /// Database-independent schema definition for Scheduling FHIR R4 resources.

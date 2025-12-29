@@ -1,7 +1,7 @@
 using Migration;
 using static Migration.PortableTypes;
 
-namespace Clinical.Api;
+namespace Clinical.Schema;
 
 /// <summary>
 /// Database-independent schema definition for Clinical FHIR R4 resources.

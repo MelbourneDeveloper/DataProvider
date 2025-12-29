@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);CA1515</NoWarn>
+  </PropertyGroup>
+
+  <!-- CRITICAL: This project must have NO dependencies on generated code -->
+  <!-- It is built BEFORE code generation runs -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Migration\Migration\Migration.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,498 @@
+name: gatekeeper
+tables:
+  - name: gk_user
+    schema: public
+    columns:
+      - name: id
+        type: Text
+        isNullable: false
+      - name: display_name
+        type: Text
+        isNullable: false
+      - name: email
+        type: Text
+        isNullable: true
+      - name: created_at
+        type: Text
+        isNullable: false
+      - name: last_login_at
+        type: Text
+        isNullable: true
+      - name: is_active
+        type: Boolean
+        isNullable: false
+        default: "1"
+      - name: metadata
+        type: Json
+        isNullable: true
+    primaryKey:
+      columns:
+        - id
+    indexes:
+      - name: idx_user_email
+        columns: [email]
+        unique: true
+
+  - name: gk_credential
+    schema: public
+    columns:
+      - name: id
+        type: Text
+        isNullable: false
+      - name: user_id
+        type: Text
+        isNullable: false
+      - name: public_key
+        type: Blob
+        isNullable: false
+      - name: sign_count
+        type: Int
+        isNullable: false
+        default: "0"
+      - name: aaguid
+        type: Text
+        isNullable: true
+      - name: credential_type
+        type: Text
+        isNullable: false
+      - name: transports
+        type: Json
+        isNullable: true
+      - name: attestation_format
+        type: Text
+        isNullable: true
+      - name: created_at
+        type: Text
+        isNullable: false
+      - name: last_used_at
+        type: Text
+        isNullable: true
+      - name: device_name
+        type: Text
+        isNullable: true
+      - name: is_backup_eligible
+        type: Boolean
+        isNullable: true
+      - name: is_backed_up
+        type: Boolean
+        isNullable: true
+    primaryKey:
+      columns:
+        - id
+    foreignKeys:
+      - columns:
+          - user_id
+        referencedTable: gk_user
+        referencedSchema: public
+        referencedColumns:
+          - id
+        onDelete: Cascade
+        onUpdate: NoAction
+    indexes:
+      - name: idx_credential_user
+        columns: [user_id]
+        unique: false
+
+  - name: gk_session
+    schema: public
+    columns:
+      - name: id
+        type: Text
+        isNullable: false
+      - name: user_id
+        type: Text
+        isNullable: false
+      - name: credential_id
+        type: Text
+        isNullable: true
+      - name: created_at
+        type: Text
+        isNullable: false
+      - name: expires_at
+        type: Text
+        isNullable: false
+      - name: last_activity_at
+        type: Text
+        isNullable: false
+      - name: ip_address
+        type: Text
+        isNullable: true
+      - name: user_agent
+        type: Text
+        isNullable: true
+      - name: is_revoked
+        type: Boolean
+        isNullable: false
+        default: "0"
+    primaryKey:
+      columns:
+        - id
+    foreignKeys:
+      - columns:
+          - user_id
+        referencedTable: gk_user
+        referencedSchema: public
+        referencedColumns:
+          - id
+        onDelete: Cascade
+        onUpdate: NoAction
+      - columns:
+          - credential_id
+        referencedTable: gk_credential
+        referencedSchema: public
+        referencedColumns:
+          - id
+        onDelete: NoAction
+        onUpdate: NoAction
+    indexes:
+      - name: idx_session_user
+        columns: [user_id]
+        unique: false
+      - name: idx_session_expires
+        columns: [expires_at]
+        unique: false
+
+  - name: gk_challenge
+    schema: public
+    columns:
+      - name: id
+        type: Text
+        isNullable: false
+      - name: user_id
+        type: Text
+        isNullable: true
+      - name: challenge
+        type: Blob
+        isNullable: false
+      - name: type
+        type: Text
+        isNullable: false
+      - name: created_at
+        type: Text
+        isNullable: false
+      - name: expires_at
+        type: Text
+        isNullable: false
+    primaryKey:
+      columns:
+        - id
+
+  - name: gk_role
+    schema: public
+    columns:
+      - name: id
+        type: Text
+        isNullable: false
+      - name: name
+        type: Text
+        isNullable: false
+      - name: description
+        type: Text
+        isNullable: true
+      - name: is_system
+        type: Boolean
+        isNullable: false
+        default: "0"
+      - name: created_at
+        type: Text
+        isNullable: false
+      - name: parent_role_id
+        type: Text
+        isNullable: true
+    primaryKey:
+      columns:
+        - id
+    foreignKeys:
+      - columns:
+          - parent_role_id
+        referencedTable: gk_role
+        referencedSchema: public
+        referencedColumns:
+          - id
+        onDelete: NoAction
+        onUpdate: NoAction
+    indexes:
+      - name: idx_role_name
+        columns: [name]
+        unique: true
+
+  - name: gk_user_role
+    schema: public
+    columns:
+      - name: user_id
+        type: Text
+        isNullable: false
+      - name: role_id
+        type: Text
+        isNullable: false
+      - name: granted_at
+        type: Text
+        isNullable: false
+      - name: granted_by
+        type: Text
+        isNullable: true
+      - name: expires_at
+        type: Text
+        isNullable: true
+    primaryKey:
+      columns:
+        - user_id
+        - role_id
+    foreignKeys:
+      - columns:
+          - user_id
+        referencedTable: gk_user
+        referencedSchema: public
+        referencedColumns:
+          - id
+        onDelete: Cascade
+        onUpdate: NoAction
+      - columns:
+          - role_id
+        referencedTable: gk_role
+        referencedSchema: public
+        referencedColumns:
+          - id
+        onDelete: Cascade
+        onUpdate: NoAction
+      - columns:
+          - granted_by
+        referencedTable: gk_user
+        referencedSchema: public
+        referencedColumns:
+          - id
+        onDelete: NoAction
+        onUpdate: NoAction
+
+  - name: gk_permission
+    schema: public
+    columns:
+      - name: id
+        type: Text
+        isNullable: false
+      - name: code
+        type: Text
+        isNullable: false
+      - name: resource_type
+        type: Text
+        isNullable: false
+      - name: action
+        type: Text
+        isNullable: false
+      - name: description
+        type: Text
+        isNullable: true
+      - name: created_at
+        type: Text
+        isNullable: false
+    primaryKey:
+      columns:
+        - id
+    indexes:
+      - name: idx_permission_code
+        columns: [code]
+        unique: true
+      - name: idx_permission_resource
+        columns: [resource_type]
+        unique: false
+
+  - name: gk_role_permission
+    schema: public
+    columns:
+      - name: role_id
+        type: Text
+        isNullable: false
+      - name: permission_id
+        type: Text
+        isNullable: false
+      - name: granted_at
+        type: Text
+        isNullable: false
+    primaryKey:
+      columns:
+        - role_id
+        - permission_id
+    foreignKeys:
+      - columns:
+          - role_id
+        referencedTable: gk_role
+        referencedSchema: public
+        referencedColumns:
+          - id
+        onDelete: Cascade
+        onUpdate: NoAction
+      - columns:
+          - permission_id
+        referencedTable: gk_permission
+        referencedSchema: public
+        referencedColumns:
+          - id
+        onDelete: Cascade
+        onUpdate: NoAction
+
+  - name: gk_user_permission
+    schema: public
+    columns:
+      - name: user_id
+        type: Text
+        isNullable: false
+      - name: permission_id
+        type: Text
+        isNullable: false
+      - name: scope_type
+        type: Text
+        isNullable: true
+      - name: scope_value
+        type: Text
+        isNullable: true
+      - name: granted_at
+        type: Text
+        isNullable: false
+      - name: granted_by
+        type: Text
+        isNullable: true
+      - name: expires_at
+        type: Text
+        isNullable: true
+      - name: reason
+        type: Text
+        isNullable: true
+    foreignKeys:
+      - columns:
+          - user_id
+        referencedTable: gk_user
+        referencedSchema: public
+        referencedColumns:
+          - id
+        onDelete: Cascade
+        onUpdate: NoAction
+      - columns:
+          - permission_id
+        referencedTable: gk_permission
+        referencedSchema: public
+        referencedColumns:
+          - id
+        onDelete: Cascade
+        onUpdate: NoAction
+      - columns:
+          - granted_by
+        referencedTable: gk_user
+        referencedSchema: public
+        referencedColumns:
+          - id
+        onDelete: NoAction
+        onUpdate: NoAction
+    indexes:
+      - name: idx_user_permission
+        columns: [user_id, permission_id, scope_value]
+        unique: true
+
+  - name: gk_resource_grant
+    schema: public
+    columns:
+      - name: id
+        type: Text
+        isNullable: false
+      - name: user_id
+        type: Text
+        isNullable: false
+      - name: resource_type
+        type: Text
+        isNullable: false
+      - name: resource_id
+        type: Text
+        isNullable: false
+      - name: permission_id
+        type: Text
+        isNullable: false
+      - name: granted_at
+        type: Text
+        isNullable: false
+      - name: granted_by
+        type: Text
+        isNullable: true
+      - name: expires_at
+        type: Text
+        isNullable: true
+    primaryKey:
+      columns:
+        - id
+    foreignKeys:
+      - columns:
+          - user_id
+        referencedTable: gk_user
+        referencedSchema: public
+        referencedColumns:
+          - id
+        onDelete: Cascade
+        onUpdate: NoAction
+      - columns:
+          - permission_id
+        referencedTable: gk_permission
+        referencedSchema: public
+        referencedColumns:
+          - id
+        onDelete: NoAction
+        onUpdate: NoAction
+      - columns:
+          - granted_by
+        referencedTable: gk_user
+        referencedSchema: public
+        referencedColumns:
+          - id
+        onDelete: NoAction
+        onUpdate: NoAction
+    indexes:
+      - name: idx_resource_grant_user
+        columns: [user_id]
+        unique: false
+      - name: idx_resource_grant_resource
+        columns: [resource_type, resource_id]
+        unique: false
+    uniqueConstraints:
+      - name: uq_resource_grant
+        columns: [user_id, resource_type, resource_id, permission_id]
+
+  - name: gk_policy
+    schema: public
+    columns:
+      - name: id
+        type: Text
+        isNullable: false
+      - name: name
+        type: Text
+        isNullable: false
+      - name: description
+        type: Text
+        isNullable: true
+      - name: resource_type
+        type: Text
+        isNullable: false
+      - name: action
+        type: Text
+        isNullable: false
+      - name: condition
+        type: Json
+        isNullable: false
+      - name: effect
+        type: Text
+        isNullable: false
+        default: "'allow'"
+      - name: priority
+        type: Int
+        isNullable: false
+        default: "0"
+      - name: is_active
+        type: Boolean
+        isNullable: false
+        default: "1"
+      - name: created_at
+        type: Text
+        isNullable: false
+    primaryKey:
+      columns:
+        - id
+    indexes:
+      - name: idx_policy_name
+        columns: [name]
+        unique: true

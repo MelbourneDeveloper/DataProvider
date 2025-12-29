@@ -32,10 +32,35 @@ If a project defines its schema in C# code (e.g., `ExampleSchema.cs`, `ClinicalS
 
 ### Schema-to-YAML Workflow
 
-1. Project defines schema in C# using `SchemaDefinition` API
-2. Build step converts C# schema to YAML file (one-time or as pre-build target)
-3. Migration.Cli reads YAML and creates database
-4. DataProvider code generation runs against the created database
+1. Schema is defined in a **separate assembly** (e.g., `MyProject.Schema/`) with NO dependencies on generated code
+2. Build step compiles the schema assembly first
+3. Schema.Export.Cli exports C# schema to YAML file
+4. Migration.Cli reads YAML and creates database
+5. DataProvider code generation runs against the created database
+6. Main project (e.g., `MyProject.Api/`) compiles with generated code
+
+### CRITICAL: Separate Schema Assemblies
+
+**Schemas MUST be in separate assemblies to avoid circular build dependencies.**
+
+Correct pattern:
+```
+MyProject.Schema/           # Schema definition only, NO generated code deps
+  └── MyProjectSchema.cs    # Defines SchemaDefinition
+MyProject.Api/              # References MyProject.Schema, has generated code
+  └── Generated/            # DataProvider generated code
+```
+
+The schema assembly:
+- Contains ONLY the `SchemaDefinition` class
+- References ONLY `Migration` (for schema types)
+- Has NO dependencies on generated code
+- Can be built BEFORE code generation runs
+
+The API/main assembly:
+- References the schema assembly
+- Contains generated code from DataProvider
+- Is built AFTER code generation
 
 ## Why YAML?
 
@@ -51,15 +76,41 @@ If a project defines its schema in C# code (e.g., `ExampleSchema.cs`, `ClinicalS
 - Multiple CLI tools for database creation
 - Hardcoded schema names/switches in the CLI
 - CLI tool referencing actual schemas
+- **Schema classes in the same project as generated code** (causes circular build deps)
+- Schema assemblies with dependencies on generated code
 
 ## MSBuild Integration
 
-Consumer projects call Migration.Cli in a pre-build target:
+Consumer projects call Schema.Export.Cli then Migration.Cli in pre-build targets:
 
 ```xml
+<!-- Step 1: Export C# schema to YAML (schema assembly must be built first) -->
+<Target Name="ExportSchemaToYaml" BeforeTargets="CreateBuildDatabase">
+    <Exec Command='dotnet run --project "$(SolutionDir)Migration/Schema.Export.Cli/Schema.Export.Cli.csproj" -- --assembly "$(SolutionDir)MyProject.Schema/bin/Debug/net9.0/MyProject.Schema.dll" --type "MyProject.Schema.MyProjectSchema" --output "$(MSBuildProjectDirectory)/schema.yaml"' />
+</Target>
+
+<!-- Step 2: Create database from YAML -->
 <Target Name="CreateBuildDatabase" BeforeTargets="GenerateDataProvider">
-    <Exec Command='dotnet run --project "$(SolutionDir)Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/schema.yaml" --output "$(MSBuildProjectDirectory)/build.db"' />
+    <Exec Command='dotnet run --project "$(SolutionDir)Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/schema.yaml" --output "$(MSBuildProjectDirectory)/build.db" --provider sqlite' />
 </Target>
 ```
 
-No project references. No schema includes. Just a path to a YAML file.
+No project references. No schema includes. Just paths to assemblies and YAML files.
+
+## Build Order (CRITICAL)
+
+To avoid circular dependencies, the build order MUST be:
+
+```
+1. Migration/Migration.csproj           # Core types
+2. MyProject.Schema/                    # Schema definition (refs Migration only)
+3. Schema.Export.Cli                    # Export schema to YAML
+4. Migration.Cli                        # Create DB from YAML
+5. DataProvider code generation         # Generate C# from DB
+6. MyProject.Api/                       # Main project with generated code
+```
+
+The schema assembly MUST NOT reference:
+- The API/main project
+- Any generated code
+- Any project that depends on generated code

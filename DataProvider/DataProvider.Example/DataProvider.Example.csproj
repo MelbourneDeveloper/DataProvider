@@ -33,9 +33,9 @@
         <AdditionalFiles Include="DataProvider.json" />
     </ItemGroup>
 
-    <!-- Create database with schema before code generation using migrations -->
+    <!-- Create database with schema before code generation using Migration.Cli -->
     <Target Name="CreateDatabaseSchema" BeforeTargets="TranspileLqlAndGenerateDataProvider">
-        <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../Migration/BuildDb.Cli/BuildDb.Cli.csproj" -- --schema example --output "$(MSBuildProjectDirectory)/invoices.db"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
+        <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/example-schema.yaml" --output "$(MSBuildProjectDirectory)/invoices.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
     </Target>
 
     <!-- Pre-compile: transpile LQL to SQL, then generate C# from SQL using external CLI -->
