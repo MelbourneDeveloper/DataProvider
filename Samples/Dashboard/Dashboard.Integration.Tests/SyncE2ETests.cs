@@ -222,15 +222,32 @@ public sealed class SyncE2ETests
         // Filter to Insert operations only (operation = 0)
         await page.SelectOptionAsync("[data-testid='action-filter']", "0");
 
-        // Wait for React to apply the filter - verify no Update operations are visible
-        await page.WaitForFunctionAsync(
+        // Debug: log all data-operation values before waiting
+        var debugOperations = await page.EvaluateAsync<string>(
             @"() => {
                 const rows = document.querySelectorAll('[data-testid=""sync-records-table""] tbody tr');
-                if (rows.length === 0) return true; // No rows = filter applied (or empty)
-                return Array.from(rows).every(row => row.getAttribute('data-operation') === '0');
-            }",
+                return Array.from(rows).map(row => row.getAttribute('data-operation')).join(', ');
+            }"
+        );
+        Console.WriteLine($"[TEST DEBUG] data-operation values before wait: [{debugOperations}]");
+
+        // Wait for React to apply the filter - verify filter dropdown has correct value
+        await page.WaitForFunctionAsync(
+            @"() => document.querySelector('[data-testid=""action-filter""]').value === '0'",
             new PageWaitForFunctionOptions { Timeout = 5000 }
         );
+
+        // Small delay for React re-render
+        await Task.Delay(500);
+
+        // Debug: log all data-operation values after filter applied
+        var debugOperationsAfter = await page.EvaluateAsync<string>(
+            @"() => {
+                const rows = document.querySelectorAll('[data-testid=""sync-records-table""] tbody tr');
+                return Array.from(rows).map(row => row.getAttribute('data-operation')).join(', ');
+            }"
+        );
+        Console.WriteLine($"[TEST DEBUG] data-operation values after filter: [{debugOperationsAfter}]");
 
         var insertRows = await page.QuerySelectorAllAsync(
             "[data-testid='sync-records-table'] tbody tr"
