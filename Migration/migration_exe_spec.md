@@ -1,5 +1,7 @@
 # Migration.Cli Specification
 
+NOTE: leave the JSON serialization/deserialization code as is for now, but deactivate it. The core will eventually offer JSON, but we are focusing on YAML for now.
+
 ## Overview
 
 `Migration/Migration.Cli/Migration.Cli.csproj` is the **single, canonical CLI tool** for creating databases from schema definitions. All projects that need to spin up a database for code generation MUST use this executable. There is no other way.
@@ -18,6 +20,8 @@ dotnet run --project Migration/Migration.Cli/Migration.Cli.csproj -- \
 ```
 
 ## Schema Input: YAML Only
+
+NOTE: leave the JSON serialization/deserialization code as is for now, but deactivate it. The core will eventually offer JSON, but we are focusing on YAML for now.
 
 The CLI accepts **only YAML schema files**. It does not accept:
 - C# code references

@@ -5,6 +5,11 @@
     <NoWarn>CA1515;CA2100;RS1035;CA1508;CA2234;CA1819;CA2007;EPC12</NoWarn>
   </PropertyGroup>
 
+  <!-- Exclude Generated folder from default globbing - we include it explicitly in the target -->
+  <ItemGroup>
+    <Compile Remove="Generated/**" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Fido2" Version="4.0.0" />
     <PackageReference Include="Fido2.AspNet" Version="4.0.0" />
@@ -25,9 +30,9 @@
     <AdditionalFiles Include="DataProvider.json" />
   </ItemGroup>
 
-  <!-- Create database with schema before code generation (needed after git clean) -->
+  <!-- Create database with schema before code generation using Migration (no raw SQL) -->
   <Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider">
-    <Exec Command='sqlite3 "$(MSBuildProjectDirectory)/gatekeeper-build.db" "CREATE TABLE IF NOT EXISTS gk_user (id TEXT PRIMARY KEY, display_name TEXT NOT NULL, email TEXT, created_at TEXT NOT NULL, last_login_at TEXT, is_active INTEGER NOT NULL DEFAULT 1, metadata TEXT); CREATE TABLE IF NOT EXISTS gk_credential (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, public_key BLOB NOT NULL, sign_count INTEGER NOT NULL DEFAULT 0, aaguid TEXT, credential_type TEXT NOT NULL, transports TEXT, attestation_format TEXT, created_at TEXT NOT NULL, last_used_at TEXT, device_name TEXT, is_backup_eligible INTEGER, is_backed_up INTEGER); CREATE TABLE IF NOT EXISTS gk_session (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, credential_id TEXT, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, last_activity_at TEXT NOT NULL, ip_address TEXT, user_agent TEXT, is_revoked INTEGER NOT NULL DEFAULT 0); CREATE TABLE IF NOT EXISTS gk_challenge (id TEXT PRIMARY KEY, user_id TEXT, challenge BLOB NOT NULL, type TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL); CREATE TABLE IF NOT EXISTS gk_role (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, is_system INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, parent_role_id TEXT); CREATE TABLE IF NOT EXISTS gk_user_role (user_id TEXT NOT NULL, role_id TEXT NOT NULL, granted_at TEXT NOT NULL, granted_by TEXT, expires_at TEXT, PRIMARY KEY (user_id, role_id)); CREATE TABLE IF NOT EXISTS gk_permission (id TEXT PRIMARY KEY, code TEXT NOT NULL, resource_type TEXT NOT NULL, action TEXT NOT NULL, description TEXT, created_at TEXT NOT NULL); CREATE TABLE IF NOT EXISTS gk_role_permission (role_id TEXT NOT NULL, permission_id TEXT NOT NULL, granted_at TEXT NOT NULL, PRIMARY KEY (role_id, permission_id)); CREATE TABLE IF NOT EXISTS gk_user_permission (user_id TEXT NOT NULL, permission_id TEXT NOT NULL, scope_type TEXT, scope_value TEXT, granted_at TEXT NOT NULL, granted_by TEXT, expires_at TEXT, reason TEXT); CREATE TABLE IF NOT EXISTS gk_resource_grant (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, resource_type TEXT NOT NULL, resource_id TEXT NOT NULL, permission_id TEXT NOT NULL, granted_at TEXT NOT NULL, granted_by TEXT, expires_at TEXT); CREATE TABLE IF NOT EXISTS gk_policy (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, resource_type TEXT NOT NULL, action TEXT NOT NULL, condition TEXT NOT NULL, effect TEXT NOT NULL DEFAULT &apos;allow&apos;, priority INTEGER NOT NULL DEFAULT 0, is_active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL);"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
+    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../Gatekeeper.BuildDb/Gatekeeper.BuildDb.csproj" -- "$(MSBuildProjectDirectory)/gatekeeper-build.db"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
   </Target>
 
   <!-- Generate C# from SQL using DataProvider.SQLite.Cli -->
@@ -36,6 +41,9 @@
     <MakeDir Directories="$(MSBuildProjectDirectory)/Generated" />
     <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../DataProvider/DataProvider.SQLite.Cli/DataProvider.SQLite.Cli.csproj" -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(MSBuildProjectDirectory)/Generated"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
     <Touch Files="$(MSBuildProjectDirectory)/Generated/.timestamp" AlwaysCreate="true" />
+    <ItemGroup>
+      <Compile Include="$(MSBuildProjectDirectory)/Generated/**/*.g.cs" />
+    </ItemGroup>
   </Target>
 
 </Project>

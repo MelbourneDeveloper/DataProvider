@@ -84,11 +84,35 @@ internal static class Program
                 return 1;
             }
 
-            // Verify DB exists and is accessible
+            // Verify DB exists and is accessible; if empty, run schema file
             try
             {
                 using var conn = new Microsoft.Data.Sqlite.SqliteConnection(cfg.ConnectionString);
                 await conn.OpenAsync().ConfigureAwait(false);
+
+                // Check if any tables exist
+                using var checkCmd = conn.CreateCommand();
+                checkCmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'";
+                var tableCount = Convert.ToInt64(await checkCmd.ExecuteScalarAsync().ConfigureAwait(false));
+
+                if (tableCount == 0)
+                {
+                    // Look for build-schema.sql in project directory
+                    var schemaFile = Path.Combine(projectDir.FullName, "build-schema.sql");
+                    if (File.Exists(schemaFile))
+                    {
+                        Console.WriteLine($"🔧 Creating database schema from {schemaFile}");
+                        var schemaSql = await File.ReadAllTextAsync(schemaFile).ConfigureAwait(false);
+                        using var schemaCmd = conn.CreateCommand();
+                        schemaCmd.CommandText = schemaSql;
+                        await schemaCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+                        Console.WriteLine("✅ Database schema created");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"⚠️ No tables in database and no build-schema.sql found");
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -138,6 +162,8 @@ internal static class Program
                     if (
                         string.Equals(baseName, "schema", StringComparison.OrdinalIgnoreCase)
                         || baseName.EndsWith("_schema", StringComparison.OrdinalIgnoreCase)
+                        || baseName.EndsWith("-schema", StringComparison.OrdinalIgnoreCase)
+                        || baseName.StartsWith("build-", StringComparison.OrdinalIgnoreCase)
                     )
                     {
                         // Skip schema files; they're only for DB initialization

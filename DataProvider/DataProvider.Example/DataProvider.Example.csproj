@@ -1,11 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <NoWarn>EPC12</NoWarn>
+        <NoWarn>EPC12;CA1303;CA1515</NoWarn>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)Example.ruleset</CodeAnalysisRuleSet>
         <WarningsNotAsErrors>CA1303</WarningsNotAsErrors>
-        <NoWarn>CA1303</NoWarn>
         <EnableLqlTranspile>true</EnableLqlTranspile>
     </PropertyGroup>
 
@@ -18,6 +17,8 @@
         <ProjectReference Include="../DataProvider/DataProvider.csproj" />
         <ProjectReference Include="../../Lql/Lql.SQLite/Lql.SQLite.csproj" />
         <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
+        <ProjectReference Include="../../Migration/Migration/Migration.csproj" />
+        <ProjectReference Include="../../Migration/Migration.SQLite/Migration.SQLite.csproj" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
@@ -32,9 +33,9 @@
         <AdditionalFiles Include="DataProvider.json" />
     </ItemGroup>
 
-    <!-- Create database with schema before code generation (needed after git clean) -->
+    <!-- Create database with schema before code generation using migrations -->
     <Target Name="CreateDatabaseSchema" BeforeTargets="TranspileLqlAndGenerateDataProvider">
-        <Exec Command='sqlite3 "$(MSBuildProjectDirectory)/invoices.db" &lt; "$(MSBuildProjectDirectory)/build-schema.ddl"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
+        <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../Migration/BuildDb.Cli/BuildDb.Cli.csproj" -- --schema example --output "$(MSBuildProjectDirectory)/invoices.db"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
     </Target>
 
     <!-- Pre-compile: transpile LQL to SQL, then generate C# from SQL using external CLI -->

@@ -31,19 +31,18 @@ public static class MapFunctions
     /// <param name="reader">The data reader</param>
     /// <returns>Customer instance</returns>
     public static Generated.Customer MapCustomer(IDataReader reader) =>
-        new()
-        {
-            Id = reader.GetString(reader.GetOrdinal("Id")),
-            CustomerName = reader.GetString(reader.GetOrdinal("CustomerName")),
-            Email = reader.IsDBNull(reader.GetOrdinal("Email"))
+        new(
+            Id: reader.GetString(reader.GetOrdinal("Id")),
+            CustomerName: reader.GetString(reader.GetOrdinal("CustomerName")),
+            Email: reader.IsDBNull(reader.GetOrdinal("Email"))
                 ? null
                 : reader.GetString(reader.GetOrdinal("Email")),
-            Phone = reader.IsDBNull(reader.GetOrdinal("Phone"))
+            Phone: reader.IsDBNull(reader.GetOrdinal("Phone"))
                 ? null
                 : reader.GetString(reader.GetOrdinal("Phone")),
-            CreatedDate = reader.GetString(reader.GetOrdinal("CreatedDate")),
-            Addresses = [],
-        };
+            CreatedDate: reader.GetString(reader.GetOrdinal("CreatedDate")),
+            Addresss: []
+        );
 
     /// <summary>
     /// Maps an IDataReader to BasicOrder record

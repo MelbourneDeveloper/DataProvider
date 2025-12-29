@@ -23,9 +23,9 @@ public sealed class CliEndToEndTests : IDisposable
         _tempDirectory = Path.Combine(Path.GetTempPath(), $"lql-cli-tests-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDirectory);
 
-        // Assuming the CLI is built and available in the output directory
-        var currentDir = Directory.GetCurrentDirectory();
-        var projectRoot = Path.GetFullPath(Path.Combine(currentDir, "..", "..", "..", ".."));
+        // Use AppContext.BaseDirectory which is stable across test runners
+        var baseDir = AppContext.BaseDirectory;
+        var projectRoot = Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", ".."));
         _cliPath = Path.Combine(projectRoot, "LqlCli.SQLite", "LqlCli.csproj");
     }
 
