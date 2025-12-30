@@ -24,18 +24,6 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Setup Java for ANTLR
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: Download ANTLR4 JAR
-        run: |
-          mkdir -p ~/.antlr
-          curl -sL https://www.antlr.org/download/antlr-4.13.1-complete.jar -o ~/.antlr/antlr-4.13.1-complete.jar
-          echo "Antlr4ToolPath=$HOME/.antlr/antlr-4.13.1-complete.jar" >> $GITHUB_ENV
-
       - name: Restore .NET tools
         run: dotnet tool restore
 

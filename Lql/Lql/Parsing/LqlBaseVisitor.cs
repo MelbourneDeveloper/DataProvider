@@ -19,6 +19,8 @@
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
 
+namespace Lql.Parsing {
+
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using IToken = Antlr4.Runtime.IToken;
@@ -334,4 +336,5 @@ public partial class LqlBaseVisitor<Result> : AbstractParseTreeVisitor<Result>, 
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	public virtual Result VisitComparisonOp([NotNull] LqlParser.ComparisonOpContext context) { return VisitChildren(context); }
+}
 }

@@ -19,6 +19,8 @@
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
 
+namespace Lql.Parsing {
+
 using System;
 using System.IO;
 using System.Text;
@@ -2981,4 +2983,5 @@ public partial class LqlParser : Parser {
 		new ATNDeserializer().Deserialize(_serializedATN);
 
 
+}
 }

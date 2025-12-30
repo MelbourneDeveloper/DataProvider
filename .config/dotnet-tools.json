@@ -8,13 +8,6 @@
         "ilspycmd"
       ],
       "rollForward": false
-    },
-    "h5": {
-      "version": "25.11.62725",
-      "commands": [
-        "h5"
-      ],
-      "rollForward": false
     }
   }
 }
