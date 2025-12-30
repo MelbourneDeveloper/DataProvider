@@ -33,11 +33,15 @@
         <AdditionalFiles Include="DataProvider.json" />
     </ItemGroup>
 
-    <!-- Export YAML from Migrations project, then create database -->
-    <Target Name="ExportSchemaYaml" BeforeTargets="CreateDatabaseSchema">
-        <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../Migration/Schema.Export.Cli/Schema.Export.Cli.csproj" -- --assembly "$(MSBuildThisFileDirectory)../DataProvider.Example.Migrations/bin/Debug/net9.0/DataProvider.Example.Migrations.dll" --type "DataProvider.Example.Migrations.ExampleSchema" --output "$(MSBuildProjectDirectory)/example-schema.yaml"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
-    </Target>
-    <Target Name="CreateDatabaseSchema" BeforeTargets="TranspileLqlAndGenerateDataProvider" DependsOnTargets="ExportSchemaYaml">
+    <!-- YAML schema is source of truth, stored in git -->
+    <ItemGroup>
+        <Content Include="example-schema.yaml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <!-- Create database from YAML using Migration.Cli (YAML stored in git) -->
+    <Target Name="CreateDatabaseSchema" BeforeTargets="TranspileLqlAndGenerateDataProvider">
         <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/example-schema.yaml" --output "$(MSBuildProjectDirectory)/invoices.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
     </Target>
 

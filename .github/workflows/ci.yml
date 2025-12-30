@@ -24,6 +24,21 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Setup Java for ANTLR
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Download ANTLR4 JAR
+        run: |
+          mkdir -p ~/.antlr
+          curl -sL https://www.antlr.org/download/antlr-4.13.1-complete.jar -o ~/.antlr/antlr-4.13.1-complete.jar
+          echo "Antlr4ToolPath=$HOME/.antlr/antlr-4.13.1-complete.jar" >> $GITHUB_ENV
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
@@ -199,15 +214,15 @@ jobs:
         run: dotnet restore Samples/Dashboard/Dashboard.Integration.Tests
 
       - name: Build
-        run: dotnet build Samples/Dashboard/Dashboard.Integration.Tests -c Debug --no-restore
+        run: dotnet build Samples/Dashboard/Dashboard.Integration.Tests -c Release --no-restore
 
       - name: Install Playwright browsers
         run: |
-          cd Samples/Dashboard/Dashboard.Integration.Tests/bin/Debug/net9.0
-          pwsh playwright.ps1 install --with-deps chromium
+          cd Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net9.0
+          ./playwright.sh install --with-deps chromium
 
       - name: Test
-        run: dotnet test Samples/Dashboard/Dashboard.Integration.Tests --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test Samples/Dashboard/Dashboard.Integration.Tests -c Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

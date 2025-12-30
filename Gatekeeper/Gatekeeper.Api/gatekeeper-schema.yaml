@@ -2,20 +2,17 @@ name: gatekeeper
 tables:
 - name: gk_user
   columns:
-  - &o0
-    name: id
+  - name: id
     type: Text
   - name: display_name
     type: Text
   - name: email
     type: Text
-  - &o1
-    name: created_at
+  - name: created_at
     type: Text
   - name: last_login_at
     type: Text
-  - &o17
-    name: is_active
+  - name: is_active
     type: Boolean
     defaultValue: 1
   - name: metadata
@@ -31,9 +28,9 @@ tables:
     - id
 - name: gk_credential
   columns:
-  - *o0
-  - &o5
-    name: user_id
+  - name: id
+    type: Text
+  - name: user_id
     type: Text
   - name: public_key
     type: Blob
@@ -48,7 +45,8 @@ tables:
     type: Json
   - name: attestation_format
     type: Text
-  - *o1
+  - name: created_at
+    type: Text
   - name: last_used_at
     type: Text
   - name: device_name
@@ -75,13 +73,15 @@ tables:
     - id
 - name: gk_session
   columns:
-  - *o0
-  - *o5
+  - name: id
+    type: Text
+  - name: user_id
+    type: Text
   - name: credential_id
     type: Text
-  - *o1
-  - &o6
-    name: expires_at
+  - name: created_at
+    type: Text
+  - name: expires_at
     type: Text
   - name: last_activity_at
     type: Text
@@ -119,31 +119,35 @@ tables:
     - id
 - name: gk_challenge
   columns:
-  - *o0
-  - *o5
+  - name: id
+    type: Text
+  - name: user_id
+    type: Text
   - name: challenge
     type: Blob
   - name: type
     type: Text
-  - *o1
-  - *o6
+  - name: created_at
+    type: Text
+  - name: expires_at
+    type: Text
   primaryKey:
     name: PK_gk_challenge
     columns:
     - id
 - name: gk_role
   columns:
-  - *o0
-  - &o15
-    name: name
+  - name: id
     type: Text
-  - &o9
-    name: description
+  - name: name
+    type: Text
+  - name: description
     type: Text
   - name: is_system
     type: Boolean
     defaultValue: 0
-  - *o1
+  - name: created_at
+    type: Text
   - name: parent_role_id
     type: Text
   indexes:
@@ -164,17 +168,16 @@ tables:
     - id
 - name: gk_user_role
   columns:
-  - *o5
-  - &o10
-    name: role_id
+  - name: user_id
     type: Text
-  - &o11
-    name: granted_at
+  - name: role_id
     type: Text
-  - &o13
-    name: granted_by
+  - name: granted_at
     type: Text
-  - *o6
+  - name: granted_by
+    type: Text
+  - name: expires_at
+    type: Text
   foreignKeys:
   - name: FK_gk_user_role_user_id
     columns:
@@ -203,17 +206,18 @@ tables:
     - role_id
 - name: gk_permission
   columns:
-  - *o0
+  - name: id
+    type: Text
   - name: code
     type: Text
-  - &o14
-    name: resource_type
+  - name: resource_type
     type: Text
-  - &o16
-    name: action
+  - name: action
     type: Text
-  - *o9
-  - *o1
+  - name: description
+    type: Text
+  - name: created_at
+    type: Text
   indexes:
   - name: idx_permission_code
     columns:
@@ -228,11 +232,12 @@ tables:
     - id
 - name: gk_role_permission
   columns:
-  - *o10
-  - &o12
-    name: permission_id
+  - name: role_id
     type: Text
-  - *o11
+  - name: permission_id
+    type: Text
+  - name: granted_at
+    type: Text
   foreignKeys:
   - name: FK_gk_role_permission_role_id
     columns:
@@ -255,15 +260,20 @@ tables:
     - permission_id
 - name: gk_user_permission
   columns:
-  - *o5
-  - *o12
+  - name: user_id
+    type: Text
+  - name: permission_id
+    type: Text
   - name: scope_type
     type: Text
   - name: scope_value
     type: Text
-  - *o11
-  - *o13
-  - *o6
+  - name: granted_at
+    type: Text
+  - name: granted_by
+    type: Text
+  - name: expires_at
+    type: Text
   - name: reason
     type: Text
   indexes:
@@ -296,15 +306,22 @@ tables:
     - id
 - name: gk_resource_grant
   columns:
-  - *o0
-  - *o5
-  - *o14
+  - name: id
+    type: Text
+  - name: user_id
+    type: Text
+  - name: resource_type
+    type: Text
   - name: resource_id
     type: Text
-  - *o12
-  - *o11
-  - *o13
-  - *o6
+  - name: permission_id
+    type: Text
+  - name: granted_at
+    type: Text
+  - name: granted_by
+    type: Text
+  - name: expires_at
+    type: Text
   indexes:
   - name: idx_resource_grant_user
     columns:
@@ -346,11 +363,16 @@ tables:
     - permission_id
 - name: gk_policy
   columns:
-  - *o0
-  - *o15
-  - *o9
-  - *o14
-  - *o16
+  - name: id
+    type: Text
+  - name: name
+    type: Text
+  - name: description
+    type: Text
+  - name: resource_type
+    type: Text
+  - name: action
+    type: Text
   - name: condition
     type: Json
   - name: effect
@@ -359,8 +381,11 @@ tables:
   - name: priority
     type: Int
     defaultValue: 0
-  - *o17
-  - *o1
+  - name: is_active
+    type: Boolean
+    defaultValue: 1
+  - name: created_at
+    type: Text
   indexes:
   - name: idx_policy_name
     columns:

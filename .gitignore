@@ -388,7 +388,6 @@ Samples/Dashboard/Dashboard.Web/wwwroot/js/vendor/
 # Dashboard compiled JS (H5/Bridge output)
 Samples/Dashboard/Dashboard.Web/wwwroot/js/Dashboard.js
 
-# YAML schema files are generated at build time from Migrations projects
-# Schema.Export.Cli exports C# schemas to YAML, then Migration.Cli creates databases
+
+
 DataProvider/DataProvider.Example/example-schema.yaml
-    
