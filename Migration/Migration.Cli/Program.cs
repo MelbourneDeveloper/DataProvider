@@ -127,7 +127,9 @@ public static class Program
 
             if (result.Success)
             {
-                Console.WriteLine($"Successfully created PostgreSQL database with {result.TablesCreated} tables");
+                Console.WriteLine(
+                    $"Successfully created PostgreSQL database with {result.TablesCreated} tables"
+                );
                 return 0;
             }
             else
@@ -167,23 +169,31 @@ public static class Program
         Console.WriteLine("Migration.Cli - Database Schema Tool");
         Console.WriteLine();
         Console.WriteLine("Usage:");
-        Console.WriteLine("  dotnet run --project Migration/Migration.Cli/Migration.Cli.csproj -- \\");
+        Console.WriteLine(
+            "  dotnet run --project Migration/Migration.Cli/Migration.Cli.csproj -- \\"
+        );
         Console.WriteLine("      --schema path/to/schema.yaml \\");
         Console.WriteLine("      --output path/to/database.db \\");
         Console.WriteLine("      --provider [sqlite|postgres]");
         Console.WriteLine();
         Console.WriteLine("Options:");
         Console.WriteLine("  --schema    Path to YAML schema definition file (required)");
-        Console.WriteLine("  --output    Path to output database file (SQLite) or connection string (Postgres)");
+        Console.WriteLine(
+            "  --output    Path to output database file (SQLite) or connection string (Postgres)"
+        );
         Console.WriteLine("  --provider  Database provider: sqlite or postgres (default: sqlite)");
         Console.WriteLine();
         Console.WriteLine("Examples:");
         Console.WriteLine("  # SQLite (file path)");
-        Console.WriteLine("  dotnet run -- --schema my-schema.yaml --output ./build.db --provider sqlite");
+        Console.WriteLine(
+            "  dotnet run -- --schema my-schema.yaml --output ./build.db --provider sqlite"
+        );
         Console.WriteLine();
         Console.WriteLine("  # PostgreSQL (connection string)");
         Console.WriteLine("  dotnet run -- --schema my-schema.yaml \\");
-        Console.WriteLine("      --output \"Host=localhost;Database=mydb;Username=user;Password=pass\" \\");
+        Console.WriteLine(
+            "      --output \"Host=localhost;Database=mydb;Username=user;Password=pass\" \\"
+        );
         Console.WriteLine("      --provider postgres");
         Console.WriteLine();
         Console.WriteLine("YAML Schema Format:");
@@ -214,7 +224,8 @@ public static class Program
 
             switch (arg)
             {
-                case "--schema" or "-s":
+                case "--schema"
+                or "-s":
                     if (i + 1 >= args.Length)
                     {
                         return new ParseResult.Failure("--schema requires a path argument");
@@ -223,7 +234,8 @@ public static class Program
                     schemaPath = args[++i];
                     break;
 
-                case "--output" or "-o":
+                case "--output"
+                or "-o":
                     if (i + 1 >= args.Length)
                     {
                         return new ParseResult.Failure("--output requires a path argument");
@@ -232,16 +244,20 @@ public static class Program
                     outputPath = args[++i];
                     break;
 
-                case "--provider" or "-p":
+                case "--provider"
+                or "-p":
                     if (i + 1 >= args.Length)
                     {
-                        return new ParseResult.Failure("--provider requires an argument (sqlite or postgres)");
+                        return new ParseResult.Failure(
+                            "--provider requires an argument (sqlite or postgres)"
+                        );
                     }
 
                     provider = args[++i];
                     break;
 
-                case "--help" or "-h":
+                case "--help"
+                or "-h":
                     return new ParseResult.HelpRequested();
 
                 default:
@@ -273,12 +289,11 @@ public static class Program
 /// </summary>
 public abstract record ParseResult
 {
-    private ParseResult()
-    {
-    }
+    private ParseResult() { }
 
     /// <summary>Successfully parsed arguments.</summary>
-    public sealed record Success(string SchemaPath, string OutputPath, string Provider) : ParseResult;
+    public sealed record Success(string SchemaPath, string OutputPath, string Provider)
+        : ParseResult;
 
     /// <summary>Parse error.</summary>
     public sealed record Failure(string Message) : ParseResult;

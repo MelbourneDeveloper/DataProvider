@@ -3,6 +3,7 @@ using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using YamlDotNet.Serialization.ObjectGraphVisitors;
 
 namespace Migration;
 
@@ -16,7 +17,15 @@ public static class SchemaYamlSerializer
         .WithNamingConvention(CamelCaseNamingConvention.Instance)
         .WithTypeConverter(new PortableTypeYamlConverter())
         .WithTypeConverter(new ForeignKeyActionYamlConverter())
-        .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
+        .ConfigureDefaultValuesHandling(
+            DefaultValuesHandling.OmitDefaults
+                | DefaultValuesHandling.OmitNull
+                | DefaultValuesHandling.OmitEmptyCollections
+        )
+        .WithEmissionPhaseObjectGraphVisitor(args => new PropertyDefaultValueFilter(
+            args.InnerVisitor
+        ))
+        .DisableAliases()
         .Build();
 
     private static readonly IDeserializer Deserializer = new DeserializerBuilder()
@@ -27,8 +36,14 @@ public static class SchemaYamlSerializer
         .WithTypeMapping<IReadOnlyList<ColumnDefinition>, List<ColumnDefinition>>()
         .WithTypeMapping<IReadOnlyList<IndexDefinition>, List<IndexDefinition>>()
         .WithTypeMapping<IReadOnlyList<ForeignKeyDefinition>, List<ForeignKeyDefinition>>()
-        .WithTypeMapping<IReadOnlyList<UniqueConstraintDefinition>, List<UniqueConstraintDefinition>>()
-        .WithTypeMapping<IReadOnlyList<CheckConstraintDefinition>, List<CheckConstraintDefinition>>()
+        .WithTypeMapping<
+            IReadOnlyList<UniqueConstraintDefinition>,
+            List<UniqueConstraintDefinition>
+        >()
+        .WithTypeMapping<
+            IReadOnlyList<CheckConstraintDefinition>,
+            List<CheckConstraintDefinition>
+        >()
         .WithTypeMapping<IReadOnlyList<string>, List<string>>()
         .Build();
 
@@ -37,8 +52,7 @@ public static class SchemaYamlSerializer
     /// </summary>
     /// <param name="schema">Schema to serialize.</param>
     /// <returns>YAML representation of the schema.</returns>
-    public static string ToYaml(SchemaDefinition schema) =>
-        Serializer.Serialize(schema);
+    public static string ToYaml(SchemaDefinition schema) => Serializer.Serialize(schema);
 
     /// <summary>
     /// Deserialize a schema definition from YAML string.
@@ -156,7 +170,9 @@ public sealed class PortableTypeYamlConverter : IYamlTypeConverter
                 "TIME" => new TimeType(int.Parse(paramsStr, CultureInfo.InvariantCulture)),
                 "DATETIME" => new DateTimeType(int.Parse(paramsStr, CultureInfo.InvariantCulture)),
                 "GEOMETRY" => new GeometryType(int.Parse(paramsStr, CultureInfo.InvariantCulture)),
-                "GEOGRAPHY" => new GeographyType(int.Parse(paramsStr, CultureInfo.InvariantCulture)),
+                "GEOGRAPHY" => new GeographyType(
+                    int.Parse(paramsStr, CultureInfo.InvariantCulture)
+                ),
                 "ENUM" => ParseEnum(paramsStr),
                 _ => new TextType(),
             };
@@ -201,7 +217,8 @@ public sealed class PortableTypeYamlConverter : IYamlTypeConverter
         return parts.Length == 2
             ? new DecimalType(
                 int.Parse(parts[0].Trim(), CultureInfo.InvariantCulture),
-                int.Parse(parts[1].Trim(), CultureInfo.InvariantCulture))
+                int.Parse(parts[1].Trim(), CultureInfo.InvariantCulture)
+            )
             : new DecimalType(int.Parse(parts[0].Trim(), CultureInfo.InvariantCulture), 0);
     }
 
@@ -256,5 +273,55 @@ public sealed class ForeignKeyActionYamlConverter : IYamlTypeConverter
             _ => "NoAction",
         };
         emitter.Emit(new Scalar(str));
+    }
+}
+
+/// <summary>
+/// Filters out properties that have their semantic default values.
+/// This handles cases where the property initializer differs from the type default.
+/// </summary>
+internal sealed class PropertyDefaultValueFilter(IObjectGraphVisitor<IEmitter> next)
+    : ChainedObjectGraphVisitor(next)
+{
+    /// <summary>
+    /// Default values per property name -> (expected value type, default value).
+    /// Uses camelCase names (after naming convention applied).
+    /// </summary>
+    private static readonly Dictionary<string, (Type ValueType, object Default)> SemanticDefaults =
+        new()
+        {
+            // ColumnDefinition semantic defaults
+            { "isNullable", (typeof(bool), true) },
+            { "identitySeed", (typeof(long), 1L) },
+            { "identityIncrement", (typeof(long), 1L) },
+            // TableDefinition and ForeignKeyDefinition semantic defaults
+            { "schema", (typeof(string), "public") },
+            { "referencedSchema", (typeof(string), "public") },
+            { "onDelete", (typeof(ForeignKeyAction), ForeignKeyAction.NoAction) },
+            { "onUpdate", (typeof(ForeignKeyAction), ForeignKeyAction.NoAction) },
+        };
+
+    /// <inheritdoc />
+    public override bool EnterMapping(
+        IPropertyDescriptor key,
+        IObjectDescriptor value,
+        IEmitter context,
+        ObjectSerializer serializer
+    )
+    {
+        if (SemanticDefaults.TryGetValue(key.Name, out var defaultInfo))
+        {
+            // Match by property name and ensure value type matches expectation
+            if (
+                value.Value != null
+                && defaultInfo.ValueType.IsAssignableFrom(value.Value.GetType())
+                && Equals(value.Value, defaultInfo.Default)
+            )
+            {
+                return false;
+            }
+        }
+
+        return base.EnterMapping(key, value, context, serializer);
     }
 }

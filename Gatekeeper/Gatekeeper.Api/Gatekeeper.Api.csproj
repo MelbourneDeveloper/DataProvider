@@ -22,15 +22,18 @@
     <ProjectReference Include="..\..\Other\Selecta\Selecta.csproj" />
     <ProjectReference Include="..\..\Migration\Migration\Migration.csproj" />
     <ProjectReference Include="..\..\Migration\Migration.SQLite\Migration.SQLite.csproj" />
-    <ProjectReference Include="..\Gatekeeper.Migration\Gatekeeper.Migration.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <AdditionalFiles Include="Sql/*.sql" />
     <AdditionalFiles Include="DataProvider.json" />
+    <!-- YAML schema is source of truth, stored in git -->
+    <Content Include="gatekeeper-schema.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
-  <!-- Create database with schema before code generation using Migration.Cli -->
+  <!-- Create database from YAML using Migration.Cli -->
   <Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider">
     <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/gatekeeper-schema.yaml" --output "$(MSBuildProjectDirectory)/gatekeeper-build.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
   </Target>

@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Globalization;
 using System.Text.Json;
 using DataProvider.CodeGeneration;
 using DataProvider.SQLite.Parsing;
@@ -92,8 +93,12 @@ internal static class Program
 
                 // Check if any tables exist
                 using var checkCmd = conn.CreateCommand();
-                checkCmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'";
-                var tableCount = Convert.ToInt64(await checkCmd.ExecuteScalarAsync().ConfigureAwait(false));
+                checkCmd.CommandText =
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'";
+                var tableCount = Convert.ToInt64(
+                    await checkCmd.ExecuteScalarAsync().ConfigureAwait(false),
+                    CultureInfo.InvariantCulture
+                );
 
                 if (tableCount == 0)
                 {
@@ -102,7 +107,8 @@ internal static class Program
                     if (File.Exists(schemaFile))
                     {
                         Console.WriteLine($"🔧 Creating database schema from {schemaFile}");
-                        var schemaSql = await File.ReadAllTextAsync(schemaFile).ConfigureAwait(false);
+                        var schemaSql = await File.ReadAllTextAsync(schemaFile)
+                            .ConfigureAwait(false);
                         using var schemaCmd = conn.CreateCommand();
                         schemaCmd.CommandText = schemaSql;
                         await schemaCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
@@ -110,7 +116,9 @@ internal static class Program
                     }
                     else
                     {
-                        Console.WriteLine($"⚠️ No tables in database and no build-schema.sql found");
+                        Console.WriteLine(
+                            $"⚠️ No tables in database and no build-schema.sql found"
+                        );
                     }
                 }
             }

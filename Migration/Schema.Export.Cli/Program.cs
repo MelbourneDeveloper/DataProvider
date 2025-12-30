@@ -54,8 +54,12 @@ public static class Program
 
             if (schema is null)
             {
-                Console.WriteLine($"Error: Could not get SchemaDefinition from type '{args.TypeName}'");
-                Console.WriteLine("  Expected: static property 'Definition' or static method 'Build()' returning SchemaDefinition");
+                Console.WriteLine(
+                    $"Error: Could not get SchemaDefinition from type '{args.TypeName}'"
+                );
+                Console.WriteLine(
+                    "  Expected: static property 'Definition' or static method 'Build()' returning SchemaDefinition"
+                );
                 return 1;
             }
 
@@ -67,7 +71,9 @@ public static class Program
             }
 
             SchemaYamlSerializer.ToYamlFile(schema, args.OutputPath);
-            Console.WriteLine($"Successfully exported schema '{schema.Name}' with {schema.Tables.Count} tables");
+            Console.WriteLine(
+                $"Successfully exported schema '{schema.Name}' with {schema.Tables.Count} tables"
+            );
             Console.WriteLine($"  Output: {args.OutputPath}");
             return 0;
         }
@@ -83,7 +89,8 @@ public static class Program
         // Try static property named "Definition"
         var definitionProp = schemaType.GetProperty(
             "Definition",
-            BindingFlags.Public | BindingFlags.Static);
+            BindingFlags.Public | BindingFlags.Static
+        );
 
         if (definitionProp?.GetValue(null) is SchemaDefinition defFromProp)
         {
@@ -94,7 +101,8 @@ public static class Program
         var buildMethod = schemaType.GetMethod(
             "Build",
             BindingFlags.Public | BindingFlags.Static,
-            Type.EmptyTypes);
+            Type.EmptyTypes
+        );
 
         if (buildMethod?.Invoke(null, null) is SchemaDefinition defFromMethod)
         {
@@ -116,7 +124,9 @@ public static class Program
         Console.WriteLine("Schema.Export.Cli - Export C# Schema to YAML");
         Console.WriteLine();
         Console.WriteLine("Usage:");
-        Console.WriteLine("  dotnet run --project Migration/Schema.Export.Cli/Schema.Export.Cli.csproj -- \\");
+        Console.WriteLine(
+            "  dotnet run --project Migration/Schema.Export.Cli/Schema.Export.Cli.csproj -- \\"
+        );
         Console.WriteLine("      --assembly path/to/assembly.dll \\");
         Console.WriteLine("      --type Namespace.SchemaClass \\");
         Console.WriteLine("      --output path/to/schema.yaml");
@@ -150,7 +160,8 @@ public static class Program
 
             switch (arg)
             {
-                case "--assembly" or "-a":
+                case "--assembly"
+                or "-a":
                     if (i + 1 >= args.Length)
                     {
                         return new ParseResult.ParseError("--assembly requires a path argument");
@@ -159,7 +170,8 @@ public static class Program
                     assemblyPath = args[++i];
                     break;
 
-                case "--type" or "-t":
+                case "--type"
+                or "-t":
                     if (i + 1 >= args.Length)
                     {
                         return new ParseResult.ParseError("--type requires a type name argument");
@@ -168,7 +180,8 @@ public static class Program
                     typeName = args[++i];
                     break;
 
-                case "--output" or "-o":
+                case "--output"
+                or "-o":
                     if (i + 1 >= args.Length)
                     {
                         return new ParseResult.ParseError("--output requires a path argument");
@@ -177,7 +190,8 @@ public static class Program
                     outputPath = args[++i];
                     break;
 
-                case "--help" or "-h":
+                case "--help"
+                or "-h":
                     return new ParseResult.Help();
 
                 default:
@@ -215,7 +229,8 @@ public abstract record ParseResult
     private ParseResult() { }
 
     /// <summary>Successfully parsed arguments.</summary>
-    public sealed record Success(string AssemblyPath, string TypeName, string OutputPath) : ParseResult;
+    public sealed record Success(string AssemblyPath, string TypeName, string OutputPath)
+        : ParseResult;
 
     /// <summary>Parse error.</summary>
     public sealed record ParseError(string Message) : ParseResult;

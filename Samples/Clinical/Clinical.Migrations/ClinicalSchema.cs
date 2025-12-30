@@ -1,7 +1,7 @@
 using Migration;
 using static Migration.PortableTypes;
 
-namespace Clinical.Schema;
+namespace Clinical.Migrations;
 
 /// <summary>
 /// Database-independent schema definition for Clinical FHIR R4 resources.
@@ -15,8 +15,8 @@ public static class ClinicalSchema
     public static SchemaDefinition Definition { get; } = BuildSchema();
 
     private static SchemaDefinition BuildSchema() =>
-        Schema
-            .Define("clinical")
+        Migration
+            .Schema.Define("clinical")
             .Table(
                 "fhir_Patient",
                 t =>

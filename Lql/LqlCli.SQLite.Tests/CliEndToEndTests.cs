@@ -23,10 +23,9 @@ public sealed class CliEndToEndTests : IDisposable
         _tempDirectory = Path.Combine(Path.GetTempPath(), $"lql-cli-tests-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDirectory);
 
-        // Use AppContext.BaseDirectory which is stable across test runners
-        var baseDir = AppContext.BaseDirectory;
-        var projectRoot = Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", ".."));
-        _cliPath = Path.Combine(projectRoot, "LqlCli.SQLite", "LqlCli.csproj");
+        // Use the built executable directly from the test's bin directory
+        // This avoids the slow and potentially hanging 'dotnet run --project' approach
+        _cliPath = Path.Combine(AppContext.BaseDirectory, "lql-sqlite");
     }
 
     /// <summary>
@@ -244,13 +243,10 @@ public sealed class CliEndToEndTests : IDisposable
     private async Task<ProcessResult> RunCliAsync(params string[] args)
     {
         using var process = new Process();
-        process.StartInfo.FileName = "dotnet";
-
-        var arguments = new List<string> { "run", "--project", _cliPath, "--" };
-        arguments.AddRange(args);
+        process.StartInfo.FileName = _cliPath;
         process.StartInfo.Arguments = string.Join(
             " ",
-            arguments.Select(arg => arg.Contains(' ') ? $"\"{arg}\"" : arg)
+            args.Select(arg => arg.Contains(' ') ? $"\"{arg}\"" : arg)
         );
 
         process.StartInfo.UseShellExecute = false;

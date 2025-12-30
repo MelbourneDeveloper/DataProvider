@@ -1389,8 +1389,8 @@ public sealed class DashboardE2ETests
     {
         using var client = E2EFixture.CreateAuthenticatedClient();
 
-        // Create an appointment for today
-        var today = DateTime.UtcNow;
+        // Create an appointment for today using LOCAL time (calendar uses DateTime.Now)
+        var today = DateTime.Now;
         var startTime = new DateTime(
             today.Year,
             today.Month,
@@ -1398,8 +1398,10 @@ public sealed class DashboardE2ETests
             15,
             0,
             0,
-            DateTimeKind.Utc
-        ).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+            DateTimeKind.Local
+        )
+            .ToUniversalTime()
+            .ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
         var endTime = new DateTime(
             today.Year,
             today.Month,
@@ -1407,8 +1409,10 @@ public sealed class DashboardE2ETests
             15,
             30,
             0,
-            DateTimeKind.Utc
-        ).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+            DateTimeKind.Local
+        )
+            .ToUniversalTime()
+            .ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
         var uniqueServiceType = $"CalEdit{DateTime.UtcNow.Ticks % 100000}";
 
         var createResponse = await client.PostAsync(

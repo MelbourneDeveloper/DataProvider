@@ -18,6 +18,7 @@
 - **Copious ILogger** - Especially sync projects
 - **NO INTERFACES** - Use `Action<T>`/`Func<T>`
 - **Expressions over assignments**
+- **Routinely format with csharpier** - `dotnet csharpier .` <- In root folder
 - **Named parameters** - No ordinal calls
 - **Close type hierarchies** - Private constructors:
 ```csharp

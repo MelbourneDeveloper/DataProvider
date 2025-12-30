@@ -1,7 +1,7 @@
 using Migration;
 using static Migration.PortableTypes;
 
-namespace Scheduling.Schema;
+namespace Scheduling.Migrations;
 
 /// <summary>
 /// Database-independent schema definition for Scheduling FHIR R4 resources.
@@ -15,8 +15,8 @@ public static class SchedulingSchema
     public static SchemaDefinition Definition { get; } = BuildSchema();
 
     private static SchemaDefinition BuildSchema() =>
-        Schema
-            .Define("scheduling")
+        Migration
+            .Schema.Define("scheduling")
             .Table(
                 "fhir_Practitioner",
                 t =>

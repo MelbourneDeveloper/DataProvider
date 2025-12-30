@@ -767,6 +767,41 @@ app.MapPost(
         )
     );
 
+app.MapGet(
+        "/sync/providers",
+        (Func<SqliteConnection> getConn) =>
+        {
+            using var conn = getConn();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText =
+                "SELECT ProviderId, FirstName, LastName, Specialty, SyncedAt FROM sync_Provider";
+            using var reader = cmd.ExecuteReader();
+            var providers = new List<object>();
+            while (reader.Read())
+            {
+                providers.Add(
+                    new
+                    {
+                        ProviderId = reader.GetString(0),
+                        FirstName = reader.IsDBNull(1) ? null : reader.GetString(1),
+                        LastName = reader.IsDBNull(2) ? null : reader.GetString(2),
+                        Specialty = reader.IsDBNull(3) ? null : reader.GetString(3),
+                        SyncedAt = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    }
+                );
+            }
+            return Results.Ok(providers);
+        }
+    )
+    .AddEndpointFilterFactory(
+        EndpointFilterFactories.RequirePermission(
+            FhirPermissions.SyncRead,
+            signingKey,
+            getGatekeeperClient,
+            app.Logger
+        )
+    );
+
 app.Run();
 
 static object BuildSyncRecordsResponse(

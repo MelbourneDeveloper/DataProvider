@@ -26,9 +26,13 @@
   <ItemGroup>
     <AdditionalFiles Include="Queries/*.sql" />
     <AdditionalFiles Include="DataProvider.json" />
+    <!-- YAML schema is source of truth, stored in git -->
+    <Content Include="clinical-schema.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
-  <!-- Create database with schema before code generation using Migration.Cli -->
+  <!-- Create database from YAML using Migration.Cli (YAML stored in git) -->
   <Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider">
     <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../../Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/clinical-schema.yaml" --output "$(MSBuildProjectDirectory)/clinical-build.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
   </Target>

@@ -1,7 +1,7 @@
 using Migration;
 using static Migration.PortableTypes;
 
-namespace DataProvider.Example.Schema;
+namespace DataProvider.Example.Migrations;
 
 /// <summary>
 /// Database schema definition for DataProvider.Example.

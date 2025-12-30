@@ -94,8 +94,16 @@ public sealed class SchemaYamlSerializerTests
                 t =>
                     t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
                         .Column("Email", PortableTypes.NVarChar(255), c => c.NotNull())
-                        .Column("CreatedAt", PortableTypes.DateTime(), c => c.NotNull().DefaultLql("now()"))
-                        .Column("IsActive", PortableTypes.Boolean, c => c.NotNull().DefaultLql("true"))
+                        .Column(
+                            "CreatedAt",
+                            PortableTypes.DateTime(),
+                            c => c.NotNull().DefaultLql("now()")
+                        )
+                        .Column(
+                            "IsActive",
+                            PortableTypes.Boolean,
+                            c => c.NotNull().DefaultLql("true")
+                        )
                         .Index("idx_users_email", "Email", unique: true)
             )
             .Table(
@@ -301,7 +309,11 @@ public sealed class SchemaYamlSerializerTests
                 "Products",
                 t =>
                     t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
-                        .Column("Price", PortableTypes.Decimal(10, 2), c => c.NotNull().Check("Price >= 0"))
+                        .Column(
+                            "Price",
+                            PortableTypes.Decimal(10, 2),
+                            c => c.NotNull().Check("Price >= 0")
+                        )
                         .Column("Quantity", PortableTypes.Int, c => c.NotNull())
                         .Check("CK_Products_Quantity", "Quantity >= 0")
             )
@@ -445,7 +457,10 @@ public sealed class SchemaYamlSerializerTests
                 "Items",
                 t =>
                     t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
-                        .Column("Status", PortableTypes.Enum("item_status", "pending", "active", "archived"))
+                        .Column(
+                            "Status",
+                            PortableTypes.Enum("item_status", "pending", "active", "archived")
+                        )
             )
             .Build();
 
@@ -475,8 +490,16 @@ public sealed class SchemaYamlSerializerTests
                 "Events",
                 t =>
                     t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey().DefaultLql("gen_uuid()"))
-                        .Column("CreatedAt", PortableTypes.DateTime(), c => c.NotNull().DefaultLql("now()"))
-                        .Column("IsActive", PortableTypes.Boolean, c => c.NotNull().DefaultLql("true"))
+                        .Column(
+                            "CreatedAt",
+                            PortableTypes.DateTime(),
+                            c => c.NotNull().DefaultLql("now()")
+                        )
+                        .Column(
+                            "IsActive",
+                            PortableTypes.Boolean,
+                            c => c.NotNull().DefaultLql("true")
+                        )
             )
             .Build();
 
@@ -575,5 +598,31 @@ public sealed class SchemaYamlSerializerTests
             "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_users_email'";
         var indexCount = Convert.ToInt32(verifyCmd.ExecuteScalar(), CultureInfo.InvariantCulture);
         Assert.Equal(1, indexCount);
+    }
+
+    [Fact]
+    public void ToYaml_OmitsSemanticDefaultValues()
+    {
+        // Arrange - Schema with all default values
+        var schema = Schema
+            .Define("test")
+            .Table(
+                "Users",
+                t =>
+                    t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
+                        .Column("Name", PortableTypes.Text) // nullable by default
+            )
+            .Build();
+
+        // Act
+        var yaml = SchemaYamlSerializer.ToYaml(schema);
+
+        // Assert - These default values should NOT appear in the YAML
+        Assert.DoesNotContain("isNullable: true", yaml);
+        Assert.DoesNotContain("identitySeed", yaml);
+        Assert.DoesNotContain("identityIncrement", yaml);
+        Assert.DoesNotContain("isIdentity: false", yaml);
+        Assert.DoesNotContain("isComputedPersisted: false", yaml);
+        Assert.DoesNotContain("schema: public", yaml);
     }
 }

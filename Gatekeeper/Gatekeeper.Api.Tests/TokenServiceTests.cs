@@ -1,5 +1,4 @@
 using System.Globalization;
-using Gatekeeper.Migration;
 using Microsoft.Data.Sqlite;
 using Migration;
 using Migration.SQLite;
@@ -466,9 +465,10 @@ public sealed class TokenServiceTests
         var conn = new SqliteConnection("Data Source=:memory:");
         conn.Open();
 
-        // Use the GatekeeperSchema migration to create only the needed tables
+        // Use the YAML schema to create only the needed tables
         // gk_credential is needed because gk_session has a FK to it
-        var schema = GatekeeperSchema.Build();
+        var yamlPath = Path.Combine(AppContext.BaseDirectory, "gatekeeper-schema.yaml");
+        var schema = SchemaYamlSerializer.FromYamlFile(yamlPath);
         var neededTables = new[] { "gk_user", "gk_credential", "gk_session" };
 
         foreach (var table in schema.Tables.Where(t => neededTables.Contains(t.Name)))

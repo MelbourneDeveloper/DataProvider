@@ -40,8 +40,7 @@ public static class SchemaSerializer
     /// </summary>
     /// <param name="schema">Schema to serialize.</param>
     /// <returns>YAML representation of the schema.</returns>
-    public static string ToYaml(SchemaDefinition schema) =>
-        SchemaYamlSerializer.ToYaml(schema);
+    public static string ToYaml(SchemaDefinition schema) => SchemaYamlSerializer.ToYaml(schema);
 
     /// <summary>
     /// Deserialize a schema definition from YAML string.
@@ -49,8 +48,7 @@ public static class SchemaSerializer
     /// </summary>
     /// <param name="yaml">YAML string.</param>
     /// <returns>Deserialized schema definition.</returns>
-    public static SchemaDefinition FromYaml(string yaml) =>
-        SchemaYamlSerializer.FromYaml(yaml);
+    public static SchemaDefinition FromYaml(string yaml) => SchemaYamlSerializer.FromYaml(yaml);
 }
 
 /// <summary>
