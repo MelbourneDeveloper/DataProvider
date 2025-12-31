@@ -9,8 +9,8 @@
       ],
       "rollForward": false
     },
-    "h5": {
-      "version": "25.11.62743",
+    "h5-compiler": {
+      "version": "25.11.62732",
       "commands": [
         "h5"
       ],
