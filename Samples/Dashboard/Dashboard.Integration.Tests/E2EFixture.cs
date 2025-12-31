@@ -162,6 +162,10 @@ public sealed class E2EFixture : IAsyncLifetime
                 clinicalSyncEnv
             );
         }
+        else
+        {
+            Console.WriteLine($"[E2E] Clinical sync worker missing: {clinicalSyncDll}");
+        }
 
         var schedulingSyncDir = Path.Combine(samplesDir, "Scheduling", "Scheduling.Sync");
         var schedulingSyncDll = Path.Combine(
@@ -184,6 +188,10 @@ public sealed class E2EFixture : IAsyncLifetime
                 schedulingSyncDir,
                 schedulingSyncEnv
             );
+        }
+        else
+        {
+            Console.WriteLine($"[E2E] Scheduling sync worker missing: {schedulingSyncDll}");
         }
 
         await Task.Delay(2000);

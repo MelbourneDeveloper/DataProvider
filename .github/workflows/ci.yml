@@ -219,6 +219,11 @@ jobs:
       - name: Build Dashboard.Web (downloads React vendor files)
         run: dotnet build Samples/Dashboard/Dashboard.Web -c Release --no-restore
 
+      - name: Build Sync projects (required for Sync E2E tests)
+        run: |
+          dotnet build Samples/Clinical/Clinical.Sync -c Release
+          dotnet build Samples/Scheduling/Scheduling.Sync -c Release
+
       - name: Build Integration Tests (includes wwwroot copy)
         run: dotnet build Samples/Dashboard/Dashboard.Integration.Tests -c Release
 

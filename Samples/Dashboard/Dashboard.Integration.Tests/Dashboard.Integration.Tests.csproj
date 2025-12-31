@@ -23,7 +23,9 @@
 
   <ItemGroup>
     <ProjectReference Include="../../Clinical/Clinical.Api/Clinical.Api.csproj" />
+    <ProjectReference Include="../../Clinical/Clinical.Sync/Clinical.Sync.csproj" />
     <ProjectReference Include="../../Scheduling/Scheduling.Api/Scheduling.Api.csproj" />
+    <ProjectReference Include="../../Scheduling/Scheduling.Sync/Scheduling.Sync.csproj" />
     <ProjectReference Include="../../../Gatekeeper/Gatekeeper.Api/Gatekeeper.Api.csproj" />
   </ItemGroup>
 
