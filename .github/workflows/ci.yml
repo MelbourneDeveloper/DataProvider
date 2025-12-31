@@ -220,9 +220,7 @@ jobs:
         run: dotnet build Samples/Dashboard/Dashboard.Integration.Tests -c Release --no-restore
 
       - name: Install Playwright browsers
-        run: |
-          cd Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net9.0
-          ./playwright.sh install --with-deps chromium
+        run: dotnet tool install --global Microsoft.Playwright.CLI && playwright install --with-deps chromium
 
       - name: Test
         run: dotnet test Samples/Dashboard/Dashboard.Integration.Tests -c Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
