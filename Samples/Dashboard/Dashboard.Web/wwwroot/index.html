@@ -2196,7 +2196,7 @@
                 ),
                 React.createElement('tbody', null,
                   filteredRecords.map(record =>
-                    React.createElement('tr', { key: record.id, 'data-testid': `sync-record-${record.id}`, 'data-service': record.service, 'data-operation': record.operation },
+                    React.createElement('tr', { key: `${record.service}-${record.id}`, 'data-testid': `sync-record-${record.service}-${record.id}`, 'data-service': record.service, 'data-operation': record.operation },
                       React.createElement('td', null,
                         React.createElement('span', { className: `status-indicator ${getOperationClass(record.operation)}` },
                           getOperationIcon(record.operation),
