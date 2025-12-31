@@ -5,12 +5,36 @@ using Selecta;
 namespace DataProvider;
 
 /// <summary>
-/// Static extension methods for IDbConnection following FP patterns
+/// Static extension methods for IDbConnection following FP patterns.
+/// All methods return Result types for explicit error handling.
 /// </summary>
+/// <example>
+/// <code>
+/// using var connection = new SqliteConnection("Data Source=:memory:");
+/// connection.Open();
+///
+/// // Execute a query with mapping
+/// var result = connection.Query&lt;Customer&gt;(
+///     sql: "SELECT Id, Name FROM Customers WHERE Active = 1",
+///     mapper: reader => new Customer(
+///         Id: reader.GetInt32(0),
+///         Name: reader.GetString(1)
+///     )
+/// );
+///
+/// // Pattern match on the result
+/// var customers = result switch
+/// {
+///     Result&lt;IReadOnlyList&lt;Customer&gt;, SqlError&gt;.Ok&lt;IReadOnlyList&lt;Customer&gt;, SqlError&gt; ok => ok.Value,
+///     Result&lt;IReadOnlyList&lt;Customer&gt;, SqlError&gt;.Error&lt;IReadOnlyList&lt;Customer&gt;, SqlError&gt; err => throw new Exception(err.Value.Message),
+///     _ => throw new InvalidOperationException()
+/// };
+/// </code>
+/// </example>
 public static class DbConnectionExtensions
 {
     /// <summary>
-    /// Execute a query and return results
+    /// Execute a query and return results.
     /// </summary>
     /// <typeparam name="T">The result type</typeparam>
     /// <param name="connection">The database connection</param>
@@ -18,6 +42,15 @@ public static class DbConnectionExtensions
     /// <param name="parameters">Optional parameters</param>
     /// <param name="mapper">Function to map from IDataReader to T</param>
     /// <returns>Result with list of T or error</returns>
+    /// <example>
+    /// <code>
+    /// var result = connection.Query&lt;Product&gt;(
+    ///     sql: "SELECT * FROM Products WHERE Price > @minPrice",
+    ///     parameters: [new SqliteParameter("@minPrice", 10.00)],
+    ///     mapper: r => new Product(r.GetInt32(0), r.GetString(1), r.GetDecimal(2))
+    /// );
+    /// </code>
+    /// </example>
     public static Result<IReadOnlyList<T>, SqlError> Query<T>(
         this IDbConnection connection,
         string sql,
@@ -72,12 +105,26 @@ public static class DbConnectionExtensions
     }
 
     /// <summary>
-    /// Execute a non-query command
+    /// Execute a non-query command (INSERT, UPDATE, DELETE).
     /// </summary>
     /// <param name="connection">The database connection</param>
     /// <param name="sql">The SQL command</param>
     /// <param name="parameters">Optional parameters</param>
     /// <returns>Result with rows affected or error</returns>
+    /// <example>
+    /// <code>
+    /// var result = connection.Execute(
+    ///     sql: "UPDATE Products SET Price = @price WHERE Id = @id",
+    ///     parameters: [
+    ///         new SqliteParameter("@price", 19.99),
+    ///         new SqliteParameter("@id", 42)
+    ///     ]
+    /// );
+    ///
+    /// if (result is Result&lt;int, SqlError&gt;.Ok&lt;int, SqlError&gt; ok)
+    ///     Console.WriteLine($"Updated {ok.Value} rows");
+    /// </code>
+    /// </example>
     public static Result<int, SqlError> Execute(
         this IDbConnection connection,
         string sql,

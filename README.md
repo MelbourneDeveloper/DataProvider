@@ -314,7 +314,7 @@ DataProvider/
 │   ├── Scheduling/            # FHIR-compliant scheduling API
 │   └── Dashboard/             # React/H5 dashboard
 ├── Other/
-│   ├── Results/               # Functional Result<T> type implementation
+│   ├── Results/               # Functional Result<T,E> type implementation
 │   └── Selecta/               # SQL parsing and AST utilities
 └── Directory.Build.props      # Central build configuration
 ```

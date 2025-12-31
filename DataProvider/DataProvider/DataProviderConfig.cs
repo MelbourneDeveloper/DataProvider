@@ -3,6 +3,20 @@ namespace DataProvider;
 /// <summary>
 /// Configuration for DataProvider code generation
 /// </summary>
+/// <example>
+/// <code>
+/// // Configure tables for code generation
+/// var config = new DataProviderConfig
+/// {
+///     ConnectionString = "Data Source=app.db",
+///     Tables = new List&lt;TableConfig&gt;
+///     {
+///         new TableConfig { Schema = "main", Name = "users", GenerateDelete = true },
+///         new TableConfig { Schema = "main", Name = "orders" }
+///     }.AsReadOnly()
+/// };
+/// </code>
+/// </example>
 public sealed record DataProviderConfig
 {
     /// <summary>
@@ -19,6 +33,21 @@ public sealed record DataProviderConfig
 /// <summary>
 /// Configuration for a single table
 /// </summary>
+/// <example>
+/// <code>
+/// // Configure a table with custom settings
+/// var tableConfig = new TableConfig
+/// {
+///     Schema = "dbo",
+///     Name = "Patients",
+///     GenerateInsert = true,
+///     GenerateUpdate = true,
+///     GenerateDelete = false,
+///     ExcludeColumns = new List&lt;string&gt; { "computed_column" }.AsReadOnly(),
+///     PrimaryKeyColumns = new List&lt;string&gt; { "Id" }.AsReadOnly()
+/// };
+/// </code>
+/// </example>
 public sealed record TableConfig
 {
     /// <summary>

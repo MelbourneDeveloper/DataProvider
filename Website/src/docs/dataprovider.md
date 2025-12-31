@@ -28,7 +28,7 @@ public static IEnumerable<Order> GetActiveOrders(this IDbConnection connection)
 
 ### Result Types
 
-Operations return `Result<T>` for safe error handling:
+Operations return `Result<T,E>` for safe error handling:
 
 ```csharp
 var result = connection.GetActiveOrders();

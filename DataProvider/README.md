@@ -7,7 +7,7 @@ A .NET source generator that creates compile-time safe database extension method
 - **Compile-Time Safety** - SQL queries are validated during compilation, catching errors before runtime
 - **Auto-Generated Extensions** - Creates extension methods on `IDbConnection` and `IDbTransaction`
 - **Schema Inspection** - Automatically inspects database schema to generate appropriate types
-- **Result Type Pattern** - All operations return `Result<T>` types for explicit error handling
+- **Result Type Pattern** - All operations return `Result<T,E>` types for explicit error handling
 - **Multi-Database Support** - Currently supports SQLite and SQL Server
 - **LQL Integration** - Seamlessly works with Lambda Query Language files
 
@@ -244,7 +244,7 @@ For complex result sets with joins, configure grouping in a `.grouping.json` fil
 DataProvider follows functional programming principles:
 
 - **No Classes** - Uses records and static extension methods
-- **No Exceptions** - Returns `Result<T>` types for all operations
+- **No Exceptions** - Returns `Result<T,E>` types for all operations
 - **Pure Functions** - Static methods with no side effects
 - **Expression-Based** - Prefers expressions over statements
 
@@ -277,7 +277,7 @@ dotnet test DataProvider.Tests/DataProvider.Tests.csproj
 
 ## Error Handling
 
-All methods return `Result<T>` types:
+All methods return `Result<T,E>` types:
 
 ```csharp
 var result = await connection.ExecuteQueryAsync();

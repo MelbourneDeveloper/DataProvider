@@ -522,13 +522,41 @@ pre code { padding: 0; background: none; border: none; color: inherit; }
 }
 
 /* Tables */
-table { width: 100%; border-collapse: collapse; margin-bottom: var(--space-6); }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--space-6);
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
 th, td {
   padding: var(--space-3) var(--space-4);
   text-align: left;
   border-bottom: 1px solid var(--border-color);
 }
-th { font-weight: 600; background: var(--bg-tertiary); }
+th {
+  background: var(--slate-blue);
+  color: var(--cloud-white);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: var(--text-sm);
+  letter-spacing: 0.05em;
+}
+td code {
+  background: var(--bg-tertiary);
+  padding: var(--space-1) var(--space-2);
+  border-radius: 4px;
+  font-size: var(--text-sm);
+}
+
+/* Breadcrumb */
+.breadcrumb {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+}
+.breadcrumb a { color: var(--signal-blue); }
 
 /* Syntax highlighting */
 .token.comment { color: #6B7280; }

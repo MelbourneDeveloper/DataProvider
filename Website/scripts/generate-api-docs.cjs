@@ -30,6 +30,34 @@ function cleanMarkdown(text) {
     .trim();
 }
 
+function formatExample(exampleArray) {
+  if (!exampleArray || !Array.isArray(exampleArray) || exampleArray.length === 0) return '';
+
+  let md = '\n## Example\n\n';
+  for (const example of exampleArray) {
+    // DocFX wraps examples in <pre><code class="lang-csharp">...</code></pre>
+    // Extract the code content and convert to markdown code block
+    let code = example;
+
+    // Remove <pre><code> wrapper if present
+    const codeMatch = code.match(/<pre><code[^>]*>([\s\S]*?)<\/code><\/pre>/);
+    if (codeMatch) {
+      code = codeMatch[1];
+    }
+
+    // Unescape HTML entities
+    code = code
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+
+    md += '```csharp\n' + code.trim() + '\n```\n\n';
+  }
+  return md;
+}
+
 function formatTypeName(type) {
   if (!type) return '';
   return type.replace(/\x60\d+/g, '').replace(/\{/g, '<').replace(/\}/g, '>').split('.').pop();
@@ -99,6 +127,11 @@ function generateTypeMarkdown(doc, allItems) {
   if (doc.summary) md += cleanMarkdown(doc.summary) + '\n\n';
   if (doc.syntax && doc.syntax.content) md += '```csharp\n' + doc.syntax.content + '\n```\n\n';
 
+  // Add class-level examples
+  if (doc.example && doc.example.length > 0) {
+    md += formatExample(doc.example);
+  }
+
   const children = allItems.filter(i => i.parent === doc.uid);
   const constructors = children.filter(c => c.type === 'Constructor');
   const properties = children.filter(c => c.type === 'Property');
@@ -149,6 +182,10 @@ function generateTypeMarkdown(doc, allItems) {
         md += '**Returns:** `' + formatTypeName(method.syntax.return.type) + '`';
         if (method.syntax.return.description) md += ' - ' + cleanMarkdown(method.syntax.return.description);
         md += '\n\n';
+      }
+      // Add method-level examples
+      if (method.example && method.example.length > 0) {
+        md += formatExample(method.example);
       }
     }
   }

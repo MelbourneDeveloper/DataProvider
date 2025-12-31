@@ -3,11 +3,29 @@ namespace Migration;
 /// <summary>
 /// Fluent builder for schema definitions.
 /// </summary>
+/// <example>
+/// <code>
+/// var schema = SchemaFactory.Define("MyDatabase")
+///     .Table("users", t => t
+///         .Column("id", PortableTypes.Uuid, c => c.PrimaryKey())
+///         .Column("email", PortableTypes.VarChar(255), c => c.NotNull())
+///         .Column("created_at", PortableTypes.DateTime, c => c.DefaultLql("now()"))
+///         .Index("idx_users_email", "email", unique: true))
+///     .Table("orders", t => t
+///         .Column("id", PortableTypes.Int, c => c.Identity().PrimaryKey())
+///         .Column("user_id", PortableTypes.Uuid, c => c.NotNull())
+///         .Column("total", PortableTypes.Decimal(10, 2))
+///         .ForeignKey("user_id", "users", "id", onDelete: ForeignKeyAction.Cascade))
+///     .Build();
+/// </code>
+/// </example>
 public static class SchemaFactory
 {
     /// <summary>
     /// Start defining a schema with the given name.
     /// </summary>
+    /// <param name="name">The name of the schema/database.</param>
+    /// <returns>A <see cref="SchemaBuilder"/> for fluent configuration.</returns>
     public static SchemaBuilder Define(string name) => new(name);
 }
 
@@ -28,8 +46,20 @@ public static class Schema
 }
 
 /// <summary>
-/// Builder for creating schema definitions.
+/// Builder for creating schema definitions with tables, columns, indexes, and constraints.
 /// </summary>
+/// <example>
+/// <code>
+/// var schema = Schema.Define("inventory")
+///     .Table("products", t => t
+///         .Column("id", PortableTypes.Int, c => c.Identity().PrimaryKey())
+///         .Column("name", PortableTypes.VarChar(100), c => c.NotNull())
+///         .Column("price", PortableTypes.Decimal(10, 2), c => c.NotNull().Check("price >= 0"))
+///         .Column("sku", PortableTypes.VarChar(50), c => c.NotNull())
+///         .Unique("uq_products_sku", "sku"))
+///     .Build();
+/// </code>
+/// </example>
 public sealed class SchemaBuilder
 {
     private readonly string _name;
@@ -66,8 +96,23 @@ public sealed class SchemaBuilder
 }
 
 /// <summary>
-/// Builder for creating table definitions.
+/// Builder for creating table definitions with columns, indexes, foreign keys, and constraints.
 /// </summary>
+/// <example>
+/// <code>
+/// // Define a table with various column types and constraints
+/// .Table("employees", t => t
+///     .Column("id", PortableTypes.Uuid, c => c.PrimaryKey().DefaultLql("gen_uuid()"))
+///     .Column("name", PortableTypes.VarChar(100), c => c.NotNull())
+///     .Column("email", PortableTypes.VarChar(255), c => c.NotNull())
+///     .Column("department_id", PortableTypes.Int)
+///     .Column("salary", PortableTypes.Decimal(12, 2))
+///     .Column("hired_at", PortableTypes.DateTime, c => c.DefaultLql("now()"))
+///     .Index("idx_employees_email", "email", unique: true)
+///     .Index("idx_employees_dept", "department_id")
+///     .ForeignKey("department_id", "departments", "id"))
+/// </code>
+/// </example>
 public sealed class TableBuilder
 {
     private readonly string _name;
@@ -279,8 +324,26 @@ public sealed class TableBuilder
 }
 
 /// <summary>
-/// Builder for creating column definitions.
+/// Builder for creating column definitions with type, nullability, defaults, and constraints.
 /// </summary>
+/// <example>
+/// <code>
+/// // UUID primary key with auto-generation
+/// .Column("id", PortableTypes.Uuid, c => c.PrimaryKey().DefaultLql("gen_uuid()"))
+///
+/// // Required string with max length
+/// .Column("name", PortableTypes.VarChar(100), c => c.NotNull())
+///
+/// // Auto-increment integer
+/// .Column("sequence", PortableTypes.Int, c => c.Identity())
+///
+/// // Decimal with precision and check constraint
+/// .Column("price", PortableTypes.Decimal(10, 2), c => c.NotNull().Check("price > 0"))
+///
+/// // DateTime with default to current timestamp
+/// .Column("created_at", PortableTypes.DateTime, c => c.DefaultLql("now()"))
+/// </code>
+/// </example>
 public sealed class ColumnBuilder
 {
     private readonly string _name;

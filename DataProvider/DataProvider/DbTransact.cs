@@ -7,6 +7,24 @@ namespace DataProvider;
 /// Provides transactional helpers as extension methods for <see cref="DbConnection"/>.
 /// Opens a transaction, executes the provided delegate, and commits or rolls back accordingly.
 /// </summary>
+/// <example>
+/// <code>
+/// // Execute multiple operations in a transaction
+/// await connection.Transact(async tx =>
+/// {
+///     await tx.InsertUserAsync(new User { Id = Guid.NewGuid(), Name = "John" });
+///     await tx.InsertOrderAsync(new Order { UserId = userId, Total = 99.99m });
+/// });
+///
+/// // Execute with a return value
+/// var userId = await connection.Transact(async tx =>
+/// {
+///     var user = new User { Id = Guid.NewGuid(), Name = "Jane" };
+///     await tx.InsertUserAsync(user);
+///     return user.Id;
+/// });
+/// </code>
+/// </example>
 public static class DbTransact
 {
     /// <summary>

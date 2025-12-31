@@ -34,7 +34,7 @@ DataProvider is built around these key principles:
 
 - **Source Generation**: SQL queries generate type-safe extension methods at compile time
 - **No ORM Overhead**: Direct SQL execution without mapping layers
-- **Result Types**: All operations return `Result<T>` for error handling without exceptions
+- **Result Types**: All operations return `Result<T,E>` for error handling without exceptions
 
 ## Next Steps
 
