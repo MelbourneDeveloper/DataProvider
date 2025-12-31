@@ -13,10 +13,14 @@
         <Rule Id="CA1062" Action="None" />
         <Rule Id="CA1002" Action="None" />
         <Rule Id="CA1034" Action="None" />
+        <Rule Id="CS8509" Action="None" />
         <!-- Perhaps false positive? https://github.com/dotnet/roslyn-analyzers/issues/7150 -->
         <Rule Id="CA1848" Action="None" />
         <!-- Mark assemblies with assembly version -->
         <Rule Id="CA1017" Action="None" />
+        <Rule Id="CA1848" Action="None" />
+        <Rule Id="MSB3243" Action="Error" />
+        <Rule Id="NU1603" Action="Error" />
         <Rule Id="IDE0037" Action="Error" />
         <Rule Id="IDE0301" Action="Error" />
         <Rule Id="IDE0042" Action="Error" />

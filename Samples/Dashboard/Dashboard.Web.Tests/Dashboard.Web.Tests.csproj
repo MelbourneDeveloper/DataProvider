@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <PackageReference Include="h5" Version="25.11.62743" />
-    <PackageReference Include="h5.Core" Version="25.11.62742" />
+    <PackageReference Include="h5.Core" Version="25.11.62746" />
   </ItemGroup>
 
   <ItemGroup>

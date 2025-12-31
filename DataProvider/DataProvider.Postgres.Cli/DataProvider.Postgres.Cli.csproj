@@ -18,6 +18,6 @@
     <ItemGroup>
         <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
         <PackageReference Include="Npgsql" Version="9.0.2" />
-        <PackageReference Include="SqlParser" Version="0.5.1" />
+        <!-- Uses SqlParserCS 0.6.5 from Directory.Build.props -->
     </ItemGroup>
 </Project>

@@ -89,12 +89,48 @@ var schema = Schema.Define("my_schema")
 SchemaYamlSerializer.ToYamlFile(schema, "schema.yaml");
 ```
 
+### Avoiding Circular Dependencies
+
+**CRITICAL:** Projects that use DataProvider code generation MUST NOT have circular dependencies with the CLI tools.
+
+**The Problem:** If your project references `DataProvider.csproj` AND runs `DataProvider.SQLite.Cli` as a build target, you create an infinite build loop:
+```
+YourProject → DataProvider → (build target) DataProvider.SQLite.Cli → DataProvider → ...
+```
+
+**How to Fix:**
+1. **Remove the `ProjectReference` to DataProvider.csproj** from projects that run the CLI as a build target
+2. **Use raw YAML schemas checked into git** - do NOT export C# schemas to YAML at build time
+3. **Migration.Cli is safe** - it does NOT depend on DataProvider, only on Migration projects
+
+**The Rule:** YAML schema files are source of truth. Check them into git. Never generate them at build time. The C# → YAML export is a one-time developer action, not a build step.
+
+**Correct pattern:**
+```xml
+<!-- SAFE: Migration.Cli has no DataProvider dependency -->
+<Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider">
+    <Exec Command='dotnet run --project Migration.Cli -- --schema schema.yaml --output build.db' />
+</Target>
+
+<!-- SAFE: DataProvider.SQLite.Cli runs AFTER schema exists, no circular ref -->
+<Target Name="GenerateDataProvider" BeforeTargets="BeforeCompile">
+    <Exec Command='dotnet run --project DataProvider.SQLite.Cli -- ...' />
+</Target>
+```
+
+**Wrong pattern:**
+```xml
+<!-- BROKEN: Project references DataProvider AND runs CLI that depends on DataProvider -->
+<ProjectReference Include="DataProvider.csproj" />  <!-- REMOVE THIS -->
+```
+
 ### Forbidden Patterns
 
 - **NO raw SQL DDL files** - Use Migration.Cli with YAML
 - **NO individual BuildDb projects** - Use Migration.Cli (single tool)
 - **NO `schema.sql` files** - YAML schemas only
 - **NO code generation before schema creation** - Migration MUST run first
+- **NO C# schema export at build time** - Export once, commit YAML to git
 
 ## Configuration
 

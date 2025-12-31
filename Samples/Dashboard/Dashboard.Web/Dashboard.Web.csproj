@@ -1,4 +1,4 @@
-<Project Sdk="h5.Target/25.11.62743">
+<Project Sdk="h5.Target/25.11.62725">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <PackageReference Include="h5" Version="25.11.62743" />
-    <PackageReference Include="h5.Core" Version="25.11.62743" />
+    <PackageReference Include="h5.Core" Version="25.11.62746" />
   </ItemGroup>
 
   <!-- Copy wwwroot files to output -->

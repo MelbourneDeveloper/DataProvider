@@ -1,7 +1,5 @@
 using System.Text;
 
-#pragma warning disable CS8509 // Non-exhaustive switch
-
 namespace Gatekeeper.Api;
 
 /// <summary>

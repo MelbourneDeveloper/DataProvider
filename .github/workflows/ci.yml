@@ -22,7 +22,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: |
+            8.0.x
+            ${{ env.DOTNET_VERSION }}
 
       - name: Restore .NET tools
         run: dotnet tool restore
@@ -105,7 +107,12 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: |
+            8.0.x
+            ${{ env.DOTNET_VERSION }}
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
@@ -183,7 +190,12 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: |
+            8.0.x
+            ${{ env.DOTNET_VERSION }}
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

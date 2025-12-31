@@ -1,4 +1,3 @@
-#pragma warning disable CS8509 // Exhaustive switch - Exhaustion analyzer handles this
 #pragma warning disable IDE0037 // Use inferred member name - prefer explicit for clarity in API responses
 
 using System.Collections.Immutable;

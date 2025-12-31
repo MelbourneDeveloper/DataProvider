@@ -5,8 +5,6 @@ using DataProvider.CodeGeneration;
 using Npgsql;
 using Outcome;
 using Selecta;
-using SqlParser;
-using SqlParser.Ast;
 
 #pragma warning disable CA1849 // Call async methods when in an async method
 #pragma warning disable CA2100 // Review SQL queries for security vulnerabilities

@@ -1,13 +1,18 @@
 <Project>
 
   <PropertyGroup>
+    <!-- H5 (Bridge.NET successor) versions - used by Dashboard projects -->
+    <H5TargetVersion>25.11.62725</H5TargetVersion>
+    <H5Version>25.11.62743</H5Version>
+    <H5CoreVersion>25.11.62746</H5CoreVersion>
+    <H5CompilerVersion>24.11.53871</H5CompilerVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TargetFramework>net9.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsAsErrors>IDE0301;IDE0063;IDE0005</WarningsAsErrors>
+    <WarningsAsErrors>IDE0301;IDE0063;IDE0005;NU1603;MSB3243</WarningsAsErrors>
     <NoWarn>CA1016;CA1303;EPS06;IDE0290;CA1062;CA1002;IDE0090;CA1017;CS8509;IDE0037</NoWarn>
     <WarningsNotAsErrors>$(WarningsNotAsErrors);CA1303;EPS06;CA1016;IDE0290;CA1062;CA1002;CA1017;CS8509;IDE0037</WarningsNotAsErrors>
     <WarningLevel>9999</WarningLevel>

@@ -8,25 +8,13 @@
         <Description>SQLite source generator for DataProvider</Description>
         <!-- Exclude from Directory.Build.props analyzer packages -->
         <!-- Temporarily disable strict rules for source generator to build -->
-        <NoWarn>CA1849;CA2100;EPC13;CA1307;</NoWarn>
+        <NoWarn>CA1849;CA2100;EPC13;CA1307;CS3021;CS0108</NoWarn>
         <IsRoslynComponent>true</IsRoslynComponent>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     </PropertyGroup>
     <ItemGroup>
-        <!-- ANTLR runtime and build support -->
+        <!-- ANTLR runtime (generated parser files are checked into git in Parsing/) -->
         <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
-        <PackageReference Include="Antlr4BuildTasks" Version="12.8.0" PrivateAssets="all" />
-    </ItemGroup>
-    <ItemGroup>
-        <!-- ANTLR grammar files - lexer must be separate -->
-        <Antlr4 Include="Parsing/SQLiteLexer.g4">
-            <Package>DataProvider.SQLite.Parsing</Package>
-        </Antlr4>
-        <Antlr4 Include="Parsing/SQLiteParser.g4">
-            <Package>DataProvider.SQLite.Parsing</Package>
-            <Listener>true</Listener>
-            <Visitor>true</Visitor>
-        </Antlr4>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
