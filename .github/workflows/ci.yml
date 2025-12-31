@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, newstuff]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -213,14 +213,26 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore
-        run: dotnet restore Samples/Dashboard/Dashboard.Integration.Tests
+      - name: Restore Dashboard.Web
+        run: dotnet restore Samples/Dashboard/Dashboard.Web
 
-      - name: Build
-        run: dotnet build Samples/Dashboard/Dashboard.Integration.Tests -c Release --no-restore
+      - name: Build Dashboard.Web (downloads React vendor files)
+        run: dotnet build Samples/Dashboard/Dashboard.Web -c Release --no-restore
+
+      - name: Build Integration Tests (includes wwwroot copy)
+        run: dotnet build Samples/Dashboard/Dashboard.Integration.Tests -c Release
 
       - name: Install Playwright browsers
         run: dotnet tool install --global Microsoft.Playwright.CLI && playwright install --with-deps chromium
+
+      - name: Verify wwwroot files
+        run: |
+          echo "=== Dashboard.Web wwwroot (source) ==="
+          ls -la Samples/Dashboard/Dashboard.Web/wwwroot/js/ || echo "Dashboard.Web js folder not found"
+          ls -la Samples/Dashboard/Dashboard.Web/wwwroot/js/vendor/ || echo "Dashboard.Web vendor folder not found"
+          echo "=== Integration Tests wwwroot (output) ==="
+          ls -la Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net9.0/wwwroot/js/ || echo "Integration Tests js folder not found"
+          ls -la Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net9.0/wwwroot/js/vendor/ || echo "Integration Tests vendor folder not found"
 
       - name: Test
         run: dotnet test Samples/Dashboard/Dashboard.Integration.Tests -c Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"

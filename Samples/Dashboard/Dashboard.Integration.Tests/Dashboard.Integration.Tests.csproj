@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="../../Clinical/Clinical.Api/Clinical.Api.csproj" />
     <ProjectReference Include="../../Scheduling/Scheduling.Api/Scheduling.Api.csproj" />
+    <ProjectReference Include="../../../Gatekeeper/Gatekeeper.Api/Gatekeeper.Api.csproj" />
   </ItemGroup>
 
   <!-- Copy Dashboard.Web wwwroot for Playwright tests -->
