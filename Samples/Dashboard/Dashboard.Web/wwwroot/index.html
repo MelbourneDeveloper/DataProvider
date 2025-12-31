@@ -104,22 +104,32 @@
 
   <!-- Pure JS React Dashboard -->
   <script>
+    window.addEventListener('error', function(event) {
+      console.error('[Dashboard] Window error', event.error || event.message);
+    });
+    window.addEventListener('unhandledrejection', function(event) {
+      console.error('[Dashboard] Unhandled rejection', event.reason);
+    });
+
     // Hide loading screen after a delay
     setTimeout(function() {
       document.getElementById('loading-screen').classList.add('hidden');
     }, 1500);
 
     // Load Google Charts
-    google.charts.load('current', {
-      'packages': ['corechart', 'line', 'bar', 'gauge']
-    });
-
     // Flag to track when charts are ready
     let googleChartsLoaded = false;
-    google.charts.setOnLoadCallback(() => {
-      googleChartsLoaded = true;
-      console.log('[Dashboard] Google Charts loaded!');
-    });
+    if (typeof google !== 'undefined' && google.charts && google.charts.load) {
+      google.charts.load('current', {
+        'packages': ['corechart', 'line', 'bar', 'gauge']
+      });
+      google.charts.setOnLoadCallback(function() {
+        googleChartsLoaded = true;
+        console.log('[Dashboard] Google Charts loaded!');
+      });
+    } else {
+      console.warn('[Dashboard] Google Charts unavailable; charts will be disabled.');
+    }
 
     // Load the React dashboard
     console.log('[Dashboard] Loading React dashboard...');

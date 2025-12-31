@@ -3,5 +3,8 @@
   "fileName": "Dashboard",
   "generateSourceMap": true,
   "combineScripts": true,
-  "fileNameCasing": "CamelCase"
+  "fileNameCasing": "CamelCase",
+  "html": {
+    "disabled": true
+  }
 }

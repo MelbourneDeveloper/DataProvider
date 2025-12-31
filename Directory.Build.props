@@ -1,11 +1,6 @@
 <Project>
 
   <PropertyGroup>
-    <!-- H5 (Bridge.NET successor) versions - used by Dashboard projects -->
-    <H5TargetVersion>25.11.62725</H5TargetVersion>
-    <H5Version>25.11.62743</H5Version>
-    <H5CoreVersion>25.11.62746</H5CoreVersion>
-    <H5CompilerVersion>24.11.53871</H5CompilerVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TargetFramework>net9.0</TargetFramework>
     <LangVersion>latest</LangVersion>

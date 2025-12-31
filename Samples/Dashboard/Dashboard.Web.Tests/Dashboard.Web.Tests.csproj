@@ -1,4 +1,4 @@
-<Project Sdk="h5.Target/25.11.62725">
+<Project Sdk="h5.Target/24.11.53863">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -22,8 +22,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="h5" Version="25.11.62743" />
-    <PackageReference Include="h5.Core" Version="25.11.62746" />
+    <PackageReference Include="h5" Version="24.11.53878" />
+    <PackageReference Include="h5.Core" Version="24.11.53879" />
   </ItemGroup>
 
   <ItemGroup>

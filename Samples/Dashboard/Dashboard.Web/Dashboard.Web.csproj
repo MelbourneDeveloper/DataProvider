@@ -1,4 +1,4 @@
-<Project Sdk="h5.Target/25.11.62725">
+<Project Sdk="h5.Target/24.11.53863">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -22,13 +22,28 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="h5" Version="25.11.62743" />
-    <PackageReference Include="h5.Core" Version="25.11.62746" />
+    <PackageReference Include="h5" Version="24.11.53878" />
+    <PackageReference Include="h5.Core" Version="24.11.53879" />
   </ItemGroup>
 
   <!-- Copy wwwroot files to output -->
   <ItemGroup>
     <None Include="wwwroot/**/*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
+  <!-- Download React vendor files before build -->
+  <Target Name="DownloadReactVendorFiles" BeforeTargets="Build" Condition="!Exists('$(MSBuildProjectDirectory)/wwwroot/js/vendor/react.development.js')">
+    <Message Importance="high" Text="[Dashboard] Downloading React vendor files..." />
+    <MakeDir Directories="$(MSBuildProjectDirectory)/wwwroot/js/vendor" />
+    <DownloadFile
+      SourceUrl="https://unpkg.com/react@18/umd/react.development.js"
+      DestinationFolder="$(MSBuildProjectDirectory)/wwwroot/js/vendor"
+      DestinationFileName="react.development.js" />
+    <DownloadFile
+      SourceUrl="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      DestinationFolder="$(MSBuildProjectDirectory)/wwwroot/js/vendor"
+      DestinationFileName="react-dom.development.js" />
+    <Message Importance="high" Text="[Dashboard] React vendor files downloaded successfully." />
+  </Target>
 
 </Project>
