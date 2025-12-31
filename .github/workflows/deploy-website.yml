@@ -41,24 +41,21 @@ jobs:
       - name: Install docfx
         run: dotnet tool install -g docfx
 
-      - name: Generate API docs with docfx
+      - name: Generate API metadata with docfx
         working-directory: Website/docfx
-        run: |
-          docfx metadata docfx.json
-          docfx build docfx.json
+        run: docfx metadata docfx.json
 
       - name: Install npm dependencies
         working-directory: Website
         run: npm ci
 
+      - name: Generate API docs markdown from DocFX YAML
+        working-directory: Website
+        run: node scripts/generate-api-docs.cjs
+
       - name: Build Eleventy site
         working-directory: Website
         run: npm run build
-
-      - name: Copy API docs to site
-        run: |
-          mkdir -p Website/_site/apidocs
-          cp -r Website/docfx/_apidocs/* Website/_site/apidocs/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

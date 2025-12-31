@@ -4,36 +4,39 @@ layout: layouts/base.njk
 
 <div class="docs-layout">
   <aside class="sidebar" id="docs-sidebar">
-    {% for section in navigation.api %}
     <div class="sidebar-section">
-      <h4>{{ section.title }}</h4>
+      <h4>Namespaces</h4>
       <ul>
-        {% for item in section.items %}
-        <li>
-          <a href="{{ item.url }}" {% if page.url == item.url %}class="active"{% endif %}>
-            {{ item.text }}
-          </a>
-        </li>
-        {% endfor %}
+        <li><a href="/apidocs/" {% if page.url == '/apidocs/' %}class="active"{% endif %}>Overview</a></li>
+        <li><a href="/apidocs/DataProvider/">DataProvider</a></li>
+        <li><a href="/apidocs/DataProvider/SQLite/">DataProvider.SQLite</a></li>
+        <li><a href="/apidocs/DataProvider/SqlServer/">DataProvider.SqlServer</a></li>
+        <li><a href="/apidocs/Sync/">Sync</a></li>
+        <li><a href="/apidocs/Sync/SQLite/">Sync.SQLite</a></li>
+        <li><a href="/apidocs/Sync/Postgres/">Sync.Postgres</a></li>
+        <li><a href="/apidocs/Migration/">Migration</a></li>
+        <li><a href="/apidocs/Gatekeeper/Api/">Gatekeeper</a></li>
       </ul>
     </div>
-    {% endfor %}
+
+    <div class="sidebar-section">
+      <h4>Documentation</h4>
+      <ul>
+        <li><a href="/docs/getting-started/">Getting Started</a></li>
+        <li><a href="/docs/dataprovider/">DataProvider</a></li>
+        <li><a href="/docs/sync/">Sync</a></li>
+        <li><a href="https://lql.dev">LQL Docs</a></li>
+      </ul>
+    </div>
   </aside>
 
   <article class="docs-content">
-    {% if breadcrumb %}
-    <div class="api-header">
-      <div class="breadcrumb">{{ breadcrumb }}</div>
-      <h1>{{ title }}</h1>
-      {% if summary %}<p>{{ summary }}</p>{% endif %}
+    {% if namespace %}
+    <div class="breadcrumb" style="font-size: var(--text-sm); color: var(--text-tertiary); margin-bottom: var(--space-2);">
+      <a href="/apidocs/">API</a> / {{ namespace }}
     </div>
-    {% else %}
+    {% endif %}
     <h1>{{ title }}</h1>
-    {% endif %}
-    
-    {% if signature %}
-    <div class="api-signature">{{ signature }}</div>
-    {% endif %}
 
     {{ content | safe }}
   </article>

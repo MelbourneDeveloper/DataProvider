@@ -47,7 +47,7 @@
     "output": "_apidocs",
     "globalMetadataFiles": [],
     "fileMetadataFiles": [],
-    "template": ["default", "modern"],
+    "template": ["default"],
     "postProcessors": [],
     "keepFileLink": false,
     "disableGitFeatures": false
