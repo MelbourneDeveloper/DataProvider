@@ -1,0 +1,28 @@
+---
+layout: layouts/base.njk
+---
+
+<article class="blog-post">
+  <div class="container">
+    <header class="blog-post-header">
+      <p class="blog-post-meta">
+        <time datetime="{{ date | isoDate }}">{{ date | dateFormat }}</time>
+        {% if author %} &middot; {{ author }}{% endif %}
+      </p>
+      <h1>{{ title }}</h1>
+      {% if tags %}
+      <div class="tags">
+        {% for tag in tags %}
+        {% if tag != 'post' and tag != 'posts' %}
+        <a href="/blog/tags/{{ tag | slugify }}/" class="tag">{{ tag }}</a>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </header>
+
+    <div class="blog-post-content">
+      {{ content | safe }}
+    </div>
+  </div>
+</article>

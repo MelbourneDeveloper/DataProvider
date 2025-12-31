@@ -1,0 +1,11 @@
+{
+  "name": "DataProvider",
+  "title": "DataProvider - Effortless .NET Data Access",
+  "description": "Simplifying Database Connectivity in .NET with source-generated SQL, LQL, and offline-first sync.",
+  "url": "https://dataprovider.dev",
+  "author": "DataProvider team",
+  "language": "en",
+  "themeColor": "#6BCF8E",
+  "twitter": "@dataprovider",
+  "github": "https://github.com/MelbourneDeveloper/DataProvider"
+}

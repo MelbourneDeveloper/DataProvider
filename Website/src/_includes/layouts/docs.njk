@@ -1,0 +1,40 @@
+---
+layout: layouts/base.njk
+---
+
+<div class="docs-layout">
+  <aside class="docs-sidebar" id="docs-sidebar">
+    <div class="sidebar-search">
+      <input type="text" placeholder="Search..." id="docs-search" class="search-input">
+    </div>
+    {% for section in navigation.docs %}
+    <div class="sidebar-section">
+      <h4>{{ section.title }}</h4>
+      <ul>
+        {% for item in section.items %}
+        <li>
+          <a href="{{ item.url }}" {% if page.url == item.url %}class="active"{% endif %}>
+            {{ item.text }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </aside>
+
+  <article class="docs-content">
+    <nav class="breadcrumb">
+      <a href="/docs/">Docs</a>
+      {% if breadcrumb %}
+      {% for crumb in breadcrumb %}
+      <span class="separator">&rsaquo;</span>
+      <a href="{{ crumb.url }}">{{ crumb.text }}</a>
+      {% endfor %}
+      {% endif %}
+    </nav>
+
+    <h1>{{ title }}</h1>
+    {{ content | safe }}
+  </article>
+</div>
