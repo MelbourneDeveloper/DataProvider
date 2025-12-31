@@ -1,0 +1,40 @@
+---
+layout: layouts/base.njk
+---
+
+<div class="docs-layout">
+  <aside class="sidebar" id="docs-sidebar">
+    {% for section in navigation.api %}
+    <div class="sidebar-section">
+      <h4>{{ section.title }}</h4>
+      <ul>
+        {% for item in section.items %}
+        <li>
+          <a href="{{ item.url }}" {% if page.url == item.url %}class="active"{% endif %}>
+            {{ item.text }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </aside>
+
+  <article class="docs-content">
+    {% if breadcrumb %}
+    <div class="api-header">
+      <div class="breadcrumb">{{ breadcrumb }}</div>
+      <h1>{{ title }}</h1>
+      {% if summary %}<p>{{ summary }}</p>{% endif %}
+    </div>
+    {% else %}
+    <h1>{{ title }}</h1>
+    {% endif %}
+    
+    {% if signature %}
+    <div class="api-signature">{{ signature }}</div>
+    {% endif %}
+
+    {{ content | safe }}
+  </article>
+</div>

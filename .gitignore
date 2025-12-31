@@ -389,3 +389,15 @@ Samples/Dashboard/Dashboard.Web/wwwroot/js/vendor/
 Samples/Dashboard/Dashboard.Web/wwwroot/js/Dashboard.js
 Samples/Dashboard/Dashboard.Web/wwwroot/js/Dashboard.min.js
 Samples/Dashboard/Dashboard.Web/wwwroot/js/index.html
+
+Website/_site/
+Website/docfx/_apidocs/api/
+Website/docfx/_site/
+
+Website/docfx/Website/_site/
+
+Website/docfx/api/
+
+Website/docfx/_apidocs/public/
+
+Website/src/apidocs/

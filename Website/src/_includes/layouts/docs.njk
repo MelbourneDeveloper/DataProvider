@@ -3,10 +3,7 @@ layout: layouts/base.njk
 ---
 
 <div class="docs-layout">
-  <aside class="docs-sidebar" id="docs-sidebar">
-    <div class="sidebar-search">
-      <input type="text" placeholder="Search..." id="docs-search" class="search-input">
-    </div>
+  <aside class="sidebar" id="docs-sidebar">
     {% for section in navigation.docs %}
     <div class="sidebar-section">
       <h4>{{ section.title }}</h4>
@@ -24,17 +21,21 @@ layout: layouts/base.njk
   </aside>
 
   <article class="docs-content">
-    <nav class="breadcrumb">
-      <a href="/docs/">Docs</a>
-      {% if breadcrumb %}
-      {% for crumb in breadcrumb %}
-      <span class="separator">&rsaquo;</span>
-      <a href="{{ crumb.url }}">{{ crumb.text }}</a>
-      {% endfor %}
-      {% endif %}
-    </nav>
-
     <h1>{{ title }}</h1>
     {{ content | safe }}
+
+    {% if prevPage or nextPage %}
+    <nav style="display: flex; justify-content: space-between; margin-top: var(--space-12); padding-top: var(--space-6); border-top: 1px solid var(--border-color);">
+      {% if prevPage %}
+      <a href="{{ prevPage.url }}" class="btn btn-secondary">&larr; {{ prevPage.title }}</a>
+      {% else %}
+      <span></span>
+      {% endif %}
+
+      {% if nextPage %}
+      <a href="{{ nextPage.url }}" class="btn btn-secondary">{{ nextPage.title }} &rarr;</a>
+      {% endif %}
+    </nav>
+    {% endif %}
   </article>
 </div>

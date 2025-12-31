@@ -1,0 +1,13 @@
+apiRules:
+  - exclude:
+      uidRegex: ^.*\.Tests.*$
+      type: Namespace
+  - exclude:
+      uidRegex: ^.*\.Example.*$
+      type: Namespace
+  - exclude:
+      uidRegex: ^.*\.Cli.*$
+      type: Namespace
+  - exclude:
+      hasAttribute:
+        uid: System.ObsoleteAttribute

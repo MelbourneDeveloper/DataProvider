@@ -1,0 +1,29 @@
+---
+pagination:
+  data: collections.tagList
+  size: 1
+  alias: tag
+permalink: /blog/tags/{{ tag | slugify }}/
+layout: layouts/base.njk
+---
+
+<section style="padding: var(--space-12) 0;">
+  <div class="container" style="max-width: 800px;">
+    <h1>Posts tagged "{{ tag | capitalize }}"</h1>
+
+    <ul class="post-list">
+      {% set tagPosts = collections.postsByTag[tag] %}
+      {% for post in tagPosts %}
+      <li class="post-item">
+        <a href="{{ post.url }}">
+          <h3>{{ post.data.title }}</h3>
+          <p>{{ post.data.description }}</p>
+          <time>{{ post.date | dateFormat }}</time>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <p style="margin-top: var(--space-8);"><a href="/blog/">&larr; All posts</a></p>
+  </div>
+</section>

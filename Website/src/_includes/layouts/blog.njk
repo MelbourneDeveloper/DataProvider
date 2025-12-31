@@ -2,27 +2,26 @@
 layout: layouts/base.njk
 ---
 
-<article class="blog-post">
-  <div class="container">
-    <header class="blog-post-header">
-      <p class="blog-post-meta">
-        <time datetime="{{ date | isoDate }}">{{ date | dateFormat }}</time>
-        {% if author %} &middot; {{ author }}{% endif %}
-      </p>
-      <h1>{{ title }}</h1>
-      {% if tags %}
-      <div class="tags">
-        {% for tag in tags %}
-        {% if tag != 'post' and tag != 'posts' %}
-        <a href="/blog/tags/{{ tag | slugify }}/" class="tag">{{ tag }}</a>
-        {% endif %}
-        {% endfor %}
-      </div>
-      {% endif %}
-    </header>
+<article class="container" style="padding: var(--space-12) 0;">
+  <header class="section-title">
+    <h1>{{ title }}</h1>
+    <p>
+      <time datetime="{{ date | isoDate }}">{{ date | dateFormat }}</time>
+      {% if author %} &middot; {{ author }}{% endif %}
+    </p>
+  </header>
 
-    <div class="blog-post-content">
-      {{ content | safe }}
+  <div style="max-width: 720px; margin: 0 auto;">
+    {{ content | safe }}
+    
+    {% if tags %}
+    <div style="margin-top: var(--space-8);">
+      {% for tag in tags %}
+      {% if tag != 'post' and tag != 'posts' %}
+      <a href="/blog/tags/{{ tag | slugify }}/" class="tag">{{ tag }}</a>
+      {% endif %}
+      {% endfor %}
     </div>
+    {% endif %}
   </div>
 </article>

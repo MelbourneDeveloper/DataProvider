@@ -1,0 +1,127 @@
+---
+layout: layouts/base.njk
+title: "DataProvider - Effortless .NET Data Access"
+description: "Simplifying Database Connectivity in .NET with source-generated SQL, LQL, and offline-first sync."
+---
+
+<section class="hero">
+  <div class="container">
+    <h1>Effortless .NET Data Access</h1>
+    <p class="hero-subtitle">
+      Simplifying Database Connectivity in .NET
+    </p>
+    <div class="hero-buttons">
+      <a href="/docs/getting-started/" class="btn btn-primary btn-large">Get Started</a>
+      <a href="https://github.com/MelbourneDeveloper/DataProvider" class="btn btn-secondary btn-large" target="_blank" rel="noopener">View on GitHub</a>
+    </div>
+
+    <div class="hero-code">
+{% highlight "sql" %}
+SELECT * FROM Orders
+WHERE Status = 'Active';
+{% endhighlight %}
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="container">
+    <div class="section-title">
+      <h2>The DataProvider Stack</h2>
+      <p>A complete toolkit for .NET database access.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="card">
+        <div class="card-icon">LQL</div>
+        <h3>LQL Integration</h3>
+        <p>Seamlessly integrated with LQL for intuitive queries. Write type-safe Lambda Query Language that compiles to SQL.</p>
+        <a href="/docs/lql/">Learn more &rarr;</a>
+      </div>
+
+      <div class="card">
+        <div class="card-icon" style="background: var(--signal-blue);">DB</div>
+        <h3>Multiple Databases</h3>
+        <p>Connect to SQL Server, MySQL, SQLite, and more with a unified API and connection providers.</p>
+        <a href="/docs/dataprovider/">Learn more &rarr;</a>
+      </div>
+
+      <div class="card">
+        <div class="card-icon" style="background: var(--query-orange);">HI</div>
+        <h3>High Performance</h3>
+        <p>Optimized for fast and efficient data access with source-generated extension methods.</p>
+        <a href="/api/">API Reference &rarr;</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features" style="background: var(--bg-secondary);">
+  <div class="container">
+    <div class="section-title">
+      <h2>Core Components</h2>
+      <p>Everything you need for modern .NET data access.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="card">
+        <div class="card-icon">DP</div>
+        <h3>DataProvider</h3>
+        <p>Source generator for SQL that creates type-safe extension methods on IDbConnection.</p>
+        <a href="/docs/dataprovider/">Documentation &rarr;</a>
+      </div>
+
+      <div class="card">
+        <div class="card-icon" style="background: var(--query-orange);">LQ</div>
+        <h3>LQL</h3>
+        <p>Lambda Query Language - a type-safe query syntax that transpiles to SQL.</p>
+        <a href="/docs/lql/">Documentation &rarr;</a>
+      </div>
+
+      <div class="card">
+        <div class="card-icon" style="background: var(--signal-blue);">SY</div>
+        <h3>Sync</h3>
+        <p>Offline-first bidirectional synchronization for mobile and web applications.</p>
+        <a href="/docs/sync/">Documentation &rarr;</a>
+      </div>
+
+      <div class="card">
+        <div class="card-icon" style="background: var(--success);">GK</div>
+        <h3>Gatekeeper</h3>
+        <p>WebAuthn authentication and Role-Based Access Control for your APIs.</p>
+        <a href="/docs/gatekeeper/">Documentation &rarr;</a>
+      </div>
+
+      <div class="card">
+        <div class="card-icon" style="background: var(--warning);">MI</div>
+        <h3>Migrations</h3>
+        <p>YAML-based database migrations with the Migration CLI tool.</p>
+        <a href="/docs/migrations/">Documentation &rarr;</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="container">
+    <div class="section-title">
+      <h2>Get Started in Minutes</h2>
+    </div>
+
+    <div style="max-width: 700px; margin: 0 auto;">
+{% highlight "bash" %}
+# Install the DataProvider package
+dotnet add package DataProvider
+
+# Create your first query
+using DataProvider;
+
+var orders = connection.Query<Order>("SELECT * FROM Orders");
+{% endhighlight %}
+    </div>
+
+    <div class="text-center mt-8">
+      <a href="/docs/getting-started/" class="btn btn-primary btn-large">Read the Full Guide</a>
+    </div>
+  </div>
+</section>
