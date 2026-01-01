@@ -9,7 +9,7 @@ namespace Conduit.Tests;
 /// E2E tests for the Conduit dispatcher.
 /// No mocking - uses real handlers and behaviors.
 /// </summary>
-internal sealed class DispatcherTests
+public sealed class DispatcherTests
 {
     private static readonly int[] ExpectedOrder = [1, 2, 3, 4];
     private readonly ILogger _logger = new TestLogger();
