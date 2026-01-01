@@ -159,7 +159,7 @@ public static class TokenService
         return result switch
         {
             GetSessionRevokedOk ok => ok.Value.FirstOrDefault()?.is_revoked == 1,
-            _ => false,
+            GetSessionRevokedError => false,
         };
     }
 
