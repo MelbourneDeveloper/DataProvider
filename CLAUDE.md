@@ -49,6 +49,7 @@ public abstract partial record Result<TSuccess, TFailure> { private Result() { }
 | LQL | `Lql/` | Lambda Query Language -> SQL transpiler |
 | Sync | `Sync/` | Offline-first bidirectional sync |
 | Gatekeeper | `Gatekeeper/` | WebAuthn + RBAC auth |
+| Conduit | `Conduit/` | Functional MediatR-style request/response pipeline |
 | Samples | `Samples/` | Clinical, Scheduling, Dashboard |
 
 ## Config
