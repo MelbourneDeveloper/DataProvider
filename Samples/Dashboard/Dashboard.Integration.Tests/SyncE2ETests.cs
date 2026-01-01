@@ -217,19 +217,47 @@ public sealed class SyncE2ETests
             "[data-testid='service-status-clinical']",
             new PageWaitForSelectorOptions { Timeout = 15000 }
         );
-        await Task.Delay(1000); // Allow data to load
+
+        // Wait for sync records to actually load (not just the page)
+        await page.WaitForFunctionAsync(
+            @"() => {
+                const badge = document.querySelector('.badge');
+                return badge && badge.textContent && !badge.textContent.includes('0 records');
+            }",
+            new PageWaitForFunctionOptions { Timeout = 15000 }
+        );
+        await Task.Delay(500); // Allow React to stabilize
+
+        // Log initial state before filtering
+        var initialRows = await page.QuerySelectorAllAsync(
+            "[data-testid='sync-records-table'] tbody tr"
+        );
+        Console.WriteLine($"[TEST] Initial row count before filter: {initialRows.Count}");
+        foreach (var row in initialRows.Take(5))
+        {
+            var op = await row.GetAttributeAsync("data-operation");
+            Console.WriteLine($"[TEST] Row data-operation: {op}");
+        }
 
         // Filter to Insert operations only (operation = 0)
         await page.SelectOptionAsync("[data-testid='action-filter']", "0");
+        await Task.Delay(500); // Allow React to start re-rendering
 
         // Wait for React to apply the filter - wait until ALL visible rows have operation=0
+        // OR there are no rows (which is valid if no Insert operations exist)
         await page.WaitForFunctionAsync(
             @"() => {
                 const rows = document.querySelectorAll('[data-testid=""sync-records-table""] tbody tr');
+                console.log('[Filter] Row count after filter: ' + rows.length);
                 if (rows.length === 0) return true;
-                return Array.from(rows).every(row => row.getAttribute('data-operation') === '0');
+                const allMatch = Array.from(rows).every(row => {
+                    const op = row.getAttribute('data-operation');
+                    console.log('[Filter] Row operation: ' + op);
+                    return op === '0';
+                });
+                return allMatch;
             }",
-            new PageWaitForFunctionOptions { Timeout = 10000 }
+            new PageWaitForFunctionOptions { Timeout = 20000 }
         );
 
         var insertRows = await page.QuerySelectorAllAsync(

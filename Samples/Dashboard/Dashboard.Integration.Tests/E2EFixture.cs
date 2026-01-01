@@ -78,14 +78,16 @@ public sealed class E2EFixture : IAsyncLifetime
         var clinicalProjectDir = Path.Combine(samplesDir, "Clinical", "Clinical.Api");
         var schedulingProjectDir = Path.Combine(samplesDir, "Scheduling", "Scheduling.Api");
         var gatekeeperProjectDir = Path.Combine(rootDir, "Gatekeeper", "Gatekeeper.Api");
+        var configuration = ResolveBuildConfiguration(testAssemblyDir);
 
         // Delete existing databases to ensure fresh state for each test run
         // This prevents sync version mismatch issues between runs
-        DeleteDatabaseIfExists(clinicalProjectDir, "clinical.db");
-        DeleteDatabaseIfExists(schedulingProjectDir, "scheduling.db");
-        DeleteDatabaseIfExists(gatekeeperProjectDir, "gatekeeper.db");
+        DeleteDatabaseIfExists(clinicalProjectDir, configuration, "clinical.db");
+        DeleteDatabaseIfExists(schedulingProjectDir, configuration, "scheduling.db");
+        DeleteDatabaseIfExists(gatekeeperProjectDir, configuration, "gatekeeper.db");
 
         Console.WriteLine($"[E2E] Test assembly dir: {testAssemblyDir}");
+        Console.WriteLine($"[E2E] Build configuration: {configuration}");
         Console.WriteLine($"[E2E] Samples dir: {samplesDir}");
         Console.WriteLine($"[E2E] Clinical dir: {clinicalProjectDir}");
         Console.WriteLine($"[E2E] Gatekeeper dir: {gatekeeperProjectDir}");
@@ -93,7 +95,7 @@ public sealed class E2EFixture : IAsyncLifetime
         var clinicalDll = Path.Combine(
             clinicalProjectDir,
             "bin",
-            "Debug",
+            configuration,
             "net9.0",
             "Clinical.Api.dll"
         );
@@ -102,7 +104,7 @@ public sealed class E2EFixture : IAsyncLifetime
         var schedulingDll = Path.Combine(
             schedulingProjectDir,
             "bin",
-            "Debug",
+            configuration,
             "net9.0",
             "Scheduling.Api.dll"
         );
@@ -111,7 +113,7 @@ public sealed class E2EFixture : IAsyncLifetime
         var gatekeeperDll = Path.Combine(
             gatekeeperProjectDir,
             "bin",
-            "Debug",
+            configuration,
             "net9.0",
             "Gatekeeper.Api.dll"
         );
@@ -126,14 +128,14 @@ public sealed class E2EFixture : IAsyncLifetime
         var clinicalDbPath = Path.Combine(
             clinicalProjectDir,
             "bin",
-            "Debug",
+            configuration,
             "net9.0",
             "clinical.db"
         );
         var schedulingDbPath = Path.Combine(
             schedulingProjectDir,
             "bin",
-            "Debug",
+            configuration,
             "net9.0",
             "scheduling.db"
         );
@@ -142,7 +144,7 @@ public sealed class E2EFixture : IAsyncLifetime
         var clinicalSyncDll = Path.Combine(
             clinicalSyncDir,
             "bin",
-            "Debug",
+            configuration,
             "net9.0",
             "Clinical.Sync.dll"
         );
@@ -160,12 +162,16 @@ public sealed class E2EFixture : IAsyncLifetime
                 clinicalSyncEnv
             );
         }
+        else
+        {
+            Console.WriteLine($"[E2E] Clinical sync worker missing: {clinicalSyncDll}");
+        }
 
         var schedulingSyncDir = Path.Combine(samplesDir, "Scheduling", "Scheduling.Sync");
         var schedulingSyncDll = Path.Combine(
             schedulingSyncDir,
             "bin",
-            "Debug",
+            configuration,
             "net9.0",
             "Scheduling.Sync.dll"
         );
@@ -182,6 +188,10 @@ public sealed class E2EFixture : IAsyncLifetime
                 schedulingSyncDir,
                 schedulingSyncEnv
             );
+        }
+        else
+        {
+            Console.WriteLine($"[E2E] Scheduling sync worker missing: {schedulingSyncDll}");
         }
 
         await Task.Delay(2000);
@@ -365,9 +375,13 @@ public sealed class E2EFixture : IAsyncLifetime
         }
     }
 
-    private static void DeleteDatabaseIfExists(string projectDir, string dbName)
+    private static void DeleteDatabaseIfExists(
+        string projectDir,
+        string configuration,
+        string dbName
+    )
     {
-        var dbPath = Path.Combine(projectDir, "bin", "Debug", "net9.0", dbName);
+        var dbPath = Path.Combine(projectDir, "bin", configuration, "net9.0", dbName);
         if (File.Exists(dbPath))
         {
             try
@@ -380,6 +394,13 @@ public sealed class E2EFixture : IAsyncLifetime
                 Console.WriteLine($"[E2E] Could not delete {dbPath}: {ex.Message}");
             }
         }
+    }
+
+    private static string ResolveBuildConfiguration(string testAssemblyDir)
+    {
+        var net9Dir = new DirectoryInfo(testAssemblyDir);
+        var configuration = net9Dir.Parent?.Name;
+        return string.IsNullOrWhiteSpace(configuration) ? "Debug" : configuration;
     }
 
     private static async Task WaitForApiAsync(string baseUrl, string healthEndpoint)

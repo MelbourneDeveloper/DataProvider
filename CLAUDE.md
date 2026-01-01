@@ -8,7 +8,7 @@
 
 ## Coding Rules
 
-- **NEVER THROW** - Return `Result<T,E>`. Wrap failures in try/catch
+- **NEVER THROW** - Return `Result<T>`. Wrap failures in try/catch
 - **No casting/!** - Pattern match on type only
 - **NO GIT** - Source control is illegal
 - **No suppressing warnings** - Illegal
