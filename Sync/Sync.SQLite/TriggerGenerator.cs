@@ -1,5 +1,3 @@
-#pragma warning disable CA1848 // Use LoggerMessage delegates for performance
-
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;

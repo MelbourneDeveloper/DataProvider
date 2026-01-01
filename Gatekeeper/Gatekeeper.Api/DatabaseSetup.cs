@@ -1,4 +1,3 @@
-using Gatekeeper.Migration;
 using Migration;
 using Migration.SQLite;
 
@@ -20,7 +19,7 @@ public static class DatabaseSetup
 
     private static void CreateSchemaFromMigration(SqliteConnection conn, ILogger logger)
     {
-        logger.LogInformation("Creating database schema from GatekeeperSchema");
+        logger.LogInformation("Creating database schema from gatekeeper-schema.yaml");
 
         try
         {
@@ -28,7 +27,11 @@ public static class DatabaseSetup
             using var pragmaCmd = conn.CreateCommand();
             pragmaCmd.CommandText = "PRAGMA journal_mode = DELETE; PRAGMA synchronous = FULL;";
             pragmaCmd.ExecuteNonQuery();
-            var schema = GatekeeperSchema.Build();
+
+            // Load schema from YAML (source of truth)
+            var yamlPath = Path.Combine(AppContext.BaseDirectory, "gatekeeper-schema.yaml");
+            var schema = SchemaYamlSerializer.FromYamlFile(yamlPath);
+
             foreach (var table in schema.Tables)
             {
                 var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
@@ -52,9 +55,7 @@ public static class DatabaseSetup
                 logger.LogDebug("Created table {TableName}", table.Name);
             }
 
-            logger.LogInformation(
-                "Created Gatekeeper database schema from GatekeeperSchema metadata"
-            );
+            logger.LogInformation("Created Gatekeeper database schema from YAML");
         }
         catch (Exception ex)
         {
@@ -95,7 +96,11 @@ public static class DatabaseSetup
             INSERT INTO gk_permission (id, code, resource_type, action, description, created_at)
             VALUES ('perm-admin-all', 'admin:*', 'admin', '*', 'Full admin access', @now),
                    ('perm-user-profile', 'user:profile', 'user', 'read', 'View own profile', @now),
-                   ('perm-user-credentials', 'user:credentials', 'user', 'manage', 'Manage own passkeys', @now)
+                   ('perm-user-credentials', 'user:credentials', 'user', 'manage', 'Manage own passkeys', @now),
+                   ('perm-patient-read', 'patient:read', 'patient', 'read', 'Read patient records', @now),
+                   ('perm-order-read', 'order:read', 'order', 'read', 'Read order records', @now),
+                   ('perm-sync-read', 'sync:read', 'sync', 'read', 'Read sync data', @now),
+                   ('perm-sync-write', 'sync:write', 'sync', 'write', 'Write sync data', @now)
             """,
             ("@now", now)
         );
@@ -105,6 +110,8 @@ public static class DatabaseSetup
             """
             INSERT INTO gk_role_permission (role_id, permission_id, granted_at)
             VALUES ('role-admin', 'perm-admin-all', @now),
+                   ('role-admin', 'perm-sync-read', @now),
+                   ('role-admin', 'perm-sync-write', @now),
                    ('role-user', 'perm-user-profile', @now),
                    ('role-user', 'perm-user-credentials', @now)
             """,

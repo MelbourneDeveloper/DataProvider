@@ -1,8 +1,9 @@
-namespace Clinical.Api.Tests;
-
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+
+namespace Clinical.Api.Tests;
 
 /// <summary>
 /// E2E tests for MedicationRequest FHIR endpoints - REAL database, NO mocks.
@@ -10,6 +11,18 @@ using System.Text.Json;
 /// </summary>
 public sealed class MedicationRequestEndpointTests
 {
+    private static readonly string AuthToken = TestTokenHelper.GenerateClinicianToken();
+
+    private static HttpClient CreateAuthenticatedClient(ClinicalApiFactory factory)
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            AuthToken
+        );
+        return client;
+    }
+
     private static async Task<string> CreateTestPatientAsync(HttpClient client)
     {
         var patient = new
@@ -29,7 +42,7 @@ public sealed class MedicationRequestEndpointTests
     public async Task GetMedicationsByPatient_ReturnsEmptyList_WhenNoMedications()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
 
         var response = await client.GetAsync($"/fhir/Patient/{patientId}/MedicationRequest/");
@@ -43,7 +56,7 @@ public sealed class MedicationRequestEndpointTests
     public async Task CreateMedicationRequest_ReturnsCreated_WithValidData()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -79,7 +92,7 @@ public sealed class MedicationRequestEndpointTests
     public async Task CreateMedicationRequest_WithAllStatuses()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var statuses = new[] { "active", "on-hold", "cancelled", "completed", "stopped", "draft" };
 
         foreach (var status in statuses)
@@ -110,7 +123,7 @@ public sealed class MedicationRequestEndpointTests
     public async Task CreateMedicationRequest_WithAllIntents()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var intents = new[]
         {
             "proposal",
@@ -151,7 +164,7 @@ public sealed class MedicationRequestEndpointTests
     public async Task GetMedicationsByPatient_ReturnsMedications_WhenExist()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request1 = new
         {
@@ -187,7 +200,7 @@ public sealed class MedicationRequestEndpointTests
     public async Task CreateMedicationRequest_SetsVersionIdToOne()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -212,7 +225,7 @@ public sealed class MedicationRequestEndpointTests
     public async Task CreateMedicationRequest_SetsAuthoredOn()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -239,7 +252,7 @@ public sealed class MedicationRequestEndpointTests
     public async Task CreateMedicationRequest_WithQuantityAndUnit()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -267,7 +280,7 @@ public sealed class MedicationRequestEndpointTests
     public async Task CreateMedicationRequest_WithDosageInstruction()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -296,7 +309,7 @@ public sealed class MedicationRequestEndpointTests
     public async Task CreateMedicationRequest_WithEncounterId()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
 
         var encounterRequest = new
@@ -339,7 +352,7 @@ public sealed class MedicationRequestEndpointTests
     public async Task CreateMedicationRequest_WithZeroRefills()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {

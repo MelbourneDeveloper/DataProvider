@@ -1,9 +1,9 @@
+using System;
+using H5;
+using static H5.Core.dom;
+
 namespace Dashboard.React
 {
-    using System;
-    using H5;
-    using static H5.Core.dom;
-
     /// <summary>
     /// Core React interop types and functions for H5.
     /// </summary>

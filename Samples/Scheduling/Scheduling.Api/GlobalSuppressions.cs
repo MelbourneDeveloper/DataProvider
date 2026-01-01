@@ -36,11 +36,6 @@ using System.Diagnostics.CodeAnalysis;
     Justification = "Used by minimal API model binding"
 )]
 [assembly: SuppressMessage(
-    "Performance",
-    "CA1848:Use LoggerMessage delegates",
-    Justification = "Sample code"
-)]
-[assembly: SuppressMessage(
     "Usage",
     "CA2100:Review SQL queries for security vulnerabilities",
     Justification = "Schema file is trusted"

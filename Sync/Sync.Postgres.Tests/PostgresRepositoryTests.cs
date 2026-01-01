@@ -1,5 +1,3 @@
-#pragma warning disable CA1848 // Use LoggerMessage delegates for performance
-
 namespace Sync.Postgres.Tests;
 
 /// <summary>
@@ -448,7 +446,10 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         // Verify it's enabled
         using var cmd = _conn.CreateCommand();
         cmd.CommandText = "SELECT sync_active FROM _sync_session";
-        var value = Convert.ToInt32(cmd.ExecuteScalar());
+        var value = Convert.ToInt32(
+            cmd.ExecuteScalar(),
+            System.Globalization.CultureInfo.InvariantCulture
+        );
         Assert.Equal(1, value);
 
         // Disable
@@ -456,7 +457,10 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         Assert.IsType<BoolSyncOk>(disable);
 
         // Verify it's disabled
-        value = Convert.ToInt32(cmd.ExecuteScalar());
+        value = Convert.ToInt32(
+            cmd.ExecuteScalar(),
+            System.Globalization.CultureInfo.InvariantCulture
+        );
         Assert.Equal(0, value);
     }
 
@@ -642,7 +646,10 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
 
         using var verifyCmd = _conn.CreateCommand();
         verifyCmd.CommandText = "SELECT COUNT(*) FROM test_delete WHERE id = 'd1'";
-        var count = Convert.ToInt32(verifyCmd.ExecuteScalar());
+        var count = Convert.ToInt32(
+            verifyCmd.ExecuteScalar(),
+            System.Globalization.CultureInfo.InvariantCulture
+        );
         Assert.Equal(0, count);
     }
 

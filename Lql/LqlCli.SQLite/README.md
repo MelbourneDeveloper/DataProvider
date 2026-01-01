@@ -7,7 +7,7 @@ A command-line tool that transpiles LQL (Language Query Language) files to SQLit
 Build the project:
 
 ```bash
-dotnet build LqlCli.SQLite/LqlCli.csproj
+dotnet build LqlCli.SQLite/LqlCli.SQLite.csproj
 ```
 
 ## Usage
@@ -17,7 +17,7 @@ dotnet build LqlCli.SQLite/LqlCli.csproj
 Transpile an LQL file to SQLite SQL and print to console:
 
 ```bash
-dotnet run --project LqlCli.SQLite/LqlCli.csproj -- --input input.lql
+dotnet run --project LqlCli.SQLite/LqlCli.SQLite.csproj -- --input input.lql
 ```
 
 ### Output to File
@@ -25,7 +25,7 @@ dotnet run --project LqlCli.SQLite/LqlCli.csproj -- --input input.lql
 Transpile and save to a file:
 
 ```bash
-dotnet run --project LqlCli.SQLite/LqlCli.csproj -- --input input.lql --output output.sql
+dotnet run --project LqlCli.SQLite/LqlCli.SQLite.csproj -- --input input.lql --output output.sql
 ```
 
 ### Validate Syntax Only
@@ -33,7 +33,7 @@ dotnet run --project LqlCli.SQLite/LqlCli.csproj -- --input input.lql --output o
 Check if the LQL syntax is valid without generating output:
 
 ```bash
-dotnet run --project LqlCli.SQLite/LqlCli.csproj -- --input input.lql --validate
+dotnet run --project LqlCli.SQLite/LqlCli.SQLite.csproj -- --input input.lql --validate
 ```
 
 ## Options
@@ -87,7 +87,7 @@ Exit codes:
 To create a native AOT binary:
 
 ```bash
-dotnet publish LqlCli.SQLite/LqlCli.csproj -c Release -r win-x64 --self-contained
+dotnet publish LqlCli.SQLite/LqlCli.SQLite.csproj -c Release -r win-x64 --self-contained
 ```
 
 Replace `win-x64` with your target runtime identifier (`linux-x64`, `osx-x64`, etc.).

@@ -1,8 +1,9 @@
-namespace Clinical.Api.Tests;
-
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+
+namespace Clinical.Api.Tests;
 
 /// <summary>
 /// E2E tests for Encounter FHIR endpoints - REAL database, NO mocks.
@@ -10,6 +11,18 @@ using System.Text.Json;
 /// </summary>
 public sealed class EncounterEndpointTests
 {
+    private static readonly string AuthToken = TestTokenHelper.GenerateClinicianToken();
+
+    private static HttpClient CreateAuthenticatedClient(ClinicalApiFactory factory)
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            AuthToken
+        );
+        return client;
+    }
+
     private static async Task<string> CreateTestPatientAsync(HttpClient client)
     {
         var patient = new
@@ -29,7 +42,7 @@ public sealed class EncounterEndpointTests
     public async Task GetEncountersByPatient_ReturnsEmptyList_WhenNoEncounters()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
 
         var response = await client.GetAsync($"/fhir/Patient/{patientId}/Encounter/");
@@ -43,7 +56,7 @@ public sealed class EncounterEndpointTests
     public async Task CreateEncounter_ReturnsCreated_WithValidData()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -74,7 +87,7 @@ public sealed class EncounterEndpointTests
     public async Task CreateEncounter_WithAllStatuses()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var statuses = new[]
         {
             "planned",
@@ -111,7 +124,7 @@ public sealed class EncounterEndpointTests
     public async Task CreateEncounter_WithAllClasses()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var classes = new[] { "ambulatory", "emergency", "inpatient", "observation", "virtual" };
 
         foreach (var encounterClass in classes)
@@ -139,7 +152,7 @@ public sealed class EncounterEndpointTests
     public async Task GetEncountersByPatient_ReturnsEncounters_WhenExist()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request1 = new
         {
@@ -169,7 +182,7 @@ public sealed class EncounterEndpointTests
     public async Task CreateEncounter_SetsVersionIdToOne()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -191,7 +204,7 @@ public sealed class EncounterEndpointTests
     public async Task CreateEncounter_SetsLastUpdatedTimestamp()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -215,7 +228,7 @@ public sealed class EncounterEndpointTests
     public async Task CreateEncounter_WithNotes()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -241,7 +254,7 @@ public sealed class EncounterEndpointTests
     public async Task CreateEncounter_WithPeriodEndTime()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {

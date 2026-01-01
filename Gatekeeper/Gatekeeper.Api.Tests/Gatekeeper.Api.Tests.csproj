@@ -4,7 +4,7 @@
     <OutputType>Library</OutputType>
     <IsTestProject>true</IsTestProject>
     <RootNamespace>Gatekeeper.Api.Tests</RootNamespace>
-    <NoWarn>CS1591;CA1707;CA1307;CA1062;CA1515;CA2100;CA1305;CA1822;CA1859;CA1848;CA1849;CA2234;CA1812;CA2007;CA2000;xUnit1030</NoWarn>
+    <NoWarn>CS1591;CA1707;CA1307;CA1062;CA1515;CA2100;CA1822;CA1859;CA1849;CA2234;CA1812;CA2007;CA2000;xUnit1030</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +24,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Gatekeeper.Api\Gatekeeper.Api.csproj" />
+    <ProjectReference Include="..\..\Migration\Migration.SQLite\Migration.SQLite.csproj" />
+  </ItemGroup>
+
+  <!-- Copy YAML schema from Gatekeeper.Api to test output -->
+  <ItemGroup>
+    <Content Include="..\Gatekeeper.Api\gatekeeper-schema.yaml" Link="gatekeeper-schema.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

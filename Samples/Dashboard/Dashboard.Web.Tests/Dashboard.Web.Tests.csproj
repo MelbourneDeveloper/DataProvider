@@ -1,4 +1,4 @@
-<Project Sdk="h5.Target/25.11.62725">
+<Project Sdk="h5.Target/24.11.53863">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Dashboard.Tests</RootNamespace>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <NoWarn>CS0626;CS1591;CA1812;CA1848;CA2100;CS8632</NoWarn>
+    <NoWarn>CS0626;CS1591;CA1812;CA2100;CS8632</NoWarn>
     <!-- H5 specific settings -->
     <DefineConstants>H5</DefineConstants>
     <UseLocalH5>true</UseLocalH5>
@@ -22,8 +22,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="h5" Version="25.11.62743" />
-    <PackageReference Include="h5.Core" Version="25.11.62742" />
+    <PackageReference Include="h5" Version="24.11.53878" />
+    <PackageReference Include="h5.Core" Version="24.11.53879" />
   </ItemGroup>
 
   <ItemGroup>

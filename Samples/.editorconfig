@@ -5,7 +5,6 @@ root = false
 # Suppress problematic analyzers in sample code
 dotnet_diagnostic.RS1035.severity = none
 dotnet_diagnostic.EPC12.severity = none
-dotnet_diagnostic.CA1848.severity = none
 dotnet_diagnostic.CA2100.severity = none
 dotnet_diagnostic.CA1826.severity = none
 dotnet_diagnostic.IDE0037.severity = none

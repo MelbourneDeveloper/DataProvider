@@ -1,11 +1,11 @@
+using System;
+using System.Threading.Tasks;
+using Dashboard.Models;
+using H5;
+using static H5.Core.dom;
+
 namespace Dashboard.Api
 {
-    using System;
-    using System.Threading.Tasks;
-    using Dashboard.Models;
-    using H5;
-    using static H5.Core.dom;
-
     /// <summary>
     /// HTTP API client for Clinical and Scheduling microservices.
     /// </summary>
@@ -13,6 +13,8 @@ namespace Dashboard.Api
     {
         private static string _clinicalBaseUrl = "http://localhost:5080";
         private static string _schedulingBaseUrl = "http://localhost:5001";
+        private static string _clinicalToken = "";
+        private static string _schedulingToken = "";
 
         /// <summary>
         /// Sets the base URLs for the microservices.
@@ -23,6 +25,15 @@ namespace Dashboard.Api
             _schedulingBaseUrl = schedulingUrl;
         }
 
+        /// <summary>
+        /// Sets the authentication tokens for the microservices.
+        /// </summary>
+        public static void SetTokens(string clinicalToken, string schedulingToken)
+        {
+            _clinicalToken = clinicalToken;
+            _schedulingToken = schedulingToken;
+        }
+
         // === CLINICAL API ===
 
         /// <summary>
@@ -30,7 +41,7 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Patient[]> GetPatientsAsync()
         {
-            var response = await FetchAsync(_clinicalBaseUrl + "/fhir/Patient");
+            var response = await FetchClinicalAsync(_clinicalBaseUrl + "/fhir/Patient");
             return ParseJson<Patient[]>(response);
         }
 
@@ -39,7 +50,7 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Patient> GetPatientAsync(string id)
         {
-            var response = await FetchAsync(_clinicalBaseUrl + "/fhir/Patient/" + id);
+            var response = await FetchClinicalAsync(_clinicalBaseUrl + "/fhir/Patient/" + id);
             return ParseJson<Patient>(response);
         }
 
@@ -48,7 +59,7 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Patient[]> SearchPatientsAsync(string query)
         {
-            var response = await FetchAsync(
+            var response = await FetchClinicalAsync(
                 _clinicalBaseUrl + "/fhir/Patient/_search?q=" + EncodeUri(query)
             );
             return ParseJson<Patient[]>(response);
@@ -59,7 +70,7 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Encounter[]> GetEncountersAsync(string patientId)
         {
-            var response = await FetchAsync(
+            var response = await FetchClinicalAsync(
                 _clinicalBaseUrl + "/fhir/Patient/" + patientId + "/Encounter"
             );
             return ParseJson<Encounter[]>(response);
@@ -70,7 +81,7 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Condition[]> GetConditionsAsync(string patientId)
         {
-            var response = await FetchAsync(
+            var response = await FetchClinicalAsync(
                 _clinicalBaseUrl + "/fhir/Patient/" + patientId + "/Condition"
             );
             return ParseJson<Condition[]>(response);
@@ -81,7 +92,7 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<MedicationRequest[]> GetMedicationsAsync(string patientId)
         {
-            var response = await FetchAsync(
+            var response = await FetchClinicalAsync(
                 _clinicalBaseUrl + "/fhir/Patient/" + patientId + "/MedicationRequest"
             );
             return ParseJson<MedicationRequest[]>(response);
@@ -92,7 +103,7 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Patient> CreatePatientAsync(Patient patient)
         {
-            var response = await PostAsync(_clinicalBaseUrl + "/fhir/Patient/", patient);
+            var response = await PostClinicalAsync(_clinicalBaseUrl + "/fhir/Patient/", patient);
             return ParseJson<Patient>(response);
         }
 
@@ -101,7 +112,10 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Patient> UpdatePatientAsync(string id, Patient patient)
         {
-            var response = await PutAsync(_clinicalBaseUrl + "/fhir/Patient/" + id, patient);
+            var response = await PutClinicalAsync(
+                _clinicalBaseUrl + "/fhir/Patient/" + id,
+                patient
+            );
             return ParseJson<Patient>(response);
         }
 
@@ -112,7 +126,7 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Practitioner[]> GetPractitionersAsync()
         {
-            var response = await FetchAsync(_schedulingBaseUrl + "/Practitioner");
+            var response = await FetchSchedulingAsync(_schedulingBaseUrl + "/Practitioner");
             return ParseJson<Practitioner[]>(response);
         }
 
@@ -121,7 +135,7 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Practitioner> GetPractitionerAsync(string id)
         {
-            var response = await FetchAsync(_schedulingBaseUrl + "/Practitioner/" + id);
+            var response = await FetchSchedulingAsync(_schedulingBaseUrl + "/Practitioner/" + id);
             return ParseJson<Practitioner>(response);
         }
 
@@ -130,7 +144,7 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Practitioner[]> SearchPractitionersAsync(string specialty)
         {
-            var response = await FetchAsync(
+            var response = await FetchSchedulingAsync(
                 _schedulingBaseUrl + "/Practitioner/_search?specialty=" + EncodeUri(specialty)
             );
             return ParseJson<Practitioner[]>(response);
@@ -141,7 +155,7 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Appointment[]> GetAppointmentsAsync()
         {
-            var response = await FetchAsync(_schedulingBaseUrl + "/Appointment");
+            var response = await FetchSchedulingAsync(_schedulingBaseUrl + "/Appointment");
             return ParseJson<Appointment[]>(response);
         }
 
@@ -150,7 +164,7 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Appointment> GetAppointmentAsync(string id)
         {
-            var response = await FetchAsync(_schedulingBaseUrl + "/Appointment/" + id);
+            var response = await FetchSchedulingAsync(_schedulingBaseUrl + "/Appointment/" + id);
             return ParseJson<Appointment>(response);
         }
 
@@ -159,7 +173,10 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Appointment> UpdateAppointmentAsync(string id, object appointment)
         {
-            var response = await PutAsync(_schedulingBaseUrl + "/Appointment/" + id, appointment);
+            var response = await PutSchedulingAsync(
+                _schedulingBaseUrl + "/Appointment/" + id,
+                appointment
+            );
             return ParseJson<Appointment>(response);
         }
 
@@ -168,7 +185,7 @@ namespace Dashboard.Api
         /// </summary>
         public static async Task<Appointment[]> GetPatientAppointmentsAsync(string patientId)
         {
-            var response = await FetchAsync(
+            var response = await FetchSchedulingAsync(
                 _schedulingBaseUrl + "/Patient/" + patientId + "/Appointment"
             );
             return ParseJson<Appointment[]>(response);
@@ -181,7 +198,7 @@ namespace Dashboard.Api
             string practitionerId
         )
         {
-            var response = await FetchAsync(
+            var response = await FetchSchedulingAsync(
                 _schedulingBaseUrl + "/Practitioner/" + practitionerId + "/Appointment"
             );
             return ParseJson<Appointment[]>(response);
@@ -189,23 +206,55 @@ namespace Dashboard.Api
 
         // === HELPER METHODS ===
 
-        private static async Task<string> FetchAsync(string url)
+        private static async Task<string> FetchClinicalAsync(string url)
         {
             var response = await Script.Call<Task<Response>>(
                 "fetch",
                 url,
-                new { method = "GET", headers = new { Accept = "application/json" } }
+                new
+                {
+                    method = "GET",
+                    headers = new
+                    {
+                        Accept = "application/json",
+                        Authorization = "Bearer " + _clinicalToken,
+                    },
+                }
             );
 
             if (!response.Ok)
             {
-                throw new Exception("HTTP " + response.Status + ": " + response.StatusText);
+                throw new Exception("HTTP " + response.Status);
             }
 
             return await response.Text();
         }
 
-        private static async Task<string> PostAsync(string url, object data)
+        private static async Task<string> FetchSchedulingAsync(string url)
+        {
+            var response = await Script.Call<Task<Response>>(
+                "fetch",
+                url,
+                new
+                {
+                    method = "GET",
+                    headers = new
+                    {
+                        Accept = "application/json",
+                        Authorization = "Bearer " + _schedulingToken,
+                    },
+                }
+            );
+
+            if (!response.Ok)
+            {
+                throw new Exception("HTTP " + response.Status);
+            }
+
+            return await response.Text();
+        }
+
+        private static async Task<string> PostClinicalAsync(string url, object data)
         {
             var response = await Script.Call<Task<Response>>(
                 "fetch",
@@ -213,20 +262,25 @@ namespace Dashboard.Api
                 new
                 {
                     method = "POST",
-                    headers = new { Accept = "application/json", ContentType = "application/json" },
+                    headers = new
+                    {
+                        Accept = "application/json",
+                        ContentType = "application/json",
+                        Authorization = "Bearer " + _clinicalToken,
+                    },
                     body = Script.Call<string>("JSON.stringify", data),
                 }
             );
 
             if (!response.Ok)
             {
-                throw new Exception("HTTP " + response.Status + ": " + response.StatusText);
+                throw new Exception("HTTP " + response.Status);
             }
 
             return await response.Text();
         }
 
-        private static async Task<string> PutAsync(string url, object data)
+        private static async Task<string> PutClinicalAsync(string url, object data)
         {
             var response = await Script.Call<Task<Response>>(
                 "fetch",
@@ -234,14 +288,45 @@ namespace Dashboard.Api
                 new
                 {
                     method = "PUT",
-                    headers = new { Accept = "application/json", ContentType = "application/json" },
+                    headers = new
+                    {
+                        Accept = "application/json",
+                        ContentType = "application/json",
+                        Authorization = "Bearer " + _clinicalToken,
+                    },
                     body = Script.Call<string>("JSON.stringify", data),
                 }
             );
 
             if (!response.Ok)
             {
-                throw new Exception("HTTP " + response.Status + ": " + response.StatusText);
+                throw new Exception("HTTP " + response.Status);
+            }
+
+            return await response.Text();
+        }
+
+        private static async Task<string> PutSchedulingAsync(string url, object data)
+        {
+            var response = await Script.Call<Task<Response>>(
+                "fetch",
+                url,
+                new
+                {
+                    method = "PUT",
+                    headers = new
+                    {
+                        Accept = "application/json",
+                        ContentType = "application/json",
+                        Authorization = "Bearer " + _schedulingToken,
+                    },
+                    body = Script.Call<string>("JSON.stringify", data),
+                }
+            );
+
+            if (!response.Ok)
+            {
+                throw new Exception("HTTP " + response.Status);
             }
 
             return await response.Text();

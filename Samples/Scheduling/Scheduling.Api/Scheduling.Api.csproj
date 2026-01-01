@@ -2,33 +2,49 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <NoWarn>CA1848;CA1515;CA2100;RS1035;CA1508;CA2234;CA1812</NoWarn>
+    <NoWarn>CA1515;CA2100;RS1035;CA1508;CA2234;CA1812</NoWarn>
   </PropertyGroup>
+
+  <!-- Exclude Generated folder from default globbing - we include it explicitly in the target -->
+  <ItemGroup>
+    <Compile Remove="Generated/**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Sync\Sync.SQLite\Sync.SQLite.csproj" />
     <ProjectReference Include="..\..\..\DataProvider\DataProvider\DataProvider.csproj" />
+    <ProjectReference Include="..\..\..\Sync\Sync.SQLite\Sync.SQLite.csproj" />
     <ProjectReference Include="..\..\..\Other\Selecta\Selecta.csproj" />
     <ProjectReference Include="..\..\..\Migration\Migration\Migration.csproj" />
     <ProjectReference Include="..\..\..\Migration\Migration.SQLite\Migration.SQLite.csproj" />
+    <ProjectReference Include="..\..\Shared\Authorization\Authorization.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <AdditionalFiles Include="Queries/*.sql" />
     <AdditionalFiles Include="DataProvider.json" />
+    <!-- YAML schema is source of truth, stored in git -->
+    <Content Include="scheduling-schema.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
+  <!-- Create database from YAML using Migration.Cli (YAML stored in git) -->
+  <Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider">
+    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../../Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/scheduling-schema.yaml" --output "$(MSBuildProjectDirectory)/scheduling-build.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
+  </Target>
+
   <!-- Generate C# from SQL using DataProvider.SQLite.Cli -->
-  <Target Name="GenerateDataProvider" BeforeTargets="CoreCompile">
-    <RemoveDir Directories="$(IntermediateOutputPath)Generated" />
-    <MakeDir Directories="$(IntermediateOutputPath)Generated" />
-    <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)..\..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(IntermediateOutputPath)Generated"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
+  <Target Name="GenerateDataProvider" BeforeTargets="BeforeCompile;CoreCompile" Inputs="$(MSBuildProjectDirectory)/DataProvider.json;@(AdditionalFiles)" Outputs="$(MSBuildProjectDirectory)/Generated/.timestamp">
+    <RemoveDir Directories="$(MSBuildProjectDirectory)/Generated" />
+    <MakeDir Directories="$(MSBuildProjectDirectory)/Generated" />
+    <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)..\..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(MSBuildProjectDirectory)/Generated"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
+    <Touch Files="$(MSBuildProjectDirectory)/Generated/.timestamp" AlwaysCreate="true" />
     <ItemGroup>
-      <Compile Include="$(IntermediateOutputPath)Generated/**/*.g.cs" Visible="false" />
+      <Compile Include="$(MSBuildProjectDirectory)/Generated/**/*.g.cs" />
     </ItemGroup>
   </Target>
 

@@ -1,8 +1,6 @@
-#pragma warning disable CS8509 // Non-exhaustive switch
+using System.Text;
 
 namespace Gatekeeper.Api;
-
-using System.Text;
 
 /// <summary>
 /// Service for evaluating authorization decisions.
@@ -24,17 +22,16 @@ public static class AuthorizationService
         // Step 1: Check resource-level grants first (most specific)
         if (!string.IsNullOrEmpty(resourceType) && !string.IsNullOrEmpty(resourceId))
         {
-            // Generated param order: user_id, resource_type, resource_id, now, permission_code
             var grantResult = await conn.CheckResourceGrantAsync(
-                    userId,
-                    resourceType,
-                    resourceId,
-                    now,
-                    permissionCode
+                    now: now,
+                    resource_id: resourceId,
+                    user_id: userId,
+                    resource_type: resourceType,
+                    permission_code: permissionCode
                 )
                 .ConfigureAwait(false);
 
-            if (grantResult is CheckResourceGrantOk { Value.Count: > 0 })
+            if (grantResult is CheckResourceGrantOk grantOk && grantOk.Value.Count > 0)
             {
                 return (true, $"resource-grant:{resourceType}/{resourceId}");
             }

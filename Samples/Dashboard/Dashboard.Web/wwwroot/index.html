@@ -90,27 +90,46 @@
   <!-- React Root -->
   <div id="root"></div>
 
+  <!-- Dev mode config - provides auth token for local development -->
+  <script>
+    // Dev token valid for 1 year, has all roles: clinician, scheduler, sync-client, admin
+    // Signed with test key (32 zero bytes)
+    window.dashboardConfig = {
+      DEV_TOKEN: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZXYtdXNlciIsImp0aSI6ImRldi1zZXNzaW9uIiwicm9sZXMiOlsiY2xpbmljaWFuIiwic2NoZWR1bGVyIiwic3luYy1jbGllbnQiLCJhZG1pbiJdLCJleHAiOjE3OTc5MjE2MDgsImlhdCI6MTc2NjM4NTYwOH0.9QG995NH-BiZJ5hQPjd5rnFYjQnlW9KzPv0MXz0Gm78'
+    };
+  </script>
+
   <!-- H5 Generated JavaScript - DISABLED: has broken React hooks (calls useState from static method) -->
   <!-- <script src="js/Dashboard.js"></script> -->
 
   <!-- Pure JS React Dashboard -->
   <script>
+    window.addEventListener('error', function(event) {
+      console.error('[Dashboard] Window error', event.error || event.message);
+    });
+    window.addEventListener('unhandledrejection', function(event) {
+      console.error('[Dashboard] Unhandled rejection', event.reason);
+    });
+
     // Hide loading screen after a delay
     setTimeout(function() {
       document.getElementById('loading-screen').classList.add('hidden');
     }, 1500);
 
     // Load Google Charts
-    google.charts.load('current', {
-      'packages': ['corechart', 'line', 'bar', 'gauge']
-    });
-
     // Flag to track when charts are ready
     let googleChartsLoaded = false;
-    google.charts.setOnLoadCallback(() => {
-      googleChartsLoaded = true;
-      console.log('[Dashboard] Google Charts loaded!');
-    });
+    if (typeof google !== 'undefined' && google.charts && google.charts.load) {
+      google.charts.load('current', {
+        'packages': ['corechart', 'line', 'bar', 'gauge']
+      });
+      google.charts.setOnLoadCallback(function() {
+        googleChartsLoaded = true;
+        console.log('[Dashboard] Google Charts loaded!');
+      });
+    } else {
+      console.warn('[Dashboard] Google Charts unavailable; charts will be disabled.');
+    }
 
     // Load the React dashboard
     console.log('[Dashboard] Loading React dashboard...');
@@ -124,6 +143,31 @@
       const AUTH_TOKEN_KEY = 'gatekeeper_token';
       const AUTH_USER_KEY = 'gatekeeper_user';
 
+      // Check if testMode is enabled via URL param
+      const urlParams = new URLSearchParams(window.location.search);
+      const isTestModeInit = urlParams.get('testMode') === 'true' || window.dashboardConfig?.testMode === true;
+      const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+      // Dev token (all-zeros key, expires 2035) with clinician and scheduler roles
+      const DEV_DASHBOARD_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYXNoYm9hcmQtdXNlciIsImp0aSI6IjE1MTMwYTg0LTY4NTktNGNmMy05MjA3LTMyMGJhYWRiNzhjNSIsInJvbGVzIjpbImNsaW5pY2lhbiIsInNjaGVkdWxlciJdLCJleHAiOjIwODE5MjIxMDQsImlhdCI6MTc2NjM4OTMwNH0.mk66XyKaLWukzZOmGNwss74lSlXobt6Em0NoEbXRdKU';
+
+      // Set dev token and user ONLY in test mode (testMode=true URL param)
+      // For localhost dev without testMode, user must log in (or use existing token)
+      // This allows login page tests to work properly
+      if (isTestModeInit) {
+        const devToken = window.dashboardConfig?.DEV_TOKEN || DEV_DASHBOARD_TOKEN;
+        localStorage.setItem(AUTH_TOKEN_KEY, devToken);
+        // Only set default test user if no user already in localStorage
+        if (!localStorage.getItem(AUTH_USER_KEY)) {
+          localStorage.setItem(AUTH_USER_KEY, JSON.stringify({
+            userId: 'test', displayName: 'Test User', email: 'test@example.com'
+          }));
+        }
+        console.log('[Dashboard] Test mode: auth state initialized');
+      } else {
+        console.log('[Dashboard] Normal mode: using existing auth state');
+      }
+
       const getAuthToken = () => localStorage.getItem(AUTH_TOKEN_KEY);
       const setAuthToken = (token) => localStorage.setItem(AUTH_TOKEN_KEY, token);
       const getAuthUser = () => {
@@ -136,15 +180,22 @@
         localStorage.removeItem(AUTH_USER_KEY);
       };
 
-      // API helper (with optional auth)
-      const fetchApi = async (url, requireAuth = false) => {
+      // API helper - always sends auth token if available
+      // Handles 401 by clearing auth and reloading to show login page
+      const fetchApi = async (url) => {
         try {
           const headers = { 'Accept': 'application/json' };
           const token = getAuthToken();
-          if (token && requireAuth) {
+          if (token) {
             headers['Authorization'] = `Bearer ${token}`;
           }
           const response = await fetch(url, { headers });
+          if (response.status === 401) {
+            console.warn('[Auth] Token expired or invalid, clearing auth and redirecting to login');
+            clearAuth();
+            window.location.reload();
+            throw new Error('Authentication required');
+          }
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           return await response.json();
         } catch (error) {
@@ -172,11 +223,12 @@
         return { data, loading, error };
       };
 
-      // POST API helper (with optional auth)
-      const postApi = async (url, data, requireAuth = false) => {
+      // POST API helper - always sends auth token if available
+      // Handles 401 by clearing auth and reloading to show login page
+      const postApi = async (url, data) => {
         const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
         const token = getAuthToken();
-        if (token && requireAuth) {
+        if (token) {
           headers['Authorization'] = `Bearer ${token}`;
         }
         const response = await fetch(url, {
@@ -184,6 +236,35 @@
           headers,
           body: JSON.stringify(data)
         });
+        if (response.status === 401) {
+          console.warn('[Auth] Token expired or invalid, clearing auth and redirecting to login');
+          clearAuth();
+          window.location.reload();
+          throw new Error('Authentication required');
+        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+      };
+
+      // PUT API helper - always sends auth token if available
+      // Handles 401 by clearing auth and reloading to show login page
+      const putApi = async (url, data) => {
+        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+        const token = getAuthToken();
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        const response = await fetch(url, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify(data)
+        });
+        if (response.status === 401) {
+          console.warn('[Auth] Token expired or invalid, clearing auth and redirecting to login');
+          clearAuth();
+          window.location.reload();
+          throw new Error('Authentication required');
+        }
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return await response.json();
       };
@@ -289,6 +370,16 @@
           React.createElement('path', { d: 'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4' }),
           React.createElement('polyline', { points: '16,17 21,12 16,7' }),
           React.createElement('line', { x1: 21, y1: 12, x2: 9, y2: 12 })
+        ),
+        Plus: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+          React.createElement('line', { x1: 12, y1: 5, x2: 12, y2: 19 }),
+          React.createElement('line', { x1: 5, y1: 12, x2: 19, y2: 12 })
+        ),
+        Trash: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+          React.createElement('polyline', { points: '3,6 5,6 21,6' }),
+          React.createElement('path', { d: 'M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2' }),
+          React.createElement('line', { x1: 10, y1: 11, x2: 10, y2: 17 }),
+          React.createElement('line', { x1: 14, y1: 11, x2: 14, y2: 17 })
         )
       };
 
@@ -1638,9 +1729,7 @@
         React.useEffect(() => {
           const fetchAppointment = async () => {
             try {
-              const response = await fetch(`${SCHEDULING_API}/Appointment/${appointmentId}`);
-              if (!response.ok) throw new Error('Failed to load appointment');
-              const data = await response.json();
+              const data = await fetchApi(`${SCHEDULING_API}/Appointment/${appointmentId}`);
               setAppointment(data);
               setFormData({
                 ServiceCategory: data.ServiceCategory || '',
@@ -1670,13 +1759,7 @@
           setError(null);
           setSuccess(null);
           try {
-            const response = await fetch(`${SCHEDULING_API}/Appointment/${appointmentId}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(formData)
-            });
-            if (!response.ok) throw new Error('Failed to update appointment');
-            const updated = await response.json();
+            const updated = await putApi(`${SCHEDULING_API}/Appointment/${appointmentId}`, formData);
             setAppointment(updated);
             setSuccess('Appointment updated successfully');
           } catch (err) {
@@ -1880,6 +1963,7 @@
       // Sync Dashboard Page - requires sync:admin permission
       const SyncPage = () => {
         const [serviceFilter, setServiceFilter] = React.useState('all');
+        const [actionFilter, setActionFilter] = React.useState('all');
         const [searchQuery, setSearchQuery] = React.useState('');
         const [refreshKey, setRefreshKey] = React.useState(0);
         const [syncServices, setSyncServices] = React.useState([]);
@@ -1893,12 +1977,12 @@
             setLoading(true);
             setError(null);
             try {
-              // Fetch status from both services
+              // Fetch status from both services (using fetchApi for auth)
               const [clinicalStatus, schedulingStatus, clinicalRecords, schedulingRecords] = await Promise.all([
-                fetch(`${CLINICAL_API}/sync/status`).then(r => r.ok ? r.json() : { status: 'error', service: 'Clinical.Api', pendingCount: 0, failedCount: 0, lastSyncTime: null }),
-                fetch(`${SCHEDULING_API}/sync/status`).then(r => r.ok ? r.json() : { status: 'error', service: 'Scheduling.Api', pendingCount: 0, failedCount: 0, lastSyncTime: null }),
-                fetch(`${CLINICAL_API}/sync/records`).then(r => r.ok ? r.json() : { records: [], total: 0 }),
-                fetch(`${SCHEDULING_API}/sync/records`).then(r => r.ok ? r.json() : { records: [], total: 0 })
+                fetchApi(`${CLINICAL_API}/sync/status`).catch(() => ({ status: 'error', service: 'Clinical.Api', pendingCount: 0, failedCount: 0, lastSyncTime: null })),
+                fetchApi(`${SCHEDULING_API}/sync/status`).catch(() => ({ status: 'error', service: 'Scheduling.Api', pendingCount: 0, failedCount: 0, lastSyncTime: null })),
+                fetchApi(`${CLINICAL_API}/sync/records`).catch(() => ({ records: [], total: 0 })),
+                fetchApi(`${SCHEDULING_API}/sync/records`).catch(() => ({ records: [], total: 0 }))
               ]);
 
               setSyncServices([
@@ -1926,11 +2010,12 @@
 
         const filteredRecords = syncRecords.filter(record => {
           const matchesService = serviceFilter === 'all' || record.service === serviceFilter;
+          const matchesAction = actionFilter === 'all' || record.operation === parseInt(actionFilter);
           const matchesSearch = searchQuery === '' ||
-            record.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            record.entityId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            record.entityType.toLowerCase().includes(searchQuery.toLowerCase());
-          return matchesService && matchesSearch;
+            String(record.id).toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (record.entityId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (record.entityType || '').toLowerCase().includes(searchQuery.toLowerCase());
+          return matchesService && matchesAction && matchesSearch;
         });
 
         const getOperationIcon = (operation) => {
@@ -1965,12 +2050,8 @@
           console.log('[Sync] Retry requested for record:', recordId, 'service:', service);
           const apiUrl = service === 'clinical' ? CLINICAL_API : SCHEDULING_API;
           try {
-            const response = await fetch(`${apiUrl}/sync/records/${recordId}/retry`, { method: 'POST' });
-            if (response.ok) {
-              setRefreshKey(prev => prev + 1);
-            } else {
-              console.error('[Sync] Retry failed:', response.status);
-            }
+            await postApi(`${apiUrl}/sync/records/${recordId}/retry`, {});
+            setRefreshKey(prev => prev + 1);
           } catch (err) {
             console.error('[Sync] Retry error:', err);
           }
@@ -2064,6 +2145,20 @@
                   React.createElement('option', { value: 'scheduling' }, 'Scheduling.Api')
                 )
               ),
+              React.createElement('div', { className: 'form-group', style: { minWidth: '150px' } },
+                React.createElement('label', { className: 'form-label' }, 'Action'),
+                React.createElement('select', {
+                  className: 'input',
+                  value: actionFilter,
+                  onChange: e => setActionFilter(e.target.value),
+                  'data-testid': 'action-filter'
+                },
+                  React.createElement('option', { value: 'all' }, 'All Actions'),
+                  React.createElement('option', { value: '0' }, 'Insert'),
+                  React.createElement('option', { value: '1' }, 'Update'),
+                  React.createElement('option', { value: '2' }, 'Delete')
+                )
+              ),
               React.createElement('div', { className: 'form-group', style: { minWidth: '300px', flex: 1 } },
                 React.createElement('label', { className: 'form-label' }, 'Search'),
                 React.createElement('input', {
@@ -2094,13 +2189,14 @@
                     React.createElement('th', null, 'Operation'),
                     React.createElement('th', null, 'Version'),
                     React.createElement('th', null, 'Service'),
-                    React.createElement('th', null, 'Entity'),
+                    React.createElement('th', null, 'Table'),
+                    React.createElement('th', null, 'Entity ID'),
                     React.createElement('th', null, 'Timestamp')
                   )
                 ),
                 React.createElement('tbody', null,
                   filteredRecords.map(record =>
-                    React.createElement('tr', { key: record.id, 'data-testid': `sync-record-${record.id}` },
+                    React.createElement('tr', { key: `${record.service}-${record.id}`, 'data-testid': `sync-record-${record.service}-${record.id}`, 'data-service': record.service, 'data-operation': record.operation },
                       React.createElement('td', null,
                         React.createElement('span', { className: `status-indicator ${getOperationClass(record.operation)}` },
                           getOperationIcon(record.operation),
@@ -2109,8 +2205,9 @@
                         )
                       ),
                       React.createElement('td', null, record.id),
-                      React.createElement('td', null, record.service === 'clinical' ? 'Clinical.Api' : 'Scheduling.Api'),
-                      React.createElement('td', null, `${record.entityType} (${record.entityId})`),
+                      React.createElement('td', { 'data-testid': 'record-service' }, record.service === 'clinical' ? 'Clinical.Api' : 'Scheduling.Api'),
+                      React.createElement('td', { 'data-testid': 'record-table' }, record.entityType),
+                      React.createElement('td', { 'data-testid': 'record-entity-id' }, record.entityId),
                       React.createElement('td', null, formatTime(record.lastAttempt))
                     )
                   )
@@ -2435,9 +2532,7 @@
         React.useEffect(() => {
           const fetchPatient = async () => {
             try {
-              const response = await fetch(`${CLINICAL_API}/fhir/Patient/${patientId}`);
-              if (!response.ok) throw new Error('Failed to load patient');
-              const data = await response.json();
+              const data = await fetchApi(`${CLINICAL_API}/fhir/Patient/${patientId}`);
               setPatient(data);
               setFormData({
                 Active: data.Active !== false,
@@ -2468,13 +2563,7 @@
           setError(null);
           setSuccess(null);
           try {
-            const response = await fetch(`${CLINICAL_API}/fhir/Patient/${patientId}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(formData)
-            });
-            if (!response.ok) throw new Error('Failed to update patient');
-            const updated = await response.json();
+            const updated = await putApi(`${CLINICAL_API}/fhir/Patient/${patientId}`, formData);
             setPatient(updated);
             setSuccess('Patient updated successfully!');
           } catch (err) {
@@ -2706,9 +2795,7 @@
         React.useEffect(() => {
           const fetchPractitioner = async () => {
             try {
-              const response = await fetch(`${SCHEDULING_API}/Practitioner/${practitionerId}`);
-              if (!response.ok) throw new Error('Failed to load practitioner');
-              const data = await response.json();
+              const data = await fetchApi(`${SCHEDULING_API}/Practitioner/${practitionerId}`);
               setPractitioner(data);
               setFormData({
                 Identifier: data.Identifier || '',
@@ -2735,13 +2822,7 @@
           setError(null);
           setSuccess(null);
           try {
-            const response = await fetch(`${SCHEDULING_API}/Practitioner/${practitionerId}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(formData)
-            });
-            if (!response.ok) throw new Error('Failed to update practitioner');
-            const updated = await response.json();
+            const updated = await putApi(`${SCHEDULING_API}/Practitioner/${practitionerId}`, formData);
             setPractitioner(updated);
             setSuccess('Practitioner updated successfully!');
           } catch (err) {
@@ -2926,20 +3007,15 @@
 
       // Main App Component
       const App = () => {
-        // Test mode bypass - allows E2E tests to skip authentication
-        // Check URL params or window config for test mode
-        const isTestMode = () => {
-          const urlParams = new URLSearchParams(window.location.search);
-          return urlParams.get('testMode') === 'true' || window.dashboardConfig?.testMode === true;
-        };
-
-        // Auth state - check localStorage on mount (or bypass in test mode)
-        const [isAuthenticated, setIsAuthenticated] = React.useState(() => isTestMode() || !!getAuthToken());
-        const [currentUser, setCurrentUser] = React.useState(() => isTestMode() ? { userId: 'test', displayName: 'Test User', email: 'test@example.com' } : getAuthUser());
+        // Auth state - read from localStorage (testMode sets these values on page load)
+        const [isAuthenticated, setIsAuthenticated] = React.useState(() => !!getAuthToken());
+        const [currentUser, setCurrentUser] = React.useState(() => getAuthUser());
 
         const handleLogin = (user) => {
+          console.log('[Dashboard] handleLogin called with user:', user);
           setCurrentUser(user);
           setIsAuthenticated(true);
+          console.log('[Dashboard] handleLogin completed, isAuthenticated should now be true');
         };
 
         // Parse initial state from URL hash for deep linking support
@@ -2971,10 +3047,11 @@
         const [editingAppointmentId, setEditingAppointmentIdState] = React.useState(initialRoute.appointmentId);
 
         // Expose login trigger for E2E testing (allows tests to simulate successful WebAuthn)
+        // NOTE: No dependency array - must update on every render to avoid stale closure
         React.useEffect(() => {
           window.__triggerLogin = handleLogin;
           return () => { delete window.__triggerLogin; };
-        }, []);
+        });
 
         // Listen for browser back/forward buttons (popstate event)
         React.useEffect(() => {

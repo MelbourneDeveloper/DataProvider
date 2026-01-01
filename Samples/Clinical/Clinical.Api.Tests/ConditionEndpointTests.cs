@@ -1,8 +1,9 @@
-namespace Clinical.Api.Tests;
-
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+
+namespace Clinical.Api.Tests;
 
 /// <summary>
 /// E2E tests for Condition FHIR endpoints - REAL database, NO mocks.
@@ -10,6 +11,18 @@ using System.Text.Json;
 /// </summary>
 public sealed class ConditionEndpointTests
 {
+    private static readonly string AuthToken = TestTokenHelper.GenerateClinicianToken();
+
+    private static HttpClient CreateAuthenticatedClient(ClinicalApiFactory factory)
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            AuthToken
+        );
+        return client;
+    }
+
     private static async Task<string> CreateTestPatientAsync(HttpClient client)
     {
         var patient = new
@@ -29,7 +42,7 @@ public sealed class ConditionEndpointTests
     public async Task GetConditionsByPatient_ReturnsEmptyList_WhenNoConditions()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
 
         var response = await client.GetAsync($"/fhir/Patient/{patientId}/Condition/");
@@ -43,7 +56,7 @@ public sealed class ConditionEndpointTests
     public async Task CreateCondition_ReturnsCreated_WithValidData()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -75,7 +88,7 @@ public sealed class ConditionEndpointTests
     public async Task CreateCondition_WithAllClinicalStatuses()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var statuses = new[]
         {
             "active",
@@ -112,7 +125,7 @@ public sealed class ConditionEndpointTests
     public async Task CreateCondition_WithAllSeverities()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var severities = new[] { "mild", "moderate", "severe" };
 
         foreach (var severity in severities)
@@ -142,7 +155,7 @@ public sealed class ConditionEndpointTests
     public async Task CreateCondition_WithVerificationStatuses()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var statuses = new[]
         {
             "unconfirmed",
@@ -179,7 +192,7 @@ public sealed class ConditionEndpointTests
     public async Task GetConditionsByPatient_ReturnsConditions_WhenExist()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request1 = new
         {
@@ -211,7 +224,7 @@ public sealed class ConditionEndpointTests
     public async Task CreateCondition_SetsRecordedDate()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -236,7 +249,7 @@ public sealed class ConditionEndpointTests
     public async Task CreateCondition_SetsVersionIdToOne()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {
@@ -259,7 +272,7 @@ public sealed class ConditionEndpointTests
     public async Task CreateCondition_WithEncounterReference()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
 
         var encounterRequest = new
@@ -297,7 +310,7 @@ public sealed class ConditionEndpointTests
     public async Task CreateCondition_WithNotes()
     {
         using var factory = new ClinicalApiFactory();
-        var client = factory.CreateClient();
+        var client = CreateAuthenticatedClient(factory);
         var patientId = await CreateTestPatientAsync(client);
         var request = new
         {

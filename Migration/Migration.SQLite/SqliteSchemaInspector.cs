@@ -157,19 +157,52 @@ public static class SqliteSchemaInspector
 
             foreach (var (indexName, isUnique) in indexNames)
             {
+                // First check if this is an expression index by looking at index_info
+                // Expression columns return NULL for the column name
                 using var idxColCmd = connection.CreateCommand();
                 idxColCmd.CommandText = $"PRAGMA index_info([{indexName}])";
 
                 var indexColumns = new List<string>();
+                var hasExpressions = false;
                 using (var reader = idxColCmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
+                        if (reader.IsDBNull(2))
+                        {
+                            // NULL column name means expression index
+                            hasExpressions = true;
+                            break;
+                        }
                         indexColumns.Add(reader.GetString(2));
                     }
                 }
 
-                if (indexColumns.Count > 0)
+                if (hasExpressions)
+                {
+                    // Expression index - get the full definition from sqlite_master
+                    using var sqlCmd = connection.CreateCommand();
+                    sqlCmd.CommandText = """
+                        SELECT sql FROM sqlite_master
+                        WHERE type = 'index' AND name = @name
+                        """;
+                    sqlCmd.Parameters.AddWithValue("@name", indexName);
+                    var sql = sqlCmd.ExecuteScalar() as string;
+
+                    if (sql is not null)
+                    {
+                        var expressions = ParseIndexExpressions(sql);
+                        indexes.Add(
+                            new IndexDefinition
+                            {
+                                Name = indexName,
+                                Expressions = expressions.AsReadOnly(),
+                                IsUnique = isUnique,
+                            }
+                        );
+                    }
+                }
+                else if (indexColumns.Count > 0)
                 {
                     indexes.Add(
                         new IndexDefinition
@@ -264,4 +297,97 @@ public static class SqliteSchemaInspector
             "RESTRICT" => ForeignKeyAction.Restrict,
             _ => ForeignKeyAction.NoAction,
         };
+
+    /// <summary>
+    /// Parse expressions from a SQLite index definition string.
+    /// Example: "CREATE UNIQUE INDEX uq_name ON table (lower(name), suburb_id)"
+    /// Returns: ["lower(name)", "suburb_id"]
+    /// </summary>
+    private static List<string> ParseIndexExpressions(string indexDef)
+    {
+        var expressions = new List<string>();
+
+        // Find "ON tablename" then the first ( after it - that's the index columns/expressions
+        // We can't use LastIndexOf because expressions like lower(name) contain nested parens
+        var onIndex = indexDef.IndexOf(" ON ", StringComparison.OrdinalIgnoreCase);
+        if (onIndex < 0)
+        {
+            return expressions;
+        }
+
+        // Find the first ( after ON - this is the start of the index columns
+        var parenStart = indexDef.IndexOf('(', onIndex);
+        if (parenStart < 0)
+        {
+            return expressions;
+        }
+
+        // Find matching closing paren by counting depth
+        var depth = 0;
+        var parenEnd = -1;
+        for (var i = parenStart; i < indexDef.Length; i++)
+        {
+            switch (indexDef[i])
+            {
+                case '(':
+                    depth++;
+                    break;
+                case ')':
+                    depth--;
+                    if (depth == 0)
+                    {
+                        parenEnd = i;
+                        goto found;
+                    }
+                    break;
+            }
+        }
+        found:
+
+        if (parenEnd < 0)
+        {
+            return expressions;
+        }
+
+        var content = indexDef.Substring(parenStart + 1, parenEnd - parenStart - 1);
+
+        // Split by comma, but respect nested parentheses (for function calls)
+        var current = new StringBuilder();
+        depth = 0;
+
+        foreach (var ch in content)
+        {
+            switch (ch)
+            {
+                case '(':
+                    depth++;
+                    current.Append(ch);
+                    break;
+                case ')':
+                    depth--;
+                    current.Append(ch);
+                    break;
+                case ',' when depth == 0:
+                    var expr = current.ToString().Trim();
+                    if (!string.IsNullOrEmpty(expr))
+                    {
+                        expressions.Add(expr);
+                    }
+                    current.Clear();
+                    break;
+                default:
+                    current.Append(ch);
+                    break;
+            }
+        }
+
+        // Add the last expression
+        var lastExpr = current.ToString().Trim();
+        if (!string.IsNullOrEmpty(lastExpr))
+        {
+            expressions.Add(lastExpr);
+        }
+
+        return expressions;
+    }
 }

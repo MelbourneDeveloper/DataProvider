@@ -1,0 +1,397 @@
+name: gatekeeper
+tables:
+- name: gk_user
+  columns:
+  - name: id
+    type: Text
+  - name: display_name
+    type: Text
+  - name: email
+    type: Text
+  - name: created_at
+    type: Text
+  - name: last_login_at
+    type: Text
+  - name: is_active
+    type: Boolean
+    defaultValue: 1
+  - name: metadata
+    type: Json
+  indexes:
+  - name: idx_user_email
+    columns:
+    - email
+    isUnique: true
+  primaryKey:
+    name: PK_gk_user
+    columns:
+    - id
+- name: gk_credential
+  columns:
+  - name: id
+    type: Text
+  - name: user_id
+    type: Text
+  - name: public_key
+    type: Blob
+  - name: sign_count
+    type: Int
+    defaultValue: 0
+  - name: aaguid
+    type: Text
+  - name: credential_type
+    type: Text
+  - name: transports
+    type: Json
+  - name: attestation_format
+    type: Text
+  - name: created_at
+    type: Text
+  - name: last_used_at
+    type: Text
+  - name: device_name
+    type: Text
+  - name: is_backup_eligible
+    type: Boolean
+  - name: is_backed_up
+    type: Boolean
+  indexes:
+  - name: idx_credential_user
+    columns:
+    - user_id
+  foreignKeys:
+  - name: FK_gk_credential_user_id
+    columns:
+    - user_id
+    referencedTable: gk_user
+    referencedColumns:
+    - id
+    onDelete: Cascade
+  primaryKey:
+    name: PK_gk_credential
+    columns:
+    - id
+- name: gk_session
+  columns:
+  - name: id
+    type: Text
+  - name: user_id
+    type: Text
+  - name: credential_id
+    type: Text
+  - name: created_at
+    type: Text
+  - name: expires_at
+    type: Text
+  - name: last_activity_at
+    type: Text
+  - name: ip_address
+    type: Text
+  - name: user_agent
+    type: Text
+  - name: is_revoked
+    type: Boolean
+    defaultValue: 0
+  indexes:
+  - name: idx_session_user
+    columns:
+    - user_id
+  - name: idx_session_expires
+    columns:
+    - expires_at
+  foreignKeys:
+  - name: FK_gk_session_user_id
+    columns:
+    - user_id
+    referencedTable: gk_user
+    referencedColumns:
+    - id
+    onDelete: Cascade
+  - name: FK_gk_session_credential_id
+    columns:
+    - credential_id
+    referencedTable: gk_credential
+    referencedColumns:
+    - id
+  primaryKey:
+    name: PK_gk_session
+    columns:
+    - id
+- name: gk_challenge
+  columns:
+  - name: id
+    type: Text
+  - name: user_id
+    type: Text
+  - name: challenge
+    type: Blob
+  - name: type
+    type: Text
+  - name: created_at
+    type: Text
+  - name: expires_at
+    type: Text
+  primaryKey:
+    name: PK_gk_challenge
+    columns:
+    - id
+- name: gk_role
+  columns:
+  - name: id
+    type: Text
+  - name: name
+    type: Text
+  - name: description
+    type: Text
+  - name: is_system
+    type: Boolean
+    defaultValue: 0
+  - name: created_at
+    type: Text
+  - name: parent_role_id
+    type: Text
+  indexes:
+  - name: idx_role_name
+    columns:
+    - name
+    isUnique: true
+  foreignKeys:
+  - name: FK_gk_role_parent_role_id
+    columns:
+    - parent_role_id
+    referencedTable: gk_role
+    referencedColumns:
+    - id
+  primaryKey:
+    name: PK_gk_role
+    columns:
+    - id
+- name: gk_user_role
+  columns:
+  - name: user_id
+    type: Text
+  - name: role_id
+    type: Text
+  - name: granted_at
+    type: Text
+  - name: granted_by
+    type: Text
+  - name: expires_at
+    type: Text
+  foreignKeys:
+  - name: FK_gk_user_role_user_id
+    columns:
+    - user_id
+    referencedTable: gk_user
+    referencedColumns:
+    - id
+    onDelete: Cascade
+  - name: FK_gk_user_role_role_id
+    columns:
+    - role_id
+    referencedTable: gk_role
+    referencedColumns:
+    - id
+    onDelete: Cascade
+  - name: FK_gk_user_role_granted_by
+    columns:
+    - granted_by
+    referencedTable: gk_user
+    referencedColumns:
+    - id
+  primaryKey:
+    name: PK_gk_user_role
+    columns:
+    - user_id
+    - role_id
+- name: gk_permission
+  columns:
+  - name: id
+    type: Text
+  - name: code
+    type: Text
+  - name: resource_type
+    type: Text
+  - name: action
+    type: Text
+  - name: description
+    type: Text
+  - name: created_at
+    type: Text
+  indexes:
+  - name: idx_permission_code
+    columns:
+    - code
+    isUnique: true
+  - name: idx_permission_resource
+    columns:
+    - resource_type
+  primaryKey:
+    name: PK_gk_permission
+    columns:
+    - id
+- name: gk_role_permission
+  columns:
+  - name: role_id
+    type: Text
+  - name: permission_id
+    type: Text
+  - name: granted_at
+    type: Text
+  foreignKeys:
+  - name: FK_gk_role_permission_role_id
+    columns:
+    - role_id
+    referencedTable: gk_role
+    referencedColumns:
+    - id
+    onDelete: Cascade
+  - name: FK_gk_role_permission_permission_id
+    columns:
+    - permission_id
+    referencedTable: gk_permission
+    referencedColumns:
+    - id
+    onDelete: Cascade
+  primaryKey:
+    name: PK_gk_role_permission
+    columns:
+    - role_id
+    - permission_id
+- name: gk_user_permission
+  columns:
+  - name: user_id
+    type: Text
+  - name: permission_id
+    type: Text
+  - name: scope_type
+    type: Text
+  - name: scope_value
+    type: Text
+  - name: granted_at
+    type: Text
+  - name: granted_by
+    type: Text
+  - name: expires_at
+    type: Text
+  - name: reason
+    type: Text
+  indexes:
+  - name: idx_user_permission
+    columns:
+    - user_id
+    - permission_id
+    - scope_value
+    isUnique: true
+  foreignKeys:
+  - name: FK_gk_user_permission_user_id
+    columns:
+    - user_id
+    referencedTable: gk_user
+    referencedColumns:
+    - id
+    onDelete: Cascade
+  - name: FK_gk_user_permission_permission_id
+    columns:
+    - permission_id
+    referencedTable: gk_permission
+    referencedColumns:
+    - id
+    onDelete: Cascade
+  - name: FK_gk_user_permission_granted_by
+    columns:
+    - granted_by
+    referencedTable: gk_user
+    referencedColumns:
+    - id
+- name: gk_resource_grant
+  columns:
+  - name: id
+    type: Text
+  - name: user_id
+    type: Text
+  - name: resource_type
+    type: Text
+  - name: resource_id
+    type: Text
+  - name: permission_id
+    type: Text
+  - name: granted_at
+    type: Text
+  - name: granted_by
+    type: Text
+  - name: expires_at
+    type: Text
+  indexes:
+  - name: idx_resource_grant_user
+    columns:
+    - user_id
+  - name: idx_resource_grant_resource
+    columns:
+    - resource_type
+    - resource_id
+  foreignKeys:
+  - name: FK_gk_resource_grant_user_id
+    columns:
+    - user_id
+    referencedTable: gk_user
+    referencedColumns:
+    - id
+    onDelete: Cascade
+  - name: FK_gk_resource_grant_permission_id
+    columns:
+    - permission_id
+    referencedTable: gk_permission
+    referencedColumns:
+    - id
+  - name: FK_gk_resource_grant_granted_by
+    columns:
+    - granted_by
+    referencedTable: gk_user
+    referencedColumns:
+    - id
+  primaryKey:
+    name: PK_gk_resource_grant
+    columns:
+    - id
+  uniqueConstraints:
+  - name: uq_resource_grant
+    columns:
+    - user_id
+    - resource_type
+    - resource_id
+    - permission_id
+- name: gk_policy
+  columns:
+  - name: id
+    type: Text
+  - name: name
+    type: Text
+  - name: description
+    type: Text
+  - name: resource_type
+    type: Text
+  - name: action
+    type: Text
+  - name: condition
+    type: Json
+  - name: effect
+    type: Text
+    defaultValue: "'allow'"
+  - name: priority
+    type: Int
+    defaultValue: 0
+  - name: is_active
+    type: Boolean
+    defaultValue: 1
+  - name: created_at
+    type: Text
+  indexes:
+  - name: idx_policy_name
+    columns:
+    - name
+    isUnique: true
+  primaryKey:
+    name: PK_gk_policy
+    columns:
+    - id

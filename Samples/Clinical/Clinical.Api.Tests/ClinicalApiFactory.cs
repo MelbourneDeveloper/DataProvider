@@ -1,7 +1,7 @@
-namespace Clinical.Api.Tests;
-
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+
+namespace Clinical.Api.Tests;
 
 /// <summary>
 /// WebApplicationFactory for Clinical.Api e2e testing.

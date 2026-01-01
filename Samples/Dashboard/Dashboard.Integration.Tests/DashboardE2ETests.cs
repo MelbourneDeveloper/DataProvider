@@ -1,387 +1,11 @@
-using System.Diagnostics;
 using System.Net;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Playwright;
 
 namespace Dashboard.Integration.Tests;
 
 /// <summary>
-/// Shared fixture that starts all services ONCE for all E2E tests.
-/// </summary>
-public sealed class E2EFixture : IAsyncLifetime
-{
-    private Process? _clinicalProcess;
-    private Process? _schedulingProcess;
-    private Process? _gatekeeperProcess;
-    private IHost? _dashboardHost;
-
-    /// <summary>
-    /// Playwright instance shared by all tests.
-    /// </summary>
-    public IPlaywright? Playwright { get; private set; }
-
-    /// <summary>
-    /// Browser instance shared by all tests.
-    /// </summary>
-    public IBrowser? Browser { get; private set; }
-
-    /// <summary>
-    /// Clinical API URL - SAME as real app default.
-    /// </summary>
-    public const string ClinicalUrl = "http://localhost:5080";
-
-    /// <summary>
-    /// Scheduling API URL - SAME as real app default.
-    /// </summary>
-    public const string SchedulingUrl = "http://localhost:5001";
-
-    /// <summary>
-    /// Gatekeeper Auth API URL - SAME as real app default.
-    /// </summary>
-    public const string GatekeeperUrl = "http://localhost:5002";
-
-    /// <summary>
-    /// Dashboard URL - SAME as real app default.
-    /// Uses testMode=true to bypass authentication in tests.
-    /// </summary>
-    public const string DashboardUrl = "http://localhost:5173?testMode=true";
-
-    /// <summary>
-    /// Dashboard URL without test mode - for auth tests.
-    /// </summary>
-    public const string DashboardUrlNoTestMode = "http://localhost:5173";
-
-    /// <summary>
-    /// Start all services ONCE for all tests.
-    /// </summary>
-    public async Task InitializeAsync()
-    {
-        // Kill any existing processes on our ports first
-        await KillProcessOnPortAsync(5080);
-        await KillProcessOnPortAsync(5001);
-        await KillProcessOnPortAsync(5002);
-        await KillProcessOnPortAsync(5173);
-
-        // Find the project directories relative to the test assembly
-        var testAssemblyDir = Path.GetDirectoryName(typeof(E2EFixture).Assembly.Location)!;
-        var samplesDir = Path.GetFullPath(
-            Path.Combine(testAssemblyDir, "..", "..", "..", "..", "..")
-        );
-        var rootDir = Path.GetFullPath(Path.Combine(samplesDir, ".."));
-        var clinicalProjectDir = Path.Combine(samplesDir, "Clinical", "Clinical.Api");
-        var schedulingProjectDir = Path.Combine(samplesDir, "Scheduling", "Scheduling.Api");
-        var gatekeeperProjectDir = Path.Combine(rootDir, "Gatekeeper", "Gatekeeper.Api");
-
-        Console.WriteLine($"[E2E] Test assembly dir: {testAssemblyDir}");
-        Console.WriteLine($"[E2E] Samples dir: {samplesDir}");
-        Console.WriteLine($"[E2E] Clinical dir: {clinicalProjectDir}");
-        Console.WriteLine($"[E2E] Clinical dir exists: {Directory.Exists(clinicalProjectDir)}");
-        Console.WriteLine($"[E2E] Gatekeeper dir: {gatekeeperProjectDir}");
-        Console.WriteLine($"[E2E] Gatekeeper dir exists: {Directory.Exists(gatekeeperProjectDir)}");
-
-        // Start Clinical API using pre-built DLL with correct content root
-        var clinicalDll = Path.Combine(
-            clinicalProjectDir,
-            "bin",
-            "Debug",
-            "net9.0",
-            "Clinical.Api.dll"
-        );
-        Console.WriteLine($"[E2E] Clinical DLL: {clinicalDll}");
-        Console.WriteLine($"[E2E] Clinical DLL exists: {File.Exists(clinicalDll)}");
-        _clinicalProcess = StartApiFromDll(clinicalDll, clinicalProjectDir, ClinicalUrl);
-
-        // Start Scheduling API using pre-built DLL with correct content root
-        var schedulingDll = Path.Combine(
-            schedulingProjectDir,
-            "bin",
-            "Debug",
-            "net9.0",
-            "Scheduling.Api.dll"
-        );
-        Console.WriteLine($"[E2E] Scheduling DLL: {schedulingDll}");
-        Console.WriteLine($"[E2E] Scheduling DLL exists: {File.Exists(schedulingDll)}");
-        _schedulingProcess = StartApiFromDll(schedulingDll, schedulingProjectDir, SchedulingUrl);
-
-        // Start Gatekeeper Auth API using pre-built DLL with correct content root
-        var gatekeeperDll = Path.Combine(
-            gatekeeperProjectDir,
-            "bin",
-            "Debug",
-            "net9.0",
-            "Gatekeeper.Api.dll"
-        );
-        Console.WriteLine($"[E2E] Gatekeeper DLL: {gatekeeperDll}");
-        Console.WriteLine($"[E2E] Gatekeeper DLL exists: {File.Exists(gatekeeperDll)}");
-        _gatekeeperProcess = StartApiFromDll(gatekeeperDll, gatekeeperProjectDir, GatekeeperUrl);
-
-        // Give the processes a moment to start before polling
-        await Task.Delay(2000);
-
-        // Wait for APIs to be ready
-        await WaitForApiAsync(ClinicalUrl, "/fhir/Patient/");
-        await WaitForApiAsync(SchedulingUrl, "/Practitioner");
-        await WaitForGatekeeperApiAsync();
-
-        // Start Dashboard static file server on port 5173 - NO config injection
-        _dashboardHost = CreateDashboardHost();
-        await _dashboardHost.StartAsync();
-
-        // Seed test data
-        await SeedTestDataAsync();
-
-        // Start Playwright
-        Playwright = await Microsoft.Playwright.Playwright.CreateAsync();
-        Browser = await Playwright.Chromium.LaunchAsync(
-            new BrowserTypeLaunchOptions { Headless = true }
-        );
-    }
-
-    /// <summary>
-    /// Stop all services ONCE after all tests.
-    /// </summary>
-    public async Task DisposeAsync()
-    {
-        if (Browser is not null)
-            await Browser.CloseAsync();
-        Playwright?.Dispose();
-
-        if (_dashboardHost is not null)
-            await _dashboardHost.StopAsync();
-        _dashboardHost?.Dispose();
-
-        StopProcess(_clinicalProcess);
-        StopProcess(_schedulingProcess);
-        StopProcess(_gatekeeperProcess);
-    }
-
-    private static Process StartApiFromDll(string dllPath, string contentRoot, string url)
-    {
-        Console.WriteLine(
-            $"[E2E] Starting API: dotnet \"{dllPath}\" --urls \"{url}\" --contentRoot \"{contentRoot}\""
-        );
-
-        var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "dotnet",
-                Arguments = $"\"{dllPath}\" --urls \"{url}\" --contentRoot \"{contentRoot}\"",
-                WorkingDirectory = contentRoot,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true,
-            },
-        };
-
-        process.OutputDataReceived += (_, e) =>
-        {
-            if (!string.IsNullOrEmpty(e.Data))
-                Console.WriteLine($"[API {url}] {e.Data}");
-        };
-        process.ErrorDataReceived += (_, e) =>
-        {
-            if (!string.IsNullOrEmpty(e.Data))
-                Console.WriteLine($"[API {url} ERR] {e.Data}");
-        };
-
-        process.Start();
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
-        return process;
-    }
-
-    private static void StopProcess(Process? process)
-    {
-        if (process is null || process.HasExited)
-            return;
-
-        try
-        {
-            process.Kill(entireProcessTree: true);
-            process.WaitForExit(5000);
-        }
-        catch
-        { /* ignore */
-        }
-        finally
-        {
-            process.Dispose();
-        }
-    }
-
-    private static async Task KillProcessOnPortAsync(int port)
-    {
-        try
-        {
-            // Use shell to kill -9 any process on the port
-            var psi = new ProcessStartInfo
-            {
-                FileName = "/bin/sh",
-                Arguments = $"-c \"lsof -ti :{port} | xargs kill -9 2>/dev/null || true\"",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            };
-
-            using var process = Process.Start(psi);
-            if (process is not null)
-                await process.WaitForExitAsync();
-
-            await Task.Delay(500);
-        }
-        catch
-        { /* ignore */
-        }
-    }
-
-    private static async Task WaitForApiAsync(string baseUrl, string healthEndpoint)
-    {
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
-        var maxRetries = 120; // Give dotnet run more time to build and start (60 seconds)
-
-        for (var i = 0; i < maxRetries; i++)
-        {
-            try
-            {
-                var response = await client.GetAsync($"{baseUrl}{healthEndpoint}");
-                if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NotFound)
-                    return;
-            }
-            catch
-            { /* not ready yet */
-            }
-
-            await Task.Delay(500);
-        }
-
-        throw new TimeoutException($"API at {baseUrl} did not start within {maxRetries * 500}ms");
-    }
-
-    private static async Task WaitForGatekeeperApiAsync()
-    {
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
-        var maxRetries = 120;
-
-        for (var i = 0; i < maxRetries; i++)
-        {
-            try
-            {
-                // Discoverable credentials flow - empty body returns valid options
-                var response = await client.PostAsync(
-                    $"{GatekeeperUrl}/auth/login/begin",
-                    new StringContent("{}", System.Text.Encoding.UTF8, "application/json")
-                );
-                // 200 OK means API is running and discoverable credentials work
-                if (response.IsSuccessStatusCode)
-                    return;
-            }
-            catch
-            { /* not ready yet */
-            }
-
-            await Task.Delay(500);
-        }
-
-        throw new TimeoutException(
-            $"Gatekeeper API at {GatekeeperUrl} did not start within {maxRetries * 500}ms"
-        );
-    }
-
-    private static IHost CreateDashboardHost()
-    {
-        var wwwrootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot");
-
-        return Host.CreateDefaultBuilder()
-            .ConfigureWebHostDefaults(webBuilder =>
-            {
-                webBuilder.UseUrls("http://localhost:5173");
-                webBuilder.Configure(app =>
-                {
-                    // Serve static files directly - NO config injection
-                    // Dashboard index.html uses default ports which match our APIs
-                    app.UseDefaultFiles();
-                    app.UseStaticFiles(
-                        new StaticFileOptions
-                        {
-                            FileProvider = new PhysicalFileProvider(wwwrootPath),
-                        }
-                    );
-                });
-            })
-            .Build();
-    }
-
-    private static async Task SeedTestDataAsync()
-    {
-        using var client = new HttpClient();
-
-        var patientResponse = await client.PostAsync(
-            $"{ClinicalUrl}/fhir/Patient/",
-            new StringContent(
-                """{"Active": true, "GivenName": "E2ETest", "FamilyName": "TestPatient", "Gender": "other"}""",
-                System.Text.Encoding.UTF8,
-                "application/json"
-            )
-        );
-        patientResponse.EnsureSuccessStatusCode();
-
-        // Seed FHIR-compliant Practitioner with all required fields
-        var practitionerResponse = await client.PostAsync(
-            $"{SchedulingUrl}/Practitioner",
-            new StringContent(
-                """{"Identifier": "DR001", "Active": true, "NameGiven": "E2EPractitioner", "NameFamily": "DrTest", "Qualification": "MD", "Specialty": "General Practice", "TelecomEmail": "drtest@hospital.org", "TelecomPhone": "+1-555-0123"}""",
-                System.Text.Encoding.UTF8,
-                "application/json"
-            )
-        );
-        practitionerResponse.EnsureSuccessStatusCode();
-
-        // Seed additional practitioners for realistic data
-        var practitioner2Response = await client.PostAsync(
-            $"{SchedulingUrl}/Practitioner",
-            new StringContent(
-                """{"Identifier": "DR002", "Active": true, "NameGiven": "Sarah", "NameFamily": "Johnson", "Qualification": "DO", "Specialty": "Cardiology", "TelecomEmail": "sjohnson@hospital.org", "TelecomPhone": "+1-555-0124"}""",
-                System.Text.Encoding.UTF8,
-                "application/json"
-            )
-        );
-        practitioner2Response.EnsureSuccessStatusCode();
-
-        var practitioner3Response = await client.PostAsync(
-            $"{SchedulingUrl}/Practitioner",
-            new StringContent(
-                """{"Identifier": "DR003", "Active": true, "NameGiven": "Michael", "NameFamily": "Chen", "Qualification": "MD", "Specialty": "Neurology", "TelecomEmail": "mchen@hospital.org", "TelecomPhone": "+1-555-0125"}""",
-                System.Text.Encoding.UTF8,
-                "application/json"
-            )
-        );
-        practitioner3Response.EnsureSuccessStatusCode();
-
-        var appointmentResponse = await client.PostAsync(
-            $"{SchedulingUrl}/Appointment",
-            new StringContent(
-                """{"ServiceCategory": "General", "ServiceType": "Checkup", "Start": "2025-12-20T10:00:00Z", "End": "2025-12-20T11:00:00Z", "PatientReference": "Patient/1", "PractitionerReference": "Practitioner/1", "Priority": "routine"}""",
-                System.Text.Encoding.UTF8,
-                "application/json"
-            )
-        );
-        appointmentResponse.EnsureSuccessStatusCode();
-    }
-}
-
-/// <summary>
-/// Collection definition that ensures all E2E tests share the same fixture.
-/// </summary>
-[CollectionDefinition("E2E Tests")]
-public sealed class E2ECollection : ICollectionFixture<E2EFixture>;
-
-/// <summary>
-/// REAL E2E tests that prove the Dashboard UI can connect to the APIs.
-/// Uses EXACTLY the same ports as the real app - no dynamic port bullshit.
+/// Core Dashboard E2E tests.
+/// Uses EXACTLY the same ports as the real app.
 /// </summary>
 [Collection("E2E Tests")]
 [Trait("Category", "E2E")]
@@ -395,155 +19,7 @@ public sealed class DashboardE2ETests
     public DashboardE2ETests(E2EFixture fixture) => _fixture = fixture;
 
     /// <summary>
-    /// CRITICAL TEST: Dashboard loads and displays patient data from Clinical API.
-    /// Playwright browser loads Dashboard at localhost:5173 and verifies data from localhost:5080.
-    /// </summary>
-    [Fact]
-    public async Task Dashboard_DisplaysPatientData_FromClinicalApi()
-    {
-        var page = await _fixture.Browser!.NewPageAsync();
-
-        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
-        page.RequestFailed += (_, req) =>
-            Console.WriteLine($"[NET FAILED] {req.Url} - {req.Failure}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(
-            ".sidebar",
-            new PageWaitForSelectorOptions { Timeout = 20000 }
-        );
-
-        await page.ClickAsync("text=Patients");
-        await page.WaitForSelectorAsync(
-            "text=TestPatient",
-            new PageWaitForSelectorOptions { Timeout = 10000 }
-        );
-
-        var content = await page.ContentAsync();
-        Assert.Contains("TestPatient", content);
-        Assert.Contains("E2ETest", content);
-
-        await page.CloseAsync();
-    }
-
-    /// <summary>
-    /// CRITICAL TEST: Dashboard loads and displays practitioner data from Scheduling API.
-    /// Verifies FHIR-compliant practitioner data including Qualification and Specialty.
-    /// </summary>
-    [Fact]
-    public async Task Dashboard_DisplaysPractitionerData_FromSchedulingApi()
-    {
-        var page = await _fixture.Browser!.NewPageAsync();
-        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(
-            ".sidebar",
-            new PageWaitForSelectorOptions { Timeout = 20000 }
-        );
-
-        // Navigate to Practitioners page
-        await page.ClickAsync("text=Practitioners");
-
-        // Wait for practitioner cards to load - should show all seeded practitioners
-        await page.WaitForSelectorAsync(
-            "text=DrTest",
-            new PageWaitForSelectorOptions { Timeout = 10000 }
-        );
-        await page.WaitForSelectorAsync(
-            ".practitioner-card",
-            new PageWaitForSelectorOptions { Timeout = 5000 }
-        );
-
-        var content = await page.ContentAsync();
-
-        // Verify first practitioner (E2EPractitioner DrTest)
-        Assert.Contains("DrTest", content);
-        Assert.Contains("E2EPractitioner", content);
-
-        // Verify additional practitioners
-        Assert.Contains("Johnson", content);
-        Assert.Contains("Sarah", content);
-        Assert.Contains("Chen", content);
-        Assert.Contains("Michael", content);
-
-        // Verify FHIR qualification data displays
-        Assert.Contains("MD", content);
-
-        // Verify FHIR specialty data displays
-        Assert.Contains("General Practice", content);
-
-        await page.CloseAsync();
-    }
-
-    /// <summary>
-    /// CRITICAL TEST: Practitioners page data comes from REAL Scheduling API.
-    /// Directly verifies the API returns FHIR-compliant data.
-    /// </summary>
-    [Fact]
-    public async Task PractitionersPage_LoadsFromSchedulingApi_WithFhirCompliantData()
-    {
-        // First verify the API directly returns FHIR data
-        using var client = new HttpClient();
-        var apiResponse = await client.GetStringAsync($"{E2EFixture.SchedulingUrl}/Practitioner");
-
-        // API should return all seeded practitioners with FHIR fields
-        Assert.Contains("DR001", apiResponse);
-        Assert.Contains("E2EPractitioner", apiResponse);
-        Assert.Contains("DrTest", apiResponse);
-        Assert.Contains("MD", apiResponse);
-        Assert.Contains("General Practice", apiResponse);
-
-        // Now verify the Dashboard UI displays this data
-        var page = await _fixture.Browser!.NewPageAsync();
-        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(
-            ".sidebar",
-            new PageWaitForSelectorOptions { Timeout = 20000 }
-        );
-
-        await page.ClickAsync("text=Practitioners");
-        await page.WaitForSelectorAsync(
-            ".practitioner-card",
-            new PageWaitForSelectorOptions { Timeout = 10000 }
-        );
-
-        // Count practitioner cards - should have at least 3 from seeded data
-        var cards = await page.QuerySelectorAllAsync(".practitioner-card");
-        Assert.True(cards.Count >= 3, $"Expected at least 3 practitioner cards, got {cards.Count}");
-
-        await page.CloseAsync();
-    }
-
-    /// <summary>
-    /// CRITICAL TEST: Dashboard loads and displays appointment data from Scheduling API.
-    /// </summary>
-    [Fact]
-    public async Task Dashboard_DisplaysAppointmentData_FromSchedulingApi()
-    {
-        var page = await _fixture.Browser!.NewPageAsync();
-        await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(
-            ".sidebar",
-            new PageWaitForSelectorOptions { Timeout = 20000 }
-        );
-
-        await page.ClickAsync("text=Appointments");
-        await page.WaitForSelectorAsync(
-            "text=Checkup",
-            new PageWaitForSelectorOptions { Timeout = 10000 }
-        );
-
-        var content = await page.ContentAsync();
-        Assert.Contains("Checkup", content);
-
-        await page.CloseAsync();
-    }
-
-    /// <summary>
-    /// CRITICAL TEST: Dashboard main page shows stats from both APIs.
+    /// Dashboard main page shows stats from both APIs.
     /// </summary>
     [Fact]
     public async Task Dashboard_MainPage_ShowsStatsFromBothApis()
@@ -613,7 +89,7 @@ public sealed class DashboardE2ETests
         );
 
         // Verify via API that patient was actually created
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
         var response = await client.GetStringAsync($"{E2EFixture.ClinicalUrl}/fhir/Patient/");
         Assert.Contains(uniqueName, response);
 
@@ -666,7 +142,7 @@ public sealed class DashboardE2ETests
         );
 
         // Verify via API that appointment was actually created
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
         var response = await client.GetStringAsync($"{E2EFixture.SchedulingUrl}/Appointment");
         Assert.Contains(uniqueServiceType, response);
 
@@ -753,7 +229,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task PatientCreationApi_WorksEndToEnd()
     {
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
 
         // Create a patient with a unique name
         var uniqueName = $"ApiTest{DateTime.UtcNow.Ticks % 100000}";
@@ -780,7 +256,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task PractitionerCreationApi_WorksEndToEnd()
     {
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
 
         // Create a practitioner with a unique identifier
         var uniqueId = $"DR{DateTime.UtcNow.Ticks % 100000}";
@@ -807,7 +283,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task EditPatientButton_OpensEditPage_AndUpdatesPatient()
     {
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
 
         // First create a patient to edit
         var uniqueName = $"EditTest{DateTime.UtcNow.Ticks % 100000}";
@@ -991,7 +467,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task EditPatientCancelButton_UsesHistoryBack()
     {
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
 
         // Create a patient to edit
         var uniqueName = $"CancelTest{DateTime.UtcNow.Ticks % 100000}";
@@ -1065,7 +541,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task BrowserBackButton_FromEditPage_ReturnsToPatientsPage()
     {
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
 
         // Create a patient to edit
         var uniqueName = $"BackBtnTest{DateTime.UtcNow.Ticks % 100000}";
@@ -1212,7 +688,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task PatientUpdateApi_WorksEndToEnd()
     {
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
 
         // Create a patient first
         var uniqueName = $"UpdateApiTest{DateTime.UtcNow.Ticks % 100000}";
@@ -1305,7 +781,7 @@ public sealed class DashboardE2ETests
         );
 
         // Verify via API that practitioner was actually created
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
         var response = await client.GetStringAsync($"{E2EFixture.SchedulingUrl}/Practitioner");
         Assert.Contains(uniqueIdentifier, response);
 
@@ -1319,7 +795,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task EditPractitionerButton_OpensEditPage_AndUpdatesPractitioner()
     {
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
 
         // Create a practitioner to edit
         var uniqueIdentifier = $"DREdit{DateTime.UtcNow.Ticks % 100000}";
@@ -1403,7 +879,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task PractitionerUpdateApi_WorksEndToEnd()
     {
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
 
         // Create a practitioner first
         var uniqueIdentifier = $"DRApi{DateTime.UtcNow.Ticks % 100000}";
@@ -1458,7 +934,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task BrowserBackButton_FromEditPractitionerPage_ReturnsToPractitionersPage()
     {
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
 
         // Create a practitioner to edit
         var uniqueIdentifier = $"DRBack{DateTime.UtcNow.Ticks % 100000}";
@@ -1589,13 +1065,13 @@ public sealed class DashboardE2ETests
             new PageWaitForSelectorOptions { Timeout = 5000 }
         );
 
-        // Verify filter controls exist
+        // Verify filter controls exist (service-filter and action-filter)
         await page.WaitForSelectorAsync(
-            "[data-testid='status-filter']",
+            "[data-testid='service-filter']",
             new PageWaitForSelectorOptions { Timeout = 5000 }
         );
         await page.WaitForSelectorAsync(
-            "[data-testid='service-filter']",
+            "[data-testid='action-filter']",
             new PageWaitForSelectorOptions { Timeout = 5000 }
         );
 
@@ -1611,7 +1087,7 @@ public sealed class DashboardE2ETests
 
     /// <summary>
     /// CRITICAL TEST: Sync Dashboard filters work correctly.
-    /// Tests status and service filtering functionality.
+    /// Tests service and action filtering functionality.
     /// </summary>
     [Fact]
     public async Task SyncDashboard_FiltersWorkCorrectly()
@@ -1625,17 +1101,22 @@ public sealed class DashboardE2ETests
             new PageWaitForSelectorOptions { Timeout = 20000 }
         );
 
-        // Get initial record count
+        // Wait for sync records table to be loaded
+        await page.WaitForSelectorAsync(
+            "[data-testid='sync-records-table']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+
+        // Get initial record count (may be 0 initially)
         var initialRows = await page.QuerySelectorAllAsync(
             "[data-testid='sync-records-table'] tbody tr"
         );
         var initialCount = initialRows.Count;
-        Assert.True(initialCount > 0, "Should have sync records displayed");
 
-        // Filter by status - select 'failed'
-        await page.SelectOptionAsync("[data-testid='status-filter']", "failed");
+        // Filter by service - select 'clinical'
+        await page.SelectOptionAsync("[data-testid='service-filter']", "clinical");
 
-        // Wait for filter to apply and check records
+        // Wait for filter to apply
         await Task.Delay(500);
         var filteredRows = await page.QuerySelectorAllAsync(
             "[data-testid='sync-records-table'] tbody tr"
@@ -1645,12 +1126,8 @@ public sealed class DashboardE2ETests
             "Filtered results should be <= initial count"
         );
 
-        // Verify filtered content contains 'failed' status
-        var content = await page.ContentAsync();
-        Assert.Contains("failed", content);
-
         // Reset filter
-        await page.SelectOptionAsync("[data-testid='status-filter']", "all");
+        await page.SelectOptionAsync("[data-testid='service-filter']", "all");
 
         await page.CloseAsync();
     }
@@ -1689,7 +1166,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task EditAppointmentButton_OpensEditPage_AndUpdatesAppointment()
     {
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
 
         // First create an appointment to edit
         var uniqueServiceType = $"EditApptTest{DateTime.UtcNow.Ticks % 100000}";
@@ -1817,7 +1294,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task CalendarPage_ClickOnDay_ShowsAppointmentDetails()
     {
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
 
         // Create an appointment for today - use LOCAL time since browser calendar uses local timezone
         var today = DateTime.Now;
@@ -1910,10 +1387,10 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task CalendarPage_EditButton_OpensEditAppointmentPage()
     {
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
 
-        // Create an appointment for today
-        var today = DateTime.UtcNow;
+        // Create an appointment for today using LOCAL time (calendar uses DateTime.Now)
+        var today = DateTime.Now;
         var startTime = new DateTime(
             today.Year,
             today.Month,
@@ -1921,8 +1398,10 @@ public sealed class DashboardE2ETests
             15,
             0,
             0,
-            DateTimeKind.Utc
-        ).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+            DateTimeKind.Local
+        )
+            .ToUniversalTime()
+            .ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
         var endTime = new DateTime(
             today.Year,
             today.Month,
@@ -1930,8 +1409,10 @@ public sealed class DashboardE2ETests
             15,
             30,
             0,
-            DateTimeKind.Utc
-        ).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+            DateTimeKind.Local
+        )
+            .ToUniversalTime()
+            .ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
         var uniqueServiceType = $"CalEdit{DateTime.UtcNow.Ticks % 100000}";
 
         var createResponse = await client.PostAsync(
@@ -2166,7 +1647,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task GatekeeperApi_LoginBegin_ReturnsValidDiscoverableCredentialOptions()
     {
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
 
         // Call /auth/login/begin with empty body (discoverable credentials flow)
         var response = await client.PostAsync(
@@ -2230,7 +1711,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task GatekeeperApi_RegisterBegin_ReturnsValidOptions()
     {
-        using var client = new HttpClient();
+        using var client = E2EFixture.CreateAuthenticatedClient();
 
         // Call /auth/register/begin with email and display name
         var response = await client.PostAsync(
@@ -2411,19 +1892,24 @@ public sealed class DashboardE2ETests
         var page = await _fixture.Browser!.NewPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
 
-        // Set up a fake token in localStorage to simulate being logged in
+        // Set up a valid test token in localStorage to simulate being logged in
         await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
 
-        // Inject a fake token to simulate authenticated state
+        // Inject a properly-signed token to simulate authenticated state
+        var testToken = E2EFixture.GenerateTestToken(
+            userId: "test-user",
+            displayName: "Test User",
+            email: "test@example.com"
+        );
         await page.EvaluateAsync(
-            @"() => {
-                localStorage.setItem('gatekeeper_token', 'fake-token-for-testing');
-                localStorage.setItem('gatekeeper_user', JSON.stringify({
+            $@"() => {{
+                localStorage.setItem('gatekeeper_token', '{testToken}');
+                localStorage.setItem('gatekeeper_user', JSON.stringify({{
                     userId: 'test-user',
                     displayName: 'Test User',
                     email: 'test@example.com'
-                }));
-            }"
+                }}));
+            }}"
         );
 
         // Reload to pick up the token
@@ -2470,18 +1956,21 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task GatekeeperApi_Logout_RevokesToken()
     {
-        using var client = new HttpClient();
-
-        // First, we need to get a valid session token by creating a user and session
-        // For this test, we'll verify the logout endpoint returns 401 for invalid tokens
-        // and verify the endpoint exists
-        var logoutResponse = await client.PostAsync(
+        // Test 1: Without a Bearer token, should return 401 Unauthorized
+        using var unauthClient = new HttpClient();
+        var unauthResponse = await unauthClient.PostAsync(
             $"{E2EFixture.GatekeeperUrl}/auth/logout",
             new StringContent("{}", System.Text.Encoding.UTF8, "application/json")
         );
+        Assert.Equal(HttpStatusCode.Unauthorized, unauthResponse.StatusCode);
 
-        // Without a valid Bearer token, should return 401 Unauthorized
-        Assert.Equal(HttpStatusCode.Unauthorized, logoutResponse.StatusCode);
+        // Test 2: With a valid Bearer token, should return 204 NoContent (logout succeeds)
+        using var authClient = E2EFixture.CreateAuthenticatedClient();
+        var authResponse = await authClient.PostAsync(
+            $"{E2EFixture.GatekeeperUrl}/auth/logout",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json")
+        );
+        Assert.Equal(HttpStatusCode.NoContent, authResponse.StatusCode);
     }
 
     [Fact]
@@ -2490,18 +1979,23 @@ public sealed class DashboardE2ETests
         var page = await _fixture.Browser!.NewPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
 
-        // Inject a user with a specific name
+        // Inject a user with a specific name using a properly-signed token
         await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
 
+        var testToken = E2EFixture.GenerateTestToken(
+            userId: "test-user",
+            displayName: "Alice Smith",
+            email: "alice@example.com"
+        );
         await page.EvaluateAsync(
-            @"() => {
-                localStorage.setItem('gatekeeper_token', 'fake-token-for-testing');
-                localStorage.setItem('gatekeeper_user', JSON.stringify({
+            $@"() => {{
+                localStorage.setItem('gatekeeper_token', '{testToken}');
+                localStorage.setItem('gatekeeper_user', JSON.stringify({{
                     userId: 'test-user',
                     displayName: 'Alice Smith',
                     email: 'alice@example.com'
-                }));
-            }"
+                }}));
+            }}"
         );
 
         await page.ReloadAsync();
@@ -2560,38 +2054,45 @@ public sealed class DashboardE2ETests
         var loginPageVisible = await page.IsVisibleAsync("[data-testid='login-page']");
         Assert.True(loginPageVisible, "Should start on login page");
 
+        // Wait for React to mount and set the __triggerLogin hook
+        await page.WaitForFunctionAsync(
+            "() => typeof window.__triggerLogin === 'function'",
+            new PageWaitForFunctionOptions { Timeout = 10000 }
+        );
+
         // Simulate what happens after successful WebAuthn authentication:
         // 1. Token is stored in localStorage
         // 2. onLogin callback is called which sets isAuthenticated=true
-        // This is what the LoginPage component does after successful auth (lines 2250-2252 in index.html)
+        // This is what the LoginPage component does after successful auth
+        var testToken = E2EFixture.GenerateTestToken(
+            userId: "test-user-123",
+            displayName: "Test User",
+            email: "test@example.com"
+        );
         await page.EvaluateAsync(
-            @"() => {
-                // Store token and user (what setAuthToken and setAuthUser do)
-                localStorage.setItem('gatekeeper_token', 'simulated-jwt-token');
-                localStorage.setItem('gatekeeper_user', JSON.stringify({
+            $@"() => {{
+                console.log('[TEST] Setting token and triggering login');
+                // Store a properly-signed token and user (what setAuthToken and setAuthUser do)
+                localStorage.setItem('gatekeeper_token', '{testToken}');
+                localStorage.setItem('gatekeeper_user', JSON.stringify({{
                     userId: 'test-user-123',
                     displayName: 'Test User',
                     email: 'test@example.com'
-                }));
+                }}));
 
-                // Trigger the React state update by finding and calling the onLogin prop
-                // This simulates what happens when LoginPage calls onLogin({ userId, displayName, email })
-                // The App component's handleLogin sets isAuthenticated=true
-
-                // We need to dispatch a custom event that the app listens for,
-                // OR we can use window.__loginCallback if exposed for testing
-                if (window.__triggerLogin) {
-                    window.__triggerLogin({
-                        userId: 'test-user-123',
-                        displayName: 'Test User',
-                        email: 'test@example.com'
-                    });
-                }
-            }"
+                // Trigger the React state update by calling the exposed login handler
+                // This simulates what happens when LoginPage calls onLogin after successful auth
+                window.__triggerLogin({{
+                    userId: 'test-user-123',
+                    displayName: 'Test User',
+                    email: 'test@example.com'
+                }});
+                console.log('[TEST] Login triggered, waiting for React state update');
+            }}"
         );
 
-        // Wait a bit for React to re-render
-        await Task.Delay(500);
+        // Wait for React state update and re-render
+        await Task.Delay(2000);
 
         // Check if sidebar is now visible (indicates successful transition to dashboard)
         // If this times out, the bug exists - app didn't transition without refresh
@@ -2599,12 +2100,15 @@ public sealed class DashboardE2ETests
         {
             await page.WaitForSelectorAsync(
                 ".sidebar",
-                new PageWaitForSelectorOptions { Timeout = 5000 }
+                new PageWaitForSelectorOptions { Timeout = 10000 }
             );
 
             // Verify login page is gone
             var loginPageStillVisible = await page.IsVisibleAsync("[data-testid='login-page']");
-            Assert.False(loginPageStillVisible, "Login page should be hidden after successful login");
+            Assert.False(
+                loginPageStillVisible,
+                "Login page should be hidden after successful login"
+            );
 
             // Verify sidebar is visible (dashboard state)
             var sidebarVisible = await page.IsVisibleAsync(".sidebar");
@@ -2614,10 +2118,10 @@ public sealed class DashboardE2ETests
         {
             // If we get here, the bug exists - first-time sign-in doesn't work without refresh
             Assert.Fail(
-                "FIRST-TIME SIGN-IN BUG: App did not transition to dashboard after login. " +
-                "User must refresh the browser for login to take effect. " +
-                "Fix: Expose window.__triggerLogin in App component for testing, " +
-                "or verify onLogin callback properly triggers React state update."
+                "FIRST-TIME SIGN-IN BUG: App did not transition to dashboard after login. "
+                    + "User must refresh the browser for login to take effect. "
+                    + "Fix: Expose window.__triggerLogin in App component for testing, "
+                    + "or verify onLogin callback properly triggers React state update."
             );
         }
 

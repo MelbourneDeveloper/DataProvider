@@ -8,7 +8,7 @@
     -->
     <OutputType>Library</OutputType>
     <RootNamespace>Sync.Http</RootNamespace>
-    <NoWarn>$(NoWarn);CA1848;CA1515;CA1307;CA2007;EPC13;CS1591</NoWarn>
+    <NoWarn>$(NoWarn);CA1515;CA1307;CA2007;EPC13;CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

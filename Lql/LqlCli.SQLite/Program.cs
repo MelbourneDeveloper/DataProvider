@@ -13,7 +13,7 @@ using LqlStatementOk = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Ok<
 using StringSqlError = Outcome.Result<string, Selecta.SqlError>.Error<string, Selecta.SqlError>;
 using StringSqlOk = Outcome.Result<string, Selecta.SqlError>.Ok<string, Selecta.SqlError>;
 
-namespace LqlCli;
+namespace LqlCli.SQLite;
 
 /// <summary>
 /// LQL to SQLite CLI transpiler

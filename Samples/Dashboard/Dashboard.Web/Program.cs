@@ -1,9 +1,9 @@
+using Dashboard.Api;
+using Dashboard.React;
+using H5;
+
 namespace Dashboard
 {
-    using Dashboard.Api;
-    using Dashboard.React;
-    using H5;
-
     /// <summary>
     /// Application entry point.
     /// </summary>
@@ -20,6 +20,15 @@ namespace Dashboard
             var schedulingUrl = GetConfigValue("SCHEDULING_API_URL", "http://localhost:5001");
 
             ApiClient.Configure(clinicalUrl, schedulingUrl);
+
+            // Set authentication token - single token with both clinician and scheduler roles
+            // Token is inlined to avoid H5 static initialization timing issues
+            // All-zeros signing key, expires 2035
+            var authToken = GetConfigValue(
+                "AUTH_TOKEN",
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYXNoYm9hcmQtdXNlciIsImp0aSI6IjE1MTMwYTg0LTY4NTktNGNmMy05MjA3LTMyMGJhYWRiNzhjNSIsInJvbGVzIjpbImNsaW5pY2lhbiIsInNjaGVkdWxlciJdLCJleHAiOjIwODE5MjIxMDQsImlhdCI6MTc2NjM4OTMwNH0.mk66XyKaLWukzZOmGNwss74lSlXobt6Em0NoEbXRdKU"
+            );
+            ApiClient.SetTokens(authToken, authToken);
 
             // Log startup
             Log("Healthcare Dashboard starting...");

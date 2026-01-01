@@ -1,5 +1,4 @@
 global using Generated;
-global using Outcome;
 global using Selecta;
 // Type aliases for Result types to reduce verbosity in DataProvider.Example
 global using BasicOrderListError = Outcome.Result<
@@ -32,6 +31,8 @@ global using CustomerReadOnlyListOk = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<Generated.Customer>,
     Selecta.SqlError
 >.Ok<System.Collections.Generic.IReadOnlyList<Generated.Customer>, Selecta.SqlError>;
+global using IntSqlError = Outcome.Result<int, Selecta.SqlError>.Error<int, Selecta.SqlError>;
+global using IntSqlOk = Outcome.Result<int, Selecta.SqlError>.Ok<int, Selecta.SqlError>;
 global using InvoiceListError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.Invoice>,
     Selecta.SqlError
@@ -40,8 +41,6 @@ global using InvoiceListOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.Invoice>,
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.Invoice>, Selecta.SqlError>;
-global using LongSqlError = Outcome.Result<long, Selecta.SqlError>.Error<long, Selecta.SqlError>;
-global using LongSqlOk = Outcome.Result<long, Selecta.SqlError>.Ok<long, Selecta.SqlError>;
 global using OrderListError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.Order>,
     Selecta.SqlError

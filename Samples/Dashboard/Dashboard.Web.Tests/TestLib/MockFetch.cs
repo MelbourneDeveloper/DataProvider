@@ -1,10 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using H5;
+
 namespace Dashboard.Tests.TestLib
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using H5;
-
     /// <summary>
     /// Mock fetch function factory for testing API calls.
     /// Intercepts HTTP requests and returns predefined responses.

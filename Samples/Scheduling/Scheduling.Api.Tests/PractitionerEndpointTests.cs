@@ -1,9 +1,9 @@
-namespace Scheduling.Api.Tests;
-
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Xunit;
+
+namespace Scheduling.Api.Tests;
 
 /// <summary>
 /// E2E tests for Practitioner FHIR endpoints - REAL database, NO mocks.
@@ -12,13 +12,20 @@ using Xunit;
 public sealed class PractitionerEndpointTests : IClassFixture<SchedulingApiFactory>
 {
     private readonly HttpClient _client;
+    private readonly string _authToken = TestTokenHelper.GenerateSchedulerToken();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PractitionerEndpointTests"/> class.
     /// </summary>
     /// <param name="factory">Shared factory instance.</param>
-    public PractitionerEndpointTests(SchedulingApiFactory factory) =>
+    public PractitionerEndpointTests(SchedulingApiFactory factory)
+    {
         _client = factory.CreateClient();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            _authToken
+        );
+    }
 
     #region CORS Tests - Dashboard Integration
 
@@ -27,6 +34,7 @@ public sealed class PractitionerEndpointTests : IClassFixture<SchedulingApiFacto
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "/Practitioner");
         request.Headers.Add("Origin", "http://localhost:5173");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
 
         var response = await _client.SendAsync(request);
 
@@ -77,6 +85,7 @@ public sealed class PractitionerEndpointTests : IClassFixture<SchedulingApiFacto
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "/Appointment");
         request.Headers.Add("Origin", "http://localhost:5173");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
 
         var response = await _client.SendAsync(request);
 

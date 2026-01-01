@@ -1,14 +1,14 @@
+using System;
+using System.Linq;
+using Dashboard.Api;
+using Dashboard.Components;
+using Dashboard.Models;
+using Dashboard.React;
+using static Dashboard.React.Elements;
+using static Dashboard.React.Hooks;
+
 namespace Dashboard.Pages
 {
-    using System;
-    using System.Linq;
-    using Dashboard.Api;
-    using Dashboard.Components;
-    using Dashboard.Models;
-    using Dashboard.React;
-    using static Dashboard.React.Elements;
-    using static Dashboard.React.Hooks;
-
     /// <summary>
     /// Calendar page state class.
     /// </summary>
@@ -401,7 +401,12 @@ namespace Dashboard.Pages
             return Span(className: dotClass);
         }
 
-        private static void SelectDay(CalendarState state, Action<CalendarState> setState, int day) => setState(
+        private static void SelectDay(
+            CalendarState state,
+            Action<CalendarState> setState,
+            int day
+        ) =>
+            setState(
                 new CalendarState
                 {
                     Appointments = state.Appointments,

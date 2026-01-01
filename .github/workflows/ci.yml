@@ -1,0 +1,257 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            ${{ env.DOTNET_VERSION }}
+
+      - name: Restore .NET tools
+        run: |
+          dotnet tool restore
+          # Verify h5 tool is available
+          dotnet tool run h5 --version || echo "h5 tool check (may fail if no version flag)"
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+  # Tests that only need SQLite (no Docker)
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - DataProvider/DataProvider.Tests
+          - DataProvider/DataProvider.Example.Tests
+          - Lql/Lql.Tests
+          - Lql/LqlCli.SQLite.Tests
+          - Migration/Migration.Tests
+          - Sync/Sync.Tests
+          - Sync/Sync.SQLite.Tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore ${{ matrix.project }}
+
+      - name: Test
+        run: dotnet test ${{ matrix.project }} --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-unit-${{ strategy.job-index }}
+          path: '**/TestResults/*.trx'
+
+  # API integration tests (SQLite, no Docker)
+  api-tests:
+    name: API Tests
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - Gatekeeper/Gatekeeper.Api.Tests
+          - Samples/Clinical/Clinical.Api.Tests
+          - Samples/Scheduling/Scheduling.Api.Tests
+          - Samples/Dashboard/Dashboard.Web.Tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            ${{ env.DOTNET_VERSION }}
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore ${{ matrix.project }}
+
+      - name: Test
+        run: dotnet test ${{ matrix.project }} --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-api-${{ strategy.job-index }}
+          path: '**/TestResults/*.trx'
+
+  # Tests that need Docker for Postgres (via Testcontainers)
+  postgres-tests:
+    name: Postgres Tests
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - Sync/Sync.Postgres.Tests
+          - Sync/Sync.Integration.Tests
+          - Sync/Sync.Http.Tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore ${{ matrix.project }}
+
+      - name: Test
+        run: dotnet test ${{ matrix.project }} --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        env:
+          # Testcontainers will automatically use the Docker daemon
+          TESTCONTAINERS_RYUK_DISABLED: false
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-postgres-${{ strategy.job-index }}
+          path: '**/TestResults/*.trx'
+
+  # Dashboard E2E tests (need Playwright browser)
+  e2e-tests:
+    name: Dashboard E2E Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            ${{ env.DOTNET_VERSION }}
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore Dashboard.Web
+        run: dotnet restore Samples/Dashboard/Dashboard.Web
+
+      - name: Build Dashboard.Web (downloads React vendor files)
+        run: dotnet build Samples/Dashboard/Dashboard.Web -c Release --no-restore
+
+      - name: Build Sync projects (required for Sync E2E tests)
+        run: |
+          dotnet build Samples/Clinical/Clinical.Sync -c Release
+          dotnet build Samples/Scheduling/Scheduling.Sync -c Release
+
+      - name: Build Integration Tests (includes wwwroot copy)
+        run: dotnet build Samples/Dashboard/Dashboard.Integration.Tests -c Release
+
+      - name: Install Playwright browsers
+        run: dotnet tool install --global Microsoft.Playwright.CLI && playwright install --with-deps chromium
+
+      - name: Verify wwwroot files
+        run: |
+          echo "=== Dashboard.Web wwwroot (source) ==="
+          ls -la Samples/Dashboard/Dashboard.Web/wwwroot/js/ || echo "Dashboard.Web js folder not found"
+          ls -la Samples/Dashboard/Dashboard.Web/wwwroot/js/vendor/ || echo "Dashboard.Web vendor folder not found"
+          echo "=== Integration Tests wwwroot (output) ==="
+          ls -la Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net9.0/wwwroot/js/ || echo "Integration Tests js folder not found"
+          ls -la Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net9.0/wwwroot/js/vendor/ || echo "Integration Tests vendor folder not found"
+
+      - name: Test
+        run: dotnet test Samples/Dashboard/Dashboard.Integration.Tests -c Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-e2e
+          path: '**/TestResults/*.trx'
+
+      - name: Upload Playwright traces
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: '**/playwright-traces/**'

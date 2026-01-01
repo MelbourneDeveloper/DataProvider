@@ -1,9 +1,9 @@
+using System;
+using System.Collections.Generic;
+using H5;
+
 namespace Dashboard.Tests.TestLib
 {
-    using System;
-    using System.Collections.Generic;
-    using H5;
-
     /// <summary>
     /// Assertion helpers for tests.
     /// </summary>

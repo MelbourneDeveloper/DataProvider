@@ -26,13 +26,15 @@ public sealed class DbTransactTests : IDisposable
         await CreateTestTable();
 
         // Act
+        var testId = Guid.NewGuid().ToString();
         await _connection.Transact(async tx =>
         {
             using var command = new SqliteCommand(
-                "INSERT INTO TestTable (Name) VALUES ('Test1')",
+                "INSERT INTO TestTable (Id, Name) VALUES (@id, 'Test1')",
                 _connection,
                 tx as SqliteTransaction
             );
+            command.Parameters.AddWithValue("@id", testId);
             await command.ExecuteNonQueryAsync().ConfigureAwait(false);
         });
 
@@ -59,13 +61,14 @@ public sealed class DbTransactTests : IDisposable
                 .Transact(async tx =>
                 {
                     using var command1 = new SqliteCommand(
-                        "INSERT INTO TestTable (Name) VALUES ('Test1')",
+                        "INSERT INTO TestTable (Id, Name) VALUES (@id, 'Test1')",
                         _connection,
                         tx as SqliteTransaction
                     );
+                    command1.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
                     await command1.ExecuteNonQueryAsync().ConfigureAwait(false);
 
-                    // This will fail due to constraint violation (assuming we make Name unique)
+                    // This will fail because InvalidTable doesn't exist
                     using var command2 = new SqliteCommand(
                         "INSERT INTO InvalidTable (Name) VALUES ('Test2')",
                         _connection,
@@ -93,19 +96,20 @@ public sealed class DbTransactTests : IDisposable
         await CreateTestTable();
 
         // Act
+        var testId = Guid.NewGuid().ToString();
         var result = await _connection.Transact(async tx =>
         {
             using var command = new SqliteCommand(
-                "INSERT INTO TestTable (Name) VALUES ('Test1'); SELECT last_insert_rowid();",
+                "INSERT INTO TestTable (Id, Name) VALUES (@id, 'Test1')",
                 _connection,
                 tx as SqliteTransaction
             );
-            var id = await command.ExecuteScalarAsync().ConfigureAwait(false);
-            return Convert.ToInt64(id, System.Globalization.CultureInfo.InvariantCulture);
+            command.Parameters.AddWithValue("@id", testId);
+            return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
         });
 
-        // Assert
-        Assert.Equal(1L, result);
+        // Assert - 1 row affected
+        Assert.Equal(1, result);
     }
 
     [Fact]
@@ -119,13 +123,14 @@ public sealed class DbTransactTests : IDisposable
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
             await _connection
-                .Transact<long>(async tx =>
+                .Transact<int>(async tx =>
                 {
                     using var command = new SqliteCommand(
-                        "INSERT INTO TestTable (Name) VALUES ('Test1')",
+                        "INSERT INTO TestTable (Id, Name) VALUES (@id, 'Test1')",
                         _connection,
                         tx as SqliteTransaction
                     );
+                    command.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
 
                     throw new InvalidOperationException("Test exception");
@@ -153,10 +158,11 @@ public sealed class DbTransactTests : IDisposable
         {
             await CreateTestTable(tx as SqliteTransaction).ConfigureAwait(false);
             using var command = new SqliteCommand(
-                "INSERT INTO TestTable (Name) VALUES ('Test1')",
+                "INSERT INTO TestTable (Id, Name) VALUES (@id, 'Test1')",
                 _connection,
                 tx as SqliteTransaction
             );
+            command.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
             await command.ExecuteNonQueryAsync().ConfigureAwait(false);
         });
 
@@ -226,7 +232,7 @@ public sealed class DbTransactTests : IDisposable
         using var command = new SqliteCommand(
             @"
             CREATE TABLE IF NOT EXISTS TestTable (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Id TEXT PRIMARY KEY,
                 Name TEXT NOT NULL
             )",
             _connection,

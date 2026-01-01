@@ -1,10 +1,10 @@
+using System;
+using System.Linq;
+using Dashboard.React;
+using static Dashboard.React.Elements;
+
 namespace Dashboard.Components
 {
-    using System;
-    using System.Linq;
-    using Dashboard.React;
-    using static Dashboard.React.Elements;
-
     /// <summary>
     /// Column definition class.
     /// </summary>
