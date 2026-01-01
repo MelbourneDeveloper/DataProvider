@@ -7,7 +7,7 @@ namespace DataProvider.Tests;
 /// <summary>
 /// Tests for DbConnectionExtensions methods to improve coverage
 /// </summary>
-public sealed class DbConnectionExtensionsTests : IDisposable
+internal sealed class DbConnectionExtensionsTests : IDisposable
 {
     private readonly SqliteConnection _connection;
 

@@ -13,7 +13,7 @@ namespace Lql.Tests;
 /// Tests for error handling in LQL to PostgreSQL transformation.
 /// Tests invalid syntax, malformed queries, and edge cases using Result types.
 /// </summary>
-public class LqlErrorHandlingTests
+internal class LqlErrorHandlingTests
 {
     [Fact]
     public void EmptyInput_ShouldReturnError()

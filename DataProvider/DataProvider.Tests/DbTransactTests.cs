@@ -8,7 +8,7 @@ namespace DataProvider.Tests;
 /// <summary>
 /// Tests for DbTransact extension methods
 /// </summary>
-public sealed class DbTransactTests : IDisposable
+internal sealed class DbTransactTests : IDisposable
 {
     private readonly string _connectionString = "Data Source=:memory:";
     private readonly SqliteConnection _connection;
@@ -22,26 +22,28 @@ public sealed class DbTransactTests : IDisposable
     public async Task Transact_SqliteConnection_CommitsSuccessfulTransaction()
     {
         // Arrange
-        await _connection.OpenAsync();
-        await CreateTestTable();
+        await _connection.OpenAsync().ConfigureAwait(false);
+        await CreateTestTable().ConfigureAwait(false);
 
         // Act
         var testId = Guid.NewGuid().ToString();
-        await _connection.Transact(async tx =>
-        {
-            using var command = new SqliteCommand(
-                "INSERT INTO TestTable (Id, Name) VALUES (@id, 'Test1')",
-                _connection,
-                tx as SqliteTransaction
-            );
-            command.Parameters.AddWithValue("@id", testId);
-            await command.ExecuteNonQueryAsync().ConfigureAwait(false);
-        });
+        await _connection
+            .Transact(async tx =>
+            {
+                using var command = new SqliteCommand(
+                    "INSERT INTO TestTable (Id, Name) VALUES (@id, 'Test1')",
+                    _connection,
+                    tx as SqliteTransaction
+                );
+                command.Parameters.AddWithValue("@id", testId);
+                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+            })
+            .ConfigureAwait(false);
 
         // Assert
         using var selectCommand = new SqliteCommand("SELECT COUNT(*) FROM TestTable", _connection);
         var count = Convert.ToInt32(
-            await selectCommand.ExecuteScalarAsync(),
+            await selectCommand.ExecuteScalarAsync().ConfigureAwait(false),
             System.Globalization.CultureInfo.InvariantCulture
         );
         Assert.Equal(1, count);
@@ -51,38 +53,40 @@ public sealed class DbTransactTests : IDisposable
     public async Task Transact_SqliteConnection_RollsBackFailedTransaction()
     {
         // Arrange
-        await _connection.OpenAsync();
-        await CreateTestTable();
+        await _connection.OpenAsync().ConfigureAwait(false);
+        await CreateTestTable().ConfigureAwait(false);
 
         // Act & Assert
-        await Assert.ThrowsAsync<SqliteException>(async () =>
-        {
-            await _connection
-                .Transact(async tx =>
-                {
-                    using var command1 = new SqliteCommand(
-                        "INSERT INTO TestTable (Id, Name) VALUES (@id, 'Test1')",
-                        _connection,
-                        tx as SqliteTransaction
-                    );
-                    command1.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
-                    await command1.ExecuteNonQueryAsync().ConfigureAwait(false);
+        await Assert
+            .ThrowsAsync<SqliteException>(async () =>
+            {
+                await _connection
+                    .Transact(async tx =>
+                    {
+                        using var command1 = new SqliteCommand(
+                            "INSERT INTO TestTable (Id, Name) VALUES (@id, 'Test1')",
+                            _connection,
+                            tx as SqliteTransaction
+                        );
+                        command1.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
+                        await command1.ExecuteNonQueryAsync().ConfigureAwait(false);
 
-                    // This will fail because InvalidTable doesn't exist
-                    using var command2 = new SqliteCommand(
-                        "INSERT INTO InvalidTable (Name) VALUES ('Test2')",
-                        _connection,
-                        tx as SqliteTransaction
-                    );
-                    await command2.ExecuteNonQueryAsync().ConfigureAwait(false);
-                })
-                .ConfigureAwait(false);
-        });
+                        // This will fail because InvalidTable doesn't exist
+                        using var command2 = new SqliteCommand(
+                            "INSERT INTO InvalidTable (Name) VALUES ('Test2')",
+                            _connection,
+                            tx as SqliteTransaction
+                        );
+                        await command2.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    })
+                    .ConfigureAwait(false);
+            })
+            .ConfigureAwait(false);
 
         // Assert - should be 0 because transaction was rolled back
         using var selectCommand = new SqliteCommand("SELECT COUNT(*) FROM TestTable", _connection);
         var count = Convert.ToInt32(
-            await selectCommand.ExecuteScalarAsync(),
+            await selectCommand.ExecuteScalarAsync().ConfigureAwait(false),
             System.Globalization.CultureInfo.InvariantCulture
         );
         Assert.Equal(0, count);
@@ -92,21 +96,23 @@ public sealed class DbTransactTests : IDisposable
     public async Task Transact_SqliteConnection_WithReturnValue_ReturnsCorrectValue()
     {
         // Arrange
-        await _connection.OpenAsync();
-        await CreateTestTable();
+        await _connection.OpenAsync().ConfigureAwait(false);
+        await CreateTestTable().ConfigureAwait(false);
 
         // Act
         var testId = Guid.NewGuid().ToString();
-        var result = await _connection.Transact(async tx =>
-        {
-            using var command = new SqliteCommand(
-                "INSERT INTO TestTable (Id, Name) VALUES (@id, 'Test1')",
-                _connection,
-                tx as SqliteTransaction
-            );
-            command.Parameters.AddWithValue("@id", testId);
-            return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
-        });
+        var result = await _connection
+            .Transact(async tx =>
+            {
+                using var command = new SqliteCommand(
+                    "INSERT INTO TestTable (Id, Name) VALUES (@id, 'Test1')",
+                    _connection,
+                    tx as SqliteTransaction
+                );
+                command.Parameters.AddWithValue("@id", testId);
+                return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+            })
+            .ConfigureAwait(false);
 
         // Assert - 1 row affected
         Assert.Equal(1, result);
@@ -116,32 +122,34 @@ public sealed class DbTransactTests : IDisposable
     public async Task Transact_SqliteConnection_WithReturnValue_RollsBackOnException()
     {
         // Arrange
-        await _connection.OpenAsync();
-        await CreateTestTable();
+        await _connection.OpenAsync().ConfigureAwait(false);
+        await CreateTestTable().ConfigureAwait(false);
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-        {
-            await _connection
-                .Transact<int>(async tx =>
-                {
-                    using var command = new SqliteCommand(
-                        "INSERT INTO TestTable (Id, Name) VALUES (@id, 'Test1')",
-                        _connection,
-                        tx as SqliteTransaction
-                    );
-                    command.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+        await Assert
+            .ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await _connection
+                    .Transact<int>(async tx =>
+                    {
+                        using var command = new SqliteCommand(
+                            "INSERT INTO TestTable (Id, Name) VALUES (@id, 'Test1')",
+                            _connection,
+                            tx as SqliteTransaction
+                        );
+                        command.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
+                        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
 
-                    throw new InvalidOperationException("Test exception");
-                })
-                .ConfigureAwait(false);
-        });
+                        throw new InvalidOperationException("Test exception");
+                    })
+                    .ConfigureAwait(false);
+            })
+            .ConfigureAwait(false);
 
         // Assert - should be 0 because transaction was rolled back
         using var selectCommand = new SqliteCommand("SELECT COUNT(*) FROM TestTable", _connection);
         var count = Convert.ToInt32(
-            await selectCommand.ExecuteScalarAsync(),
+            await selectCommand.ExecuteScalarAsync().ConfigureAwait(false),
             System.Globalization.CultureInfo.InvariantCulture
         );
         Assert.Equal(0, count);
@@ -154,22 +162,24 @@ public sealed class DbTransactTests : IDisposable
         // Connection starts closed
 
         // Act
-        await _connection.Transact(async tx =>
-        {
-            await CreateTestTable(tx as SqliteTransaction).ConfigureAwait(false);
-            using var command = new SqliteCommand(
-                "INSERT INTO TestTable (Id, Name) VALUES (@id, 'Test1')",
-                _connection,
-                tx as SqliteTransaction
-            );
-            command.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
-            await command.ExecuteNonQueryAsync().ConfigureAwait(false);
-        });
+        await _connection
+            .Transact(async tx =>
+            {
+                await CreateTestTable(tx as SqliteTransaction).ConfigureAwait(false);
+                using var command = new SqliteCommand(
+                    "INSERT INTO TestTable (Id, Name) VALUES (@id, 'Test1')",
+                    _connection,
+                    tx as SqliteTransaction
+                );
+                command.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
+                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+            })
+            .ConfigureAwait(false);
 
         // Assert
         using var selectCommand = new SqliteCommand("SELECT COUNT(*) FROM TestTable", _connection);
         var count = Convert.ToInt32(
-            await selectCommand.ExecuteScalarAsync(),
+            await selectCommand.ExecuteScalarAsync().ConfigureAwait(false),
             System.Globalization.CultureInfo.InvariantCulture
         );
         Assert.Equal(1, count);
@@ -182,23 +192,27 @@ public sealed class DbTransactTests : IDisposable
         SqliteConnection nullConnection = null!;
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-        {
-            await nullConnection.Transact(async tx => { }).ConfigureAwait(false);
-        });
+        await Assert
+            .ThrowsAsync<ArgumentNullException>(async () =>
+            {
+                await nullConnection.Transact(async tx => { }).ConfigureAwait(false);
+            })
+            .ConfigureAwait(false);
     }
 
     [Fact]
     public async Task Transact_SqliteConnection_ThrowsOnNullBody()
     {
         // Arrange
-        await _connection.OpenAsync();
+        await _connection.OpenAsync().ConfigureAwait(false);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-        {
-            await _connection.Transact(null!).ConfigureAwait(false);
-        });
+        await Assert
+            .ThrowsAsync<ArgumentNullException>(async () =>
+            {
+                await _connection.Transact(null!).ConfigureAwait(false);
+            })
+            .ConfigureAwait(false);
     }
 
     [Fact]
@@ -208,23 +222,27 @@ public sealed class DbTransactTests : IDisposable
         SqliteConnection nullConnection = null!;
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-        {
-            await nullConnection.Transact(async tx => 42).ConfigureAwait(false);
-        });
+        await Assert
+            .ThrowsAsync<ArgumentNullException>(async () =>
+            {
+                await nullConnection.Transact(async tx => 42).ConfigureAwait(false);
+            })
+            .ConfigureAwait(false);
     }
 
     [Fact]
     public async Task Transact_SqliteConnection_WithReturnValue_ThrowsOnNullBody()
     {
         // Arrange
-        await _connection.OpenAsync();
+        await _connection.OpenAsync().ConfigureAwait(false);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-        {
-            await _connection.Transact(null!).ConfigureAwait(false);
-        });
+        await Assert
+            .ThrowsAsync<ArgumentNullException>(async () =>
+            {
+                await _connection.Transact(null!).ConfigureAwait(false);
+            })
+            .ConfigureAwait(false);
     }
 
     private async Task CreateTestTable(SqliteTransaction? transaction = null)

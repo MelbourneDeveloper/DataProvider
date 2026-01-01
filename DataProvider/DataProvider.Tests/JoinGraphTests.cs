@@ -3,7 +3,7 @@ using Xunit;
 
 namespace DataProvider.Tests;
 
-public class JoinGraphTests
+internal class JoinGraphTests
 {
     [Fact]
     public void New_JoinGraph_IsEmpty()

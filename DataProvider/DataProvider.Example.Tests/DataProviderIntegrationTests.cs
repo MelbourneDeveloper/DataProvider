@@ -11,7 +11,7 @@ namespace DataProvider.Example.Tests;
 /// <summary>
 /// Integration tests for DataProvider code generation
 /// </summary>
-public sealed class DataProviderIntegrationTests : IDisposable
+internal sealed class DataProviderIntegrationTests : IDisposable
 {
     private readonly string _connectionString = "Data Source=:memory:";
     private readonly SqliteConnection _connection;
@@ -25,10 +25,12 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task GetInvoicesAsync_WithValidData_ReturnsCorrectTypes()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
 
         // Act
-        var result = await _connection.GetInvoicesAsync("Acme Corp", "2024-01-01", "2024-12-31");
+        var result = await _connection
+            .GetInvoicesAsync("Acme Corp", "2024-01-01", "2024-12-31")
+            .ConfigureAwait(false);
 
         // Assert
         if (result is InvoiceListError failure)
@@ -69,10 +71,10 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task GetCustomersLqlAsync_WithValidData_ReturnsCorrectTypes()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
 
         // Act
-        var result = await _connection.GetCustomersLqlAsync(null);
+        var result = await _connection.GetCustomersLqlAsync(null).ConfigureAwait(false);
 
         // Assert
         if (result is CustomerListError failure)
@@ -119,15 +121,12 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task GetOrdersAsync_WithValidData_ReturnsCorrectTypes()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
 
         // Act
-        var result = await _connection.GetOrdersAsync(
-            "cust-1",
-            "Completed",
-            "2024-01-01",
-            "2024-12-31"
-        );
+        var result = await _connection
+            .GetOrdersAsync("cust-1", "Completed", "2024-01-01", "2024-12-31")
+            .ConfigureAwait(false);
 
         // Assert
         Assert.True(result is OrderListOk, $"Expected Success but got {result.GetType()}");
@@ -163,12 +162,16 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task AllQueries_VerifyCorrectTableNamesGenerated()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
 
         // Act & Assert - Verify extension methods exist with correct names
-        var invoiceResult = await _connection.GetInvoicesAsync("Acme Corp", null!, null!);
-        var customerResult = await _connection.GetCustomersLqlAsync(null);
-        var orderResult = await _connection.GetOrdersAsync("cust-1", null!, null!, null!);
+        var invoiceResult = await _connection
+            .GetInvoicesAsync("Acme Corp", null!, null!)
+            .ConfigureAwait(false);
+        var customerResult = await _connection.GetCustomersLqlAsync(null).ConfigureAwait(false);
+        var orderResult = await _connection
+            .GetOrdersAsync("cust-1", null!, null!, null!)
+            .ConfigureAwait(false);
 
         // All should succeed (this proves the extension methods were generated)
         Assert.True(
@@ -205,10 +208,12 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task GetInvoicesAsync_WithMultipleRecords_GroupsCorrectly()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
 
         // Act
-        var result = await _connection.GetInvoicesAsync("Acme Corp", "2024-01-01", "2024-12-31");
+        var result = await _connection
+            .GetInvoicesAsync("Acme Corp", "2024-01-01", "2024-12-31")
+            .ConfigureAwait(false);
 
         // Assert
         Assert.True(result is InvoiceListOk, $"Expected Success but got {result.GetType()}");
@@ -233,10 +238,10 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task GetCustomersLqlAsync_WithMultipleAddresses_GroupsCorrectly()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
 
         // Act
-        var result = await _connection.GetCustomersLqlAsync(null);
+        var result = await _connection.GetCustomersLqlAsync(null).ConfigureAwait(false);
 
         // Assert
         Assert.True(result is CustomerListOk, $"Expected Success but got {result.GetType()}");
@@ -259,10 +264,12 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task GetOrdersAsync_WithMultipleItems_GroupsCorrectly()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
 
         // Act
-        var result = await _connection.GetOrdersAsync(null, null, "2024-01-01", "2024-12-31");
+        var result = await _connection
+            .GetOrdersAsync(null, null, "2024-01-01", "2024-12-31")
+            .ConfigureAwait(false);
 
         // Assert
         Assert.True(result is OrderListOk, $"Expected Success but got {result.GetType()}");
@@ -284,10 +291,12 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task GetInvoicesAsync_WithEmptyDatabase_ReturnsEmpty()
     {
         // Arrange
-        await SetupEmptyDatabase();
+        await SetupEmptyDatabase().ConfigureAwait(false);
 
         // Act
-        var result = await _connection.GetInvoicesAsync("Acme Corp", "2024-01-01", "2024-12-31");
+        var result = await _connection
+            .GetInvoicesAsync("Acme Corp", "2024-01-01", "2024-12-31")
+            .ConfigureAwait(false);
 
         // Assert
         Assert.True(result is InvoiceListOk, $"Expected Success but got {result.GetType()}");
@@ -302,10 +311,10 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task GetCustomersLqlAsync_WithEmptyDatabase_ReturnsEmpty()
     {
         // Arrange
-        await SetupEmptyDatabase();
+        await SetupEmptyDatabase().ConfigureAwait(false);
 
         // Act
-        var result = await _connection.GetCustomersLqlAsync(null);
+        var result = await _connection.GetCustomersLqlAsync(null).ConfigureAwait(false);
 
         // Assert
         Assert.True(result is CustomerListOk, $"Expected Success but got {result.GetType()}");
@@ -320,15 +329,12 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task GetOrdersAsync_WithEmptyDatabase_ReturnsEmpty()
     {
         // Arrange
-        await SetupEmptyDatabase();
+        await SetupEmptyDatabase().ConfigureAwait(false);
 
         // Act
-        var result = await _connection.GetOrdersAsync(
-            "cust-1",
-            "Completed",
-            "2024-01-01",
-            "2024-12-31"
-        );
+        var result = await _connection
+            .GetOrdersAsync("cust-1", "Completed", "2024-01-01", "2024-12-31")
+            .ConfigureAwait(false);
 
         // Assert
         Assert.True(result is OrderListOk, $"Expected Success but got {result.GetType()}");
@@ -665,7 +671,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task PredicateBuilder_True_E2E_ReturnsAllCustomers()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
         var predicate = PredicateBuilder.True<Customer>();
         var query = SelectStatement.From<Customer>("Customer").Where(predicate);
 
@@ -686,7 +692,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task PredicateBuilder_False_E2E_ReturnsNoCustomers()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
         var predicate = PredicateBuilder.False<Customer>();
         var query = SelectStatement.From<Customer>("Customer").Where(predicate);
 
@@ -707,7 +713,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task PredicateBuilder_Or_E2E_CombinesPredicatesWithOrLogic()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
         var predicate = PredicateBuilder.False<Customer>();
         predicate = predicate.Or(c => c.CustomerName == "Acme Corp");
         predicate = predicate.Or(c => c.CustomerName == "Tech Solutions");
@@ -735,7 +741,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task PredicateBuilder_And_E2E_CombinesPredicatesWithAndLogic()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
         var predicate = PredicateBuilder.True<Customer>();
         predicate = predicate.And(c => c.CustomerName == "Acme Corp");
         predicate = predicate.And(c => c.Email != null);
@@ -759,7 +765,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task PredicateBuilder_Not_E2E_NegatesPredicateLogic()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
         var predicate = PredicateBuilder.True<Customer>();
         predicate = predicate.And(c => c.CustomerName == "Acme Corp");
         predicate = predicate.Not();
@@ -783,7 +789,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task PredicateBuilder_DynamicOrConditions_E2E_BuildsSearchFilters()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
         var searchNames = new[] { "Acme Corp", "Unknown Corp", "Missing Inc" }; // Only "Acme Corp" exists in test data
         var predicate = PredicateBuilder.False<Customer>();
 
@@ -812,7 +818,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task PredicateBuilder_DynamicAndConditions_E2E_BuildsFilterChains()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
         var predicate = PredicateBuilder.True<Customer>();
 
         // Act - simulate building dynamic AND conditions for filtering
@@ -840,7 +846,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task PredicateBuilder_MixedAndOrOperations_E2E_ComplexBusinessLogic()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
         var searchNames = new[] { "Acme Corp", "NonExistent Corp" };
 
         // Act - build name filter with OR
@@ -872,7 +878,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task PredicateBuilder_ConditionalBuilding_E2E_EliminatesDuplication()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
         var searchByName = true;
         var searchByEmail = false;
         var customerName = "Tech Solutions";
@@ -907,7 +913,7 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public async Task PredicateBuilder_WithOrdersEntity_E2E_WorksAcrossEntityTypes()
     {
         // Arrange
-        await SetupTestDatabase();
+        await SetupTestDatabase().ConfigureAwait(false);
         var statuses = new[] { "Completed", "Processing" };
         var predicate = PredicateBuilder.False<Order>();
 

@@ -20,7 +20,7 @@ namespace DataProvider.Tests;
 /// <summary>
 /// Tests for DbTransactionExtensions Query method to improve coverage
 /// </summary>
-public sealed class DbTransactionExtensionsTests : IDisposable
+internal sealed class DbTransactionExtensionsTests : IDisposable
 {
     private readonly SqliteConnection _connection;
     private readonly SqliteTransaction _transaction;

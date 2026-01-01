@@ -5,7 +5,7 @@ namespace DataProvider.Tests;
 /// <summary>
 /// Tests for schema types and their functionality
 /// </summary>
-public sealed class SchemaTypesTests
+internal sealed class SchemaTypesTests
 {
     [Fact]
     public void DatabaseColumn_CanBeCreatedWithDefaults()

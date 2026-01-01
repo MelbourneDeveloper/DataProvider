@@ -5,7 +5,7 @@ namespace Lql.Tests;
 /// <summary>
 /// File-based tests for advanced LQL features - subqueries, CTEs, window functions, etc.
 /// </summary>
-public partial class LqlFileBasedTests
+internal partial class LqlFileBasedTests
 {
     [Theory]
     [InlineData("window_function", "PostgreSql")]

@@ -5,7 +5,7 @@ namespace DataProvider.Tests;
 /// <summary>
 /// Tests for SqlError record type
 /// </summary>
-public sealed class SqlErrorTests
+internal sealed class SqlErrorTests
 {
     [Fact]
     public void SqlError_CanBeCreatedWithMessageOnly()

@@ -6,7 +6,7 @@ using Xunit;
 
 namespace DataProvider.Tests.Fakes;
 
-public class FakeDbConnectionTests
+internal class FakeDbConnectionTests
 {
     [Fact]
     public void FakeDbConnection_ActsAsFactoryForFakeTransaction()
@@ -200,12 +200,12 @@ public class FakeDbConnectionTests
         // Act
         using var command = connection.CreateCommand();
         command.CommandText = "SELECT * FROM Users";
-        using var reader = await command.ExecuteReaderAsync();
+        using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
 
         // Assert
-        Assert.True(await reader.ReadAsync());
+        Assert.True(await reader.ReadAsync().ConfigureAwait(false));
         Assert.Equal(1, reader.GetInt32(0));
         Assert.Equal("Test User", reader.GetString(1));
-        Assert.False(await reader.IsDBNullAsync(0));
+        Assert.False(await reader.IsDBNullAsync(0).ConfigureAwait(false));
     }
 }

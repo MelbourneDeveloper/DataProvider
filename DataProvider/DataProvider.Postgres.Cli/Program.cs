@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.Text;
 using System.Text.Json;
-using DataProvider.CodeGeneration;
 using Npgsql;
 using Outcome;
 using Selecta;
@@ -92,7 +91,9 @@ internal static class Program
             // Verify DB connection
             try
             {
-                await using var conn = new NpgsqlConnection(cfg.ConnectionString);
+                await using var conn = new NpgsqlConnection(cfg.ConnectionString).ConfigureAwait(
+                    false
+                );
                 await conn.OpenAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -249,12 +250,12 @@ internal static class Program
         string outDir
     )
     {
-        await using var conn = new NpgsqlConnection(connectionString);
+        await using var conn = new NpgsqlConnection(connectionString).ConfigureAwait(false);
         await conn.OpenAsync().ConfigureAwait(false);
 
         // Get column metadata from information_schema
         var columns = new List<DatabaseColumn>();
-        await using (var cmd = conn.CreateCommand())
+        await using (var cmd = conn.CreateCommand().ConfigureAwait(false))
         {
             cmd.CommandText = """
                 SELECT c.column_name, c.data_type, c.is_nullable, c.column_default,
@@ -276,7 +277,9 @@ internal static class Program
             cmd.Parameters.AddWithValue("schema", table.Schema);
             cmd.Parameters.AddWithValue("table", table.Name);
 
-            await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            await using var reader = (
+                await cmd.ExecuteReaderAsync().ConfigureAwait(false)
+            ).ConfigureAwait(false);
             while (await reader.ReadAsync().ConfigureAwait(false))
             {
                 var colName = reader.GetString(0);
@@ -946,7 +949,7 @@ internal static class Program
     {
         try
         {
-            await using var conn = new NpgsqlConnection(connectionString);
+            await using var conn = new NpgsqlConnection(connectionString).ConfigureAwait(false);
             await conn.OpenAsync().ConfigureAwait(false);
 
             // Replace @params with NULL for metadata query
@@ -959,11 +962,11 @@ internal static class Program
             // Wrap in a CTE to get metadata without executing
             var wrappedSql = $"SELECT * FROM ({metaSql}) AS _meta WHERE 1=0";
 
-            await using var cmd = new NpgsqlCommand(wrappedSql, conn);
-            await using var reader = await cmd.ExecuteReaderAsync(
-                    System.Data.CommandBehavior.SchemaOnly
-                )
-                .ConfigureAwait(false);
+            await using var cmd = new NpgsqlCommand(wrappedSql, conn).ConfigureAwait(false);
+            await using var reader = (
+                await cmd.ExecuteReaderAsync(System.Data.CommandBehavior.SchemaOnly)
+                    .ConfigureAwait(false)
+            ).ConfigureAwait(false);
 
             var schema = reader.GetColumnSchema();
             var columns = new List<DatabaseColumn>();
@@ -1322,10 +1325,10 @@ internal sealed record TableConfigItem
     /// <summary>
     /// Columns to exclude from generation.
     /// </summary>
-    public IReadOnlyList<string> ExcludeColumns { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> ExcludeColumns { get; init; } = [];
 
     /// <summary>
     /// Primary key columns.
     /// </summary>
-    public IReadOnlyList<string> PrimaryKeyColumns { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> PrimaryKeyColumns { get; init; } = [];
 }
