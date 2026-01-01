@@ -7,7 +7,7 @@ namespace DataProvider.Tests;
 /// <summary>
 /// Tests for source generator types
 /// </summary>
-internal sealed class SourceGeneratorTypesTests
+public sealed class SourceGeneratorTypesTests
 {
     [Fact]
     public void ColumnInfo_CanBeCreatedWithBasicProperties()

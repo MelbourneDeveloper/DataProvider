@@ -4,7 +4,7 @@ using Xunit;
 
 namespace DataProvider.Tests;
 
-internal sealed class SqlStatementGenerationTests
+public sealed class SqlStatementGenerationTests
 {
     [Fact]
     public void ToSQLite_SimpleSelectFromSingleTable_GeneratesExpectedSql()

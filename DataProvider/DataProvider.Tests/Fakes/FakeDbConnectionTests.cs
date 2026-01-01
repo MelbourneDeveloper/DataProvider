@@ -6,7 +6,7 @@ using Xunit;
 
 namespace DataProvider.Tests.Fakes;
 
-internal class FakeDbConnectionTests
+public sealed class FakeDbConnectionTests
 {
     [Fact]
     public void FakeDbConnection_ActsAsFactoryForFakeTransaction()

@@ -6,7 +6,7 @@ namespace DataProvider.Tests;
 /// <summary>
 /// Tests for bulk insert and upsert code generation
 /// </summary>
-internal sealed class BulkOperationsTests
+public sealed class BulkOperationsTests
 {
     private static DatabaseTable CreateTestTable() =>
         new()

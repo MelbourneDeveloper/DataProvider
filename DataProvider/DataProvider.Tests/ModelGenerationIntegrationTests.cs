@@ -6,7 +6,7 @@ namespace DataProvider.Tests;
 /// <summary>
 /// Integration tests for ModelGenerator functionality
 /// </summary>
-internal sealed class ModelGenerationIntegrationTests
+public sealed class ModelGenerationIntegrationTests
 {
     [Fact]
     public void GenerateRecordType_WithSimpleColumns_GeneratesValidCode()

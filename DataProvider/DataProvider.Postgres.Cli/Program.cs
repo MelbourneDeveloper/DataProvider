@@ -91,9 +91,7 @@ internal static class Program
             // Verify DB connection
             try
             {
-                await using var conn = new NpgsqlConnection(cfg.ConnectionString).ConfigureAwait(
-                    false
-                );
+                await using var conn = new NpgsqlConnection(cfg.ConnectionString);
                 await conn.OpenAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -250,12 +248,12 @@ internal static class Program
         string outDir
     )
     {
-        await using var conn = new NpgsqlConnection(connectionString).ConfigureAwait(false);
+        await using var conn = new NpgsqlConnection(connectionString);
         await conn.OpenAsync().ConfigureAwait(false);
 
         // Get column metadata from information_schema
         var columns = new List<DatabaseColumn>();
-        await using (var cmd = conn.CreateCommand().ConfigureAwait(false))
+        await using (var cmd = conn.CreateCommand())
         {
             cmd.CommandText = """
                 SELECT c.column_name, c.data_type, c.is_nullable, c.column_default,
@@ -277,9 +275,7 @@ internal static class Program
             cmd.Parameters.AddWithValue("schema", table.Schema);
             cmd.Parameters.AddWithValue("table", table.Name);
 
-            await using var reader = (
-                await cmd.ExecuteReaderAsync().ConfigureAwait(false)
-            ).ConfigureAwait(false);
+            await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
             while (await reader.ReadAsync().ConfigureAwait(false))
             {
                 var colName = reader.GetString(0);
@@ -949,7 +945,7 @@ internal static class Program
     {
         try
         {
-            await using var conn = new NpgsqlConnection(connectionString).ConfigureAwait(false);
+            await using var conn = new NpgsqlConnection(connectionString);
             await conn.OpenAsync().ConfigureAwait(false);
 
             // Replace @params with NULL for metadata query
@@ -962,11 +958,11 @@ internal static class Program
             // Wrap in a CTE to get metadata without executing
             var wrappedSql = $"SELECT * FROM ({metaSql}) AS _meta WHERE 1=0";
 
-            await using var cmd = new NpgsqlCommand(wrappedSql, conn).ConfigureAwait(false);
-            await using var reader = (
-                await cmd.ExecuteReaderAsync(System.Data.CommandBehavior.SchemaOnly)
-                    .ConfigureAwait(false)
-            ).ConfigureAwait(false);
+            await using var cmd = new NpgsqlCommand(wrappedSql, conn);
+            await using var reader = await cmd.ExecuteReaderAsync(
+                    System.Data.CommandBehavior.SchemaOnly
+                )
+                .ConfigureAwait(false);
 
             var schema = reader.GetColumnSchema();
             var columns = new List<DatabaseColumn>();

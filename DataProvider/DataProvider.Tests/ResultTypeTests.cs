@@ -3,7 +3,7 @@ using Xunit;
 
 namespace DataProvider.Tests;
 
-internal class ResultTypeTests
+public sealed class ResultTypeTests
 {
     [Fact]
     public void Result_SuccessValue_CreatesSuccessResult()

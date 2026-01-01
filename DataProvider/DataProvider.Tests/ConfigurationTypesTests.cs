@@ -8,7 +8,7 @@ namespace DataProvider.Tests;
 /// <summary>
 /// Tests for configuration types and JSON serialization
 /// </summary>
-internal sealed class ConfigurationTypesTests
+public sealed class ConfigurationTypesTests
 {
     [Fact]
     public void DataProviderConfig_CanBeCreatedWithDefaults()

@@ -8,7 +8,7 @@ namespace DataProvider.Tests;
 /// <summary>
 /// Tests for LINQ query expression support with SelectQueryable
 /// </summary>
-internal sealed class SqlQueryableTests
+public sealed class SqlQueryableTests
 {
     [Fact]
     public void SimpleSelectQuery_GeneratesCorrectSqlStatement()

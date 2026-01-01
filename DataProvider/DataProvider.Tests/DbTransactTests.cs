@@ -8,7 +8,7 @@ namespace DataProvider.Tests;
 /// <summary>
 /// Tests for DbTransact extension methods
 /// </summary>
-internal sealed class DbTransactTests : IDisposable
+public sealed class DbTransactTests : IDisposable
 {
     private readonly string _connectionString = "Data Source=:memory:";
     private readonly SqliteConnection _connection;

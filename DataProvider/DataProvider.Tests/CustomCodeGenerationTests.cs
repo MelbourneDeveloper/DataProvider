@@ -12,7 +12,7 @@ namespace DataProvider.Tests;
 /// <summary>
 /// Tests demonstrating custom code generation with completely different output styles
 /// </summary>
-internal class CustomCodeGenerationTests
+public sealed class CustomCodeGenerationTests
 {
     private static readonly List<DatabaseColumn> TestColumns = new()
     {
@@ -845,7 +845,7 @@ internal static class StringExtensions
 /// <summary>
 /// Tests for non-query (UPDATE/DELETE/INSERT) SQL statement code generation.
 /// </summary>
-internal class NonQueryCodeGenerationTests
+public sealed class NonQueryCodeGenerationTests
 {
     [Fact]
     public void GenerateNonQueryMethod_UpdateStatement_GeneratesCorrectExtension()

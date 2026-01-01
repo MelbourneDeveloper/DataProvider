@@ -11,7 +11,7 @@ namespace DataProvider.Example.Tests;
 /// <summary>
 /// Integration tests for DataProvider code generation
 /// </summary>
-internal sealed class DataProviderIntegrationTests : IDisposable
+public sealed class DataProviderIntegrationTests : IDisposable
 {
     private readonly string _connectionString = "Data Source=:memory:";
     private readonly SqliteConnection _connection;
