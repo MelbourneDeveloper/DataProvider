@@ -36,10 +36,13 @@ internal static class DatabaseSetup
             return;
         }
 
-        // Use Migration tool to create schema from ClinicalSchema metadata
+        // Use Migration tool to create schema from YAML (source of truth)
         try
         {
-            foreach (var table in ClinicalSchema.Definition.Tables)
+            var yamlPath = Path.Combine(AppContext.BaseDirectory, "clinical-schema.yaml");
+            var schema = SchemaYamlSerializer.FromYamlFile(yamlPath);
+
+            foreach (var table in schema.Tables)
             {
                 var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
                 using var cmd = connection.CreateCommand();
@@ -48,10 +51,7 @@ internal static class DatabaseSetup
                 logger.Log(LogLevel.Debug, "Created table {TableName}", table.Name);
             }
 
-            logger.Log(
-                LogLevel.Information,
-                "Created Clinical database schema from ClinicalSchema metadata"
-            );
+            logger.Log(LogLevel.Information, "Created Clinical database schema from YAML");
         }
         catch (Exception ex)
         {

@@ -8,7 +8,12 @@ namespace Scheduling.Sync;
 /// Background worker that syncs patient data from Clinical domain to Scheduling domain.
 /// Applies column mappings defined in SyncMappings.json.
 /// </summary>
+/// <remarks>
+/// Instantiated by the DI container as a hosted service.
+/// </remarks>
+#pragma warning disable CA1812 // Instantiated by DI
 internal sealed class SchedulingSyncWorker : BackgroundService
+#pragma warning restore CA1812
 {
     private readonly ILogger<SchedulingSyncWorker> _logger;
     private readonly Func<SqliteConnection> _getConnection;
@@ -41,7 +46,12 @@ internal sealed class SchedulingSyncWorker : BackgroundService
     /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("[SYNC-START] Scheduling.Sync worker starting at {Time}. Target: {Url}, Poll interval: {Interval}s", DateTimeOffset.Now, _clinicalEndpoint, _pollIntervalSeconds);
+        _logger.LogInformation(
+            "[SYNC-START] Scheduling.Sync worker starting at {Time}. Target: {Url}, Poll interval: {Interval}s",
+            DateTimeOffset.Now,
+            _clinicalEndpoint,
+            _pollIntervalSeconds
+        );
 
         var consecutiveFailures = 0;
         const int maxConsecutiveFailuresBeforeWarning = 3;
@@ -56,11 +66,15 @@ internal sealed class SchedulingSyncWorker : BackgroundService
                 // Reset failure counter on success
                 if (consecutiveFailures > 0)
                 {
-                    _logger.LogInformation("[SYNC-RECOVERED] Sync recovered after {Count} consecutive failures", consecutiveFailures);
+                    _logger.LogInformation(
+                        "[SYNC-RECOVERED] Sync recovered after {Count} consecutive failures",
+                        consecutiveFailures
+                    );
                     consecutiveFailures = 0;
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(_pollIntervalSeconds), stoppingToken).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromSeconds(_pollIntervalSeconds), stoppingToken)
+                    .ConfigureAwait(false);
             }
             catch (HttpRequestException ex)
             {
@@ -69,14 +83,25 @@ internal sealed class SchedulingSyncWorker : BackgroundService
 
                 if (consecutiveFailures >= maxConsecutiveFailuresBeforeWarning)
                 {
-                    _logger.LogWarning("[SYNC-FAULT] Clinical.Api unreachable for {Count} consecutive attempts. Error: {Message}. Retrying in {Delay}s...", consecutiveFailures, ex.Message, retryDelay);
+                    _logger.LogWarning(
+                        "[SYNC-FAULT] Clinical.Api unreachable for {Count} consecutive attempts. Error: {Message}. Retrying in {Delay}s...",
+                        consecutiveFailures,
+                        ex.Message,
+                        retryDelay
+                    );
                 }
                 else
                 {
-                    _logger.LogInformation("[SYNC-RETRY] Clinical.Api not reachable ({Message}). Attempt {Count}, retrying in {Delay}s...", ex.Message, consecutiveFailures, retryDelay);
+                    _logger.LogInformation(
+                        "[SYNC-RETRY] Clinical.Api not reachable ({Message}). Attempt {Count}, retrying in {Delay}s...",
+                        ex.Message,
+                        consecutiveFailures,
+                        retryDelay
+                    );
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(retryDelay), stoppingToken).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromSeconds(retryDelay), stoppingToken)
+                    .ConfigureAwait(false);
             }
             catch (TaskCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -88,13 +113,23 @@ internal sealed class SchedulingSyncWorker : BackgroundService
                 consecutiveFailures++;
                 var retryDelay = Math.Min(10 * consecutiveFailures, 60); // Longer backoff for unknown errors
 
-                _logger.LogError(ex, "[SYNC-ERROR] Unexpected error during sync (attempt {Count}). Retrying in {Delay}s. Error type: {Type}", consecutiveFailures, retryDelay, ex.GetType().Name);
+                _logger.LogError(
+                    ex,
+                    "[SYNC-ERROR] Unexpected error during sync (attempt {Count}). Retrying in {Delay}s. Error type: {Type}",
+                    consecutiveFailures,
+                    retryDelay,
+                    ex.GetType().Name
+                );
 
-                await Task.Delay(TimeSpan.FromSeconds(retryDelay), stoppingToken).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromSeconds(retryDelay), stoppingToken)
+                    .ConfigureAwait(false);
             }
         }
 
-        _logger.LogInformation("[SYNC-EXIT] Scheduling.Sync worker exited at {Time}", DateTimeOffset.Now);
+        _logger.LogInformation(
+            "[SYNC-EXIT] Scheduling.Sync worker exited at {Time}",
+            DateTimeOffset.Now
+        );
     }
 
     /// <summary>
@@ -116,7 +151,9 @@ internal sealed class SchedulingSyncWorker : BackgroundService
         httpClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateSyncToken());
 
-        var response = await httpClient.GetAsync(changesUrl, cancellationToken).ConfigureAwait(false);
+        var response = await httpClient
+            .GetAsync(new Uri(changesUrl), cancellationToken)
+            .ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -128,7 +165,9 @@ internal sealed class SchedulingSyncWorker : BackgroundService
             return;
         }
 
-        var content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        var content = await response
+            .Content.ReadAsStringAsync(cancellationToken)
+            .ConfigureAwait(false);
         var changes = JsonSerializer.Deserialize<SyncChange[]>(content);
 
         if (changes is null || changes.Length == 0)
@@ -233,7 +272,7 @@ internal sealed class SchedulingSyncWorker : BackgroundService
         }
     }
 
-    private long GetLastSyncVersion(SqliteConnection connection)
+    private static long GetLastSyncVersion(SqliteConnection connection)
     {
         // Ensure _sync_state table exists
         using var createCmd = connection.CreateCommand();
@@ -252,14 +291,17 @@ internal sealed class SchedulingSyncWorker : BackgroundService
         return result is string str && long.TryParse(str, out var version) ? version : 0;
     }
 
-    private void UpdateLastSyncVersion(SqliteConnection connection, long version)
+    private static void UpdateLastSyncVersion(SqliteConnection connection, long version)
     {
         using var cmd = connection.CreateCommand();
         cmd.CommandText = """
             INSERT INTO _sync_state (key, value) VALUES ('last_clinical_sync_version', @version)
             ON CONFLICT (key) DO UPDATE SET value = excluded.value
             """;
-        cmd.Parameters.AddWithValue("@version", version.ToString());
+        cmd.Parameters.AddWithValue(
+            "@version",
+            version.ToString(System.Globalization.CultureInfo.InvariantCulture)
+        );
         cmd.ExecuteNonQuery();
     }
 
@@ -309,7 +351,9 @@ internal sealed class SchedulingSyncWorker : BackgroundService
 /// Represents a sync change from the Clinical domain.
 /// Matches the SyncLogEntry schema returned by /sync/changes endpoint.
 /// </summary>
-public sealed record SyncChange(
+/// <remarks>Instantiated via JSON deserialization.</remarks>
+#pragma warning disable CA1812 // Instantiated via deserialization
+internal sealed record SyncChange(
     long Version,
     string TableName,
     string PkValue,

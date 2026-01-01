@@ -30,10 +30,13 @@ internal static class DatabaseSetup
 
         _ = SyncSchema.SetOriginId(connection, Guid.NewGuid().ToString());
 
-        // Use Migration tool to create schema from SchedulingSchema metadata
+        // Use Migration tool to create schema from YAML (source of truth)
         try
         {
-            foreach (var table in SchedulingSchema.Definition.Tables)
+            var yamlPath = Path.Combine(AppContext.BaseDirectory, "scheduling-schema.yaml");
+            var schema = SchemaYamlSerializer.FromYamlFile(yamlPath);
+
+            foreach (var table in schema.Tables)
             {
                 var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
                 using var cmd = connection.CreateCommand();
@@ -42,10 +45,7 @@ internal static class DatabaseSetup
                 logger.Log(LogLevel.Debug, "Created table {TableName}", table.Name);
             }
 
-            logger.Log(
-                LogLevel.Information,
-                "Created Scheduling database schema from SchedulingSchema metadata"
-            );
+            logger.Log(LogLevel.Information, "Created Scheduling database schema from YAML");
         }
         catch (Exception ex)
         {

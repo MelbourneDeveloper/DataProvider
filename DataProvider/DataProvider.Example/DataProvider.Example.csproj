@@ -1,17 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <NoWarn>EPC12</NoWarn>
+        <NoWarn>EPC12;CA1303;CA1515</NoWarn>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)Example.ruleset</CodeAnalysisRuleSet>
         <WarningsNotAsErrors>CA1303</WarningsNotAsErrors>
-        <NoWarn>CA1303</NoWarn>
         <EnableLqlTranspile>true</EnableLqlTranspile>
     </PropertyGroup>
+
+    <!-- Exclude Generated folder from default globbing - we include it explicitly in the target -->
+    <ItemGroup>
+        <Compile Remove="Generated/**" />
+    </ItemGroup>
+
     <ItemGroup>
         <ProjectReference Include="../DataProvider/DataProvider.csproj" />
         <ProjectReference Include="../../Lql/Lql.SQLite/Lql.SQLite.csproj" />
         <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
+        <ProjectReference Include="../../Migration/Migration/Migration.csproj" />
+        <ProjectReference Include="../../Migration/Migration.SQLite/Migration.SQLite.csproj" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
@@ -25,24 +32,35 @@
         <AdditionalFiles Include="GetCustomersLql.grouping.json" />
         <AdditionalFiles Include="DataProvider.json" />
     </ItemGroup>
+
+    <!-- YAML schema is source of truth, stored in git -->
+    <ItemGroup>
+        <Content Include="example-schema.yaml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <!-- Create database from YAML using Migration.Cli (YAML stored in git) -->
+    <Target Name="CreateDatabaseSchema" BeforeTargets="TranspileLqlAndGenerateDataProvider">
+        <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/example-schema.yaml" --output "$(MSBuildProjectDirectory)/invoices.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
+    </Target>
+
     <!-- Pre-compile: transpile LQL to SQL, then generate C# from SQL using external CLI -->
-    <Target Name="TranspileLqlAndGenerateDataProvider" BeforeTargets="CoreCompile">
+    <Target Name="TranspileLqlAndGenerateDataProvider" BeforeTargets="BeforeCompile;CoreCompile" Inputs="$(MSBuildProjectDirectory)/DataProvider.json;@(AdditionalFiles);@(LqlFiles)" Outputs="$(MSBuildProjectDirectory)/Generated/.timestamp">
         <!-- Clean and recreate Generated folder to avoid stale files -->
-        <RemoveDir Directories="$(IntermediateOutputPath)Generated" />
-        <MakeDir Directories="$(IntermediateOutputPath)Generated" />
+        <RemoveDir Directories="$(MSBuildProjectDirectory)/Generated" />
+        <MakeDir Directories="$(MSBuildProjectDirectory)/Generated" />
         <!-- Transpile each .lql to .sql into project directory (or Intermediate) -->
         <ItemGroup>
             <LqlFiles Include="$(MSBuildProjectDirectory)/**/*.lql" />
         </ItemGroup>
         <Message Importance="High" Text="Transpiling LQL files (@(LqlFiles))" />
-        <Exec Command='dotnet run --project $(MSBuildProjectDirectory)/../../Lql/LqlCli.SQLite/LqlCli.csproj -- --input &quot;%(LqlFiles.Identity)&quot; --output &quot;%(LqlFiles.RootDir)%(LqlFiles.Directory)%(LqlFiles.Filename).generated.sql&quot;' Condition="'$(EnableLqlTranspile)' == 'true' and @(LqlFiles) != ''" WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' ContinueOnError="WarnAndContinue" />
-        <!-- Run SQLite generator CLI to emit .g.cs into IntermediateOutputPath/Generated -->
-        <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)../DataProvider.SQLite.Cli/DataProvider.SQLite.Cli.csproj -- --project-dir &quot;$(MSBuildProjectDirectory)&quot; --config &quot;$(MSBuildProjectDirectory)/DataProvider.json&quot; --out &quot;$(IntermediateOutputPath)Generated&quot;' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
-        <!-- Include generated sources created in this target -->
+        <Exec Command='dotnet run --project $(MSBuildProjectDirectory)/../../Lql/LqlCli.SQLite/LqlCli.SQLite.csproj -- --input &quot;%(LqlFiles.Identity)&quot; --output &quot;%(LqlFiles.RootDir)%(LqlFiles.Directory)%(LqlFiles.Filename).generated.sql&quot;' Condition="'$(EnableLqlTranspile)' == 'true' and @(LqlFiles) != ''" WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' ContinueOnError="WarnAndContinue" />
+        <!-- Run SQLite generator CLI to emit .g.cs into Generated folder -->
+        <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)../DataProvider.SQLite.Cli/DataProvider.SQLite.Cli.csproj -- --project-dir &quot;$(MSBuildProjectDirectory)&quot; --config &quot;$(MSBuildProjectDirectory)/DataProvider.json&quot; --out &quot;$(MSBuildProjectDirectory)/Generated&quot;' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
+        <Touch Files="$(MSBuildProjectDirectory)/Generated/.timestamp" AlwaysCreate="true" />
         <ItemGroup>
-            <Compile Include="$(IntermediateOutputPath)Generated/**/*.g.cs" Visible="false" />
-            <!-- Make the freshly generated SQL visible to source generators as AdditionalFiles -->
-            <AdditionalFiles Include="$(MSBuildProjectDirectory)/**/*.generated.sql" />
+            <Compile Include="$(MSBuildProjectDirectory)/Generated/**/*.g.cs" />
         </ItemGroup>
     </Target>
 </Project>

@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 
 namespace Scheduling.Api.Tests;
+
 /// <summary>
 /// Tests that verify the Dashboard can actually connect to Scheduling API.
 /// These tests MUST FAIL if CORS is not configured for Dashboard origin.

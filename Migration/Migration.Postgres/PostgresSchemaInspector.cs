@@ -177,54 +177,68 @@ public static class PostgresSchemaInspector
                 };
             }
 
-            // Get indexes
+            // Get indexes (both column-based and expression indexes)
             using var idxCmd = connection.CreateCommand();
             idxCmd.CommandText = """
-                SELECT 
+                SELECT
                     i.relname AS index_name,
-                    a.attname AS column_name,
-                    ix.indisunique AS is_unique
+                    ix.indisunique AS is_unique,
+                    pg_get_indexdef(ix.indexrelid) AS index_def,
+                    (SELECT array_agg(a.attname ORDER BY ord.n)
+                     FROM unnest(ix.indkey) WITH ORDINALITY AS ord(attnum, n)
+                     LEFT JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ord.attnum
+                     WHERE ord.attnum > 0) AS column_names,
+                    (SELECT bool_or(ord.attnum = 0)
+                     FROM unnest(ix.indkey) WITH ORDINALITY AS ord(attnum, n)) AS has_expressions
                 FROM pg_class t
                 JOIN pg_index ix ON t.oid = ix.indrelid
                 JOIN pg_class i ON i.oid = ix.indexrelid
-                JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
                 JOIN pg_namespace n ON n.oid = t.relnamespace
-                WHERE n.nspname = @schema 
+                WHERE n.nspname = @schema
                 AND t.relname = @table
                 AND NOT ix.indisprimary
-                ORDER BY i.relname, a.attnum
+                ORDER BY i.relname
                 """;
             idxCmd.Parameters.AddWithValue("@schema", schemaName);
             idxCmd.Parameters.AddWithValue("@table", tableName);
 
-            var indexData = new Dictionary<string, (bool IsUnique, List<string> Columns)>();
             using (var reader = idxCmd.ExecuteReader())
             {
                 while (reader.Read())
                 {
                     var indexName = reader.GetString(0);
-                    var columnName = reader.GetString(1);
-                    var isUnique = reader.GetBoolean(2);
+                    var isUnique = reader.GetBoolean(1);
+                    var indexDef = reader.GetString(2);
+                    var columnNames = reader.IsDBNull(3) ? [] : (string[])reader.GetValue(3);
+                    var hasExpressions = reader.IsDBNull(4) ? false : reader.GetBoolean(4);
 
-                    if (!indexData.TryGetValue(indexName, out var data))
+                    if (hasExpressions)
                     {
-                        data = (isUnique, []);
-                        indexData[indexName] = data;
+                        // Expression index - parse expressions from the index definition
+                        // Format: CREATE [UNIQUE] INDEX name ON table (expr1, expr2, ...)
+                        var expressions = ParseIndexExpressions(indexDef);
+                        indexes.Add(
+                            new IndexDefinition
+                            {
+                                Name = indexName,
+                                Expressions = expressions.AsReadOnly(),
+                                IsUnique = isUnique,
+                            }
+                        );
                     }
-                    data.Columns.Add(columnName);
+                    else
+                    {
+                        // Simple column index
+                        indexes.Add(
+                            new IndexDefinition
+                            {
+                                Name = indexName,
+                                Columns = columnNames.ToList().AsReadOnly(),
+                                IsUnique = isUnique,
+                            }
+                        );
+                    }
                 }
-            }
-
-            foreach (var (indexName, (isUnique, indexColumns)) in indexData)
-            {
-                indexes.Add(
-                    new IndexDefinition
-                    {
-                        Name = indexName,
-                        Columns = indexColumns.AsReadOnly(),
-                        IsUnique = isUnique,
-                    }
-                );
             }
 
             // Get foreign keys
@@ -355,4 +369,64 @@ public static class PostgresSchemaInspector
             "RESTRICT" => ForeignKeyAction.Restrict,
             _ => ForeignKeyAction.NoAction,
         };
+
+    /// <summary>
+    /// Parse expressions from a PostgreSQL index definition string.
+    /// Example: "CREATE UNIQUE INDEX uq_name ON public.table USING btree (lower(name), suburb_id)"
+    /// Returns: ["lower(name)", "suburb_id"]
+    /// </summary>
+    private static List<string> ParseIndexExpressions(string indexDef)
+    {
+        var expressions = new List<string>();
+
+        // Find the opening parenthesis after USING btree (or just after table name)
+        var parenStart = indexDef.LastIndexOf('(');
+        var parenEnd = indexDef.LastIndexOf(')');
+
+        if (parenStart < 0 || parenEnd < 0 || parenEnd <= parenStart)
+        {
+            return expressions;
+        }
+
+        var content = indexDef.Substring(parenStart + 1, parenEnd - parenStart - 1);
+
+        // Split by comma, but respect nested parentheses (for function calls)
+        var current = new StringBuilder();
+        var depth = 0;
+
+        foreach (var ch in content)
+        {
+            switch (ch)
+            {
+                case '(':
+                    depth++;
+                    current.Append(ch);
+                    break;
+                case ')':
+                    depth--;
+                    current.Append(ch);
+                    break;
+                case ',' when depth == 0:
+                    var expr = current.ToString().Trim();
+                    if (!string.IsNullOrEmpty(expr))
+                    {
+                        expressions.Add(expr);
+                    }
+                    current.Clear();
+                    break;
+                default:
+                    current.Append(ch);
+                    break;
+            }
+        }
+
+        // Add the last expression
+        var lastExpr = current.ToString().Trim();
+        if (!string.IsNullOrEmpty(lastExpr))
+        {
+            expressions.Add(lastExpr);
+        }
+
+        return expressions;
+    }
 }

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Migration.Postgres</RootNamespace>
-    <NoWarn>$(NoWarn);CA1848;CA2254;CA1305;CA2100</NoWarn>
+    <NoWarn>$(NoWarn);CA2254;CA2100</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

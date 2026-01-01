@@ -3,8 +3,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Sync</RootNamespace>
-    <!-- Suppress CA1848 (LoggerMessage performance) for now - will optimize later -->
-    <NoWarn>$(NoWarn);CA1848</NoWarn>
+    <NoWarn>$(NoWarn);</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

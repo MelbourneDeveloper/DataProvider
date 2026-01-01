@@ -1,4 +1,3 @@
-#pragma warning disable CS8509 // Exhaustive switch - Exhaustion analyzer handles this
 #pragma warning disable IDE0037 // Use inferred member name - prefer explicit for clarity in API responses
 
 using System.Collections.Immutable;
@@ -61,10 +60,6 @@ builder.Services.AddHttpClient(
 
 var app = builder.Build();
 
-// Get HttpClientFactory for auth filters
-var httpClientFactory = app.Services.GetRequiredService<IHttpClientFactory>();
-Func<HttpClient> getGatekeeperClient = () => httpClientFactory.CreateClient("Gatekeeper");
-
 using (var conn = new SqliteConnection(connectionString))
 {
     conn.Open();
@@ -74,8 +69,9 @@ using (var conn = new SqliteConnection(connectionString))
 // Enable CORS
 app.UseCors("Dashboard");
 
-// Health endpoint for sync service startup checks
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "Clinical.Api" }));
+// Get HttpClientFactory for auth filters
+var httpClientFactory = app.Services.GetRequiredService<IHttpClientFactory>();
+Func<HttpClient> getGatekeeperClient = () => httpClientFactory.CreateClient("Gatekeeper");
 
 var patientGroup = app.MapGroup("/fhir/Patient").WithTags("Patient");
 
@@ -135,7 +131,7 @@ patientGroup
             signingKey,
             getGatekeeperClient,
             app.Logger,
-            "id"
+            idParamName: "id"
         )
     );
 
@@ -300,7 +296,7 @@ patientGroup
             signingKey,
             getGatekeeperClient,
             app.Logger,
-            "id"
+            idParamName: "id"
         )
     );
 
@@ -464,22 +460,22 @@ conditionGroup
 
             var result = await transaction
                 .Insertfhir_ConditionAsync(
-                    id,
-                    request.ClinicalStatus,
-                    request.VerificationStatus,
-                    request.Category,
-                    request.Severity,
-                    request.CodeSystem,
-                    request.CodeValue,
-                    request.CodeDisplay,
-                    patientId,
-                    request.EncounterReference,
-                    request.OnsetDateTime,
-                    recordedDate,
-                    request.RecorderReference,
-                    request.NoteText,
-                    now,
-                    1L
+                    id: id,
+                    clinicalstatus: request.ClinicalStatus,
+                    verificationstatus: request.VerificationStatus,
+                    category: request.Category,
+                    severity: request.Severity,
+                    codesystem: request.CodeSystem,
+                    codevalue: request.CodeValue,
+                    codedisplay: request.CodeDisplay,
+                    subjectreference: patientId,
+                    encounterreference: request.EncounterReference,
+                    onsetdatetime: request.OnsetDateTime,
+                    recordeddate: recordedDate,
+                    recorderreference: request.RecorderReference,
+                    notetext: request.NoteText,
+                    lastupdated: now,
+                    versionid: 1L
                 )
                 .ConfigureAwait(false);
 
@@ -770,7 +766,6 @@ app.MapPost(
         )
     );
 
-// Query synced providers from Scheduling domain
 app.MapGet(
         "/sync/providers",
         (Func<SqliteConnection> getConn) =>
@@ -787,10 +782,10 @@ app.MapGet(
                     new
                     {
                         ProviderId = reader.GetString(0),
-                        FirstName = reader.GetString(1),
-                        LastName = reader.GetString(2),
+                        FirstName = reader.IsDBNull(1) ? null : reader.GetString(1),
+                        LastName = reader.IsDBNull(2) ? null : reader.GetString(2),
                         Specialty = reader.IsDBNull(3) ? null : reader.GetString(3),
-                        SyncedAt = reader.GetString(4),
+                        SyncedAt = reader.IsDBNull(4) ? null : reader.GetString(4),
                     }
                 );
             }

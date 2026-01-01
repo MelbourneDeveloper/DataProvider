@@ -1,9 +1,9 @@
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Clinical.Sync;
+
 internal static class Program
 {
     internal static async Task Main(string[] args)
@@ -14,7 +14,18 @@ internal static class Program
         // Default path navigates from bin/Debug/net9.0 up to Clinical.Api/bin/Debug/net9.0
         var clinicalDbPath =
             Environment.GetEnvironmentVariable("CLINICAL_DB_PATH")
-            ?? Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Clinical.Api", "bin", "Debug", "net9.0", "clinical.db");
+            ?? Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "Clinical.Api",
+                "bin",
+                "Debug",
+                "net9.0",
+                "clinical.db"
+            );
         var schedulingApiUrl =
             Environment.GetEnvironmentVariable("SCHEDULING_API_URL") ?? "http://localhost:5001";
 

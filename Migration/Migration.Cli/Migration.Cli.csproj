@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Migration.Cli</RootNamespace>
+    <NoWarn>$(NoWarn);CA2254;CA1515;RS1035;CA2100</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+    <PackageReference Include="Npgsql" Version="9.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Migration\Migration.csproj" />
+    <ProjectReference Include="..\Migration.SQLite\Migration.SQLite.csproj" />
+    <ProjectReference Include="..\Migration.Postgres\Migration.Postgres.csproj" />
+  </ItemGroup>
+
+</Project>

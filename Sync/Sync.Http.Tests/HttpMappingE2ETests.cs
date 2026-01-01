@@ -555,7 +555,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
         // Verify all records transformed
         using var countCmd = _postgresConn.CreateCommand();
         countCmd.CommandText = "SELECT COUNT(*) FROM customer";
-        var count = Convert.ToInt32(countCmd.ExecuteScalar());
+        var count = Convert.ToInt32(
+            countCmd.ExecuteScalar(),
+            System.Globalization.CultureInfo.InvariantCulture
+        );
         Assert.Equal(3, count);
 
         // Verify uppercase names

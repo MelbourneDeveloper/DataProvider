@@ -238,12 +238,18 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         // Assert - Both databases have both records
         using var pgCmd = postgres.CreateCommand();
         pgCmd.CommandText = "SELECT COUNT(*) FROM person";
-        var pgCount = Convert.ToInt32(pgCmd.ExecuteScalar());
+        var pgCount = Convert.ToInt32(
+            pgCmd.ExecuteScalar(),
+            System.Globalization.CultureInfo.InvariantCulture
+        );
         Assert.Equal(2, pgCount);
 
         using var sqliteCmd = sqlite.CreateCommand();
         sqliteCmd.CommandText = "SELECT COUNT(*) FROM Person";
-        var sqliteCount = Convert.ToInt32(sqliteCmd.ExecuteScalar());
+        var sqliteCount = Convert.ToInt32(
+            sqliteCmd.ExecuteScalar(),
+            System.Globalization.CultureInfo.InvariantCulture
+        );
         Assert.Equal(2, sqliteCount);
     }
 
@@ -356,7 +362,10 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         // Assert - Record deleted
         using var verifyCmd = postgres.CreateCommand();
         verifyCmd.CommandText = "SELECT COUNT(*) FROM person WHERE id = 'd1'";
-        var count = Convert.ToInt32(verifyCmd.ExecuteScalar());
+        var count = Convert.ToInt32(
+            verifyCmd.ExecuteScalar(),
+            System.Globalization.CultureInfo.InvariantCulture
+        );
         Assert.Equal(0, count);
     }
 
@@ -446,7 +455,10 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
 
         using var countCmd = postgres.CreateCommand();
         countCmd.CommandText = "SELECT COUNT(*) FROM person";
-        var pgCount = Convert.ToInt32(countCmd.ExecuteScalar());
+        var pgCount = Convert.ToInt32(
+            countCmd.ExecuteScalar(),
+            System.Globalization.CultureInfo.InvariantCulture
+        );
         Assert.Equal(recordCount, pgCount);
     }
 

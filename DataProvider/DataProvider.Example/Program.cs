@@ -355,7 +355,7 @@ internal static class Program
         var dynamicResult = connection.GetRecords(
             SelectStatement
                 .From<Customer>()
-                .Where(c => c.Id != null) // Simple predicate that works (all non-null IDs)
+                .Where(c => c.Id != null) // Simple predicate that works
                 .OrderBy(c => c.CustomerName)
                 .ToSqlStatement(),
             stmt => stmt.ToSQLite(),

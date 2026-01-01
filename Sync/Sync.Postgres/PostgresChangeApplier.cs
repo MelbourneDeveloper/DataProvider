@@ -1,4 +1,3 @@
-#pragma warning disable CA1848 // Use LoggerMessage delegates for performance
 #pragma warning disable CA2100 // SQL is built from sync metadata - tables validated at trigger generation
 
 using System.Diagnostics.CodeAnalysis;

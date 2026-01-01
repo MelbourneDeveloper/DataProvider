@@ -1,29 +1,11 @@
-# Build results
+# ═══════════════════════════════════════════════════════════════════════════════
+# .NET Build Output
+# ═══════════════════════════════════════════════════════════════════════════════
 bin/
 obj/
 out/
 publish/
-
-# User-specific files
-*.rsuser
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-
-# Visual Studio Code
-.vscode/settings.json
-.vscode/tasks.json
-.vscode/extensions.json
-.history/
-
-# User-specific files (MonoDevelop/Xamarin Studio)
-*.userprefs
-
-# Mono auto generated files
-mono_crash.*
-
-# Build results
+artifacts/
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
@@ -39,41 +21,23 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
-# Visual Studio cache/options directory
+# ═══════════════════════════════════════════════════════════════════════════════
+# Visual Studio
+# ═══════════════════════════════════════════════════════════════════════════════
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Cache and options
 .vs/
+*.[Cc]ache
+!?*.[Cc]ache/
 
-# MSTest test Results
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
-
-# NUnit
-*.VisualState.xml
-TestResult.xml
-nunit-*.xml
-
-# Build Results of an ATL Project
-[Dd]ebugPS/
-[Rr]eleasePS/
-dlldata.c
-
-# Benchmark Results
-BenchmarkDotNet.Artifacts/
-
-# .NET Core
-project.lock.json
-project.fragment.lock.json
-artifacts/
-
-# ASP.NET Scaffolding
-ScaffoldingReadMe.txt
-
-# StyleCop
-StyleCopReport.xml
-
-# Files built by Visual Studio
-*_i.c
-*_p.c
-*_h.h
+# Build files
 *.ilk
 *.meta
 *.obj
@@ -100,58 +64,60 @@ StyleCopReport.xml
 *.svclog
 *.scc
 
-# Chutzpah Test files
-_Chutzpah*
-
-# Visual C++ cache files
-ipch/
-*.aps
-*.ncb
-*.opendb
-*.opensdf
-*.sdf
-*.cachefile
-*.VC.db
-*.VC.VC.opendb
-
-# Visual Studio profiler
+# Profiler
 *.psess
 *.vsp
 *.vspx
 *.sap
 
-# Visual Studio Trace Files
+# Trace files
 *.e2e
 
-# TFS 2012 Local Workspace
-$tf/
+# LightSwitch
+**/*.HTMLClient/GeneratedArtifacts
+**/*.DesktopClient/GeneratedArtifacts
+**/*.DesktopClient/ModelManifest.xml
+**/*.Server/GeneratedArtifacts
+**/*.Server/ModelManifest.xml
+_Pvt_Extensions
 
-# Guidance Automation Toolkit
-*.gpState
+# ═══════════════════════════════════════════════════════════════════════════════
+# VS Code
+# ═══════════════════════════════════════════════════════════════════════════════
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
 
-# ReSharper is a .NET coding add-in
-_ReSharper*/
-*.[Rr]e[Ss]harper
-*.DotSettings.user
+# ═══════════════════════════════════════════════════════════════════════════════
+# JetBrains Rider
+# ═══════════════════════════════════════════════════════════════════════════════
+.idea/
+*.sln.iml
 
-# TeamCity is a build add-in
-_TeamCity*
-
-# DotCover is a Code Coverage Tool
-*.dotCover
-
-# AxoCover is a Code Coverage Tool
-.axoCover/*
-!.axoCover/settings.json
-
-# Coverlet is a free, cross platform Code Coverage Tool
+# ═══════════════════════════════════════════════════════════════════════════════
+# Test Results & Coverage
+# ═══════════════════════════════════════════════════════════════════════════════
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+BenchmarkDotNet.Artifacts/
+coverage/
+coverage-report/
+coverage-results/
 coverage*.json
 coverage*.xml
 coverage*.info
-
-# Visual Studio code coverage results
 *.coverage
 *.coveragexml
+*.dotCover
+.axoCover/*
+!.axoCover/settings.json
 
 # NCrunch
 _NCrunch_*
@@ -162,13 +128,109 @@ nCrunchTemp_*
 *.mm.*
 AutoTest.Net/
 
-# Web workbench (sass)
-.sass-cache/
+# ═══════════════════════════════════════════════════════════════════════════════
+# .NET Core / NuGet
+# ═══════════════════════════════════════════════════════════════════════════════
+project.lock.json
+project.fragment.lock.json
 
-# Installshield output folder
-[Ee]xpress/
+# ═══════════════════════════════════════════════════════════════════════════════
+# Mono
+# ═══════════════════════════════════════════════════════════════════════════════
+mono_crash.*
 
-# DocProject is a documentation generator add-in
+# ═══════════════════════════════════════════════════════════════════════════════
+# Visual C++
+# ═══════════════════════════════════════════════════════════════════════════════
+ipch/
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
+*.VC.db
+*.VC.VC.opendb
+[Dd]ebugPS/
+[Rr]eleasePS/
+dlldata.c
+*_i.c
+*_p.c
+*_h.h
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Visual Studio 6
+# ═══════════════════════════════════════════════════════════════════════════════
+*.plg
+*.opt
+*.vbw
+*.vbp
+*.dsw
+*.dsp
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SQL Server
+# ═══════════════════════════════════════════════════════════════════════════════
+*.mdf
+*.ldf
+*.ndf
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Azure
+# ═══════════════════════════════════════════════════════════════════════════════
+*.azurePubxml
+csx/
+*.build.csdef
+ecf/
+rcf/
+ASALocalRun/
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Publishing
+# ═══════════════════════════════════════════════════════════════════════════════
+*.[Pp]ublish.xml
+*.pubxml
+*.publishproj
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Windows Store
+# ═══════════════════════════════════════════════════════════════════════════════
+AppPackages/
+BundleArtifacts/
+Package.StoreAssociation.xml
+_pkginfo.txt
+*.appx
+*.appxbundle
+*.appxupload
+
+# Windows Installer
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ReSharper
+# ═══════════════════════════════════════════════════════════════════════════════
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TeamCity
+# ═══════════════════════════════════════════════════════════════════════════════
+_TeamCity*
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Microsoft Fakes
+# ═══════════════════════════════════════════════════════════════════════════════
+FakesAssemblies/
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Documentation Tools
+# ═══════════════════════════════════════════════════════════════════════════════
+# DocProject
 DocProject/buildhelp/
 DocProject/Help/*.HxT
 DocProject/Help/*.HxC
@@ -178,82 +240,85 @@ DocProject/Help/*.hhp
 DocProject/Help/Html2
 DocProject/Help/html
 
-# Click-Once directory
-publish/
+# GhostDoc
+*.GhostDoc.xml
 
-# Publish Web Output
-*.[Pp]ublish.xml
-*.azurePubxml
-# Note: Comment the next line if you want to checkin your web deploy settings,
-# but database connection strings (with potential passwords) will be unencrypted
-*.pubxml
-*.publishproj
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
 
-# Microsoft Azure Web App publish settings. Comment the next line if you want to
-# checkin your Azure Web App publish settings, but sensitive information contained
-# in these files may be revealed.
-*.azurePubxml
+# ═══════════════════════════════════════════════════════════════════════════════
+# Other Tools
+# ═══════════════════════════════════════════════════════════════════════════════
+# Paket dependency manager
+.paket/paket.exe
+paket-files/
 
-# Microsoft Azure Build Output
-csx/
-*.build.csdef
+# FAKE - F# Make
+.fake/
 
-# Microsoft Azure Emulator
-ecf/
-rcf/
+# CodeRush
+.cr/personal
 
-# Windows Store app package directories and files
-AppPackages/
-BundleArtifacts/
-Package.StoreAssociation.xml
-_pkginfo.txt
-*.appx
-*.appxbundle
-*.appxupload
+# Tabs Studio
+*.tss
 
-# Visual Studio cache files
-# files ending in .cache can be ignored
-*.[Cc]ache
-# but keep track of directories ending in .cache
-!?*.[Cc]ache/
+# Telerik JustMock
+*.jmconfig
 
-# Others
-ClientBin/
-~$*
-*~
-*.dbmdl
-*.dbproj.schemaview
-*.jfm
-*.pfx
-*.publishsettings
-orleans.codegen.cs
+# NVidia Nsight
+*.nvuser
 
-# Including strong name files can present a security risk
-# (https://github.com/github/gitignore/pull/2483#issue-259490424)
-#*.snk
+# MFractors (Xamarin)
+.mfractor/
 
-# Since there are multiple workflows, uncomment next line to ignore bower_components
-# (https://github.com/github/gitignore/pull/1529#issuecomment-104372622)
-#bower_components/
+# Ionide (F# VS Code)
+.ionide/
 
-# RIA/Silverlight projects
-Generated_Code/
+# Fody
+FodyWeavers.xsd
 
-# Backup & report files from converting an old project file
-# to a newer Visual Studio version. Backup files are not needed,
-# because we have git ;-)
-_UpgradeReport_Files/
-Backup*/
-UpgradeLog*.XML
-UpgradeLog*.htm
-CordovaApp.projitems
+# TFS 2012 Local Workspace
+$tf/
 
-# SQL Server files
-*.mdf
-*.ldf
-*.ndf
+# Guidance Automation Toolkit
+*.gpState
 
-# Business Intelligence projects
+# Chutzpah
+_Chutzpah*
+
+# StyleCop
+StyleCopReport.xml
+
+# OpenCover
+OpenCover/
+
+# MSBuild Binary Log
+*.binlog
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Web Development
+# ═══════════════════════════════════════════════════════════════════════════════
+# Node.js
+node_modules/
+.ntvs_analysis.dat
+
+# Sass
+.sass-cache/
+
+# Blazor WebAssembly
+**/wwwroot/_framework/
+**/wwwroot/css/*.min.css
+**/wwwroot/js/*.min.js
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Python
+# ═══════════════════════════════════════════════════════════════════════════════
+__pycache__/
+*.pyc
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Business Intelligence
+# ═══════════════════════════════════════════════════════════════════════════════
 *.rdl.data
 *.bim.layout
 *.bim_*.settings
@@ -262,155 +327,75 @@ CordovaApp.projitems
 *- [Bb]ackup ([0-9]).rdl
 *- [Bb]ackup ([0-9][0-9]).rdl
 
-# Microsoft Fakes
-FakesAssemblies/
-
-# GhostDoc plugin setting file
-*.GhostDoc.xml
-
-# Node.js Tools for Visual Studio
-.ntvs_analysis.dat
-node_modules/
-
-# Visual Studio 6 build log
-*.plg
-
-# Visual Studio 6 workspace options file
-*.opt
-
-# Visual Studio 6 auto-generated workspace file (contains which files were open etc.)
-*.vbw
-
-# Visual Studio 6 auto-generated project file (contains which files were open etc.)
-*.vbp
-
-# Visual Studio 6 workspace and project file (working project files containing files to include in project)
-*.dsw
-*.dsp
-
-# Visual Studio 6 technical files
-*.ncb
-*.aps
-
-# Visual Studio LightSwitch build output
-**/*.HTMLClient/GeneratedArtifacts
-**/*.DesktopClient/GeneratedArtifacts
-**/*.DesktopClient/ModelManifest.xml
-**/*.Server/GeneratedArtifacts
-**/*.Server/ModelManifest.xml
-_Pvt_Extensions
-
-# Paket dependency manager
-.paket/paket.exe
-paket-files/
-
-# FAKE - F# Make
-.fake/
-
-# CodeRush personal settings
-.cr/personal
-
-# Python Tools for Visual Studio (PTVS)
-__pycache__/
-*.pyc
-
-# Cake - Uncomment if you are using it
-# tools/**
-# !tools/packages.config
-
-# Tabs Studio
-*.tss
-
-# Telerik's JustMock configuration file
-*.jmconfig
-
-# BizTalk build output
+# BizTalk
 *.btp.cs
 *.btm.cs
 *.odx.cs
 *.xsd.cs
 
-# OpenCover UI analysis results
-OpenCover/
-
-# Azure Stream Analytics local run output
-ASALocalRun/
-
-# MSBuild Binary and Structured Log
-*.binlog
-
-# NVidia Nsight GPU debugger configuration file
-*.nvuser
-
-# MFractors (Xamarin productivity tool) working folder
-.mfractor/
-
-# Local History for Visual Studio
-.localhistory/
-
-# Visual Studio History (VSHistory) files
-.vshistory/
-
-# BeatPulse healthcheck temp database
-healthchecksdb
-
-# Backup folder for Package Reference Convert tool in Visual Studio 2017
-MigrationBackup/
-
-# Ionide (cross platform F# VS Code extension) temporary files
-.ionide/
-
-# Fody - auto-generated XML schema
-FodyWeavers.xsd
-
-# VS Code files for those working on multiple tools
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-*.code-workspace
-
-# Local History for Visual Studio Code
-.history/
-
-# Windows Installer files from build outputs
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-
-# JetBrains Rider
-.idea/
-*.sln.iml
-
+# ═══════════════════════════════════════════════════════════════════════════════
 # macOS
+# ═══════════════════════════════════════════════════════════════════════════════
 .DS_Store
 .AppleDouble
 .LSOverride
 
-# Project-specific
-invoices.db
-*.generated.sql
-
-# Blazor WebAssembly publish folder
-**/wwwroot/_framework/
-**/wwwroot/css/*.min.css
-**/wwwroot/js/*.min.js
-
-# Temporary files
+# ═══════════════════════════════════════════════════════════════════════════════
+# Temporary & Backup Files
+# ═══════════════════════════════════════════════════════════════════════════════
 *.tmp
 *.bak
 *.swp
 *~
+~$*
+ClientBin/
+*.dbmdl
+*.dbproj.schemaview
+*.jfm
+*.pfx
+*.publishsettings
+orleans.codegen.cs
+healthchecksdb
+_UpgradeReport_Files/
+Backup*/
+UpgradeLog*.XML
+UpgradeLog*.htm
+CordovaApp.projitems
+MigrationBackup/
+.localhistory/
+.vshistory/
+Generated_Code/
+[Ee]xpress/
 
-coverage/
-coverage-report/
-coverage-results/
+# ═══════════════════════════════════════════════════════════════════════════════
+# PROJECT-SPECIFIC: DataProvider
+# ═══════════════════════════════════════════════════════════════════════════════
+# SQLite databases (created at build time and by tests)
+*.db
 
+# Generated SQL files from DataProvider
+*.generated.sql
 
+# Generated C# code from DataProvider source generator
+*.g.cs
 
+# Build timestamps
+.timestamp
+
+# Dashboard vendor JS (downloaded at build time)
 Samples/Dashboard/Dashboard.Web/wwwroot/js/vendor/
 
-*.db
+# Dashboard compiled JS (H5/Bridge output)
+Samples/Dashboard/Dashboard.Web/wwwroot/js/Dashboard.js
+Samples/Dashboard/Dashboard.Web/wwwroot/js/Dashboard.min.js
+Samples/Dashboard/Dashboard.Web/wwwroot/js/index.html
+Website/_site/
+
+Website/docfx/api/
+
+Website/src/apidocs/
+
+# Docs copied from README files (source of truth is in the project READMEs)
+Website/src/docs/sync.md
+Website/src/docs/dataprovider.md
+Website/src/docs/lql.md

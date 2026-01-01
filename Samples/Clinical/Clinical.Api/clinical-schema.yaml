@@ -1,0 +1,227 @@
+name: clinical
+tables:
+- name: fhir_Patient
+  columns:
+  - name: Id
+    type: Text
+  - name: Active
+    type: Int
+    defaultValue: 1
+  - name: GivenName
+    type: Text
+  - name: FamilyName
+    type: Text
+  - name: BirthDate
+    type: Text
+  - name: Gender
+    type: Text
+    checkConstraint: Gender IN ('male', 'female', 'other', 'unknown')
+  - name: Phone
+    type: Text
+  - name: Email
+    type: Text
+  - name: AddressLine
+    type: Text
+  - name: City
+    type: Text
+  - name: State
+    type: Text
+  - name: PostalCode
+    type: Text
+  - name: Country
+    type: Text
+  - name: LastUpdated
+    type: Text
+    defaultValue: (datetime('now'))
+  - name: VersionId
+    type: Int
+    defaultValue: 1
+  indexes:
+  - name: idx_fhir_patient_family
+    columns:
+    - FamilyName
+  - name: idx_fhir_patient_given
+    columns:
+    - GivenName
+  primaryKey:
+    name: PK_fhir_Patient
+    columns:
+    - Id
+- name: fhir_Encounter
+  columns:
+  - name: Id
+    type: Text
+  - name: Status
+    type: Text
+    checkConstraint: Status IN ('planned', 'arrived', 'triaged', 'in-progress', 'onleave', 'finished', 'cancelled', 'entered-in-error')
+  - name: Class
+    type: Text
+    checkConstraint: Class IN ('ambulatory', 'emergency', 'inpatient', 'observation', 'virtual')
+  - name: PatientId
+    type: Text
+  - name: PractitionerId
+    type: Text
+  - name: ServiceType
+    type: Text
+  - name: ReasonCode
+    type: Text
+  - name: PeriodStart
+    type: Text
+  - name: PeriodEnd
+    type: Text
+  - name: Notes
+    type: Text
+  - name: LastUpdated
+    type: Text
+    defaultValue: (datetime('now'))
+  - name: VersionId
+    type: Int
+    defaultValue: 1
+  indexes:
+  - name: idx_fhir_encounter_patient
+    columns:
+    - PatientId
+  foreignKeys:
+  - name: FK_fhir_Encounter_PatientId
+    columns:
+    - PatientId
+    referencedTable: fhir_Patient
+    referencedColumns:
+    - Id
+  primaryKey:
+    name: PK_fhir_Encounter
+    columns:
+    - Id
+- name: fhir_Condition
+  columns:
+  - name: Id
+    type: Text
+  - name: ClinicalStatus
+    type: Text
+    checkConstraint: ClinicalStatus IN ('active', 'recurrence', 'relapse', 'inactive', 'remission', 'resolved')
+  - name: VerificationStatus
+    type: Text
+    checkConstraint: VerificationStatus IN ('unconfirmed', 'provisional', 'differential', 'confirmed', 'refuted', 'entered-in-error')
+  - name: Category
+    type: Text
+    defaultValue: "'problem-list-item'"
+  - name: Severity
+    type: Text
+    checkConstraint: Severity IN ('mild', 'moderate', 'severe')
+  - name: CodeSystem
+    type: Text
+    defaultValue: "'http://hl7.org/fhir/sid/icd-10-cm'"
+  - name: CodeValue
+    type: Text
+  - name: CodeDisplay
+    type: Text
+  - name: SubjectReference
+    type: Text
+  - name: EncounterReference
+    type: Text
+  - name: OnsetDateTime
+    type: Text
+  - name: RecordedDate
+    type: Text
+    defaultValue: (date('now'))
+  - name: RecorderReference
+    type: Text
+  - name: NoteText
+    type: Text
+  - name: LastUpdated
+    type: Text
+    defaultValue: (datetime('now'))
+  - name: VersionId
+    type: Int
+    defaultValue: 1
+  indexes:
+  - name: idx_fhir_condition_patient
+    columns:
+    - SubjectReference
+  foreignKeys:
+  - name: FK_fhir_Condition_SubjectReference
+    columns:
+    - SubjectReference
+    referencedTable: fhir_Patient
+    referencedColumns:
+    - Id
+  primaryKey:
+    name: PK_fhir_Condition
+    columns:
+    - Id
+- name: fhir_MedicationRequest
+  columns:
+  - name: Id
+    type: Text
+  - name: Status
+    type: Text
+    checkConstraint: Status IN ('active', 'on-hold', 'cancelled', 'completed', 'entered-in-error', 'stopped', 'draft')
+  - name: Intent
+    type: Text
+    checkConstraint: Intent IN ('proposal', 'plan', 'order', 'original-order', 'reflex-order', 'filler-order', 'instance-order', 'option')
+  - name: PatientId
+    type: Text
+  - name: PractitionerId
+    type: Text
+  - name: EncounterId
+    type: Text
+  - name: MedicationCode
+    type: Text
+  - name: MedicationDisplay
+    type: Text
+  - name: DosageInstruction
+    type: Text
+  - name: Quantity
+    type: Double
+  - name: Unit
+    type: Text
+  - name: Refills
+    type: Int
+    defaultValue: 0
+  - name: AuthoredOn
+    type: Text
+    defaultValue: (datetime('now'))
+  - name: LastUpdated
+    type: Text
+    defaultValue: (datetime('now'))
+  - name: VersionId
+    type: Int
+    defaultValue: 1
+  indexes:
+  - name: idx_fhir_medication_patient
+    columns:
+    - PatientId
+  foreignKeys:
+  - name: FK_fhir_MedicationRequest_PatientId
+    columns:
+    - PatientId
+    referencedTable: fhir_Patient
+    referencedColumns:
+    - Id
+  - name: FK_fhir_MedicationRequest_EncounterId
+    columns:
+    - EncounterId
+    referencedTable: fhir_Encounter
+    referencedColumns:
+    - Id
+  primaryKey:
+    name: PK_fhir_MedicationRequest
+    columns:
+    - Id
+- name: sync_Provider
+  columns:
+  - name: ProviderId
+    type: Text
+  - name: FirstName
+    type: Text
+  - name: LastName
+    type: Text
+  - name: Specialty
+    type: Text
+  - name: SyncedAt
+    type: Text
+    defaultValue: (datetime('now'))
+  primaryKey:
+    name: PK_sync_Provider
+    columns:
+    - ProviderId

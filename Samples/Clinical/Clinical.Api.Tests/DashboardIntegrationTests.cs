@@ -1,7 +1,7 @@
-
 using System.Net.Http.Headers;
 
 namespace Clinical.Api.Tests;
+
 /// <summary>
 /// Tests that verify the Dashboard can actually connect to Clinical API.
 /// These tests MUST FAIL if:

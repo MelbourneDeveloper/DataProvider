@@ -1,4 +1,3 @@
-#pragma warning disable CA1848 // Use the LoggerMessage delegates for performance
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
 
 using System.Text.Json;

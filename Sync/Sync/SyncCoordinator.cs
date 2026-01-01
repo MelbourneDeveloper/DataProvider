@@ -1,5 +1,3 @@
-#pragma warning disable CA1848 // Use LoggerMessage delegates for performance - sync operations are not high-throughput
-
 using Microsoft.Extensions.Logging;
 
 namespace Sync;
@@ -10,6 +8,13 @@ namespace Sync;
 /// <param name="ChangesApplied">Number of changes pulled and applied.</param>
 /// <param name="FromVersion">Starting version of the pull.</param>
 /// <param name="ToVersion">Ending version after the pull.</param>
+/// <example>
+/// <code>
+/// // After a successful pull operation
+/// var result = new PullResult(ChangesApplied: 42, FromVersion: 100, ToVersion: 142);
+/// Console.WriteLine($"Pulled {result.ChangesApplied} changes");
+/// </code>
+/// </example>
 public sealed record PullResult(int ChangesApplied, long FromVersion, long ToVersion);
 
 /// <summary>
@@ -18,6 +23,13 @@ public sealed record PullResult(int ChangesApplied, long FromVersion, long ToVer
 /// <param name="ChangesPushed">Number of changes pushed.</param>
 /// <param name="FromVersion">Starting version of the push.</param>
 /// <param name="ToVersion">Ending version after the push.</param>
+/// <example>
+/// <code>
+/// // After a successful push operation
+/// var result = new PushResult(ChangesPushed: 15, FromVersion: 50, ToVersion: 65);
+/// Console.WriteLine($"Pushed {result.ChangesPushed} changes to server");
+/// </code>
+/// </example>
 public sealed record PushResult(int ChangesPushed, long FromVersion, long ToVersion);
 
 /// <summary>
@@ -25,6 +37,16 @@ public sealed record PushResult(int ChangesPushed, long FromVersion, long ToVers
 /// </summary>
 /// <param name="Pull">Result of pulling changes from remote.</param>
 /// <param name="Push">Result of pushing changes to remote.</param>
+/// <example>
+/// <code>
+/// // After a full sync operation
+/// var syncResult = new SyncResult(
+///     Pull: new PullResult(ChangesApplied: 42, FromVersion: 100, ToVersion: 142),
+///     Push: new PushResult(ChangesPushed: 15, FromVersion: 50, ToVersion: 65)
+/// );
+/// Console.WriteLine($"Sync complete: pulled {syncResult.Pull.ChangesApplied}, pushed {syncResult.Push.ChangesPushed}");
+/// </code>
+/// </example>
 public sealed record SyncResult(PullResult Pull, PushResult Push);
 
 /// <summary>
@@ -32,6 +54,29 @@ public sealed record SyncResult(PullResult Pull, PushResult Push);
 /// Main entry point for pull/push sync operations.
 /// Implements spec Section 11 (Bi-Directional Sync Protocol).
 /// </summary>
+/// <example>
+/// <code>
+/// // Perform a bidirectional sync
+/// using var connection = new SqliteConnection("Data Source=local.db");
+/// connection.Open();
+///
+/// var result = SyncCoordinator.Sync(
+///     myOriginId: "client-uuid-123",
+///     lastServerVersion: 100,
+///     lastPushVersion: 50,
+///     config: new BatchConfig(BatchSize: 1000),
+///     fetchRemoteChanges: (version, limit) => httpClient.GetChanges(version, limit),
+///     applyLocalChange: entry => ApplyChange(connection, entry),
+///     enableTriggerSuppression: () => EnableSuppression(connection),
+///     disableTriggerSuppression: () => DisableSuppression(connection),
+///     updateLastServerVersion: v => UpdateServerVersion(connection, v),
+///     fetchLocalChanges: (version, limit) => GetLocalChanges(connection, version, limit),
+///     sendToRemote: entries => httpClient.PushChanges(entries),
+///     updateLastPushVersion: v => UpdatePushVersion(connection, v),
+///     logger: logger
+/// );
+/// </code>
+/// </example>
 public static class SyncCoordinator
 {
     /// <summary>

@@ -1,44 +1,28 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-# Rules
-
-## Multi-Agent Coordination (Too Many Cooks)
-- Keep your key! It's critical. Do not lose it!
-- Check messages regularly, lock files before editing, unlock after
-- Don't edit locked files; signal intent via plans and messages
-- Coordinator: keep delegating via messages. Worker: keep asking for tasks via messages
-- Telegraph EVERYTHING with messages and plan updates
-- Clean up expired locks routinely
+## Multi-Agent (Too Many Cooks)
+- Keep your key! Don't lose it!
+- Check messages, lock files before editing, unlock after
+- Don't edit locked files; telegraph intent via plans/messages
+- Coordinator: delegate. Worker: ask for tasks. Update plans constantly.
 
 ## Coding Rules
 
-- **NEVER THROW EXCEPTIONS** - Always return `Result<T>` for fallible operations. Wrap anything that can fail in try/catch
-- **No casting or using ! for nulls** - Only pattern matching on type
-- **DO NOT USE GIT** <-- ⛔️ Source control is illegal for you 🙅🏼
-- **Do not supress analyzer warnings/errors** <-- Illegal
-- **No direct CREATE TABLE or other SQL to create schema** - Use the DataProvider Migrations!
-- **No direct SQL inserts/Updates!** - Generate extensions for inserts/updates with DataProvider
-- **NO CLASSES** - Use records and static methods. FP style with pure static methods
-- **Copious logging with ILogger** - Especially in the sync projects
-- **NO INTERFACES** - Use `Action<T>` or `Func<T>` for abstractions
-- **AVOID ASSIGNMENTS** - Use expressions where possible
-- **You MUST close type hierarchies** - Make the constructor restricted so it is not possible to create new implementations from the base type. Eg:
+- **NEVER THROW** - Return `Result<T>`. Wrap failures in try/catch
+- **No casting/!** - Pattern match on type only
+- **NO GIT** - Source control is illegal
+- **No suppressing warnings** - Illegal
+- **No raw SQL inserts/updates** - Use generated extensions
+- **Use DataProvider Migrations to spin up DBs** - ⛔️ SQL for creating db schema = ILLEGAL (schema.sql = ILLEGAL).  Use the Migration.CLI with YAML. This is the ONLY valid tool to migrate dbs unless the app itself spins up the migrations in code.
+- **NO CLASSES** - Records + static methods (FP style)
+- **Copious ILogger** - Especially sync projects
+- **NO INTERFACES** - Use `Action<T>`/`Func<T>`
+- **Expressions over assignments**
+- **Routinely format with csharpier** - `dotnet csharpier .` <- In root folder
+- **Named parameters** - No ordinal calls
+- **Close type hierarchies** - Private constructors:
 ```csharp
-public abstract partial record Result<TSuccess, TFailure>
-{
-    // [...]
-    /// </summary>
-    private Result() { }
-    // [...]
-}
-``
-- **Static extension methods on IDbConnection and IDbTransaction only** - No classes for data access
-- **Don't use statements like if** - use pattern matching switch expressions on type
-⛔️ wrong
-```csharp
-if (triggerResult is Result<bool, SyncError>.Error<bool, SyncError> triggerErr)
+public abstract partial record Result<TSuccess, TFailure> { private Result() { } }
 ```
 - **Skipping tests = ⛔️ ILLEGAL** - Failing tests = OK. Aggressively unskip tests
 - **Test at the highest level** - Avoid mocks. Only full integration testing
@@ -56,59 +40,26 @@ if (triggerResult is Result<bool, SyncError>.Error<bool, SyncError> triggerErr)
 - **No placeholders** - If incomplete, leave LOUD compilation error with TODO
 - **Never use Fluent Assertions**
 
+## CSS
+- **MINIMAL CSS** - Do not duplicate CSS clases
+- **Name classes after component, NOT section** - Sections should not have their own CSS classes
+
 ## Testing
-- Use e2e tests with zero mocking where possible
-- Fall back on unit testing only when absolutely necessary
-- Create MEANINGFUL tests that test REAL WORLD use cases
-- All projects must have 100% test coverage and a Stryker Mutator testing score of 70% or above. Use [Stryker Mutator](https://stryker-mutator.io/docs/stryker-net/getting-started/) as the ultimate arbiter of test quality
+- E2E with zero mocking
+- 100% coverage, Stryker score 70%+
+- Medical data: [FHIR spec](https://build.fhir.org/resourcelist.html)
 
-## Architecture Overview
+## Architecture
 
-This repository contains four major components:
+| Component | Path | Purpose |
+|-----------|------|---------|
+| DataProvider | `DataProvider/` | Source gen for SQL -> extension methods |
+| LQL | `Lql/` | Lambda Query Language -> SQL transpiler |
+| Sync | `Sync/` | Offline-first bidirectional sync |
+| Gatekeeper | `Gatekeeper/` | WebAuthn + RBAC auth |
+| Samples | `Samples/` | Clinical, Scheduling, Dashboard |
 
-**DataProvider** - Source generator creating compile-time safe extension methods from SQL files
-- Core library in `DataProvider/DataProvider/` - base types, config records, code generation
-- Database-specific implementations: `DataProvider.SQLite/`, `DataProvider.SqlServer/`
-- Uses ANTLR grammars for SQL parsing (`Parsing/*.g4` files)
-- Generates extension methods on `IDbConnection` and `IDbTransaction`
-- Routinely format all C# code with `dotnet csharpier .`
-
-**LQL (Lambda Query Language)** - Functional DSL that transpiles to SQL
-- Core transpiler in `Lql/Lql/` - ANTLR grammar, pipeline steps, AST
-- Database dialects: `Lql.SQLite/`, `Lql.SqlServer/`, `Lql.Postgres/`
-- CLI tool: `LqlCli.SQLite/`
-- Browser playground: `Lql.Browser/`
-
-**Sync Framework** - Offline-first bidirectional synchronization
-- Core engine in `Sync/Sync/` - SyncCoordinator, ConflictResolver, BatchManager
-- Database implementations: `Sync.SQLite/`, `Sync.Postgres/`
-- HTTP layer: `Sync.Http/` - REST endpoints with SSE subscriptions
-- Key components: TriggerGenerator, ChangeApplier, MappingEngine
-- Comprehensive tests: `Sync.Tests/`, `Sync.SQLite.Tests/`, `Sync.Postgres.Tests/`
-
-**Gatekeeper** - Authentication and authorization microservice
-- API in `Gatekeeper/Gatekeeper.Api/` - WebAuthn passkey auth, RBAC, record-level permissions
-- Schema in `Gatekeeper/Gatekeeper.Migration/` - Uses DataProvider migrations
-- Key files: `TokenService.cs`, `AuthorizationService.cs`, `Program.cs`
-- Tests: `Gatekeeper/Gatekeeper.Api.Tests/`
-
-**Shared Libraries** in `Other/`:
-- `Results/` - `Result<TValue, TError>` type for functional error handling
-- `Selecta/` - SQL parsing and AST utilities
-
-**Samples** - Healthcare microservices demonstrating the suite
-- `Samples/Clinical/` - FHIR-compliant clinical API (Patient, Encounter, Condition)
-- `Samples/Scheduling/` - FHIR-compliant scheduling API (Practitioner, Appointment)
-- `Samples/Dashboard/` - React/H5 dashboard
-- Medical: All medical data MUST conform to the [FHIR spec](https://build.fhir.org/resourcelist.html).
-
-## Project Configuration
-
-- .NET 9.0, C# latest with nullable enabled
-- All warnings as errors (TreatWarningsAsErrors=true)
-- Central config in `Directory.Build.props` - don't duplicate in .csproj files
-- xUnit for testing with Moq
-
-## Code Generation Note
-
-This is a code generation project. Don't generate code manually that is the responsibility of the generator. Check for existing types/methods before creating new ones.
+## Config
+- .NET 9.0, C# latest, nullable, warnings as errors
+- Central config in `Directory.Build.props`
+- Format: `dotnet csharpier .`

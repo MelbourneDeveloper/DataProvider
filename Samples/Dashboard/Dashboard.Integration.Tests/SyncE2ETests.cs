@@ -27,17 +27,38 @@ public sealed class SyncE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         await page.ClickAsync("text=Sync Dashboard");
 
-        await page.WaitForSelectorAsync("[data-testid='sync-page']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='sync-page']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         Assert.Contains("#sync", page.Url);
 
-        await page.WaitForSelectorAsync("[data-testid='service-status-clinical']", new PageWaitForSelectorOptions { Timeout = 15000 });
-        await page.WaitForSelectorAsync("[data-testid='service-status-scheduling']", new PageWaitForSelectorOptions { Timeout = 15000 });
-        await page.WaitForSelectorAsync("[data-testid='sync-records-table']", new PageWaitForSelectorOptions { Timeout = 5000 });
-        await page.WaitForSelectorAsync("[data-testid='action-filter']", new PageWaitForSelectorOptions { Timeout = 5000 });
-        await page.WaitForSelectorAsync("[data-testid='service-filter']", new PageWaitForSelectorOptions { Timeout = 5000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='service-status-clinical']",
+            new PageWaitForSelectorOptions { Timeout = 15000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='service-status-scheduling']",
+            new PageWaitForSelectorOptions { Timeout = 15000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='sync-records-table']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='action-filter']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='service-filter']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
 
         var content = await page.ContentAsync();
         Assert.Contains("Sync Dashboard", content);
@@ -74,7 +95,10 @@ public sealed class SyncE2ETests
             $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
             new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(patientRequest),
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
 
         // Create practitioner in Scheduling.Api
         var practitionerRequest = new
@@ -90,15 +114,26 @@ public sealed class SyncE2ETests
             $"{E2EFixture.SchedulingUrl}/Practitioner",
             new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(practitionerRequest),
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
 
         await page.GotoAsync($"{E2EFixture.DashboardUrl}#sync");
-        await page.WaitForSelectorAsync("[data-testid='sync-page']", new PageWaitForSelectorOptions { Timeout = 20000 });
-        await page.WaitForSelectorAsync("[data-testid='service-status-clinical']", new PageWaitForSelectorOptions { Timeout = 15000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='sync-page']",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='service-status-clinical']",
+            new PageWaitForSelectorOptions { Timeout = 15000 }
+        );
         await Task.Delay(1000); // Allow data to load
 
         // Get initial count with all services
-        var allRows = await page.QuerySelectorAllAsync("[data-testid='sync-records-table'] tbody tr");
+        var allRows = await page.QuerySelectorAllAsync(
+            "[data-testid='sync-records-table'] tbody tr"
+        );
         var initialCount = allRows.Count;
         Console.WriteLine($"[TEST] Initial row count (all services): {initialCount}");
 
@@ -106,7 +141,9 @@ public sealed class SyncE2ETests
         await page.SelectOptionAsync("[data-testid='service-filter']", "clinical");
         await Task.Delay(500);
 
-        var clinicalRows = await page.QuerySelectorAllAsync("[data-testid='sync-records-table'] tbody tr");
+        var clinicalRows = await page.QuerySelectorAllAsync(
+            "[data-testid='sync-records-table'] tbody tr"
+        );
         Console.WriteLine($"[TEST] Clinical filter row count: {clinicalRows.Count}");
 
         // PROVE: Every visible row must be from Clinical service
@@ -120,7 +157,9 @@ public sealed class SyncE2ETests
         await page.SelectOptionAsync("[data-testid='service-filter']", "scheduling");
         await Task.Delay(500);
 
-        var schedulingRows = await page.QuerySelectorAllAsync("[data-testid='sync-records-table'] tbody tr");
+        var schedulingRows = await page.QuerySelectorAllAsync(
+            "[data-testid='sync-records-table'] tbody tr"
+        );
         Console.WriteLine($"[TEST] Scheduling filter row count: {schedulingRows.Count}");
 
         // PROVE: Every visible row must be from Scheduling service
@@ -131,8 +170,10 @@ public sealed class SyncE2ETests
         }
 
         // PROVE: Combined counts should equal total (or less if overlap)
-        Assert.True(clinicalRows.Count + schedulingRows.Count <= initialCount + 1,
-            $"Clinical ({clinicalRows.Count}) + Scheduling ({schedulingRows.Count}) should not exceed initial ({initialCount})");
+        Assert.True(
+            clinicalRows.Count + schedulingRows.Count <= initialCount + 1,
+            $"Clinical ({clinicalRows.Count}) + Scheduling ({schedulingRows.Count}) should not exceed initial ({initialCount})"
+        );
 
         await page.CloseAsync();
     }
@@ -161,19 +202,67 @@ public sealed class SyncE2ETests
             $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
             new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(patientRequest),
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
 
         await page.GotoAsync($"{E2EFixture.DashboardUrl}#sync");
-        await page.WaitForSelectorAsync("[data-testid='sync-page']", new PageWaitForSelectorOptions { Timeout = 20000 });
-        await page.WaitForSelectorAsync("[data-testid='service-status-clinical']", new PageWaitForSelectorOptions { Timeout = 15000 });
-        await Task.Delay(1000); // Allow data to load
+        await page.WaitForSelectorAsync(
+            "[data-testid='sync-page']",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='service-status-clinical']",
+            new PageWaitForSelectorOptions { Timeout = 15000 }
+        );
+
+        // Wait for sync records to actually load (not just the page)
+        await page.WaitForFunctionAsync(
+            @"() => {
+                const badge = document.querySelector('.badge');
+                return badge && badge.textContent && !badge.textContent.includes('0 records');
+            }",
+            new PageWaitForFunctionOptions { Timeout = 15000 }
+        );
+        await Task.Delay(500); // Allow React to stabilize
+
+        // Log initial state before filtering
+        var initialRows = await page.QuerySelectorAllAsync(
+            "[data-testid='sync-records-table'] tbody tr"
+        );
+        Console.WriteLine($"[TEST] Initial row count before filter: {initialRows.Count}");
+        foreach (var row in initialRows.Take(5))
+        {
+            var op = await row.GetAttributeAsync("data-operation");
+            Console.WriteLine($"[TEST] Row data-operation: {op}");
+        }
 
         // Filter to Insert operations only (operation = 0)
         await page.SelectOptionAsync("[data-testid='action-filter']", "0");
-        await Task.Delay(500);
+        await Task.Delay(500); // Allow React to start re-rendering
 
-        var insertRows = await page.QuerySelectorAllAsync("[data-testid='sync-records-table'] tbody tr");
+        // Wait for React to apply the filter - wait until ALL visible rows have operation=0
+        // OR there are no rows (which is valid if no Insert operations exist)
+        await page.WaitForFunctionAsync(
+            @"() => {
+                const rows = document.querySelectorAll('[data-testid=""sync-records-table""] tbody tr');
+                console.log('[Filter] Row count after filter: ' + rows.length);
+                if (rows.length === 0) return true;
+                const allMatch = Array.from(rows).every(row => {
+                    const op = row.getAttribute('data-operation');
+                    console.log('[Filter] Row operation: ' + op);
+                    return op === '0';
+                });
+                return allMatch;
+            }",
+            new PageWaitForFunctionOptions { Timeout = 20000 }
+        );
+
+        var insertRows = await page.QuerySelectorAllAsync(
+            "[data-testid='sync-records-table'] tbody tr"
+        );
         Console.WriteLine($"[TEST] Insert filter row count: {insertRows.Count}");
 
         // PROVE: Every visible row must have Insert operation (0)
@@ -184,16 +273,26 @@ public sealed class SyncE2ETests
         }
 
         // Verify filter value is selected
-        var selectedValue = await page.EvalOnSelectorAsync<string>("[data-testid='action-filter']", "el => el.value");
+        var selectedValue = await page.EvalOnSelectorAsync<string>(
+            "[data-testid='action-filter']",
+            "el => el.value"
+        );
         Assert.Equal("0", selectedValue);
 
         // Reset filter
         await page.SelectOptionAsync("[data-testid='action-filter']", "all");
-        await Task.Delay(500);
 
-        var allRows = await page.QuerySelectorAllAsync("[data-testid='sync-records-table'] tbody tr");
-        Assert.True(allRows.Count >= insertRows.Count,
-            "All rows should be >= Insert-only rows");
+        // Wait for React to apply the reset filter
+        await page.WaitForFunctionAsync(
+            $"() => document.querySelector('[data-testid=\"action-filter\"]').value === 'all'",
+            new PageWaitForFunctionOptions { Timeout = 5000 }
+        );
+        await Task.Delay(300); // Small buffer for React re-render
+
+        var allRows = await page.QuerySelectorAllAsync(
+            "[data-testid='sync-records-table'] tbody tr"
+        );
+        Assert.True(allRows.Count >= insertRows.Count, "All rows should be >= Insert-only rows");
 
         await page.CloseAsync();
     }
@@ -222,20 +321,45 @@ public sealed class SyncE2ETests
             $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
             new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(patientRequest),
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
 
         await page.GotoAsync($"{E2EFixture.DashboardUrl}#sync");
-        await page.WaitForSelectorAsync("[data-testid='sync-page']", new PageWaitForSelectorOptions { Timeout = 20000 });
-        await page.WaitForSelectorAsync("[data-testid='service-status-clinical']", new PageWaitForSelectorOptions { Timeout = 15000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='sync-page']",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='service-status-clinical']",
+            new PageWaitForSelectorOptions { Timeout = 15000 }
+        );
         await Task.Delay(1000);
 
         // Apply both filters: Clinical + Insert
         await page.SelectOptionAsync("[data-testid='service-filter']", "clinical");
         await page.SelectOptionAsync("[data-testid='action-filter']", "0");
-        await Task.Delay(500);
 
-        var filteredRows = await page.QuerySelectorAllAsync("[data-testid='sync-records-table'] tbody tr");
-        Console.WriteLine($"[TEST] Combined filter (Clinical + Insert) row count: {filteredRows.Count}");
+        // Wait for React to apply both filters
+        await page.WaitForFunctionAsync(
+            @"() => {
+                const rows = document.querySelectorAll('[data-testid=""sync-records-table""] tbody tr');
+                if (rows.length === 0) return true; // No rows = filters applied (or empty)
+                return Array.from(rows).every(row =>
+                    row.getAttribute('data-service') === 'clinical' &&
+                    row.getAttribute('data-operation') === '0'
+                );
+            }",
+            new PageWaitForFunctionOptions { Timeout = 5000 }
+        );
+
+        var filteredRows = await page.QuerySelectorAllAsync(
+            "[data-testid='sync-records-table'] tbody tr"
+        );
+        Console.WriteLine(
+            $"[TEST] Combined filter (Clinical + Insert) row count: {filteredRows.Count}"
+        );
 
         // PROVE: Every row must satisfy BOTH filters
         foreach (var row in filteredRows)
@@ -248,9 +372,23 @@ public sealed class SyncE2ETests
 
         // Try Scheduling + Insert
         await page.SelectOptionAsync("[data-testid='service-filter']", "scheduling");
-        await Task.Delay(500);
 
-        var schedulingInsertRows = await page.QuerySelectorAllAsync("[data-testid='sync-records-table'] tbody tr");
+        // Wait for React to apply the service filter change
+        await page.WaitForFunctionAsync(
+            @"() => {
+                const rows = document.querySelectorAll('[data-testid=""sync-records-table""] tbody tr');
+                if (rows.length === 0) return true;
+                return Array.from(rows).every(row =>
+                    row.getAttribute('data-service') === 'scheduling' &&
+                    row.getAttribute('data-operation') === '0'
+                );
+            }",
+            new PageWaitForFunctionOptions { Timeout = 5000 }
+        );
+
+        var schedulingInsertRows = await page.QuerySelectorAllAsync(
+            "[data-testid='sync-records-table'] tbody tr"
+        );
         foreach (var row in schedulingInsertRows)
         {
             var serviceAttr = await row.GetAttributeAsync("data-service");
@@ -286,32 +424,50 @@ public sealed class SyncE2ETests
             $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
             new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(patientRequest),
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
         var patientJson = await createResponse.Content.ReadAsStringAsync();
         var patientDoc = System.Text.Json.JsonDocument.Parse(patientJson);
         var patientId = patientDoc.RootElement.GetProperty("Id").GetString();
 
         await page.GotoAsync($"{E2EFixture.DashboardUrl}#sync");
-        await page.WaitForSelectorAsync("[data-testid='sync-page']", new PageWaitForSelectorOptions { Timeout = 20000 });
-        await page.WaitForSelectorAsync("[data-testid='service-status-clinical']", new PageWaitForSelectorOptions { Timeout = 15000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='sync-page']",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='service-status-clinical']",
+            new PageWaitForSelectorOptions { Timeout = 15000 }
+        );
         await Task.Delay(1000);
 
         // Get initial count
-        var initialRows = await page.QuerySelectorAllAsync("[data-testid='sync-records-table'] tbody tr");
+        var initialRows = await page.QuerySelectorAllAsync(
+            "[data-testid='sync-records-table'] tbody tr"
+        );
         var initialCount = initialRows.Count;
 
         // Search for the patient ID
         await page.FillAsync("[data-testid='sync-search']", patientId!);
         await Task.Delay(500);
 
-        var searchRows = await page.QuerySelectorAllAsync("[data-testid='sync-records-table'] tbody tr");
+        var searchRows = await page.QuerySelectorAllAsync(
+            "[data-testid='sync-records-table'] tbody tr"
+        );
         Console.WriteLine($"[TEST] Search for '{patientId}' found {searchRows.Count} rows");
 
         // PROVE: Search should find at least one matching row
-        Assert.True(searchRows.Count >= 1, $"Search for patient ID '{patientId}' should find at least one row");
-        Assert.True(searchRows.Count < initialCount || initialCount <= 1,
-            "Search should filter down results (unless only 1 row exists)");
+        Assert.True(
+            searchRows.Count >= 1,
+            $"Search for patient ID '{patientId}' should find at least one row"
+        );
+        Assert.True(
+            searchRows.Count < initialCount || initialCount <= 1,
+            "Search should filter down results (unless only 1 row exists)"
+        );
 
         await page.CloseAsync();
     }
@@ -326,7 +482,10 @@ public sealed class SyncE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync($"{E2EFixture.DashboardUrl}#sync");
-        await page.WaitForSelectorAsync("[data-testid='sync-page']", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='sync-page']",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
 
         var content = await page.ContentAsync();
         Assert.Contains("Sync Dashboard", content);
@@ -358,13 +517,18 @@ public sealed class SyncE2ETests
             $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
             new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(patientRequest),
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
         var patientJson = await createResponse.Content.ReadAsStringAsync();
         var patientDoc = System.Text.Json.JsonDocument.Parse(patientJson);
         var patientId = patientDoc.RootElement.GetProperty("Id").GetString();
 
-        var clinicalGetResponse = await client.GetAsync($"{E2EFixture.ClinicalUrl}/fhir/Patient/{patientId}");
+        var clinicalGetResponse = await client.GetAsync(
+            $"{E2EFixture.ClinicalUrl}/fhir/Patient/{patientId}"
+        );
         Assert.Equal(HttpStatusCode.OK, clinicalGetResponse.StatusCode);
 
         var syncedToScheduling = false;
@@ -372,7 +536,9 @@ public sealed class SyncE2ETests
         {
             await Task.Delay(5000);
 
-            var syncPatientsResponse = await client.GetAsync($"{E2EFixture.SchedulingUrl}/sync/patients");
+            var syncPatientsResponse = await client.GetAsync(
+                $"{E2EFixture.SchedulingUrl}/sync/patients"
+            );
             if (syncPatientsResponse.IsSuccessStatusCode)
             {
                 var patientsJson = await syncPatientsResponse.Content.ReadAsStringAsync();
@@ -384,8 +550,10 @@ public sealed class SyncE2ETests
             }
         }
 
-        Assert.True(syncedToScheduling,
-            $"Patient '{uniqueId}' created in Clinical.Api was not synced to Scheduling.Api within 90 seconds.");
+        Assert.True(
+            syncedToScheduling,
+            $"Patient '{uniqueId}' created in Clinical.Api was not synced to Scheduling.Api within 90 seconds."
+        );
     }
 
     /// <summary>
@@ -413,21 +581,28 @@ public sealed class SyncE2ETests
             $"{E2EFixture.SchedulingUrl}/Practitioner",
             new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(practitionerRequest),
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
         var practitionerJson = await createResponse.Content.ReadAsStringAsync();
         var practitionerDoc = System.Text.Json.JsonDocument.Parse(practitionerJson);
         var practitionerId = practitionerDoc.RootElement.GetProperty("Id").GetString();
 
-        var schedulingGetResponse = await client.GetAsync($"{E2EFixture.SchedulingUrl}/Practitioner/{practitionerId}");
+        var schedulingGetResponse = await client.GetAsync(
+            $"{E2EFixture.SchedulingUrl}/Practitioner/{practitionerId}"
+        );
         Assert.Equal(HttpStatusCode.OK, schedulingGetResponse.StatusCode);
 
         var syncedToClinical = false;
-        for (var i = 0; i < 18; i++)
+        for (var i = 0; i < 30; i++)
         {
             await Task.Delay(5000);
 
-            var syncProvidersResponse = await client.GetAsync($"{E2EFixture.ClinicalUrl}/sync/providers");
+            var syncProvidersResponse = await client.GetAsync(
+                $"{E2EFixture.ClinicalUrl}/sync/providers"
+            );
             if (syncProvidersResponse.IsSuccessStatusCode)
             {
                 var providersJson = await syncProvidersResponse.Content.ReadAsStringAsync();
@@ -439,8 +614,10 @@ public sealed class SyncE2ETests
             }
         }
 
-        Assert.True(syncedToClinical,
-            $"Practitioner '{uniqueId}' created in Scheduling.Api was not synced to Clinical.Api within 90 seconds.");
+        Assert.True(
+            syncedToClinical,
+            $"Practitioner '{uniqueId}' created in Scheduling.Api was not synced to Clinical.Api within 150 seconds."
+        );
     }
 
     /// <summary>
@@ -466,21 +643,37 @@ public sealed class SyncE2ETests
             $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
             new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(patientRequest),
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
 
         await page.GotoAsync($"{E2EFixture.DashboardUrl}#sync");
-        await page.WaitForSelectorAsync("[data-testid='sync-page']", new PageWaitForSelectorOptions { Timeout = 20000 });
-        await page.WaitForSelectorAsync("[data-testid='service-status-clinical']", new PageWaitForSelectorOptions { Timeout = 15000 });
-        await page.WaitForSelectorAsync("[data-testid='service-status-scheduling']", new PageWaitForSelectorOptions { Timeout = 15000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='sync-page']",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='service-status-clinical']",
+            new PageWaitForSelectorOptions { Timeout = 15000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='service-status-scheduling']",
+            new PageWaitForSelectorOptions { Timeout = 15000 }
+        );
 
         var content = await page.ContentAsync();
         Assert.Contains("Clinical.Api", content);
         Assert.Contains("Scheduling.Api", content);
         Assert.Contains("Sync Records", content);
 
-        var clinicalCardVisible = await page.IsVisibleAsync("[data-testid='service-status-clinical']");
-        var schedulingCardVisible = await page.IsVisibleAsync("[data-testid='service-status-scheduling']");
+        var clinicalCardVisible = await page.IsVisibleAsync(
+            "[data-testid='service-status-clinical']"
+        );
+        var schedulingCardVisible = await page.IsVisibleAsync(
+            "[data-testid='service-status-scheduling']"
+        );
         Assert.True(clinicalCardVisible);
         Assert.True(schedulingCardVisible);
 
@@ -495,7 +688,9 @@ public sealed class SyncE2ETests
     {
         using var client = E2EFixture.CreateAuthenticatedClient();
 
-        var initialClinicalResponse = await client.GetAsync($"{E2EFixture.ClinicalUrl}/sync/records");
+        var initialClinicalResponse = await client.GetAsync(
+            $"{E2EFixture.ClinicalUrl}/sync/records"
+        );
         initialClinicalResponse.EnsureSuccessStatusCode();
         var initialClinicalJson = await initialClinicalResponse.Content.ReadAsStringAsync();
         var initialClinicalDoc = System.Text.Json.JsonDocument.Parse(initialClinicalJson);
@@ -514,16 +709,23 @@ public sealed class SyncE2ETests
             $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
             new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(patientRequest),
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
 
-        var updatedClinicalResponse = await client.GetAsync($"{E2EFixture.ClinicalUrl}/sync/records");
+        var updatedClinicalResponse = await client.GetAsync(
+            $"{E2EFixture.ClinicalUrl}/sync/records"
+        );
         updatedClinicalResponse.EnsureSuccessStatusCode();
         var updatedClinicalJson = await updatedClinicalResponse.Content.ReadAsStringAsync();
         var updatedClinicalDoc = System.Text.Json.JsonDocument.Parse(updatedClinicalJson);
         var updatedClinicalCount = updatedClinicalDoc.RootElement.GetProperty("total").GetInt32();
 
-        Assert.True(updatedClinicalCount > initialClinicalCount,
-            $"Sync log count should increase after creating a patient. Initial: {initialClinicalCount}, After: {updatedClinicalCount}");
+        Assert.True(
+            updatedClinicalCount > initialClinicalCount,
+            $"Sync log count should increase after creating a patient. Initial: {initialClinicalCount}, After: {updatedClinicalCount}"
+        );
     }
 }

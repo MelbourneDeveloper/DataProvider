@@ -78,19 +78,45 @@ public sealed class E2EFixture : IAsyncLifetime
         var clinicalProjectDir = Path.Combine(samplesDir, "Clinical", "Clinical.Api");
         var schedulingProjectDir = Path.Combine(samplesDir, "Scheduling", "Scheduling.Api");
         var gatekeeperProjectDir = Path.Combine(rootDir, "Gatekeeper", "Gatekeeper.Api");
+        var configuration = ResolveBuildConfiguration(testAssemblyDir);
+
+        // Delete existing databases to ensure fresh state for each test run
+        // This prevents sync version mismatch issues between runs
+        DeleteDatabaseIfExists(clinicalProjectDir, configuration, "clinical.db");
+        DeleteDatabaseIfExists(schedulingProjectDir, configuration, "scheduling.db");
+        DeleteDatabaseIfExists(gatekeeperProjectDir, configuration, "gatekeeper.db");
 
         Console.WriteLine($"[E2E] Test assembly dir: {testAssemblyDir}");
+        Console.WriteLine($"[E2E] Build configuration: {configuration}");
         Console.WriteLine($"[E2E] Samples dir: {samplesDir}");
         Console.WriteLine($"[E2E] Clinical dir: {clinicalProjectDir}");
         Console.WriteLine($"[E2E] Gatekeeper dir: {gatekeeperProjectDir}");
 
-        var clinicalDll = Path.Combine(clinicalProjectDir, "bin", "Debug", "net9.0", "Clinical.Api.dll");
+        var clinicalDll = Path.Combine(
+            clinicalProjectDir,
+            "bin",
+            configuration,
+            "net9.0",
+            "Clinical.Api.dll"
+        );
         _clinicalProcess = StartApiFromDll(clinicalDll, clinicalProjectDir, ClinicalUrl);
 
-        var schedulingDll = Path.Combine(schedulingProjectDir, "bin", "Debug", "net9.0", "Scheduling.Api.dll");
+        var schedulingDll = Path.Combine(
+            schedulingProjectDir,
+            "bin",
+            configuration,
+            "net9.0",
+            "Scheduling.Api.dll"
+        );
         _schedulingProcess = StartApiFromDll(schedulingDll, schedulingProjectDir, SchedulingUrl);
 
-        var gatekeeperDll = Path.Combine(gatekeeperProjectDir, "bin", "Debug", "net9.0", "Gatekeeper.Api.dll");
+        var gatekeeperDll = Path.Combine(
+            gatekeeperProjectDir,
+            "bin",
+            configuration,
+            "net9.0",
+            "Gatekeeper.Api.dll"
+        );
         _gatekeeperProcess = StartApiFromDll(gatekeeperDll, gatekeeperProjectDir, GatekeeperUrl);
 
         await Task.Delay(2000);
@@ -99,31 +125,73 @@ public sealed class E2EFixture : IAsyncLifetime
         await WaitForApiAsync(SchedulingUrl, "/Practitioner");
         await WaitForGatekeeperApiAsync();
 
-        var clinicalDbPath = Path.Combine(clinicalProjectDir, "bin", "Debug", "net9.0", "clinical.db");
-        var schedulingDbPath = Path.Combine(schedulingProjectDir, "bin", "Debug", "net9.0", "scheduling.db");
+        var clinicalDbPath = Path.Combine(
+            clinicalProjectDir,
+            "bin",
+            configuration,
+            "net9.0",
+            "clinical.db"
+        );
+        var schedulingDbPath = Path.Combine(
+            schedulingProjectDir,
+            "bin",
+            configuration,
+            "net9.0",
+            "scheduling.db"
+        );
 
         var clinicalSyncDir = Path.Combine(samplesDir, "Clinical", "Clinical.Sync");
-        var clinicalSyncDll = Path.Combine(clinicalSyncDir, "bin", "Debug", "net9.0", "Clinical.Sync.dll");
+        var clinicalSyncDll = Path.Combine(
+            clinicalSyncDir,
+            "bin",
+            configuration,
+            "net9.0",
+            "Clinical.Sync.dll"
+        );
         if (File.Exists(clinicalSyncDll))
         {
             var clinicalSyncEnv = new Dictionary<string, string>
             {
                 ["CLINICAL_DB_PATH"] = clinicalDbPath,
                 ["SCHEDULING_API_URL"] = SchedulingUrl,
+                ["POLL_INTERVAL_SECONDS"] = "5", // Fast polling for E2E tests
             };
-            _clinicalSyncProcess = StartSyncWorker(clinicalSyncDll, clinicalSyncDir, clinicalSyncEnv);
+            _clinicalSyncProcess = StartSyncWorker(
+                clinicalSyncDll,
+                clinicalSyncDir,
+                clinicalSyncEnv
+            );
+        }
+        else
+        {
+            Console.WriteLine($"[E2E] Clinical sync worker missing: {clinicalSyncDll}");
         }
 
         var schedulingSyncDir = Path.Combine(samplesDir, "Scheduling", "Scheduling.Sync");
-        var schedulingSyncDll = Path.Combine(schedulingSyncDir, "bin", "Debug", "net9.0", "Scheduling.Sync.dll");
+        var schedulingSyncDll = Path.Combine(
+            schedulingSyncDir,
+            "bin",
+            configuration,
+            "net9.0",
+            "Scheduling.Sync.dll"
+        );
         if (File.Exists(schedulingSyncDll))
         {
             var schedulingSyncEnv = new Dictionary<string, string>
             {
                 ["SCHEDULING_DB_PATH"] = schedulingDbPath,
                 ["CLINICAL_API_URL"] = ClinicalUrl,
+                ["POLL_INTERVAL_SECONDS"] = "5", // Fast polling for E2E tests
             };
-            _schedulingSyncProcess = StartSyncWorker(schedulingSyncDll, schedulingSyncDir, schedulingSyncEnv);
+            _schedulingSyncProcess = StartSyncWorker(
+                schedulingSyncDll,
+                schedulingSyncDir,
+                schedulingSyncEnv
+            );
+        }
+        else
+        {
+            Console.WriteLine($"[E2E] Scheduling sync worker missing: {schedulingSyncDll}");
         }
 
         await Task.Delay(2000);
@@ -134,7 +202,9 @@ public sealed class E2EFixture : IAsyncLifetime
         await SeedTestDataAsync();
 
         Playwright = await Microsoft.Playwright.Playwright.CreateAsync();
-        Browser = await Playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+        Browser = await Playwright.Chromium.LaunchAsync(
+            new BrowserTypeLaunchOptions { Headless = true }
+        );
     }
 
     /// <summary>
@@ -206,7 +276,11 @@ public sealed class E2EFixture : IAsyncLifetime
         return process;
     }
 
-    private static Process StartSyncWorker(string dllPath, string workingDir, Dictionary<string, string>? envVars = null)
+    private static Process StartSyncWorker(
+        string dllPath,
+        string workingDir,
+        Dictionary<string, string>? envVars = null
+    )
     {
         var startInfo = new ProcessStartInfo
         {
@@ -301,6 +375,34 @@ public sealed class E2EFixture : IAsyncLifetime
         }
     }
 
+    private static void DeleteDatabaseIfExists(
+        string projectDir,
+        string configuration,
+        string dbName
+    )
+    {
+        var dbPath = Path.Combine(projectDir, "bin", configuration, "net9.0", dbName);
+        if (File.Exists(dbPath))
+        {
+            try
+            {
+                File.Delete(dbPath);
+                Console.WriteLine($"[E2E] Deleted database: {dbPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[E2E] Could not delete {dbPath}: {ex.Message}");
+            }
+        }
+    }
+
+    private static string ResolveBuildConfiguration(string testAssemblyDir)
+    {
+        var net9Dir = new DirectoryInfo(testAssemblyDir);
+        var configuration = net9Dir.Parent?.Name;
+        return string.IsNullOrWhiteSpace(configuration) ? "Debug" : configuration;
+    }
+
     private static async Task WaitForApiAsync(string baseUrl, string healthEndpoint)
     {
         using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
@@ -309,8 +411,12 @@ public sealed class E2EFixture : IAsyncLifetime
             try
             {
                 var response = await client.GetAsync($"{baseUrl}{healthEndpoint}");
-                if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NotFound
-                    || response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden)
+                if (
+                    response.IsSuccessStatusCode
+                    || response.StatusCode == HttpStatusCode.NotFound
+                    || response.StatusCode == HttpStatusCode.Unauthorized
+                    || response.StatusCode == HttpStatusCode.Forbidden
+                )
                     return;
             }
             catch { }
@@ -350,20 +456,34 @@ public sealed class E2EFixture : IAsyncLifetime
         return client;
     }
 
-    private static string GenerateTestToken()
+    /// <summary>
+    /// Generates a test JWT token with the specified user details.
+    /// Uses the same all-zeros signing key that the APIs use in dev mode.
+    /// </summary>
+    public static string GenerateTestToken(
+        string userId = "e2e-test-user",
+        string displayName = "E2E Test User",
+        string email = "e2etest@example.com"
+    )
     {
         var signingKey = new byte[32];
         var header = Base64UrlEncode(Encoding.UTF8.GetBytes("""{"alg":"HS256","typ":"JWT"}"""));
         var expiration = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds();
-        var payload = Base64UrlEncode(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new
-        {
-            sub = "e2e-test-user",
-            name = "E2E Test User",
-            email = "e2etest@example.com",
-            jti = Guid.NewGuid().ToString(),
-            exp = expiration,
-            roles = new[] { "admin", "user" },
-        })));
+        var payload = Base64UrlEncode(
+            Encoding.UTF8.GetBytes(
+                JsonSerializer.Serialize(
+                    new
+                    {
+                        sub = userId,
+                        name = displayName,
+                        email,
+                        jti = Guid.NewGuid().ToString(),
+                        exp = expiration,
+                        roles = new[] { "admin", "user" },
+                    }
+                )
+            )
+        );
         var signature = ComputeHmacSignature(header, payload, signingKey);
         return $"{header}.{payload}.{signature}";
     }
@@ -388,10 +508,12 @@ public sealed class E2EFixture : IAsyncLifetime
                 webBuilder.Configure(app =>
                 {
                     app.UseDefaultFiles();
-                    app.UseStaticFiles(new StaticFileOptions
-                    {
-                        FileProvider = new PhysicalFileProvider(wwwrootPath),
-                    });
+                    app.UseStaticFiles(
+                        new StaticFileOptions
+                        {
+                            FileProvider = new PhysicalFileProvider(wwwrootPath),
+                        }
+                    );
                 });
             })
             .Build();
@@ -401,25 +523,50 @@ public sealed class E2EFixture : IAsyncLifetime
     {
         using var client = CreateAuthenticatedClient();
 
-        await client.PostAsync($"{ClinicalUrl}/fhir/Patient/",
-            new StringContent("""{"Active": true, "GivenName": "E2ETest", "FamilyName": "TestPatient", "Gender": "other"}""",
-                Encoding.UTF8, "application/json"));
+        await client.PostAsync(
+            $"{ClinicalUrl}/fhir/Patient/",
+            new StringContent(
+                """{"Active": true, "GivenName": "E2ETest", "FamilyName": "TestPatient", "Gender": "other"}""",
+                Encoding.UTF8,
+                "application/json"
+            )
+        );
 
-        await client.PostAsync($"{SchedulingUrl}/Practitioner",
-            new StringContent("""{"Identifier": "DR001", "Active": true, "NameGiven": "E2EPractitioner", "NameFamily": "DrTest", "Qualification": "MD", "Specialty": "General Practice", "TelecomEmail": "drtest@hospital.org", "TelecomPhone": "+1-555-0123"}""",
-                Encoding.UTF8, "application/json"));
+        await client.PostAsync(
+            $"{SchedulingUrl}/Practitioner",
+            new StringContent(
+                """{"Identifier": "DR001", "Active": true, "NameGiven": "E2EPractitioner", "NameFamily": "DrTest", "Qualification": "MD", "Specialty": "General Practice", "TelecomEmail": "drtest@hospital.org", "TelecomPhone": "+1-555-0123"}""",
+                Encoding.UTF8,
+                "application/json"
+            )
+        );
 
-        await client.PostAsync($"{SchedulingUrl}/Practitioner",
-            new StringContent("""{"Identifier": "DR002", "Active": true, "NameGiven": "Sarah", "NameFamily": "Johnson", "Qualification": "DO", "Specialty": "Cardiology", "TelecomEmail": "sjohnson@hospital.org", "TelecomPhone": "+1-555-0124"}""",
-                Encoding.UTF8, "application/json"));
+        await client.PostAsync(
+            $"{SchedulingUrl}/Practitioner",
+            new StringContent(
+                """{"Identifier": "DR002", "Active": true, "NameGiven": "Sarah", "NameFamily": "Johnson", "Qualification": "DO", "Specialty": "Cardiology", "TelecomEmail": "sjohnson@hospital.org", "TelecomPhone": "+1-555-0124"}""",
+                Encoding.UTF8,
+                "application/json"
+            )
+        );
 
-        await client.PostAsync($"{SchedulingUrl}/Practitioner",
-            new StringContent("""{"Identifier": "DR003", "Active": true, "NameGiven": "Michael", "NameFamily": "Chen", "Qualification": "MD", "Specialty": "Neurology", "TelecomEmail": "mchen@hospital.org", "TelecomPhone": "+1-555-0125"}""",
-                Encoding.UTF8, "application/json"));
+        await client.PostAsync(
+            $"{SchedulingUrl}/Practitioner",
+            new StringContent(
+                """{"Identifier": "DR003", "Active": true, "NameGiven": "Michael", "NameFamily": "Chen", "Qualification": "MD", "Specialty": "Neurology", "TelecomEmail": "mchen@hospital.org", "TelecomPhone": "+1-555-0125"}""",
+                Encoding.UTF8,
+                "application/json"
+            )
+        );
 
-        await client.PostAsync($"{SchedulingUrl}/Appointment",
-            new StringContent("""{"ServiceCategory": "General", "ServiceType": "Checkup", "Start": "2025-12-20T10:00:00Z", "End": "2025-12-20T11:00:00Z", "PatientReference": "Patient/1", "PractitionerReference": "Practitioner/1", "Priority": "routine"}""",
-                Encoding.UTF8, "application/json"));
+        await client.PostAsync(
+            $"{SchedulingUrl}/Appointment",
+            new StringContent(
+                """{"ServiceCategory": "General", "ServiceType": "Checkup", "Start": "2025-12-20T10:00:00Z", "End": "2025-12-20T11:00:00Z", "PatientReference": "Patient/1", "PractitionerReference": "Practitioner/1", "Priority": "routine"}""",
+                Encoding.UTF8,
+                "application/json"
+            )
+        );
     }
 }
 

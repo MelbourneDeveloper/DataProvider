@@ -1,4 +1,3 @@
-#pragma warning disable CS8509 // Exhaustive switch
 #pragma warning disable IDE0037 // Use inferred member name
 
 using System.Security.Cryptography;
@@ -110,7 +109,7 @@ authGroup.MapPost(
                         Convert.FromBase64String(c.id)
                     ))
                     .ToList(),
-                _ => [],
+                GetUserCredentialsError _ => [],
             };
 
             var user = new Fido2User

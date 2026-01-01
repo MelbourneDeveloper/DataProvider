@@ -1,0 +1,162 @@
+name: scheduling
+tables:
+- name: fhir_Practitioner
+  columns:
+  - name: Id
+    type: Text
+  - name: Identifier
+    type: Text
+  - name: Active
+    type: Int
+    defaultValue: 1
+  - name: NameFamily
+    type: Text
+  - name: NameGiven
+    type: Text
+  - name: Qualification
+    type: Text
+  - name: Specialty
+    type: Text
+  - name: TelecomEmail
+    type: Text
+  - name: TelecomPhone
+    type: Text
+  indexes:
+  - name: idx_practitioner_identifier
+    columns:
+    - Identifier
+  - name: idx_practitioner_specialty
+    columns:
+    - Specialty
+  primaryKey:
+    name: PK_fhir_Practitioner
+    columns:
+    - Id
+- name: fhir_Schedule
+  columns:
+  - name: Id
+    type: Text
+  - name: Active
+    type: Int
+    defaultValue: 1
+  - name: PractitionerReference
+    type: Text
+  - name: PlanningHorizon
+    type: Int
+    defaultValue: 30
+  - name: Comment
+    type: Text
+  indexes:
+  - name: idx_schedule_practitioner
+    columns:
+    - PractitionerReference
+  foreignKeys:
+  - name: FK_fhir_Schedule_PractitionerReference
+    columns:
+    - PractitionerReference
+    referencedTable: fhir_Practitioner
+    referencedColumns:
+    - Id
+  primaryKey:
+    name: PK_fhir_Schedule
+    columns:
+    - Id
+- name: fhir_Slot
+  columns:
+  - name: Id
+    type: Text
+  - name: ScheduleReference
+    type: Text
+  - name: Status
+    type: Text
+    checkConstraint: Status IN ('free', 'busy', 'busy-unavailable', 'busy-tentative')
+  - name: StartTime
+    type: Text
+  - name: EndTime
+    type: Text
+  - name: Overbooked
+    type: Int
+    defaultValue: 0
+  - name: Comment
+    type: Text
+  indexes:
+  - name: idx_slot_schedule
+    columns:
+    - ScheduleReference
+  - name: idx_slot_status
+    columns:
+    - Status
+  foreignKeys:
+  - name: FK_fhir_Slot_ScheduleReference
+    columns:
+    - ScheduleReference
+    referencedTable: fhir_Schedule
+    referencedColumns:
+    - Id
+  primaryKey:
+    name: PK_fhir_Slot
+    columns:
+    - Id
+- name: fhir_Appointment
+  columns:
+  - name: Id
+    type: Text
+  - name: Status
+    type: Text
+    checkConstraint: Status IN ('proposed', 'pending', 'booked', 'arrived', 'fulfilled', 'cancelled', 'noshow', 'entered-in-error', 'checked-in', 'waitlist')
+  - name: ServiceCategory
+    type: Text
+  - name: ServiceType
+    type: Text
+  - name: ReasonCode
+    type: Text
+  - name: Priority
+    type: Text
+    checkConstraint: Priority IN ('routine', 'urgent', 'asap', 'stat')
+  - name: Description
+    type: Text
+  - name: StartTime
+    type: Text
+  - name: EndTime
+    type: Text
+  - name: MinutesDuration
+    type: Int
+  - name: PatientReference
+    type: Text
+  - name: PractitionerReference
+    type: Text
+  - name: Created
+    type: Text
+  - name: Comment
+    type: Text
+  indexes:
+  - name: idx_appointment_status
+    columns:
+    - Status
+  - name: idx_appointment_patient
+    columns:
+    - PatientReference
+  - name: idx_appointment_practitioner
+    columns:
+    - PractitionerReference
+  primaryKey:
+    name: PK_fhir_Appointment
+    columns:
+    - Id
+- name: sync_ScheduledPatient
+  columns:
+  - name: PatientId
+    type: Text
+  - name: DisplayName
+    type: Text
+  - name: ContactPhone
+    type: Text
+  - name: ContactEmail
+    type: Text
+  - name: SyncedAt
+    type: Text
+    defaultValue: (datetime('now'))
+  primaryKey:
+    name: PK_sync_ScheduledPatient
+    columns:
+    - PatientId

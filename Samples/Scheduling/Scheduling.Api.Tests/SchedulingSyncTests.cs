@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Scheduling.Api.Tests;
+
 /// <summary>
 /// Sync tests for Scheduling domain.
 /// </summary>

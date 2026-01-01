@@ -1,4 +1,3 @@
-
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -6,6 +5,7 @@ using Microsoft.Playwright;
 using Xunit;
 
 namespace Dashboard.Web.Tests.Runner;
+
 /// <summary>
 /// Playwright-based test runner that executes H5 browser tests once and validates all results.
 /// Runs browser once, executes tests once, then validates all test categories from the output.
@@ -30,7 +30,11 @@ public sealed class DashboardPlaywrightTests : IAsyncLifetime
     {
         _playwright = await Playwright.CreateAsync();
         _browser = await _playwright.Chromium.LaunchAsync(
-            new BrowserTypeLaunchOptions { Headless = true }
+            new BrowserTypeLaunchOptions
+            {
+                Headless = true,
+                Args = ["--allow-file-access-from-files", "--disable-web-security"],
+            }
         );
 
         var testHtmlPath = FindTestHtml();

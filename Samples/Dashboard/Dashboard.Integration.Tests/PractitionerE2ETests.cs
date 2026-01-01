@@ -27,10 +27,19 @@ public sealed class PractitionerE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         await page.ClickAsync("text=Practitioners");
-        await page.WaitForSelectorAsync("text=DrTest", new PageWaitForSelectorOptions { Timeout = 10000 });
-        await page.WaitForSelectorAsync(".practitioner-card", new PageWaitForSelectorOptions { Timeout = 5000 });
+        await page.WaitForSelectorAsync(
+            "text=DrTest",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        await page.WaitForSelectorAsync(
+            ".practitioner-card",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
 
         var content = await page.ContentAsync();
         Assert.Contains("DrTest", content);
@@ -57,9 +66,15 @@ public sealed class PractitionerE2ETests
 
         var page = await _fixture.Browser!.NewPageAsync();
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         await page.ClickAsync("text=Practitioners");
-        await page.WaitForSelectorAsync(".practitioner-card", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            ".practitioner-card",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         var cards = await page.QuerySelectorAllAsync(".practitioner-card");
         Assert.True(cards.Count >= 3);
@@ -80,7 +95,10 @@ public sealed class PractitionerE2ETests
             $"{E2EFixture.SchedulingUrl}/Practitioner",
             new StringContent(
                 $$$"""{"Identifier": "{{{uniqueId}}}", "Active": true, "NameGiven": "ApiDoctor", "NameFamily": "TestDoc", "Qualification": "MD", "Specialty": "Testing", "TelecomEmail": "test@hospital.org", "TelecomPhone": "+1-555-9999"}""",
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
 
         var listResponse = await client.GetStringAsync($"{E2EFixture.SchedulingUrl}/Practitioner");
@@ -97,11 +115,20 @@ public sealed class PractitionerE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         await page.ClickAsync("text=Practitioners");
-        await page.WaitForSelectorAsync("[data-testid='add-practitioner-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-practitioner-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         await page.ClickAsync("[data-testid='add-practitioner-btn']");
-        await page.WaitForSelectorAsync(".modal", new PageWaitForSelectorOptions { Timeout = 5000 });
+        await page.WaitForSelectorAsync(
+            ".modal",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
 
         var uniqueIdentifier = $"DR{DateTime.UtcNow.Ticks % 100000}";
         var uniqueGivenName = $"E2EDoc{DateTime.UtcNow.Ticks % 100000}";
@@ -111,7 +138,10 @@ public sealed class PractitionerE2ETests
         await page.FillAsync("[data-testid='practitioner-specialty']", "E2E Testing");
         await page.ClickAsync("[data-testid='submit-practitioner']");
 
-        await page.WaitForSelectorAsync($"text={uniqueGivenName}", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            $"text={uniqueGivenName}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         using var client = E2EFixture.CreateAuthenticatedClient();
         var response = await client.GetStringAsync($"{E2EFixture.SchedulingUrl}/Practitioner");
@@ -134,7 +164,10 @@ public sealed class PractitionerE2ETests
             $"{E2EFixture.SchedulingUrl}/Practitioner",
             new StringContent(
                 $$$"""{"Identifier": "{{{uniqueIdentifier}}}", "NameFamily": "OriginalFamily", "NameGiven": "{{{uniqueGivenName}}}", "Qualification": "MD", "Specialty": "Original Specialty"}""",
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
         var createdJson = await createResponse.Content.ReadAsStringAsync();
         var practitionerIdMatch = Regex.Match(createdJson, "\"Id\"\\s*:\\s*\"([^\"]+)\"");
@@ -144,22 +177,36 @@ public sealed class PractitionerE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         await page.ClickAsync("text=Practitioners");
-        await page.WaitForSelectorAsync($"text={uniqueGivenName}", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            $"text={uniqueGivenName}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         var editButton = page.Locator($"[data-testid='edit-practitioner-{practitionerId}']");
         await editButton.HoverAsync();
         await editButton.ClickAsync();
 
-        await page.WaitForSelectorAsync("[data-testid='edit-practitioner-page']", new PageWaitForSelectorOptions { Timeout = 5000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='edit-practitioner-page']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
 
         var newSpecialty = $"Updated Specialty {DateTime.UtcNow.Ticks % 100000}";
         await page.FillAsync("[data-testid='edit-practitioner-specialty']", newSpecialty);
         await page.ClickAsync("[data-testid='save-practitioner']");
-        await page.WaitForSelectorAsync("[data-testid='edit-practitioner-success']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='edit-practitioner-success']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
-        var updatedPractitionerJson = await client.GetStringAsync($"{E2EFixture.SchedulingUrl}/Practitioner/{practitionerId}");
+        var updatedPractitionerJson = await client.GetStringAsync(
+            $"{E2EFixture.SchedulingUrl}/Practitioner/{practitionerId}"
+        );
         Assert.Contains(newSpecialty, updatedPractitionerJson);
 
         await page.CloseAsync();
@@ -178,11 +225,17 @@ public sealed class PractitionerE2ETests
             $"{E2EFixture.SchedulingUrl}/Practitioner",
             new StringContent(
                 $$$"""{"Identifier": "{{{uniqueIdentifier}}}", "NameFamily": "ApiOriginal", "NameGiven": "TestDoc", "Qualification": "MD", "Specialty": "Original"}""",
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
         var createdPractitionerJson = await createResponse.Content.ReadAsStringAsync();
 
-        var practitionerIdMatch = Regex.Match(createdPractitionerJson, "\"Id\"\\s*:\\s*\"([^\"]+)\"");
+        var practitionerIdMatch = Regex.Match(
+            createdPractitionerJson,
+            "\"Id\"\\s*:\\s*\"([^\"]+)\""
+        );
         var practitionerId = practitionerIdMatch.Groups[1].Value;
 
         var updatedSpecialty = $"ApiUpdated{DateTime.UtcNow.Ticks % 100000}";
@@ -190,10 +243,15 @@ public sealed class PractitionerE2ETests
             $"{E2EFixture.SchedulingUrl}/Practitioner/{practitionerId}",
             new StringContent(
                 $$$"""{"Identifier": "{{{uniqueIdentifier}}}", "Active": true, "NameFamily": "ApiUpdated", "NameGiven": "TestDoc", "Qualification": "DO", "Specialty": "{{{updatedSpecialty}}}", "TelecomEmail": "updated@hospital.com", "TelecomPhone": "555-1234"}""",
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         updateResponse.EnsureSuccessStatusCode();
 
-        var getResponse = await client.GetStringAsync($"{E2EFixture.SchedulingUrl}/Practitioner/{practitionerId}");
+        var getResponse = await client.GetStringAsync(
+            $"{E2EFixture.SchedulingUrl}/Practitioner/{practitionerId}"
+        );
         Assert.Contains(updatedSpecialty, getResponse);
         Assert.Contains("ApiUpdated", getResponse);
     }
@@ -212,7 +270,10 @@ public sealed class PractitionerE2ETests
             $"{E2EFixture.SchedulingUrl}/Practitioner",
             new StringContent(
                 $$$"""{"Identifier": "{{{uniqueIdentifier}}}", "NameFamily": "BackButtonTest", "NameGiven": "{{{uniqueGivenName}}}", "Qualification": "MD", "Specialty": "Testing"}""",
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
         var createdJson = await createResponse.Content.ReadAsStringAsync();
         var practitionerIdMatch = Regex.Match(createdJson, "\"Id\"\\s*:\\s*\"([^\"]+)\"");
@@ -222,19 +283,34 @@ public sealed class PractitionerE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         await page.ClickAsync("text=Practitioners");
-        await page.WaitForSelectorAsync($"text={uniqueGivenName}", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            $"text={uniqueGivenName}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         var editButton = page.Locator($"[data-testid='edit-practitioner-{practitionerId}']");
         await editButton.HoverAsync();
         await editButton.ClickAsync();
-        await page.WaitForSelectorAsync("[data-testid='edit-practitioner-page']", new PageWaitForSelectorOptions { Timeout = 5000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='edit-practitioner-page']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
 
         await page.GoBackAsync();
 
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 10000 });
-        await page.WaitForSelectorAsync("[data-testid='add-practitioner-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-practitioner-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         Assert.Contains("#practitioners", page.Url);
 
         await page.CloseAsync();

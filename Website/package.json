@@ -1,0 +1,22 @@
+{
+  "name": "dataprovider-website",
+  "version": "1.0.0",
+  "description": "Documentation website for DataProvider - Effortless .NET Data Access",
+  "type": "module",
+  "scripts": {
+    "dev": "eleventy --serve",
+    "build": "eleventy",
+    "build:site": "eleventy",
+    "generate-api": "node scripts/generate-api-docs.cjs"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^3.1.2",
+    "@11ty/eleventy-navigation": "^0.3.5",
+    "@11ty/eleventy-plugin-rss": "^2.0.2",
+    "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.0",
+    "markdown-it-anchor": "^9.2.0"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

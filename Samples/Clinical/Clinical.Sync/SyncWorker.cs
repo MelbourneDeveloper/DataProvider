@@ -1,4 +1,3 @@
-
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -6,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Clinical.Sync;
+
 /// <summary>
 /// Background service that pulls Practitioner data from Scheduling.Api and maps to sync_Provider.
 /// </summary>
@@ -35,7 +35,12 @@ internal sealed class SyncWorker : BackgroundService
     /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.Log(LogLevel.Information, "[SYNC-START] Clinical.Sync worker starting at {Time}. Target: {Url}", DateTimeOffset.Now, _schedulingApiUrl);
+        _logger.Log(
+            LogLevel.Information,
+            "[SYNC-START] Clinical.Sync worker starting at {Time}. Target: {Url}",
+            DateTimeOffset.Now,
+            _schedulingApiUrl
+        );
 
         var consecutiveFailures = 0;
         const int maxConsecutiveFailuresBeforeWarning = 3;
@@ -50,7 +55,11 @@ internal sealed class SyncWorker : BackgroundService
                 // Reset failure counter on success
                 if (consecutiveFailures > 0)
                 {
-                    _logger.Log(LogLevel.Information, "[SYNC-RECOVERED] Sync recovered after {Count} consecutive failures", consecutiveFailures);
+                    _logger.Log(
+                        LogLevel.Information,
+                        "[SYNC-RECOVERED] Sync recovered after {Count} consecutive failures",
+                        consecutiveFailures
+                    );
                     consecutiveFailures = 0;
                 }
 
@@ -63,18 +72,34 @@ internal sealed class SyncWorker : BackgroundService
 
                 if (consecutiveFailures >= maxConsecutiveFailuresBeforeWarning)
                 {
-                    _logger.Log(LogLevel.Warning, "[SYNC-FAULT] Scheduling.Api unreachable for {Count} consecutive attempts. Error: {Message}. Retrying in {Delay}s...", consecutiveFailures, ex.Message, retryDelay);
+                    _logger.Log(
+                        LogLevel.Warning,
+                        "[SYNC-FAULT] Scheduling.Api unreachable for {Count} consecutive attempts. Error: {Message}. Retrying in {Delay}s...",
+                        consecutiveFailures,
+                        ex.Message,
+                        retryDelay
+                    );
                 }
                 else
                 {
-                    _logger.Log(LogLevel.Information, "[SYNC-RETRY] Scheduling.Api not reachable ({Message}). Attempt {Count}, retrying in {Delay}s...", ex.Message, consecutiveFailures, retryDelay);
+                    _logger.Log(
+                        LogLevel.Information,
+                        "[SYNC-RETRY] Scheduling.Api not reachable ({Message}). Attempt {Count}, retrying in {Delay}s...",
+                        ex.Message,
+                        consecutiveFailures,
+                        retryDelay
+                    );
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(retryDelay), stoppingToken).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromSeconds(retryDelay), stoppingToken)
+                    .ConfigureAwait(false);
             }
             catch (TaskCanceledException) when (stoppingToken.IsCancellationRequested)
             {
-                _logger.Log(LogLevel.Information, "[SYNC-SHUTDOWN] Sync worker shutting down gracefully");
+                _logger.Log(
+                    LogLevel.Information,
+                    "[SYNC-SHUTDOWN] Sync worker shutting down gracefully"
+                );
                 break;
             }
             catch (Exception ex)
@@ -82,13 +107,25 @@ internal sealed class SyncWorker : BackgroundService
                 consecutiveFailures++;
                 var retryDelay = Math.Min(10 * consecutiveFailures, 60); // Longer backoff for unknown errors
 
-                _logger.Log(LogLevel.Error, ex, "[SYNC-ERROR] Unexpected error during sync (attempt {Count}). Retrying in {Delay}s. Error type: {Type}", consecutiveFailures, retryDelay, ex.GetType().Name);
+                _logger.Log(
+                    LogLevel.Error,
+                    ex,
+                    "[SYNC-ERROR] Unexpected error during sync (attempt {Count}). Retrying in {Delay}s. Error type: {Type}",
+                    consecutiveFailures,
+                    retryDelay,
+                    ex.GetType().Name
+                );
 
-                await Task.Delay(TimeSpan.FromSeconds(retryDelay), stoppingToken).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromSeconds(retryDelay), stoppingToken)
+                    .ConfigureAwait(false);
             }
         }
 
-        _logger.Log(LogLevel.Information, "[SYNC-EXIT] Clinical.Sync worker exited at {Time}", DateTimeOffset.Now);
+        _logger.Log(
+            LogLevel.Information,
+            "[SYNC-EXIT] Clinical.Sync worker exited at {Time}",
+            DateTimeOffset.Now
+        );
     }
 
     private async Task PerformSync(CancellationToken cancellationToken)

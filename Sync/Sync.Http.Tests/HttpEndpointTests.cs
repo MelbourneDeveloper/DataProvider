@@ -641,11 +641,23 @@ public sealed class HttpSyncE2ETests : IClassFixture<SyncApiWebApplicationFactor
         // Assert - both databases have both records
         using var serverCmd = _serverConn.CreateCommand();
         serverCmd.CommandText = "SELECT COUNT(*) FROM Person";
-        Assert.Equal(2L, Convert.ToInt64(serverCmd.ExecuteScalar()));
+        Assert.Equal(
+            2L,
+            Convert.ToInt64(
+                serverCmd.ExecuteScalar(),
+                System.Globalization.CultureInfo.InvariantCulture
+            )
+        );
 
         using var clientCmd = _clientConn.CreateCommand();
         clientCmd.CommandText = "SELECT COUNT(*) FROM Person";
-        Assert.Equal(2L, Convert.ToInt64(clientCmd.ExecuteScalar()));
+        Assert.Equal(
+            2L,
+            Convert.ToInt64(
+                clientCmd.ExecuteScalar(),
+                System.Globalization.CultureInfo.InvariantCulture
+            )
+        );
     }
 
     /// <summary>

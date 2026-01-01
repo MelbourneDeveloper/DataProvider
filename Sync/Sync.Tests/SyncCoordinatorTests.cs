@@ -1,5 +1,4 @@
-#pragma warning disable CA1848 // Use LoggerMessage delegates for performance
-
+using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -783,7 +782,7 @@ public sealed class SyncCoordinatorTests : IDisposable
     {
         using var cmd = db.CreateCommand();
         cmd.CommandText = "UPDATE _sync_state SET value = $v WHERE key = 'last_server_version'";
-        cmd.Parameters.AddWithValue("$v", version.ToString());
+        cmd.Parameters.AddWithValue("$v", version.ToString(CultureInfo.InvariantCulture));
         cmd.ExecuteNonQuery();
     }
 
@@ -791,7 +790,7 @@ public sealed class SyncCoordinatorTests : IDisposable
     {
         using var cmd = db.CreateCommand();
         cmd.CommandText = "UPDATE _sync_state SET value = $v WHERE key = 'last_push_version'";
-        cmd.Parameters.AddWithValue("$v", version.ToString());
+        cmd.Parameters.AddWithValue("$v", version.ToString(CultureInfo.InvariantCulture));
         cmd.ExecuteNonQuery();
     }
 

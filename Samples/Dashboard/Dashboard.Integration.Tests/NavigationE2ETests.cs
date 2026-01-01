@@ -27,23 +27,38 @@ public sealed class NavigationE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         Assert.Contains("#dashboard", page.Url);
 
         await page.ClickAsync("text=Patients");
-        await page.WaitForSelectorAsync("[data-testid='add-patient-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         Assert.Contains("#patients", page.Url);
 
         await page.ClickAsync("text=Appointments");
-        await page.WaitForSelectorAsync("[data-testid='add-appointment-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-appointment-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         Assert.Contains("#appointments", page.Url);
 
         await page.GoBackAsync();
-        await page.WaitForSelectorAsync("[data-testid='add-patient-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         Assert.Contains("#patients", page.Url);
 
         await page.GoBackAsync();
-        await page.WaitForSelectorAsync(".metric-card", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            ".metric-card",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         Assert.Contains("#dashboard", page.Url);
 
         await page.CloseAsync();
@@ -59,14 +74,23 @@ public sealed class NavigationE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync($"{E2EFixture.DashboardUrl}#patients");
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
-        await page.WaitForSelectorAsync("[data-testid='add-patient-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         var content = await page.ContentAsync();
         Assert.Contains("Patients", content);
 
         await page.GotoAsync($"{E2EFixture.DashboardUrl}#appointments");
-        await page.WaitForSelectorAsync("[data-testid='add-appointment-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-appointment-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         content = await page.ContentAsync();
         Assert.Contains("Appointments", content);
@@ -87,7 +111,10 @@ public sealed class NavigationE2ETests
             $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
             new StringContent(
                 $$$"""{"Active": true, "GivenName": "{{{uniqueName}}}", "FamilyName": "CancelTestPatient", "Gender": "male"}""",
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
         var createdJson = await createResponse.Content.ReadAsStringAsync();
         var patientIdMatch = Regex.Match(createdJson, "\"Id\"\\s*:\\s*\"([^\"]+)\"");
@@ -97,17 +124,32 @@ public sealed class NavigationE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         await page.ClickAsync("text=Patients");
-        await page.WaitForSelectorAsync("[data-testid='add-patient-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         await page.FillAsync("input[placeholder*='Search']", uniqueName);
-        await page.WaitForSelectorAsync($"text={uniqueName}", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            $"text={uniqueName}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         await page.ClickAsync($"[data-testid='edit-patient-{patientId}']");
-        await page.WaitForSelectorAsync("[data-testid='edit-patient-page']", new PageWaitForSelectorOptions { Timeout = 5000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='edit-patient-page']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
 
         await page.ClickAsync("button:has-text('Cancel')");
-        await page.WaitForSelectorAsync("[data-testid='add-patient-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         Assert.Contains("#patients", page.Url);
         Assert.DoesNotContain("/edit/", page.Url);
@@ -128,7 +170,10 @@ public sealed class NavigationE2ETests
             $"{E2EFixture.ClinicalUrl}/fhir/Patient/",
             new StringContent(
                 $$$"""{"Active": true, "GivenName": "{{{uniqueName}}}", "FamilyName": "BackButtonTest", "Gender": "female"}""",
-                System.Text.Encoding.UTF8, "application/json"));
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
         createResponse.EnsureSuccessStatusCode();
         var createdJson = await createResponse.Content.ReadAsStringAsync();
         var patientIdMatch = Regex.Match(createdJson, "\"Id\"\\s*:\\s*\"([^\"]+)\"");
@@ -138,19 +183,37 @@ public sealed class NavigationE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
         await page.ClickAsync("text=Patients");
-        await page.WaitForSelectorAsync("[data-testid='add-patient-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         await page.FillAsync("input[placeholder*='Search']", uniqueName);
-        await page.WaitForSelectorAsync($"text={uniqueName}", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            $"text={uniqueName}",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         await page.ClickAsync($"[data-testid='edit-patient-{patientId}']");
-        await page.WaitForSelectorAsync("[data-testid='edit-patient-page']", new PageWaitForSelectorOptions { Timeout = 5000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='edit-patient-page']",
+            new PageWaitForSelectorOptions { Timeout = 5000 }
+        );
 
         await page.GoBackAsync();
 
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 10000 });
-        await page.WaitForSelectorAsync("[data-testid='add-patient-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         Assert.Contains("#patients", page.Url);
 
         var content = await page.ContentAsync();
@@ -158,7 +221,10 @@ public sealed class NavigationE2ETests
         Assert.Contains("Add Patient", content);
 
         await page.GoBackAsync();
-        await page.WaitForSelectorAsync(".metric-card", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            ".metric-card",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         Assert.Contains("#dashboard", page.Url);
 
         await page.CloseAsync();
@@ -174,21 +240,36 @@ public sealed class NavigationE2ETests
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync(E2EFixture.DashboardUrl);
-        await page.WaitForSelectorAsync(".sidebar", new PageWaitForSelectorOptions { Timeout = 20000 });
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 20000 }
+        );
 
         await page.ClickAsync("text=Patients");
-        await page.WaitForSelectorAsync("[data-testid='add-patient-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
 
         await page.ClickAsync("text=Practitioners");
-        await page.WaitForSelectorAsync(".practitioner-card, .empty-state", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            ".practitioner-card, .empty-state",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         Assert.Contains("#practitioners", page.Url);
 
         await page.GoBackAsync();
-        await page.WaitForSelectorAsync("[data-testid='add-patient-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            "[data-testid='add-patient-btn']",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         Assert.Contains("#patients", page.Url);
 
         await page.GoForwardAsync();
-        await page.WaitForSelectorAsync(".practitioner-card, .empty-state", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await page.WaitForSelectorAsync(
+            ".practitioner-card, .empty-state",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
         Assert.Contains("#practitioners", page.Url);
 
         var content = await page.ContentAsync();

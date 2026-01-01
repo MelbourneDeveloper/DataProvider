@@ -1,0 +1,5 @@
+- this is primarily about documentaiton and  
+- Keep the website tight and simple to navigate. 
+- No duplicate pages
+- leverage the readmes for content
+- Explain what each element of DataProvider does: LQL, DataProvider, Migrations, etc

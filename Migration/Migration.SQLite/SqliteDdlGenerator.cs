@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Migration.SQLite;
 
 /// <summary>
@@ -39,7 +41,7 @@ public static class SqliteDdlGenerator
     private static string GenerateCreateTable(TableDefinition table)
     {
         var sb = new StringBuilder();
-        sb.Append($"CREATE TABLE IF NOT EXISTS [{table.Name}] (");
+        sb.Append(CultureInfo.InvariantCulture, $"CREATE TABLE IF NOT EXISTS [{table.Name}] (");
 
         var columnDefs = new List<string>();
 
@@ -89,10 +91,15 @@ public static class SqliteDdlGenerator
         {
             sb.AppendLine(";");
             var unique = index.IsUnique ? "UNIQUE " : "";
-            var cols = string.Join(", ", index.Columns.Select(c => $"[{c}]"));
+            // Expression indexes use Expressions verbatim, column indexes quote column names
+            var indexItems =
+                index.Expressions.Count > 0
+                    ? string.Join(", ", index.Expressions)
+                    : string.Join(", ", index.Columns.Select(c => $"[{c}]"));
             var filter = index.Filter is not null ? $" WHERE {index.Filter}" : "";
             sb.Append(
-                $"CREATE {unique}INDEX IF NOT EXISTS [{index.Name}] ON [{table.Name}] ({cols}){filter}"
+                CultureInfo.InvariantCulture,
+                $"CREATE {unique}INDEX IF NOT EXISTS [{index.Name}] ON [{table.Name}] ({indexItems}){filter}"
             );
         }
 
@@ -102,7 +109,7 @@ public static class SqliteDdlGenerator
     private static string GenerateColumnDef(ColumnDefinition column)
     {
         var sb = new StringBuilder();
-        sb.Append($"[{column.Name}] ");
+        sb.Append(CultureInfo.InvariantCulture, $"[{column.Name}] ");
         sb.Append(PortableTypeToSqlite(column.Type));
 
         if (!column.IsNullable)
@@ -110,19 +117,25 @@ public static class SqliteDdlGenerator
             sb.Append(" NOT NULL");
         }
 
-        if (column.DefaultValue is not null)
+        // LQL expression takes precedence over raw SQL default
+        if (column.DefaultLqlExpression is not null)
         {
-            sb.Append($" DEFAULT {column.DefaultValue}");
+            var translated = LqlDefaultTranslator.ToSqlite(column.DefaultLqlExpression);
+            sb.Append(CultureInfo.InvariantCulture, $" DEFAULT {translated}");
+        }
+        else if (column.DefaultValue is not null)
+        {
+            sb.Append(CultureInfo.InvariantCulture, $" DEFAULT {column.DefaultValue}");
         }
 
         if (column.Collation is not null)
         {
-            sb.Append($" COLLATE {column.Collation}");
+            sb.Append(CultureInfo.InvariantCulture, $" COLLATE {column.Collation}");
         }
 
         if (column.CheckConstraint is not null)
         {
-            sb.Append($" CHECK ({column.CheckConstraint})");
+            sb.Append(CultureInfo.InvariantCulture, $" CHECK ({column.CheckConstraint})");
         }
 
         return sb.ToString();
@@ -137,10 +150,14 @@ public static class SqliteDdlGenerator
     private static string GenerateCreateIndex(CreateIndexOperation op)
     {
         var unique = op.Index.IsUnique ? "UNIQUE " : "";
-        var cols = string.Join(", ", op.Index.Columns.Select(c => $"[{c}]"));
+        // Expression indexes use Expressions verbatim, column indexes quote column names
+        var indexItems =
+            op.Index.Expressions.Count > 0
+                ? string.Join(", ", op.Index.Expressions)
+                : string.Join(", ", op.Index.Columns.Select(c => $"[{c}]"));
         var filter = op.Index.Filter is not null ? $" WHERE {op.Index.Filter}" : "";
 
-        return $"CREATE {unique}INDEX IF NOT EXISTS [{op.Index.Name}] ON [{op.TableName}] ({cols}){filter}";
+        return $"CREATE {unique}INDEX IF NOT EXISTS [{op.Index.Name}] ON [{op.TableName}] ({indexItems}){filter}";
     }
 
     /// <summary>
