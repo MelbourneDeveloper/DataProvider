@@ -32,6 +32,10 @@ global using GetSessionRevokedOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetSessionRevoked>,
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.GetSessionRevoked>, Selecta.SqlError>;
+global using GetSessionRevokedError = Outcome.Result<
+    System.Collections.Immutable.ImmutableList<Generated.GetSessionRevoked>,
+    Selecta.SqlError
+>.Error<System.Collections.Immutable.ImmutableList<Generated.GetSessionRevoked>, Selecta.SqlError>;
 // Query result type aliases
 global using GetUserByEmailOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetUserByEmail>,
