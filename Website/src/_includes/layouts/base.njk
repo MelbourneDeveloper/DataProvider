@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="{{ site.language }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title | default(site.title) }}</title>
+  <meta name="description" content="{{ description | default(site.description) }}">
+  <meta name="author" content="{{ site.author }}">
+  <link rel="canonical" href="{{ site.url }}{{ page.url }}">
+  
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ site.url }}{{ page.url }}">
+  <meta property="og:title" content="{{ title | default(site.title) }}">
+  <meta property="og:description" content="{{ description | default(site.description) }}">
+  <meta property="og:image" content="{{ site.url }}/assets/images/Logo.png">
+  
+  <meta name="theme-color" content="{{ site.themeColor }}">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <link rel="icon" type="image/png" sizes="59x59" href="/assets/images/Logo.png">
+  <link rel="apple-touch-icon" href="/assets/images/Logo.png">
+  <link rel="shortcut icon" href="/assets/images/Logo.png">
+
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <header class="header">
+    <nav class="nav container">
+      <a href="/" class="logo">
+        <img src="/assets/images/LogoAndText.png" alt="DataProvider">
+      </a>
+
+      <ul class="nav-links">
+        {% for item in navigation.main %}
+        <li>
+          <a href="{{ item.url }}" {% if item.external %}target="_blank" rel="noopener"{% endif %}
+             class="nav-link {% if page.url.startsWith(item.url) %}active{% endif %}">
+            {{ item.text }}
+            {% if item.external %}<span aria-hidden="true">&#8599;</span>{% endif %}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+
+      <div class="nav-actions">
+        <a href="/docs/getting-started/" class="btn btn-primary">Get Started</a>
+        <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    {% block content %}{{ content | safe }}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-grid">
+      {% for section in navigation.footer %}
+      <div class="footer-section">
+        <h3>{{ section.title }}</h3>
+        <ul>
+          {% for item in section.items %}
+          <li><a href="{{ item.url }}">{{ item.text }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="container footer-bottom">
+      <p>&copy; {% year %} DataProvider. Built for .NET developers.</p>
+    </div>
+  </footer>
+
+  <script src="/assets/js/main.js"></script>
+</body>
+</html>

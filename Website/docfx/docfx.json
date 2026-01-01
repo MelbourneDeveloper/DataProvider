@@ -1,0 +1,55 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": ["DataProvider/DataProvider.csproj", "DataProvider.SQLite/DataProvider.SQLite.csproj", "DataProvider.SqlServer/DataProvider.SqlServer.csproj"],
+          "src": "../../DataProvider"
+        },
+        {
+          "files": ["Sync/Sync.csproj", "Sync.SQLite/Sync.SQLite.csproj", "Sync.Postgres/Sync.Postgres.csproj", "Sync.Http/Sync.Http.csproj"],
+          "src": "../../Sync"
+        },
+        {
+          "files": ["Migration/Migration.csproj", "Migration.SQLite/Migration.SQLite.csproj", "Migration.Postgres/Migration.Postgres.csproj"],
+          "src": "../../Migration"
+        },
+        {
+          "files": ["Gatekeeper.Api/Gatekeeper.Api.csproj"],
+          "src": "../../Gatekeeper"
+        }
+      ],
+      "dest": "api",
+      "includePrivateMembers": false,
+      "disableGitFeatures": false,
+      "disableDefaultFilter": false,
+      "noRestore": false,
+      "namespaceLayout": "flattened",
+      "memberLayout": "samePage",
+      "filter": "filterConfig.yml",
+      "allowCompilationErrors": true
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": ["api/**.yml", "api/index.md"]
+      },
+      {
+        "files": ["toc.yml", "*.md"]
+      }
+    ],
+    "resource": [
+      {
+        "files": ["images/**"]
+      }
+    ],
+    "output": "_apidocs",
+    "globalMetadataFiles": [],
+    "fileMetadataFiles": [],
+    "template": ["default"],
+    "postProcessors": [],
+    "keepFileLink": false,
+    "disableGitFeatures": false
+  }
+}

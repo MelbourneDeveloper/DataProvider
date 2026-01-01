@@ -36,6 +36,10 @@ public abstract partial record Result<TSuccess, TFailure> { private Result() { }
 - **No commented code** - Delete it
 - **No placeholders** - Leave compile errors with TODO
 
+## CSS
+- **MINIMAL CSS** - Do not duplicate CSS clases
+- **Name classes after component, NOT section** - Sections should not have their own CSS classes
+
 ## Testing
 - E2E with zero mocking
 - 100% coverage, Stryker score 70%+

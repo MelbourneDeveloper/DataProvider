@@ -4,6 +4,33 @@ namespace Migration;
 /// Calculates the difference between two schema definitions.
 /// Produces a list of operations to transform current schema into desired schema.
 /// </summary>
+/// <example>
+/// <code>
+/// // Compare current database schema against desired schema
+/// var currentSchema = await schemaInspector.InspectAsync(connection);
+/// var desiredSchema = Schema.Define("mydb")
+///     .Table("users", t => t
+///         .Column("id", PortableTypes.Uuid, c => c.PrimaryKey())
+///         .Column("email", PortableTypes.VarChar(255), c => c.NotNull())
+///         .Column("name", PortableTypes.VarChar(100)))  // New column
+///     .Build();
+///
+/// // Calculate safe (additive-only) migration operations
+/// var result = SchemaDiff.Calculate(currentSchema, desiredSchema);
+/// if (result is OperationsResult.Ok&lt;IReadOnlyList&lt;SchemaOperation&gt;, MigrationError&gt; ok)
+/// {
+///     foreach (var op in ok.Value)
+///     {
+///         var ddl = ddlGenerator.Generate(op);
+///         await connection.ExecuteAsync(ddl);
+///     }
+/// }
+///
+/// // Or allow destructive changes (DROP operations)
+/// var destructiveResult = SchemaDiff.Calculate(
+///     currentSchema, desiredSchema, allowDestructive: true);
+/// </code>
+/// </example>
 public static class SchemaDiff
 {
     /// <summary>
