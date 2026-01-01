@@ -3,6 +3,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using Clinical.Api;
+using Conduit;
 using Microsoft.AspNetCore.Http.Json;
 using Samples.Authorization;
 
@@ -72,32 +73,100 @@ app.UseCors("Dashboard");
 // Get HttpClientFactory for auth filters
 var httpClientFactory = app.Services.GetRequiredService<IHttpClientFactory>();
 Func<HttpClient> getGatekeeperClient = () => httpClientFactory.CreateClient("Gatekeeper");
+var getConn = app.Services.GetRequiredService<Func<SqliteConnection>>();
+var logger = app.Logger;
+
+// Build Conduit registry with logging behavior
+var registry = ConduitRegistry
+    .Empty.AddBehavior(BuiltInBehaviors.Logging<GetPatientsQuery, ImmutableList<GetPatients>>())
+    .AddBehavior(BuiltInBehaviors.Logging<GetPatientByIdQuery, GetPatientByIdResult>())
+    .AddBehavior(BuiltInBehaviors.Logging<CreatePatientCommand, CreatedPatient>())
+    .AddBehavior(BuiltInBehaviors.Logging<UpdatePatientCommand, UpdatedPatient>())
+    .AddBehavior(BuiltInBehaviors.Logging<SearchPatientsQuery, ImmutableList<SearchPatients>>())
+    .AddBehavior(
+        BuiltInBehaviors.Logging<GetEncountersQuery, ImmutableList<GetEncountersByPatient>>()
+    )
+    .AddBehavior(BuiltInBehaviors.Logging<CreateEncounterCommand, CreatedEncounter>())
+    .AddBehavior(
+        BuiltInBehaviors.Logging<GetConditionsQuery, ImmutableList<GetConditionsByPatient>>()
+    )
+    .AddBehavior(BuiltInBehaviors.Logging<CreateConditionCommand, CreatedCondition>())
+    .AddBehavior(
+        BuiltInBehaviors.Logging<GetMedicationsQuery, ImmutableList<GetMedicationsByPatient>>()
+    )
+    .AddBehavior(BuiltInBehaviors.Logging<CreateMedicationCommand, CreatedMedication>())
+    .AddBehavior(BuiltInBehaviors.Logging<GetSyncChangesQuery, SyncChangesResult>())
+    .AddBehavior(BuiltInBehaviors.Logging<GetSyncOriginQuery, SyncOriginResult>())
+    .AddHandler<GetPatientsQuery, ImmutableList<GetPatients>>(
+        (req, ct) => ClinicalHandlers.HandleGetPatients(req, getConn, ct)
+    )
+    .AddHandler<GetPatientByIdQuery, GetPatientByIdResult>(
+        (req, ct) => ClinicalHandlers.HandleGetPatientById(req, getConn, ct)
+    )
+    .AddHandler<CreatePatientCommand, CreatedPatient>(
+        (req, ct) => ClinicalHandlers.HandleCreatePatient(req, getConn, ct)
+    )
+    .AddHandler<UpdatePatientCommand, UpdatedPatient>(
+        (req, ct) => ClinicalHandlers.HandleUpdatePatient(req, getConn, ct)
+    )
+    .AddHandler<SearchPatientsQuery, ImmutableList<SearchPatients>>(
+        (req, ct) => ClinicalHandlers.HandleSearchPatients(req, getConn, ct)
+    )
+    .AddHandler<GetEncountersQuery, ImmutableList<GetEncountersByPatient>>(
+        (req, ct) => ClinicalHandlers.HandleGetEncounters(req, getConn, ct)
+    )
+    .AddHandler<CreateEncounterCommand, CreatedEncounter>(
+        (req, ct) => ClinicalHandlers.HandleCreateEncounter(req, getConn, ct)
+    )
+    .AddHandler<GetConditionsQuery, ImmutableList<GetConditionsByPatient>>(
+        (req, ct) => ClinicalHandlers.HandleGetConditions(req, getConn, ct)
+    )
+    .AddHandler<CreateConditionCommand, CreatedCondition>(
+        (req, ct) => ClinicalHandlers.HandleCreateCondition(req, getConn, ct)
+    )
+    .AddHandler<GetMedicationsQuery, ImmutableList<GetMedicationsByPatient>>(
+        (req, ct) => ClinicalHandlers.HandleGetMedications(req, getConn, ct)
+    )
+    .AddHandler<CreateMedicationCommand, CreatedMedication>(
+        (req, ct) => ClinicalHandlers.HandleCreateMedication(req, getConn, ct)
+    )
+    .AddHandler<GetSyncChangesQuery, SyncChangesResult>(
+        (req, ct) => ClinicalHandlers.HandleGetSyncChanges(req, getConn, ct)
+    )
+    .AddHandler<GetSyncOriginQuery, SyncOriginResult>(
+        (req, ct) => ClinicalHandlers.HandleGetSyncOrigin(req, getConn, ct)
+    );
 
 var patientGroup = app.MapGroup("/fhir/Patient").WithTags("Patient");
 
 patientGroup
     .MapGet(
         "/",
-        async (
-            bool? active,
-            string? familyName,
-            string? givenName,
-            string? gender,
-            Func<SqliteConnection> getConn
-        ) =>
+        async (bool? active, string? familyName, string? givenName, string? gender) =>
         {
-            using var conn = getConn();
-            var result = await conn.GetPatientsAsync(
-                    active.HasValue ? (active.Value ? 1L : 0L) : DBNull.Value,
-                    familyName ?? (object)DBNull.Value,
-                    givenName ?? (object)DBNull.Value,
-                    gender ?? (object)DBNull.Value
+            var result = await Dispatcher
+                .Send<GetPatientsQuery, ImmutableList<GetPatients>>(
+                    request: new GetPatientsQuery(
+                        Active: active,
+                        FamilyName: familyName,
+                        GivenName: givenName,
+                        Gender: gender
+                    ),
+                    registry: registry,
+                    logger: logger
                 )
                 .ConfigureAwait(false);
+
             return result switch
             {
-                GetPatientsOk(var patients) => Results.Ok(patients),
-                GetPatientsError(var err) => Results.Problem(err.Message),
+                Result<ImmutableList<GetPatients>, ConduitError>.Ok<
+                    ImmutableList<GetPatients>,
+                    ConduitError
+                > ok => Results.Ok(ok.Value),
+                Result<ImmutableList<GetPatients>, ConduitError>.Error<
+                    ImmutableList<GetPatients>,
+                    ConduitError
+                > err => Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -113,15 +182,24 @@ patientGroup
 patientGroup
     .MapGet(
         "/{id}",
-        async (string id, Func<SqliteConnection> getConn) =>
+        async (string id) =>
         {
-            using var conn = getConn();
-            var result = await conn.GetPatientByIdAsync(id).ConfigureAwait(false);
+            var result = await Dispatcher
+                .Send<GetPatientByIdQuery, GetPatientByIdResult>(
+                    request: new GetPatientByIdQuery(Id: id),
+                    registry: registry,
+                    logger: logger
+                )
+                .ConfigureAwait(false);
+
             return result switch
             {
-                GetPatientByIdOk(var patients) when patients.Count > 0 => Results.Ok(patients[0]),
-                GetPatientByIdOk => Results.NotFound(),
-                GetPatientByIdError(var err) => Results.Problem(err.Message),
+                Result<GetPatientByIdResult, ConduitError>.Ok<GetPatientByIdResult, ConduitError> ok
+                    when ok.Value.Found => Results.Ok(ok.Value.Patient),
+                Result<GetPatientByIdResult, ConduitError>.Ok<GetPatientByIdResult, ConduitError>
+                    => Results.NotFound(),
+                Result<GetPatientByIdResult, ConduitError>.Error<GetPatientByIdResult, ConduitError>
+                    err => Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -138,67 +216,43 @@ patientGroup
 patientGroup
     .MapPost(
         "/",
-        async (CreatePatientRequest request, Func<SqliteConnection> getConn) =>
+        async (CreatePatientRequest request) =>
         {
-            using var conn = getConn();
-            var transaction = await conn.BeginTransactionAsync().ConfigureAwait(false);
-            await using var _ = transaction.ConfigureAwait(false);
-            var id = Guid.NewGuid().ToString();
-            var now = DateTime.UtcNow.ToString(
-                "yyyy-MM-ddTHH:mm:ss.fffZ",
-                CultureInfo.InvariantCulture
-            );
-
-            var result = await transaction
-                .Insertfhir_PatientAsync(
-                    id,
-                    request.Active ? 1L : 0L,
-                    request.GivenName,
-                    request.FamilyName,
-                    request.BirthDate,
-                    request.Gender,
-                    request.Phone,
-                    request.Email,
-                    request.AddressLine,
-                    request.City,
-                    request.State,
-                    request.PostalCode,
-                    request.Country,
-                    now,
-                    1L
+            var result = await Dispatcher
+                .Send<CreatePatientCommand, CreatedPatient>(
+                    request: new CreatePatientCommand(Request: request),
+                    registry: registry,
+                    logger: logger
                 )
                 .ConfigureAwait(false);
 
-            if (result is InsertOk)
+            return result switch
             {
-                await transaction.CommitAsync().ConfigureAwait(false);
-                return Results.Created(
-                    $"/fhir/Patient/{id}",
-                    new
-                    {
-                        Id = id,
-                        Active = request.Active,
-                        GivenName = request.GivenName,
-                        FamilyName = request.FamilyName,
-                        BirthDate = request.BirthDate,
-                        Gender = request.Gender,
-                        Phone = request.Phone,
-                        Email = request.Email,
-                        AddressLine = request.AddressLine,
-                        City = request.City,
-                        State = request.State,
-                        PostalCode = request.PostalCode,
-                        Country = request.Country,
-                        LastUpdated = now,
-                        VersionId = 1L,
-                    }
-                );
-            }
-
-            return result.Match(
-                _ => Results.Problem("Unexpected state"),
-                err => Results.Problem(err.Message)
-            );
+                Result<CreatedPatient, ConduitError>.Ok<CreatedPatient, ConduitError> ok
+                    => Results.Created(
+                        $"/fhir/Patient/{ok.Value.Id}",
+                        new
+                        {
+                            Id = ok.Value.Id,
+                            Active = ok.Value.Active,
+                            GivenName = ok.Value.GivenName,
+                            FamilyName = ok.Value.FamilyName,
+                            BirthDate = ok.Value.BirthDate,
+                            Gender = ok.Value.Gender,
+                            Phone = ok.Value.Phone,
+                            Email = ok.Value.Email,
+                            AddressLine = ok.Value.AddressLine,
+                            City = ok.Value.City,
+                            State = ok.Value.State,
+                            PostalCode = ok.Value.PostalCode,
+                            Country = ok.Value.Country,
+                            LastUpdated = ok.Value.LastUpdated,
+                            VersionId = ok.Value.VersionId,
+                        }
+                    ),
+                Result<CreatedPatient, ConduitError>.Error<CreatedPatient, ConduitError> err
+                    => Results.Problem(err.Value.ToString()),
+            };
         }
     )
     .AddEndpointFilterFactory(
@@ -213,81 +267,44 @@ patientGroup
 patientGroup
     .MapPut(
         "/{id}",
-        async (string id, UpdatePatientRequest request, Func<SqliteConnection> getConn) =>
+        async (string id, UpdatePatientRequest request) =>
         {
-            using var conn = getConn();
-
-            // First verify the patient exists
-            var existingResult = await conn.GetPatientByIdAsync(id).ConfigureAwait(false);
-            if (existingResult is GetPatientByIdOk(var patients) && patients.Count == 0)
-            {
-                return Results.NotFound();
-            }
-
-            if (existingResult is GetPatientByIdError(var fetchErr))
-            {
-                return Results.Problem(fetchErr.Message);
-            }
-
-            var existingPatient = ((GetPatientByIdOk)existingResult).Value[0];
-            var newVersionId = existingPatient.VersionId + 1;
-
-            var transaction = await conn.BeginTransactionAsync().ConfigureAwait(false);
-            await using var _ = transaction.ConfigureAwait(false);
-            var now = DateTime.UtcNow.ToString(
-                "yyyy-MM-ddTHH:mm:ss.fffZ",
-                CultureInfo.InvariantCulture
-            );
-
-            var result = await transaction
-                .Updatefhir_PatientAsync(
-                    id,
-                    request.Active ? 1L : 0L,
-                    request.GivenName,
-                    request.FamilyName,
-                    request.BirthDate ?? string.Empty,
-                    request.Gender ?? string.Empty,
-                    request.Phone ?? string.Empty,
-                    request.Email ?? string.Empty,
-                    request.AddressLine ?? string.Empty,
-                    request.City ?? string.Empty,
-                    request.State ?? string.Empty,
-                    request.PostalCode ?? string.Empty,
-                    request.Country ?? string.Empty,
-                    now,
-                    newVersionId
+            var result = await Dispatcher
+                .Send<UpdatePatientCommand, UpdatedPatient>(
+                    request: new UpdatePatientCommand(Id: id, Request: request),
+                    registry: registry,
+                    logger: logger
                 )
                 .ConfigureAwait(false);
 
-            if (result is UpdateOk)
+            return result switch
             {
-                await transaction.CommitAsync().ConfigureAwait(false);
-                return Results.Ok(
-                    new
-                    {
-                        Id = id,
-                        Active = request.Active,
-                        GivenName = request.GivenName,
-                        FamilyName = request.FamilyName,
-                        BirthDate = request.BirthDate,
-                        Gender = request.Gender,
-                        Phone = request.Phone,
-                        Email = request.Email,
-                        AddressLine = request.AddressLine,
-                        City = request.City,
-                        State = request.State,
-                        PostalCode = request.PostalCode,
-                        Country = request.Country,
-                        LastUpdated = now,
-                        VersionId = newVersionId,
-                    }
-                );
-            }
-
-            return result.Match(
-                _ => Results.Problem("Unexpected state"),
-                err => Results.Problem(err.Message)
-            );
+                Result<UpdatedPatient, ConduitError>.Ok<UpdatedPatient, ConduitError> ok
+                    when ok.Value.Found => Results.Ok(
+                        new
+                        {
+                            Id = id,
+                            Active = ok.Value.Patient!.Active,
+                            GivenName = ok.Value.Patient.GivenName,
+                            FamilyName = ok.Value.Patient.FamilyName,
+                            BirthDate = ok.Value.Patient.BirthDate,
+                            Gender = ok.Value.Patient.Gender,
+                            Phone = ok.Value.Patient.Phone,
+                            Email = ok.Value.Patient.Email,
+                            AddressLine = ok.Value.Patient.AddressLine,
+                            City = ok.Value.Patient.City,
+                            State = ok.Value.Patient.State,
+                            PostalCode = ok.Value.Patient.PostalCode,
+                            Country = ok.Value.Patient.Country,
+                            LastUpdated = ok.Value.Patient.LastUpdated,
+                            VersionId = ok.Value.Patient.VersionId,
+                        }
+                    ),
+                Result<UpdatedPatient, ConduitError>.Ok<UpdatedPatient, ConduitError>
+                    => Results.NotFound(),
+                Result<UpdatedPatient, ConduitError>.Error<UpdatedPatient, ConduitError> err
+                    => Results.Problem(err.Value.ToString()),
+            };
         }
     )
     .AddEndpointFilterFactory(
@@ -303,14 +320,26 @@ patientGroup
 patientGroup
     .MapGet(
         "/_search",
-        async (string q, Func<SqliteConnection> getConn) =>
+        async (string q) =>
         {
-            using var conn = getConn();
-            var result = await conn.SearchPatientsAsync($"%{q}%").ConfigureAwait(false);
+            var result = await Dispatcher
+                .Send<SearchPatientsQuery, ImmutableList<SearchPatients>>(
+                    request: new SearchPatientsQuery(Query: q),
+                    registry: registry,
+                    logger: logger
+                )
+                .ConfigureAwait(false);
+
             return result switch
             {
-                SearchPatientsOk(var patients) => Results.Ok(patients),
-                SearchPatientsError(var err) => Results.Problem(err.Message),
+                Result<ImmutableList<SearchPatients>, ConduitError>.Ok<
+                    ImmutableList<SearchPatients>,
+                    ConduitError
+                > ok => Results.Ok(ok.Value),
+                Result<ImmutableList<SearchPatients>, ConduitError>.Error<
+                    ImmutableList<SearchPatients>,
+                    ConduitError
+                > err => Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -328,14 +357,26 @@ var encounterGroup = patientGroup.MapGroup("/{patientId}/Encounter").WithTags("E
 encounterGroup
     .MapGet(
         "/",
-        async (string patientId, Func<SqliteConnection> getConn) =>
+        async (string patientId) =>
         {
-            using var conn = getConn();
-            var result = await conn.GetEncountersByPatientAsync(patientId).ConfigureAwait(false);
+            var result = await Dispatcher
+                .Send<GetEncountersQuery, ImmutableList<GetEncountersByPatient>>(
+                    request: new GetEncountersQuery(PatientId: patientId),
+                    registry: registry,
+                    logger: logger
+                )
+                .ConfigureAwait(false);
+
             return result switch
             {
-                GetEncountersOk(var encounters) => Results.Ok(encounters),
-                GetEncountersError(var err) => Results.Problem(err.Message),
+                Result<ImmutableList<GetEncountersByPatient>, ConduitError>.Ok<
+                    ImmutableList<GetEncountersByPatient>,
+                    ConduitError
+                > ok => Results.Ok(ok.Value),
+                Result<ImmutableList<GetEncountersByPatient>, ConduitError>.Error<
+                    ImmutableList<GetEncountersByPatient>,
+                    ConduitError
+                > err => Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -351,61 +392,39 @@ encounterGroup
 encounterGroup
     .MapPost(
         "/",
-        async (string patientId, CreateEncounterRequest request, Func<SqliteConnection> getConn) =>
+        async (string patientId, CreateEncounterRequest request) =>
         {
-            using var conn = getConn();
-            var transaction = await conn.BeginTransactionAsync().ConfigureAwait(false);
-            await using var _ = transaction.ConfigureAwait(false);
-            var id = Guid.NewGuid().ToString();
-            var now = DateTime.UtcNow.ToString(
-                "yyyy-MM-ddTHH:mm:ss.fffZ",
-                CultureInfo.InvariantCulture
-            );
-
-            var result = await transaction
-                .Insertfhir_EncounterAsync(
-                    id,
-                    request.Status,
-                    request.Class,
-                    patientId,
-                    request.PractitionerId,
-                    request.ServiceType,
-                    request.ReasonCode,
-                    request.PeriodStart,
-                    request.PeriodEnd,
-                    request.Notes,
-                    now,
-                    1L
+            var result = await Dispatcher
+                .Send<CreateEncounterCommand, CreatedEncounter>(
+                    request: new CreateEncounterCommand(PatientId: patientId, Request: request),
+                    registry: registry,
+                    logger: logger
                 )
                 .ConfigureAwait(false);
 
-            if (result is InsertOk)
-            {
-                await transaction.CommitAsync().ConfigureAwait(false);
-                return Results.Created(
-                    $"/fhir/Patient/{patientId}/Encounter/{id}",
-                    new
-                    {
-                        Id = id,
-                        Status = request.Status,
-                        Class = request.Class,
-                        PatientId = patientId,
-                        PractitionerId = request.PractitionerId,
-                        ServiceType = request.ServiceType,
-                        ReasonCode = request.ReasonCode,
-                        PeriodStart = request.PeriodStart,
-                        PeriodEnd = request.PeriodEnd,
-                        Notes = request.Notes,
-                        LastUpdated = now,
-                        VersionId = 1L,
-                    }
-                );
-            }
-
             return result switch
             {
-                InsertOk => Results.Problem("Unexpected state"),
-                InsertError(var err) => Results.Problem(err.Message),
+                Result<CreatedEncounter, ConduitError>.Ok<CreatedEncounter, ConduitError> ok
+                    => Results.Created(
+                        $"/fhir/Patient/{patientId}/Encounter/{ok.Value.Id}",
+                        new
+                        {
+                            Id = ok.Value.Id,
+                            Status = ok.Value.Status,
+                            Class = ok.Value.Class,
+                            PatientId = patientId,
+                            PractitionerId = ok.Value.PractitionerId,
+                            ServiceType = ok.Value.ServiceType,
+                            ReasonCode = ok.Value.ReasonCode,
+                            PeriodStart = ok.Value.PeriodStart,
+                            PeriodEnd = ok.Value.PeriodEnd,
+                            Notes = ok.Value.Notes,
+                            LastUpdated = ok.Value.LastUpdated,
+                            VersionId = ok.Value.VersionId,
+                        }
+                    ),
+                Result<CreatedEncounter, ConduitError>.Error<CreatedEncounter, ConduitError> err
+                    => Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -423,14 +442,26 @@ var conditionGroup = patientGroup.MapGroup("/{patientId}/Condition").WithTags("C
 conditionGroup
     .MapGet(
         "/",
-        async (string patientId, Func<SqliteConnection> getConn) =>
+        async (string patientId) =>
         {
-            using var conn = getConn();
-            var result = await conn.GetConditionsByPatientAsync(patientId).ConfigureAwait(false);
+            var result = await Dispatcher
+                .Send<GetConditionsQuery, ImmutableList<GetConditionsByPatient>>(
+                    request: new GetConditionsQuery(PatientId: patientId),
+                    registry: registry,
+                    logger: logger
+                )
+                .ConfigureAwait(false);
+
             return result switch
             {
-                GetConditionsOk(var conditions) => Results.Ok(conditions),
-                GetConditionsError(var err) => Results.Problem(err.Message),
+                Result<ImmutableList<GetConditionsByPatient>, ConduitError>.Ok<
+                    ImmutableList<GetConditionsByPatient>,
+                    ConduitError
+                > ok => Results.Ok(ok.Value),
+                Result<ImmutableList<GetConditionsByPatient>, ConduitError>.Error<
+                    ImmutableList<GetConditionsByPatient>,
+                    ConduitError
+                > err => Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -446,70 +477,43 @@ conditionGroup
 conditionGroup
     .MapPost(
         "/",
-        async (string patientId, CreateConditionRequest request, Func<SqliteConnection> getConn) =>
+        async (string patientId, CreateConditionRequest request) =>
         {
-            using var conn = getConn();
-            var transaction = await conn.BeginTransactionAsync().ConfigureAwait(false);
-            await using var _ = transaction.ConfigureAwait(false);
-            var id = Guid.NewGuid().ToString();
-            var now = DateTime.UtcNow.ToString(
-                "yyyy-MM-ddTHH:mm:ss.fffZ",
-                CultureInfo.InvariantCulture
-            );
-            var recordedDate = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-
-            var result = await transaction
-                .Insertfhir_ConditionAsync(
-                    id: id,
-                    clinicalstatus: request.ClinicalStatus,
-                    verificationstatus: request.VerificationStatus,
-                    category: request.Category,
-                    severity: request.Severity,
-                    codesystem: request.CodeSystem,
-                    codevalue: request.CodeValue,
-                    codedisplay: request.CodeDisplay,
-                    subjectreference: patientId,
-                    encounterreference: request.EncounterReference,
-                    onsetdatetime: request.OnsetDateTime,
-                    recordeddate: recordedDate,
-                    recorderreference: request.RecorderReference,
-                    notetext: request.NoteText,
-                    lastupdated: now,
-                    versionid: 1L
+            var result = await Dispatcher
+                .Send<CreateConditionCommand, CreatedCondition>(
+                    request: new CreateConditionCommand(PatientId: patientId, Request: request),
+                    registry: registry,
+                    logger: logger
                 )
                 .ConfigureAwait(false);
 
-            if (result is InsertOk)
-            {
-                await transaction.CommitAsync().ConfigureAwait(false);
-                return Results.Created(
-                    $"/fhir/Patient/{patientId}/Condition/{id}",
-                    new
-                    {
-                        Id = id,
-                        ClinicalStatus = request.ClinicalStatus,
-                        VerificationStatus = request.VerificationStatus,
-                        Category = request.Category,
-                        Severity = request.Severity,
-                        CodeSystem = request.CodeSystem,
-                        CodeValue = request.CodeValue,
-                        CodeDisplay = request.CodeDisplay,
-                        SubjectReference = patientId,
-                        EncounterReference = request.EncounterReference,
-                        OnsetDateTime = request.OnsetDateTime,
-                        RecordedDate = recordedDate,
-                        RecorderReference = request.RecorderReference,
-                        NoteText = request.NoteText,
-                        LastUpdated = now,
-                        VersionId = 1L,
-                    }
-                );
-            }
-
             return result switch
             {
-                InsertOk => Results.Problem("Unexpected state"),
-                InsertError(var err) => Results.Problem(err.Message),
+                Result<CreatedCondition, ConduitError>.Ok<CreatedCondition, ConduitError> ok
+                    => Results.Created(
+                        $"/fhir/Patient/{patientId}/Condition/{ok.Value.Id}",
+                        new
+                        {
+                            Id = ok.Value.Id,
+                            ClinicalStatus = ok.Value.ClinicalStatus,
+                            VerificationStatus = ok.Value.VerificationStatus,
+                            Category = ok.Value.Category,
+                            Severity = ok.Value.Severity,
+                            CodeSystem = ok.Value.CodeSystem,
+                            CodeValue = ok.Value.CodeValue,
+                            CodeDisplay = ok.Value.CodeDisplay,
+                            SubjectReference = patientId,
+                            EncounterReference = ok.Value.EncounterReference,
+                            OnsetDateTime = ok.Value.OnsetDateTime,
+                            RecordedDate = ok.Value.RecordedDate,
+                            RecorderReference = ok.Value.RecorderReference,
+                            NoteText = ok.Value.NoteText,
+                            LastUpdated = ok.Value.LastUpdated,
+                            VersionId = ok.Value.VersionId,
+                        }
+                    ),
+                Result<CreatedCondition, ConduitError>.Error<CreatedCondition, ConduitError> err
+                    => Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -529,14 +533,26 @@ var medicationGroup = patientGroup
 medicationGroup
     .MapGet(
         "/",
-        async (string patientId, Func<SqliteConnection> getConn) =>
+        async (string patientId) =>
         {
-            using var conn = getConn();
-            var result = await conn.GetMedicationsByPatientAsync(patientId).ConfigureAwait(false);
+            var result = await Dispatcher
+                .Send<GetMedicationsQuery, ImmutableList<GetMedicationsByPatient>>(
+                    request: new GetMedicationsQuery(PatientId: patientId),
+                    registry: registry,
+                    logger: logger
+                )
+                .ConfigureAwait(false);
+
             return result switch
             {
-                GetMedicationsOk(var medications) => Results.Ok(medications),
-                GetMedicationsError(var err) => Results.Problem(err.Message),
+                Result<ImmutableList<GetMedicationsByPatient>, ConduitError>.Ok<
+                    ImmutableList<GetMedicationsByPatient>,
+                    ConduitError
+                > ok => Results.Ok(ok.Value),
+                Result<ImmutableList<GetMedicationsByPatient>, ConduitError>.Error<
+                    ImmutableList<GetMedicationsByPatient>,
+                    ConduitError
+                > err => Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -552,71 +568,42 @@ medicationGroup
 medicationGroup
     .MapPost(
         "/",
-        async (
-            string patientId,
-            CreateMedicationRequestRequest request,
-            Func<SqliteConnection> getConn
-        ) =>
+        async (string patientId, CreateMedicationRequestRequest request) =>
         {
-            using var conn = getConn();
-            var transaction = await conn.BeginTransactionAsync().ConfigureAwait(false);
-            await using var _ = transaction.ConfigureAwait(false);
-            var id = Guid.NewGuid().ToString();
-            var now = DateTime.UtcNow.ToString(
-                "yyyy-MM-ddTHH:mm:ss.fffZ",
-                CultureInfo.InvariantCulture
-            );
-
-            var result = await transaction
-                .Insertfhir_MedicationRequestAsync(
-                    id,
-                    request.Status,
-                    request.Intent,
-                    patientId,
-                    request.PractitionerId,
-                    request.EncounterId,
-                    request.MedicationCode,
-                    request.MedicationDisplay,
-                    request.DosageInstruction,
-                    request.Quantity,
-                    request.Unit,
-                    request.Refills,
-                    now,
-                    now,
-                    1L
+            var result = await Dispatcher
+                .Send<CreateMedicationCommand, CreatedMedication>(
+                    request: new CreateMedicationCommand(PatientId: patientId, Request: request),
+                    registry: registry,
+                    logger: logger
                 )
                 .ConfigureAwait(false);
 
-            if (result is InsertOk)
-            {
-                await transaction.CommitAsync().ConfigureAwait(false);
-                return Results.Created(
-                    $"/fhir/Patient/{patientId}/MedicationRequest/{id}",
-                    new
-                    {
-                        Id = id,
-                        Status = request.Status,
-                        Intent = request.Intent,
-                        PatientId = patientId,
-                        PractitionerId = request.PractitionerId,
-                        EncounterId = request.EncounterId,
-                        MedicationCode = request.MedicationCode,
-                        MedicationDisplay = request.MedicationDisplay,
-                        DosageInstruction = request.DosageInstruction,
-                        Quantity = request.Quantity,
-                        Unit = request.Unit,
-                        Refills = request.Refills,
-                        AuthoredOn = now,
-                        LastUpdated = now,
-                        VersionId = 1L,
-                    }
-                );
-            }
-
             return result switch
             {
-                InsertOk => Results.Problem("Unexpected state"),
-                InsertError(var err) => Results.Problem(err.Message),
+                Result<CreatedMedication, ConduitError>.Ok<CreatedMedication, ConduitError> ok
+                    => Results.Created(
+                        $"/fhir/Patient/{patientId}/MedicationRequest/{ok.Value.Id}",
+                        new
+                        {
+                            Id = ok.Value.Id,
+                            Status = ok.Value.Status,
+                            Intent = ok.Value.Intent,
+                            PatientId = patientId,
+                            PractitionerId = ok.Value.PractitionerId,
+                            EncounterId = ok.Value.EncounterId,
+                            MedicationCode = ok.Value.MedicationCode,
+                            MedicationDisplay = ok.Value.MedicationDisplay,
+                            DosageInstruction = ok.Value.DosageInstruction,
+                            Quantity = ok.Value.Quantity,
+                            Unit = ok.Value.Unit,
+                            Refills = ok.Value.Refills,
+                            AuthoredOn = ok.Value.AuthoredOn,
+                            LastUpdated = ok.Value.LastUpdated,
+                            VersionId = ok.Value.VersionId,
+                        }
+                    ),
+                Result<CreatedMedication, ConduitError>.Error<CreatedMedication, ConduitError> err
+                    => Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -631,14 +618,25 @@ medicationGroup
 
 app.MapGet(
         "/sync/changes",
-        (long? fromVersion, int? limit, Func<SqliteConnection> getConn) =>
+        async (long? fromVersion, int? limit) =>
         {
-            using var conn = getConn();
-            var result = SyncLogRepository.FetchChanges(conn, fromVersion ?? 0, limit ?? 100);
+            var result = await Dispatcher
+                .Send<GetSyncChangesQuery, SyncChangesResult>(
+                    request: new GetSyncChangesQuery(
+                        FromVersion: fromVersion ?? 0,
+                        Limit: limit ?? 100
+                    ),
+                    registry: registry,
+                    logger: logger
+                )
+                .ConfigureAwait(false);
+
             return result switch
             {
-                SyncLogListOk(var logs) => Results.Ok(logs),
-                SyncLogListError(var err) => Results.Problem(SyncHelpers.ToMessage(err)),
+                Result<SyncChangesResult, ConduitError>.Ok<SyncChangesResult, ConduitError> ok
+                    => Results.Ok(ok.Value.Changes),
+                Result<SyncChangesResult, ConduitError>.Error<SyncChangesResult, ConduitError> err
+                    => Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -653,14 +651,22 @@ app.MapGet(
 
 app.MapGet(
         "/sync/origin",
-        (Func<SqliteConnection> getConn) =>
+        async () =>
         {
-            using var conn = getConn();
-            var result = SyncSchema.GetOriginId(conn);
+            var result = await Dispatcher
+                .Send<GetSyncOriginQuery, SyncOriginResult>(
+                    request: new GetSyncOriginQuery(),
+                    registry: registry,
+                    logger: logger
+                )
+                .ConfigureAwait(false);
+
             return result switch
             {
-                StringSyncOk(var originId) => Results.Ok(new { originId }),
-                StringSyncError(var err) => Results.Problem(SyncHelpers.ToMessage(err)),
+                Result<SyncOriginResult, ConduitError>.Ok<SyncOriginResult, ConduitError> ok
+                    => Results.Ok(new { originId = ok.Value.OriginId }),
+                Result<SyncOriginResult, ConduitError>.Error<SyncOriginResult, ConduitError> err
+                    => Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -675,9 +681,9 @@ app.MapGet(
 
 app.MapGet(
         "/sync/status",
-        (Func<SqliteConnection> getConn) =>
+        (Func<SqliteConnection> getConnLocal) =>
         {
-            using var conn = getConn();
+            using var conn = getConnLocal();
             var changesResult = SyncLogRepository.FetchChanges(conn, 0, 1000);
 
             var (totalCount, lastSyncTime) = changesResult switch
@@ -723,9 +729,9 @@ app.MapGet(
 
 app.MapGet(
         "/sync/records",
-        (string? search, int? page, int? pageSize, Func<SqliteConnection> getConn) =>
+        (string? search, int? page, int? pageSize, Func<SqliteConnection> getConnLocal) =>
         {
-            using var conn = getConn();
+            using var conn = getConnLocal();
             var currentPage = page ?? 1;
             var size = pageSize ?? 50;
             var changesResult = SyncLogRepository.FetchChanges(conn, 0, 1000);
@@ -768,9 +774,9 @@ app.MapPost(
 
 app.MapGet(
         "/sync/providers",
-        (Func<SqliteConnection> getConn) =>
+        (Func<SqliteConnection> getConnLocal) =>
         {
-            using var conn = getConn();
+            using var conn = getConnLocal();
             using var cmd = conn.CreateCommand();
             cmd.CommandText =
                 "SELECT ProviderId, FirstName, LastName, Specialty, SyncedAt FROM sync_Provider";

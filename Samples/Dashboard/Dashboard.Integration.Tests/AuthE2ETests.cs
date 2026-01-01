@@ -1,4 +1,3 @@
-using System.Net;
 using Microsoft.Playwright;
 
 namespace Dashboard.Integration.Tests;

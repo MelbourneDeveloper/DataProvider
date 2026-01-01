@@ -2,9 +2,21 @@
 
 using System.Collections.Immutable;
 using System.Globalization;
+using Conduit;
 using Microsoft.AspNetCore.Http.Json;
+using Outcome;
 using Samples.Authorization;
 using Scheduling.Api;
+
+// Conduit result type aliases for dispatch results
+using GetAllPractitionersConduitResult = Outcome.Result<
+    System.Collections.Immutable.ImmutableList<Generated.GetAllPractitioners>,
+    Conduit.ConduitError
+>;
+using GetPractitionerByIdConduitResult = Outcome.Result<
+    System.Collections.Immutable.ImmutableList<Generated.GetPractitionerById>,
+    Conduit.ConduitError
+>;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,12 +48,43 @@ var connectionString = new SqliteConnectionStringBuilder
 }.ToString();
 
 // Register a FACTORY that creates new connections - NOT a singleton connection
-builder.Services.AddSingleton(() =>
+Func<SqliteConnection> connectionFactory = () =>
 {
     var conn = new SqliteConnection(connectionString);
     conn.Open();
     return conn;
-});
+};
+builder.Services.AddSingleton(connectionFactory);
+
+// Register Conduit registry with handlers - use existing PractitionerHandlers pattern
+builder.Services.AddConduit(registry =>
+    registry
+        .RegisterPractitionerHandlers(connectionFactory)
+        .AddBehavior(
+            BuiltInBehaviors.Logging<
+                GetAllPractitionersRequest,
+                ImmutableList<GetAllPractitioners>
+            >()
+        )
+        .AddBehavior(
+            BuiltInBehaviors.Logging<
+                GetPractitionerByIdRequest,
+                ImmutableList<GetPractitionerById>
+            >()
+        )
+        .AddBehavior(
+            BuiltInBehaviors.ExceptionHandler<
+                GetAllPractitionersRequest,
+                ImmutableList<GetAllPractitioners>
+            >()
+        )
+        .AddBehavior(
+            BuiltInBehaviors.ExceptionHandler<
+                GetPractitionerByIdRequest,
+                ImmutableList<GetPractitionerById>
+            >()
+        )
+);
 
 // Gatekeeper configuration for authorization
 var gatekeeperUrl = builder.Configuration["Gatekeeper:BaseUrl"] ?? "http://localhost:5002";
@@ -72,6 +115,59 @@ app.UseCors("Dashboard");
 
 // Health endpoint for sync service startup checks
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "Scheduling.Api" }));
+
+// Get Conduit registry and logger for dispatch
+var conduitRegistry = app.Services.GetRequiredService<ConduitRegistry>();
+var conduitLogger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Conduit");
+
+// === CONDUIT-BASED ENDPOINTS ===
+// These demonstrate the Conduit pattern - request/response through a pipeline
+
+app.MapGet(
+    "/conduit/Practitioner",
+    async (CancellationToken ct) =>
+    {
+        var result = await Dispatcher.Send<
+            GetAllPractitionersRequest,
+            ImmutableList<GetAllPractitioners>
+        >(
+            request: new GetAllPractitionersRequest(),
+            registry: conduitRegistry,
+            logger: conduitLogger,
+            cancellationToken: ct
+        );
+
+        return result switch
+        {
+            GetAllPractitionersConduitResult.Ok ok => Results.Ok(ok.Value),
+            GetAllPractitionersConduitResult.Error err => Results.Problem(err.Value.ToString()),
+        };
+    }
+);
+
+app.MapGet(
+    "/conduit/Practitioner/{id}",
+    async (string id, CancellationToken ct) =>
+    {
+        var result = await Dispatcher.Send<
+            GetPractitionerByIdRequest,
+            ImmutableList<GetPractitionerById>
+        >(
+            request: new GetPractitionerByIdRequest(id),
+            registry: conduitRegistry,
+            logger: conduitLogger,
+            cancellationToken: ct
+        );
+
+        return result switch
+        {
+            GetPractitionerByIdConduitResult.Ok ok when ok.Value.Count > 0
+                => Results.Ok(ok.Value[0]),
+            GetPractitionerByIdConduitResult.Ok => Results.NotFound(),
+            GetPractitionerByIdConduitResult.Error err => Results.Problem(err.Value.ToString()),
+        };
+    }
+);
 
 // Get HttpClientFactory for auth filters
 var httpClientFactory = app.Services.GetRequiredService<IHttpClientFactory>();

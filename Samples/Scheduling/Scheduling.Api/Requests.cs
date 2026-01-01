@@ -3,7 +3,7 @@ namespace Scheduling.Api;
 /// <summary>
 /// Create practitioner request.
 /// </summary>
-internal sealed record CreatePractitionerRequest(
+public sealed record CreatePractitionerRequest(
     string Identifier,
     string NameFamily,
     string NameGiven,
@@ -16,7 +16,7 @@ internal sealed record CreatePractitionerRequest(
 /// <summary>
 /// Update practitioner request.
 /// </summary>
-internal sealed record UpdatePractitionerRequest(
+public sealed record UpdatePractitionerRequest(
     string Identifier,
     bool Active,
     string NameFamily,
@@ -30,7 +30,7 @@ internal sealed record UpdatePractitionerRequest(
 /// <summary>
 /// Create appointment request.
 /// </summary>
-internal sealed record CreateAppointmentRequest(
+public sealed record CreateAppointmentRequest(
     string ServiceCategory,
     string ServiceType,
     string? ReasonCode,
@@ -46,7 +46,7 @@ internal sealed record CreateAppointmentRequest(
 /// <summary>
 /// Update appointment request.
 /// </summary>
-internal sealed record UpdateAppointmentRequest(
+public sealed record UpdateAppointmentRequest(
     string ServiceCategory,
     string ServiceType,
     string? ReasonCode,

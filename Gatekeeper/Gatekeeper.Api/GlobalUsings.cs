@@ -15,10 +15,6 @@ global using CheckResourceGrantOk = Outcome.Result<
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.CheckResourceGrant>, Selecta.SqlError>;
 // Insert result type alias
-global using CountSystemRolesOk = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.CountSystemRoles>,
-    Selecta.SqlError
->.Ok<System.Collections.Immutable.ImmutableList<Generated.CountSystemRoles>, Selecta.SqlError>;
 global using GetChallengeByIdOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetChallengeById>,
     Selecta.SqlError
@@ -28,10 +24,6 @@ global using GetCredentialByIdOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetCredentialById>,
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.GetCredentialById>, Selecta.SqlError>;
-global using GetSessionRevokedOk = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.GetSessionRevoked>,
-    Selecta.SqlError
->.Ok<System.Collections.Immutable.ImmutableList<Generated.GetSessionRevoked>, Selecta.SqlError>;
 // Query result type aliases
 global using GetUserByEmailOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetUserByEmail>,

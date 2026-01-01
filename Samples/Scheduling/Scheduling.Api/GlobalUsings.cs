@@ -1,4 +1,5 @@
 global using System;
+global using Conduit;
 global using Generated;
 global using Microsoft.Data.Sqlite;
 global using Microsoft.Extensions.Logging;
