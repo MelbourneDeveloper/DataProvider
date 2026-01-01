@@ -389,3 +389,13 @@ Samples/Dashboard/Dashboard.Web/wwwroot/js/vendor/
 Samples/Dashboard/Dashboard.Web/wwwroot/js/Dashboard.js
 Samples/Dashboard/Dashboard.Web/wwwroot/js/Dashboard.min.js
 Samples/Dashboard/Dashboard.Web/wwwroot/js/index.html
+Website/_site/
+
+Website/docfx/api/
+
+Website/src/apidocs/
+
+# Docs copied from README files (source of truth is in the project READMEs)
+Website/src/docs/sync.md
+Website/src/docs/dataprovider.md
+Website/src/docs/lql.md
