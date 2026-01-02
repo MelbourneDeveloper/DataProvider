@@ -136,12 +136,17 @@ internal sealed class SyncWorker : BackgroundService
             DateTimeOffset.Now
         );
 
+        using var conn = _getConnection();
+
+        // Get last sync version
+        var lastVersion = GetLastSyncVersion(conn);
+
         using var httpClient = new HttpClient { BaseAddress = new Uri(_schedulingApiUrl) };
         httpClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateSyncToken());
 
         var changesResponse = await httpClient
-            .GetAsync("/sync/changes?limit=100", cancellationToken)
+            .GetAsync($"/sync/changes?fromVersion={lastVersion}&limit=100", cancellationToken)
             .ConfigureAwait(false);
         if (!changesResponse.IsSuccessStatusCode)
         {
@@ -166,7 +171,6 @@ internal sealed class SyncWorker : BackgroundService
 
         _logger.Log(LogLevel.Information, "Processing {Count} changes", changes.Count);
 
-        using var conn = _getConnection();
         await using var transaction = await conn.BeginTransactionAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -182,10 +186,16 @@ internal sealed class SyncWorker : BackgroundService
             }
 
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            // Update last sync version to the maximum version we processed
+            var maxVersion = changes.Max(c => c.Version);
+            UpdateLastSyncVersion(conn, maxVersion);
+
             _logger.Log(
                 LogLevel.Information,
-                "Successfully synced {Count} provider changes",
-                practitionerChanges.Count
+                "Successfully synced {Count} provider changes, updated version to {Version}",
+                practitionerChanges.Count,
+                maxVersion
             );
         }
         catch (Exception ex)
@@ -267,6 +277,40 @@ internal sealed class SyncWorker : BackgroundService
             "Upserted provider {ProviderId}",
             data.GetValueOrDefault("Id").GetString()
         );
+    }
+
+    private static long GetLastSyncVersion(SqliteConnection connection)
+    {
+        // Ensure _sync_state table exists
+        using var createCmd = connection.CreateCommand();
+        createCmd.CommandText = """
+            CREATE TABLE IF NOT EXISTS _sync_state (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+            """;
+        createCmd.ExecuteNonQuery();
+
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText =
+            "SELECT value FROM _sync_state WHERE key = 'last_scheduling_sync_version'";
+
+        var result = cmd.ExecuteScalar();
+        return result is string str && long.TryParse(str, out var version) ? version : 0;
+    }
+
+    private static void UpdateLastSyncVersion(SqliteConnection connection, long version)
+    {
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO _sync_state (key, value) VALUES ('last_scheduling_sync_version', @version)
+            ON CONFLICT (key) DO UPDATE SET value = excluded.value
+            """;
+        cmd.Parameters.AddWithValue(
+            "@version",
+            version.ToString(System.Globalization.CultureInfo.InvariantCulture)
+        );
+        cmd.ExecuteNonQuery();
     }
 
     private static readonly string[] SyncRoles = ["sync-client", "clinician", "scheduler", "admin"];
