@@ -1,6 +1,7 @@
 module Lql.TypeProvider.Tests
 
 open System
+open System.IO
 open Microsoft.Data.Sqlite
 open Xunit
 open Lql
@@ -14,109 +15,108 @@ open Lql.TypeProvider
 
 // Basic select queries
 type SelectAll = LqlCommand<"Customer |> select(*)">
-type SelectColumns = LqlCommand<"users |> select(users.id, users.name, users.email)">
-type SelectWithAlias = LqlCommand<"users |> select(users.id, users.name as username)">
+type SelectColumns = LqlCommand<"Users |> select(Users.Id, Users.Name, Users.Email)">
+type SelectWithAlias = LqlCommand<"Users |> select(Users.Id, Users.Name as username)">
 
 // Filter queries
-type FilterSimple = LqlCommand<"users |> filter(fn(row) => row.users.age > 18) |> select(users.name)">
-type FilterComplex = LqlCommand<"users |> filter(fn(row) => row.users.age > 18 and row.users.status = 'active') |> select(*)">
-type FilterOr = LqlCommand<"users |> filter(fn(row) => row.users.age < 18 or row.users.role = 'admin') |> select(*)">
+type FilterSimple = LqlCommand<"Users |> filter(fn(row) => row.Users.Age > 18) |> select(Users.Name)">
+type FilterComplex = LqlCommand<"Users |> filter(fn(row) => row.Users.Age > 18 and row.Users.Status = 'active') |> select(*)">
+type FilterOr = LqlCommand<"Users |> filter(fn(row) => row.Users.Age < 18 or row.Users.Role = 'admin') |> select(*)">
 
 // Join queries
-type JoinSimple = LqlCommand<"users |> join(orders, on = users.id = orders.user_id) |> select(users.name, orders.total)">
-type JoinLeft = LqlCommand<"users |> left_join(orders, on = users.id = orders.user_id) |> select(users.name, orders.total)">
-type JoinMultiple = LqlCommand<"users |> join(orders, on = users.id = orders.user_id) |> join(products, on = orders.product_id = products.id) |> select(users.name, products.name)">
+type JoinSimple = LqlCommand<"Users |> join(Orders, on = Users.Id = Orders.UserId) |> select(Users.Name, Orders.Total)">
+type JoinLeft = LqlCommand<"Users |> left_join(Orders, on = Users.Id = Orders.UserId) |> select(Users.Name, Orders.Total)">
+type JoinMultiple = LqlCommand<"Users |> join(Orders, on = Users.Id = Orders.UserId) |> join(Products, on = Orders.ProductId = Products.Id) |> select(Users.Name, Products.Name)">
 
 // Aggregation queries
-type GroupBy = LqlCommand<"orders |> group_by(orders.user_id) |> select(orders.user_id, count(*) as order_count)">
-type Aggregates = LqlCommand<"orders |> group_by(orders.status) |> select(orders.status, sum(orders.total) as total_sum, avg(orders.total) as avg_total)">
-type Having = LqlCommand<"orders |> group_by(orders.user_id) |> having(fn(g) => count(*) > 5) |> select(orders.user_id, count(*) as cnt)">
+type GroupBy = LqlCommand<"Orders |> group_by(Orders.UserId) |> select(Orders.UserId, count(*) as order_count)">
+type Aggregates = LqlCommand<"Orders |> group_by(Orders.Status) |> select(Orders.Status, sum(Orders.Total) as total_sum, avg(Orders.Total) as avg_total)">
+type Having = LqlCommand<"Orders |> group_by(Orders.UserId) |> having(fn(g) => count(*) > 5) |> select(Orders.UserId, count(*) as cnt)">
 
 // Order and limit
-type OrderBy = LqlCommand<"users |> order_by(users.name asc) |> select(*)">
-type OrderByDesc = LqlCommand<"users |> order_by(users.created_at desc) |> select(*)">
-type Limit = LqlCommand<"users |> order_by(users.id) |> limit(10) |> select(*)">
-type Offset = LqlCommand<"users |> order_by(users.id) |> limit(10) |> offset(20) |> select(*)">
+type OrderBy = LqlCommand<"Users |> order_by(Users.Name asc) |> select(*)">
+type OrderByDesc = LqlCommand<"Users |> order_by(Users.CreatedAt desc) |> select(*)">
+type Limit = LqlCommand<"Users |> order_by(Users.Id) |> limit(10) |> select(*)">
+type Offset = LqlCommand<"Users |> order_by(Users.Id) |> limit(10) |> offset(20) |> select(*)">
 
 // Arithmetic expressions
-type ArithmeticBasic = LqlCommand<"products |> select(products.price * products.quantity as total)">
-type ArithmeticComplex = LqlCommand<"orders |> select(orders.subtotal + orders.tax - orders.discount as final_total)">
+type ArithmeticBasic = LqlCommand<"Products |> select(Products.Price * Products.Quantity as total)">
+type ArithmeticComplex = LqlCommand<"Orders |> select(Orders.Subtotal + Orders.Tax - Orders.Discount as final_total)">
 
 // =============================================================================
-// E2E TEST FIXTURES - Test the type provider with REAL SQLite databases
+// E2E TEST FIXTURES - Test the type provider with REAL SQLite database file
+// Schema is created by Migration.CLI from YAML - NO raw SQL for schema!
 // =============================================================================
 
 module TestFixtures =
-    let createTestDatabase() =
-        let conn = new SqliteConnection("Data Source=:memory:")
+    /// Get the path to the test database file (created by Migration.CLI from YAML)
+    let getTestDbPath() =
+        let baseDir = AppDomain.CurrentDomain.BaseDirectory
+        // The database is created in the project directory by MSBuild target
+        // bin/Debug/net9.0 -> go up 3 levels to project dir
+        let projectDir = Path.GetFullPath(Path.Combine(baseDir, "..", "..", ".."))
+        Path.Combine(projectDir, "typeprovider-test.db")
+
+    /// Open connection to the REAL SQLite database file
+    let openTestDatabase() =
+        let dbPath = getTestDbPath()
+        if not (File.Exists(dbPath)) then
+            failwithf "Test database not found at %s. Run 'dotnet build' first to create it via Migration.CLI." dbPath
+        let conn = new SqliteConnection($"Data Source={dbPath}")
         conn.Open()
+        conn
 
-        // Create test tables
-        use cmd = new SqliteCommand("""
-            CREATE TABLE Customer (
-                id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL,
-                email TEXT,
-                age INTEGER,
-                status TEXT DEFAULT 'active'
-            );
+    /// Insert test data into the database (schema created by Migration.CLI from YAML)
+    let loadTestData (conn: SqliteConnection) =
+        // Clear existing test data first
+        use clearCmd = new SqliteCommand("DELETE FROM orders; DELETE FROM users; DELETE FROM products; DELETE FROM Customer;", conn)
+        clearCmd.ExecuteNonQuery() |> ignore
 
-            CREATE TABLE users (
-                id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL,
-                email TEXT,
-                age INTEGER,
-                status TEXT DEFAULT 'active',
-                role TEXT DEFAULT 'user',
-                created_at TEXT
-            );
-
-            CREATE TABLE orders (
-                id INTEGER PRIMARY KEY,
-                user_id INTEGER,
-                product_id INTEGER,
-                total REAL,
-                subtotal REAL,
-                tax REAL,
-                discount REAL,
-                status TEXT,
-                FOREIGN KEY (user_id) REFERENCES users(id)
-            );
-
-            CREATE TABLE products (
-                id INTEGER PRIMARY KEY,
-                name TEXT,
-                price REAL,
-                quantity INTEGER
-            );
-
-            -- Insert test data
-            INSERT INTO Customer (id, name, email, age, status) VALUES
-                (1, 'Acme Corp', 'acme@example.com', 10, 'active'),
-                (2, 'Tech Corp', 'tech@example.com', 5, 'active'),
-                (3, 'Old Corp', 'old@example.com', 50, 'inactive');
-
-            INSERT INTO users (id, name, email, age, status, role, created_at) VALUES
-                (1, 'Alice', 'alice@example.com', 30, 'active', 'admin', '2024-01-01'),
-                (2, 'Bob', 'bob@example.com', 17, 'active', 'user', '2024-01-02'),
-                (3, 'Charlie', 'charlie@example.com', 25, 'inactive', 'user', '2024-01-03'),
-                (4, 'Diana', 'diana@example.com', 16, 'active', 'admin', '2024-01-04');
-
-            INSERT INTO orders (id, user_id, product_id, total, subtotal, tax, discount, status) VALUES
-                (1, 1, 1, 100.0, 90.0, 15.0, 5.0, 'completed'),
-                (2, 1, 2, 200.0, 180.0, 30.0, 10.0, 'completed'),
-                (3, 2, 1, 50.0, 45.0, 7.5, 2.5, 'pending'),
-                (4, 1, 3, 150.0, 135.0, 22.5, 7.5, 'completed'),
-                (5, 1, 1, 75.0, 67.5, 11.25, 3.75, 'completed'),
-                (6, 1, 2, 300.0, 270.0, 45.0, 15.0, 'completed'),
-                (7, 1, 3, 125.0, 112.5, 18.75, 6.25, 'completed');
-
-            INSERT INTO products (id, name, price, quantity) VALUES
-                (1, 'Widget', 10.0, 100),
-                (2, 'Gadget', 25.0, 50),
-                (3, 'Gizmo', 15.0, 75);
+        // Insert Customer test data
+        use customerCmd = new SqliteCommand("""
+            INSERT INTO Customer (Id, name, email, age, status) VALUES
+            ('c1', 'Acme Corp', 'acme@example.com', 10, 'active'),
+            ('c2', 'Tech Corp', 'tech@example.com', 5, 'active'),
+            ('c3', 'New Corp', 'new@example.com', 1, 'pending')
         """, conn)
-        cmd.ExecuteNonQuery() |> ignore
+        customerCmd.ExecuteNonQuery() |> ignore
+
+        // Insert users test data
+        use usersCmd = new SqliteCommand("""
+            INSERT INTO users (Id, name, email, age, status, role, created_at) VALUES
+            ('u1', 'Alice', 'alice@example.com', 30, 'active', 'admin', '2024-01-01'),
+            ('u2', 'Bob', 'bob@example.com', 16, 'active', 'user', '2024-01-02'),
+            ('u3', 'Charlie', 'charlie@example.com', 25, 'inactive', 'user', '2024-01-03'),
+            ('u4', 'Diana', 'diana@example.com', 15, 'active', 'admin', '2024-01-04')
+        """, conn)
+        usersCmd.ExecuteNonQuery() |> ignore
+
+        // Insert products test data
+        use productsCmd = new SqliteCommand("""
+            INSERT INTO products (Id, name, price, quantity) VALUES
+            ('p1', 'Widget', 10.00, 100),
+            ('p2', 'Gadget', 25.50, 50),
+            ('p3', 'Gizmo', 5.00, 200)
+        """, conn)
+        productsCmd.ExecuteNonQuery() |> ignore
+
+        // Insert orders test data (user 1 has 6 orders, user 2 has 1)
+        use ordersCmd = new SqliteCommand("""
+            INSERT INTO orders (Id, user_id, product_id, total, subtotal, tax, discount, status) VALUES
+            ('o1', 'u1', 'p1', 100.00, 90.00, 10.00, 0.00, 'completed'),
+            ('o2', 'u1', 'p2', 50.00, 45.00, 5.00, 0.00, 'completed'),
+            ('o3', 'u1', 'p1', 75.00, 68.00, 7.00, 0.00, 'pending'),
+            ('o4', 'u1', 'p3', 25.00, 22.50, 2.50, 0.00, 'completed'),
+            ('o5', 'u1', 'p2', 125.00, 112.50, 12.50, 0.00, 'completed'),
+            ('o6', 'u1', 'p1', 200.00, 180.00, 20.00, 0.00, 'pending'),
+            ('o7', 'u2', 'p3', 30.00, 27.00, 3.00, 0.00, 'completed')
+        """, conn)
+        ordersCmd.ExecuteNonQuery() |> ignore
+
+    /// Create test database connection with fresh test data
+    let createTestDatabase() =
+        let conn = openTestDatabase()
+        loadTestData conn
         conn
 
     let executeQuery (conn: SqliteConnection) (sql: string) =
@@ -328,7 +328,7 @@ type TypeProviderRealWorldScenarioTests() =
         Assert.Equal(3, results.Length)
 
         // Verify customer data
-        let names = results |> List.map (fun r -> r.["name"] :?> string) |> Set.ofList
+        let names = results |> List.map (fun r -> r.["Name"] :?> string) |> Set.ofList
         Assert.Contains("Acme Corp", names)
         Assert.Contains("Tech Corp", names)
 
@@ -371,10 +371,10 @@ type TypeProviderQueryPropertyTests() =
     member _.``Query property returns original LQL for all query types``() =
         // Verify each type provider generated type has correct Query property
         Assert.Equal("Customer |> select(*)", SelectAll.Query)
-        Assert.Equal("users |> select(users.id, users.name, users.email)", SelectColumns.Query)
-        Assert.Equal("users |> filter(fn(row) => row.users.age > 18) |> select(users.name)", FilterSimple.Query)
-        Assert.Equal("users |> join(orders, on = users.id = orders.user_id) |> select(users.name, orders.total)", JoinSimple.Query)
-        Assert.Equal("orders |> group_by(orders.user_id) |> select(orders.user_id, count(*) as order_count)", GroupBy.Query)
+        Assert.Equal("Users |> select(Users.Id, Users.Name, Users.Email)", SelectColumns.Query)
+        Assert.Equal("Users |> filter(fn(row) => row.Users.Age > 18) |> select(Users.Name)", FilterSimple.Query)
+        Assert.Equal("Users |> join(Orders, on = Users.Id = Orders.UserId) |> select(Users.Name, Orders.Total)", JoinSimple.Query)
+        Assert.Equal("Orders |> group_by(Orders.UserId) |> select(Orders.UserId, count(*) as order_count)", GroupBy.Query)
 
     [<Fact>]
     member _.``Sql property is never null or empty``() =
