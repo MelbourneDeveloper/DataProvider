@@ -2,19 +2,16 @@
 
 using System.Collections.Immutable;
 using System.Globalization;
-using Conduit;
 using Microsoft.AspNetCore.Http.Json;
-using Outcome;
 using Samples.Authorization;
 using Scheduling.Api;
-
 // Conduit result type aliases for dispatch results
 using GetAllPractitionersConduitResult = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetAllPractitioners>,
     Conduit.ConduitError
 >;
 using GetPractitionerByIdConduitResult = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.GetPractitionerById>,
+    Scheduling.Api.GetPractitionerByIdResult,
     Conduit.ConduitError
 >;
 
@@ -56,33 +53,19 @@ Func<SqliteConnection> connectionFactory = () =>
 };
 builder.Services.AddSingleton(connectionFactory);
 
-// Register Conduit registry with handlers - use existing PractitionerHandlers pattern
+// Register Conduit registry with global behaviors + handlers
 builder.Services.AddConduit(registry =>
     registry
-        .RegisterPractitionerHandlers(connectionFactory)
-        .AddBehavior(
-            BuiltInBehaviors.Logging<
-                GetAllPractitionersRequest,
-                ImmutableList<GetAllPractitioners>
-            >()
+        // Global behaviors - apply to ALL handlers automatically
+        .WithGlobalLogging()
+        .WithGlobalExceptionHandling()
+        .WithGlobalTimeout(TimeSpan.FromSeconds(30))
+        // Handlers
+        .AddHandler<GetAllPractitionersQuery, ImmutableList<GetAllPractitioners>>(
+            (req, ct) => SchedulingHandlers.HandleGetAllPractitioners(req, connectionFactory, ct)
         )
-        .AddBehavior(
-            BuiltInBehaviors.Logging<
-                GetPractitionerByIdRequest,
-                ImmutableList<GetPractitionerById>
-            >()
-        )
-        .AddBehavior(
-            BuiltInBehaviors.ExceptionHandler<
-                GetAllPractitionersRequest,
-                ImmutableList<GetAllPractitioners>
-            >()
-        )
-        .AddBehavior(
-            BuiltInBehaviors.ExceptionHandler<
-                GetPractitionerByIdRequest,
-                ImmutableList<GetPractitionerById>
-            >()
+        .AddHandler<GetPractitionerByIdQuery, GetPractitionerByIdResult>(
+            (req, ct) => SchedulingHandlers.HandleGetPractitionerById(req, connectionFactory, ct)
         )
 );
 
@@ -127,20 +110,25 @@ app.MapGet(
     "/conduit/Practitioner",
     async (CancellationToken ct) =>
     {
-        var result = await Dispatcher.Send<
-            GetAllPractitionersRequest,
-            ImmutableList<GetAllPractitioners>
-        >(
-            request: new GetAllPractitionersRequest(),
-            registry: conduitRegistry,
-            logger: conduitLogger,
-            cancellationToken: ct
-        );
+        var result = await Dispatcher
+            .Send<GetAllPractitionersQuery, ImmutableList<GetAllPractitioners>>(
+                request: new GetAllPractitionersQuery(),
+                registry: conduitRegistry,
+                logger: conduitLogger,
+                cancellationToken: ct
+            )
+            .ConfigureAwait(false);
 
         return result switch
         {
-            GetAllPractitionersConduitResult.Ok ok => Results.Ok(ok.Value),
-            GetAllPractitionersConduitResult.Error err => Results.Problem(err.Value.ToString()),
+            GetAllPractitionersConduitResult.Ok<
+                ImmutableList<GetAllPractitioners>,
+                ConduitError
+            > ok => Results.Ok(ok.Value),
+            GetAllPractitionersConduitResult.Error<
+                ImmutableList<GetAllPractitioners>,
+                ConduitError
+            > err => Results.Problem(err.Value.ToString()),
         };
     }
 );
@@ -149,22 +137,23 @@ app.MapGet(
     "/conduit/Practitioner/{id}",
     async (string id, CancellationToken ct) =>
     {
-        var result = await Dispatcher.Send<
-            GetPractitionerByIdRequest,
-            ImmutableList<GetPractitionerById>
-        >(
-            request: new GetPractitionerByIdRequest(id),
-            registry: conduitRegistry,
-            logger: conduitLogger,
-            cancellationToken: ct
-        );
+        var result = await Dispatcher
+            .Send<GetPractitionerByIdQuery, GetPractitionerByIdResult>(
+                request: new GetPractitionerByIdQuery(id),
+                registry: conduitRegistry,
+                logger: conduitLogger,
+                cancellationToken: ct
+            )
+            .ConfigureAwait(false);
 
         return result switch
         {
-            GetPractitionerByIdConduitResult.Ok ok when ok.Value.Count > 0
-                => Results.Ok(ok.Value[0]),
-            GetPractitionerByIdConduitResult.Ok => Results.NotFound(),
-            GetPractitionerByIdConduitResult.Error err => Results.Problem(err.Value.ToString()),
+            GetPractitionerByIdConduitResult.Ok<GetPractitionerByIdResult, ConduitError> ok
+                when ok.Value.Found => Results.Ok(ok.Value.Practitioner),
+            GetPractitionerByIdConduitResult.Ok<GetPractitionerByIdResult, ConduitError> =>
+                Results.NotFound(),
+            GetPractitionerByIdConduitResult.Error<GetPractitionerByIdResult, ConduitError> err =>
+                Results.Problem(err.Value.ToString()),
         };
     }
 );

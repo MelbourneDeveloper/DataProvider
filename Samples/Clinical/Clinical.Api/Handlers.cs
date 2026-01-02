@@ -105,7 +105,10 @@ public sealed record CreatedCondition(
 public sealed record GetMedicationsQuery(string PatientId);
 
 /// <summary>Command to create a medication.</summary>
-public sealed record CreateMedicationCommand(string PatientId, CreateMedicationRequestRequest Request);
+public sealed record CreateMedicationCommand(
+    string PatientId,
+    CreateMedicationRequestRequest Request
+);
 
 /// <summary>Result of created medication.</summary>
 public sealed record CreatedMedication(
@@ -153,14 +156,13 @@ public static class ClinicalHandlers
     public static async Task<Result<ImmutableList<GetPatients>, ConduitError>> HandleGetPatients(
         GetPatientsQuery request,
         Func<SqliteConnection> getConn,
-        CancellationToken ct
+        CancellationToken _
     )
     {
         try
         {
             using var conn = getConn();
-            var result = await conn
-                .GetPatientsAsync(
+            var result = await conn.GetPatientsAsync(
                     active: request.Active.HasValue
                         ? (request.Active.Value ? 1L : 0L)
                         : DBNull.Value,
@@ -172,17 +174,11 @@ public static class ClinicalHandlers
 
             return result switch
             {
-                Result<ImmutableList<GetPatients>, SqlError>.Ok<
-                    ImmutableList<GetPatients>,
-                    SqlError
-                > ok => new Result<ImmutableList<GetPatients>, ConduitError>.Ok<
+                GetPatientsOk ok => new Result<ImmutableList<GetPatients>, ConduitError>.Ok<
                     ImmutableList<GetPatients>,
                     ConduitError
                 >(ok.Value),
-                Result<ImmutableList<GetPatients>, SqlError>.Error<
-                    ImmutableList<GetPatients>,
-                    SqlError
-                > err => new Result<ImmutableList<GetPatients>, ConduitError>.Error<
+                GetPatientsError err => new Result<ImmutableList<GetPatients>, ConduitError>.Error<
                     ImmutableList<GetPatients>,
                     ConduitError
                 >(new ConduitErrorHandlerFailed("GetPatients", err.Value.Message, null)),
@@ -203,7 +199,7 @@ public static class ClinicalHandlers
     public static async Task<Result<GetPatientByIdResult, ConduitError>> HandleGetPatientById(
         GetPatientByIdQuery request,
         Func<SqliteConnection> getConn,
-        CancellationToken ct
+        CancellationToken _
     )
     {
         try
@@ -213,26 +209,17 @@ public static class ClinicalHandlers
 
             return result switch
             {
-                Result<ImmutableList<GetPatientById>, SqlError>.Ok<
-                    ImmutableList<GetPatientById>,
-                    SqlError
-                > ok when ok.Value.Count > 0 => new Result<
+                GetPatientByIdOk ok when ok.Value.Count > 0 => new Result<
                     GetPatientByIdResult,
                     ConduitError
                 >.Ok<GetPatientByIdResult, ConduitError>(
                     new GetPatientByIdResult(Patient: ok.Value[0], Found: true)
                 ),
-                Result<ImmutableList<GetPatientById>, SqlError>.Ok<
-                    ImmutableList<GetPatientById>,
-                    SqlError
-                > => new Result<GetPatientByIdResult, ConduitError>.Ok<
+                GetPatientByIdOk => new Result<GetPatientByIdResult, ConduitError>.Ok<
                     GetPatientByIdResult,
                     ConduitError
                 >(new GetPatientByIdResult(Patient: null, Found: false)),
-                Result<ImmutableList<GetPatientById>, SqlError>.Error<
-                    ImmutableList<GetPatientById>,
-                    SqlError
-                > err => new Result<GetPatientByIdResult, ConduitError>.Error<
+                GetPatientByIdError err => new Result<GetPatientByIdResult, ConduitError>.Error<
                     GetPatientByIdResult,
                     ConduitError
                 >(new ConduitErrorHandlerFailed("GetPatientById", err.Value.Message, null)),
@@ -290,7 +277,8 @@ public static class ClinicalHandlers
 
             return result switch
             {
-                InsertOk => await CommitAndReturnPatient(transaction, id, request.Request, now),
+                InsertOk => await CommitAndReturnPatient(transaction, id, request.Request, now)
+                    .ConfigureAwait(false),
                 InsertError err => new Result<CreatedPatient, ConduitError>.Error<
                     CreatedPatient,
                     ConduitError
@@ -318,45 +306,24 @@ public static class ClinicalHandlers
         {
             using var conn = getConn();
 
-            var existingResult = await conn
-                .GetPatientByIdAsync(id: request.Id)
+            var existingResult = await conn.GetPatientByIdAsync(id: request.Id)
                 .ConfigureAwait(false);
 
-            if (
-                existingResult
-                is Result<ImmutableList<GetPatientById>, SqlError>.Ok<
-                    ImmutableList<GetPatientById>,
-                    SqlError
-                > { Value.Count: 0 }
-            )
+            if (existingResult is GetPatientByIdOk { Value.Count: 0 })
             {
                 return new Result<UpdatedPatient, ConduitError>.Ok<UpdatedPatient, ConduitError>(
                     new UpdatedPatient(Patient: null, Found: false)
                 );
             }
 
-            if (
-                existingResult
-                is Result<ImmutableList<GetPatientById>, SqlError>.Error<
-                    ImmutableList<GetPatientById>,
-                    SqlError
-                > fetchErr
-            )
+            if (existingResult is GetPatientByIdError fetchErr)
             {
                 return new Result<UpdatedPatient, ConduitError>.Error<UpdatedPatient, ConduitError>(
                     new ConduitErrorHandlerFailed("UpdatePatient", fetchErr.Value.Message, null)
                 );
             }
 
-            var existing =
-                (
-                    (
-                        Result<ImmutableList<GetPatientById>, SqlError>.Ok<
-                            ImmutableList<GetPatientById>,
-                            SqlError
-                        >
-                    )existingResult
-                ).Value[0];
+            var existing = ((GetPatientByIdOk)existingResult).Value[0];
             var newVersionId = existing.VersionId + 1;
 
             var transaction = await conn.BeginTransactionAsync(ct).ConfigureAwait(false);
@@ -390,12 +357,13 @@ public static class ClinicalHandlers
             return result switch
             {
                 UpdateOk => await CommitAndReturnUpdatedPatient(
-                    transaction,
-                    request.Id,
-                    request.Request,
-                    now,
-                    newVersionId
-                ),
+                        transaction,
+                        request.Id,
+                        request.Request,
+                        now,
+                        newVersionId
+                    )
+                    .ConfigureAwait(false),
                 UpdateError err => new Result<UpdatedPatient, ConduitError>.Error<
                     UpdatedPatient,
                     ConduitError
@@ -418,32 +386,27 @@ public static class ClinicalHandlers
     > HandleSearchPatients(
         SearchPatientsQuery request,
         Func<SqliteConnection> getConn,
-        CancellationToken ct
+        CancellationToken _
     )
     {
         try
         {
             using var conn = getConn();
-            var result = await conn
-                .SearchPatientsAsync(term: $"%{request.Query}%")
+            var result = await conn.SearchPatientsAsync(term: $"%{request.Query}%")
                 .ConfigureAwait(false);
 
             return result switch
             {
-                Result<ImmutableList<SearchPatients>, SqlError>.Ok<
-                    ImmutableList<SearchPatients>,
-                    SqlError
-                > ok => new Result<ImmutableList<SearchPatients>, ConduitError>.Ok<
+                SearchPatientsOk ok => new Result<ImmutableList<SearchPatients>, ConduitError>.Ok<
                     ImmutableList<SearchPatients>,
                     ConduitError
                 >(ok.Value),
-                Result<ImmutableList<SearchPatients>, SqlError>.Error<
-                    ImmutableList<SearchPatients>,
-                    SqlError
-                > err => new Result<ImmutableList<SearchPatients>, ConduitError>.Error<
+                SearchPatientsError err => new Result<
                     ImmutableList<SearchPatients>,
                     ConduitError
-                >(new ConduitErrorHandlerFailed("SearchPatients", err.Value.Message, null)),
+                >.Error<ImmutableList<SearchPatients>, ConduitError>(
+                    new ConduitErrorHandlerFailed("SearchPatients", err.Value.Message, null)
+                ),
             };
         }
         catch (Exception ex)
@@ -463,32 +426,27 @@ public static class ClinicalHandlers
     > HandleGetEncounters(
         GetEncountersQuery request,
         Func<SqliteConnection> getConn,
-        CancellationToken ct
+        CancellationToken _
     )
     {
         try
         {
             using var conn = getConn();
-            var result = await conn
-                .GetEncountersByPatientAsync(patientId: request.PatientId)
+            var result = await conn.GetEncountersByPatientAsync(patientId: request.PatientId)
                 .ConfigureAwait(false);
 
             return result switch
             {
-                Result<ImmutableList<GetEncountersByPatient>, SqlError>.Ok<
-                    ImmutableList<GetEncountersByPatient>,
-                    SqlError
-                > ok => new Result<ImmutableList<GetEncountersByPatient>, ConduitError>.Ok<
+                GetEncountersOk ok => new Result<
                     ImmutableList<GetEncountersByPatient>,
                     ConduitError
-                >(ok.Value),
-                Result<ImmutableList<GetEncountersByPatient>, SqlError>.Error<
-                    ImmutableList<GetEncountersByPatient>,
-                    SqlError
-                > err => new Result<ImmutableList<GetEncountersByPatient>, ConduitError>.Error<
+                >.Ok<ImmutableList<GetEncountersByPatient>, ConduitError>(ok.Value),
+                GetEncountersError err => new Result<
                     ImmutableList<GetEncountersByPatient>,
                     ConduitError
-                >(new ConduitErrorHandlerFailed("GetEncounters", err.Value.Message, null)),
+                >.Error<ImmutableList<GetEncountersByPatient>, ConduitError>(
+                    new ConduitErrorHandlerFailed("GetEncounters", err.Value.Message, null)
+                ),
             };
         }
         catch (Exception ex)
@@ -541,12 +499,13 @@ public static class ClinicalHandlers
             return result switch
             {
                 InsertOk => await CommitAndReturnEncounter(
-                    transaction,
-                    id,
-                    request.PatientId,
-                    request.Request,
-                    now
-                ),
+                        transaction,
+                        id,
+                        request.PatientId,
+                        request.Request,
+                        now
+                    )
+                    .ConfigureAwait(false),
                 InsertError err => new Result<CreatedEncounter, ConduitError>.Error<
                     CreatedEncounter,
                     ConduitError
@@ -569,32 +528,27 @@ public static class ClinicalHandlers
     > HandleGetConditions(
         GetConditionsQuery request,
         Func<SqliteConnection> getConn,
-        CancellationToken ct
+        CancellationToken _
     )
     {
         try
         {
             using var conn = getConn();
-            var result = await conn
-                .GetConditionsByPatientAsync(patientId: request.PatientId)
+            var result = await conn.GetConditionsByPatientAsync(patientId: request.PatientId)
                 .ConfigureAwait(false);
 
             return result switch
             {
-                Result<ImmutableList<GetConditionsByPatient>, SqlError>.Ok<
-                    ImmutableList<GetConditionsByPatient>,
-                    SqlError
-                > ok => new Result<ImmutableList<GetConditionsByPatient>, ConduitError>.Ok<
+                GetConditionsOk ok => new Result<
                     ImmutableList<GetConditionsByPatient>,
                     ConduitError
-                >(ok.Value),
-                Result<ImmutableList<GetConditionsByPatient>, SqlError>.Error<
-                    ImmutableList<GetConditionsByPatient>,
-                    SqlError
-                > err => new Result<ImmutableList<GetConditionsByPatient>, ConduitError>.Error<
+                >.Ok<ImmutableList<GetConditionsByPatient>, ConduitError>(ok.Value),
+                GetConditionsError err => new Result<
                     ImmutableList<GetConditionsByPatient>,
                     ConduitError
-                >(new ConduitErrorHandlerFailed("GetConditions", err.Value.Message, null)),
+                >.Error<ImmutableList<GetConditionsByPatient>, ConduitError>(
+                    new ConduitErrorHandlerFailed("GetConditions", err.Value.Message, null)
+                ),
             };
         }
         catch (Exception ex)
@@ -652,13 +606,14 @@ public static class ClinicalHandlers
             return result switch
             {
                 InsertOk => await CommitAndReturnCondition(
-                    transaction,
-                    id,
-                    request.PatientId,
-                    request.Request,
-                    recordedDate,
-                    now
-                ),
+                        transaction,
+                        id,
+                        request.PatientId,
+                        request.Request,
+                        recordedDate,
+                        now
+                    )
+                    .ConfigureAwait(false),
                 InsertError err => new Result<CreatedCondition, ConduitError>.Error<
                     CreatedCondition,
                     ConduitError
@@ -681,32 +636,27 @@ public static class ClinicalHandlers
     > HandleGetMedications(
         GetMedicationsQuery request,
         Func<SqliteConnection> getConn,
-        CancellationToken ct
+        CancellationToken _
     )
     {
         try
         {
             using var conn = getConn();
-            var result = await conn
-                .GetMedicationsByPatientAsync(patientId: request.PatientId)
+            var result = await conn.GetMedicationsByPatientAsync(patientId: request.PatientId)
                 .ConfigureAwait(false);
 
             return result switch
             {
-                Result<ImmutableList<GetMedicationsByPatient>, SqlError>.Ok<
-                    ImmutableList<GetMedicationsByPatient>,
-                    SqlError
-                > ok => new Result<ImmutableList<GetMedicationsByPatient>, ConduitError>.Ok<
+                GetMedicationsOk ok => new Result<
                     ImmutableList<GetMedicationsByPatient>,
                     ConduitError
-                >(ok.Value),
-                Result<ImmutableList<GetMedicationsByPatient>, SqlError>.Error<
-                    ImmutableList<GetMedicationsByPatient>,
-                    SqlError
-                > err => new Result<ImmutableList<GetMedicationsByPatient>, ConduitError>.Error<
+                >.Ok<ImmutableList<GetMedicationsByPatient>, ConduitError>(ok.Value),
+                GetMedicationsError err => new Result<
                     ImmutableList<GetMedicationsByPatient>,
                     ConduitError
-                >(new ConduitErrorHandlerFailed("GetMedications", err.Value.Message, null)),
+                >.Error<ImmutableList<GetMedicationsByPatient>, ConduitError>(
+                    new ConduitErrorHandlerFailed("GetMedications", err.Value.Message, null)
+                ),
             };
         }
         catch (Exception ex)
@@ -762,12 +712,13 @@ public static class ClinicalHandlers
             return result switch
             {
                 InsertOk => await CommitAndReturnMedication(
-                    transaction,
-                    id,
-                    request.PatientId,
-                    request.Request,
-                    now
-                ),
+                        transaction,
+                        id,
+                        request.PatientId,
+                        request.Request,
+                        now
+                    )
+                    .ConfigureAwait(false),
                 InsertError err => new Result<CreatedMedication, ConduitError>.Error<
                     CreatedMedication,
                     ConduitError
@@ -788,16 +739,17 @@ public static class ClinicalHandlers
     /// </summary>
     public static Task<Result<SyncChangesResult, ConduitError>> HandleGetSyncChanges(
         GetSyncChangesQuery request,
-        CancellationToken ct
+        Func<SqliteConnection> getConn,
+        CancellationToken _
     )
     {
         try
         {
-            using var conn = request.GetConn();
+            using var conn = getConn();
             var result = SyncLogRepository.FetchChanges(
                 conn,
                 fromVersion: request.FromVersion,
-                limit: request.Limit
+                batchSize: request.Limit
             );
 
             return Task.FromResult<Result<SyncChangesResult, ConduitError>>(
@@ -806,7 +758,7 @@ public static class ClinicalHandlers
                     SyncLogListOk ok => new Result<SyncChangesResult, ConduitError>.Ok<
                         SyncChangesResult,
                         ConduitError
-                    >(new SyncChangesResult(Changes: ok.Value)),
+                    >(new SyncChangesResult(Changes: [.. ok.Value])),
                     SyncLogListError err => new Result<SyncChangesResult, ConduitError>.Error<
                         SyncChangesResult,
                         ConduitError
@@ -834,13 +786,14 @@ public static class ClinicalHandlers
     /// Handles GetSyncOrigin request.
     /// </summary>
     public static Task<Result<SyncOriginResult, ConduitError>> HandleGetSyncOrigin(
-        GetSyncOriginQuery request,
-        CancellationToken ct
+        GetSyncOriginQuery _,
+        Func<SqliteConnection> getConn,
+        CancellationToken __
     )
     {
         try
         {
-            using var conn = request.GetConn();
+            using var conn = getConn();
             var result = SyncSchema.GetOriginId(conn);
 
             return Task.FromResult<Result<SyncOriginResult, ConduitError>>(

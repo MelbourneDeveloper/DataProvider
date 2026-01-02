@@ -284,7 +284,7 @@ internal static class TestHandlers
 {
     public static Task<Result<TestResponse, ConduitError>> Handle(
         TestRequest request,
-        CancellationToken ct
+        CancellationToken _
     ) =>
         Task.FromResult<Result<TestResponse, ConduitError>>(
             new Result<TestResponse, ConduitError>.Ok<TestResponse, ConduitError>(

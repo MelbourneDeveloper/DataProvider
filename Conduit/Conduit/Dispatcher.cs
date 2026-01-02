@@ -68,8 +68,8 @@ public static class Dispatcher
         // Create context
         var context = PipelineContext.Create<TRequest, TResponse>(request);
 
-        // Get typed behaviors and compose pipeline
-        var behaviors = Pipeline.GetTypedBehaviors<TRequest, TResponse>(registry.GlobalBehaviors);
+        // Get all behaviors (global configs + typed) and compose pipeline
+        var behaviors = Pipeline.GetAllBehaviors<TRequest, TResponse>(registry);
         var pipeline = Pipeline.Compose(behaviors, handler, logger);
 
         try

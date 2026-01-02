@@ -76,27 +76,14 @@ Func<HttpClient> getGatekeeperClient = () => httpClientFactory.CreateClient("Gat
 var getConn = app.Services.GetRequiredService<Func<SqliteConnection>>();
 var logger = app.Logger;
 
-// Build Conduit registry with logging behavior
+// Build Conduit registry with global behaviors + handlers
 var registry = ConduitRegistry
-    .Empty.AddBehavior(BuiltInBehaviors.Logging<GetPatientsQuery, ImmutableList<GetPatients>>())
-    .AddBehavior(BuiltInBehaviors.Logging<GetPatientByIdQuery, GetPatientByIdResult>())
-    .AddBehavior(BuiltInBehaviors.Logging<CreatePatientCommand, CreatedPatient>())
-    .AddBehavior(BuiltInBehaviors.Logging<UpdatePatientCommand, UpdatedPatient>())
-    .AddBehavior(BuiltInBehaviors.Logging<SearchPatientsQuery, ImmutableList<SearchPatients>>())
-    .AddBehavior(
-        BuiltInBehaviors.Logging<GetEncountersQuery, ImmutableList<GetEncountersByPatient>>()
-    )
-    .AddBehavior(BuiltInBehaviors.Logging<CreateEncounterCommand, CreatedEncounter>())
-    .AddBehavior(
-        BuiltInBehaviors.Logging<GetConditionsQuery, ImmutableList<GetConditionsByPatient>>()
-    )
-    .AddBehavior(BuiltInBehaviors.Logging<CreateConditionCommand, CreatedCondition>())
-    .AddBehavior(
-        BuiltInBehaviors.Logging<GetMedicationsQuery, ImmutableList<GetMedicationsByPatient>>()
-    )
-    .AddBehavior(BuiltInBehaviors.Logging<CreateMedicationCommand, CreatedMedication>())
-    .AddBehavior(BuiltInBehaviors.Logging<GetSyncChangesQuery, SyncChangesResult>())
-    .AddBehavior(BuiltInBehaviors.Logging<GetSyncOriginQuery, SyncOriginResult>())
+    .Empty
+    // Global behaviors - apply to ALL handlers automatically
+    .WithGlobalLogging()
+    .WithGlobalExceptionHandling()
+    .WithGlobalTimeout(TimeSpan.FromSeconds(30))
+    // Handlers
     .AddHandler<GetPatientsQuery, ImmutableList<GetPatients>>(
         (req, ct) => ClinicalHandlers.HandleGetPatients(req, getConn, ct)
     )
@@ -196,10 +183,12 @@ patientGroup
             {
                 Result<GetPatientByIdResult, ConduitError>.Ok<GetPatientByIdResult, ConduitError> ok
                     when ok.Value.Found => Results.Ok(ok.Value.Patient),
-                Result<GetPatientByIdResult, ConduitError>.Ok<GetPatientByIdResult, ConduitError>
-                    => Results.NotFound(),
-                Result<GetPatientByIdResult, ConduitError>.Error<GetPatientByIdResult, ConduitError>
-                    err => Results.Problem(err.Value.ToString()),
+                Result<GetPatientByIdResult, ConduitError>.Ok<GetPatientByIdResult, ConduitError> =>
+                    Results.NotFound(),
+                Result<GetPatientByIdResult, ConduitError>.Error<
+                    GetPatientByIdResult,
+                    ConduitError
+                > err => Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -228,8 +217,8 @@ patientGroup
 
             return result switch
             {
-                Result<CreatedPatient, ConduitError>.Ok<CreatedPatient, ConduitError> ok
-                    => Results.Created(
+                Result<CreatedPatient, ConduitError>.Ok<CreatedPatient, ConduitError> ok =>
+                    Results.Created(
                         $"/fhir/Patient/{ok.Value.Id}",
                         new
                         {
@@ -250,8 +239,8 @@ patientGroup
                             VersionId = ok.Value.VersionId,
                         }
                     ),
-                Result<CreatedPatient, ConduitError>.Error<CreatedPatient, ConduitError> err
-                    => Results.Problem(err.Value.ToString()),
+                Result<CreatedPatient, ConduitError>.Error<CreatedPatient, ConduitError> err =>
+                    Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -281,29 +270,29 @@ patientGroup
             {
                 Result<UpdatedPatient, ConduitError>.Ok<UpdatedPatient, ConduitError> ok
                     when ok.Value.Found => Results.Ok(
-                        new
-                        {
-                            Id = id,
-                            Active = ok.Value.Patient!.Active,
-                            GivenName = ok.Value.Patient.GivenName,
-                            FamilyName = ok.Value.Patient.FamilyName,
-                            BirthDate = ok.Value.Patient.BirthDate,
-                            Gender = ok.Value.Patient.Gender,
-                            Phone = ok.Value.Patient.Phone,
-                            Email = ok.Value.Patient.Email,
-                            AddressLine = ok.Value.Patient.AddressLine,
-                            City = ok.Value.Patient.City,
-                            State = ok.Value.Patient.State,
-                            PostalCode = ok.Value.Patient.PostalCode,
-                            Country = ok.Value.Patient.Country,
-                            LastUpdated = ok.Value.Patient.LastUpdated,
-                            VersionId = ok.Value.Patient.VersionId,
-                        }
-                    ),
-                Result<UpdatedPatient, ConduitError>.Ok<UpdatedPatient, ConduitError>
-                    => Results.NotFound(),
-                Result<UpdatedPatient, ConduitError>.Error<UpdatedPatient, ConduitError> err
-                    => Results.Problem(err.Value.ToString()),
+                    new
+                    {
+                        Id = id,
+                        Active = ok.Value.Patient!.Active,
+                        GivenName = ok.Value.Patient.GivenName,
+                        FamilyName = ok.Value.Patient.FamilyName,
+                        BirthDate = ok.Value.Patient.BirthDate,
+                        Gender = ok.Value.Patient.Gender,
+                        Phone = ok.Value.Patient.Phone,
+                        Email = ok.Value.Patient.Email,
+                        AddressLine = ok.Value.Patient.AddressLine,
+                        City = ok.Value.Patient.City,
+                        State = ok.Value.Patient.State,
+                        PostalCode = ok.Value.Patient.PostalCode,
+                        Country = ok.Value.Patient.Country,
+                        LastUpdated = ok.Value.Patient.LastUpdated,
+                        VersionId = ok.Value.Patient.VersionId,
+                    }
+                ),
+                Result<UpdatedPatient, ConduitError>.Ok<UpdatedPatient, ConduitError> =>
+                    Results.NotFound(),
+                Result<UpdatedPatient, ConduitError>.Error<UpdatedPatient, ConduitError> err =>
+                    Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -404,8 +393,8 @@ encounterGroup
 
             return result switch
             {
-                Result<CreatedEncounter, ConduitError>.Ok<CreatedEncounter, ConduitError> ok
-                    => Results.Created(
+                Result<CreatedEncounter, ConduitError>.Ok<CreatedEncounter, ConduitError> ok =>
+                    Results.Created(
                         $"/fhir/Patient/{patientId}/Encounter/{ok.Value.Id}",
                         new
                         {
@@ -423,8 +412,8 @@ encounterGroup
                             VersionId = ok.Value.VersionId,
                         }
                     ),
-                Result<CreatedEncounter, ConduitError>.Error<CreatedEncounter, ConduitError> err
-                    => Results.Problem(err.Value.ToString()),
+                Result<CreatedEncounter, ConduitError>.Error<CreatedEncounter, ConduitError> err =>
+                    Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -489,8 +478,8 @@ conditionGroup
 
             return result switch
             {
-                Result<CreatedCondition, ConduitError>.Ok<CreatedCondition, ConduitError> ok
-                    => Results.Created(
+                Result<CreatedCondition, ConduitError>.Ok<CreatedCondition, ConduitError> ok =>
+                    Results.Created(
                         $"/fhir/Patient/{patientId}/Condition/{ok.Value.Id}",
                         new
                         {
@@ -512,8 +501,8 @@ conditionGroup
                             VersionId = ok.Value.VersionId,
                         }
                     ),
-                Result<CreatedCondition, ConduitError>.Error<CreatedCondition, ConduitError> err
-                    => Results.Problem(err.Value.ToString()),
+                Result<CreatedCondition, ConduitError>.Error<CreatedCondition, ConduitError> err =>
+                    Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -580,8 +569,8 @@ medicationGroup
 
             return result switch
             {
-                Result<CreatedMedication, ConduitError>.Ok<CreatedMedication, ConduitError> ok
-                    => Results.Created(
+                Result<CreatedMedication, ConduitError>.Ok<CreatedMedication, ConduitError> ok =>
+                    Results.Created(
                         $"/fhir/Patient/{patientId}/MedicationRequest/{ok.Value.Id}",
                         new
                         {
@@ -602,8 +591,10 @@ medicationGroup
                             VersionId = ok.Value.VersionId,
                         }
                     ),
-                Result<CreatedMedication, ConduitError>.Error<CreatedMedication, ConduitError> err
-                    => Results.Problem(err.Value.ToString()),
+                Result<CreatedMedication, ConduitError>.Error<
+                    CreatedMedication,
+                    ConduitError
+                > err => Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -633,10 +624,12 @@ app.MapGet(
 
             return result switch
             {
-                Result<SyncChangesResult, ConduitError>.Ok<SyncChangesResult, ConduitError> ok
-                    => Results.Ok(ok.Value.Changes),
-                Result<SyncChangesResult, ConduitError>.Error<SyncChangesResult, ConduitError> err
-                    => Results.Problem(err.Value.ToString()),
+                Result<SyncChangesResult, ConduitError>.Ok<SyncChangesResult, ConduitError> ok =>
+                    Results.Ok(ok.Value.Changes),
+                Result<SyncChangesResult, ConduitError>.Error<
+                    SyncChangesResult,
+                    ConduitError
+                > err => Results.Problem(err.Value.ToString()),
             };
         }
     )
@@ -663,10 +656,10 @@ app.MapGet(
 
             return result switch
             {
-                Result<SyncOriginResult, ConduitError>.Ok<SyncOriginResult, ConduitError> ok
-                    => Results.Ok(new { originId = ok.Value.OriginId }),
-                Result<SyncOriginResult, ConduitError>.Error<SyncOriginResult, ConduitError> err
-                    => Results.Problem(err.Value.ToString()),
+                Result<SyncOriginResult, ConduitError>.Ok<SyncOriginResult, ConduitError> ok =>
+                    Results.Ok(new { originId = ok.Value.OriginId }),
+                Result<SyncOriginResult, ConduitError>.Error<SyncOriginResult, ConduitError> err =>
+                    Results.Problem(err.Value.ToString()),
             };
         }
     )

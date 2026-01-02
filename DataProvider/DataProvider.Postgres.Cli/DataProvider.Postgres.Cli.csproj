@@ -9,7 +9,7 @@
         <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
         <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
         <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-        <NoWarn>EPC12;CA2100</NoWarn>
+        <NoWarn>EPC12;CA2100;</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="../DataProvider/DataProvider.csproj" />

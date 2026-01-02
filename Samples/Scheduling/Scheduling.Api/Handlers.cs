@@ -14,9 +14,9 @@ public static class SchedulingHandlers
     public static async Task<
         Result<ImmutableList<GetAllPractitioners>, ConduitError>
     > HandleGetAllPractitioners(
-        GetAllPractitionersQuery request,
+        GetAllPractitionersQuery _,
         Func<SqliteConnection> getConn,
-        CancellationToken ct
+        CancellationToken __
     )
     {
         try
@@ -55,7 +55,7 @@ public static class SchedulingHandlers
     > HandleGetPractitionerById(
         GetPractitionerByIdQuery request,
         Func<SqliteConnection> getConn,
-        CancellationToken ct
+        CancellationToken _
     )
     {
         try
@@ -149,7 +149,7 @@ public static class SchedulingHandlers
     > HandleSearchPractitioners(
         SearchPractitionersQuery request,
         Func<SqliteConnection> getConn,
-        CancellationToken ct
+        CancellationToken _
     )
     {
         try
@@ -189,9 +189,9 @@ public static class SchedulingHandlers
     public static async Task<
         Result<ImmutableList<GetUpcomingAppointments>, ConduitError>
     > HandleGetUpcomingAppointments(
-        GetUpcomingAppointmentsQuery request,
+        GetUpcomingAppointmentsQuery _,
         Func<SqliteConnection> getConn,
-        CancellationToken ct
+        CancellationToken __
     )
     {
         try
@@ -234,7 +234,7 @@ public static class SchedulingHandlers
     > HandleGetAppointmentById(
         GetAppointmentByIdQuery request,
         Func<SqliteConnection> getConn,
-        CancellationToken ct
+        CancellationToken _
     )
     {
         try
@@ -352,7 +352,7 @@ public static class SchedulingHandlers
     > HandleGetAppointmentsByPatient(
         GetAppointmentsByPatientQuery request,
         Func<SqliteConnection> getConn,
-        CancellationToken ct
+        CancellationToken _
     )
     {
         try
@@ -398,7 +398,7 @@ public static class SchedulingHandlers
     > HandleGetAppointmentsByPractitioner(
         GetAppointmentsByPractitionerQuery request,
         Func<SqliteConnection> getConn,
-        CancellationToken ct
+        CancellationToken _
     )
     {
         try
@@ -442,17 +442,13 @@ public static class SchedulingHandlers
     public static Task<Result<SyncChangesResult, ConduitError>> HandleGetSyncChanges(
         GetSyncChangesQuery request,
         Func<SqliteConnection> getConn,
-        CancellationToken ct
+        CancellationToken _
     )
     {
         try
         {
             using var conn = getConn();
-            var result = SyncLogRepository.FetchChanges(
-                conn,
-                fromVersion: request.FromVersion,
-                limit: request.Limit
-            );
+            var result = SyncLogRepository.FetchChanges(conn, request.FromVersion, request.Limit);
 
             return Task.FromResult<Result<SyncChangesResult, ConduitError>>(
                 result switch
@@ -460,7 +456,7 @@ public static class SchedulingHandlers
                     SyncLogListOk ok => new Result<SyncChangesResult, ConduitError>.Ok<
                         SyncChangesResult,
                         ConduitError
-                    >(new SyncChangesResult(Changes: ok.Value)),
+                    >(new SyncChangesResult(ok.Value)),
                     SyncLogListError err => new Result<SyncChangesResult, ConduitError>.Error<
                         SyncChangesResult,
                         ConduitError
@@ -488,9 +484,9 @@ public static class SchedulingHandlers
     /// Handles GetSyncOrigin request.
     /// </summary>
     public static Task<Result<SyncOriginResult, ConduitError>> HandleGetSyncOrigin(
-        GetSyncOriginQuery request,
+        GetSyncOriginQuery _,
         Func<SqliteConnection> getConn,
-        CancellationToken ct
+        CancellationToken __
     )
     {
         try
@@ -654,7 +650,7 @@ public sealed record GetAppointmentsByPractitionerQuery(string PractitionerId);
 public sealed record GetSyncChangesQuery(long FromVersion, int Limit);
 
 /// <summary>Result of sync changes.</summary>
-public sealed record SyncChangesResult(ImmutableList<SyncLogEntry> Changes);
+public sealed record SyncChangesResult(IReadOnlyList<SyncLogEntry> Changes);
 
 /// <summary>Query to get sync origin.</summary>
 public sealed record GetSyncOriginQuery;

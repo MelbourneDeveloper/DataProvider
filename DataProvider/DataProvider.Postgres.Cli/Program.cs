@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Npgsql;
@@ -326,10 +327,13 @@ internal static class Program
         sb.AppendLine();
 
         // Extension class
-        sb.AppendLine($"/// <summary>");
-        sb.AppendLine($"/// Generated CRUD operations for {table.Name} table.");
-        sb.AppendLine($"/// </summary>");
-        sb.AppendLine($"public static class {pascalName}Extensions");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"/// <summary>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"/// Generated CRUD operations for {table.Name} table."
+        );
+        sb.AppendLine(CultureInfo.InvariantCulture, $"/// </summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"public static class {pascalName}Extensions");
         sb.AppendLine("{");
 
         // Generate INSERT method
@@ -386,26 +390,31 @@ internal static class Program
         );
 
         sb.AppendLine();
-        sb.AppendLine($"    /// <summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"    /// <summary>");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    /// Inserts a row into {table.Name}. Returns inserted id or null on conflict."
         );
-        sb.AppendLine($"    /// </summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"    /// </summary>");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    public static async Task<Result<Guid?, SqlError>> Insert{pascalName}Async("
         );
-        sb.AppendLine($"        this NpgsqlConnection conn,");
-        sb.AppendLine($"        {parameters})");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        this NpgsqlConnection conn,");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
         sb.AppendLine("    {");
 
         var colNames = string.Join(", ", insertable.Select(c => c.Name));
         var paramNames = string.Join(", ", insertable.Select(c => $"@{ToCamelCase(c.Name)}"));
 
-        sb.AppendLine($"        const string sql = @\"");
-        sb.AppendLine($"            INSERT INTO {table.Schema}.{table.Name} ({colNames})");
-        sb.AppendLine($"            VALUES ({paramNames})");
-        sb.AppendLine($"            ON CONFLICT DO NOTHING");
-        sb.AppendLine($"            RETURNING id\";");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        const string sql = @\"");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            INSERT INTO {table.Schema}.{table.Name} ({colNames})"
+        );
+        sb.AppendLine(CultureInfo.InvariantCulture, $"            VALUES ({paramNames})");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"            ON CONFLICT DO NOTHING");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"            RETURNING id\";");
         sb.AppendLine();
         sb.AppendLine("        try");
         sb.AppendLine("        {");
@@ -417,12 +426,14 @@ internal static class Program
             if (col.IsNullable)
             {
                 sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName} ?? (object)DBNull.Value);"
                 );
             }
             else
             {
                 sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName});"
                 );
             }
@@ -467,14 +478,18 @@ internal static class Program
         );
 
         sb.AppendLine();
-        sb.AppendLine($"    /// <summary>");
-        sb.AppendLine($"    /// Updates a row in {table.Name} by primary key.");
-        sb.AppendLine($"    /// </summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"    /// <summary>");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// Updates a row in {table.Name} by primary key."
+        );
+        sb.AppendLine(CultureInfo.InvariantCulture, $"    /// </summary>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    public static async Task<Result<int, SqlError>> Update{pascalName}Async("
         );
-        sb.AppendLine($"        this NpgsqlConnection conn,");
-        sb.AppendLine($"        {parameters})");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        this NpgsqlConnection conn,");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
         sb.AppendLine("    {");
 
         var setClauses = string.Join(
@@ -486,10 +501,13 @@ internal static class Program
             pkCols.Select(c => $"{c.Name} = @{ToCamelCase(c.Name)}")
         );
 
-        sb.AppendLine($"        const string sql = @\"");
-        sb.AppendLine($"            UPDATE {table.Schema}.{table.Name}");
-        sb.AppendLine($"            SET {setClauses}");
-        sb.AppendLine($"            WHERE {whereClauses}\";");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        const string sql = @\"");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            UPDATE {table.Schema}.{table.Name}"
+        );
+        sb.AppendLine(CultureInfo.InvariantCulture, $"            SET {setClauses}");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"            WHERE {whereClauses}\";");
         sb.AppendLine();
         sb.AppendLine("        try");
         sb.AppendLine("        {");
@@ -501,12 +519,14 @@ internal static class Program
             if (col.IsNullable)
             {
                 sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName} ?? (object)DBNull.Value);"
                 );
             }
             else
             {
                 sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName});"
                 );
             }
@@ -544,14 +564,18 @@ internal static class Program
         );
 
         sb.AppendLine();
-        sb.AppendLine($"    /// <summary>");
-        sb.AppendLine($"    /// Deletes a row from {table.Name} by primary key.");
-        sb.AppendLine($"    /// </summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"    /// <summary>");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// Deletes a row from {table.Name} by primary key."
+        );
+        sb.AppendLine(CultureInfo.InvariantCulture, $"    /// </summary>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    public static async Task<Result<int, SqlError>> Delete{pascalName}Async("
         );
-        sb.AppendLine($"        this NpgsqlConnection conn,");
-        sb.AppendLine($"        {parameters})");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        this NpgsqlConnection conn,");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
         sb.AppendLine("    {");
 
         var whereClauses = string.Join(
@@ -560,6 +584,7 @@ internal static class Program
         );
 
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"        const string sql = @\"DELETE FROM {table.Schema}.{table.Name} WHERE {whereClauses}\";"
         );
         sb.AppendLine();
@@ -570,6 +595,7 @@ internal static class Program
         foreach (var col in pkCols)
         {
             sb.AppendLine(
+                CultureInfo.InvariantCulture,
                 $"            cmd.Parameters.AddWithValue(\"{ToCamelCase(col.Name)}\", {ToCamelCase(col.Name)});"
             );
         }
@@ -608,27 +634,45 @@ internal static class Program
         );
 
         sb.AppendLine();
-        sb.AppendLine($"    /// <summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"    /// <summary>");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    /// Bulk inserts rows into {table.Name} using batched multi-row VALUES."
         );
-        sb.AppendLine($"    /// Uses ON CONFLICT DO NOTHING to skip duplicates.");
-        sb.AppendLine($"    /// </summary>");
-        sb.AppendLine($"    /// <param name=\"conn\">Open database connection.</param>");
-        sb.AppendLine($"    /// <param name=\"records\">Records to insert as tuples.</param>");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// Uses ON CONFLICT DO NOTHING to skip duplicates."
+        );
+        sb.AppendLine(CultureInfo.InvariantCulture, $"    /// </summary>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// <param name=\"conn\">Open database connection.</param>"
+        );
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// <param name=\"records\">Records to insert as tuples.</param>"
+        );
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    /// <param name=\"batchSize\">Max rows per batch (default 1000).</param>"
         );
-        sb.AppendLine($"    /// <returns>Total rows inserted.</returns>");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// <returns>Total rows inserted.</returns>"
+        );
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    public static async Task<Result<int, SqlError>> BulkInsert{pascalName}Async("
         );
-        sb.AppendLine($"        this NpgsqlConnection conn,");
-        sb.AppendLine($"        IEnumerable<({tupleType})> records,");
-        sb.AppendLine($"        int batchSize = 1000)");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        this NpgsqlConnection conn,");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        IEnumerable<({tupleType})> records,");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        int batchSize = 1000)");
         sb.AppendLine("    {");
         sb.AppendLine("        var totalInserted = 0;");
-        sb.AppendLine($"        var batch = new List<({tupleType})>(batchSize);");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"        var batch = new List<({tupleType})>(batchSize);"
+        );
         sb.AppendLine();
         sb.AppendLine("        try");
         sb.AppendLine("        {");
@@ -638,6 +682,7 @@ internal static class Program
         sb.AppendLine("                if (batch.Count >= batchSize)");
         sb.AppendLine("                {");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"                    var result = await ExecuteBulkInsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);"
         );
         sb.AppendLine(
@@ -654,6 +699,7 @@ internal static class Program
         sb.AppendLine("            if (batch.Count > 0)");
         sb.AppendLine("            {");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"                var finalResult = await ExecuteBulkInsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);"
         );
         sb.AppendLine(
@@ -680,10 +726,11 @@ internal static class Program
 
         // Generate batch execution helper
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    private static async Task<Result<int, SqlError>> ExecuteBulkInsert{pascalName}BatchAsync("
         );
-        sb.AppendLine($"        NpgsqlConnection conn,");
-        sb.AppendLine($"        List<({tupleType})> batch)");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        NpgsqlConnection conn,");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        List<({tupleType})> batch)");
         sb.AppendLine("    {");
         sb.AppendLine("        if (batch.Count == 0)");
         sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(0);");
@@ -691,6 +738,7 @@ internal static class Program
 
         var colNames = string.Join(", ", insertable.Select(c => c.Name));
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"        var sql = new System.Text.StringBuilder(\"INSERT INTO {table.Schema}.{table.Name} ({colNames}) VALUES \");"
         );
         sb.AppendLine();
@@ -703,7 +751,10 @@ internal static class Program
             ", ",
             insertable.Select((c, idx) => $"@p\" + (i * {insertable.Count} + {idx}) + \"")
         );
-        sb.AppendLine($"            sql.Append(\"({placeholders})\");");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            sql.Append(\"({placeholders})\");"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("        sql.Append(\" ON CONFLICT DO NOTHING\");");
         sb.AppendLine();
@@ -720,12 +771,14 @@ internal static class Program
             if (col.IsNullable)
             {
                 sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName} ?? (object)DBNull.Value);"
                 );
             }
             else
             {
                 sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName});"
                 );
             }
@@ -759,27 +812,45 @@ internal static class Program
         );
 
         sb.AppendLine();
-        sb.AppendLine($"    /// <summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"    /// <summary>");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    /// Bulk upserts rows into {table.Name} using batched multi-row VALUES."
         );
-        sb.AppendLine($"    /// Uses ON CONFLICT DO UPDATE to insert or update existing rows.");
-        sb.AppendLine($"    /// </summary>");
-        sb.AppendLine($"    /// <param name=\"conn\">Open database connection.</param>");
-        sb.AppendLine($"    /// <param name=\"records\">Records to upsert as tuples.</param>");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// Uses ON CONFLICT DO UPDATE to insert or update existing rows."
+        );
+        sb.AppendLine(CultureInfo.InvariantCulture, $"    /// </summary>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// <param name=\"conn\">Open database connection.</param>"
+        );
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// <param name=\"records\">Records to upsert as tuples.</param>"
+        );
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    /// <param name=\"batchSize\">Max rows per batch (default 1000).</param>"
         );
-        sb.AppendLine($"    /// <returns>Total rows affected.</returns>");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// <returns>Total rows affected.</returns>"
+        );
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    public static async Task<Result<int, SqlError>> BulkUpsert{pascalName}Async("
         );
-        sb.AppendLine($"        this NpgsqlConnection conn,");
-        sb.AppendLine($"        IEnumerable<({tupleType})> records,");
-        sb.AppendLine($"        int batchSize = 1000)");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        this NpgsqlConnection conn,");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        IEnumerable<({tupleType})> records,");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        int batchSize = 1000)");
         sb.AppendLine("    {");
         sb.AppendLine("        var totalAffected = 0;");
-        sb.AppendLine($"        var batch = new List<({tupleType})>(batchSize);");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"        var batch = new List<({tupleType})>(batchSize);"
+        );
         sb.AppendLine();
         sb.AppendLine("        try");
         sb.AppendLine("        {");
@@ -789,6 +860,7 @@ internal static class Program
         sb.AppendLine("                if (batch.Count >= batchSize)");
         sb.AppendLine("                {");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"                    var result = await ExecuteBulkUpsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);"
         );
         sb.AppendLine(
@@ -805,6 +877,7 @@ internal static class Program
         sb.AppendLine("            if (batch.Count > 0)");
         sb.AppendLine("            {");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"                var finalResult = await ExecuteBulkUpsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);"
         );
         sb.AppendLine(
@@ -831,10 +904,11 @@ internal static class Program
 
         // Generate batch execution helper
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    private static async Task<Result<int, SqlError>> ExecuteBulkUpsert{pascalName}BatchAsync("
         );
-        sb.AppendLine($"        NpgsqlConnection conn,");
-        sb.AppendLine($"        List<({tupleType})> batch)");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        NpgsqlConnection conn,");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        List<({tupleType})> batch)");
         sb.AppendLine("    {");
         sb.AppendLine("        if (batch.Count == 0)");
         sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(0);");
@@ -846,6 +920,7 @@ internal static class Program
         var updateSet = string.Join(", ", updateCols.Select(c => $"{c.Name} = EXCLUDED.{c.Name}"));
 
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"        var sql = new System.Text.StringBuilder(\"INSERT INTO {table.Schema}.{table.Name} ({colNames}) VALUES \");"
         );
         sb.AppendLine();
@@ -858,20 +933,27 @@ internal static class Program
             ", ",
             insertable.Select((c, idx) => $"@p\" + (i * {insertable.Count} + {idx}) + \"")
         );
-        sb.AppendLine($"            sql.Append(\"({placeholders})\");");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            sql.Append(\"({placeholders})\");"
+        );
         sb.AppendLine("        }");
 
         // Add ON CONFLICT DO UPDATE clause
         if (updateCols.Count > 0)
         {
             sb.AppendLine(
+                CultureInfo.InvariantCulture,
                 $"        sql.Append(\" ON CONFLICT ({pkColNames}) DO UPDATE SET {updateSet}\");"
             );
         }
         else
         {
             // If all columns are PKs, just do nothing on conflict
-            sb.AppendLine($"        sql.Append(\" ON CONFLICT ({pkColNames}) DO NOTHING\");");
+            sb.AppendLine(
+                CultureInfo.InvariantCulture,
+                $"        sql.Append(\" ON CONFLICT ({pkColNames}) DO NOTHING\");"
+            );
         }
 
         sb.AppendLine();
@@ -888,12 +970,14 @@ internal static class Program
             if (col.IsNullable)
             {
                 sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName} ?? (object)DBNull.Value);"
                 );
             }
             else
             {
                 sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName});"
                 );
             }
@@ -1057,21 +1141,24 @@ internal static class Program
         // Result type aliases must come after standard usings but before any type definitions
         // Use fully qualified names since type aliases don't use namespace context
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"using {fileName}Result = Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Selecta.SqlError>;"
         );
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"using {fileName}Ok = Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Selecta.SqlError>.Ok<System.Collections.Immutable.ImmutableList<{recordName}>, Selecta.SqlError>;"
         );
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"using {fileName}Error = Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Selecta.SqlError>.Error<System.Collections.Immutable.ImmutableList<{recordName}>, Selecta.SqlError>;"
         );
         sb.AppendLine();
 
         // Generate record type
-        sb.AppendLine($"/// <summary>");
-        sb.AppendLine($"/// Generated record for {fileName} query.");
-        sb.AppendLine($"/// </summary>");
-        sb.Append($"public sealed record {recordName}(");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"/// <summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"/// Generated record for {fileName} query.");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"/// </summary>");
+        sb.Append(CultureInfo.InvariantCulture, $"public sealed record {recordName}(");
 
         var first = true;
         foreach (var col in columns)
@@ -1081,47 +1168,52 @@ internal static class Program
             first = false;
 
             var propName = ToPascalCase(col.Name);
-            sb.Append($"{col.CSharpType} {propName}");
+            sb.Append(CultureInfo.InvariantCulture, $"{col.CSharpType} {propName}");
         }
         sb.AppendLine(");");
         sb.AppendLine();
 
         // Generate extension method
-        sb.AppendLine($"/// <summary>");
-        sb.AppendLine($"/// Extension methods for {fileName} query.");
-        sb.AppendLine($"/// </summary>");
-        sb.AppendLine($"public static class {fileName}Extensions");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"/// <summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"/// Extension methods for {fileName} query.");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"/// </summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"public static class {fileName}Extensions");
         sb.AppendLine("{");
 
         // SQL constant
-        sb.AppendLine($"    private const string Sql = @\"");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"    private const string Sql = @\"");
         sb.AppendLine(sql.Replace("\"", "\"\""));
         sb.AppendLine("\";");
         sb.AppendLine();
 
         // Async method
-        sb.AppendLine($"    /// <summary>");
-        sb.AppendLine($"    /// Executes the {fileName} query.");
-        sb.AppendLine($"    /// </summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"    /// <summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"    /// Executes the {fileName} query.");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"    /// </summary>");
         sb.Append(
+            CultureInfo.InvariantCulture,
             $"    public static async Task<{fileName}Result> {fileName}Async(this NpgsqlConnection conn"
         );
 
         foreach (var param in parameters)
         {
             var paramType = InferParameterType(param);
-            sb.Append($", {paramType} {ToCamelCase(param)}");
+            sb.Append(CultureInfo.InvariantCulture, $", {paramType} {ToCamelCase(param)}");
         }
         sb.AppendLine(")");
         sb.AppendLine("    {");
         sb.AppendLine("        try");
         sb.AppendLine("        {");
-        sb.AppendLine($"            var results = ImmutableList.CreateBuilder<{recordName}>();");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            var results = ImmutableList.CreateBuilder<{recordName}>();"
+        );
         sb.AppendLine("            await using var cmd = new NpgsqlCommand(Sql, conn);");
 
         foreach (var param in parameters)
         {
             sb.AppendLine(
+                CultureInfo.InvariantCulture,
                 $"            cmd.Parameters.AddWithValue(\"{param}\", {ToCamelCase(param)});"
             );
         }
@@ -1132,23 +1224,33 @@ internal static class Program
         );
         sb.AppendLine("            while (await reader.ReadAsync().ConfigureAwait(false))");
         sb.AppendLine("            {");
-        sb.AppendLine($"                results.Add(Read{recordName}(reader));");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"                results.Add(Read{recordName}(reader));"
+        );
         sb.AppendLine("            }");
         sb.AppendLine();
-        sb.AppendLine($"            return new {fileName}Ok(results.ToImmutable());");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            return new {fileName}Ok(results.ToImmutable());"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");
         sb.AppendLine("        {");
-        sb.AppendLine($"            return new {fileName}Error(SqlError.FromException(ex));");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            return new {fileName}Error(SqlError.FromException(ex));"
+        );
         sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine();
 
         // Reader method
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    private static {recordName} Read{recordName}(NpgsqlDataReader reader) =>"
         );
-        sb.Append($"        new(");
+        sb.Append(CultureInfo.InvariantCulture, $"        new(");
 
         first = true;
         var ordinal = 0;
@@ -1160,7 +1262,7 @@ internal static class Program
 
             var propName = ToPascalCase(col.Name);
             var readExpr = GetReaderExpression(col, ordinal);
-            sb.Append($"{propName}: {readExpr}");
+            sb.Append(CultureInfo.InvariantCulture, $"{propName}: {readExpr}");
             ordinal++;
         }
         sb.AppendLine(");");
