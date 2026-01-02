@@ -711,7 +711,10 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var predicate = PredicateBuilder.False<Customer>();
         predicate = predicate.Or(c => c.CustomerName == "Acme Corp");
         predicate = predicate.Or(c => c.CustomerName == "Tech Solutions");
-        var query = SelectStatement.From<Customer>("Customer").Where(predicate).OrderBy(c => c.CustomerName);
+        var query = SelectStatement
+            .From<Customer>("Customer")
+            .Where(predicate)
+            .OrderBy(c => c.CustomerName);
 
         // Act
         var statement = query.ToSqlStatement();
@@ -817,7 +820,10 @@ public sealed class DataProviderIntegrationTests : IDisposable
         predicate = predicate.And(c => c.Email != null);
         predicate = predicate.And(c => c.CustomerName != null);
 
-        var query = SelectStatement.From<Customer>("Customer").Where(predicate).OrderBy(c => c.CustomerName);
+        var query = SelectStatement
+            .From<Customer>("Customer")
+            .Where(predicate)
+            .OrderBy(c => c.CustomerName);
         var statement = query.ToSqlStatement();
         var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
 
