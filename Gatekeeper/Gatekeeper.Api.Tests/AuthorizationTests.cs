@@ -528,8 +528,7 @@ public sealed class GatekeeperTestFixture : IDisposable
             ),
         };
 
-        var permId =
-            existingPerm?.id
+        var permId = existingPerm?.id
             ?? throw new InvalidOperationException(
                 $"Permission '{permissionCode}' not found in seeded database"
             );
@@ -553,9 +552,7 @@ public sealed class GatekeeperTestFixture : IDisposable
 
         if (grantResult is Result<int, SqlError>.Error<int, SqlError> grantErr)
         {
-            throw new InvalidOperationException(
-                $"Failed to insert grant: {grantErr.Value.Message}"
-            );
+            throw new InvalidOperationException($"Failed to insert grant: {grantErr.Value.Message}");
         }
 
         tx.Commit();
@@ -588,8 +585,7 @@ public sealed class GatekeeperTestFixture : IDisposable
             ),
         };
 
-        var permId =
-            existingPerm?.id
+        var permId = existingPerm?.id
             ?? throw new InvalidOperationException(
                 $"Permission '{permissionCode}' not found in seeded database"
             );

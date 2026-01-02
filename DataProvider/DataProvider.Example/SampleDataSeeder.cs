@@ -16,8 +16,22 @@ internal static class SampleDataSeeder
         IDbTransaction transaction
     )
     {
-        // Insert Customers
+        // Generate UUIDs for all entities
         var customer1Id = Guid.NewGuid().ToString();
+        var customer2Id = Guid.NewGuid().ToString();
+        var invoiceId = Guid.NewGuid().ToString();
+        var invoiceLine1Id = Guid.NewGuid().ToString();
+        var invoiceLine2Id = Guid.NewGuid().ToString();
+        var address1Id = Guid.NewGuid().ToString();
+        var address2Id = Guid.NewGuid().ToString();
+        var address3Id = Guid.NewGuid().ToString();
+        var order1Id = Guid.NewGuid().ToString();
+        var order2Id = Guid.NewGuid().ToString();
+        var orderItem1Id = Guid.NewGuid().ToString();
+        var orderItem2Id = Guid.NewGuid().ToString();
+        var orderItem3Id = Guid.NewGuid().ToString();
+
+        // Insert Customers
         var customer1Result = await transaction
             .InsertCustomerAsync(
                 customer1Id,
@@ -33,7 +47,6 @@ internal static class SampleDataSeeder
                 value: new StringSqlError((customer1Result as IntSqlError)!.Value)
             );
 
-        var customer2Id = Guid.NewGuid().ToString();
         var customer2Result = await transaction
             .InsertCustomerAsync(
                 customer2Id,
@@ -50,7 +63,6 @@ internal static class SampleDataSeeder
             );
 
         // Insert Invoice
-        var invoiceId = Guid.NewGuid().ToString();
         var invoiceResult = await transaction
             .InsertInvoiceAsync(
                 invoiceId,
@@ -72,7 +84,7 @@ internal static class SampleDataSeeder
         // Insert InvoiceLines
         var invoiceLine1Result = await transaction
             .InsertInvoiceLineAsync(
-                Guid.NewGuid().ToString(),
+                invoiceLine1Id,
                 invoiceId,
                 "Software License",
                 1,
@@ -90,7 +102,7 @@ internal static class SampleDataSeeder
 
         var invoiceLine2Result = await transaction
             .InsertInvoiceLineAsync(
-                Guid.NewGuid().ToString(),
+                invoiceLine2Id,
                 invoiceId,
                 "Support Package",
                 1,
@@ -109,7 +121,7 @@ internal static class SampleDataSeeder
         // Insert Addresses
         var address1Result = await transaction
             .InsertAddressAsync(
-                Guid.NewGuid().ToString(),
+                address1Id,
                 customer1Id,
                 "123 Business Ave",
                 "New York",
@@ -126,7 +138,7 @@ internal static class SampleDataSeeder
 
         var address2Result = await transaction
             .InsertAddressAsync(
-                Guid.NewGuid().ToString(),
+                address2Id,
                 customer1Id,
                 "456 Main St",
                 "Albany",
@@ -143,7 +155,7 @@ internal static class SampleDataSeeder
 
         var address3Result = await transaction
             .InsertAddressAsync(
-                Guid.NewGuid().ToString(),
+                address3Id,
                 customer2Id,
                 "789 Tech Blvd",
                 "San Francisco",
@@ -159,7 +171,6 @@ internal static class SampleDataSeeder
             );
 
         // Insert Orders
-        var order1Id = Guid.NewGuid().ToString();
         var order1Result = await transaction
             .InsertOrdersAsync(order1Id, "ORD-001", "2024-01-10", customer1Id, 500.00, "Completed")
             .ConfigureAwait(false);
@@ -169,7 +180,6 @@ internal static class SampleDataSeeder
                 value: new StringSqlError((order1Result as IntSqlError)!.Value)
             );
 
-        var order2Id = Guid.NewGuid().ToString();
         var order2Result = await transaction
             .InsertOrdersAsync(order2Id, "ORD-002", "2024-01-11", customer2Id, 750.00, "Processing")
             .ConfigureAwait(false);
@@ -181,14 +191,7 @@ internal static class SampleDataSeeder
 
         // Insert OrderItems
         var orderItem1Result = await transaction
-            .InsertOrderItemAsync(
-                Guid.NewGuid().ToString(),
-                order1Id,
-                "Widget A",
-                2,
-                100.00,
-                200.00
-            )
+            .InsertOrderItemAsync(orderItem1Id, order1Id, "Widget A", 2.0, 100.00, 200.00)
             .ConfigureAwait(false);
         if (orderItem1Result is not IntSqlOk)
             return (
@@ -197,14 +200,7 @@ internal static class SampleDataSeeder
             );
 
         var orderItem2Result = await transaction
-            .InsertOrderItemAsync(
-                Guid.NewGuid().ToString(),
-                order1Id,
-                "Widget B",
-                3,
-                100.00,
-                300.00
-            )
+            .InsertOrderItemAsync(orderItem2Id, order1Id, "Widget B", 3.0, 100.00, 300.00)
             .ConfigureAwait(false);
         if (orderItem2Result is not IntSqlOk)
             return (
@@ -213,14 +209,7 @@ internal static class SampleDataSeeder
             );
 
         var orderItem3Result = await transaction
-            .InsertOrderItemAsync(
-                Guid.NewGuid().ToString(),
-                order2Id,
-                "Service Package",
-                1,
-                750.00,
-                750.00
-            )
+            .InsertOrderItemAsync(orderItem3Id, order2Id, "Service Package", 1.0, 750.00, 750.00)
             .ConfigureAwait(false);
         if (orderItem3Result is not IntSqlOk)
             return (

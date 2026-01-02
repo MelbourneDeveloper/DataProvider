@@ -8,6 +8,10 @@ using Scheduling.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// File logging
+var logPath = Path.Combine(AppContext.BaseDirectory, "scheduling.log");
+builder.Logging.AddFileLogging(logPath);
+
 // Configure JSON to use PascalCase property names
 builder.Services.Configure<JsonOptions>(options =>
 {

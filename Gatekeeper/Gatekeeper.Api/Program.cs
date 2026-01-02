@@ -1,11 +1,14 @@
 #pragma warning disable IDE0037 // Use inferred member name
 
-using System.Security.Cryptography;
 using System.Text;
 using Gatekeeper.Api;
 using Microsoft.AspNetCore.Http.Json;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// File logging
+var logPath = Path.Combine(AppContext.BaseDirectory, "gatekeeper.log");
+builder.Logging.AddFileLogging(logPath);
 
 builder.Services.Configure<JsonOptions>(options =>
     options.SerializerOptions.PropertyNamingPolicy = null
@@ -44,7 +47,7 @@ builder.Services.AddSingleton(new DbConfig(connectionString));
 
 var signingKeyBase64 = builder.Configuration["Jwt:SigningKey"];
 var signingKey = string.IsNullOrEmpty(signingKeyBase64)
-    ? RandomNumberGenerator.GetBytes(32)
+    ? new byte[32] // Default dev key (32 zeros) - MUST match Clinical/Scheduling APIs
     : Convert.FromBase64String(signingKeyBase64);
 builder.Services.AddSingleton(new JwtConfig(signingKey, TimeSpan.FromHours(24)));
 

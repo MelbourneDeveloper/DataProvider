@@ -1,8 +1,7 @@
-namespace Gatekeeper.Api;
-
 using System.Security.Cryptography;
 using System.Text;
 
+namespace Gatekeeper.Api;
 /// <summary>
 /// JWT token generation and validation service.
 /// </summary>
@@ -149,23 +148,19 @@ public static class TokenService
     }
 
     /// <summary>
-    /// Revokes a token by JTI.
+    /// Revokes a token by JTI using DataProvider generated method.
     /// </summary>
-    public static async Task RevokeTokenAsync(SqliteConnection conn, string jti)
-    {
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "UPDATE gk_session SET is_revoked = 1 WHERE id = @jti";
-        cmd.Parameters.AddWithValue("@jti", jti);
-        await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
-    }
+    public static async Task RevokeTokenAsync(SqliteConnection conn, string jti) =>
+        _ = await conn.RevokeSessionAsync(jti).ConfigureAwait(false);
 
     private static async Task<bool> IsTokenRevokedAsync(SqliteConnection conn, string jti)
     {
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT is_revoked FROM gk_session WHERE id = @jti";
-        cmd.Parameters.AddWithValue("@jti", jti);
-        var result = await cmd.ExecuteScalarAsync().ConfigureAwait(false);
-        return result is long revoked && revoked == 1;
+        var result = await conn.GetSessionRevokedAsync(jti).ConfigureAwait(false);
+        return result switch
+        {
+            GetSessionRevokedOk ok => ok.Value.FirstOrDefault()?.is_revoked == 1,
+            GetSessionRevokedError => false,
+        };
     }
 
     private static string Base64UrlEncode(byte[] input) =>
