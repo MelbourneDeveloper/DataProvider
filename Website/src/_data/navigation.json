@@ -1,0 +1,62 @@
+{
+  "main": [
+    { "text": "Docs", "url": "/docs/getting-started/" },
+    { "text": "API", "url": "/apidocs/" },
+    { "text": "Blog", "url": "/blog/" },
+    { "text": "GitHub", "url": "https://github.com/MelbourneDeveloper/DataProvider", "external": true }
+  ],
+  "docs": [
+    {
+      "title": "Getting Started",
+      "items": [
+        { "text": "Introduction", "url": "/docs/getting-started/" },
+        { "text": "Installation", "url": "/docs/installation/" },
+        { "text": "Quick Start", "url": "/docs/quick-start/" }
+      ]
+    },
+    {
+      "title": "Components",
+      "items": [
+        { "text": "DataProvider", "url": "/docs/dataprovider/" },
+        { "text": "LQL", "url": "/docs/lql/" },
+        { "text": "Sync", "url": "/docs/sync/" },
+        { "text": "Migrations", "url": "/docs/migrations/" },
+        { "text": "Gatekeeper", "url": "/docs/gatekeeper/" }
+      ]
+    }
+  ],
+  "api": [
+    {
+      "title": "API Reference",
+      "items": [
+        { "text": "Overview", "url": "/api/" },
+        { "text": "DataProvider API", "url": "/apidocs/" },
+        { "text": "LQL Docs", "url": "https://lql.dev", "external": true }
+      ]
+    }
+  ],
+  "footer": [
+    {
+      "title": "Documentation",
+      "items": [
+        { "text": "Getting Started", "url": "/docs/getting-started/" },
+        { "text": "API Reference", "url": "/apidocs/" },
+        { "text": "LQL", "url": "/docs/lql/" }
+      ]
+    },
+    {
+      "title": "Community",
+      "items": [
+        { "text": "GitHub", "url": "https://github.com/MelbourneDeveloper/DataProvider" },
+        { "text": "NuGet", "url": "https://www.nuget.org/packages/DataProvider" }
+      ]
+    },
+    {
+      "title": "More",
+      "items": [
+        { "text": "Blog", "url": "/blog/" },
+        { "text": "About", "url": "/about/" }
+      ]
+    }
+  ]
+}

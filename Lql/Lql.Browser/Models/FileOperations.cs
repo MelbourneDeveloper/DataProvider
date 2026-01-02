@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using Results;
+using Outcome;
 
 namespace Lql.Browser.Models;
 
@@ -34,11 +34,13 @@ public static class FileOperations
         try
         {
             var content = await File.ReadAllTextAsync(filePath);
-            return new Result<string, string>.Success(content);
+            return new Result<string, string>.Ok<string, string>(content);
         }
         catch (Exception ex)
         {
-            return new Result<string, string>.Failure($"Error reading file: {ex.Message}");
+            return new Result<string, string>.Error<string, string>(
+                $"Error reading file: {ex.Message}"
+            );
         }
     }
 
@@ -52,11 +54,13 @@ public static class FileOperations
 #pragma warning disable RS1035 // Do not use APIs banned for analyzers
             await File.WriteAllTextAsync(filePath, content);
 #pragma warning restore RS1035 // Do not use APIs banned for analyzers
-            return new Result<Unit, string>.Success(Unit.Value);
+            return new Result<Unit, string>.Ok<Unit, string>(Unit.Value);
         }
         catch (Exception ex)
         {
-            return new Result<Unit, string>.Failure($"Error writing file: {ex.Message}");
+            return new Result<Unit, string>.Error<Unit, string>(
+                $"Error writing file: {ex.Message}"
+            );
         }
     }
 
@@ -108,14 +112,4 @@ public static class FileOperations
         tabs.Remove(tabToRemove);
         return tabs.FirstOrDefault();
     }
-}
-
-/// <summary>
-/// Unit type for void operations
-/// </summary>
-public record Unit
-{
-    public static readonly Unit Value = new();
-
-    private Unit() { }
 }

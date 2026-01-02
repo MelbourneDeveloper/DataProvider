@@ -1,10 +1,36 @@
-using Results;
+using Outcome;
+using Selecta;
 
 namespace DataProvider;
 
 /// <summary>
 /// Represents a database column with its metadata
 /// </summary>
+/// <example>
+/// <code>
+/// // Create a column definition
+/// var column = new DatabaseColumn
+/// {
+///     Name = "Id",
+///     SqlType = "uniqueidentifier",
+///     CSharpType = "Guid",
+///     IsNullable = false,
+///     IsPrimaryKey = true,
+///     IsIdentity = false,
+///     IsComputed = false
+/// };
+///
+/// // Create a string column with max length
+/// var nameColumn = new DatabaseColumn
+/// {
+///     Name = "Name",
+///     SqlType = "nvarchar(100)",
+///     CSharpType = "string",
+///     IsNullable = false,
+///     MaxLength = 100
+/// };
+/// </code>
+/// </example>
 public sealed record DatabaseColumn
 {
     /// <summary>
@@ -61,6 +87,27 @@ public sealed record DatabaseColumn
 /// <summary>
 /// Represents a database table with its columns
 /// </summary>
+/// <example>
+/// <code>
+/// // Create a table definition with columns
+/// var table = new DatabaseTable
+/// {
+///     Schema = "dbo",
+///     Name = "Patients",
+///     Columns = new List&lt;DatabaseColumn&gt;
+///     {
+///         new DatabaseColumn { Name = "Id", SqlType = "uniqueidentifier", IsPrimaryKey = true },
+///         new DatabaseColumn { Name = "Name", SqlType = "nvarchar(100)" },
+///         new DatabaseColumn { Name = "DateOfBirth", SqlType = "date", IsNullable = true }
+///     }.AsReadOnly()
+/// };
+///
+/// // Access computed column lists
+/// var pkColumns = table.PrimaryKeyColumns;
+/// var insertColumns = table.InsertableColumns;
+/// var updateColumns = table.UpdateableColumns;
+/// </code>
+/// </example>
 public sealed record DatabaseTable
 {
     /// <summary>

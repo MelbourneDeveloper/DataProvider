@@ -1,4 +1,4 @@
-using Results;
+using Outcome;
 using Selecta;
 
 namespace DataProvider.CodeGeneration;
@@ -139,12 +139,12 @@ public record CodeGenerationConfig
     )
     {
         if (string.IsNullOrWhiteSpace(namespaceName))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("namespaceName cannot be null or empty")
             );
 
         if (string.IsNullOrWhiteSpace(modelCode) && string.IsNullOrWhiteSpace(dataAccessCode))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("At least one of modelCode or dataAccessCode must be provided")
             );
 
@@ -156,7 +156,8 @@ public record CodeGenerationConfig
         sb.AppendLine("using System.Collections.Immutable;");
         sb.AppendLine("using System.Threading.Tasks;");
         sb.AppendLine("using Microsoft.Data.Sqlite;");
-        sb.AppendLine("using Results;");
+        sb.AppendLine("using Outcome;");
+        sb.AppendLine("using Selecta;");
         sb.AppendLine();
 
         // Generate namespace
@@ -179,6 +180,6 @@ public record CodeGenerationConfig
             sb.Append(modelCode);
         }
 
-        return new Result<string, SqlError>.Success(sb.ToString());
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
 }

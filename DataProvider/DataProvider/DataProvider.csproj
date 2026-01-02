@@ -22,7 +22,6 @@
   <!-- You are not allowed to reference database platform specific dependencies here -->
 
   <ItemGroup>
-    <ProjectReference Include="../../Other/Results/Results.csproj" />
     <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
   </ItemGroup>
 
@@ -33,7 +32,7 @@
 
   <!-- Disable problematic analyzer rules for generated code -->
   <PropertyGroup>
-    <NoWarn>$(NoWarn);EPC13;EPS06;CA1017;CA1002;CA1822;CA1859</NoWarn>
+    <NoWarn>$(NoWarn);EPC13;EPS06;CA1002;CA1822;CA1859</NoWarn>
   </PropertyGroup>
 
   <!-- Release Configuration -->

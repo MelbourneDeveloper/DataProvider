@@ -1,19 +1,65 @@
-- NEVER THROW EXCEPTIONS!!!!!! Always return a result type for methods that could fail. Anything that can fail is wrapped in a try/catch
-- You are building a code generation. Don't generate code yourself that is the responsibility of the generator
-- AVOID DUPLICATION. Always check for the existence of types, methods and variables before creating them
-- No interfaces! Use Action<T> or Func<T> for abstractions
-- AVOID ASSIGNMENTS!!!! Use EXPRESSIONS where possible 
-- NO CONSECUTIVE Console.WriteLine calls. Use string interpolation on a sinle line
-- DO NOT USE GIT - Unless explicitly requested
-- Static extension methods on IDbConnection and ITransaction only! No classes for getting data
-- No singletons! Inject Func into static methods 
-- NO CLASSES. Records and Static Methods!!! - FP style code wherever with pure static methods
-- Turn all warnings up to ERRORS and include as many Roslyn analyzer rules as possible, especially for null safety
-- Keep files under 450 LOC
-- Run dotnet csharpier . on the root folder of the repo every now and then
-- No placeholders! If you don't have time to implement something properly, leave a LOUD compilation error with a TODO instead
-- All public members MUST have XMLDOC documentation, except on tests
-- DON'T use Regex! Parse the SQL with the official Antlr .g4 or a well tested existing parsing library
-- Use a build props for everything and remove duplicate config from the csproj, especially Roslyn/code rule config. 
-- Keep the readme updated
-- Don't put temp files or anything in the root folder
+# CLAUDE.md
+
+## Multi-Agent (Too Many Cooks)
+- Keep your key! Don't lose it!
+- Check messages, lock files before editing, unlock after
+- Don't edit locked files; telegraph intent via plans/messages
+- Coordinator: delegate. Worker: ask for tasks. Update plans constantly.
+
+## Coding Rules
+
+- **NEVER THROW** - Return `Result<T>`. Wrap failures in try/catch
+- **No casting/!** - Pattern match on type only
+- **NO GIT** - Source control is illegal
+- **No suppressing warnings** - Illegal
+- **No raw SQL inserts/updates** - Use generated extensions
+- **Use DataProvider Migrations to spin up DBs** - ⛔️ SQL for creating db schema = ILLEGAL (schema.sql = ILLEGAL).  Use the Migration.CLI with YAML. This is the ONLY valid tool to migrate dbs unless the app itself spins up the migrations in code.
+- **NO CLASSES** - Records + static methods (FP style)
+- **Copious ILogger** - Especially sync projects
+- **NO INTERFACES** - Use `Action<T>`/`Func<T>`
+- **Expressions over assignments**
+- **Routinely format with csharpier** - `dotnet csharpier .` <- In root folder
+- **Named parameters** - No ordinal calls
+- **Close type hierarchies** - Private constructors:
+```csharp
+public abstract partial record Result<TSuccess, TFailure> { private Result() { } }
+```
+- **Skipping tests = ⛔️ ILLEGAL** - Failing tests = OK. Aggressively unskip tests
+- **Test at the highest level** - Avoid mocks. Only full integration testing
+- **Keep files under 450 LOC and functions under 20 LOC**
+- **Always use type aliases (using) for result types** - Don't write like this: `new Result<string, SqlError>.Ok`
+- **All tables must have a SINGLE primary key**
+- **Primary keys MUST be UUIDs**
+- **No singletons** - Inject `Func` into static methods
+- **Immutable types!** - Use records. Don't use `List<T>`. Use `ImmutableList` `FrozenSet` or `ImmutableArray`
+- **NO REGEX** - Parse SQL with ANTLR .g4 grammars or SqlParserCS library
+- **All public members require XMLDOC** - Except in test projects
+- **One type per file** (except small records)
+- **No commented-out code** - Delete it
+- **No consecutive Console.WriteLine** - Use single string interpolation
+- **No placeholders** - If incomplete, leave LOUD compilation error with TODO
+- **Never use Fluent Assertions**
+
+## CSS
+- **MINIMAL CSS** - Do not duplicate CSS clases
+- **Name classes after component, NOT section** - Sections should not have their own CSS classes
+
+## Testing
+- E2E with zero mocking
+- 100% coverage, Stryker score 70%+
+- Medical data: [FHIR spec](https://build.fhir.org/resourcelist.html)
+
+## Architecture
+
+| Component | Path | Purpose |
+|-----------|------|---------|
+| DataProvider | `DataProvider/` | Source gen for SQL -> extension methods |
+| LQL | `Lql/` | Lambda Query Language -> SQL transpiler |
+| Sync | `Sync/` | Offline-first bidirectional sync |
+| Gatekeeper | `Gatekeeper/` | WebAuthn + RBAC auth |
+| Samples | `Samples/` | Clinical, Scheduling, Dashboard |
+
+## Config
+- .NET 9.0, C# latest, nullable, warnings as errors
+- Central config in `Directory.Build.props`
+- Format: `dotnet csharpier .`

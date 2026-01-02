@@ -1,9 +1,9 @@
 using System.Collections.Frozen;
+using System.Diagnostics.CodeAnalysis;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
-using Results;
+using Outcome;
 using Selecta;
-using System.Diagnostics.CodeAnalysis;
 
 namespace DataProvider.SQLite.Parsing;
 
@@ -39,11 +39,13 @@ public sealed class SqliteAntlrParser : ISqlParser
             var queryType = DetermineQueryType(parseTree);
 
             var statement = new SelectStatement { Parameters = parameterInfos.ToFrozenSet() };
-            return new Result<SelectStatement, string>.Success(statement);
+            return new Result<SelectStatement, string>.Ok<SelectStatement, string>(statement);
         }
         catch (Exception ex)
         {
-            return new Result<SelectStatement, string>.Failure($"Failed to parse SQL: {ex}");
+            return new Result<SelectStatement, string>.Error<SelectStatement, string>(
+                $"Failed to parse SQL: {ex}"
+            );
         }
     }
 

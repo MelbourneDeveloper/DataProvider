@@ -2,6 +2,20 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Dashboard (Fresh)",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "${workspaceFolder}/Samples/start.sh --fresh",
+            "cwd": "${workspaceFolder}/Samples"
+        },
+        {
+            "name": "Dashboard (Continue)",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "${workspaceFolder}/Samples/start.sh",
+            "cwd": "${workspaceFolder}/Samples"
+        },
+        {
             "name": "Launch Blazor LQL Website",
             "type": "coreclr",
             "request": "launch",

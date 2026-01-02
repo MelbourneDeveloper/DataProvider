@@ -5,7 +5,7 @@ using DataProvider.CodeGeneration;
 using DataProvider.SQLite.CodeGeneration;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
-using Results;
+using Outcome;
 using Selecta;
 
 namespace DataProvider.SQLite;
@@ -45,25 +45,27 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
     )
     {
         if (string.IsNullOrWhiteSpace(fileName))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("fileName cannot be null or empty")
             );
 
         if (string.IsNullOrWhiteSpace(sql))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("sql cannot be null or empty")
             );
 
         if (statement == null)
-            return new Result<string, SqlError>.Failure(new SqlError("statement cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("statement cannot be null")
+            );
 
         if (string.IsNullOrWhiteSpace(connectionString))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("connectionString cannot be null or empty")
             );
 
         if (columnMetadata == null)
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 new SqlError("columnMetadata cannot be null")
             );
 
@@ -87,7 +89,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
 
         // Generate model type
         var modelResult = generationConfig.GenerateModelType(fileName, columnMetadata);
-        if (modelResult is Result<string, SqlError>.Failure modelFailure)
+        if (modelResult is Result<string, SqlError>.Error<string, SqlError> modelFailure)
             return modelFailure;
 
         // Generate data access method
@@ -100,14 +102,14 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
             columnMetadata,
             generationConfig.ConnectionType
         );
-        if (dataAccessResult is Result<string, SqlError>.Failure dataAccessFailure)
+        if (dataAccessResult is Result<string, SqlError>.Error<string, SqlError> dataAccessFailure)
             return dataAccessFailure;
 
         // Generate complete source file
         return generationConfig.GenerateSourceFile(
             generationConfig.TargetNamespace,
-            (modelResult as Result<string, SqlError>.Success)!.Value,
-            (dataAccessResult as Result<string, SqlError>.Success)!.Value
+            (modelResult as Result<string, SqlError>.Ok<string, SqlError>)!.Value,
+            (dataAccessResult as Result<string, SqlError>.Ok<string, SqlError>)!.Value
         );
     }
 
@@ -215,7 +217,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
 
             if (columns.Count == 0)
             {
-                return new Result<DatabaseTable, SqlError>.Failure(
+                return new Result<DatabaseTable, SqlError>.Error<DatabaseTable, SqlError>(
                     new SqlError($"Table {tableName} not found or has no columns")
                 );
             }
@@ -227,11 +229,11 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                 Columns = columns.AsReadOnly(),
             };
 
-            return new Result<DatabaseTable, SqlError>.Success(table);
+            return new Result<DatabaseTable, SqlError>.Ok<DatabaseTable, SqlError>(table);
         }
         catch (Exception ex)
         {
-            return new Result<DatabaseTable, SqlError>.Failure(
+            return new Result<DatabaseTable, SqlError>.Error<DatabaseTable, SqlError>(
                 new SqlError($"Failed to get table metadata for {tableName}", ex)
             );
         }
@@ -279,7 +281,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
     {
         // Generate raw record type
         var rawRecordResult = config.GenerateRawRecordType($"{fileName}Raw", columnMetadata);
-        if (rawRecordResult is Result<string, SqlError>.Failure rawFailure)
+        if (rawRecordResult is Result<string, SqlError>.Error<string, SqlError> rawFailure)
             return rawFailure;
 
         // Generate grouped query method
@@ -292,7 +294,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
             groupingConfig,
             config.ConnectionType
         );
-        if (groupedMethodResult is Result<string, SqlError>.Failure methodFailure)
+        if (groupedMethodResult is Result<string, SqlError>.Error<string, SqlError> methodFailure)
             return methodFailure;
 
         // Generate grouped model types
@@ -303,13 +305,13 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
             groupingConfig.ChildEntity.Columns,
             columnMetadata
         );
-        if (groupedModelsResult is Result<string, SqlError>.Failure modelsFailure)
+        if (groupedModelsResult is Result<string, SqlError>.Error<string, SqlError> modelsFailure)
             return modelsFailure;
 
         // Combine all parts
-        var rawRecord = (rawRecordResult as Result<string, SqlError>.Success)!.Value;
-        var method = (groupedMethodResult as Result<string, SqlError>.Success)!.Value;
-        var models = (groupedModelsResult as Result<string, SqlError>.Success)!.Value;
+        var rawRecord = (rawRecordResult as Result<string, SqlError>.Ok<string, SqlError>)!.Value;
+        var method = (groupedMethodResult as Result<string, SqlError>.Ok<string, SqlError>)!.Value;
+        var models = (groupedModelsResult as Result<string, SqlError>.Ok<string, SqlError>)!.Value;
 
         return config.GenerateSourceFile(
             config.TargetNamespace,
@@ -333,10 +335,11 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
 
         var sqlFiles = additional.Where(at =>
             at.Path.EndsWith(".sql", StringComparison.OrdinalIgnoreCase)
-            && !Path.GetFileName(at.Path).Equals("schema.sql", StringComparison.OrdinalIgnoreCase)
+            && !Path.GetFileName(at.Path).Contains("schema", StringComparison.OrdinalIgnoreCase)
         );
         var schemaFiles = additional.Where(at =>
-            Path.GetFileName(at.Path).Equals("schema.sql", StringComparison.OrdinalIgnoreCase)
+            Path.GetFileName(at.Path).Contains("schema", StringComparison.OrdinalIgnoreCase)
+            && at.Path.EndsWith(".sql", StringComparison.OrdinalIgnoreCase)
         );
         var configFiles = additional.Where(at =>
             at.Path.EndsWith("DataProvider.json", StringComparison.OrdinalIgnoreCase)
@@ -443,6 +446,49 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
 
         var parser = new Parsing.SqliteAntlrParser();
 
+        // Helper to detect non-query statements
+        static bool IsNonQueryStatement(string sql)
+        {
+            var trimmed = sql.TrimStart();
+            return trimmed.StartsWith("UPDATE ", StringComparison.OrdinalIgnoreCase)
+                || trimmed.StartsWith("DELETE ", StringComparison.OrdinalIgnoreCase)
+                || trimmed.StartsWith("INSERT ", StringComparison.OrdinalIgnoreCase);
+        }
+
+        // Helper to extract @parameters from SQL
+        static IReadOnlyList<ParameterInfo> ExtractParameters(string sql)
+        {
+            var parameters = new List<ParameterInfo>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var i = 0;
+            while (i < sql.Length)
+            {
+                if (sql[i] == '@')
+                {
+                    var start = i + 1;
+                    var end = start;
+                    while (end < sql.Length && (char.IsLetterOrDigit(sql[end]) || sql[end] == '_'))
+                    {
+                        end++;
+                    }
+                    if (end > start)
+                    {
+                        var name = sql[start..end];
+                        if (seen.Add(name))
+                        {
+                            parameters.Add(new ParameterInfo(name, "TEXT"));
+                        }
+                    }
+                    i = end;
+                }
+                else
+                {
+                    i++;
+                }
+            }
+            return parameters.AsReadOnly();
+        }
+
         foreach (var sqlFile in sqlFiles)
         {
             try
@@ -461,16 +507,71 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                     continue;
                 }
 
+                // Handle non-query statements (UPDATE/DELETE/INSERT) separately
+                if (IsNonQueryStatement(sqlText))
+                {
+                    var parameters = ExtractParameters(sqlText);
+                    var className = $"{baseName}Extensions";
+                    var nonQueryResult = DataAccessGenerator.GenerateNonQueryMethod(
+                        className,
+                        baseName,
+                        sqlText,
+                        parameters,
+                        "SqliteConnection"
+                    );
+
+                    if (nonQueryResult is Result<string, SqlError>.Ok<string, SqlError> nqSuccess)
+                    {
+                        // Wrap in source file with usings
+                        var sb = new StringBuilder();
+                        sb.AppendLine("using System;");
+                        sb.AppendLine("using System.Threading.Tasks;");
+                        sb.AppendLine("using Microsoft.Data.Sqlite;");
+                        sb.AppendLine("using Outcome;");
+                        sb.AppendLine("using Selecta;");
+                        sb.AppendLine();
+                        sb.AppendLine("namespace Generated;");
+                        sb.AppendLine();
+                        sb.Append(nqSuccess.Value);
+
+                        context.AddSource(
+                            baseName + ".g.cs",
+                            SourceText.From(sb.ToString(), Encoding.UTF8)
+                        );
+                    }
+                    else if (
+                        nonQueryResult is Result<string, SqlError>.Error<string, SqlError> nqFailure
+                    )
+                    {
+                        var nqDiag = Diagnostic.Create(
+                            new DiagnosticDescriptor(
+                                "DP0003",
+                                "Non-query generation failed",
+                                $"Failed to generate non-query for '{baseName}': {nqFailure.Value.Message}",
+                                "DataProvider.SQLite",
+                                DiagnosticSeverity.Error,
+                                true
+                            ),
+                            Location.None
+                        );
+                        context.ReportDiagnostic(nqDiag);
+                    }
+                    continue;
+                }
+
                 // Parse SQL (attach any unexpected parser errors to the SQL file)
                 var parseResult = parser.ParseSql(sqlText);
-                if (parseResult is Result<SelectStatement, string>.Failure parseFailure)
+                if (
+                    parseResult
+                    is Result<SelectStatement, string>.Error<SelectStatement, string> parseFailure
+                )
                 {
                     context.ReportDiagnostic(
                         Diagnostic.Create(
                             new DiagnosticDescriptor(
                                 "DP0002",
                                 "SQL Parse Error",
-                                $"Failed to parse SQL file '{baseName}': {parseFailure.ErrorValue}",
+                                $"Failed to parse SQL file '{baseName}': {parseFailure.Value}",
                                 "DataProvider.SQLite",
                                 DiagnosticSeverity.Error,
                                 true
@@ -480,7 +581,9 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                     );
                     continue;
                 }
-                var statement = ((Result<SelectStatement, string>.Success)parseResult).Value;
+                var statement = (
+                    (Result<SelectStatement, string>.Ok<SelectStatement, string>)parseResult
+                ).Value;
 
                 // Discover real column metadata by executing the SQL against the DB
                 var columnsResult = GetColumnMetadataFromSqlAsync(
@@ -493,12 +596,19 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
 
                 if (
                     columnsResult
-                    is not Result<IReadOnlyList<DatabaseColumn>, SqlError>.Success colSuccess
+                    is not Result<IReadOnlyList<DatabaseColumn>, SqlError>.Ok<
+                        IReadOnlyList<DatabaseColumn>,
+                        SqlError
+                    > colSuccess
                 )
                 {
                     var err = (
-                        columnsResult as Result<IReadOnlyList<DatabaseColumn>, SqlError>.Failure
-                    )!.ErrorValue;
+                        columnsResult
+                        as Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error<
+                            IReadOnlyList<DatabaseColumn>,
+                            SqlError
+                        >
+                    )!.Value;
 
                     // Attach the diagnostic to the start of the SQL file so IDEs show it inline
                     var text =
@@ -572,14 +682,14 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                     groupingConfig
                 );
 
-                if (sourceResult is Result<string, SqlError>.Success success)
+                if (sourceResult is Result<string, SqlError>.Ok<string, SqlError> success)
                 {
                     context.AddSource(
                         baseName + ".g.cs",
                         SourceText.From(success.Value, Encoding.UTF8)
                     );
                 }
-                else if (sourceResult is Result<string, SqlError>.Failure failure)
+                else if (sourceResult is Result<string, SqlError>.Error<string, SqlError> failure)
                 {
                     // Attach the diagnostic to the SQL file as well
                     var text =
@@ -603,7 +713,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                         ),
                         location,
                         baseName,
-                        failure.ErrorValue.DetailedMessage
+                        failure.Value.DetailedMessage
                     );
                     context.ReportDiagnostic(diagGen);
                 }
@@ -666,11 +776,15 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                         config.ConnectionString,
                         tableConfigItem.Name
                     );
-                    if (tableMetadataResult is not Result<DatabaseTable, SqlError>.Success tableOk)
+                    if (
+                        tableMetadataResult
+                        is not Result<DatabaseTable, SqlError>.Ok<DatabaseTable, SqlError> tableOk
+                    )
                     {
                         var err = (
-                            tableMetadataResult as Result<DatabaseTable, SqlError>.Failure
-                        )!.ErrorValue;
+                            tableMetadataResult
+                            as Result<DatabaseTable, SqlError>.Error<DatabaseTable, SqlError>
+                        )!.Value;
                         var tableDiag = Diagnostic.Create(
                             new DiagnosticDescriptor(
                                 "DataProvider007",
@@ -705,14 +819,20 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                         tableOk.Value,
                         tableConfig
                     );
-                    if (operationsResult is Result<string, SqlError>.Success operationsSuccess)
+                    if (
+                        operationsResult
+                        is Result<string, SqlError>.Ok<string, SqlError> operationsSuccess
+                    )
                     {
                         context.AddSource(
                             tableConfigItem.Name + "Operations.g.cs",
                             SourceText.From(operationsSuccess.Value, Encoding.UTF8)
                         );
                     }
-                    else if (operationsResult is Result<string, SqlError>.Failure operationsFailure)
+                    else if (
+                        operationsResult
+                        is Result<string, SqlError>.Error<string, SqlError> operationsFailure
+                    )
                     {
                         var opsDiag = Diagnostic.Create(
                             new DiagnosticDescriptor(
@@ -725,7 +845,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                             ),
                             Location.None,
                             tableConfigItem.Name,
-                            operationsFailure.ErrorValue.Message
+                            operationsFailure.Value.Message
                         );
                         context.ReportDiagnostic(opsDiag);
                     }

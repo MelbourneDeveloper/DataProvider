@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "ilspycmd": {
+      "version": "9.1.0.7988",
+      "commands": [
+        "ilspycmd"
+      ],
+      "rollForward": false
+    },
+    "h5-compiler": {
+      "version": "24.11.53871",
+      "commands": [
+        "h5"
+      ],
+      "rollForward": false
+    }
+  }
+}

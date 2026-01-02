@@ -2,7 +2,7 @@ using System.Data;
 using System.Globalization;
 using CsvHelper;
 using Newtonsoft.Json;
-using Results;
+using Outcome;
 
 namespace Lql.Browser.Models;
 
@@ -22,7 +22,7 @@ public static class DataExport
         try
         {
             if (dataTable.Rows.Count == 0)
-                return new Result<Unit, string>.Failure("No data to export");
+                return new Result<Unit, string>.Error<Unit, string>("No data to export");
 
             await using var writer = new StreamWriter(filePath);
             await using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
@@ -42,11 +42,13 @@ public static class DataExport
                 await csv.NextRecordAsync();
             }
 
-            return new Result<Unit, string>.Success(Unit.Value);
+            return new Result<Unit, string>.Ok<Unit, string>(Unit.Value);
         }
         catch (Exception ex)
         {
-            return new Result<Unit, string>.Failure($"Error exporting CSV: {ex.Message}");
+            return new Result<Unit, string>.Error<Unit, string>(
+                $"Error exporting CSV: {ex.Message}"
+            );
         }
     }
 
@@ -61,7 +63,7 @@ public static class DataExport
         try
         {
             if (dataTable.Rows.Count == 0)
-                return new Result<Unit, string>.Failure("No data to export");
+                return new Result<Unit, string>.Error<Unit, string>("No data to export");
 
             var jsonData = new List<Dictionary<string, object?>>();
 
@@ -78,11 +80,13 @@ public static class DataExport
             var json = JsonConvert.SerializeObject(jsonData, Formatting.Indented);
             await File.WriteAllTextAsync(filePath, json);
 
-            return new Result<Unit, string>.Success(Unit.Value);
+            return new Result<Unit, string>.Ok<Unit, string>(Unit.Value);
         }
         catch (Exception ex)
         {
-            return new Result<Unit, string>.Failure($"Error exporting JSON: {ex.Message}");
+            return new Result<Unit, string>.Error<Unit, string>(
+                $"Error exporting JSON: {ex.Message}"
+            );
         }
     }
 }

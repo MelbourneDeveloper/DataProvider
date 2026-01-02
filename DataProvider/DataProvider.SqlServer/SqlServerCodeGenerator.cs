@@ -2,9 +2,9 @@ using System.Globalization;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.Data.SqlClient;
-using Results;
+using Outcome;
 using Selecta;
-using SqlError = Results.SqlError;
+using SqlError = Selecta.SqlError;
 
 namespace DataProvider.SqlServer;
 
@@ -31,22 +31,22 @@ public static class SqlServerCodeGenerator
     )
     {
         if (string.IsNullOrWhiteSpace(fileName))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 SqlError.Create("fileName cannot be null or empty")
             );
 
         if (string.IsNullOrWhiteSpace(sql))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 SqlError.Create("sql cannot be null or empty")
             );
 
         if (statement == null)
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 SqlError.Create("statement cannot be null")
             );
 
         // This is the fallback method - should not be used when database metadata is available
-        return new Result<string, SqlError>.Failure(
+        return new Result<string, SqlError>.Error<string, SqlError>(
             SqlError.Create(
                 "Use GenerateCodeWithMetadata instead for proper database-driven code generation"
             )
@@ -75,27 +75,27 @@ public static class SqlServerCodeGenerator
     )
     {
         if (string.IsNullOrWhiteSpace(fileName))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 SqlError.Create("fileName cannot be null or empty")
             );
 
         if (string.IsNullOrWhiteSpace(sql))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 SqlError.Create("sql cannot be null or empty")
             );
 
         if (statement == null)
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 SqlError.Create("statement cannot be null")
             );
 
         if (string.IsNullOrWhiteSpace(connectionString))
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 SqlError.Create("connectionString cannot be null or empty")
             );
 
         if (columnMetadata == null)
-            return new Result<string, SqlError>.Failure(
+            return new Result<string, SqlError>.Error<string, SqlError>(
                 SqlError.Create("columnMetadata cannot be null")
             );
 
@@ -195,14 +195,14 @@ public static class SqlServerCodeGenerator
             sb.AppendLine();
             sb.AppendLine(
                 CultureInfo.InvariantCulture,
-                $"            return new Result<ImmutableList<{fileName}>, SqlError>.Success(results.ToImmutable());"
+                $"            return new Result<ImmutableList<{fileName}>, SqlError>.Ok(results.ToImmutable());"
             );
             sb.AppendLine("        }");
             sb.AppendLine("        catch (Exception ex)");
             sb.AppendLine("        {");
             sb.AppendLine(
                 CultureInfo.InvariantCulture,
-                $"            return new Result<ImmutableList<{fileName}>, SqlError>.Failure(new SqlError(\"Database error\", ex));"
+                $"            return new Result<ImmutableList<{fileName}>, SqlError>.Error(new SqlError(\"Database error\", ex));"
             );
             sb.AppendLine("        }");
             sb.AppendLine("    }");
@@ -224,11 +224,11 @@ public static class SqlServerCodeGenerator
             }
             sb.AppendLine(");");
 
-            return new Result<string, SqlError>.Success(sb.ToString());
+            return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
         }
         catch (Exception ex)
         {
-            return new Result<string, SqlError>.Failure(SqlError.FromException(ex));
+            return new Result<string, SqlError>.Error<string, SqlError>(SqlError.FromException(ex));
         }
     }
 
@@ -244,10 +244,14 @@ public static class SqlServerCodeGenerator
     )
     {
         if (table == null)
-            return new Result<string, SqlError>.Failure(SqlError.Create("table cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                SqlError.Create("table cannot be null")
+            );
 
         if (config == null)
-            return new Result<string, SqlError>.Failure(SqlError.Create("config cannot be null"));
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                SqlError.Create("config cannot be null")
+            );
 
         try
         {
@@ -282,11 +286,11 @@ public static class SqlServerCodeGenerator
             sb.AppendLine("    }");
             sb.AppendLine("}");
 
-            return new Result<string, SqlError>.Success(sb.ToString());
+            return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
         }
         catch (Exception ex)
         {
-            return new Result<string, SqlError>.Failure(SqlError.FromException(ex));
+            return new Result<string, SqlError>.Error<string, SqlError>(SqlError.FromException(ex));
         }
     }
 
@@ -345,13 +349,15 @@ public static class SqlServerCodeGenerator
         sb.AppendLine(
             "                    var newId = Convert.ToInt32(result, CultureInfo.InvariantCulture);"
         );
-        sb.AppendLine("                    return new Result<int, SqlError>.Success(newId);");
+        sb.AppendLine(
+            "                    return new Result<int, SqlError>.Ok<int, SqlError>(newId);"
+        );
         sb.AppendLine("                }");
         sb.AppendLine("            }");
         sb.AppendLine("            catch (Exception ex)");
         sb.AppendLine("            {");
         sb.AppendLine(
-            "                return new Result<int, SqlError>.Failure(new SqlError(\"Insert failed\", ex));"
+            "                return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Insert failed\", ex));"
         );
         sb.AppendLine("            }");
         sb.AppendLine("        }");
@@ -416,14 +422,14 @@ public static class SqlServerCodeGenerator
             "                    var rowsAffected = await command.ExecuteNonQueryAsync().ConfigureAwait(false);"
         );
         sb.AppendLine(
-            "                    return new Result<int, SqlError>.Success(rowsAffected);"
+            "                    return new Result<int, SqlError>.Ok<int, SqlError>(rowsAffected);"
         );
         sb.AppendLine("                }");
         sb.AppendLine("            }");
         sb.AppendLine("            catch (Exception ex)");
         sb.AppendLine("            {");
         sb.AppendLine(
-            "                return new Result<int, SqlError>.Failure(new SqlError(\"Update failed\", ex));"
+            "                return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Update failed\", ex));"
         );
         sb.AppendLine("            }");
         sb.AppendLine("        }");
@@ -547,14 +553,14 @@ public static class SqlServerCodeGenerator
         );
         sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            return new Result<IReadOnlyList<{groupingConfig.ParentEntity.Name}WithChildren>, SqlError>.Success(grouped);"
+            $"            return new Result<IReadOnlyList<{groupingConfig.ParentEntity.Name}WithChildren>, SqlError>.Ok(grouped);"
         );
         sb.AppendLine("        }");
         sb.AppendLine("        catch (Exception ex)");
         sb.AppendLine("        {");
         sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            return new Result<IReadOnlyList<{groupingConfig.ParentEntity.Name}WithChildren>, SqlError>.Failure(new SqlError(\"Database error\", ex));"
+            $"            return new Result<IReadOnlyList<{groupingConfig.ParentEntity.Name}WithChildren>, SqlError>.Error(new SqlError(\"Database error\", ex));"
         );
         sb.AppendLine("        }");
         sb.AppendLine("    }");
@@ -684,7 +690,7 @@ public static class SqlServerCodeGenerator
         }
         sb.AppendLine(");");
 
-        return new Result<string, SqlError>.Success(sb.ToString());
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
 
     /// <summary>
@@ -704,17 +710,17 @@ public static class SqlServerCodeGenerator
     )
     {
         if (string.IsNullOrWhiteSpace(connectionString))
-            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Failure(
+            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error(
                 SqlError.Create("connectionString cannot be null or empty")
             );
 
         if (string.IsNullOrWhiteSpace(sql))
-            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Failure(
+            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error(
                 SqlError.Create("sql cannot be null or empty")
             );
 
         if (parameters == null)
-            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Failure(
+            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error(
                 SqlError.Create("parameters cannot be null")
             );
 
@@ -766,18 +772,18 @@ public static class SqlServerCodeGenerator
         catch (SqlException ex)
         {
             // If we can't execute the query, return error
-            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Failure(
+            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error(
                 SqlError.FromException(ex)
             );
         }
         catch (Exception ex)
         {
-            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Failure(
+            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error(
                 SqlError.FromException(ex)
             );
         }
 
-        return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Success(columns.AsReadOnly());
+        return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Ok(columns.AsReadOnly());
     }
 
     /// <summary>

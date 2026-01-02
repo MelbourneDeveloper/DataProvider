@@ -1,0 +1,8 @@
+fhir_Slot
+|> join(fhir_Schedule, schedule_reference, id)
+|> select(fhir_Slot.id, status, start_time, end_time, practitioner_reference)
+|> where(practitioner_reference = @practitionerRef)
+|> where(status = 'free')
+|> where(start_time >= @fromDate)
+|> where(start_time < @toDate)
+|> orderBy(start_time)

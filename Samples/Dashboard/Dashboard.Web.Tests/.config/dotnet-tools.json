@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "h5-compiler": {
+      "version": "24.11.53871",
+      "commands": [
+        "h5"
+      ],
+      "rollForward": false
+    }
+  }
+}

@@ -1,5 +1,5 @@
 using Microsoft.Data.SqlClient;
-using Results;
+using Outcome;
 
 namespace DataProvider.SqlServer.SchemaInspection;
 
@@ -144,14 +144,15 @@ public sealed class SqlServerSchemaInspector : ISchemaInspector
     /// </summary>
     /// <param name="sqlQuery">The SQL query to analyze</param>
     /// <returns>Result containing metadata about the query result columns</returns>
-    public async Task<Result<SqlQueryMetadata, Results.SqlError>> GetSqlQueryMetadataAsync(
+    public async Task<Result<SqlQueryMetadata, Selecta.SqlError>> GetSqlQueryMetadataAsync(
         string sqlQuery
     )
     {
         if (string.IsNullOrWhiteSpace(sqlQuery))
-            return new Result<SqlQueryMetadata, Results.SqlError>.Failure(
-                new Results.SqlError("SQL query cannot be null or empty")
-            );
+            return new Result<SqlQueryMetadata, Selecta.SqlError>.Error<
+                SqlQueryMetadata,
+                Selecta.SqlError
+            >(new Selecta.SqlError("SQL query cannot be null or empty"));
 
         try
         {
@@ -223,19 +224,24 @@ public sealed class SqlServerSchemaInspector : ISchemaInspector
                 SqlText = sqlQuery,
             };
 
-            return new Result<SqlQueryMetadata, Results.SqlError>.Success(metadata);
+            return new Result<SqlQueryMetadata, Selecta.SqlError>.Ok<
+                SqlQueryMetadata,
+                Selecta.SqlError
+            >(metadata);
         }
         catch (SqlException ex)
         {
-            return new Result<SqlQueryMetadata, Results.SqlError>.Failure(
-                new Results.SqlError("SQL Server error during schema inspection", ex)
-            );
+            return new Result<SqlQueryMetadata, Selecta.SqlError>.Error<
+                SqlQueryMetadata,
+                Selecta.SqlError
+            >(new Selecta.SqlError("SQL Server error during schema inspection", ex));
         }
         catch (Exception ex)
         {
-            return new Result<SqlQueryMetadata, Results.SqlError>.Failure(
-                new Results.SqlError("Error analyzing SQL query", ex)
-            );
+            return new Result<SqlQueryMetadata, Selecta.SqlError>.Error<
+                SqlQueryMetadata,
+                Selecta.SqlError
+            >(new Selecta.SqlError("Error analyzing SQL query", ex));
         }
     }
 

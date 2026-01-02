@@ -7,7 +7,8 @@ using CommunityToolkit.Mvvm.Input;
 using Lql.Browser.Models;
 using Lql.SQLite;
 using Microsoft.Data.Sqlite;
-using Results;
+using Outcome;
+using Selecta;
 
 namespace Lql.Browser.ViewModels;
 
@@ -214,16 +215,16 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     var filePath = files[0].Path.LocalPath;
                     var contentResult = await FileOperations.ReadFileAsync(filePath);
 
-                    if (contentResult is Result<string, string>.Success success)
+                    if (contentResult is Result<string, string>.Ok<string, string> success)
                     {
                         var tab = FileOperations.CreateTabFromFile(filePath, success.Value);
                         FileTabs.Add(tab);
                         FileOperations.SwitchActiveTab(FileTabs, tab);
                         ActiveTab = tab;
                     }
-                    else if (contentResult is Result<string, string>.Failure failure)
+                    else if (contentResult is Result<string, string>.Error<string, string> failure)
                     {
-                        StatusBarViewModel.StatusMessage = failure.ErrorValue;
+                        StatusBarViewModel.StatusMessage = failure.Value;
                     }
                 }
             }
@@ -246,14 +247,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
 
         var result = await FileOperations.WriteFileAsync(ActiveTab.FilePath, ActiveTab.Content);
-        if (result is Result<Unit, string>.Success)
+        if (result is Result<Unit, string>.Ok<Unit, string>)
         {
             ActiveTab.IsModified = false;
             StatusBarViewModel.StatusMessage = $"Saved {ActiveTab.FileName}";
         }
-        else if (result is Result<Unit, string>.Failure failure)
+        else if (result is Result<Unit, string>.Error<Unit, string> failure)
         {
-            StatusBarViewModel.StatusMessage = failure.ErrorValue;
+            StatusBarViewModel.StatusMessage = failure.Value;
         }
     }
 
@@ -294,15 +295,15 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     var filePath = file.Path.LocalPath;
                     var result = await FileOperations.WriteFileAsync(filePath, ActiveTab.Content);
 
-                    if (result is Result<Unit, string>.Success)
+                    if (result is Result<Unit, string>.Ok<Unit, string>)
                     {
                         FileOperations.UpdateFileType(ActiveTab, filePath);
                         ActiveTab.IsModified = false;
                         StatusBarViewModel.StatusMessage = $"Saved {ActiveTab.FileName}";
                     }
-                    else if (result is Result<Unit, string>.Failure failure)
+                    else if (result is Result<Unit, string>.Error<Unit, string> failure)
                     {
-                        StatusBarViewModel.StatusMessage = failure.ErrorValue;
+                        StatusBarViewModel.StatusMessage = failure.Value;
                     }
                 }
             }
@@ -381,14 +382,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                         _currentDataTable,
                         file.Path.LocalPath
                     );
-                    if (result is Result<Unit, string>.Success)
+                    if (result is Result<Unit, string>.Ok<Unit, string>)
                     {
                         StatusBarViewModel.StatusMessage =
                             $"Exported {_currentDataTable.Rows.Count} rows to CSV";
                     }
-                    else if (result is Result<Unit, string>.Failure failure)
+                    else if (result is Result<Unit, string>.Error<Unit, string> failure)
                     {
-                        StatusBarViewModel.StatusMessage = failure.ErrorValue;
+                        StatusBarViewModel.StatusMessage = failure.Value;
                     }
                 }
             }
@@ -436,14 +437,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                         _currentDataTable,
                         file.Path.LocalPath
                     );
-                    if (result is Result<Unit, string>.Success)
+                    if (result is Result<Unit, string>.Ok<Unit, string>)
                     {
                         StatusBarViewModel.StatusMessage =
                             $"Exported {_currentDataTable.Rows.Count} rows to JSON";
                     }
-                    else if (result is Result<Unit, string>.Failure failure)
+                    else if (result is Result<Unit, string>.Error<Unit, string> failure)
                     {
-                        StatusBarViewModel.StatusMessage = failure.ErrorValue;
+                        StatusBarViewModel.StatusMessage = failure.Value;
                     }
                 }
             }
@@ -509,25 +510,30 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 Console.WriteLine("Converting LQL to SQL...");
                 MessagesPanelViewModel.AddInfo("Converting LQL to SQL...");
                 var lqlStatement = LqlStatementConverter.ToStatement(ActiveTab.Content);
-                if (lqlStatement is Result<LqlStatement, SqlError>.Success lqlSuccess)
+                if (
+                    lqlStatement
+                    is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> lqlSuccess
+                )
                 {
                     Console.WriteLine("LQL parsed successfully");
                     var sqlResult = lqlSuccess.Value.ToSQLite();
-                    if (sqlResult is Result<string, SqlError>.Success sqlSuccess)
+                    if (sqlResult is Result<string, SqlError>.Ok<string, SqlError> sqlSuccess)
                     {
                         sqlToExecute = sqlSuccess.Value;
                         Console.WriteLine($"LQL converted to SQL: {sqlToExecute}");
                         MessagesPanelViewModel.SetTranspiledSql(sqlToExecute);
                         StatusBarViewModel.StatusMessage = $"LQL converted to SQL: {sqlToExecute}";
                     }
-                    else if (sqlResult is Result<string, SqlError>.Failure sqlFailure)
+                    else if (
+                        sqlResult is Result<string, SqlError>.Error<string, SqlError> sqlFailure
+                    )
                     {
-                        Console.WriteLine($"LQL conversion error: {sqlFailure.ErrorValue.Message}");
+                        Console.WriteLine($"LQL conversion error: {sqlFailure.Value.Message}");
                         MessagesPanelViewModel.AddError(
-                            $"LQL conversion error: {sqlFailure.ErrorValue.Message}"
+                            $"LQL conversion error: {sqlFailure.Value.Message}"
                         );
                         StatusBarViewModel.StatusMessage =
-                            $"LQL conversion error: {sqlFailure.ErrorValue.Message}";
+                            $"LQL conversion error: {sqlFailure.Value.Message}";
                         return;
                     }
                     else
@@ -538,14 +544,15 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                         return;
                     }
                 }
-                else if (lqlStatement is Result<LqlStatement, SqlError>.Failure lqlFailure)
+                else if (
+                    lqlStatement
+                    is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> lqlFailure
+                )
                 {
-                    Console.WriteLine($"LQL parse error: {lqlFailure.ErrorValue.Message}");
-                    MessagesPanelViewModel.AddError(
-                        $"LQL parse error: {lqlFailure.ErrorValue.Message}"
-                    );
+                    Console.WriteLine($"LQL parse error: {lqlFailure.Value.Message}");
+                    MessagesPanelViewModel.AddError($"LQL parse error: {lqlFailure.Value.Message}");
                     StatusBarViewModel.StatusMessage =
-                        $"LQL parse error: {lqlFailure.ErrorValue.Message}";
+                        $"LQL parse error: {lqlFailure.Value.Message}";
                     return;
                 }
                 else

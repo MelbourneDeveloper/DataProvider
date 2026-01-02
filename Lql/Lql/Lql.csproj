@@ -2,28 +2,16 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <NoWarn>CA1308;CA1515;CA1866;CA1310;CA1834;</NoWarn>
+    <!-- CS3021: CLSCompliant not needed (generated ANTLR code) -->
+    <NoWarn>CA1515;CA1866;CA1310;CA1834;CS3021</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- ANTLR runtime (generated parser files are checked into git) -->
     <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
-    <PackageReference Include="Antlr4BuildTasks" Version="12.8.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
-    <Antlr4 Include="Parsing/Lql.g4">
-      <Generator>MSBuild:Compile</Generator>
-      <CustomToolNamespace>LqlTranspiler.Generated</CustomToolNamespace>
-      <Listener>false</Listener>
-      <Visitor>true</Visitor>
-    </Antlr4>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="../../Other/Results/Results.csproj" />
     <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
   </ItemGroup>
 

@@ -1,0 +1,15 @@
+<Project>
+  <!-- Override parent Directory.Build.props for H5 projects -->
+  <!-- H5 targets netstandard2.0/2.1 which is incompatible with some packages -->
+
+  <PropertyGroup>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
+  </PropertyGroup>
+
+  <!-- Don't inherit any PackageReferences from parent -->
+
+</Project>

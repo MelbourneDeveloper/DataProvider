@@ -1,0 +1,146 @@
+name: example
+tables:
+- name: Invoice
+  columns:
+  - name: Id
+    type: Text
+  - name: InvoiceNumber
+    type: Text
+  - name: InvoiceDate
+    type: Text
+  - name: CustomerName
+    type: Text
+  - name: CustomerEmail
+    type: Text
+  - name: TotalAmount
+    type: Double
+  - name: DiscountAmount
+    type: Double
+  - name: Notes
+    type: Text
+  primaryKey:
+    name: PK_Invoice
+    columns:
+    - Id
+- name: InvoiceLine
+  columns:
+  - name: Id
+    type: Text
+  - name: InvoiceId
+    type: Text
+  - name: Description
+    type: Text
+  - name: Quantity
+    type: Double
+  - name: UnitPrice
+    type: Double
+  - name: Amount
+    type: Double
+  - name: DiscountPercentage
+    type: Double
+  - name: Notes
+    type: Text
+  foreignKeys:
+  - name: FK_InvoiceLine_InvoiceId
+    columns:
+    - InvoiceId
+    referencedTable: Invoice
+    referencedColumns:
+    - Id
+  primaryKey:
+    name: PK_InvoiceLine
+    columns:
+    - Id
+- name: Customer
+  columns:
+  - name: Id
+    type: Text
+  - name: CustomerName
+    type: Text
+  - name: Email
+    type: Text
+  - name: Phone
+    type: Text
+  - name: CreatedDate
+    type: Text
+  primaryKey:
+    name: PK_Customer
+    columns:
+    - Id
+- name: Address
+  columns:
+  - name: Id
+    type: Text
+  - name: CustomerId
+    type: Text
+  - name: Street
+    type: Text
+  - name: City
+    type: Text
+  - name: State
+    type: Text
+  - name: ZipCode
+    type: Text
+  - name: Country
+    type: Text
+  foreignKeys:
+  - name: FK_Address_CustomerId
+    columns:
+    - CustomerId
+    referencedTable: Customer
+    referencedColumns:
+    - Id
+  primaryKey:
+    name: PK_Address
+    columns:
+    - Id
+- name: Orders
+  columns:
+  - name: Id
+    type: Text
+  - name: OrderNumber
+    type: Text
+  - name: OrderDate
+    type: Text
+  - name: CustomerId
+    type: Text
+  - name: TotalAmount
+    type: Double
+  - name: Status
+    type: Text
+  foreignKeys:
+  - name: FK_Orders_CustomerId
+    columns:
+    - CustomerId
+    referencedTable: Customer
+    referencedColumns:
+    - Id
+  primaryKey:
+    name: PK_Orders
+    columns:
+    - Id
+- name: OrderItem
+  columns:
+  - name: Id
+    type: Text
+  - name: OrderId
+    type: Text
+  - name: ProductName
+    type: Text
+  - name: Quantity
+    type: Double
+  - name: Price
+    type: Double
+  - name: Subtotal
+    type: Double
+  foreignKeys:
+  - name: FK_OrderItem_OrderId
+    columns:
+    - OrderId
+    referencedTable: Orders
+    referencedColumns:
+    - Id
+  primaryKey:
+    name: PK_OrderItem
+    columns:
+    - Id

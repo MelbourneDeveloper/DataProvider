@@ -1,0 +1,66 @@
+name: Deploy Website to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Website/**'
+      - 'DataProvider/**'
+      - 'Lql/**'
+      - '.github/workflows/deploy-website.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: Website/package-lock.json
+
+      - name: Install docfx
+        run: dotnet tool install -g docfx
+
+      - name: Generate API metadata with docfx
+        working-directory: Website/docfx
+        run: docfx metadata docfx.json
+
+      - name: Install npm dependencies
+        working-directory: Website
+        run: npm ci
+
+      - name: Generate API docs markdown from DocFX YAML
+        working-directory: Website
+        run: node scripts/generate-api-docs.cjs
+
+      - name: Build Eleventy site
+        working-directory: Website
+        run: npm run build
+
+      - name: Deploy to DataProviderWebsite repo
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          deploy_key: ${{ secrets.DATAPROVIDER_WEBSITE_DEPLOY_KEY }}
+          external_repository: MelbourneDeveloper/DataProviderWebsite
+          publish_branch: gh-pages
+          publish_dir: ./Website/_site

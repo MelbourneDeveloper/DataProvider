@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Schema.Export.Cli</RootNamespace>
+    <NoWarn>$(NoWarn);CA1515;RS1035;CA2007</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Migration/Migration.csproj" />
+  </ItemGroup>
+
+</Project>

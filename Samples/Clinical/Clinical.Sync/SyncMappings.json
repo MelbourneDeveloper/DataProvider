@@ -1,0 +1,27 @@
+{
+  "mappings": [
+    {
+      "source_table": "fhir_Practitioner",
+      "target_table": "sync_Provider",
+      "column_mappings": [
+        {
+          "source": "Id",
+          "target": "ProviderId"
+        },
+        {
+          "source": "NameGiven",
+          "target": "FirstName"
+        },
+        {
+          "source": "NameFamily",
+          "target": "LastName"
+        },
+        {
+          "source": "Specialty",
+          "target": "Specialty"
+        }
+      ],
+      "filter": "Active = 1"
+    }
+  ]
+}

@@ -1,6 +1,5 @@
 using System.Data;
 using DataProvider.Example.Model;
-using Generated;
 
 namespace DataProvider.Example;
 
@@ -15,15 +14,15 @@ public static class MapFunctions
     /// </summary>
     /// <param name="reader">The data reader</param>
     /// <returns>Order instance</returns>
-    public static Order MapOrder(IDataReader reader) =>
+    public static Generated.Order MapOrder(IDataReader reader) =>
         new(
-            reader.GetInt64(reader.GetOrdinal("Id")),
-            reader.GetString(reader.GetOrdinal("OrderNumber")),
-            reader.GetString(reader.GetOrdinal("OrderDate")),
-            reader.GetInt64(reader.GetOrdinal("CustomerId")),
-            reader.GetDouble(reader.GetOrdinal("TotalAmount")),
-            reader.GetString(reader.GetOrdinal("Status")),
-            []
+            Id: reader.GetString(reader.GetOrdinal("Id")),
+            OrderNumber: reader.GetString(reader.GetOrdinal("OrderNumber")),
+            OrderDate: reader.GetString(reader.GetOrdinal("OrderDate")),
+            CustomerId: reader.GetString(reader.GetOrdinal("CustomerId")),
+            TotalAmount: reader.GetDouble(reader.GetOrdinal("TotalAmount")),
+            Status: reader.GetString(reader.GetOrdinal("Status")),
+            OrderItems: []
         );
 
     /// <summary>
@@ -31,18 +30,18 @@ public static class MapFunctions
     /// </summary>
     /// <param name="reader">The data reader</param>
     /// <returns>Customer instance</returns>
-    public static Customer MapCustomer(IDataReader reader) =>
+    public static Generated.Customer MapCustomer(IDataReader reader) =>
         new(
-            reader.GetInt64(reader.GetOrdinal("Id")),
-            reader.GetString(reader.GetOrdinal("CustomerName")),
-            reader.IsDBNull(reader.GetOrdinal("Email"))
+            Id: reader.GetString(reader.GetOrdinal("Id")),
+            CustomerName: reader.GetString(reader.GetOrdinal("CustomerName")),
+            Email: reader.IsDBNull(reader.GetOrdinal("Email"))
                 ? null
                 : reader.GetString(reader.GetOrdinal("Email")),
-            reader.IsDBNull(reader.GetOrdinal("Phone"))
+            Phone: reader.IsDBNull(reader.GetOrdinal("Phone"))
                 ? null
                 : reader.GetString(reader.GetOrdinal("Phone")),
-            reader.GetString(reader.GetOrdinal("CreatedDate")),
-            []
+            CreatedDate: reader.GetString(reader.GetOrdinal("CreatedDate")),
+            Addresss: []
         );
 
     /// <summary>

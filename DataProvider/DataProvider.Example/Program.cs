@@ -1,11 +1,5 @@
-using System.Collections.Immutable;
-using System.Linq.Expressions;
-using DataProvider.Example.Model;
-using Generated;
 using Lql.SQLite;
 using Microsoft.Data.Sqlite;
-using Results;
-using Selecta;
 using static DataProvider.Example.MapFunctions;
 
 namespace DataProvider.Example;
@@ -51,7 +45,7 @@ internal static class Program
             .ConfigureAwait(false);
         switch (invoiceResult)
         {
-            case Result<ImmutableList<Invoice>, SqlError>.Success invOk:
+            case InvoiceListOk invOk:
                 var preview = string.Join(
                     " | ",
                     invOk
@@ -62,11 +56,8 @@ internal static class Program
                 );
                 Console.WriteLine($"Invoices fetched: {invOk.Value.Count}. Preview: {preview}");
                 break;
-            case Result<ImmutableList<Invoice>, SqlError>.Failure invErr:
-                Console.WriteLine($"❌ Error querying invoices: {invErr.ErrorValue.Message}");
-                return;
-            default:
-                Console.WriteLine($"❌ Error querying invoices: unknown");
+            case InvoiceListError invErr:
+                Console.WriteLine($"❌ Error querying invoices: {invErr.Value.Message}");
                 return;
         }
     }
@@ -81,7 +72,7 @@ internal static class Program
         var customerResult = await connection.GetCustomersLqlAsync(null).ConfigureAwait(false);
         switch (customerResult)
         {
-            case Result<ImmutableList<Customer>, SqlError>.Success custOk:
+            case CustomerListOk custOk:
                 var preview = string.Join(
                     " | ",
                     custOk
@@ -90,11 +81,8 @@ internal static class Program
                 );
                 Console.WriteLine($"Customers fetched: {custOk.Value.Count}. Preview: {preview}");
                 break;
-            case Result<ImmutableList<Customer>, SqlError>.Failure custErr:
-                Console.WriteLine($"❌ Error querying customers: {custErr.ErrorValue.Message}");
-                return;
-            default:
-                Console.WriteLine($"❌ Error querying customers: unknown");
+            case CustomerListError custErr:
+                Console.WriteLine($"❌ Error querying customers: {custErr.Value.Message}");
                 return;
         }
     }
@@ -111,7 +99,7 @@ internal static class Program
             .ConfigureAwait(false);
         switch (orderResult)
         {
-            case Result<ImmutableList<Order>, SqlError>.Success ordOk:
+            case OrderListOk ordOk:
                 var preview = string.Join(
                     " | ",
                     ordOk
@@ -122,11 +110,8 @@ internal static class Program
                 );
                 Console.WriteLine($"Orders fetched: {ordOk.Value.Count}. Preview: {preview}");
                 break;
-            case Result<ImmutableList<Order>, SqlError>.Failure ordErr:
-                Console.WriteLine($"❌ Error querying orders: {ordErr.ErrorValue.Message}");
-                return;
-            default:
-                Console.WriteLine($"❌ Error querying orders: unknown");
+            case OrderListError ordErr:
+                Console.WriteLine($"❌ Error querying orders: {ordErr.Value.Message}");
                 return;
         }
     }
@@ -171,17 +156,14 @@ internal static class Program
 
         switch (customersResult)
         {
-            case Result<IReadOnlyList<Customer>, SqlError>.Success custSuccess:
+            case CustomerReadOnlyListOk custSuccess:
                 Console.WriteLine(
                     $"✅ Generated LINQ Query and loaded {custSuccess.Value.Count} customers!\n   Customers: {string.Join(", ", custSuccess.Value.Take(3).Select(c => c.CustomerName))}"
                 );
                 break;
-            case Result<IReadOnlyList<Customer>, SqlError>.Failure custErr:
-                Console.WriteLine($"❌ Error loading customers: {custErr.ErrorValue.Message}");
-                return;
-            default:
-                Console.WriteLine($"❌ Error loading customers: unknown");
-                return;
+            case CustomerReadOnlyListError custErr:
+                Console.WriteLine($"❌ Error loading customers: {custErr.Value.Message}");
+                break;
         }
     }
 
@@ -214,7 +196,7 @@ internal static class Program
 
         switch (highValueResult)
         {
-            case Result<IReadOnlyList<BasicOrder>, SqlError>.Success orders:
+            case BasicOrderListOk orders:
                 Console.WriteLine(
                     $"✅ Generated Fluent Query and loaded {orders.Value.Count} high-value orders!"
                 );
@@ -223,12 +205,9 @@ internal static class Program
                     Console.WriteLine($"   📋 {order}");
                 }
                 break;
-            case Result<IReadOnlyList<BasicOrder>, SqlError>.Failure error:
-                Console.WriteLine($"❌ Error loading high-value orders: {error.ErrorValue.Message}");
-                return;
-            default:
-                Console.WriteLine($"❌ Error loading high-value orders: unknown");
-                return;
+            case BasicOrderListError error:
+                Console.WriteLine($"❌ Error loading high-value orders: {error.Value.Message}");
+                break;
         }
     }
 
@@ -253,7 +232,7 @@ internal static class Program
 
         switch (recentOrdersResult)
         {
-            case Result<IReadOnlyList<Order>, SqlError>.Success ordSuccess:
+            case OrderReadOnlyListOk ordSuccess:
                 Console.WriteLine(
                     $"✅ Generated LINQ Method Query and loaded {ordSuccess.Value.Count} orders!"
                 );
@@ -264,11 +243,8 @@ internal static class Program
                     );
                 }
                 break;
-            case Result<IReadOnlyList<Order>, SqlError>.Failure ordErr:
-                Console.WriteLine($"❌ Error loading orders: {ordErr.ErrorValue.Message}");
-                return;
-            default:
-                Console.WriteLine($"❌ Error loading orders: unknown");
+            case OrderReadOnlyListError ordErr:
+                Console.WriteLine($"❌ Error loading orders: {ordErr.Value.Message}");
                 return;
         }
     }
@@ -325,7 +301,7 @@ internal static class Program
 
         switch (premiumResult)
         {
-            case Result<IReadOnlyList<BasicOrder>, SqlError>.Success premiumOrders:
+            case BasicOrderListOk premiumOrders:
                 Console.WriteLine(
                     $"✅ Generated Complex Filter Query and loaded {premiumOrders.Value.Count} premium orders!\n   🌟 Advanced parentheses handling with multiple conditions!"
                 );
@@ -334,14 +310,9 @@ internal static class Program
                     Console.WriteLine($"   📋 {order}");
                 }
                 break;
-            case Result<IReadOnlyList<BasicOrder>, SqlError>.Failure premiumErr:
-                Console.WriteLine(
-                    $"❌ Error loading premium orders: {premiumErr.ErrorValue.Message}"
-                );
-                return;
-            default:
-                Console.WriteLine($"❌ Error loading premium orders: unknown");
-                return;
+            case BasicOrderListError premiumErr:
+                Console.WriteLine($"❌ Error loading premium orders: {premiumErr.Value.Message}");
+                break;
         }
     }
 
@@ -384,7 +355,7 @@ internal static class Program
         var dynamicResult = connection.GetRecords(
             SelectStatement
                 .From<Customer>()
-                .Where(c => c.Id >= 1) // Simple predicate that works
+                .Where(c => c.Id != null) // Simple predicate that works
                 .OrderBy(c => c.CustomerName)
                 .ToSqlStatement(),
             stmt => stmt.ToSQLite(),
@@ -393,7 +364,7 @@ internal static class Program
 
         switch (dynamicResult)
         {
-            case Result<IReadOnlyList<Customer>, SqlError>.Success success:
+            case CustomerReadOnlyListOk success:
                 Console.WriteLine(
                     $"✅ PredicateBuilder: Found {success.Value.Count} customers with dynamic predicates!"
                 );
@@ -402,11 +373,8 @@ internal static class Program
                 );
                 Console.WriteLine($"   🔄 ZERO query duplication - maximum code reuse!");
                 break;
-            case Result<IReadOnlyList<Customer>, SqlError>.Failure error:
-                Console.WriteLine($"❌ PredicateBuilder error: {error.ErrorValue.Message}");
-                break;
-            default:
-                Console.WriteLine($"❌ PredicateBuilder unknown error");
+            case CustomerReadOnlyListError error:
+                Console.WriteLine($"❌ PredicateBuilder error: {error.Value.Message}");
                 break;
         }
     }

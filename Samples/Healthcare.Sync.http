@@ -1,0 +1,95 @@
+@PatientService = http://localhost:5080
+@AppointmentService = http://localhost:5081
+
+### PatientService - list patients
+GET {{PatientService}}/fhir/Patient
+Accept: application/json
+
+### PatientService - search by query string
+GET {{PatientService}}/fhir/Patient/_search?q=smith
+Accept: application/json
+
+### PatientService - create patient
+POST {{PatientService}}/fhir/Patient
+Content-Type: application/json
+
+{
+  "active": true,
+  "givenName": "Alice",
+  "familyName": "Smith",
+  "birthDate": "1990-01-01",
+  "gender": "female",
+  "phone": "+1-555-0101",
+  "email": "alice.smith@example.org",
+  "addressLine": "123 Main St",
+  "city": "Seattle",
+  "state": "WA",
+  "postalCode": "98101",
+  "country": "USA"
+}
+
+### PatientService - patient clinical records
+GET {{PatientService}}/fhir/Patient/{{patientId}}/records
+Accept: application/json
+
+### PatientService - add clinical record
+POST {{PatientService}}/fhir/Patient/{{patientId}}/records
+Content-Type: application/json
+
+{
+  "patientId": "{{patientId}}",
+  "visitDate": "2024-03-01",
+  "chiefComplaint": "Follow up",
+  "diagnosis": "Hypertension",
+  "treatment": "Lifestyle changes",
+  "prescriptions": null,
+  "notes": "Patient doing well",
+  "providerId": null
+}
+
+### AppointmentService - list practitioners
+GET {{AppointmentService}}/Practitioner
+Accept: application/json
+
+### AppointmentService - create practitioner
+POST {{AppointmentService}}/Practitioner
+Content-Type: application/json
+
+{
+  "identifier": "NPI-0001",
+  "nameFamily": "Doe",
+  "nameGiven": "John",
+  "qualification": "MD",
+  "specialty": "cardiology",
+  "telecomEmail": "john.doe@example.org",
+  "telecomPhone": "+1-555-0000"
+}
+
+### AppointmentService - list appointments
+GET {{AppointmentService}}/Appointment
+Accept: application/json
+
+### AppointmentService - create appointment
+POST {{AppointmentService}}/Appointment
+Content-Type: application/json
+
+{
+  "serviceCategory": "exam",
+  "serviceType": "consult",
+  "reasonCode": "follow-up",
+  "priority": "routine",
+  "description": "Follow-up appointment",
+  "start": "2024-04-01T09:00:00Z",
+  "end": "2024-04-01T09:30:00Z",
+  "patientReference": "Patient/{{patientId}}",
+  "practitionerReference": "Practitioner/{{practitionerId}}",
+  "comment": "Initial consult"
+}
+
+### Sync - pull patient changes
+GET {{PatientService}}/sync/changes?fromVersion=0&limit=50
+Accept: application/json
+
+### Sync - pull appointment changes
+GET {{AppointmentService}}/sync/changes?fromVersion=0&limit=50
+Accept: application/json

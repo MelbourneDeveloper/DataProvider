@@ -1,9 +1,19 @@
 using System.CommandLine;
 using Lql;
 using Lql.SQLite;
-using Results;
+using Selecta;
+using LqlStatementError = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Error<
+    Lql.LqlStatement,
+    Selecta.SqlError
+>;
+using LqlStatementOk = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Ok<
+    Lql.LqlStatement,
+    Selecta.SqlError
+>;
+using StringSqlError = Outcome.Result<string, Selecta.SqlError>.Error<string, Selecta.SqlError>;
+using StringSqlOk = Outcome.Result<string, Selecta.SqlError>.Ok<string, Selecta.SqlError>;
 
-namespace LqlCli;
+namespace LqlCli.SQLite;
 
 /// <summary>
 /// LQL to SQLite CLI transpiler
@@ -100,17 +110,14 @@ internal static class Program
 
             return parseResult switch
             {
-                Result<LqlStatement, SqlError>.Success success => await ProcessSuccessfulParse(
+                LqlStatementOk success => await ProcessSuccessfulParse(
                         success.Value,
                         outputFile,
                         validate,
                         inputFile.FullName
                     )
                     .ConfigureAwait(false),
-                Result<LqlStatement, SqlError>.Failure failure => HandleParseError(
-                    failure.ErrorValue
-                ),
-                _ => HandleUnknownError(),
+                LqlStatementError failure => HandleParseError(failure.Value),
             };
         }
         catch (Exception ex)
@@ -146,12 +153,8 @@ internal static class Program
 
         return sqliteResult switch
         {
-            Result<string, SqlError>.Success success => await OutputSql(success.Value, outputFile)
-                .ConfigureAwait(false),
-            Result<string, SqlError>.Failure failure => HandleTranspilationError(
-                failure.ErrorValue
-            ),
-            _ => HandleUnknownError(),
+            StringSqlOk success => await OutputSql(success.Value, outputFile).ConfigureAwait(false),
+            StringSqlError failure => HandleTranspilationError(failure.Value),
         };
     }
 
@@ -221,16 +224,6 @@ internal static class Program
         {
             Console.WriteLine($"   Details: {error.DetailedMessage}");
         }
-        return 1;
-    }
-
-    /// <summary>
-    /// Handles unknown errors
-    /// </summary>
-    /// <returns>Exit code</returns>
-    private static int HandleUnknownError()
-    {
-        Console.WriteLine("❌ Unknown error occurred during processing.");
         return 1;
     }
 }
