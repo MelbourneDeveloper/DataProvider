@@ -1,0 +1,84 @@
+name: typeprovider_test
+tables:
+- name: Customer
+  columns:
+  - name: Id
+    type: Text
+  - name: name
+    type: Text
+  - name: email
+    type: Text
+  - name: age
+    type: Integer
+  - name: status
+    type: Text
+  primaryKey:
+    name: PK_Customer
+    columns:
+    - Id
+
+- name: users
+  columns:
+  - name: Id
+    type: Text
+  - name: name
+    type: Text
+  - name: email
+    type: Text
+  - name: age
+    type: Integer
+  - name: status
+    type: Text
+  - name: role
+    type: Text
+  - name: created_at
+    type: Text
+  primaryKey:
+    name: PK_users
+    columns:
+    - Id
+
+- name: orders
+  columns:
+  - name: Id
+    type: Text
+  - name: user_id
+    type: Text
+  - name: product_id
+    type: Text
+  - name: total
+    type: Double
+  - name: subtotal
+    type: Double
+  - name: tax
+    type: Double
+  - name: discount
+    type: Double
+  - name: status
+    type: Text
+  foreignKeys:
+  - name: FK_orders_user_id
+    columns:
+    - user_id
+    referencedTable: users
+    referencedColumns:
+    - Id
+  primaryKey:
+    name: PK_orders
+    columns:
+    - Id
+
+- name: products
+  columns:
+  - name: Id
+    type: Text
+  - name: name
+    type: Text
+  - name: price
+    type: Double
+  - name: quantity
+    type: Integer
+  primaryKey:
+    name: PK_products
+    columns:
+    - Id

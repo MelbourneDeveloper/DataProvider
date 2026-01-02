@@ -36,4 +36,16 @@
     <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
   </ItemGroup>
 
+  <!-- YAML schema is source of truth -->
+  <ItemGroup>
+    <Content Include="typeprovider-test-schema.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!-- Create database from YAML using Migration.Cli before build -->
+  <Target Name="CreateTestDatabase" BeforeTargets="BeforeCompile">
+    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/typeprovider-test-schema.yaml" --output "$(MSBuildProjectDirectory)/typeprovider-test.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
+  </Target>
+
 </Project>
