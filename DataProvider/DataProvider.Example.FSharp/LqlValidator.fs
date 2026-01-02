@@ -4,7 +4,8 @@ open System
 open Microsoft.Data.Sqlite
 open Lql
 open Lql.SQLite
-open Results
+open Outcome
+open Selecta
 
 //TODO: this does not belong here. Move to core code
 
@@ -16,7 +17,7 @@ type LqlQuery private() =
         // Validate at compile time
         let statementResult = LqlStatementConverter.ToStatement(lqlQuery)
         match statementResult with
-        | :? Result<LqlStatement, SqlError>.Success as success ->
+        | :? Outcome.Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> as success ->
             let lqlStatement = success.Value
             match lqlStatement.AstNode with
             | :? Pipeline as pipeline ->
@@ -42,8 +43,8 @@ type LqlQuery private() =
                 Ok(results |> List.ofSeq)
             | _ -> 
                 Error "Invalid LQL statement type"
-        | :? Result<LqlStatement, SqlError>.Failure as failure ->
-            Error(sprintf "Invalid LQL syntax: %s" failure.ErrorValue.Message)
+        | :? Outcome.Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> as failure ->
+            Error(sprintf "Invalid LQL syntax: %s" failure.Value.Message)
         | _ ->
             Error "Unknown result type from LQL parser"
     
@@ -51,7 +52,7 @@ type LqlQuery private() =
     static member inline ToSql([<ReflectedDefinition>] lqlQuery: string) =
         let statementResult = LqlStatementConverter.ToStatement(lqlQuery)
         match statementResult with
-        | :? Result<LqlStatement, SqlError>.Success as success ->
+        | :? Outcome.Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> as success ->
             let lqlStatement = success.Value
             match lqlStatement.AstNode with
             | :? Pipeline as pipeline ->
@@ -59,7 +60,7 @@ type LqlQuery private() =
                 Ok(PipelineProcessor.ConvertPipelineToSql(pipeline, sqliteContext))
             | _ -> 
                 Error "Invalid LQL statement type"
-        | :? Result<LqlStatement, SqlError>.Failure as failure ->
-            Error(sprintf "Invalid LQL syntax: %s" failure.ErrorValue.Message)
+        | :? Outcome.Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> as failure ->
+            Error(sprintf "Invalid LQL syntax: %s" failure.Value.Message)
         | _ ->
             Error "Unknown result type from LQL parser"

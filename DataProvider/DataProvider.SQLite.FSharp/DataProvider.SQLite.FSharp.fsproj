@@ -19,8 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../Other/Results/Results.csproj" />
-    <ProjectReference Include="../DataProvider.SQLite/DataProvider.SQLite.csproj" />
+        <ProjectReference Include="../DataProvider.SQLite/DataProvider.SQLite.csproj" />
   </ItemGroup>
 
 </Project>

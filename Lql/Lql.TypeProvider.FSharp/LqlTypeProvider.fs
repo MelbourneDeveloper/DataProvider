@@ -7,7 +7,8 @@ open Microsoft.FSharp.Quotations
 open ProviderImplementation.ProvidedTypes
 open Lql
 open Lql.SQLite
-open Results
+open Outcome
+open Selecta
 
 [<TypeProvider>]
 type public LqlTypeProvider(config: TypeProviderConfig) as this =
@@ -32,7 +33,7 @@ type public LqlTypeProvider(config: TypeProviderConfig) as this =
         t.AddXmlDoc(sprintf "✅ Compile-time validated LQL: '%s' → SQL: '%s'" lqlQuery sql)
         t
 
-    let rootType = ProvidedTypeDefinition(thisAssembly, namespaceName, "LqlCommand", Some typeof<obj>, isErased = false)
+    let rootType = ProvidedTypeDefinition(thisAssembly, namespaceName, "LqlCommand", Some typeof<obj>, isErased = true)
     
     do
         rootType.DefineStaticParameters(
@@ -47,19 +48,19 @@ type public LqlTypeProvider(config: TypeProviderConfig) as this =
                 try
                     let result = LqlStatementConverter.ToStatement lqlQuery
                     match result with
-                    | :? Results.Result<LqlStatement, SqlError>.Success as success ->
+                    | :? Outcome.Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> as success ->
                         // Valid LQL - convert to SQL
                         let sqlResult = success.Value.ToSQLite()
                         match sqlResult with
-                        | :? Results.Result<string, SqlError>.Success as sqlSuccess ->
+                        | :? Outcome.Result<string, SqlError>.Ok<string, SqlError> as sqlSuccess ->
                             let sql = sqlSuccess.Value
                             createValidatedType(typeName, lqlQuery, sql)
-                        | :? Results.Result<string, SqlError>.Failure as sqlFailure ->
-                            failwith (sprintf "❌ COMPILATION FAILED: SQL generation error - %s for LQL: '%s'" sqlFailure.ErrorValue.Message lqlQuery)
-                        | _ -> 
+                        | :? Outcome.Result<string, SqlError>.Error<string, SqlError> as sqlFailure ->
+                            failwith (sprintf "❌ COMPILATION FAILED: SQL generation error - %s for LQL: '%s'" sqlFailure.Value.Message lqlQuery)
+                        | _ ->
                             failwith (sprintf "❌ COMPILATION FAILED: Unknown SQL generation error for LQL: '%s'" lqlQuery)
-                    | :? Results.Result<LqlStatement, SqlError>.Failure as failure ->
-                        let error = failure.ErrorValue
+                    | :? Outcome.Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> as failure ->
+                        let error = failure.Value
                         let position = 
                             match error.Position with
                             | null -> ""

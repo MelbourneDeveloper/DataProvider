@@ -31,8 +31,8 @@
   <ItemGroup>
     <ProjectReference Include="../../Lql/Lql.SQLite/Lql.SQLite.csproj" />
     <ProjectReference Include="../../Lql/Lql/Lql.csproj" />
-    <ProjectReference Include="../../Other/Results/Results.csproj" />
     <ProjectReference Include="../../Lql/Lql.TypeProvider.FSharp/Lql.TypeProvider.FSharp.fsproj" />
+    <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
   </ItemGroup>
 
 </Project>
