@@ -124,300 +124,348 @@ public sealed class TokenServiceTests
     [Fact]
     public async Task ValidateTokenAsync_ValidToken_ReturnsOk()
     {
-        using var conn = CreateInMemoryDb();
+        var (conn, dbPath) = CreateTestDb();
+        try
+        {
+            var token = TokenService.CreateToken(
+                "user-valid",
+                "Valid User",
+                "valid@example.com",
+                ["user"],
+                TestSigningKey,
+                TimeSpan.FromHours(1)
+            );
 
-        var token = TokenService.CreateToken(
-            "user-valid",
-            "Valid User",
-            "valid@example.com",
-            ["user"],
-            TestSigningKey,
-            TimeSpan.FromHours(1)
-        );
+            var result = await TokenService.ValidateTokenAsync(
+                conn,
+                token,
+                TestSigningKey,
+                checkRevocation: false
+            );
 
-        var result = await TokenService.ValidateTokenAsync(
-            conn,
-            token,
-            TestSigningKey,
-            checkRevocation: false
-        );
-
-        Assert.IsType<TokenService.TokenValidationOk>(result);
-        var ok = (TokenService.TokenValidationOk)result;
-        Assert.Equal("user-valid", ok.Claims.UserId);
-        Assert.Equal("Valid User", ok.Claims.DisplayName);
-        Assert.Equal("valid@example.com", ok.Claims.Email);
-        Assert.Contains("user", ok.Claims.Roles);
+            Assert.IsType<TokenService.TokenValidationOk>(result);
+            var ok = (TokenService.TokenValidationOk)result;
+            Assert.Equal("user-valid", ok.Claims.UserId);
+            Assert.Equal("Valid User", ok.Claims.DisplayName);
+            Assert.Equal("valid@example.com", ok.Claims.Email);
+            Assert.Contains("user", ok.Claims.Roles);
+        }
+        finally
+        {
+            CleanupTestDb(conn, dbPath);
+        }
     }
 
     [Fact]
     public async Task ValidateTokenAsync_InvalidFormat_ReturnsError()
     {
-        using var conn = CreateInMemoryDb();
+        var (conn, dbPath) = CreateTestDb();
+        try
+        {
+            var result = await TokenService.ValidateTokenAsync(
+                conn,
+                "not-a-jwt",
+                TestSigningKey,
+                checkRevocation: false
+            );
 
-        var result = await TokenService.ValidateTokenAsync(
-            conn,
-            "not-a-jwt",
-            TestSigningKey,
-            checkRevocation: false
-        );
-
-        Assert.IsType<TokenService.TokenValidationError>(result);
-        var error = (TokenService.TokenValidationError)result;
-        Assert.Equal("Invalid token format", error.Reason);
+            Assert.IsType<TokenService.TokenValidationError>(result);
+            var error = (TokenService.TokenValidationError)result;
+            Assert.Equal("Invalid token format", error.Reason);
+        }
+        finally
+        {
+            CleanupTestDb(conn, dbPath);
+        }
     }
 
     [Fact]
     public async Task ValidateTokenAsync_TwoPartToken_ReturnsError()
     {
-        using var conn = CreateInMemoryDb();
+        var (conn, dbPath) = CreateTestDb();
+        try
+        {
+            var result = await TokenService.ValidateTokenAsync(
+                conn,
+                "header.payload",
+                TestSigningKey,
+                checkRevocation: false
+            );
 
-        var result = await TokenService.ValidateTokenAsync(
-            conn,
-            "header.payload",
-            TestSigningKey,
-            checkRevocation: false
-        );
-
-        Assert.IsType<TokenService.TokenValidationError>(result);
-        var error = (TokenService.TokenValidationError)result;
-        Assert.Equal("Invalid token format", error.Reason);
+            Assert.IsType<TokenService.TokenValidationError>(result);
+            var error = (TokenService.TokenValidationError)result;
+            Assert.Equal("Invalid token format", error.Reason);
+        }
+        finally
+        {
+            CleanupTestDb(conn, dbPath);
+        }
     }
 
     [Fact]
     public async Task ValidateTokenAsync_InvalidSignature_ReturnsError()
     {
-        using var conn = CreateInMemoryDb();
+        var (conn, dbPath) = CreateTestDb();
+        try
+        {
+            var token = TokenService.CreateToken(
+                "user-sig",
+                "Sig User",
+                "sig@example.com",
+                [],
+                TestSigningKey,
+                TimeSpan.FromHours(1)
+            );
 
-        var token = TokenService.CreateToken(
-            "user-sig",
-            "Sig User",
-            "sig@example.com",
-            [],
-            TestSigningKey,
-            TimeSpan.FromHours(1)
-        );
+            // Use different key for validation
+            var differentKey = new byte[32];
+            differentKey[0] = 0xFF;
 
-        // Use different key for validation
-        var differentKey = new byte[32];
-        differentKey[0] = 0xFF;
+            var result = await TokenService.ValidateTokenAsync(
+                conn,
+                token,
+                differentKey,
+                checkRevocation: false
+            );
 
-        var result = await TokenService.ValidateTokenAsync(
-            conn,
-            token,
-            differentKey,
-            checkRevocation: false
-        );
-
-        Assert.IsType<TokenService.TokenValidationError>(result);
-        var error = (TokenService.TokenValidationError)result;
-        Assert.Equal("Invalid signature", error.Reason);
+            Assert.IsType<TokenService.TokenValidationError>(result);
+            var error = (TokenService.TokenValidationError)result;
+            Assert.Equal("Invalid signature", error.Reason);
+        }
+        finally
+        {
+            CleanupTestDb(conn, dbPath);
+        }
     }
 
     [Fact]
     public async Task ValidateTokenAsync_ExpiredToken_ReturnsError()
     {
-        using var conn = CreateInMemoryDb();
+        var (conn, dbPath) = CreateTestDb();
+        try
+        {
+            // Create token that expired 1 hour ago
+            var token = TokenService.CreateToken(
+                "user-expired",
+                "Expired User",
+                "expired@example.com",
+                [],
+                TestSigningKey,
+                TimeSpan.FromHours(-2) // Negative = already expired
+            );
 
-        // Create token that expired 1 hour ago
-        var token = TokenService.CreateToken(
-            "user-expired",
-            "Expired User",
-            "expired@example.com",
-            [],
-            TestSigningKey,
-            TimeSpan.FromHours(-2) // Negative = already expired
-        );
+            var result = await TokenService.ValidateTokenAsync(
+                conn,
+                token,
+                TestSigningKey,
+                checkRevocation: false
+            );
 
-        var result = await TokenService.ValidateTokenAsync(
-            conn,
-            token,
-            TestSigningKey,
-            checkRevocation: false
-        );
-
-        Assert.IsType<TokenService.TokenValidationError>(result);
-        var error = (TokenService.TokenValidationError)result;
-        Assert.Equal("Token expired", error.Reason);
+            Assert.IsType<TokenService.TokenValidationError>(result);
+            var error = (TokenService.TokenValidationError)result;
+            Assert.Equal("Token expired", error.Reason);
+        }
+        finally
+        {
+            CleanupTestDb(conn, dbPath);
+        }
     }
 
     [Fact]
     public async Task ValidateTokenAsync_RevokedToken_ReturnsError()
     {
-        using var conn = CreateInMemoryDb();
+        var (conn, dbPath) = CreateTestDb();
+        try
+        {
+            var token = TokenService.CreateToken(
+                "user-revoked",
+                "Revoked User",
+                "revoked@example.com",
+                [],
+                TestSigningKey,
+                TimeSpan.FromHours(1)
+            );
 
-        var token = TokenService.CreateToken(
-            "user-revoked",
-            "Revoked User",
-            "revoked@example.com",
-            [],
-            TestSigningKey,
-            TimeSpan.FromHours(1)
-        );
+            // Extract JTI and revoke
+            var parts = token.Split('.');
+            var payloadJson = Base64UrlDecode(parts[1]);
+            var payload = JsonDocument.Parse(payloadJson);
+            var jti = payload.RootElement.GetProperty("jti").GetString()!;
 
-        // Extract JTI and revoke
-        var parts = token.Split('.');
-        var payloadJson = Base64UrlDecode(parts[1]);
-        var payload = JsonDocument.Parse(payloadJson);
-        var jti = payload.RootElement.GetProperty("jti").GetString()!;
+            var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+            var exp = DateTime.UtcNow.AddHours(1).ToString("o", CultureInfo.InvariantCulture);
 
-        var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
-        var exp = DateTime.UtcNow.AddHours(1).ToString("o", CultureInfo.InvariantCulture);
+            // Insert user and revoked session using raw SQL (consistent with other tests)
+            using var tx = conn.BeginTransaction();
 
-        // Insert user and revoked session using raw SQL (consistent with other tests)
-        using var tx = conn.BeginTransaction();
+            using var userCmd = conn.CreateCommand();
+            userCmd.Transaction = tx;
+            userCmd.CommandText =
+                @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
+                                    VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
+            userCmd.Parameters.AddWithValue("@id", "user-revoked");
+            userCmd.Parameters.AddWithValue("@name", "Revoked User");
+            userCmd.Parameters.AddWithValue("@email", DBNull.Value);
+            userCmd.Parameters.AddWithValue("@now", now);
+            await userCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
 
-        using var userCmd = conn.CreateCommand();
-        userCmd.Transaction = tx;
-        userCmd.CommandText =
-            @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
-                                VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
-        userCmd.Parameters.AddWithValue("@id", "user-revoked");
-        userCmd.Parameters.AddWithValue("@name", "Revoked User");
-        userCmd.Parameters.AddWithValue("@email", DBNull.Value);
-        userCmd.Parameters.AddWithValue("@now", now);
-        await userCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+            using var sessionCmd = conn.CreateCommand();
+            sessionCmd.Transaction = tx;
+            sessionCmd.CommandText =
+                @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
+                                       VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 1)";
+            sessionCmd.Parameters.AddWithValue("@id", jti);
+            sessionCmd.Parameters.AddWithValue("@user_id", "user-revoked");
+            sessionCmd.Parameters.AddWithValue("@created", now);
+            sessionCmd.Parameters.AddWithValue("@expires", exp);
+            sessionCmd.Parameters.AddWithValue("@activity", now);
+            await sessionCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
 
-        using var sessionCmd = conn.CreateCommand();
-        sessionCmd.Transaction = tx;
-        sessionCmd.CommandText =
-            @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
-                                   VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 1)";
-        sessionCmd.Parameters.AddWithValue("@id", jti);
-        sessionCmd.Parameters.AddWithValue("@user_id", "user-revoked");
-        sessionCmd.Parameters.AddWithValue("@created", now);
-        sessionCmd.Parameters.AddWithValue("@expires", exp);
-        sessionCmd.Parameters.AddWithValue("@activity", now);
-        await sessionCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+            tx.Commit();
 
-        tx.Commit();
+            var result = await TokenService.ValidateTokenAsync(
+                conn,
+                token,
+                TestSigningKey,
+                checkRevocation: true
+            );
 
-        var result = await TokenService.ValidateTokenAsync(
-            conn,
-            token,
-            TestSigningKey,
-            checkRevocation: true
-        );
-
-        Assert.IsType<TokenService.TokenValidationError>(result);
-        var error = (TokenService.TokenValidationError)result;
-        Assert.Equal("Token revoked", error.Reason);
+            Assert.IsType<TokenService.TokenValidationError>(result);
+            var error = (TokenService.TokenValidationError)result;
+            Assert.Equal("Token revoked", error.Reason);
+        }
+        finally
+        {
+            CleanupTestDb(conn, dbPath);
+        }
     }
 
     [Fact]
     public async Task ValidateTokenAsync_RevokedToken_IgnoredWhenCheckRevocationFalse()
     {
-        using var conn = CreateInMemoryDb();
+        var (conn, dbPath) = CreateTestDb();
+        try
+        {
+            var token = TokenService.CreateToken(
+                "user-revoked2",
+                "Revoked User 2",
+                "revoked2@example.com",
+                [],
+                TestSigningKey,
+                TimeSpan.FromHours(1)
+            );
 
-        var token = TokenService.CreateToken(
-            "user-revoked2",
-            "Revoked User 2",
-            "revoked2@example.com",
-            [],
-            TestSigningKey,
-            TimeSpan.FromHours(1)
-        );
+            // Extract JTI and revoke
+            var parts = token.Split('.');
+            var payloadJson = Base64UrlDecode(parts[1]);
+            var payload = JsonDocument.Parse(payloadJson);
+            var jti = payload.RootElement.GetProperty("jti").GetString()!;
 
-        // Extract JTI and revoke
-        var parts = token.Split('.');
-        var payloadJson = Base64UrlDecode(parts[1]);
-        var payload = JsonDocument.Parse(payloadJson);
-        var jti = payload.RootElement.GetProperty("jti").GetString()!;
+            var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+            var exp = DateTime.UtcNow.AddHours(1).ToString("o", CultureInfo.InvariantCulture);
 
-        var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
-        var exp = DateTime.UtcNow.AddHours(1).ToString("o", CultureInfo.InvariantCulture);
+            // Insert user and revoked session using raw SQL (consistent with other tests)
+            using var tx = conn.BeginTransaction();
 
-        // Insert user and revoked session using raw SQL (consistent with other tests)
-        using var tx = conn.BeginTransaction();
+            using var userCmd = conn.CreateCommand();
+            userCmd.Transaction = tx;
+            userCmd.CommandText =
+                @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
+                                    VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
+            userCmd.Parameters.AddWithValue("@id", "user-revoked2");
+            userCmd.Parameters.AddWithValue("@name", "Revoked User 2");
+            userCmd.Parameters.AddWithValue("@email", DBNull.Value);
+            userCmd.Parameters.AddWithValue("@now", now);
+            await userCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
 
-        using var userCmd = conn.CreateCommand();
-        userCmd.Transaction = tx;
-        userCmd.CommandText =
-            @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
-                                VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
-        userCmd.Parameters.AddWithValue("@id", "user-revoked2");
-        userCmd.Parameters.AddWithValue("@name", "Revoked User 2");
-        userCmd.Parameters.AddWithValue("@email", DBNull.Value);
-        userCmd.Parameters.AddWithValue("@now", now);
-        await userCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+            using var sessionCmd = conn.CreateCommand();
+            sessionCmd.Transaction = tx;
+            sessionCmd.CommandText =
+                @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
+                                       VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 1)";
+            sessionCmd.Parameters.AddWithValue("@id", jti);
+            sessionCmd.Parameters.AddWithValue("@user_id", "user-revoked2");
+            sessionCmd.Parameters.AddWithValue("@created", now);
+            sessionCmd.Parameters.AddWithValue("@expires", exp);
+            sessionCmd.Parameters.AddWithValue("@activity", now);
+            await sessionCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
 
-        using var sessionCmd = conn.CreateCommand();
-        sessionCmd.Transaction = tx;
-        sessionCmd.CommandText =
-            @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
-                                   VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 1)";
-        sessionCmd.Parameters.AddWithValue("@id", jti);
-        sessionCmd.Parameters.AddWithValue("@user_id", "user-revoked2");
-        sessionCmd.Parameters.AddWithValue("@created", now);
-        sessionCmd.Parameters.AddWithValue("@expires", exp);
-        sessionCmd.Parameters.AddWithValue("@activity", now);
-        await sessionCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+            tx.Commit();
 
-        tx.Commit();
+            // With checkRevocation: false, should still validate
+            var result = await TokenService.ValidateTokenAsync(
+                conn,
+                token,
+                TestSigningKey,
+                checkRevocation: false
+            );
 
-        // With checkRevocation: false, should still validate
-        var result = await TokenService.ValidateTokenAsync(
-            conn,
-            token,
-            TestSigningKey,
-            checkRevocation: false
-        );
-
-        Assert.IsType<TokenService.TokenValidationOk>(result);
+            Assert.IsType<TokenService.TokenValidationOk>(result);
+        }
+        finally
+        {
+            CleanupTestDb(conn, dbPath);
+        }
     }
 
     [Fact]
     public async Task RevokeTokenAsync_SetsIsRevokedFlag()
     {
-        using var conn = CreateInMemoryDb();
-
-        var jti = Guid.NewGuid().ToString();
-        var userId = "user-test";
-        var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
-        var exp = DateTime.UtcNow.AddHours(1).ToString("o", CultureInfo.InvariantCulture);
-
-        // Insert user and session using raw SQL (TEXT PK doesn't return rowid)
-        using var tx = conn.BeginTransaction();
-
-        using var userCmd = conn.CreateCommand();
-        userCmd.Transaction = tx;
-        userCmd.CommandText =
-            @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
-                                VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
-        userCmd.Parameters.AddWithValue("@id", userId);
-        userCmd.Parameters.AddWithValue("@name", "Test User");
-        userCmd.Parameters.AddWithValue("@email", DBNull.Value);
-        userCmd.Parameters.AddWithValue("@now", now);
-        await userCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
-
-        using var sessionCmd = conn.CreateCommand();
-        sessionCmd.Transaction = tx;
-        sessionCmd.CommandText =
-            @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
-                                   VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 0)";
-        sessionCmd.Parameters.AddWithValue("@id", jti);
-        sessionCmd.Parameters.AddWithValue("@user_id", userId);
-        sessionCmd.Parameters.AddWithValue("@created", now);
-        sessionCmd.Parameters.AddWithValue("@expires", exp);
-        sessionCmd.Parameters.AddWithValue("@activity", now);
-        await sessionCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
-
-        tx.Commit();
-
-        // Revoke
-        await TokenService.RevokeTokenAsync(conn, jti);
-
-        // Verify using DataProvider generated method
-        var revokedResult = await conn.GetSessionRevokedAsync(jti);
-        var isRevoked = revokedResult switch
+        var (conn, dbPath) = CreateTestDb();
+        try
         {
-            GetSessionRevokedOk ok => ok.Value.FirstOrDefault()?.is_revoked ?? -1L,
-            GetSessionRevokedError err => throw new InvalidOperationException(
-                $"GetSessionRevoked failed: {err.Value.Message}, {err.Value.InnerException?.Message}"
-            ),
-        };
+            var jti = Guid.NewGuid().ToString();
+            var userId = "user-test";
+            var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+            var exp = DateTime.UtcNow.AddHours(1).ToString("o", CultureInfo.InvariantCulture);
 
-        Assert.Equal(1L, isRevoked);
+            // Insert user and session using raw SQL (TEXT PK doesn't return rowid)
+            using var tx = conn.BeginTransaction();
+
+            using var userCmd = conn.CreateCommand();
+            userCmd.Transaction = tx;
+            userCmd.CommandText =
+                @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
+                                    VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
+            userCmd.Parameters.AddWithValue("@id", userId);
+            userCmd.Parameters.AddWithValue("@name", "Test User");
+            userCmd.Parameters.AddWithValue("@email", DBNull.Value);
+            userCmd.Parameters.AddWithValue("@now", now);
+            await userCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+
+            using var sessionCmd = conn.CreateCommand();
+            sessionCmd.Transaction = tx;
+            sessionCmd.CommandText =
+                @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
+                                       VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 0)";
+            sessionCmd.Parameters.AddWithValue("@id", jti);
+            sessionCmd.Parameters.AddWithValue("@user_id", userId);
+            sessionCmd.Parameters.AddWithValue("@created", now);
+            sessionCmd.Parameters.AddWithValue("@expires", exp);
+            sessionCmd.Parameters.AddWithValue("@activity", now);
+            await sessionCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+
+            tx.Commit();
+
+            // Revoke
+            await TokenService.RevokeTokenAsync(conn, jti);
+
+            // Verify using DataProvider generated method
+            var revokedResult = await conn.GetSessionRevokedAsync(jti);
+            var isRevoked = revokedResult switch
+            {
+                GetSessionRevokedOk ok => ok.Value.FirstOrDefault()?.is_revoked ?? -1L,
+                GetSessionRevokedError err => throw new InvalidOperationException(
+                    $"GetSessionRevoked failed: {err.Value.Message}, {err.Value.InnerException?.Message}"
+                ),
+            };
+
+            Assert.Equal(1L, isRevoked);
+        }
+        finally
+        {
+            CleanupTestDb(conn, dbPath);
+        }
     }
 
     [Fact]
@@ -460,9 +508,10 @@ public sealed class TokenServiceTests
         Assert.Null(token);
     }
 
-    private static SqliteConnection CreateInMemoryDb()
+    private static (SqliteConnection Connection, string DbPath) CreateTestDb()
     {
-        var conn = new SqliteConnection("Data Source=:memory:");
+        var dbPath = Path.Combine(Path.GetTempPath(), $"tokenservice_{Guid.NewGuid():N}.db");
+        var conn = new SqliteConnection($"Data Source={dbPath}");
         conn.Open();
 
         // Use the YAML schema to create only the needed tables
@@ -491,7 +540,18 @@ public sealed class TokenServiceTests
             }
         }
 
-        return conn;
+        return (conn, dbPath);
+    }
+
+    private static void CleanupTestDb(SqliteConnection connection, string dbPath)
+    {
+        connection.Close();
+        connection.Dispose();
+        if (File.Exists(dbPath))
+        {
+            try { File.Delete(dbPath); }
+            catch { /* File may be locked */ }
+        }
     }
 
     private static string Base64UrlDecode(string input)

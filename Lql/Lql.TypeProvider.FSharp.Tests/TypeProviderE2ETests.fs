@@ -67,96 +67,20 @@ module TestFixtures =
         conn.Open()
         conn
 
-    /// Execute parameterized insert using DataProvider extension
-    let private executeInsert (conn: SqliteConnection) (sql: string) (parameters: IDataParameter seq) =
-        let result = DbConnectionExtensions.Execute(conn, sql, parameters)
-        match result with
-        | :? Outcome.Result<int, SqlError>.Ok<int, SqlError> -> ()
-        | _ -> failwithf "Failed to execute: %s" sql
-
-    /// Clear test data from all tables
-    let private clearTestData (conn: SqliteConnection) =
-        DbConnectionExtensions.Execute(conn, "DELETE FROM Orders", null) |> ignore
-        DbConnectionExtensions.Execute(conn, "DELETE FROM Users", null) |> ignore
-        DbConnectionExtensions.Execute(conn, "DELETE FROM Products", null) |> ignore
-        DbConnectionExtensions.Execute(conn, "DELETE FROM Customer", null) |> ignore
-
-    /// Insert test data using DataProvider Execute with parameterized queries (NO raw SQL!)
-    let private insertTestData (conn: SqliteConnection) =
-        // Insert Customers using parameterized queries
-        let customers = [
-            ("c1", "Acme Corp", "acme@example.com", 10, "active")
-            ("c2", "Tech Corp", "tech@example.com", 5, "active")
-            ("c3", "New Corp", "new@example.com", 1, "pending")
-        ]
-        for (id, name, email, age, status) in customers do
-            executeInsert conn
-                "INSERT INTO Customer (Id, Name, Email, Age, Status) VALUES (@id, @name, @email, @age, @status)"
-                [| SqliteParameter("@id", id) :> IDataParameter
-                   SqliteParameter("@name", name)
-                   SqliteParameter("@email", email)
-                   SqliteParameter("@age", age)
-                   SqliteParameter("@status", status) |]
-
-        // Insert Users using parameterized queries
-        let users = [
-            ("u1", "Alice", "alice@example.com", 30, "active", "admin", "2024-01-01")
-            ("u2", "Bob", "bob@example.com", 16, "active", "user", "2024-01-02")
-            ("u3", "Charlie", "charlie@example.com", 25, "inactive", "user", "2024-01-03")
-            ("u4", "Diana", "diana@example.com", 15, "active", "admin", "2024-01-04")
-        ]
-        for (id, name, email, age, status, role, createdAt) in users do
-            executeInsert conn
-                "INSERT INTO Users (Id, Name, Email, Age, Status, Role, CreatedAt) VALUES (@id, @name, @email, @age, @status, @role, @createdAt)"
-                [| SqliteParameter("@id", id) :> IDataParameter
-                   SqliteParameter("@name", name)
-                   SqliteParameter("@email", email)
-                   SqliteParameter("@age", age)
-                   SqliteParameter("@status", status)
-                   SqliteParameter("@role", role)
-                   SqliteParameter("@createdAt", createdAt) |]
-
-        // Insert Products using parameterized queries
-        let products = [
-            ("p1", "Widget", 10.00, 100)
-            ("p2", "Gadget", 25.50, 50)
-            ("p3", "Gizmo", 5.00, 200)
-        ]
-        for (id, name, price, quantity) in products do
-            executeInsert conn
-                "INSERT INTO Products (Id, Name, Price, Quantity) VALUES (@id, @name, @price, @quantity)"
-                [| SqliteParameter("@id", id) :> IDataParameter
-                   SqliteParameter("@name", name)
-                   SqliteParameter("@price", price)
-                   SqliteParameter("@quantity", quantity) |]
-
-        // Insert Orders using parameterized queries
-        let orders = [
-            ("o1", "u1", "p1", 100.00, 90.00, 10.00, 0.00, "completed")
-            ("o2", "u1", "p2", 50.00, 45.00, 5.00, 0.00, "completed")
-            ("o3", "u1", "p1", 75.00, 68.00, 7.00, 0.00, "pending")
-            ("o4", "u1", "p3", 25.00, 22.50, 2.50, 0.00, "completed")
-            ("o5", "u1", "p2", 125.00, 112.50, 12.50, 0.00, "completed")
-            ("o6", "u1", "p1", 200.00, 180.00, 20.00, 0.00, "pending")
-            ("o7", "u2", "p3", 30.00, 27.00, 3.00, 0.00, "completed")
-        ]
-        for (id, userId, productId, total, subtotal, tax, discount, status) in orders do
-            executeInsert conn
-                "INSERT INTO Orders (Id, UserId, ProductId, Total, Subtotal, Tax, Discount, Status) VALUES (@id, @userId, @productId, @total, @subtotal, @tax, @discount, @status)"
-                [| SqliteParameter("@id", id) :> IDataParameter
-                   SqliteParameter("@userId", userId)
-                   SqliteParameter("@productId", productId)
-                   SqliteParameter("@total", total)
-                   SqliteParameter("@subtotal", subtotal)
-                   SqliteParameter("@tax", tax)
-                   SqliteParameter("@discount", discount)
-                   SqliteParameter("@status", status) |]
-
-    /// Create test database connection with fresh test data
+    /// Create test database connection with fresh test data using C# seeder with generated extensions
     let createTestDatabase() =
         let conn = openTestDatabase()
-        clearTestData conn
-        insertTestData conn
+        use transaction = conn.BeginTransaction()
+        let result = TestDataSeeder.SeedDataAsync(transaction).GetAwaiter().GetResult()
+        match result with
+        | :? Outcome.Result<string, Selecta.SqlError>.Ok<string, Selecta.SqlError> ->
+            transaction.Commit()
+        | :? Outcome.Result<string, Selecta.SqlError>.Error<string, Selecta.SqlError> as err ->
+            transaction.Rollback()
+            failwithf "Failed to seed test data: %s" (err.Value.ToString())
+        | _ ->
+            transaction.Rollback()
+            failwith "Unknown result type from SeedDataAsync"
         conn
 
     let executeQuery (conn: SqliteConnection) (sql: string) =

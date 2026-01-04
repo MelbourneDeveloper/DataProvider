@@ -12,11 +12,15 @@ namespace Sync.SQLite.Tests;
 public sealed class SpecComplianceTests : IDisposable
 {
     private readonly SqliteConnection _db;
+    private readonly string _dbPath = Path.Combine(
+        Path.GetTempPath(),
+        $"speccompliancetests_{Guid.NewGuid()}.db"
+    );
     private readonly string _originId = Guid.NewGuid().ToString();
 
     public SpecComplianceTests()
     {
-        _db = new SqliteConnection("Data Source=:memory:");
+        _db = new SqliteConnection($"Data Source={_dbPath}");
         _db.Open();
         SyncSchema.CreateSchema(_db);
         SyncSchema.SetOriginId(_db, _originId);
@@ -982,5 +986,19 @@ public sealed class SpecComplianceTests : IDisposable
 
     #endregion
 
-    public void Dispose() => _db.Dispose();
+    public void Dispose()
+    {
+        _db.Dispose();
+        if (File.Exists(_dbPath))
+        {
+            try
+            {
+                File.Delete(_dbPath);
+            }
+            catch
+            {
+                /* File may be locked */
+            }
+        }
+    }
 }
