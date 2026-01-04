@@ -44,9 +44,16 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
         _sqliteConnection.Dispose();
         if (File.Exists(_sqliteDbPath))
         {
-            try { File.Delete(_sqliteDbPath); }
-            catch (IOException) { /* File may be locked */ }
-            catch (UnauthorizedAccessException) { /* May not have permission */ }
+            try
+            {
+                File.Delete(_sqliteDbPath);
+            }
+            catch (IOException)
+            { /* File may be locked */
+            }
+            catch (UnauthorizedAccessException)
+            { /* May not have permission */
+            }
         }
     }
 

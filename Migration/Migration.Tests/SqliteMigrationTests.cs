@@ -21,8 +21,13 @@ public sealed class SqliteMigrationTests
         connection.Dispose();
         if (File.Exists(dbPath))
         {
-            try { File.Delete(dbPath); }
-            catch { /* File may be locked */ }
+            try
+            {
+                File.Delete(dbPath);
+            }
+            catch
+            { /* File may be locked */
+            }
         }
     }
 
@@ -140,7 +145,9 @@ public sealed class SqliteMigrationTests
             // Assert
             Assert.True(result is MigrationApplyResultOk);
 
-            var inspected = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+            var inspected = (
+                (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+            ).Value;
 
             Assert.Equal(2, inspected.Tables.Count);
             Assert.Contains(inspected.Tables, t => t.Name == "Users");
@@ -508,7 +515,9 @@ public sealed class SqliteMigrationTests
             // Assert
             Assert.True(result is MigrationApplyResultOk);
 
-            var inspected = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+            var inspected = (
+                (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+            ).Value;
             var table = inspected.Tables.Single();
             Assert.Equal(25, table.Columns.Count);
         }
@@ -559,7 +568,12 @@ public sealed class SqliteMigrationTests
 
             var operations = (
                 (OperationsResultOk)
-                    SchemaDiff.Calculate(currentSchema, v2, allowDestructive: false, logger: _logger)
+                    SchemaDiff.Calculate(
+                        currentSchema,
+                        v2,
+                        allowDestructive: false,
+                        logger: _logger
+                    )
             ).Value;
 
             // Assert - No drop operations should be generated
@@ -675,7 +689,9 @@ public sealed class SqliteMigrationTests
             );
 
             // Act - Inspect and compare
-            var inspected = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+            var inspected = (
+                (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+            ).Value;
 
             // Calculate diff between original and inspected - should be empty
             var diff = (
@@ -1462,7 +1478,11 @@ public sealed class SqliteMigrationTests
                     t =>
                         t.Column("id", PortableTypes.Int, c => c.PrimaryKey())
                             .Column("count", PortableTypes.Int, c => c.NotNull().DefaultLql("0"))
-                            .Column("priority", PortableTypes.Int, c => c.NotNull().DefaultLql("100"))
+                            .Column(
+                                "priority",
+                                PortableTypes.Int,
+                                c => c.NotNull().DefaultLql("100")
+                            )
                             .Column(
                                 "rate",
                                 PortableTypes.Decimal(5, 2),
@@ -1582,7 +1602,11 @@ public sealed class SqliteMigrationTests
                 .Table(
                     "records",
                     t =>
-                        t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey().DefaultLql("gen_uuid()"))
+                        t.Column(
+                                "id",
+                                PortableTypes.Uuid,
+                                c => c.PrimaryKey().DefaultLql("gen_uuid()")
+                            )
                             .Column("name", PortableTypes.VarChar(100))
                 )
                 .Build();
@@ -1607,7 +1631,8 @@ public sealed class SqliteMigrationTests
 
             // Insert multiple rows and verify UUIDs are generated and unique
             using var insertCmd = connection.CreateCommand();
-            insertCmd.CommandText = "INSERT INTO records (name) VALUES ('test1'), ('test2'), ('test3')";
+            insertCmd.CommandText =
+                "INSERT INTO records (name) VALUES ('test1'), ('test2'), ('test3')";
             insertCmd.ExecuteNonQuery();
 
             using var selectCmd = connection.CreateCommand();
@@ -1704,7 +1729,11 @@ public sealed class SqliteMigrationTests
                 .Table(
                     "orders",
                     t =>
-                        t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey().DefaultLql("gen_uuid()"))
+                        t.Column(
+                                "id",
+                                PortableTypes.Uuid,
+                                c => c.PrimaryKey().DefaultLql("gen_uuid()")
+                            )
                             .Column(
                                 "status",
                                 PortableTypes.VarChar(20),
@@ -1748,7 +1777,8 @@ public sealed class SqliteMigrationTests
             insertCmd.ExecuteNonQuery();
 
             using var selectCmd = connection.CreateCommand();
-            selectCmd.CommandText = "SELECT id, status, quantity, is_urgent, created_at FROM orders";
+            selectCmd.CommandText =
+                "SELECT id, status, quantity, is_urgent, created_at FROM orders";
             using var reader = selectCmd.ExecuteReader();
             Assert.True(reader.Read());
 

@@ -89,7 +89,9 @@ public sealed class MigrationCornerCaseTests
 
             Assert.True(result is MigrationApplyResultOk);
 
-            var inspected = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+            var inspected = (
+                (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+            ).Value;
             var table = inspected.Tables.Single();
             Assert.Equal(7, table.Columns.Count);
         }
@@ -120,7 +122,9 @@ public sealed class MigrationCornerCaseTests
 
             Assert.True(result is MigrationApplyResultOk);
 
-            var inspected = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+            var inspected = (
+                (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+            ).Value;
             Assert.Contains(inspected.Tables, t => t.Name == "UserAccountSettings");
         }
         finally
@@ -188,7 +192,9 @@ public sealed class MigrationCornerCaseTests
 
             Assert.True(result is MigrationApplyResultOk);
 
-            var inspected = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+            var inspected = (
+                (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+            ).Value;
             Assert.Equal(21, inspected.Tables.Single().Columns.Count);
         }
         finally
@@ -306,7 +312,10 @@ public sealed class MigrationCornerCaseTests
                             .Column("EntityType", PortableTypes.VarChar(100))
                             .Column("EntityId", PortableTypes.Uuid)
                             .Column("EventDate", PortableTypes.DateTime())
-                            .Index("idx_events_tenant_entity", ["TenantId", "EntityType", "EntityId"])
+                            .Index(
+                                "idx_events_tenant_entity",
+                                ["TenantId", "EntityType", "EntityId"]
+                            )
                 )
                 .Build();
 
@@ -314,7 +323,9 @@ public sealed class MigrationCornerCaseTests
 
             Assert.True(result is MigrationApplyResultOk);
 
-            var inspected = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+            var inspected = (
+                (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+            ).Value;
             Assert.Single(inspected.Tables.Single().Indexes);
         }
         finally
@@ -352,7 +363,9 @@ public sealed class MigrationCornerCaseTests
 
             Assert.True(result is MigrationApplyResultOk);
 
-            var inspected = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+            var inspected = (
+                (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+            ).Value;
             var table = inspected.Tables.Single();
             Assert.Single(table.ForeignKeys);
             Assert.Equal("Categories", table.ForeignKeys[0].ReferencedTable);
@@ -388,7 +401,9 @@ public sealed class MigrationCornerCaseTests
 
             Assert.True(result is MigrationApplyResultOk);
 
-            var inspected = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+            var inspected = (
+                (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+            ).Value;
             Assert.Equal(3, inspected.Tables.Single().Indexes.Count);
         }
         finally
@@ -426,7 +441,9 @@ public sealed class MigrationCornerCaseTests
             Assert.True(result is MigrationApplyResultOk);
 
             // Verify all columns except Id are nullable
-            var inspected = ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)).Value;
+            var inspected = (
+                (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+            ).Value;
             var table = inspected.Tables.Single();
             foreach (var col in table.Columns.Where(c => c.Name != "Id"))
             {
@@ -487,7 +504,11 @@ public sealed class MigrationCornerCaseTests
                     "Defaults",
                     t =>
                         t.Column("Id", PortableTypes.Int, c => c.PrimaryKey())
-                            .Column("Status", PortableTypes.VarChar(50), c => c.Default("'pending'"))
+                            .Column(
+                                "Status",
+                                PortableTypes.VarChar(50),
+                                c => c.Default("'pending'")
+                            )
                             .Column("Type", PortableTypes.VarChar(50), c => c.Default("'default'"))
                 )
                 .Build();
@@ -782,7 +803,12 @@ public sealed class MigrationCornerCaseTests
 
             var operations = (
                 (OperationsResultOk)
-                    SchemaDiff.Calculate(currentSchema, v2, allowDestructive: false, logger: _logger)
+                    SchemaDiff.Calculate(
+                        currentSchema,
+                        v2,
+                        allowDestructive: false,
+                        logger: _logger
+                    )
             ).Value;
 
             // Should add the new index

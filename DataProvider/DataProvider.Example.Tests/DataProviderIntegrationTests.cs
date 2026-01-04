@@ -19,7 +19,10 @@ public sealed class DataProviderIntegrationTests : IDisposable
 
     public DataProviderIntegrationTests()
     {
-        _dbPath = Path.Combine(Path.GetTempPath(), $"dataprovider_integration_tests_{Guid.NewGuid()}.db");
+        _dbPath = Path.Combine(
+            Path.GetTempPath(),
+            $"dataprovider_integration_tests_{Guid.NewGuid()}.db"
+        );
         _connectionString = $"Data Source={_dbPath}";
         _connection = new SqliteConnection(_connectionString);
     }

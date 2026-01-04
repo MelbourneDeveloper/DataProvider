@@ -593,13 +593,19 @@ public sealed class SchemaYamlSerializerTests
             using var verifyCmd = connection.CreateCommand();
             verifyCmd.CommandText =
                 "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('Users', 'Orders')";
-            var tableCount = Convert.ToInt32(verifyCmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+            var tableCount = Convert.ToInt32(
+                verifyCmd.ExecuteScalar(),
+                CultureInfo.InvariantCulture
+            );
             Assert.Equal(2, tableCount);
 
             // Verify index exists
             verifyCmd.CommandText =
                 "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_users_email'";
-            var indexCount = Convert.ToInt32(verifyCmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+            var indexCount = Convert.ToInt32(
+                verifyCmd.ExecuteScalar(),
+                CultureInfo.InvariantCulture
+            );
             Assert.Equal(1, indexCount);
         }
         finally

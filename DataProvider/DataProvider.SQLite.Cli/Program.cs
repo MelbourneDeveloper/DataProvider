@@ -94,7 +94,9 @@ internal static class Program
             // Verify DB exists and is accessible; if empty, run schema file
             try
             {
-                using var conn = new Microsoft.Data.Sqlite.SqliteConnection(absoluteConnectionString);
+                using var conn = new Microsoft.Data.Sqlite.SqliteConnection(
+                    absoluteConnectionString
+                );
                 await conn.OpenAsync().ConfigureAwait(false);
 
                 // Check if any tables exist
@@ -202,7 +204,11 @@ internal static class Program
                     ).Value;
 
                     var colsResult = await SqliteCodeGenerator
-                        .GetColumnMetadataFromSqlAsync(absoluteConnectionString, sql, stmt.Parameters)
+                        .GetColumnMetadataFromSqlAsync(
+                            absoluteConnectionString,
+                            sql,
+                            stmt.Parameters
+                        )
                         .ConfigureAwait(false);
                     if (
                         colsResult

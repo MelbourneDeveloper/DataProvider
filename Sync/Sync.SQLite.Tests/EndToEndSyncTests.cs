@@ -411,13 +411,23 @@ public sealed class EndToEndSyncTests : IDisposable
         _targetDb.Dispose();
         if (File.Exists(_sourceDbPath))
         {
-            try { File.Delete(_sourceDbPath); }
-            catch { /* File may be locked */ }
+            try
+            {
+                File.Delete(_sourceDbPath);
+            }
+            catch
+            { /* File may be locked */
+            }
         }
         if (File.Exists(_targetDbPath))
         {
-            try { File.Delete(_targetDbPath); }
-            catch { /* File may be locked */ }
+            try
+            {
+                File.Delete(_targetDbPath);
+            }
+            catch
+            { /* File may be locked */
+            }
         }
     }
 }

@@ -601,8 +601,13 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
         _db.Dispose();
         if (File.Exists(_dbPath))
         {
-            try { File.Delete(_dbPath); }
-            catch { /* File may be locked */ }
+            try
+            {
+                File.Delete(_dbPath);
+            }
+            catch
+            { /* File may be locked */
+            }
         }
     }
 

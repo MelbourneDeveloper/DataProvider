@@ -549,8 +549,13 @@ public sealed class TokenServiceTests
         connection.Dispose();
         if (File.Exists(dbPath))
         {
-            try { File.Delete(dbPath); }
-            catch { /* File may be locked */ }
+            try
+            {
+                File.Delete(dbPath);
+            }
+            catch
+            { /* File may be locked */
+            }
         }
     }
 

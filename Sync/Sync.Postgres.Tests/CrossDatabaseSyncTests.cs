@@ -68,8 +68,13 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
 
         if (File.Exists(_sqliteDbPath))
         {
-            try { File.Delete(_sqliteDbPath); }
-            catch { /* File may be locked */ }
+            try
+            {
+                File.Delete(_sqliteDbPath);
+            }
+            catch
+            { /* File may be locked */
+            }
         }
     }
 
