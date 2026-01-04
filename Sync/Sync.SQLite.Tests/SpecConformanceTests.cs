@@ -14,11 +14,15 @@ namespace Sync.SQLite.Tests;
 public sealed partial class SpecConformanceTests : IDisposable
 {
     private readonly SqliteConnection _db;
+    private readonly string _dbPath = Path.Combine(
+        Path.GetTempPath(),
+        $"specconformancetests_{Guid.NewGuid()}.db"
+    );
     private readonly string _originId = Guid.NewGuid().ToString();
 
     public SpecConformanceTests()
     {
-        _db = new SqliteConnection("Data Source=:memory:");
+        _db = new SqliteConnection($"Data Source={_dbPath}");
         _db.Open();
         SyncSchema.CreateSchema(_db);
         SyncSchema.SetOriginId(_db, _originId);
@@ -688,7 +692,21 @@ public sealed partial class SpecConformanceTests : IDisposable
     [GeneratedRegex(@"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")]
     private static partial Regex UuidRegex();
 
-    public void Dispose() => _db.Dispose();
+    public void Dispose()
+    {
+        _db.Dispose();
+        if (File.Exists(_dbPath))
+        {
+            try
+            {
+                File.Delete(_dbPath);
+            }
+            catch
+            {
+                /* File may be locked */
+            }
+        }
+    }
 
     #endregion
 }

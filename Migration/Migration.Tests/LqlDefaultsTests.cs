@@ -13,6 +13,7 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
     private PostgreSqlContainer _postgres = null!;
     private NpgsqlConnection _pgConnection = null!;
     private SqliteConnection _sqliteConnection = null!;
+    private string _sqliteDbPath = null!;
     private readonly ILogger _logger = NullLogger.Instance;
 
     public async Task InitializeAsync()
@@ -30,8 +31,9 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
         _pgConnection = new NpgsqlConnection(_postgres.GetConnectionString());
         await _pgConnection.OpenAsync().ConfigureAwait(false);
 
-        // Setup SQLite (in-memory)
-        _sqliteConnection = new SqliteConnection("Data Source=:memory:");
+        // Setup SQLite with file-based database
+        _sqliteDbPath = Path.Combine(Path.GetTempPath(), $"lql_defaults_{Guid.NewGuid():N}.db");
+        _sqliteConnection = new SqliteConnection($"Data Source={_sqliteDbPath}");
         await _sqliteConnection.OpenAsync().ConfigureAwait(false);
     }
 
@@ -40,6 +42,19 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
         await _pgConnection.DisposeAsync().ConfigureAwait(false);
         await _postgres.DisposeAsync().ConfigureAwait(false);
         _sqliteConnection.Dispose();
+        if (File.Exists(_sqliteDbPath))
+        {
+            try
+            {
+                File.Delete(_sqliteDbPath);
+            }
+            catch (IOException)
+            { /* File may be locked */
+            }
+            catch (UnauthorizedAccessException)
+            { /* May not have permission */
+            }
+        }
     }
 
     // =========================================================================

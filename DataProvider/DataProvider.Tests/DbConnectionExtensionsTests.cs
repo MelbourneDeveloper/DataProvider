@@ -10,10 +10,12 @@ namespace DataProvider.Tests;
 public sealed class DbConnectionExtensionsTests : IDisposable
 {
     private readonly SqliteConnection _connection;
+    private readonly string _dbPath;
 
     public DbConnectionExtensionsTests()
     {
-        _connection = new SqliteConnection("Data Source=:memory:");
+        _dbPath = Path.Combine(Path.GetTempPath(), $"dbconn_ext_tests_{Guid.NewGuid()}.db");
+        _connection = new SqliteConnection($"Data Source={_dbPath}");
         _connection.Open();
         CreateSchema();
     }
@@ -316,7 +318,27 @@ public sealed class DbConnectionExtensionsTests : IDisposable
         Assert.False(result is NullableStringOk);
     }
 
-    public void Dispose() => _connection?.Dispose();
+    public void Dispose()
+    {
+        _connection?.Dispose();
+        if (File.Exists(_dbPath))
+        {
+            try
+            {
+                File.Delete(_dbPath);
+            }
+#pragma warning disable CA1031 // Cleanup is best-effort
+            catch (IOException)
+            {
+                // File may be locked by another process
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // May not have permission
+            }
+#pragma warning restore CA1031
+        }
+    }
 
     private sealed record TestRecord
     {

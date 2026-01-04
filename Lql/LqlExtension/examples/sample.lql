@@ -1,156 +1,137 @@
 -- Lambda Query Language Example
 -- This file demonstrates LQL syntax and features
 
--- Simple select with filter
-users
-|> filter (age > 18 and status = 'active')
-|> select name, email, age, created_at
-|> order_by created_at desc
-|> limit 10
+-- Simple select all columns
+Customer
+|> select(*)
 
--- Join operation with aggregation
-let active_users = users |> filter (status = 'active') in
-orders
-|> join active_users on orders.user_id = active_users.id
-|> group_by active_users.name, active_users.email
-|> select 
-    active_users.name,
-    active_users.email,
-    count(*) as total_orders,
-    sum(orders.amount) as total_spent,
-    avg(orders.amount) as avg_order_value
-|> having total_orders > 5
-|> order_by total_spent desc
+-- Select specific columns
+Users
+|> select(Users.Id, Users.Name, Users.Email)
 
--- Complex query with arithmetic and functions
-products
-|> select 
-    name,
-    category,
-    price,
-    round(price * 0.1, 2) as tax,
-    round(price + (price * 0.1), 2) as total_price,
-    upper(category) as category_upper,
-    length(name) as name_length
-|> filter (total_price > 100 and category in ('electronics', 'books'))
-|> order_by total_price desc, name asc
+-- Select with column alias
+Users
+|> select(Users.Id, Users.Name as username)
+
+-- Filter using lambda syntax with single condition
+Users
+|> filter(fn(row) => row.Users.Age > 18)
+|> select(Users.Name)
+
+-- Filter with AND condition
+Users
+|> filter(fn(row) => row.Users.Age > 18 and row.Users.Status = 'active')
+|> select(*)
+
+-- Filter with OR condition
+Users
+|> filter(fn(row) => row.Users.Age < 18 or row.Users.Role = 'admin')
+|> select(*)
+
+-- Inner join
+Users
+|> join(Orders, on = Users.Id = Orders.UserId)
+|> select(Users.Name, Orders.Total)
+
+-- Left join
+Users
+|> left_join(Orders, on = Users.Id = Orders.UserId)
+|> select(Users.Name, Orders.Total)
+
+-- Multiple joins
+Users
+|> join(Orders, on = Users.Id = Orders.UserId)
+|> join(Products, on = Orders.ProductId = Products.Id)
+|> select(Users.Name, Products.Name)
+
+-- Cross join
+Categories
+|> cross_join(Statuses)
+|> select(Categories.Name, Statuses.Value)
+
+-- Group by with count
+Orders
+|> group_by(Orders.UserId)
+|> select(Orders.UserId, count(*) as order_count)
+
+-- Group by with multiple aggregates
+Orders
+|> group_by(Orders.Status)
+|> select(Orders.Status, sum(Orders.Total) as total_sum, avg(Orders.Total) as avg_total)
+
+-- Group by with having clause (lambda syntax)
+Orders
+|> group_by(Orders.UserId)
+|> having(fn(g) => count(*) > 5)
+|> select(Orders.UserId, count(*) as cnt)
+
+-- Order by ascending
+Users
+|> order_by(Users.Name asc)
+|> select(*)
+
+-- Order by descending
+Users
+|> order_by(Users.CreatedAt desc)
+|> select(*)
+
+-- Limit results
+Users
+|> order_by(Users.Id)
+|> limit(10)
+|> select(*)
+
+-- Limit with offset for pagination
+Users
+|> order_by(Users.Id)
+|> limit(10)
+|> offset(20)
+|> select(*)
+
+-- Select distinct
+Users
+|> select_distinct(Users.Status)
+
+-- Arithmetic expressions in select
+Products
+|> select(Products.Price * Products.Quantity as total)
+
+-- Complex arithmetic
+Orders
+|> select(Orders.Subtotal + Orders.Tax - Orders.Discount as final_total)
+
+-- Let binding for query variables
+let active_users = Users |> filter(fn(row) => row.Users.Status = 'active') |> select(*)
 
 -- Union query
-let recent_orders = orders |> filter (created_at > '2023-01-01') in
-let old_orders = orders |> filter (created_at <= '2023-01-01') in
+let q1 = Table1 |> select(Table1.Name)
+let q2 = Table2 |> select(Table2.Name)
 
-recent_orders
-|> select user_id, amount, 'recent' as order_type
-union
-old_orders
-|> select user_id, amount, 'old' as order_type
-|> order_by amount desc
+Table1
+|> select(Table1.Name)
+|> union(q2)
 
--- Insert statement
-insert into users (
-    name, 
-    email, 
-    age, 
-    status,
-    created_at
-) values (
-    'John Doe',
-    'john.doe@example.com',
-    25,
-    'active',
-    now()
+-- Union all query
+Table1
+|> select(Table1.Name)
+|> union_all(Table2 |> select(Table2.Name))
+
+-- Case expression in select
+Users
+|> select(
+    Users.Name,
+    case
+        when Users.Age > 65 then 'Senior'
+        when Users.Age > 18 then 'Adult'
+        else 'Minor'
+    end as age_group
 )
 
--- Update with filter
-users
-|> filter (last_login < '2023-01-01')
-|> update {
-    status = 'inactive',
-    updated_at = now()
-}
-
--- Lambda function example
-let calculate_discount = fn price => 
-    case 
-        when price > 1000 then price * 0.1
-        when price > 500 then price * 0.05
-        else 0
-    end
-in
-
-products
-|> select 
-    name,
-    price,
-    calculate_discount(price) as discount,
-    price - calculate_discount(price) as final_price
-|> filter (discount > 0)
-
--- Nested query with case expression
-employees
-|> select 
-    name,
-    department,
-    salary,
-    case
-        when salary > 100000 then 'Senior'
-        when salary > 50000 then 'Mid-level'
-        else 'Junior'
-    end as level,
-    case
-        when department = 'Engineering' then salary * 1.1
-        when department = 'Sales' then salary * 1.05
-        else salary
-    end as adjusted_salary
-|> group_by department, level
-|> select 
-    department,
-    level,
-    count(*) as employee_count,
-    avg(adjusted_salary) as avg_salary,
-    min(adjusted_salary) as min_salary,
-    max(adjusted_salary) as max_salary
-|> order_by department, level
-
--- String manipulation functions
-customers
-|> select 
-    concat(first_name, ' ', last_name) as full_name,
-    upper(email) as email_upper,
-    substring(phone, 1, 3) as area_code,
-    trim(address) as clean_address,
-    length(notes) as notes_length
-|> filter (notes_length > 0)
-
--- Date functions
-events
-|> select 
-    title,
-    event_date,
-    year(event_date) as event_year,
-    month(event_date) as event_month,
-    day(event_date) as event_day,
-    hour(event_date) as event_hour
-|> filter (event_year = 2023 and event_month >= 6)
-|> order_by event_date
-
--- Mathematical functions
-measurements
-|> select 
-    sample_id,
-    value,
-    abs(value) as absolute_value,
-    round(value, 2) as rounded_value,
-    floor(value) as floor_value,
-    ceil(value) as ceiling_value,
-    sqrt(abs(value)) as square_root
-|> filter (abs(value) > 10)
-
--- Conditional functions
-user_profiles
-|> select 
-    user_id,
-    coalesce(nickname, username, 'Anonymous') as display_name,
-    nullif(bio, '') as clean_bio,
-    case when avatar_url is null then false else true end as has_avatar
-|> filter (clean_bio is not null)
+-- Full pipeline example
+Users
+|> filter(fn(row) => row.Users.Age > 18 and row.Users.Status = 'active')
+|> join(Orders, on = Users.Id = Orders.UserId)
+|> group_by(Users.Id, Users.Name)
+|> select(Users.Name, sum(Orders.Total) as TotalSpent)
+|> order_by(TotalSpent desc)
+|> limit(10)

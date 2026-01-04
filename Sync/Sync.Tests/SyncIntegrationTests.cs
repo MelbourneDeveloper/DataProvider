@@ -11,6 +11,14 @@ namespace Sync.Tests;
 public sealed class SyncIntegrationTests : IDisposable
 {
     private static readonly ILogger Logger = NullLogger.Instance;
+    private readonly string _serverDbPath = Path.Combine(
+        Path.GetTempPath(),
+        $"syncintegration_server_{Guid.NewGuid()}.db"
+    );
+    private readonly string _clientDbPath = Path.Combine(
+        Path.GetTempPath(),
+        $"syncintegration_client_{Guid.NewGuid()}.db"
+    );
     private readonly SqliteConnection _serverDb;
     private readonly SqliteConnection _clientDb;
     private const string ServerOrigin = "server-origin-001";
@@ -18,8 +26,8 @@ public sealed class SyncIntegrationTests : IDisposable
 
     public SyncIntegrationTests()
     {
-        _serverDb = CreateSyncDatabase(ServerOrigin);
-        _clientDb = CreateSyncDatabase(ClientOrigin);
+        _serverDb = CreateSyncDatabase(ServerOrigin, _serverDbPath);
+        _clientDb = CreateSyncDatabase(ClientOrigin, _clientDbPath);
     }
 
     [Fact]
@@ -183,9 +191,9 @@ public sealed class SyncIntegrationTests : IDisposable
 
     // === Helper Methods ===
 
-    private static SqliteConnection CreateSyncDatabase(string originId)
+    private static SqliteConnection CreateSyncDatabase(string originId, string dbPath)
     {
-        var conn = new SqliteConnection("Data Source=:memory:");
+        var conn = new SqliteConnection($"Data Source={dbPath}");
         conn.Open();
 
         using var cmd = conn.CreateCommand();
@@ -612,5 +620,27 @@ public sealed class SyncIntegrationTests : IDisposable
     {
         _serverDb.Dispose();
         _clientDb.Dispose();
+        if (File.Exists(_serverDbPath))
+        {
+            try
+            {
+                File.Delete(_serverDbPath);
+            }
+            catch
+            {
+                /* File may be locked */
+            }
+        }
+        if (File.Exists(_clientDbPath))
+        {
+            try
+            {
+                File.Delete(_clientDbPath);
+            }
+            catch
+            {
+                /* File may be locked */
+            }
+        }
     }
 }

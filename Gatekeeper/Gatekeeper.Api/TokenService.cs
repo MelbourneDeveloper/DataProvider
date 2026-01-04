@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 
 namespace Gatekeeper.Api;
+
 /// <summary>
 /// JWT token generation and validation service.
 /// </summary>

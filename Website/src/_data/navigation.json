@@ -2,6 +2,7 @@
   "main": [
     { "text": "Docs", "url": "/docs/getting-started/" },
     { "text": "API", "url": "/apidocs/" },
+    { "text": "LQL", "url": "https://lql.dev", "external": true },
     { "text": "Blog", "url": "/blog/" },
     { "text": "GitHub", "url": "https://github.com/MelbourneDeveloper/DataProvider", "external": true }
   ],

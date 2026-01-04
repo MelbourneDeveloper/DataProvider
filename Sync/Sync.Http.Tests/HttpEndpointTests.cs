@@ -120,9 +120,10 @@ public sealed class HttpEndpointTests : IClassFixture<SyncApiWebApplicationFacto
             "application/json"
         );
 
-        // Act
+        // Act - using temp file path (test expects BadRequest before connection is used)
+        var tempDbPath = Path.Combine(Path.GetTempPath(), $"temp_test_{Guid.NewGuid()}.db");
         var response = await _client.PostAsync(
-            "/sync/changes?dbType=sqlite&connectionString=Data Source=:memory:",
+            $"/sync/changes?dbType=sqlite&connectionString=Data Source={Uri.EscapeDataString(tempDbPath)}",
             content
         );
 

@@ -379,6 +379,9 @@ Generated_Code/
 # Generated C# code from DataProvider source generator
 *.g.cs
 
+
+!Lql/Lql.TypeProvider.FSharp.Tests.Data/Generated/*.g.cs
+
 # Build timestamps
 .timestamp
 
@@ -399,3 +402,5 @@ Website/src/apidocs/
 Website/src/docs/sync.md
 Website/src/docs/dataprovider.md
 Website/src/docs/lql.md
+
+Lql/Lql.TypeProvider.FSharp.Tests.Data/Generated/

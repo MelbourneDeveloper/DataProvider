@@ -8,7 +8,7 @@
 
 ## Coding Rules
 
-- **NEVER THROW** - Return `Result<T>`. Wrap failures in try/catch
+- **NEVER THROW** - Return `Result<T,E>`. Wrap failures in try/catch
 - **No casting/!** - Pattern match on type only
 - **NO GIT** - Source control is illegal
 - **No suppressing warnings** - Illegal
@@ -18,22 +18,32 @@
 - **Copious ILogger** - Especially sync projects
 - **NO INTERFACES** - Use `Action<T>`/`Func<T>`
 - **Expressions over assignments**
+- **Routinely format with csharpier** - `dotnet csharpier .` <- In root folder
 - **Named parameters** - No ordinal calls
 - **Close type hierarchies** - Private constructors:
 ```csharp
 public abstract partial record Result<TSuccess, TFailure> { private Result() { } }
 ```
-- **Extension methods on IDbConnection/IDbTransaction only**
-- **Pattern match, don't if** - Switch expressions on type
-- **No skipping tests** - Failing = OK, Skip = illegal
-- **E2E tests only** - No mocks, integration testing
-- **Type aliases for Results** - `using XResult = Result<X, XError>`
-- **Immutable** - Records, `ImmutableList`, `FrozenSet`, `ImmutableArray`
-- **NO REGEX** - ANTLR or SqlParserCS
-- **XMLDOC on public members** - Except tests
-- **< 450 LOC per file**
-- **No commented code** - Delete it
-- **No placeholders** - Leave compile errors with TODO
+- **Skipping tests = ⛔️ ILLEGAL** - Failing tests = OK. Aggressively unskip tests
+- **Test at the highest level** - Avoid mocks. Only full integration testing
+- **Keep files under 450 LOC and functions under 20 LOC**
+- **Always use type aliases (using) for result types** - Don't write like this: `new Result<string, SqlError>.Ok`
+- **All tables must have a SINGLE primary key**
+- **Primary keys MUST be UUIDs**
+- **No singletons** - Inject `Func` into static methods
+- **Immutable types!** - Use records. Don't use `List<T>`. Use `ImmutableList` `FrozenSet` or `ImmutableArray`
+- **No in-memory dbs** - Real dbs all the way
+- **NO REGEX** - Parse SQL with ANTLR .g4 grammars or SqlParserCS library
+- **All public members require XMLDOC** - Except in test projects
+- **One type per file** (except small records)
+- **No commented-out code** - Delete it
+- **No consecutive Console.WriteLine** - Use single string interpolation
+- **No placeholders** - If incomplete, leave LOUD compilation error with TODO
+- **Never use Fluent Assertions**
+
+## CSS
+- **MINIMAL CSS** - Do not duplicate CSS clases
+- **Name classes after component, NOT section** - Sections should not have their own CSS classes
 
 ## Testing
 - E2E with zero mocking

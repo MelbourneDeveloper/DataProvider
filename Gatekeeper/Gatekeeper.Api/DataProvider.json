@@ -30,5 +30,5 @@
     { "schema": "main", "name": "gk_role", "generateInsert": true, "excludeColumns": ["id"], "primaryKeyColumns": ["id"] },
     { "schema": "main", "name": "gk_role_permission", "generateInsert": true, "excludeColumns": [], "primaryKeyColumns": ["role_id", "permission_id"] }
   ],
-  "connectionString": "Data Source=gatekeeper-build.db"
+  "connectionString": "Data Source=gatekeeper.db"
 }

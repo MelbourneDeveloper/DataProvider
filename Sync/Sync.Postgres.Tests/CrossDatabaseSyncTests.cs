@@ -17,6 +17,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
     private PostgreSqlContainer _postgres = null!;
     private NpgsqlConnection _pgConn = null!;
     private SqliteConnection _sqliteConn = null!;
+    private string _sqliteDbPath = null!;
     private readonly string _sqliteOrigin = Guid.NewGuid().ToString();
     private readonly string _postgresOrigin = Guid.NewGuid().ToString();
     private static readonly ILogger Logger = NullLogger.Instance;
@@ -37,8 +38,9 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         _pgConn = new NpgsqlConnection(_postgres.GetConnectionString());
         await _pgConn.OpenAsync().ConfigureAwait(false);
 
-        // Create SQLite in-memory
-        _sqliteConn = new SqliteConnection("Data Source=:memory:");
+        // Create SQLite file database
+        _sqliteDbPath = Path.Combine(Path.GetTempPath(), $"cross_db_sync_{Guid.NewGuid()}.db");
+        _sqliteConn = new SqliteConnection($"Data Source={_sqliteDbPath}");
         _sqliteConn.Open();
 
         // Initialize sync schemas
@@ -63,6 +65,17 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         await _pgConn.CloseAsync().ConfigureAwait(false);
         await _pgConn.DisposeAsync().ConfigureAwait(false);
         await _postgres.DisposeAsync();
+
+        if (File.Exists(_sqliteDbPath))
+        {
+            try
+            {
+                File.Delete(_sqliteDbPath);
+            }
+            catch
+            { /* File may be locked */
+            }
+        }
     }
 
     private static void CreateTestTable(NpgsqlConnection conn)

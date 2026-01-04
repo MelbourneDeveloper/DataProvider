@@ -11,11 +11,15 @@ namespace Sync.SQLite.Tests;
 public sealed class SchemaAndTriggerTests : IDisposable
 {
     private readonly SqliteConnection _db;
+    private readonly string _dbPath = Path.Combine(
+        Path.GetTempPath(),
+        $"schemaandtriggertests_{Guid.NewGuid()}.db"
+    );
     private const string OriginId = "test-origin-id";
 
     public SchemaAndTriggerTests()
     {
-        _db = new SqliteConnection("Data Source=:memory:");
+        _db = new SqliteConnection($"Data Source={_dbPath}");
         _db.Open();
     }
 
@@ -835,5 +839,19 @@ public sealed class SchemaAndTriggerTests : IDisposable
 
     #endregion
 
-    public void Dispose() => _db.Dispose();
+    public void Dispose()
+    {
+        _db.Dispose();
+        if (File.Exists(_dbPath))
+        {
+            try
+            {
+                File.Delete(_dbPath);
+            }
+            catch
+            {
+                /* File may be locked */
+            }
+        }
+    }
 }

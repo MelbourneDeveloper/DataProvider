@@ -575,29 +575,55 @@ public sealed class SchemaYamlSerializerTests
         var schema = SchemaYamlSerializer.FromYaml(yaml);
 
         // Act - Apply to SQLite
-        using var connection = new SqliteConnection("Data Source=:memory:");
-        connection.Open();
-
-        foreach (var table in schema.Tables)
+        var dbPath = Path.Combine(Path.GetTempPath(), $"schemayaml_{Guid.NewGuid()}.db");
+        var connection = new SqliteConnection($"Data Source={dbPath}");
+        try
         {
-            var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = ddl;
-            cmd.ExecuteNonQuery();
+            connection.Open();
+
+            foreach (var table in schema.Tables)
+            {
+                var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
+                using var cmd = connection.CreateCommand();
+                cmd.CommandText = ddl;
+                cmd.ExecuteNonQuery();
+            }
+
+            // Assert - Verify tables exist
+            using var verifyCmd = connection.CreateCommand();
+            verifyCmd.CommandText =
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('Users', 'Orders')";
+            var tableCount = Convert.ToInt32(
+                verifyCmd.ExecuteScalar(),
+                CultureInfo.InvariantCulture
+            );
+            Assert.Equal(2, tableCount);
+
+            // Verify index exists
+            verifyCmd.CommandText =
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_users_email'";
+            var indexCount = Convert.ToInt32(
+                verifyCmd.ExecuteScalar(),
+                CultureInfo.InvariantCulture
+            );
+            Assert.Equal(1, indexCount);
         }
-
-        // Assert - Verify tables exist
-        using var verifyCmd = connection.CreateCommand();
-        verifyCmd.CommandText =
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('Users', 'Orders')";
-        var tableCount = Convert.ToInt32(verifyCmd.ExecuteScalar(), CultureInfo.InvariantCulture);
-        Assert.Equal(2, tableCount);
-
-        // Verify index exists
-        verifyCmd.CommandText =
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_users_email'";
-        var indexCount = Convert.ToInt32(verifyCmd.ExecuteScalar(), CultureInfo.InvariantCulture);
-        Assert.Equal(1, indexCount);
+        finally
+        {
+            connection.Close();
+            connection.Dispose();
+            if (File.Exists(dbPath))
+            {
+                try
+                {
+                    File.Delete(dbPath);
+                }
+                catch
+                {
+                    /* File may be locked */
+                }
+            }
+        }
     }
 
     [Fact]

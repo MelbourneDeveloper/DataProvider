@@ -95,8 +95,7 @@ public sealed class FileLogger : ILogger
         }
 
         var message = formatter(state, exception);
-        var line =
-            $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} [{logLevel}] {_category}: {message}";
+        var line = $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} [{logLevel}] {_category}: {message}";
         if (exception != null)
         {
             line += Environment.NewLine + exception;

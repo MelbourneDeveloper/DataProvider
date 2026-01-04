@@ -14,13 +14,21 @@ public sealed class TombstoneIntegrationTests : IDisposable
 {
     private readonly SqliteConnection _serverDb;
     private readonly SqliteConnection _clientDb;
+    private readonly string _serverDbPath = Path.Combine(
+        Path.GetTempPath(),
+        $"tombstoneintegrationtests_server_{Guid.NewGuid()}.db"
+    );
+    private readonly string _clientDbPath = Path.Combine(
+        Path.GetTempPath(),
+        $"tombstoneintegrationtests_client_{Guid.NewGuid()}.db"
+    );
     private readonly string _serverOrigin = "server-" + Guid.NewGuid();
     private readonly string _clientOrigin = "client-" + Guid.NewGuid();
 
     public TombstoneIntegrationTests()
     {
-        _serverDb = CreateSyncDatabase(_serverOrigin);
-        _clientDb = CreateSyncDatabase(_clientOrigin);
+        _serverDb = CreateSyncDatabase(_serverDbPath, _serverOrigin);
+        _clientDb = CreateSyncDatabase(_clientDbPath, _clientOrigin);
     }
 
     #region Section 13.3: Server Tracking
@@ -315,9 +323,9 @@ public sealed class TombstoneIntegrationTests : IDisposable
 
     #region Helpers
 
-    private static SqliteConnection CreateSyncDatabase(string originId)
+    private static SqliteConnection CreateSyncDatabase(string dbPath, string originId)
     {
-        var conn = new SqliteConnection("Data Source=:memory:");
+        var conn = new SqliteConnection($"Data Source={dbPath}");
         conn.Open();
         SyncSchema.CreateSchema(conn);
         SyncSchema.SetOriginId(conn, originId);
@@ -360,6 +368,30 @@ public sealed class TombstoneIntegrationTests : IDisposable
     {
         _serverDb.Dispose();
         _clientDb.Dispose();
+
+        if (File.Exists(_serverDbPath))
+        {
+            try
+            {
+                File.Delete(_serverDbPath);
+            }
+            catch
+            {
+                /* File may be locked */
+            }
+        }
+
+        if (File.Exists(_clientDbPath))
+        {
+            try
+            {
+                File.Delete(_clientDbPath);
+            }
+            catch
+            {
+                /* File may be locked */
+            }
+        }
     }
 
     #endregion

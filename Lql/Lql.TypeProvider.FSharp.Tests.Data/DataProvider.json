@@ -1,0 +1,38 @@
+{
+    "queries": [],
+    "tables": [
+        {
+            "schema": "main",
+            "name": "Customer",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": true,
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "Users",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": true,
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "Orders",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": true,
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "Products",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": true,
+            "primaryKeyColumns": ["Id"]
+        }
+    ],
+    "connectionString": "Data Source=../Lql.TypeProvider.FSharp.Tests/typeprovider-test.db"
+}
