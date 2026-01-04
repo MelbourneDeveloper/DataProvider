@@ -44,9 +44,9 @@
     </Content>
   </ItemGroup>
 
-  <!-- DATABASE CREATION: Handled by Lql.TypeProvider.FSharp.Tests.Data project reference.
-       That project's CreateDatabaseSchema target creates typeprovider-test.db before its build.
-       DO NOT add a duplicate target here - it causes race conditions on CI where both
-       projects try to create the same database file simultaneously, causing hangs/deadlocks. -->
+  <!-- Create database from YAML using Migration.Cli before build -->
+  <Target Name="CreateTestDatabase" BeforeTargets="BeforeCompile">
+    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/typeprovider-test-schema.yaml" --output "$(MSBuildProjectDirectory)/typeprovider-test.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
+  </Target>
 
 </Project>
