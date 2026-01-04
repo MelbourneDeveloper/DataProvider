@@ -40,6 +40,34 @@ dotnet add package DataProvider.MySql
 dotnet add package DataProvider.Sqlite
 ```
 
+## LQL (Lambda Query Language)
+
+Install LQL packages for cross-database query transpilation:
+
+```bash
+# Choose your target database
+dotnet add package Lql.SQLite
+dotnet add package Lql.Postgres
+dotnet add package Lql.SqlServer
+```
+
+### F# Type Provider
+
+For F# projects, install the type provider for compile-time LQL validation:
+
+```bash
+dotnet add package Lql.TypeProvider.FSharp
+```
+
+This enables compile-time validated queries:
+
+```fsharp
+open Lql
+
+type GetUsers = LqlCommand<"Users |> select(Users.Id, Users.Name)">
+let sql = GetUsers.Sql  // Invalid LQL = build error
+```
+
 ## Requirements
 
 - .NET 9.0 or later

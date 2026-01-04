@@ -39,5 +39,6 @@ DataProvider is built around these key principles:
 ## Next Steps
 
 - [DataProvider Documentation](/docs/dataprovider/)
-- [LQL Query Language](/docs/lql/)
+- [LQL Query Language](/docs/lql/) - Write once, deploy to any SQL database
+- [F# Type Provider](/docs/lql/#f-type-provider) - Compile-time validated LQL queries
 - [API Reference](/api/)

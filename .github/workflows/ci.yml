@@ -122,7 +122,7 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --no-restore -c Release
+        run: dotnet build --no-restore -c Release -p:SkipTypeProviderCodeGen=true
 
   # DataProvider tests
   dataprovider-tests:
@@ -230,11 +230,6 @@ jobs:
 
       - name: Restore
         run: dotnet restore Lql/Lql.TypeProvider.FSharp.Tests
-
-      - name: Build CLI tools (needed by MSBuild targets in test project)
-        run: |
-          dotnet build Migration/Migration.Cli -c Release --no-restore
-          dotnet build DataProvider/DataProvider.SQLite.Cli -c Release --no-restore
 
       - name: Test
         run: dotnet test Lql/Lql.TypeProvider.FSharp.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"

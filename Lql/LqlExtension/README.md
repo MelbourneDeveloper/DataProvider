@@ -212,6 +212,29 @@ npm run lint
 4. Add tests if applicable
 5. Submit a pull request
 
+## F# Type Provider
+
+For F# projects, LQL also offers compile-time validation through a type provider. Invalid LQL queries cause compilation errors rather than runtime failures.
+
+```fsharp
+open Lql
+
+// Validated at compile time
+type GetUsers = LqlCommand<"Users |> select(Users.Id, Users.Name)">
+type FilteredUsers = LqlCommand<"Users |> filter(fn(row) => row.Users.Age > 18) |> select(*)">
+
+// Access generated SQL
+let sql = GetUsers.Sql  // SQL string generated at compile time
+```
+
+Install the type provider:
+
+```xml
+<PackageReference Include="Lql.TypeProvider.FSharp" Version="*" />
+```
+
+See the [LQL documentation](../README.md) for full type provider details.
+
 ## License
 
 MIT License - see LICENSE file for details.
@@ -219,7 +242,3 @@ MIT License - see LICENSE file for details.
 ## Support
 
 For issues and feature requests, please visit our [GitHub repository](https://github.com/your-org/lambda-query-language).
-
----
-
-**Enjoy coding with Lambda Query Language! 🚀**
