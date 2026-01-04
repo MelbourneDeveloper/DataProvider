@@ -7,6 +7,11 @@
         <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     </PropertyGroup>
 
+    <!-- Exclude Generated folder from default globbing - target adds them after regenerating -->
+    <ItemGroup>
+        <Compile Remove="Generated/**" />
+    </ItemGroup>
+
     <ItemGroup>
         <ProjectReference Include="../../DataProvider/DataProvider/DataProvider.csproj" />
         <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
@@ -28,8 +33,7 @@
         </Content>
     </ItemGroup>
 
-    <!-- Generated files are committed to git - SDK default globbing includes them -->
-    <!-- These targets regenerate them when schema changes (incremental build) -->
+    <!-- Targets regenerate files when schema changes (incremental build) -->
 
     <!-- Create database from YAML using Migration.Cli -->
     <Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider"
@@ -46,5 +50,8 @@
         <MakeDir Directories="$(MSBuildProjectDirectory)/Generated" />
         <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)../../DataProvider/DataProvider.SQLite.Cli/DataProvider.SQLite.Cli.csproj -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(MSBuildProjectDirectory)/Generated"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
         <Touch Files="$(MSBuildProjectDirectory)/Generated/.timestamp" AlwaysCreate="true" />
+        <ItemGroup>
+            <Compile Include="$(MSBuildProjectDirectory)/Generated/**/*.g.cs" />
+        </ItemGroup>
     </Target>
 </Project>
