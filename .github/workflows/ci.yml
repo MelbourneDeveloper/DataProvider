@@ -118,11 +118,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore dependencies
-        run: dotnet restore
-
       - name: Build
-        run: dotnet build --no-restore -c Release -p:SkipTypeProviderCodeGen=true
+        run: dotnet build -c Release
 
   # DataProvider tests
   dataprovider-tests:

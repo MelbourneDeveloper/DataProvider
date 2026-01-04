@@ -7,11 +7,6 @@
         <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     </PropertyGroup>
 
-    <!-- Exclude Generated folder from default globbing - we include it explicitly in the target -->
-    <ItemGroup>
-        <Compile Remove="Generated/**" />
-    </ItemGroup>
-
     <ItemGroup>
         <ProjectReference Include="../../DataProvider/DataProvider/DataProvider.csproj" />
         <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
@@ -33,24 +28,23 @@
         </Content>
     </ItemGroup>
 
+    <!-- Generated files are committed to git - SDK default globbing includes them -->
+    <!-- These targets regenerate them when schema changes (incremental build) -->
+
     <!-- Create database from YAML using Migration.Cli -->
-    <!-- Only runs when building this project directly (not during solution build) -->
-    <!-- Set SkipTypeProviderCodeGen=true to skip these targets -->
-    <Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider" Condition="'$(SkipTypeProviderCodeGen)' != 'true'">
+    <Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider"
+            Inputs="../Lql.TypeProvider.FSharp.Tests/typeprovider-test-schema.yaml"
+            Outputs="../Lql.TypeProvider.FSharp.Tests/typeprovider-test.db">
         <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildThisFileDirectory)../Lql.TypeProvider.FSharp.Tests/typeprovider-test-schema.yaml" --output "$(MSBuildThisFileDirectory)../Lql.TypeProvider.FSharp.Tests/typeprovider-test.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
     </Target>
 
     <!-- Generate C# extensions from schema using DataProvider.SQLite.Cli -->
-    <!-- Only runs when building this project directly (not during solution build) -->
-    <Target Name="GenerateDataProvider" BeforeTargets="BeforeCompile;CoreCompile" Condition="'$(SkipTypeProviderCodeGen)' != 'true'" Inputs="$(MSBuildProjectDirectory)/DataProvider.json" Outputs="$(MSBuildProjectDirectory)/Generated/.timestamp">
-        <!-- Clean and recreate Generated folder to avoid stale files -->
+    <Target Name="GenerateDataProvider" BeforeTargets="BeforeCompile;CoreCompile"
+            Inputs="$(MSBuildProjectDirectory)/DataProvider.json;../Lql.TypeProvider.FSharp.Tests/typeprovider-test-schema.yaml"
+            Outputs="$(MSBuildProjectDirectory)/Generated/.timestamp">
         <RemoveDir Directories="$(MSBuildProjectDirectory)/Generated" />
         <MakeDir Directories="$(MSBuildProjectDirectory)/Generated" />
-        <!-- Run SQLite generator CLI to emit .g.cs into Generated folder -->
-        <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)../../DataProvider/DataProvider.SQLite.Cli/DataProvider.SQLite.Cli.csproj -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(MSBuildProjectDirectory)/Generated"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
+        <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)../../DataProvider/DataProvider.SQLite.Cli/DataProvider.SQLite.Cli.csproj -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(MSBuildProjectDirectory)/Generated"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
         <Touch Files="$(MSBuildProjectDirectory)/Generated/.timestamp" AlwaysCreate="true" />
-        <ItemGroup>
-            <Compile Include="$(MSBuildProjectDirectory)/Generated/**/*.g.cs" />
-        </ItemGroup>
     </Target>
 </Project>
