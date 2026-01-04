@@ -231,8 +231,13 @@ jobs:
       - name: Restore
         run: dotnet restore Lql/Lql.TypeProvider.FSharp.Tests
 
+      - name: Build CLI tools (needed by MSBuild targets)
+        run: |
+          dotnet build Migration/Migration.Cli -c Debug
+          dotnet build DataProvider/DataProvider.SQLite.Cli -c Debug
+
       - name: Test
-        run: dotnet test Lql/Lql.TypeProvider.FSharp.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx" -p:SkipTypeProviderCodeGen=true
+        run: dotnet test Lql/Lql.TypeProvider.FSharp.Tests --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
