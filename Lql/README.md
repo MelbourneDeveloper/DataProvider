@@ -172,26 +172,70 @@ orders |> filter(fn(row) => row.customer_id IN (
 - Format on save
 - Snippets for common patterns
 
+## F# Type Provider
+
+LQL includes an F# Type Provider that validates LQL queries at **compile time**. Invalid queries cause compilation errors, not runtime errors.
+
+### Installation
+
+```xml
+<PackageReference Include="Lql.TypeProvider.FSharp" Version="*" />
+```
+
+### Usage
+
+```fsharp
+open Lql.TypeProvider
+
+// These queries are validated at COMPILE TIME
+type GetUsers = LqlCommand<"Users |> select(Id, Name, Email)">
+type FilterActive = LqlCommand<"Users |> filter(fn(row) => row.Status = 'active') |> select(*)">
+type JoinOrders = LqlCommand<"Users |> join(Orders, on = Users.Id = Orders.UserId) |> select(Users.Name, Orders.Total)">
+
+// Access the generated SQL
+let sql = GetUsers.Sql
+let originalQuery = GetUsers.Query
+
+// Execute against a database
+use conn = new SqliteConnection("Data Source=mydb.db")
+conn.Open()
+use cmd = new SqliteCommand(GetUsers.Sql, conn)
+use reader = cmd.ExecuteReader()
+// ... process results
+```
+
+### Benefits
+
+- **Compile-time validation** - Syntax errors caught during build
+- **Type safety** - Generated types ensure correct usage
+- **IntelliSense** - Full IDE support in F# editors
+- **Zero runtime overhead** - SQL is generated at compile time
+
 ## Architecture
 
 ```
 Lql/
-├── Lql/                    # Core transpiler
-│   ├── Parsing/           # ANTLR grammar and parser
-│   ├── FunctionMapping/   # Database-specific functions
-│   └── Pipeline steps     # AST transformation
-├── Lql.SQLite/            # SQLite dialect
-├── Lql.SqlServer/         # SQL Server dialect
-├── Lql.Postgres/          # PostgreSQL dialect
-├── LqlCli.SQLite/         # CLI tool
-├── LqlExtension/          # VS Code extension
-└── Website/               # lql.dev website
+├── Lql/                       # Core transpiler
+│   ├── Parsing/               # ANTLR grammar and parser
+│   ├── FunctionMapping/       # Database-specific functions
+│   └── Pipeline steps         # AST transformation
+├── Lql.SQLite/                # SQLite dialect
+├── Lql.SqlServer/             # SQL Server dialect
+├── Lql.Postgres/              # PostgreSQL dialect
+├── Lql.TypeProvider.FSharp/   # F# Type Provider
+├── LqlCli.SQLite/             # CLI tool
+├── LqlExtension/              # VS Code extension
+└── Website/                   # lql.dev website
 ```
 
 ## Testing
 
 ```bash
+# C# tests
 dotnet test Lql.Tests/Lql.Tests.csproj
+
+# F# Type Provider tests
+dotnet test Lql.TypeProvider.FSharp.Tests/Lql.TypeProvider.FSharp.Tests.fsproj
 ```
 
 ## Examples

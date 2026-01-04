@@ -4,81 +4,81 @@ tables:
   columns:
   - name: Id
     type: Text
-  - name: name
+  - name: Name
     type: Text
-  - name: email
+  - name: Email
     type: Text
-  - name: age
+  - name: Age
     type: Integer
-  - name: status
+  - name: Status
     type: Text
   primaryKey:
     name: PK_Customer
     columns:
     - Id
 
-- name: users
+- name: Users
   columns:
   - name: Id
     type: Text
-  - name: name
+  - name: Name
     type: Text
-  - name: email
+  - name: Email
     type: Text
-  - name: age
+  - name: Age
     type: Integer
-  - name: status
+  - name: Status
     type: Text
-  - name: role
+  - name: Role
     type: Text
-  - name: created_at
+  - name: CreatedAt
     type: Text
   primaryKey:
-    name: PK_users
+    name: PK_Users
     columns:
     - Id
 
-- name: orders
+- name: Orders
   columns:
   - name: Id
     type: Text
-  - name: user_id
+  - name: UserId
     type: Text
-  - name: product_id
+  - name: ProductId
     type: Text
-  - name: total
+  - name: Total
     type: Double
-  - name: subtotal
+  - name: Subtotal
     type: Double
-  - name: tax
+  - name: Tax
     type: Double
-  - name: discount
+  - name: Discount
     type: Double
-  - name: status
+  - name: Status
     type: Text
   foreignKeys:
-  - name: FK_orders_user_id
+  - name: FK_Orders_UserId
     columns:
-    - user_id
-    referencedTable: users
+    - UserId
+    referencedTable: Users
     referencedColumns:
     - Id
   primaryKey:
-    name: PK_orders
+    name: PK_Orders
     columns:
     - Id
 
-- name: products
+- name: Products
   columns:
   - name: Id
     type: Text
-  - name: name
+  - name: Name
     type: Text
-  - name: price
+  - name: Price
     type: Double
-  - name: quantity
+  - name: Quantity
     type: Integer
   primaryKey:
-    name: PK_products
+    name: PK_Products
     columns:
     - Id
