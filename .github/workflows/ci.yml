@@ -119,7 +119,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Build
-        run: dotnet build -c Release
+        run: dotnet build -c Release -m:1
 
   # DataProvider tests
   dataprovider-tests:
