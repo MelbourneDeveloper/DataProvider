@@ -3,15 +3,20 @@ using Microsoft.Data.Sqlite;
 namespace Sync.Tests;
 
 /// <summary>
-/// In-memory SQLite database for integration testing.
+/// File-based SQLite database for integration testing.
 /// </summary>
 public sealed class TestDb : IDisposable
 {
+    private readonly string _dbPath = Path.Combine(
+        Path.GetTempPath(),
+        $"testdb_{Guid.NewGuid()}.db"
+    );
+
     public SqliteConnection Connection { get; }
 
     public TestDb()
     {
-        Connection = new SqliteConnection("Data Source=:memory:");
+        Connection = new SqliteConnection($"Data Source={_dbPath}");
         Connection.Open();
         InitializeSyncSchema();
     }
@@ -131,5 +136,19 @@ public sealed class TestDb : IDisposable
             _ => throw new ArgumentException($"Unknown operation: {op}"),
         };
 
-    public void Dispose() => Connection.Dispose();
+    public void Dispose()
+    {
+        Connection.Dispose();
+        if (File.Exists(_dbPath))
+        {
+            try
+            {
+                File.Delete(_dbPath);
+            }
+            catch
+            {
+                /* File may be locked */
+            }
+        }
+    }
 }

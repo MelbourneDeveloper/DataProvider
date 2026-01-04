@@ -24,13 +24,15 @@ public sealed class DbTransactionExtensionsTests : IDisposable
 {
     private readonly SqliteConnection _connection;
     private readonly SqliteTransaction _transaction;
+    private readonly string _dbPath;
 
     /// <summary>
     /// Initializes a new instance of <see cref="DbTransactionExtensionsTests"/>.
     /// </summary>
     public DbTransactionExtensionsTests()
     {
-        _connection = new SqliteConnection("Data Source=:memory:");
+        _dbPath = Path.Combine(Path.GetTempPath(), $"dbtrans_ext_tests_{Guid.NewGuid()}.db");
+        _connection = new SqliteConnection($"Data Source={_dbPath}");
         _connection.Open();
         CreateSchema();
         _transaction = _connection.BeginTransaction();
@@ -151,6 +153,23 @@ public sealed class DbTransactionExtensionsTests : IDisposable
     {
         _transaction?.Dispose();
         _connection?.Dispose();
+        if (File.Exists(_dbPath))
+        {
+            try
+            {
+                File.Delete(_dbPath);
+            }
+#pragma warning disable CA1031 // Cleanup is best-effort
+            catch (IOException)
+            {
+                // File may be locked by another process
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // May not have permission
+            }
+#pragma warning restore CA1031
+        }
     }
 
     [Fact]

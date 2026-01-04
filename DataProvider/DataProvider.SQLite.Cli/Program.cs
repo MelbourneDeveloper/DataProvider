@@ -85,10 +85,16 @@ internal static class Program
                 return 1;
             }
 
+            // Make the connection string path absolute relative to project directory
+            var absoluteConnectionString = MakeConnectionStringAbsolute(
+                cfg.ConnectionString,
+                projectDir.FullName
+            );
+
             // Verify DB exists and is accessible; if empty, run schema file
             try
             {
-                using var conn = new Microsoft.Data.Sqlite.SqliteConnection(cfg.ConnectionString);
+                using var conn = new Microsoft.Data.Sqlite.SqliteConnection(absoluteConnectionString);
                 await conn.OpenAsync().ConfigureAwait(false);
 
                 // Check if any tables exist
@@ -196,7 +202,7 @@ internal static class Program
                     ).Value;
 
                     var colsResult = await SqliteCodeGenerator
-                        .GetColumnMetadataFromSqlAsync(cfg.ConnectionString, sql, stmt.Parameters)
+                        .GetColumnMetadataFromSqlAsync(absoluteConnectionString, sql, stmt.Parameters)
                         .ConfigureAwait(false);
                     if (
                         colsResult
@@ -238,7 +244,7 @@ internal static class Program
                         baseName,
                         sql,
                         stmt,
-                        cfg.ConnectionString,
+                        absoluteConnectionString,
                         cols.Value,
                         hasCustomImplementation: false,
                         grouping
@@ -296,7 +302,7 @@ internal static class Program
 
                         // Use SQLite's native schema inspection to get table metadata
                         using var conn = new Microsoft.Data.Sqlite.SqliteConnection(
-                            cfg.ConnectionString
+                            absoluteConnectionString
                         );
                         await conn.OpenAsync().ConfigureAwait(false);
 
@@ -482,6 +488,37 @@ internal static class Program
             ? head
             : $"{head}{tail} (SQLite generation Error {codeText})";
         return final;
+    }
+
+    /// <summary>
+    /// Makes a SQLite connection string's Data Source path absolute relative to a project directory.
+    /// </summary>
+    private static string MakeConnectionStringAbsolute(string connectionString, string projectDir)
+    {
+        // Parse "Data Source=path" from connection string
+        const string dataSourcePrefix = "Data Source=";
+        var idx = connectionString.IndexOf(dataSourcePrefix, StringComparison.OrdinalIgnoreCase);
+        if (idx < 0)
+            return connectionString;
+
+        var pathStart = idx + dataSourcePrefix.Length;
+        var semicolonIdx = connectionString.IndexOf(';', pathStart);
+        var dbPath =
+            semicolonIdx >= 0
+                ? connectionString[pathStart..semicolonIdx]
+                : connectionString[pathStart..];
+
+        // If already absolute or special (like :memory:), return as-is
+        if (Path.IsPathRooted(dbPath) || dbPath.StartsWith(':'))
+            return connectionString;
+
+        // Make path absolute relative to project directory
+        var absolutePath = Path.GetFullPath(Path.Combine(projectDir, dbPath));
+
+        // Reconstruct connection string
+        var prefix = connectionString[..idx];
+        var suffix = semicolonIdx >= 0 ? connectionString[semicolonIdx..] : string.Empty;
+        return $"{prefix}{dataSourcePrefix}{absolutePath}{suffix}";
     }
 
     /// <summary>

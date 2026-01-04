@@ -10,7 +10,7 @@ namespace DataProvider;
 /// </summary>
 /// <example>
 /// <code>
-/// using var connection = new SqliteConnection("Data Source=:memory:");
+/// using var connection = new SqliteConnection("Data Source=mydb.db");
 /// connection.Open();
 ///
 /// // Execute a query with mapping

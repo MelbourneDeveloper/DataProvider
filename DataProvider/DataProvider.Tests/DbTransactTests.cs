@@ -10,11 +10,14 @@ namespace DataProvider.Tests;
 /// </summary>
 public sealed class DbTransactTests : IDisposable
 {
-    private readonly string _connectionString = "Data Source=:memory:";
+    private readonly string _dbPath;
+    private readonly string _connectionString;
     private readonly SqliteConnection _connection;
 
     public DbTransactTests()
     {
+        _dbPath = Path.Combine(Path.GetTempPath(), $"dbtransact_tests_{Guid.NewGuid()}.db");
+        _connectionString = $"Data Source={_dbPath}";
         _connection = new SqliteConnection(_connectionString);
     }
 
@@ -241,5 +244,25 @@ public sealed class DbTransactTests : IDisposable
         await command.ExecuteNonQueryAsync().ConfigureAwait(false);
     }
 
-    public void Dispose() => _connection?.Dispose();
+    public void Dispose()
+    {
+        _connection?.Dispose();
+        if (File.Exists(_dbPath))
+        {
+            try
+            {
+                File.Delete(_dbPath);
+            }
+#pragma warning disable CA1031 // Cleanup is best-effort
+            catch (IOException)
+            {
+                // File may be locked by another process
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // May not have permission
+            }
+#pragma warning restore CA1031
+        }
+    }
 }

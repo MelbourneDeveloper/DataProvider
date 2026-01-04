@@ -12,6 +12,14 @@ namespace Sync.Tests;
 public sealed class SyncCoordinatorTests : IDisposable
 {
     private static readonly ILogger Logger = NullLogger.Instance;
+    private readonly string _serverDbPath = Path.Combine(
+        Path.GetTempPath(),
+        $"synccoord_server_{Guid.NewGuid()}.db"
+    );
+    private readonly string _clientDbPath = Path.Combine(
+        Path.GetTempPath(),
+        $"synccoord_client_{Guid.NewGuid()}.db"
+    );
     private readonly SqliteConnection _serverDb;
     private readonly SqliteConnection _clientDb;
     private const string ServerOrigin = "server-coord-001";
@@ -19,8 +27,8 @@ public sealed class SyncCoordinatorTests : IDisposable
 
     public SyncCoordinatorTests()
     {
-        _serverDb = CreateSyncDatabase(ServerOrigin);
-        _clientDb = CreateSyncDatabase(ClientOrigin);
+        _serverDb = CreateSyncDatabase(ServerOrigin, _serverDbPath);
+        _clientDb = CreateSyncDatabase(ClientOrigin, _clientDbPath);
     }
 
     #region Pull Tests
@@ -452,9 +460,9 @@ public sealed class SyncCoordinatorTests : IDisposable
 
     #region Helper Methods
 
-    private static SqliteConnection CreateSyncDatabase(string originId)
+    private static SqliteConnection CreateSyncDatabase(string originId, string dbPath)
     {
-        var conn = new SqliteConnection("Data Source=:memory:");
+        var conn = new SqliteConnection($"Data Source={dbPath}");
         conn.Open();
 
         using var cmd = conn.CreateCommand();
@@ -807,6 +815,28 @@ public sealed class SyncCoordinatorTests : IDisposable
     {
         _serverDb.Dispose();
         _clientDb.Dispose();
+        if (File.Exists(_serverDbPath))
+        {
+            try
+            {
+                File.Delete(_serverDbPath);
+            }
+            catch
+            {
+                /* File may be locked */
+            }
+        }
+        if (File.Exists(_clientDbPath))
+        {
+            try
+            {
+                File.Delete(_clientDbPath);
+            }
+            catch
+            {
+                /* File may be locked */
+            }
+        }
     }
 
     #endregion

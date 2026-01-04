@@ -12,6 +12,7 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
     private PostgreSqlContainer _postgresContainer = null!;
     private string _postgresConnectionString = null!;
     private readonly ILogger _logger = NullLogger.Instance;
+    private readonly List<string> _sqliteDbPaths = [];
 
     public async Task InitializeAsync()
     {
@@ -26,16 +27,29 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
         _postgresConnectionString = _postgresContainer.GetConnectionString();
     }
 
-    public async Task DisposeAsync() =>
+    public async Task DisposeAsync()
+    {
         await _postgresContainer.DisposeAsync().ConfigureAwait(false);
+
+        foreach (var dbPath in _sqliteDbPaths)
+        {
+            if (File.Exists(dbPath))
+            {
+                try { File.Delete(dbPath); }
+                catch { /* File may be locked */ }
+            }
+        }
+    }
 
     /// <summary>
     /// Creates SQLite source DB with User table (source schema).
     /// Columns: Id, FullName, EmailAddress (DIFFERENT from target!)
     /// </summary>
-    private static SqliteConnection CreateSourceDb(string originId)
+    private SqliteConnection CreateSourceDb(string originId)
     {
-        var conn = new SqliteConnection("Data Source=:memory:");
+        var dbPath = Path.Combine(Path.GetTempPath(), $"mapping_source_{Guid.NewGuid()}.db");
+        _sqliteDbPaths.Add(dbPath);
+        var conn = new SqliteConnection($"Data Source={dbPath}");
         conn.Open();
 
         SyncSchema.CreateSchema(conn);
@@ -286,7 +300,9 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
     {
         // Arrange
         var sourceOrigin = Guid.NewGuid().ToString();
-        using var source = new SqliteConnection("Data Source=:memory:");
+        var dbPath = Path.Combine(Path.GetTempPath(), $"multi_target_{Guid.NewGuid()}.db");
+        _sqliteDbPaths.Add(dbPath);
+        using var source = new SqliteConnection($"Data Source={dbPath}");
         source.Open();
 
         SyncSchema.CreateSchema(source);

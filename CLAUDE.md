@@ -8,7 +8,7 @@
 
 ## Coding Rules
 
-- **NEVER THROW** - Return `Result<T>`. Wrap failures in try/catch
+- **NEVER THROW** - Return `Result<T,E>``. Wrap failures in try/catch
 - **No casting/!** - Pattern match on type only
 - **NO GIT** - Source control is illegal
 - **No suppressing warnings** - Illegal
@@ -32,6 +32,7 @@ public abstract partial record Result<TSuccess, TFailure> { private Result() { }
 - **Primary keys MUST be UUIDs**
 - **No singletons** - Inject `Func` into static methods
 - **Immutable types!** - Use records. Don't use `List<T>`. Use `ImmutableList` `FrozenSet` or `ImmutableArray`
+- **No in-memory dbs** - Real dbs all the way
 - **NO REGEX** - Parse SQL with ANTLR .g4 grammars or SqlParserCS library
 - **All public members require XMLDOC** - Except in test projects
 - **One type per file** (except small records)

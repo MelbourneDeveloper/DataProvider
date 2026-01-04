@@ -2,104 +2,172 @@
     "Select All": {
         "prefix": "select",
         "body": [
-            "${1:table_name}",
-            "|> select ${2:*}"
+            "${1:TableName}",
+            "|> select(*)"
         ],
-        "description": "Basic select statement"
+        "description": "Basic select all columns"
+    },
+    "Select Columns": {
+        "prefix": "selectc",
+        "body": [
+            "${1:TableName}",
+            "|> select(${1:TableName}.${2:Column1}, ${1:TableName}.${3:Column2})"
+        ],
+        "description": "Select specific columns"
     },
     "Select with Filter": {
         "prefix": "selectf",
         "body": [
-            "${1:table_name}",
-            "|> filter (${2:condition})",
-            "|> select ${3:*}"
+            "${1:TableName}",
+            "|> filter(fn(row) => row.${1:TableName}.${2:Column} ${3|=,>,<,>=,<=,!=|} ${4:value})",
+            "|> select(*)"
         ],
-        "description": "Select with filter"
+        "description": "Select with filter using lambda syntax"
+    },
+    "Filter with AND": {
+        "prefix": "filterand",
+        "body": [
+            "${1:TableName}",
+            "|> filter(fn(row) => row.${1:TableName}.${2:Column1} ${3|=,>,<|} ${4:value1} and row.${1:TableName}.${5:Column2} ${6|=,>,<|} ${7:value2})",
+            "|> select(*)"
+        ],
+        "description": "Filter with AND condition"
+    },
+    "Filter with OR": {
+        "prefix": "filteror",
+        "body": [
+            "${1:TableName}",
+            "|> filter(fn(row) => row.${1:TableName}.${2:Column1} ${3|=,>,<|} ${4:value1} or row.${1:TableName}.${5:Column2} ${6|=,>,<|} ${7:value2})",
+            "|> select(*)"
+        ],
+        "description": "Filter with OR condition"
     },
     "Join Tables": {
         "prefix": "join",
         "body": [
-            "${1:table1}",
-            "|> join ${2:table2} on ${3:condition}",
-            "|> select ${4:*}"
+            "${1:Table1}",
+            "|> join(${2:Table2}, on = ${1:Table1}.${3:Id} = ${2:Table2}.${4:ForeignKey})",
+            "|> select(${1:Table1}.${5:Column1}, ${2:Table2}.${6:Column2})"
         ],
-        "description": "Join two tables"
+        "description": "Inner join two tables"
     },
-    "Group By with Aggregation": {
+    "Left Join": {
+        "prefix": "leftjoin",
+        "body": [
+            "${1:Table1}",
+            "|> left_join(${2:Table2}, on = ${1:Table1}.${3:Id} = ${2:Table2}.${4:ForeignKey})",
+            "|> select(${1:Table1}.${5:Column1}, ${2:Table2}.${6:Column2})"
+        ],
+        "description": "Left join two tables"
+    },
+    "Cross Join": {
+        "prefix": "crossjoin",
+        "body": [
+            "${1:Table1}",
+            "|> cross_join(${2:Table2})",
+            "|> select(${1:Table1}.${3:Column1}, ${2:Table2}.${4:Column2})"
+        ],
+        "description": "Cross join two tables"
+    },
+    "Group By with Count": {
         "prefix": "groupby",
         "body": [
-            "${1:table_name}",
-            "|> group_by ${2:column}",
-            "|> select ${2:column}, ${3:count(*)} as ${4:count}"
+            "${1:TableName}",
+            "|> group_by(${1:TableName}.${2:Column})",
+            "|> select(${1:TableName}.${2:Column}, count(*) as ${3:count})"
         ],
-        "description": "Group by with aggregation"
+        "description": "Group by with count aggregation"
     },
-    "Order By": {
+    "Group By with Sum": {
+        "prefix": "groupbysum",
+        "body": [
+            "${1:TableName}",
+            "|> group_by(${1:TableName}.${2:GroupColumn})",
+            "|> select(${1:TableName}.${2:GroupColumn}, sum(${1:TableName}.${3:SumColumn}) as ${4:total})"
+        ],
+        "description": "Group by with sum aggregation"
+    },
+    "Group By with Having": {
+        "prefix": "groupbyhaving",
+        "body": [
+            "${1:TableName}",
+            "|> group_by(${1:TableName}.${2:Column})",
+            "|> having(fn(g) => count(*) > ${3:5})",
+            "|> select(${1:TableName}.${2:Column}, count(*) as ${4:cnt})"
+        ],
+        "description": "Group by with having clause"
+    },
+    "Order By Ascending": {
         "prefix": "orderby",
         "body": [
-            "${1:table_name}",
-            "|> order_by ${2:column} ${3|asc,desc|}",
-            "|> select ${4:*}"
+            "${1:TableName}",
+            "|> order_by(${1:TableName}.${2:Column} asc)",
+            "|> select(*)"
         ],
-        "description": "Order by clause"
+        "description": "Order by ascending"
+    },
+    "Order By Descending": {
+        "prefix": "orderbydesc",
+        "body": [
+            "${1:TableName}",
+            "|> order_by(${1:TableName}.${2:Column} desc)",
+            "|> select(*)"
+        ],
+        "description": "Order by descending"
+    },
+    "Limit": {
+        "prefix": "limit",
+        "body": [
+            "${1:TableName}",
+            "|> order_by(${1:TableName}.${2:Column})",
+            "|> limit(${3:10})",
+            "|> select(*)"
+        ],
+        "description": "Limit results"
+    },
+    "Limit with Offset": {
+        "prefix": "limitoffset",
+        "body": [
+            "${1:TableName}",
+            "|> order_by(${1:TableName}.${2:Column})",
+            "|> limit(${3:10})",
+            "|> offset(${4:20})",
+            "|> select(*)"
+        ],
+        "description": "Limit with offset for pagination"
+    },
+    "Select Distinct": {
+        "prefix": "distinct",
+        "body": [
+            "${1:TableName}",
+            "|> select_distinct(${1:TableName}.${2:Column})"
+        ],
+        "description": "Select distinct values"
+    },
+    "Union": {
+        "prefix": "union",
+        "body": [
+            "${1:Table1}",
+            "|> select(${1:Table1}.${2:Column})",
+            "|> union(${3:Table2} |> select(${3:Table2}.${4:Column}))"
+        ],
+        "description": "Union of two queries"
+    },
+    "Union All": {
+        "prefix": "unionall",
+        "body": [
+            "${1:Table1}",
+            "|> select(${1:Table1}.${2:Column})",
+            "|> union_all(${3:Table2} |> select(${3:Table2}.${4:Column}))"
+        ],
+        "description": "Union all of two queries"
     },
     "Let Binding": {
         "prefix": "let",
         "body": [
-            "let ${1:variable_name} = ${2:expression} in",
-            "${3:query}"
+            "let ${1:queryName} = ${2:TableName} |> select(*)"
         ],
-        "description": "Let binding for variables"
-    },
-    "Insert Statement": {
-        "prefix": "insert",
-        "body": [
-            "insert into ${1:table_name} (",
-            "    ${2:column1}, ${3:column2}",
-            ") values (",
-            "    ${4:value1}, ${5:value2}",
-            ")"
-        ],
-        "description": "Insert statement"
-    },
-    "Update Statement": {
-        "prefix": "update",
-        "body": [
-            "${1:table_name}",
-            "|> filter (${2:condition})",
-            "|> update {",
-            "    ${3:column} = ${4:value}",
-            "}"
-        ],
-        "description": "Update statement"
-    },
-    "Union Query": {
-        "prefix": "union",
-        "body": [
-            "${1:query1}",
-            "union",
-            "${2:query2}"
-        ],
-        "description": "Union of two queries"
-    },
-    "Having Clause": {
-        "prefix": "having",
-        "body": [
-            "${1:table_name}",
-            "|> group_by ${2:column}",
-            "|> having ${3:condition}",
-            "|> select ${4:*}"
-        ],
-        "description": "Having clause with group by"
-    },
-    "Limit and Offset": {
-        "prefix": "limit",
-        "body": [
-            "${1:table_name}",
-            "|> limit ${2:10} offset ${3:0}",
-            "|> select ${4:*}"
-        ],
-        "description": "Limit with offset"
+        "description": "Let binding for query variables"
     },
     "Case Expression": {
         "prefix": "case",
@@ -112,35 +180,41 @@
         ],
         "description": "Case expression"
     },
-    "Lambda Function": {
-        "prefix": "lambda",
+    "Lambda Filter": {
+        "prefix": "fn",
         "body": [
-            "fn ${1:param} => ${2:expression}"
+            "fn(${1:row}) => ${2:row.Table.Column} ${3|=,>,<,>=,<=,!=|} ${4:value}"
         ],
-        "description": "Lambda function"
+        "description": "Lambda function for filter/having"
     },
-    "Arithmetic Operations": {
+    "Arithmetic in Select": {
         "prefix": "arith",
         "body": [
-            "${1:table_name}",
-            "|> select ${2:column1} ${3|+,-,*,/,%|} ${4:column2} as ${5:result}"
+            "${1:TableName}",
+            "|> select(${1:TableName}.${2:Column1} ${3|+,-,*,/|} ${1:TableName}.${4:Column2} as ${5:result})"
         ],
-        "description": "Arithmetic operations"
+        "description": "Arithmetic operations in select"
     },
-    "String Functions": {
-        "prefix": "string",
+    "Aggregate Functions": {
+        "prefix": "agg",
         "body": [
-            "${1:table_name}",
-            "|> select ${2|concat,substring,length,trim,upper,lower|}(${3:column}) as ${4:result}"
+            "${1:TableName}",
+            "|> group_by(${1:TableName}.${2:GroupColumn})",
+            "|> select(${1:TableName}.${2:GroupColumn}, ${3|count,sum,avg,min,max|}(${1:TableName}.${4:Column}) as ${5:result})"
         ],
-        "description": "String functions"
+        "description": "Aggregate function in select"
     },
-    "Math Functions": {
-        "prefix": "math",
+    "Full Pipeline": {
+        "prefix": "pipeline",
         "body": [
-            "${1:table_name}",
-            "|> select ${2|round,floor,ceil,abs,sqrt|}(${3:column}) as ${4:result}"
+            "${1:TableName}",
+            "|> filter(fn(row) => row.${1:TableName}.${2:Column} ${3|=,>,<|} ${4:value})",
+            "|> join(${5:OtherTable}, on = ${1:TableName}.${6:Id} = ${5:OtherTable}.${7:ForeignKey})",
+            "|> group_by(${1:TableName}.${8:GroupColumn})",
+            "|> order_by(${1:TableName}.${8:GroupColumn} ${9|asc,desc|})",
+            "|> limit(${10:10})",
+            "|> select(${1:TableName}.${8:GroupColumn}, count(*) as count)"
         ],
-        "description": "Math functions"
+        "description": "Full pipeline with filter, join, group, order, limit"
     }
 }

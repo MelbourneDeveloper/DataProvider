@@ -13,11 +13,15 @@ public sealed class EndToEndSyncTests : IDisposable
     private readonly SqliteConnection _targetDb;
     private readonly string _sourceOrigin = Guid.NewGuid().ToString();
     private readonly string _targetOrigin = Guid.NewGuid().ToString();
+    private readonly string _sourceDbPath;
+    private readonly string _targetDbPath;
 
     public EndToEndSyncTests()
     {
-        _sourceDb = CreateDatabase();
-        _targetDb = CreateDatabase();
+        _sourceDbPath = Path.Combine(Path.GetTempPath(), $"e2e_source_{Guid.NewGuid()}.db");
+        _targetDbPath = Path.Combine(Path.GetTempPath(), $"e2e_target_{Guid.NewGuid()}.db");
+        _sourceDb = CreateDatabase(_sourceDbPath);
+        _targetDb = CreateDatabase(_targetDbPath);
 
         SetupSchema(_sourceDb, _sourceOrigin);
         SetupSchema(_targetDb, _targetOrigin);
@@ -217,9 +221,9 @@ public sealed class EndToEndSyncTests : IDisposable
         Assert.NotNull(GetPerson(_targetDb, "p2"));
     }
 
-    private static SqliteConnection CreateDatabase()
+    private static SqliteConnection CreateDatabase(string dbPath)
     {
-        var connection = new SqliteConnection("Data Source=:memory:");
+        var connection = new SqliteConnection($"Data Source={dbPath}");
         connection.Open();
         return connection;
     }
@@ -405,5 +409,15 @@ public sealed class EndToEndSyncTests : IDisposable
     {
         _sourceDb.Dispose();
         _targetDb.Dispose();
+        if (File.Exists(_sourceDbPath))
+        {
+            try { File.Delete(_sourceDbPath); }
+            catch { /* File may be locked */ }
+        }
+        if (File.Exists(_targetDbPath))
+        {
+            try { File.Delete(_targetDbPath); }
+            catch { /* File may be locked */ }
+        }
     }
 }
