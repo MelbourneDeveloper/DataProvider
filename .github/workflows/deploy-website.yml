@@ -64,3 +64,4 @@ jobs:
           external_repository: MelbourneDeveloper/DataProviderWebsite
           publish_branch: gh-pages
           publish_dir: ./Website/_site
+          force_orphan: true
