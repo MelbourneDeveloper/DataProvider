@@ -87,6 +87,30 @@ nav a:hover {
     color: var(--volcanic);
 }
 
+/* Site Toggle */
+.site-toggle {
+    display: flex;
+    background: var(--darker-bg);
+    border-radius: 8px;
+    padding: 2px;
+    border: 1px solid var(--border);
+    margin-right: 24px;
+}
+.site-toggle-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.site-toggle-btn:hover { color: var(--text-primary); }
+.site-toggle-btn.active {
+    background: var(--amber);
+    color: var(--obsidian);
+}
+
 /* Hero Section */
 .hero {
     padding: 120px 0;

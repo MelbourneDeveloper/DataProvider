@@ -189,6 +189,28 @@ pre code { padding: 0; background: none; border: none; color: inherit; }
 }
 .nav-link:hover, .nav-link.active { color: var(--data-green); }
 
+/* Site Toggle */
+.site-toggle {
+  display: flex;
+  background: var(--bg-primary);
+  border-radius: var(--radius);
+  padding: 2px;
+  border: 1px solid var(--border-color);
+}
+.site-toggle-btn {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  transition: all var(--transition);
+}
+.site-toggle-btn:hover { color: var(--text-primary); }
+.site-toggle-btn.active {
+  background: var(--data-green);
+  color: var(--midnight-blue);
+}
+
 .nav-actions { display: flex; align-items: center; gap: var(--space-3); }
 
 /* Mobile menu toggle */
