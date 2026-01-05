@@ -33,15 +33,7 @@ jobs:
         with:
           dotnet-version: '9.0.x'
           cache: true
-          cache-dependency-path: '**/packages.lock.json'
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/LqlWebsite.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
+          cache-dependency-path: 'Lql/**/*.csproj'
 
       - name: Install .NET WebAssembly workload
         run: dotnet workload install wasm-tools
