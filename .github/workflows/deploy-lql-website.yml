@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'Lql/Website/**'
+      - 'Lql/**'
       - '.github/workflows/deploy-lql-website.yml'
   workflow_dispatch:
 
@@ -23,44 +23,54 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
-          
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/LqlWebsite.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
       - name: Install .NET WebAssembly workload
         run: dotnet workload install wasm-tools
-        
+
       - name: Restore dependencies
-        run: dotnet restore ./Lql/Website/LqlWebsite.csproj
-        
+        run: dotnet restore ./Lql/LqlWebsite/LqlWebsite.csproj
+
       - name: Build
-        run: dotnet build ./Lql/Website/LqlWebsite.csproj -c Release --no-restore
-        
+        run: dotnet build ./Lql/LqlWebsite/LqlWebsite.csproj -c Release --no-restore
+
       - name: Publish Blazor WebAssembly project
-        run: dotnet publish ./Lql/Website/LqlWebsite.csproj -c Release -o release --nologo
-        
+        run: dotnet publish ./Lql/LqlWebsite/LqlWebsite.csproj -c Release -o release --nologo
+
       - name: Update base href for custom domain
         run: |
           sed -i 's/<base href="\/" \/>/<base href="\/" \/>/g' release/wwwroot/index.html
-        
+
       - name: Add .nojekyll file
         run: touch release/wwwroot/.nojekyll
-        
-        
+
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
-        
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: release/wwwroot
-          
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
