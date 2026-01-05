@@ -4,6 +4,13 @@ title: Getting Started
 description: Get started with DataProvider for .NET data access.
 ---
 
+This guide walks you through setting up DataProvider and running your first query.
+
+## Prerequisites
+
+- .NET 9.0 SDK or later
+- A database (SQLite, SQL Server, or PostgreSQL)
+
 ## Installation
 
 Add DataProvider to your .NET project:
@@ -12,33 +19,89 @@ Add DataProvider to your .NET project:
 dotnet add package DataProvider
 ```
 
-## Quick Start
+For database-specific providers:
 
-DataProvider generates type-safe extension methods on `IDbConnection` from your SQL queries.
+```bash
+# SQLite
+dotnet add package DataProvider.SQLite
 
-```csharp
-using DataProvider;
+# SQL Server
+dotnet add package DataProvider.SqlServer
 
-// Execute a query
-var orders = connection.Query<Order>("SELECT * FROM Orders WHERE Status = @status", 
-    new { status = "Active" });
-
-// Insert a record
-connection.Execute("INSERT INTO Orders (Name, Status) VALUES (@name, @status)",
-    new { name = "New Order", status = "Pending" });
+# PostgreSQL
+dotnet add package DataProvider.Postgres
 ```
 
-## Core Concepts
+## Project Setup
 
-DataProvider is built around these key principles:
+Configure your project for DataProvider:
 
-- **Source Generation**: SQL queries generate type-safe extension methods at compile time
-- **No ORM Overhead**: Direct SQL execution without mapping layers
-- **Result Types**: All operations return `Result<T,E>` for error handling without exceptions
+```xml
+<PropertyGroup>
+  <TargetFramework>net9.0</TargetFramework>
+  <Nullable>enable</Nullable>
+  <LangVersion>latest</LangVersion>
+</PropertyGroup>
+```
+
+## Your First Query
+
+### 1. Create a SQL File
+
+Add a `GetOrders.sql` file to your project:
+
+```sql
+SELECT Id, CustomerName, Total, Status
+FROM Orders
+WHERE Status = @status
+```
+
+### 2. Mark it as AdditionalFiles
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="Queries/*.sql" />
+</ItemGroup>
+```
+
+### 3. Use the Generated Extension
+
+```csharp
+using Microsoft.Data.Sqlite;
+using Generated;
+
+using var connection = new SqliteConnection("Data Source=app.db");
+connection.Open();
+
+var result = await connection.GetOrdersAsync(status: "active");
+
+if (result is GetOrdersResult.Ok ok)
+{
+    foreach (var order in ok.Value)
+    {
+        Console.WriteLine($"{order.CustomerName}: ${order.Total}");
+    }
+}
+```
+
+## Understanding Result Types
+
+DataProvider never throws exceptions for expected failures. Every operation returns a `Result<T, Error>`:
+
+```csharp
+var result = await connection.GetOrdersAsync(status: "active");
+
+// Pattern match on the result
+var message = result switch
+{
+    GetOrdersResult.Ok ok => $"Found {ok.Value.Count} orders",
+    GetOrdersResult.Error err => $"Query failed: {err.Value.Message}"
+};
+```
 
 ## Next Steps
 
-- [DataProvider Documentation](/docs/dataprovider/)
-- [LQL Query Language](/docs/lql/) - Write once, deploy to any SQL database
-- [F# Type Provider](/docs/lql/#f-type-provider) - Compile-time validated LQL queries
-- [API Reference](/api/)
+- [Installation](/docs/installation/) - Detailed package installation guide
+- [Quick Start](/docs/quick-start/) - More query examples
+- [DataProvider](/docs/dataprovider/) - Full documentation
+- [LQL](/docs/lql/) - Cross-database query language

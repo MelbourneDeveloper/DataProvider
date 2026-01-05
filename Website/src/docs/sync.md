@@ -1,6 +1,7 @@
 ---
-layout: layouts/docs.njk
+layout: "layouts/docs.njk"
 title: "Sync Framework"
+description: "Offline-first bidirectional synchronization framework for .NET."
 ---
 
 A database-agnostic, offline-first synchronization framework for .NET applications. Enables two-way data synchronization between distributed replicas with conflict resolution, tombstone management, and real-time subscriptions.

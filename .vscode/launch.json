@@ -19,8 +19,9 @@
             "name": "Launch Blazor LQL Website",
             "type": "coreclr",
             "request": "launch",
+            "preLaunchTask": "kill-lql-website-port",
             "program": "dotnet",
-            "args": ["run", "--project", "Lql/Website"],
+            "args": ["run", "--project", "Lql/LqlWebsite"],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "serverReadyAction": {
