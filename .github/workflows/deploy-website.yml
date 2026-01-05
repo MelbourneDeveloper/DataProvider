@@ -57,6 +57,11 @@ jobs:
         working-directory: Website
         run: npm run build
 
+      - name: Add GitHub Pages workflow to build output
+        run: |
+          mkdir -p ./Website/_site/.github/workflows
+          cp ./Website/deploy-pages-target.yml ./Website/_site/.github/workflows/deploy-pages.yml
+
       - name: Deploy to DataProviderWebsite repo
         uses: peaceiris/actions-gh-pages@v4
         with:
