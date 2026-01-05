@@ -26,8 +26,7 @@
                     <div class="code-dot"></div>
                     <span class="code-title">complex_analytics.lql</span>
                 </div>
-                <div class="code-block">
-<span class="comment">-- Join users + orders, filter only completed orders</span>
+                <div class="code-block"><span class="comment">-- Join users + orders, filter only completed orders</span>
 <span class="keyword">let</span> <span class="identifier">joined</span> <span class="operator">=</span>
     <span class="identifier">users</span>
     <span class="operator">|></span> <span class="function">join</span>(<span class="identifier">orders</span>, <span class="identifier">on</span> <span class="operator">=</span> <span class="identifier">users</span>.<span class="identifier">id</span> <span class="operator">=</span> <span class="identifier">orders</span>.<span class="identifier">user_id</span>)
@@ -40,8 +39,7 @@
     <span class="identifier">users</span>.<span class="identifier">name</span>,
     <span class="function">count</span>(*) <span class="keyword">as</span> <span class="identifier">total_orders</span>,
     <span class="function">sum</span>(<span class="identifier">orders</span>.<span class="identifier">total</span>) <span class="keyword">as</span> <span class="identifier">revenue</span>
-)
-                </div>
+)</div>
             </div>
         </div>
     </div>
@@ -113,13 +111,11 @@
                     </ul>
                 </div>
                 <div class="example-code">
-                    <div class="code-block">
-<span class="identifier">users</span> <span class="operator">|></span> <span class="function">select</span>(
-    <span class="identifier">users</span>.<span class="identifier">id</span>, 
-    <span class="identifier">users</span>.<span class="identifier">name</span>, 
+                    <div class="code-block"><span class="identifier">users</span> <span class="operator">|></span> <span class="function">select</span>(
+    <span class="identifier">users</span>.<span class="identifier">id</span>,
+    <span class="identifier">users</span>.<span class="identifier">name</span>,
     <span class="identifier">users</span>.<span class="identifier">email</span>
-)
-                    </div>
+)</div>
                 </div>
             </div>
 
@@ -134,18 +130,16 @@
                     </ul>
                 </div>
                 <div class="example-code">
-                    <div class="code-block">
-<span class="identifier">employees</span>
+                    <div class="code-block"><span class="identifier">employees</span>
 <span class="operator">|></span> <span class="function">select</span>(
-    <span class="identifier">employees</span>.<span class="identifier">id</span>, 
-    <span class="identifier">employees</span>.<span class="identifier">name</span>, 
+    <span class="identifier">employees</span>.<span class="identifier">id</span>,
+    <span class="identifier">employees</span>.<span class="identifier">name</span>,
     <span class="identifier">employees</span>.<span class="identifier">salary</span>
 )
-<span class="operator">|></span> <span class="function">filter</span>(<span class="keyword">fn</span>(<span class="identifier">row</span>) <span class="operator">=></span> 
-    <span class="identifier">row</span>.<span class="identifier">employees</span>.<span class="identifier">salary</span> <span class="operator">></span> <span class="string">50000</span> <span class="keyword">and</span> 
-    <span class="identifier">row</span>.<span class="identifier">employees</span>.<span class="identifier">salary</span> <span class="operator"></span> <span class="string">100000</span>
-)
-                    </div>
+<span class="operator">|></span> <span class="function">filter</span>(<span class="keyword">fn</span>(<span class="identifier">row</span>) <span class="operator">=></span>
+    <span class="identifier">row</span>.<span class="identifier">employees</span>.<span class="identifier">salary</span> <span class="operator">&gt;</span> <span class="string">50000</span> <span class="keyword">and</span>
+    <span class="identifier">row</span>.<span class="identifier">employees</span>.<span class="identifier">salary</span> <span class="operator">&lt;</span> <span class="string">100000</span>
+)</div>
                 </div>
             </div>
 
@@ -160,18 +154,16 @@
                     </ul>
                 </div>
                 <div class="example-code">
-                    <div class="code-block">
-<span class="identifier">products</span> 
+                    <div class="code-block"><span class="identifier">products</span>
 <span class="operator">|></span> <span class="function">select</span>(
     <span class="identifier">products</span>.<span class="identifier">name</span>,
     <span class="identifier">products</span>.<span class="identifier">price</span> <span class="operator">*</span> <span class="identifier">products</span>.<span class="identifier">quantity</span> <span class="keyword">as</span> <span class="identifier">total_value</span>,
     <span class="identifier">products</span>.<span class="identifier">price</span> <span class="operator">+</span> <span class="string">10</span> <span class="keyword">as</span> <span class="identifier">price_plus_ten</span>,
     <span class="function">round</span>(<span class="identifier">products</span>.<span class="identifier">price</span> <span class="operator">/</span> <span class="string">2</span>, <span class="string">2</span>) <span class="keyword">as</span> <span class="identifier">half_price</span>
 )
-<span class="operator">|></span> <span class="function">filter</span>(<span class="keyword">fn</span>(<span class="identifier">row</span>) <span class="operator">=></span> 
-    <span class="identifier">row</span>.<span class="identifier">products</span>.<span class="identifier">price</span> <span class="operator">></span> <span class="string">0</span>
-)
-                    </div>
+<span class="operator">|></span> <span class="function">filter</span>(<span class="keyword">fn</span>(<span class="identifier">row</span>) <span class="operator">=></span>
+    <span class="identifier">row</span>.<span class="identifier">products</span>.<span class="identifier">price</span> <span class="operator">&gt;</span> <span class="string">0</span>
+)</div>
                 </div>
             </div>
 
@@ -186,8 +178,7 @@
                     </ul>
                 </div>
                 <div class="example-code">
-                    <div class="code-block">
-<span class="identifier">orders</span>
+                    <div class="code-block"><span class="identifier">orders</span>
 <span class="operator">|></span> <span class="function">group_by</span>(<span class="identifier">orders</span>.<span class="identifier">user_id</span>, <span class="identifier">orders</span>.<span class="identifier">status</span>)
 <span class="operator">|></span> <span class="function">select</span>(
     <span class="identifier">orders</span>.<span class="identifier">user_id</span>,
@@ -196,9 +187,8 @@
     <span class="function">sum</span>(<span class="identifier">orders</span>.<span class="identifier">total</span>) <span class="keyword">as</span> <span class="identifier">total_amount</span>,
     <span class="function">avg</span>(<span class="identifier">orders</span>.<span class="identifier">total</span>) <span class="keyword">as</span> <span class="identifier">avg_amount</span>
 )
-<span class="operator">|></span> <span class="function">having</span>(<span class="keyword">fn</span>(<span class="identifier">group</span>) <span class="operator">=></span> <span class="function">count</span>(*) <span class="operator">></span> <span class="string">2</span>)
-<span class="operator">|></span> <span class="function">order_by</span>(<span class="identifier">total_amount</span> <span class="keyword">desc</span>)
-                    </div>
+<span class="operator">|></span> <span class="function">having</span>(<span class="keyword">fn</span>(<span class="identifier">group</span>) <span class="operator">=></span> <span class="function">count</span>(*) <span class="operator">&gt;</span> <span class="string">2</span>)
+<span class="operator">|></span> <span class="function">order_by</span>(<span class="identifier">total_amount</span> <span class="keyword">desc</span>)</div>
                 </div>
             </div>
         </div>
@@ -230,19 +220,15 @@
                     <div class="code-dot"></div>
                     <span class="code-title">Program.fs</span>
                 </div>
-                <div class="code-block">
-<span class="keyword">open</span> <span class="identifier">Lql.TypeProvider</span>
+                <div class="code-block"><span class="keyword">open</span> <span class="identifier">Lql</span>
 
-<span class="comment">// Type provider generates types from your schema</span>
-<span class="keyword">type</span> <span class="identifier">Db</span> <span class="operator">=</span> <span class="identifier">LqlProvider</span><span class="operator">&lt;</span><span class="string">"connection_string"</span><span class="operator">&gt;</span>
+<span class="comment">// Define types with validated LQL</span>
+<span class="keyword">type</span> <span class="identifier">GetUsers</span> <span class="operator">=</span>
+    <span class="identifier">LqlCommand</span><span class="operator">&lt;</span><span class="string">"Users |> select(*)"</span><span class="operator">&gt;</span>
 
-<span class="comment">// Write type-safe LQL queries</span>
-<span class="keyword">let</span> <span class="identifier">activeUsers</span> <span class="operator">=</span>
-    <span class="identifier">Db</span>.<span class="identifier">Users</span>
-    <span class="operator">|></span> <span class="function">filter</span> (<span class="keyword">fun</span> <span class="identifier">u</span> <span class="operator">-></span> <span class="identifier">u</span>.<span class="identifier">Status</span> <span class="operator">=</span> <span class="string">"active"</span>)
-    <span class="operator">|></span> <span class="function">select</span> (<span class="keyword">fun</span> <span class="identifier">u</span> <span class="operator">-></span> <span class="identifier">u</span>.<span class="identifier">Name</span>, <span class="identifier">u</span>.<span class="identifier">Email</span>)
-    <span class="operator">|></span> <span class="function">toSql</span>
-                </div>
+<span class="comment">// Access generated SQL</span>
+<span class="keyword">let</span> <span class="identifier">sql</span> <span class="operator">=</span> <span class="identifier">GetUsers</span>.<span class="identifier">Sql</span>
+<span class="keyword">let</span> <span class="identifier">query</span> <span class="operator">=</span> <span class="identifier">GetUsers</span>.<span class="identifier">Query</span></div>
             </div>
         </div>
     </div>
