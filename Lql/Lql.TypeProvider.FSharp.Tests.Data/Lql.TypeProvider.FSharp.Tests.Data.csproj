@@ -34,7 +34,6 @@
     </ItemGroup>
 
     <!-- Targets regenerate files when schema changes (incremental build) -->
-    <!-- Use --no-build to avoid parallel build conflicts when building solution -->
 
     <!-- Create database from YAML using Migration.Cli -->
     <Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider"

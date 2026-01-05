@@ -41,13 +41,11 @@
     </ItemGroup>
 
     <!-- Create database from YAML using Migration.Cli (YAML stored in git) -->
-    <!-- Use --no-build to avoid parallel build conflicts when building solution -->
     <Target Name="CreateDatabaseSchema" BeforeTargets="TranspileLqlAndGenerateDataProvider">
         <Exec Command='dotnet run --no-build --project "$(MSBuildThisFileDirectory)../../Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/example-schema.yaml" --output "$(MSBuildProjectDirectory)/invoices.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
     </Target>
 
     <!-- Pre-compile: transpile LQL to SQL, then generate C# from SQL using external CLI -->
-    <!-- Use --no-build to avoid parallel build conflicts when building solution -->
     <Target Name="TranspileLqlAndGenerateDataProvider" BeforeTargets="BeforeCompile;CoreCompile" Inputs="$(MSBuildProjectDirectory)/DataProvider.json;@(AdditionalFiles);@(LqlFiles)" Outputs="$(MSBuildProjectDirectory)/Generated/.timestamp">
         <!-- Clean and recreate Generated folder to avoid stale files -->
         <RemoveDir Directories="$(MSBuildProjectDirectory)/Generated" />

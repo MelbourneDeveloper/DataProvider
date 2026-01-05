@@ -33,13 +33,11 @@
   </ItemGroup>
 
   <!-- Create database from YAML using Migration.Cli (YAML stored in git) -->
-  <!-- Use --no-build to avoid parallel build conflicts when building solution -->
   <Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider">
     <Exec Command='dotnet run --no-build --project "$(MSBuildThisFileDirectory)../../../Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/clinical-schema.yaml" --output "$(MSBuildProjectDirectory)/clinical.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
   </Target>
 
   <!-- Generate C# from SQL using DataProvider.SQLite.Cli -->
-  <!-- Use --no-build to avoid parallel build conflicts when building solution -->
   <Target Name="GenerateDataProvider" BeforeTargets="BeforeCompile;CoreCompile" Inputs="$(MSBuildProjectDirectory)/DataProvider.json;@(AdditionalFiles)" Outputs="$(MSBuildProjectDirectory)/Generated/.timestamp">
     <RemoveDir Directories="$(MSBuildProjectDirectory)/Generated" />
     <MakeDir Directories="$(MSBuildProjectDirectory)/Generated" />
