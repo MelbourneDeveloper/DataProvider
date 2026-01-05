@@ -275,6 +275,16 @@ dotnet test DataProvider.Tests/DataProvider.Tests.csproj
 - **Minimal Allocations** - Uses value types and expressions where possible
 - **Async/Await** - Full async support for all database operations
 
+## Logging
+
+Generated methods support optional `ILogger` injection for observability. Pass an `ILogger` instance to any generated method:
+
+```csharp
+var result = await connection.GetCustomersAsync(isActive: true, logger: _logger);
+```
+
+Logging includes query timing, parameter values (debug level), row counts, and structured error context. Zero overhead when logger is null.
+
 ## Error Handling
 
 All methods return `Result<T,E>` types:
