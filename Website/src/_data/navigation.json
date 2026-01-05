@@ -2,7 +2,6 @@
   "main": [
     { "text": "Docs", "url": "/docs/getting-started/" },
     { "text": "API", "url": "/apidocs/" },
-    { "text": "LQL", "url": "https://lql.dev", "external": true },
     { "text": "Blog", "url": "/blog/" },
     { "text": "GitHub", "url": "https://github.com/MelbourneDeveloper/DataProvider", "external": true }
   ],
@@ -10,7 +9,8 @@
     {
       "title": "Getting Started",
       "items": [
-        { "text": "Introduction", "url": "/docs/getting-started/" },
+        { "text": "Introduction", "url": "/docs/" },
+        { "text": "Getting Started", "url": "/docs/getting-started/" },
         { "text": "Installation", "url": "/docs/installation/" },
         { "text": "Quick Start", "url": "/docs/quick-start/" }
       ]
@@ -20,6 +20,7 @@
       "items": [
         { "text": "DataProvider", "url": "/docs/dataprovider/" },
         { "text": "LQL", "url": "/docs/lql/" },
+        { "text": "F# Type Provider", "url": "https://lql.dev#fsharp", "external": true },
         { "text": "Sync", "url": "/docs/sync/" },
         { "text": "Migrations", "url": "/docs/migrations/" },
         { "text": "Gatekeeper", "url": "/docs/gatekeeper/" }

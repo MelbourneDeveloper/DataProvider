@@ -205,6 +205,49 @@
     </div>
 </section>
 
+<section id="fsharp" class="fsharp">
+    <div class="container">
+        <div class="section-header">
+            <h2>F# Type Provider</h2>
+            <p>Use LQL with full type safety in F# through our native type provider.</p>
+        </div>
+
+        <div class="fsharp-content">
+            <div class="fsharp-info">
+                <h3>Type-Safe LQL in F#</h3>
+                <p>The LQL Type Provider brings compile-time type checking to your LQL queries in F#. Write queries with IntelliSense support, catch errors before runtime, and enjoy seamless integration with your F# codebase.</p>
+                <ul class="fsharp-features">
+                    <li>Compile-time query validation</li>
+                    <li>Full IntelliSense support for table and column names</li>
+                    <li>Automatic SQL generation for PostgreSQL and SQL Server</li>
+                    <li>Strongly-typed result sets</li>
+                </ul>
+            </div>
+            <div class="fsharp-code">
+                <div class="code-header">
+                    <div class="code-dot"></div>
+                    <div class="code-dot"></div>
+                    <div class="code-dot"></div>
+                    <span class="code-title">Program.fs</span>
+                </div>
+                <div class="code-block">
+<span class="keyword">open</span> <span class="identifier">Lql.TypeProvider</span>
+
+<span class="comment">// Type provider generates types from your schema</span>
+<span class="keyword">type</span> <span class="identifier">Db</span> <span class="operator">=</span> <span class="identifier">LqlProvider</span><span class="operator">&lt;</span><span class="string">"connection_string"</span><span class="operator">&gt;</span>
+
+<span class="comment">// Write type-safe LQL queries</span>
+<span class="keyword">let</span> <span class="identifier">activeUsers</span> <span class="operator">=</span>
+    <span class="identifier">Db</span>.<span class="identifier">Users</span>
+    <span class="operator">|></span> <span class="function">filter</span> (<span class="keyword">fun</span> <span class="identifier">u</span> <span class="operator">-></span> <span class="identifier">u</span>.<span class="identifier">Status</span> <span class="operator">=</span> <span class="string">"active"</span>)
+    <span class="operator">|></span> <span class="function">select</span> (<span class="keyword">fun</span> <span class="identifier">u</span> <span class="operator">-></span> <span class="identifier">u</span>.<span class="identifier">Name</span>, <span class="identifier">u</span>.<span class="identifier">Email</span>)
+    <span class="operator">|></span> <span class="function">toSql</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <section id="playground" class="playground">
     <div class="container">
         <div class="section-header">

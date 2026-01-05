@@ -525,6 +525,64 @@ nav a:hover {
     padding: 24px;
 }
 
+/* F# Type Provider Section */
+.fsharp {
+    padding: 120px 0;
+    background: var(--obsidian);
+}
+
+.fsharp-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+}
+
+.fsharp-info h3 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.fsharp-info p {
+    font-size: 18px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    line-height: 1.7;
+}
+
+.fsharp-features {
+    list-style: none;
+}
+
+.fsharp-features li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    color: var(--text-secondary);
+}
+
+.fsharp-features li::before {
+    content: '→';
+    color: var(--violet);
+    font-weight: bold;
+}
+
+.fsharp-code {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+}
+
+@media (max-width: 768px) {
+    .fsharp-content {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* Footer */
 footer {
     background: var(--darker-bg);
