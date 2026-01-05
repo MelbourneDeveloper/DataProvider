@@ -32,7 +32,7 @@ This transpiles to correct SQL for PostgreSQL, SQLite, or SQL Server.
 ### Cross-Database Migrations
 Define schema changes in LQL. Migration.CLI generates the right SQL for your target database.
 
-### Business Logic
+### Cross DB Platform Business Logic With Triggers
 Write triggers and constraints in LQL. Deploy the same logic to any database.
 
 ### Offline-First Sync

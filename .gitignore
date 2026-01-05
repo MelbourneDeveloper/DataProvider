@@ -399,8 +399,15 @@ Website/docfx/api/
 Website/src/apidocs/
 
 # Docs copied from README files (source of truth is in the project READMEs)
-Website/src/docs/sync.md
+Website/src/docs/index.md
 Website/src/docs/dataprovider.md
 Website/src/docs/lql.md
+Website/src/docs/sync.md
+Website/src/docs/gatekeeper.md
+Website/src/docs/migrations.md
+
+# Images copied from repo at build time
+Website/src/assets/images/lqldbbrowser.png
+Website/src/assets/images/Samples/
 
 Lql/Lql.TypeProvider.FSharp.Tests.Data/Generated/

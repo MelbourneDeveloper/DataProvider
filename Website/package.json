@@ -4,9 +4,9 @@
   "description": "Documentation website for DataProvider - Effortless .NET Data Access",
   "type": "module",
   "scripts": {
-    "dev": "eleventy --serve",
-    "build": "eleventy",
-    "build:site": "eleventy",
+    "dev": "node scripts/copy-readmes.cjs && eleventy --serve",
+    "build": "node scripts/copy-readmes.cjs && eleventy",
+    "build:site": "node scripts/copy-readmes.cjs && eleventy",
     "generate-api": "node scripts/generate-api-docs.cjs"
   },
   "devDependencies": {

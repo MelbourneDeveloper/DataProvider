@@ -1,6 +1,6 @@
 {
   "main": [
-    { "text": "Docs", "url": "/docs/getting-started/" },
+    { "text": "Docs", "url": "/docs/" },
     { "text": "API", "url": "/apidocs/" },
     { "text": "Blog", "url": "/blog/" },
     { "text": "GitHub", "url": "https://github.com/MelbourneDeveloper/DataProvider", "external": true }
