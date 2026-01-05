@@ -3,8 +3,6 @@ layout: layouts/docs.njk
 title: "Sync Framework"
 ---
 
-# Sync Framework
-
 A database-agnostic, offline-first synchronization framework for .NET applications. Enables two-way data synchronization between distributed replicas with conflict resolution, tombstone management, and real-time subscriptions.
 
 ## Overview

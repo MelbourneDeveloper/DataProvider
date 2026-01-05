@@ -1,9 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- Source Generator Properties -->
-    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <!-- Package Information -->
+    <PackageId>DataProvider</PackageId>
+    <Version>0.1.0-beta</Version>
+    <Authors>ChristianFindlay</Authors>
+    <Description>A source generator that creates compile-time safe extension methods for database operations from SQL files. Generates strongly-typed C# code based on your SQL queries and database schema, ensuring type safety and eliminating runtime SQL errors.</Description>
+    <PackageTags>source-generator;sql;database;compile-time-safety;code-generation;sqlite;sqlserver</PackageTags>
+    <PackageProjectUrl>https://github.com/christianfindlay/DataProvider</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/christianfindlay/DataProvider</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageReleaseNotes>Initial release of DataProvider source generator for compile-time safe database operations.</PackageReleaseNotes>
+    
+    <!-- Source Generator Properties -->
+    <IncludeBuildOutput>true</IncludeBuildOutput>
   </PropertyGroup>
 
   <!-- You are not allowed to reference database platform specific dependencies here -->
@@ -12,9 +25,27 @@
     <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
   </ItemGroup>
 
+  <!-- Package Content -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
   <!-- Disable problematic analyzer rules for generated code -->
   <PropertyGroup>
     <NoWarn>$(NoWarn);EPC13;EPS06;CA1002;CA1822;CA1859</NoWarn>
+  </PropertyGroup>
+
+  <!-- Release Configuration -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <Optimize>true</Optimize>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
 </Project>

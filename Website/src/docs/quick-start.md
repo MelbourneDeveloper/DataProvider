@@ -75,8 +75,30 @@ catch
 }
 ```
 
+## Using LQL for Cross-Database Queries
+
+Instead of writing raw SQL, use LQL to write queries that work across all databases:
+
+```csharp
+using Lql;
+using Lql.SQLite;
+
+var lql = "Orders |> filter(fn(row) => row.Status = 'Active') |> select(Id, Name)";
+var sql = LqlCodeParser.Parse(lql).ToSql(new SQLiteContext());
+```
+
+For F# projects, use the Type Provider for compile-time validation:
+
+```fsharp
+open Lql
+
+type ActiveOrders = LqlCommand<"Orders |> filter(fn(row) => row.Status = 'Active') |> select(*)">
+let sql = ActiveOrders.Sql  // SQL validated at compile time
+```
+
 ## Next Steps
 
 - [DataProvider Documentation](/docs/dataprovider/)
-- [LQL Query Language](/docs/lql/)
+- [LQL Query Language](/docs/lql/) - Cross-database query language
+- [F# Type Provider](/docs/lql/#f-type-provider) - Compile-time LQL validation
 - [API Reference](/api/)

@@ -12,6 +12,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
     private PostgreSqlContainer _postgresContainer = null!;
     private string _postgresConnectionString = null!;
     private readonly ILogger _logger = NullLogger.Instance;
+    private readonly List<string> _sqliteDbPaths = [];
 
     public async Task InitializeAsync()
     {
@@ -26,15 +27,33 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         _postgresConnectionString = _postgresContainer.GetConnectionString();
     }
 
-    public async Task DisposeAsync() =>
+    public async Task DisposeAsync()
+    {
         await _postgresContainer.DisposeAsync().ConfigureAwait(false);
 
+        foreach (var dbPath in _sqliteDbPaths)
+        {
+            if (File.Exists(dbPath))
+            {
+                try
+                {
+                    File.Delete(dbPath);
+                }
+                catch
+                { /* File may be locked */
+                }
+            }
+        }
+    }
+
     /// <summary>
-    /// Creates a fresh SQLite in-memory database with sync schema and triggers.
+    /// Creates a fresh SQLite file database with sync schema and triggers.
     /// </summary>
-    private static SqliteConnection CreateSqliteDb(string originId)
+    private SqliteConnection CreateSqliteDb(string originId)
     {
-        var conn = new SqliteConnection("Data Source=:memory:");
+        var dbPath = Path.Combine(Path.GetTempPath(), $"http_sync_{Guid.NewGuid()}.db");
+        _sqliteDbPaths.Add(dbPath);
+        var conn = new SqliteConnection($"Data Source={dbPath}");
         conn.Open();
 
         // Create sync schema

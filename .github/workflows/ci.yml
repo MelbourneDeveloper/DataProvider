@@ -118,11 +118,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore dependencies
-        run: dotnet restore
-
       - name: Build
-        run: dotnet build --no-restore -c Release
+        run: dotnet build -c Release -m:1
 
   # DataProvider tests
   dataprovider-tests:
@@ -204,6 +201,46 @@ jobs:
         if: always()
         with:
           name: test-results-lql-${{ strategy.job-index }}
+          path: '**/TestResults/*.trx'
+
+  # LQL F# Type Provider tests
+  lql-fsharp-typeprovider-tests:
+    name: LQL F# Type Provider Tests
+    runs-on: ubuntu-latest
+    needs: [build, changes]
+    if: needs.changes.outputs.lql == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.fsproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore Lql/Lql.TypeProvider.FSharp.Tests
+
+      - name: Build CLI tools (needed by MSBuild targets)
+        run: |
+          dotnet build Migration/Migration.Cli -c Debug
+          dotnet build DataProvider/DataProvider.SQLite.Cli -c Debug
+
+      - name: Test
+        run: dotnet test Lql/Lql.TypeProvider.FSharp.Tests --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-lql-fsharp-typeprovider
           path: '**/TestResults/*.trx'
 
   # Migration tests

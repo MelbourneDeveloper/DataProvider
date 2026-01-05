@@ -13,11 +13,17 @@ namespace DataProvider.Example.Tests;
 /// </summary>
 public sealed class DataProviderIntegrationTests : IDisposable
 {
-    private readonly string _connectionString = "Data Source=:memory:";
+    private readonly string _dbPath;
+    private readonly string _connectionString;
     private readonly SqliteConnection _connection;
 
     public DataProviderIntegrationTests()
     {
+        _dbPath = Path.Combine(
+            Path.GetTempPath(),
+            $"dataprovider_integration_tests_{Guid.NewGuid()}.db"
+        );
+        _connectionString = $"Data Source={_dbPath}";
         _connection = new SqliteConnection(_connectionString);
     }
 
@@ -711,7 +717,10 @@ public sealed class DataProviderIntegrationTests : IDisposable
         var predicate = PredicateBuilder.False<Customer>();
         predicate = predicate.Or(c => c.CustomerName == "Acme Corp");
         predicate = predicate.Or(c => c.CustomerName == "Tech Solutions");
-        var query = SelectStatement.From<Customer>("Customer").Where(predicate).OrderBy(c => c.CustomerName);
+        var query = SelectStatement
+            .From<Customer>("Customer")
+            .Where(predicate)
+            .OrderBy(c => c.CustomerName);
 
         // Act
         var statement = query.ToSqlStatement();
@@ -817,7 +826,10 @@ public sealed class DataProviderIntegrationTests : IDisposable
         predicate = predicate.And(c => c.Email != null);
         predicate = predicate.And(c => c.CustomerName != null);
 
-        var query = SelectStatement.From<Customer>("Customer").Where(predicate).OrderBy(c => c.CustomerName);
+        var query = SelectStatement
+            .From<Customer>("Customer")
+            .Where(predicate)
+            .OrderBy(c => c.CustomerName);
         var statement = query.ToSqlStatement();
         var result = _connection.GetRecords(statement, s => s.ToSQLite(), MapCustomer);
 
@@ -1221,23 +1233,18 @@ public sealed class DataProviderIntegrationTests : IDisposable
     public void Dispose()
     {
         _connection?.Dispose();
-
-        // Clean up test database file
-        var dbFileName = _connectionString.Replace("Data Source=", "", StringComparison.Ordinal);
-        if (File.Exists(dbFileName))
+        if (File.Exists(_dbPath))
         {
             try
             {
-                File.Delete(dbFileName);
+                File.Delete(_dbPath);
             }
+#pragma warning disable CA1031 // Do not catch general exception types - file cleanup is best-effort
             catch (IOException)
             {
-                // File might be in use, ignore
+                /* File may be locked */
             }
-            catch (UnauthorizedAccessException)
-            {
-                // No permission to delete, ignore
-            }
+#pragma warning restore CA1031
         }
     }
 }

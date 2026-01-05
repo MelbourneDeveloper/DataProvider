@@ -6,17 +6,22 @@ namespace Sync.SQLite.Tests;
 /// <summary>
 /// Integration tests for ChangeApplierSQLite.
 /// Tests applying sync changes (insert, update, delete) to SQLite database.
-/// NO MOCKS - real SQLite databases only!
+/// NO MOCKS - real file-based SQLite databases only! NO :memory:!
 /// </summary>
 public sealed class ChangeApplierIntegrationTests : IDisposable
 {
     private readonly SqliteConnection _db;
+    private readonly string _dbPath;
     private readonly string _originId = Guid.NewGuid().ToString();
     private const string Timestamp = "2025-01-01T00:00:00.000Z";
 
+    /// <summary>
+    /// Initializes test with file-based SQLite database.
+    /// </summary>
     public ChangeApplierIntegrationTests()
     {
-        _db = new SqliteConnection("Data Source=:memory:");
+        _dbPath = Path.Combine(Path.GetTempPath(), $"change_applier_{Guid.NewGuid():N}.db");
+        _db = new SqliteConnection($"Data Source={_dbPath}");
         _db.Open();
         SyncSchema.CreateSchema(_db);
         SyncSchema.SetOriginId(_db, _originId);
@@ -589,7 +594,22 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
         cmd.ExecuteNonQuery();
     }
 
-    public void Dispose() => _db.Dispose();
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        _db.Close();
+        _db.Dispose();
+        if (File.Exists(_dbPath))
+        {
+            try
+            {
+                File.Delete(_dbPath);
+            }
+            catch
+            { /* File may be locked */
+            }
+        }
+    }
 
     #endregion
 }

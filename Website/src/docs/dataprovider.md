@@ -3,8 +3,6 @@ layout: layouts/docs.njk
 title: "DataProvider SQL Parser"
 ---
 
-# DataProvider SQL Parser
-
 A .NET source generator project that aims to parse SQL files and generate strongly-typed extension methods for multiple SQL database platforms.
 
 CRITICAL: The generator connects to the database at compile time to get query metadata. If it doesn't connect, the generation fails with a compiler error.
