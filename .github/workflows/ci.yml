@@ -118,8 +118,26 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Build
-        run: dotnet build -c Release -m:1
+      - name: Build core projects
+        run: |
+          # Build core libraries (excludes Dashboard which requires h5 tool setup)
+          dotnet build DataProvider/DataProvider/DataProvider.csproj -c Release
+          dotnet build DataProvider/DataProvider.SQLite/DataProvider.SQLite.csproj -c Release
+          dotnet build DataProvider/DataProvider.Postgres.Cli/DataProvider.Postgres.Cli.csproj -c Release
+          dotnet build DataProvider/DataProvider.SQLite.Cli/DataProvider.SQLite.Cli.csproj -c Release
+          dotnet build Migration/Migration/Migration.csproj -c Release
+          dotnet build Migration/Migration.SQLite/Migration.SQLite.csproj -c Release
+          dotnet build Migration/Migration.Postgres/Migration.Postgres.csproj -c Release
+          dotnet build Migration/Migration.Cli/Migration.Cli.csproj -c Release
+          dotnet build Other/Selecta/Selecta.csproj -c Release
+          dotnet build Lql/Lql/Lql.csproj -c Release
+          dotnet build Sync/Sync/Sync.csproj -c Release
+          dotnet build Sync/Sync.SQLite/Sync.SQLite.csproj -c Release
+          dotnet build Sync/Sync.Postgres/Sync.Postgres.csproj -c Release
+          dotnet build Gatekeeper/Gatekeeper.Api/Gatekeeper.Api.csproj -c Release
+          # Build Samples that don't need h5
+          dotnet build Samples/Clinical/Clinical.Api/Clinical.Api.csproj -c Release
+          dotnet build Samples/Scheduling/Scheduling.Api/Scheduling.Api.csproj -c Release
 
   # DataProvider tests
   dataprovider-tests:
