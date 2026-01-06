@@ -1,2 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Selecta</PackageId>
+    <Description>Utility library for SQL result selection and mapping</Description>
+  </PropertyGroup>
+
 </Project>

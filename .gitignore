@@ -411,3 +411,7 @@ Website/src/assets/images/lqldbbrowser.png
 Website/src/assets/images/Samples/
 
 Lql/Lql.TypeProvider.FSharp.Tests.Data/Generated/
+
+*.nupkg
+
+*.snupkg

@@ -10,6 +10,10 @@
         <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
         <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
         <NoWarn>EPC12;CA2100</NoWarn>
+        <PackageId>DataProvider.Postgres.Cli</PackageId>
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>dataprovider-postgres</ToolCommandName>
+        <Description>CLI tool for generating type-safe PostgreSQL data access code</Description>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="../DataProvider/DataProvider.csproj" />

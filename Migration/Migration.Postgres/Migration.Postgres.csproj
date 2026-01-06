@@ -3,6 +3,8 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Migration.Postgres</RootNamespace>
+    <PackageId>Migration.Postgres</PackageId>
+    <Description>PostgreSQL DDL generator for Migration</Description>
     <NoWarn>$(NoWarn);CA2254;CA2100</NoWarn>
   </PropertyGroup>
 

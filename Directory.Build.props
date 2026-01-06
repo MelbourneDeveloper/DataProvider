@@ -1,5 +1,25 @@
 <Project>
 
+  <!-- NuGet Package Metadata -->
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Authors>ChristianFindlay</Authors>
+    <Company>MelbourneDeveloper</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/MelbourneDeveloper/DataProvider</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/MelbourneDeveloper/DataProvider</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <!-- Include root README.md in all packages -->
+  <PropertyGroup>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TargetFramework>net9.0</TargetFramework>

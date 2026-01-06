@@ -27,10 +27,7 @@
         <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
     </ItemGroup>
     
-    <!-- Package Content -->
-    <ItemGroup>
-        <None Include="../../DataProvider/README.md" Pack="true" PackagePath="\" />
-    </ItemGroup>
+    <!-- Package Content - README.md included via Directory.Build.props -->
     
     <!-- Release Configuration -->
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">

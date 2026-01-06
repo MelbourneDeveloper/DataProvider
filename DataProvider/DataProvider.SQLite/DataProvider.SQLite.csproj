@@ -2,7 +2,6 @@
     <PropertyGroup>
         <!-- Package Information -->
         <PackageId>DataProvider.SQLite</PackageId>
-        <Version>0.1.0-beta</Version>
         <Authors>ChristianFindlay</Authors>
         <Description>SQLite source generator for DataProvider. Provides compile-time safe database access with automatic code generation from SQL files for SQLite databases.</Description>
         <PackageTags>source-generator;sql;sqlite;database;compile-time-safety;code-generation</PackageTags>
@@ -10,9 +9,8 @@
         <RepositoryUrl>https://github.com/MelbourneDeveloper/DataProvider</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-        <PackageReleaseNotes>Initial beta release of DataProvider.SQLite source generator.</PackageReleaseNotes>
+        <PackageReleaseNotes>Initial release of DataProvider.SQLite source generator.</PackageReleaseNotes>
         
         <!-- Source Generator Properties -->
         <IncludeBuildOutput>true</IncludeBuildOutput>
@@ -47,10 +45,7 @@
         <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
     </ItemGroup>
     
-    <!-- Package Content -->
-    <ItemGroup>
-        <None Include="../../DataProvider/README.md" Pack="true" PackagePath="\" />
-    </ItemGroup>
+    <!-- Package Content - README.md included via Directory.Build.props -->
     
     <!-- Release Configuration -->
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">

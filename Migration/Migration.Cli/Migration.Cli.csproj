@@ -4,6 +4,10 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Migration.Cli</RootNamespace>
     <NoWarn>$(NoWarn);CA2254;CA1515;RS1035;CA2100</NoWarn>
+    <PackageId>Migration.Cli</PackageId>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>migration-cli</ToolCommandName>
+    <Description>CLI tool for database schema migrations</Description>
   </PropertyGroup>
 
   <ItemGroup>

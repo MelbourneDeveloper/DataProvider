@@ -10,6 +10,10 @@
         <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
         <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
         <NoWarn>EPC12;CA2100</NoWarn>
+        <PackageId>DataProvider.SQLite.Cli</PackageId>
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>dataprovider-sqlite</ToolCommandName>
+        <Description>CLI tool for generating type-safe SQLite data access code</Description>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="../DataProvider.SQLite/DataProvider.SQLite.csproj" />

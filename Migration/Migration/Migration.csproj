@@ -3,6 +3,8 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Migration</RootNamespace>
+    <PackageId>Migration</PackageId>
+    <Description>YAML-based database schema migration library</Description>
     <!-- Disable warnings that are not relevant -->
     <NoWarn>$(NoWarn);CA2254;CA1720;CA1724;RS1035</NoWarn>
   </PropertyGroup>

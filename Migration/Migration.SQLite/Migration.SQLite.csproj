@@ -3,6 +3,8 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Migration.SQLite</RootNamespace>
+    <PackageId>Migration.SQLite</PackageId>
+    <Description>SQLite DDL generator for Migration</Description>
     <NoWarn>$(NoWarn);CA2254;CA2100</NoWarn>
   </PropertyGroup>
 
