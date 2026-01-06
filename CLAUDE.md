@@ -15,6 +15,7 @@
 - **No raw SQL inserts/updates** - Use generated extensions
 - **Use DataProvider Migrations to spin up DBs** - ⛔️ SQL for creating db schema = ILLEGAL (schema.sql = ILLEGAL).  Use the Migration.CLI with YAML. This is the ONLY valid tool to migrate dbs unless the app itself spins up the migrations in code.
 - **NO CLASSES** - Records + static methods (FP style)
+- **PRIVATE/INTERNAL BY DEFAULT** - Don't expose types/members that users don't need
 - **Copious ILogger** - Especially sync projects
 - **NO INTERFACES** - Use `Action<T>`/`Func<T>`
 - **Expressions over assignments**

@@ -34,7 +34,7 @@ using ParserRuleContext = Antlr4.Runtime.ParserRuleContext;
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.13.1")]
 [System.Diagnostics.DebuggerNonUserCode]
 [System.CLSCompliant(false)]
-public partial class SQLiteParserBaseVisitor<Result> : AbstractParseTreeVisitor<Result>, ISQLiteParserVisitor<Result> {
+internal partial class SQLiteParserBaseVisitor<Result> : AbstractParseTreeVisitor<Result>, ISQLiteParserVisitor<Result> {
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="SQLiteParser.parse"/>.
 	/// <para>

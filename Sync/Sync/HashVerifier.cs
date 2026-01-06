@@ -8,7 +8,7 @@ namespace Sync;
 /// Computes and verifies hashes for sync verification.
 /// Implements spec Section 15 (Hash Verification).
 /// </summary>
-public static class HashVerifier
+internal static class HashVerifier
 {
     private static readonly JsonSerializerOptions CanonicalJsonOptions = new()
     {

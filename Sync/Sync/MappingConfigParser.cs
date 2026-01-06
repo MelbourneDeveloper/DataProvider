@@ -8,7 +8,7 @@ namespace Sync;
 /// Parses JSON mapping configuration files.
 /// Implements spec Section 7.3 - Mapping Configuration Schema.
 /// </summary>
-public static class MappingConfigParser
+internal static class MappingConfigParser
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

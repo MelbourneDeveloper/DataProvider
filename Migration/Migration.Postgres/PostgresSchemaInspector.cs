@@ -3,7 +3,7 @@ namespace Migration.Postgres;
 /// <summary>
 /// Inspects PostgreSQL database schema and returns a SchemaDefinition.
 /// </summary>
-public static class PostgresSchemaInspector
+internal static class PostgresSchemaInspector
 {
     /// <summary>
     /// Inspect all tables in a PostgreSQL database.

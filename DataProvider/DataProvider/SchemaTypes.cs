@@ -165,7 +165,7 @@ public sealed record SqlQueryMetadata
 /// <summary>
 /// Abstraction for inspecting database schema
 /// </summary>
-public interface ISchemaInspector
+internal interface ISchemaInspector
 {
     /// <summary>
     /// Gets table information including columns and their metadata

@@ -31,7 +31,7 @@ using IToken = Antlr4.Runtime.IToken;
 /// </summary>
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.13.1")]
 [System.CLSCompliant(false)]
-public interface ILqlListener : IParseTreeListener {
+internal interface ILqlListener : IParseTreeListener {
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="LqlParser.program"/>.
 	/// </summary>

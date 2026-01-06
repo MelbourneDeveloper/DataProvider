@@ -54,7 +54,7 @@ public static class SchemaSerializer
 /// <summary>
 /// JSON converter for PortableType discriminated union.
 /// </summary>
-public sealed class PortableTypeJsonConverter : JsonConverter<PortableType>
+internal sealed class PortableTypeJsonConverter : JsonConverter<PortableType>
 {
     /// <inheritdoc />
     public override PortableType? Read(

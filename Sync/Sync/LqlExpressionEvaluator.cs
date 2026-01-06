@@ -9,7 +9,7 @@ namespace Sync;
 /// Supports: upper(col), lower(col), concat(a, b, ...), coalesce(a, b),
 /// substring(col, start, len), trim(col), length(col).
 /// </summary>
-public static partial class LqlExpressionEvaluator
+internal static partial class LqlExpressionEvaluator
 {
     /// <summary>
     /// Evaluates an LQL expression against a JSON source object.

@@ -30,7 +30,7 @@ using IToken = Antlr4.Runtime.IToken;
 /// </summary>
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.13.1")]
 [System.CLSCompliant(false)]
-public interface ISQLiteParserListener : IParseTreeListener {
+internal interface ISQLiteParserListener : IParseTreeListener {
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="SQLiteParser.parse"/>.
 	/// </summary>

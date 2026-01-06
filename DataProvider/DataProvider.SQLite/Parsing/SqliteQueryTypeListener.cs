@@ -6,7 +6,7 @@ namespace DataProvider.SQLite.Parsing;
 /// Listener to determine SQLite query type from parse tree
 /// </summary>
 [ExcludeFromCodeCoverage]
-public sealed class SqliteQueryTypeListener : SQLiteParserBaseListener
+internal sealed class SqliteQueryTypeListener : SQLiteParserBaseListener
 {
     /// <summary>
     /// Gets the detected query type (e.g. SELECT, INSERT, UPDATE, DELETE).

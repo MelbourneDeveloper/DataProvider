@@ -36,7 +36,7 @@ using ParserRuleContext = Antlr4.Runtime.ParserRuleContext;
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.13.1")]
 [System.Diagnostics.DebuggerNonUserCode]
 [System.CLSCompliant(false)]
-public partial class LqlBaseListener : ILqlListener {
+internal partial class LqlBaseListener : ILqlListener {
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="LqlParser.program"/>.
 	/// <para>The default implementation does nothing.</para>

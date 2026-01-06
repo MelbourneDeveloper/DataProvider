@@ -4,7 +4,7 @@ namespace Sync;
 /// Manages tombstone retention and purging.
 /// Implements spec Section 13 (Tombstone Retention).
 /// </summary>
-public static class TombstoneManager
+internal static class TombstoneManager
 {
     /// <summary>
     /// Default maximum age for inactive clients before removal.

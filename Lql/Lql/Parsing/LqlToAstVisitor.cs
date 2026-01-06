@@ -9,7 +9,7 @@ namespace Lql.Parsing;
 /// <summary>
 /// Visitor that converts ANTLR parse tree to transpiler AST nodes.
 /// </summary>
-public sealed class LqlToAstVisitor : LqlBaseVisitor<INode>
+internal sealed class LqlToAstVisitor : LqlBaseVisitor<INode>
 {
     private readonly Dictionary<string, INode> _variables = [];
     private HashSet<string>? _lambdaScope;

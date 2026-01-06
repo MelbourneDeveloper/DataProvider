@@ -7,7 +7,7 @@ namespace DataProvider.SQLite.Parsing;
 /// Parameter extractor for SQLite using ANTLR parse tree
 /// </summary>
 [ExcludeFromCodeCoverage]
-public sealed class SqliteParameterExtractor
+internal sealed class SqliteParameterExtractor
 {
     /// <summary>
     /// Extracts parameter names from the provided ANTLR <see cref="IParseTree"/>.

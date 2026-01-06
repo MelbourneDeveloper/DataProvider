@@ -7,7 +7,7 @@ namespace Lql.Parsing;
 /// <summary>
 /// Utility class for parsing LQL code.
 /// </summary>
-public static class LqlCodeParser
+internal static class LqlCodeParser
 {
     private static readonly char[] SplitCharacters = [' ', '\t', '|', '>', '(', ')', ',', '='];
 

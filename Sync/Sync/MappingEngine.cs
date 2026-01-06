@@ -50,7 +50,7 @@ public sealed record MappingFailed(SyncError Error) : MappingResult;
 /// Engine for applying data mappings to sync log entries.
 /// Implements spec Section 7 - Data Mapping.
 /// </summary>
-public static class MappingEngine
+internal static class MappingEngine
 {
     /// <summary>
     /// Applies mapping configuration to a sync log entry.

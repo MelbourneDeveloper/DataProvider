@@ -35,7 +35,7 @@ public sealed record RecordHash(
 /// Manages sync tracking state per spec Section 7.5.
 /// Determines whether records should be synced based on tracking strategy.
 /// </summary>
-public static class SyncTrackingManager
+internal static class SyncTrackingManager
 {
     /// <summary>
     /// Determines if an entry should be synced based on tracking state.

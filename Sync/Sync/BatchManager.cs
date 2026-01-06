@@ -6,7 +6,7 @@ namespace Sync;
 /// Manages batch fetching and processing for sync operations.
 /// Implements spec Section 12 (Batching).
 /// </summary>
-public static class BatchManager
+internal static class BatchManager
 {
     /// <summary>
     /// Fetches a batch of changes from the sync log.
