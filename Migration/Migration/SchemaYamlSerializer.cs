@@ -90,7 +90,7 @@ public static class SchemaYamlSerializer
 /// YAML type converter for PortableType discriminated union.
 /// Serializes types as simple strings like "Text", "Int", "VarChar(255)".
 /// </summary>
-public sealed class PortableTypeYamlConverter : IYamlTypeConverter
+internal sealed class PortableTypeYamlConverter : IYamlTypeConverter
 {
     /// <inheritdoc />
     public bool Accepts(Type type) => typeof(PortableType).IsAssignableFrom(type);
@@ -239,7 +239,7 @@ public sealed class PortableTypeYamlConverter : IYamlTypeConverter
 /// <summary>
 /// YAML type converter for ForeignKeyAction enum.
 /// </summary>
-public sealed class ForeignKeyActionYamlConverter : IYamlTypeConverter
+internal sealed class ForeignKeyActionYamlConverter : IYamlTypeConverter
 {
     /// <inheritdoc />
     public bool Accepts(Type type) => type == typeof(ForeignKeyAction);

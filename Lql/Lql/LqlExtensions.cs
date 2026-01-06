@@ -3,7 +3,7 @@ namespace Lql;
 /// <summary>
 /// Extension methods for working with nodes and steps.
 /// </summary>
-public static class LqlExtensions
+internal static class LqlExtensions
 {
     /// <summary>
     /// Wraps a node in an identity step.

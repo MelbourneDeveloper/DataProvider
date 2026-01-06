@@ -6,7 +6,7 @@ namespace DataProvider.SqlServer.SchemaInspection;
 /// <summary>
 /// SQL Server implementation of schema inspection
 /// </summary>
-public sealed class SqlServerSchemaInspector : ISchemaInspector
+internal sealed class SqlServerSchemaInspector : ISchemaInspector
 {
     private readonly string _connectionString;
 

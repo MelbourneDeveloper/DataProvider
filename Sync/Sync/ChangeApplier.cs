@@ -6,7 +6,7 @@ namespace Sync;
 /// Applies changes to the local database with FK violation defer/retry.
 /// Implements spec Section 11 (Bi-Directional Sync Protocol).
 /// </summary>
-public static class ChangeApplier
+internal static class ChangeApplier
 {
     /// <summary>
     /// Applies a batch of changes with FK violation handling.

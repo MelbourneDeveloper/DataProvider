@@ -3,7 +3,7 @@ namespace Migration.SQLite;
 /// <summary>
 /// Inspects SQLite database schema and returns a SchemaDefinition.
 /// </summary>
-public static class SqliteSchemaInspector
+internal static class SqliteSchemaInspector
 {
     /// <summary>
     /// Inspect all tables in a SQLite database.

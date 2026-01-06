@@ -8,7 +8,7 @@ namespace DataProvider.CodeGeneration;
 /// <summary>
 /// Pure transformation functions for generating grouped query code
 /// </summary>
-public static class GroupingTransformations
+internal static class GroupingTransformations
 {
     /// <summary>
     /// Generates the grouping method that transforms flat results into parent-child structure

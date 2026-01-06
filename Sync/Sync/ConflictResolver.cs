@@ -32,7 +32,7 @@ public sealed record ConflictResolution(SyncLogEntry Winner, ConflictStrategy St
 /// Resolves conflicts between local and remote changes.
 /// Implements spec Section 14 (Conflict Resolution).
 /// </summary>
-public static class ConflictResolver
+internal static class ConflictResolver
 {
     /// <summary>
     /// Detects if two changes conflict.

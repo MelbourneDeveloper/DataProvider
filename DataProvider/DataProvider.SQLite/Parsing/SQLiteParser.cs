@@ -33,7 +33,7 @@ using DFA = Antlr4.Runtime.Dfa.DFA;
 
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.13.1")]
 [System.CLSCompliant(false)]
-public partial class SQLiteParser : Parser {
+internal partial class SQLiteParser : Parser {
 	protected static DFA[] decisionToDFA;
 	protected static PredictionContextCache sharedContextCache = new PredictionContextCache();
 	public const int
@@ -226,7 +226,7 @@ public partial class SQLiteParser : Parser {
 		Interpreter = new ParserATNSimulator(this, _ATN, decisionToDFA, sharedContextCache);
 	}
 
-	public partial class ParseContext : ParserRuleContext {
+	internal partial class ParseContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode Eof() { return GetToken(SQLiteParser.Eof, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Sql_stmt_listContext[] sql_stmt_list() {
 			return GetRuleContexts<Sql_stmt_listContext>();
@@ -294,7 +294,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Sql_stmt_listContext : ParserRuleContext {
+	internal partial class Sql_stmt_listContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Sql_stmtContext[] sql_stmt() {
 			return GetRuleContexts<Sql_stmtContext>();
 		}
@@ -412,7 +412,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Sql_stmtContext : ParserRuleContext {
+	internal partial class Sql_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Alter_table_stmtContext alter_table_stmt() {
 			return GetRuleContext<Alter_table_stmtContext>(0);
 		}
@@ -702,7 +702,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Alter_table_stmtContext : ParserRuleContext {
+	internal partial class Alter_table_stmtContext : ParserRuleContext {
 		public Table_nameContext new_table_name;
 		public Column_nameContext old_column_name;
 		public Column_nameContext new_column_name;
@@ -873,7 +873,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Analyze_stmtContext : ParserRuleContext {
+	internal partial class Analyze_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ANALYZE_() { return GetToken(SQLiteParser.ANALYZE_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Schema_nameContext schema_name() {
 			return GetRuleContext<Schema_nameContext>(0);
@@ -955,7 +955,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Attach_stmtContext : ParserRuleContext {
+	internal partial class Attach_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ATTACH_() { return GetToken(SQLiteParser.ATTACH_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ExprContext expr() {
 			return GetRuleContext<ExprContext>(0);
@@ -1026,7 +1026,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Begin_stmtContext : ParserRuleContext {
+	internal partial class Begin_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode BEGIN_() { return GetToken(SQLiteParser.BEGIN_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode TRANSACTION_() { return GetToken(SQLiteParser.TRANSACTION_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DEFERRED_() { return GetToken(SQLiteParser.DEFERRED_, 0); }
@@ -1118,7 +1118,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Commit_stmtContext : ParserRuleContext {
+	internal partial class Commit_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode COMMIT_() { return GetToken(SQLiteParser.COMMIT_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode END_() { return GetToken(SQLiteParser.END_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode TRANSACTION_() { return GetToken(SQLiteParser.TRANSACTION_, 0); }
@@ -1185,7 +1185,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Rollback_stmtContext : ParserRuleContext {
+	internal partial class Rollback_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ROLLBACK_() { return GetToken(SQLiteParser.ROLLBACK_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode TRANSACTION_() { return GetToken(SQLiteParser.TRANSACTION_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode TO_() { return GetToken(SQLiteParser.TO_, 0); }
@@ -1271,7 +1271,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Savepoint_stmtContext : ParserRuleContext {
+	internal partial class Savepoint_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode SAVEPOINT_() { return GetToken(SQLiteParser.SAVEPOINT_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Savepoint_nameContext savepoint_name() {
 			return GetRuleContext<Savepoint_nameContext>(0);
@@ -1323,7 +1323,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Release_stmtContext : ParserRuleContext {
+	internal partial class Release_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode RELEASE_() { return GetToken(SQLiteParser.RELEASE_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Savepoint_nameContext savepoint_name() {
 			return GetRuleContext<Savepoint_nameContext>(0);
@@ -1386,7 +1386,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Create_index_stmtContext : ParserRuleContext {
+	internal partial class Create_index_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CREATE_() { return GetToken(SQLiteParser.CREATE_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode INDEX_() { return GetToken(SQLiteParser.INDEX_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Index_nameContext index_name() {
@@ -1544,7 +1544,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Indexed_columnContext : ParserRuleContext {
+	internal partial class Indexed_columnContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Column_nameContext column_name() {
 			return GetRuleContext<Column_nameContext>(0);
 		}
@@ -1640,7 +1640,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Create_table_stmtContext : ParserRuleContext {
+	internal partial class Create_table_stmtContext : ParserRuleContext {
 		public IToken row_ROW_ID;
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CREATE_() { return GetToken(SQLiteParser.CREATE_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode TABLE_() { return GetToken(SQLiteParser.TABLE_, 0); }
@@ -1844,7 +1844,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Column_defContext : ParserRuleContext {
+	internal partial class Column_defContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Column_nameContext column_name() {
 			return GetRuleContext<Column_nameContext>(0);
 		}
@@ -1927,7 +1927,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Type_nameContext : ParserRuleContext {
+	internal partial class Type_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public NameContext[] name() {
 			return GetRuleContexts<NameContext>();
 		}
@@ -2035,7 +2035,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Column_constraintContext : ParserRuleContext {
+	internal partial class Column_constraintContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CHECK_() { return GetToken(SQLiteParser.CHECK_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OPEN_PAR() { return GetToken(SQLiteParser.OPEN_PAR, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ExprContext expr() {
@@ -2324,7 +2324,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Signed_numberContext : ParserRuleContext {
+	internal partial class Signed_numberContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode NUMERIC_LITERAL() { return GetToken(SQLiteParser.NUMERIC_LITERAL, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PLUS() { return GetToken(SQLiteParser.PLUS, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode MINUS() { return GetToken(SQLiteParser.MINUS, 0); }
@@ -2391,7 +2391,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Table_constraintContext : ParserRuleContext {
+	internal partial class Table_constraintContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OPEN_PAR() { return GetToken(SQLiteParser.OPEN_PAR, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Indexed_columnContext[] indexed_column() {
 			return GetRuleContexts<Indexed_columnContext>();
@@ -2591,7 +2591,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Foreign_key_clauseContext : ParserRuleContext {
+	internal partial class Foreign_key_clauseContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode REFERENCES_() { return GetToken(SQLiteParser.REFERENCES_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Foreign_tableContext foreign_table() {
 			return GetRuleContext<Foreign_tableContext>(0);
@@ -2860,7 +2860,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Conflict_clauseContext : ParserRuleContext {
+	internal partial class Conflict_clauseContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ON_() { return GetToken(SQLiteParser.ON_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CONFLICT_() { return GetToken(SQLiteParser.CONFLICT_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ROLLBACK_() { return GetToken(SQLiteParser.ROLLBACK_, 0); }
@@ -2925,7 +2925,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Create_trigger_stmtContext : ParserRuleContext {
+	internal partial class Create_trigger_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CREATE_() { return GetToken(SQLiteParser.CREATE_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode TRIGGER_() { return GetToken(SQLiteParser.TRIGGER_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Trigger_nameContext trigger_name() {
@@ -3252,7 +3252,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Create_view_stmtContext : ParserRuleContext {
+	internal partial class Create_view_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CREATE_() { return GetToken(SQLiteParser.CREATE_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode VIEW_() { return GetToken(SQLiteParser.VIEW_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public View_nameContext view_name() {
@@ -3410,7 +3410,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Create_virtual_table_stmtContext : ParserRuleContext {
+	internal partial class Create_virtual_table_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CREATE_() { return GetToken(SQLiteParser.CREATE_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode VIRTUAL_() { return GetToken(SQLiteParser.VIRTUAL_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode TABLE_() { return GetToken(SQLiteParser.TABLE_, 0); }
@@ -3552,7 +3552,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class With_clauseContext : ParserRuleContext {
+	internal partial class With_clauseContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode WITH_() { return GetToken(SQLiteParser.WITH_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Cte_table_nameContext[] cte_table_name() {
 			return GetRuleContexts<Cte_table_nameContext>();
@@ -3673,7 +3673,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Cte_table_nameContext : ParserRuleContext {
+	internal partial class Cte_table_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Table_nameContext table_name() {
 			return GetRuleContext<Table_nameContext>(0);
 		}
@@ -3765,7 +3765,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Recursive_cteContext : ParserRuleContext {
+	internal partial class Recursive_cteContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Cte_table_nameContext cte_table_name() {
 			return GetRuleContext<Cte_table_nameContext>(0);
 		}
@@ -3848,7 +3848,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Common_table_expressionContext : ParserRuleContext {
+	internal partial class Common_table_expressionContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Table_nameContext table_name() {
 			return GetRuleContext<Table_nameContext>(0);
 		}
@@ -3958,7 +3958,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Delete_stmtContext : ParserRuleContext {
+	internal partial class Delete_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DELETE_() { return GetToken(SQLiteParser.DELETE_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode FROM_() { return GetToken(SQLiteParser.FROM_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Qualified_table_nameContext qualified_table_name() {
@@ -4056,7 +4056,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Delete_stmt_limitedContext : ParserRuleContext {
+	internal partial class Delete_stmt_limitedContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DELETE_() { return GetToken(SQLiteParser.DELETE_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode FROM_() { return GetToken(SQLiteParser.FROM_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Qualified_table_nameContext qualified_table_name() {
@@ -4180,7 +4180,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Detach_stmtContext : ParserRuleContext {
+	internal partial class Detach_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DETACH_() { return GetToken(SQLiteParser.DETACH_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Schema_nameContext schema_name() {
 			return GetRuleContext<Schema_nameContext>(0);
@@ -4243,7 +4243,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Drop_stmtContext : ParserRuleContext {
+	internal partial class Drop_stmtContext : ParserRuleContext {
 		public IToken @object;
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DROP_() { return GetToken(SQLiteParser.DROP_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
@@ -4341,7 +4341,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class ExprContext : ParserRuleContext {
+	internal partial class ExprContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Literal_valueContext literal_value() {
 			return GetRuleContext<Literal_valueContext>(0);
 		}
@@ -5422,7 +5422,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Raise_functionContext : ParserRuleContext {
+	internal partial class Raise_functionContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode RAISE_() { return GetToken(SQLiteParser.RAISE_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OPEN_PAR() { return GetToken(SQLiteParser.OPEN_PAR, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CLOSE_PAR() { return GetToken(SQLiteParser.CLOSE_PAR, 0); }
@@ -5515,7 +5515,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Literal_valueContext : ParserRuleContext {
+	internal partial class Literal_valueContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode NUMERIC_LITERAL() { return GetToken(SQLiteParser.NUMERIC_LITERAL, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode STRING_LITERAL() { return GetToken(SQLiteParser.STRING_LITERAL, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode BLOB_LITERAL() { return GetToken(SQLiteParser.BLOB_LITERAL, 0); }
@@ -5578,7 +5578,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Value_rowContext : ParserRuleContext {
+	internal partial class Value_rowContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OPEN_PAR() { return GetToken(SQLiteParser.OPEN_PAR, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ExprContext[] expr() {
 			return GetRuleContexts<ExprContext>();
@@ -5657,7 +5657,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Values_clauseContext : ParserRuleContext {
+	internal partial class Values_clauseContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode VALUES_() { return GetToken(SQLiteParser.VALUES_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Value_rowContext[] value_row() {
 			return GetRuleContexts<Value_rowContext>();
@@ -5733,7 +5733,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Insert_stmtContext : ParserRuleContext {
+	internal partial class Insert_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode INTO_() { return GetToken(SQLiteParser.INTO_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Table_nameContext table_name() {
 			return GetRuleContext<Table_nameContext>(0);
@@ -5985,7 +5985,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Returning_clauseContext : ParserRuleContext {
+	internal partial class Returning_clauseContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode RETURNING_() { return GetToken(SQLiteParser.RETURNING_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Result_columnContext[] result_column() {
 			return GetRuleContexts<Result_columnContext>();
@@ -6061,7 +6061,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Upsert_clauseContext : ParserRuleContext {
+	internal partial class Upsert_clauseContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ON_() { return GetToken(SQLiteParser.ON_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CONFLICT_() { return GetToken(SQLiteParser.CONFLICT_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DO_() { return GetToken(SQLiteParser.DO_, 0); }
@@ -6286,7 +6286,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Pragma_stmtContext : ParserRuleContext {
+	internal partial class Pragma_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PRAGMA_() { return GetToken(SQLiteParser.PRAGMA_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Pragma_nameContext pragma_name() {
 			return GetRuleContext<Pragma_nameContext>(0);
@@ -6410,7 +6410,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Pragma_valueContext : ParserRuleContext {
+	internal partial class Pragma_valueContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Signed_numberContext signed_number() {
 			return GetRuleContext<Signed_numberContext>(0);
 		}
@@ -6483,7 +6483,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Reindex_stmtContext : ParserRuleContext {
+	internal partial class Reindex_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode REINDEX_() { return GetToken(SQLiteParser.REINDEX_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Collation_nameContext collation_name() {
 			return GetRuleContext<Collation_nameContext>(0);
@@ -6585,7 +6585,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Select_stmtContext : ParserRuleContext {
+	internal partial class Select_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Select_coreContext[] select_core() {
 			return GetRuleContexts<Select_coreContext>();
 		}
@@ -6702,7 +6702,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Join_clauseContext : ParserRuleContext {
+	internal partial class Join_clauseContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Table_or_subqueryContext[] table_or_subquery() {
 			return GetRuleContexts<Table_or_subqueryContext>();
 		}
@@ -6793,7 +6793,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Select_coreContext : ParserRuleContext {
+	internal partial class Select_coreContext : ParserRuleContext {
 		public ExprContext whereExpr;
 		public ExprContext _expr;
 		public IList<ExprContext> _groupByExpr = new List<ExprContext>();
@@ -7083,7 +7083,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Factored_select_stmtContext : ParserRuleContext {
+	internal partial class Factored_select_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Select_stmtContext select_stmt() {
 			return GetRuleContext<Select_stmtContext>(0);
 		}
@@ -7132,7 +7132,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Simple_select_stmtContext : ParserRuleContext {
+	internal partial class Simple_select_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Select_coreContext select_core() {
 			return GetRuleContext<Select_coreContext>(0);
 		}
@@ -7221,7 +7221,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Compound_select_stmtContext : ParserRuleContext {
+	internal partial class Compound_select_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Select_coreContext[] select_core() {
 			return GetRuleContexts<Select_coreContext>();
 		}
@@ -7377,7 +7377,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Table_or_subqueryContext : ParserRuleContext {
+	internal partial class Table_or_subqueryContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Table_nameContext table_name() {
 			return GetRuleContext<Table_nameContext>(0);
 		}
@@ -7711,7 +7711,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Result_columnContext : ParserRuleContext {
+	internal partial class Result_columnContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode STAR() { return GetToken(SQLiteParser.STAR, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Table_nameContext table_name() {
 			return GetRuleContext<Table_nameContext>(0);
@@ -7814,7 +7814,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Join_operatorContext : ParserRuleContext {
+	internal partial class Join_operatorContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode COMMA() { return GetToken(SQLiteParser.COMMA, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode JOIN_() { return GetToken(SQLiteParser.JOIN_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode NATURAL_() { return GetToken(SQLiteParser.NATURAL_, 0); }
@@ -7946,7 +7946,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Join_constraintContext : ParserRuleContext {
+	internal partial class Join_constraintContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ON_() { return GetToken(SQLiteParser.ON_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ExprContext expr() {
 			return GetRuleContext<ExprContext>(0);
@@ -8049,7 +8049,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Compound_operatorContext : ParserRuleContext {
+	internal partial class Compound_operatorContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode UNION_() { return GetToken(SQLiteParser.UNION_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ALL_() { return GetToken(SQLiteParser.ALL_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode INTERSECT_() { return GetToken(SQLiteParser.INTERSECT_, 0); }
@@ -8132,7 +8132,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Update_stmtContext : ParserRuleContext {
+	internal partial class Update_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode UPDATE_() { return GetToken(SQLiteParser.UPDATE_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Qualified_table_nameContext qualified_table_name() {
 			return GetRuleContext<Qualified_table_nameContext>(0);
@@ -8384,7 +8384,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Column_name_listContext : ParserRuleContext {
+	internal partial class Column_name_listContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OPEN_PAR() { return GetToken(SQLiteParser.OPEN_PAR, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Column_nameContext[] column_name() {
 			return GetRuleContexts<Column_nameContext>();
@@ -8463,7 +8463,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Update_stmt_limitedContext : ParserRuleContext {
+	internal partial class Update_stmt_limitedContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode UPDATE_() { return GetToken(SQLiteParser.UPDATE_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Qualified_table_nameContext qualified_table_name() {
 			return GetRuleContext<Qualified_table_nameContext>(0);
@@ -8689,7 +8689,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Qualified_table_nameContext : ParserRuleContext {
+	internal partial class Qualified_table_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Table_nameContext table_name() {
 			return GetRuleContext<Table_nameContext>(0);
 		}
@@ -8832,7 +8832,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Vacuum_stmtContext : ParserRuleContext {
+	internal partial class Vacuum_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode VACUUM_() { return GetToken(SQLiteParser.VACUUM_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Schema_nameContext schema_name() {
 			return GetRuleContext<Schema_nameContext>(0);
@@ -8909,7 +8909,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Filter_clauseContext : ParserRuleContext {
+	internal partial class Filter_clauseContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode FILTER_() { return GetToken(SQLiteParser.FILTER_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OPEN_PAR() { return GetToken(SQLiteParser.OPEN_PAR, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode WHERE_() { return GetToken(SQLiteParser.WHERE_, 0); }
@@ -8970,7 +8970,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Window_defnContext : ParserRuleContext {
+	internal partial class Window_defnContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OPEN_PAR() { return GetToken(SQLiteParser.OPEN_PAR, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CLOSE_PAR() { return GetToken(SQLiteParser.CLOSE_PAR, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ORDER_() { return GetToken(SQLiteParser.ORDER_, 0); }
@@ -9123,7 +9123,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Over_clauseContext : ParserRuleContext {
+	internal partial class Over_clauseContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OVER_() { return GetToken(SQLiteParser.OVER_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Window_nameContext window_name() {
 			return GetRuleContext<Window_nameContext>(0);
@@ -9302,7 +9302,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Frame_specContext : ParserRuleContext {
+	internal partial class Frame_specContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Frame_clauseContext frame_clause() {
 			return GetRuleContext<Frame_clauseContext>(0);
 		}
@@ -9403,7 +9403,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Frame_clauseContext : ParserRuleContext {
+	internal partial class Frame_clauseContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode RANGE_() { return GetToken(SQLiteParser.RANGE_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ROWS_() { return GetToken(SQLiteParser.ROWS_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode GROUPS_() { return GetToken(SQLiteParser.GROUPS_, 0); }
@@ -9493,7 +9493,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Simple_function_invocationContext : ParserRuleContext {
+	internal partial class Simple_function_invocationContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Simple_funcContext simple_func() {
 			return GetRuleContext<Simple_funcContext>(0);
 		}
@@ -9757,7 +9757,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Aggregate_function_invocationContext : ParserRuleContext {
+	internal partial class Aggregate_function_invocationContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Aggregate_funcContext aggregate_func() {
 			return GetRuleContext<Aggregate_funcContext>(0);
 		}
@@ -10047,7 +10047,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Window_function_invocationContext : ParserRuleContext {
+	internal partial class Window_function_invocationContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Window_functionContext window_function() {
 			return GetRuleContext<Window_functionContext>(0);
 		}
@@ -10351,7 +10351,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Common_table_stmtContext : ParserRuleContext {
+	internal partial class Common_table_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode WITH_() { return GetToken(SQLiteParser.WITH_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Common_table_expressionContext[] common_table_expression() {
 			return GetRuleContexts<Common_table_expressionContext>();
@@ -10438,7 +10438,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Order_by_stmtContext : ParserRuleContext {
+	internal partial class Order_by_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ORDER_() { return GetToken(SQLiteParser.ORDER_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode BY_() { return GetToken(SQLiteParser.BY_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Ordering_termContext[] ordering_term() {
@@ -10517,7 +10517,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Limit_stmtContext : ParserRuleContext {
+	internal partial class Limit_stmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode LIMIT_() { return GetToken(SQLiteParser.LIMIT_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ExprContext[] expr() {
 			return GetRuleContexts<ExprContext>();
@@ -10594,7 +10594,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Ordering_termContext : ParserRuleContext {
+	internal partial class Ordering_termContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ExprContext expr() {
 			return GetRuleContext<ExprContext>(0);
 		}
@@ -10695,7 +10695,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Asc_descContext : ParserRuleContext {
+	internal partial class Asc_descContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ASC_() { return GetToken(SQLiteParser.ASC_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DESC_() { return GetToken(SQLiteParser.DESC_, 0); }
 		public Asc_descContext(ParserRuleContext parent, int invokingState)
@@ -10751,7 +10751,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Frame_leftContext : ParserRuleContext {
+	internal partial class Frame_leftContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ExprContext expr() {
 			return GetRuleContext<ExprContext>(0);
 		}
@@ -10840,7 +10840,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Frame_rightContext : ParserRuleContext {
+	internal partial class Frame_rightContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ExprContext expr() {
 			return GetRuleContext<ExprContext>(0);
 		}
@@ -10929,7 +10929,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Frame_singleContext : ParserRuleContext {
+	internal partial class Frame_singleContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ExprContext expr() {
 			return GetRuleContext<ExprContext>(0);
 		}
@@ -11008,7 +11008,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Window_functionContext : ParserRuleContext {
+	internal partial class Window_functionContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] OPEN_PAR() { return GetTokens(SQLiteParser.OPEN_PAR); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OPEN_PAR(int i) {
 			return GetToken(SQLiteParser.OPEN_PAR, i);
@@ -11368,7 +11368,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class OffsetContext : ParserRuleContext {
+	internal partial class OffsetContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode COMMA() { return GetToken(SQLiteParser.COMMA, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Signed_numberContext signed_number() {
 			return GetRuleContext<Signed_numberContext>(0);
@@ -11420,7 +11420,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Default_valueContext : ParserRuleContext {
+	internal partial class Default_valueContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode COMMA() { return GetToken(SQLiteParser.COMMA, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Signed_numberContext signed_number() {
 			return GetRuleContext<Signed_numberContext>(0);
@@ -11472,7 +11472,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Partition_byContext : ParserRuleContext {
+	internal partial class Partition_byContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PARTITION_() { return GetToken(SQLiteParser.PARTITION_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode BY_() { return GetToken(SQLiteParser.BY_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ExprContext[] expr() {
@@ -11549,7 +11549,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Order_by_exprContext : ParserRuleContext {
+	internal partial class Order_by_exprContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ORDER_() { return GetToken(SQLiteParser.ORDER_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode BY_() { return GetToken(SQLiteParser.BY_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ExprContext[] expr() {
@@ -11620,7 +11620,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Order_by_expr_asc_descContext : ParserRuleContext {
+	internal partial class Order_by_expr_asc_descContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ORDER_() { return GetToken(SQLiteParser.ORDER_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode BY_() { return GetToken(SQLiteParser.BY_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public Expr_asc_descContext expr_asc_desc() {
@@ -11675,7 +11675,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Expr_asc_descContext : ParserRuleContext {
+	internal partial class Expr_asc_descContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ExprContext[] expr() {
 			return GetRuleContexts<ExprContext>();
 		}
@@ -11774,7 +11774,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Initial_selectContext : ParserRuleContext {
+	internal partial class Initial_selectContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Select_stmtContext select_stmt() {
 			return GetRuleContext<Select_stmtContext>(0);
 		}
@@ -11823,7 +11823,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Recursive_selectContext : ParserRuleContext {
+	internal partial class Recursive_selectContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Select_stmtContext select_stmt() {
 			return GetRuleContext<Select_stmtContext>(0);
 		}
@@ -11872,7 +11872,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Unary_operatorContext : ParserRuleContext {
+	internal partial class Unary_operatorContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode MINUS() { return GetToken(SQLiteParser.MINUS, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PLUS() { return GetToken(SQLiteParser.PLUS, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode TILDE() { return GetToken(SQLiteParser.TILDE, 0); }
@@ -11930,7 +11930,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Error_messageContext : ParserRuleContext {
+	internal partial class Error_messageContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode STRING_LITERAL() { return GetToken(SQLiteParser.STRING_LITERAL, 0); }
 		public Error_messageContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
@@ -11977,7 +11977,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Module_argumentContext : ParserRuleContext {
+	internal partial class Module_argumentContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ExprContext expr() {
 			return GetRuleContext<ExprContext>(0);
 		}
@@ -12042,7 +12042,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Column_aliasContext : ParserRuleContext {
+	internal partial class Column_aliasContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENTIFIER() { return GetToken(SQLiteParser.IDENTIFIER, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode STRING_LITERAL() { return GetToken(SQLiteParser.STRING_LITERAL, 0); }
 		public Column_aliasContext(ParserRuleContext parent, int invokingState)
@@ -12098,7 +12098,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class KeywordContext : ParserRuleContext {
+	internal partial class KeywordContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ABORT_() { return GetToken(SQLiteParser.ABORT_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ACTION_() { return GetToken(SQLiteParser.ACTION_, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ADD_() { return GetToken(SQLiteParser.ADD_, 0); }
@@ -12307,7 +12307,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class NameContext : ParserRuleContext {
+	internal partial class NameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -12356,7 +12356,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Function_nameContext : ParserRuleContext {
+	internal partial class Function_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -12405,7 +12405,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Schema_nameContext : ParserRuleContext {
+	internal partial class Schema_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -12454,7 +12454,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Table_nameContext : ParserRuleContext {
+	internal partial class Table_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -12503,7 +12503,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Table_or_index_nameContext : ParserRuleContext {
+	internal partial class Table_or_index_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -12552,7 +12552,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Column_nameContext : ParserRuleContext {
+	internal partial class Column_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -12601,7 +12601,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Collation_nameContext : ParserRuleContext {
+	internal partial class Collation_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -12650,7 +12650,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Foreign_tableContext : ParserRuleContext {
+	internal partial class Foreign_tableContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -12699,7 +12699,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Index_nameContext : ParserRuleContext {
+	internal partial class Index_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -12748,7 +12748,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Trigger_nameContext : ParserRuleContext {
+	internal partial class Trigger_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -12797,7 +12797,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class View_nameContext : ParserRuleContext {
+	internal partial class View_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -12846,7 +12846,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Module_nameContext : ParserRuleContext {
+	internal partial class Module_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -12895,7 +12895,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Pragma_nameContext : ParserRuleContext {
+	internal partial class Pragma_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -12944,7 +12944,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Savepoint_nameContext : ParserRuleContext {
+	internal partial class Savepoint_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -12993,7 +12993,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Table_aliasContext : ParserRuleContext {
+	internal partial class Table_aliasContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -13042,7 +13042,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Transaction_nameContext : ParserRuleContext {
+	internal partial class Transaction_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -13091,7 +13091,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Window_nameContext : ParserRuleContext {
+	internal partial class Window_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -13140,7 +13140,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class AliasContext : ParserRuleContext {
+	internal partial class AliasContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -13189,7 +13189,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class FilenameContext : ParserRuleContext {
+	internal partial class FilenameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -13238,7 +13238,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Base_window_nameContext : ParserRuleContext {
+	internal partial class Base_window_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -13287,7 +13287,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Simple_funcContext : ParserRuleContext {
+	internal partial class Simple_funcContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -13336,7 +13336,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Aggregate_funcContext : ParserRuleContext {
+	internal partial class Aggregate_funcContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -13385,7 +13385,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Table_function_nameContext : ParserRuleContext {
+	internal partial class Table_function_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public Any_nameContext any_name() {
 			return GetRuleContext<Any_nameContext>(0);
 		}
@@ -13434,7 +13434,7 @@ public partial class SQLiteParser : Parser {
 		return _localctx;
 	}
 
-	public partial class Any_nameContext : ParserRuleContext {
+	internal partial class Any_nameContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENTIFIER() { return GetToken(SQLiteParser.IDENTIFIER, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public KeywordContext keyword() {
 			return GetRuleContext<KeywordContext>(0);

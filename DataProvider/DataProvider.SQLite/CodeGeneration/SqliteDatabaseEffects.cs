@@ -10,7 +10,7 @@ namespace DataProvider.SQLite.CodeGeneration;
 /// SQLite-specific database effects implementation
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class SqliteDatabaseEffects : IDatabaseEffects
+internal sealed class SqliteDatabaseEffects : IDatabaseEffects
 {
     /// <summary>
     /// Gets column metadata by executing the SQL query against the SQLite database.

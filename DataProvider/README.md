@@ -124,14 +124,6 @@ YourProject → DataProvider → (build target) DataProvider.SQLite.Cli → Data
 <ProjectReference Include="DataProvider.csproj" />  <!-- REMOVE THIS -->
 ```
 
-### Forbidden Patterns
-
-- **NO raw SQL DDL files** - Use Migration.Cli with YAML
-- **NO individual BuildDb projects** - Use Migration.Cli (single tool)
-- **NO `schema.sql` files** - YAML schemas only
-- **NO code generation before schema creation** - Migration MUST run first
-- **NO C# schema export at build time** - Export once, commit YAML to git
-
 ## Configuration
 
 Create a `DataProvider.json` file in your project root:

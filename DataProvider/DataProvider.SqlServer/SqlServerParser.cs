@@ -7,7 +7,7 @@ namespace DataProvider.SqlServer;
 /// <summary>
 /// SQL Server specific parser implementation using SqlParserCS
 /// </summary>
-public sealed class SqlServerParser : ISqlParser
+internal sealed class SqlServerParser : ISqlParser
 {
     private readonly SqlParserCsImplementation _parser = new();
 

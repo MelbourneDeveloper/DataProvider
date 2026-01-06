@@ -34,7 +34,7 @@ using DFA = Antlr4.Runtime.Dfa.DFA;
 
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.13.1")]
 [System.CLSCompliant(false)]
-public partial class LqlParser : Parser {
+internal partial class LqlParser : Parser {
 	protected static DFA[] decisionToDFA;
 	protected static PredictionContextCache sharedContextCache = new PredictionContextCache();
 	public const int
@@ -113,7 +113,7 @@ public partial class LqlParser : Parser {
 		Interpreter = new ParserATNSimulator(this, _ATN, decisionToDFA, sharedContextCache);
 	}
 
-	public partial class ProgramContext : ParserRuleContext {
+	internal partial class ProgramContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode Eof() { return GetToken(LqlParser.Eof, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public StatementContext[] statement() {
 			return GetRuleContexts<StatementContext>();
@@ -181,7 +181,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class StatementContext : ParserRuleContext {
+	internal partial class StatementContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public LetStmtContext letStmt() {
 			return GetRuleContext<LetStmtContext>(0);
 		}
@@ -256,7 +256,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class LetStmtContext : ParserRuleContext {
+	internal partial class LetStmtContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(LqlParser.IDENT, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public PipeExprContext pipeExpr() {
 			return GetRuleContext<PipeExprContext>(0);
@@ -312,7 +312,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class PipeExprContext : ParserRuleContext {
+	internal partial class PipeExprContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ExprContext[] expr() {
 			return GetRuleContexts<ExprContext>();
 		}
@@ -381,7 +381,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class ExprContext : ParserRuleContext {
+	internal partial class ExprContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(LqlParser.IDENT, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OVER() { return GetToken(LqlParser.OVER, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public WindowSpecContext windowSpec() {
@@ -576,7 +576,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class WindowSpecContext : ParserRuleContext {
+	internal partial class WindowSpecContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public PartitionClauseContext partitionClause() {
 			return GetRuleContext<PartitionClauseContext>(0);
 		}
@@ -647,7 +647,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class PartitionClauseContext : ParserRuleContext {
+	internal partial class PartitionClauseContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PARTITION() { return GetToken(LqlParser.PARTITION, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode BY() { return GetToken(LqlParser.BY, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ArgListContext argList() {
@@ -702,7 +702,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class OrderClauseContext : ParserRuleContext {
+	internal partial class OrderClauseContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ORDER() { return GetToken(LqlParser.ORDER, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode BY() { return GetToken(LqlParser.BY, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ArgListContext argList() {
@@ -757,7 +757,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class LambdaExprContext : ParserRuleContext {
+	internal partial class LambdaExprContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] IDENT() { return GetTokens(LqlParser.IDENT); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT(int i) {
 			return GetToken(LqlParser.IDENT, i);
@@ -837,7 +837,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class QualifiedIdentContext : ParserRuleContext {
+	internal partial class QualifiedIdentContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] IDENT() { return GetTokens(LqlParser.IDENT); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT(int i) {
 			return GetToken(LqlParser.IDENT, i);
@@ -904,7 +904,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class ArgListContext : ParserRuleContext {
+	internal partial class ArgListContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ArgContext[] arg() {
 			return GetRuleContexts<ArgContext>();
 		}
@@ -973,7 +973,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class ArgContext : ParserRuleContext {
+	internal partial class ArgContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ColumnAliasContext columnAlias() {
 			return GetRuleContext<ColumnAliasContext>(0);
 		}
@@ -1119,7 +1119,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class ColumnAliasContext : ParserRuleContext {
+	internal partial class ColumnAliasContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ArithmeticExprContext arithmeticExpr() {
 			return GetRuleContext<ArithmeticExprContext>(0);
 		}
@@ -1218,7 +1218,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class ArithmeticExprContext : ParserRuleContext {
+	internal partial class ArithmeticExprContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ArithmeticTermContext[] arithmeticTerm() {
 			return GetRuleContexts<ArithmeticTermContext>();
 		}
@@ -1294,7 +1294,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class ArithmeticTermContext : ParserRuleContext {
+	internal partial class ArithmeticTermContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ArithmeticFactorContext[] arithmeticFactor() {
 			return GetRuleContexts<ArithmeticFactorContext>();
 		}
@@ -1377,7 +1377,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class ArithmeticFactorContext : ParserRuleContext {
+	internal partial class ArithmeticFactorContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public QualifiedIdentContext qualifiedIdent() {
 			return GetRuleContext<QualifiedIdentContext>(0);
 		}
@@ -1506,7 +1506,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class FunctionCallContext : ParserRuleContext {
+	internal partial class FunctionCallContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(LqlParser.IDENT, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ArgListContext argList() {
 			return GetRuleContext<ArgListContext>(0);
@@ -1582,7 +1582,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class NamedArgContext : ParserRuleContext {
+	internal partial class NamedArgContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(LqlParser.IDENT, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ON() { return GetToken(LqlParser.ON, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ComparisonContext comparison() {
@@ -1662,7 +1662,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class LogicalExprContext : ParserRuleContext {
+	internal partial class LogicalExprContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public AndExprContext[] andExpr() {
 			return GetRuleContexts<AndExprContext>();
 		}
@@ -1737,7 +1737,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class AndExprContext : ParserRuleContext {
+	internal partial class AndExprContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public AtomicExprContext[] atomicExpr() {
 			return GetRuleContexts<AtomicExprContext>();
 		}
@@ -1812,7 +1812,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class AtomicExprContext : ParserRuleContext {
+	internal partial class AtomicExprContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ComparisonContext comparison() {
 			return GetRuleContext<ComparisonContext>(0);
 		}
@@ -1881,7 +1881,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class ComparisonContext : ParserRuleContext {
+	internal partial class ComparisonContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ArithmeticExprContext[] arithmeticExpr() {
 			return GetRuleContexts<ArithmeticExprContext>();
 		}
@@ -2226,7 +2226,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class ExistsExprContext : ParserRuleContext {
+	internal partial class ExistsExprContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode EXISTS() { return GetToken(LqlParser.EXISTS, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public PipeExprContext pipeExpr() {
 			return GetRuleContext<PipeExprContext>(0);
@@ -2282,7 +2282,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class NullCheckExprContext : ParserRuleContext {
+	internal partial class NullCheckExprContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public QualifiedIdentContext qualifiedIdent() {
 			return GetRuleContext<QualifiedIdentContext>(0);
 		}
@@ -2373,7 +2373,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class InExprContext : ParserRuleContext {
+	internal partial class InExprContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IN() { return GetToken(LqlParser.IN, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public QualifiedIdentContext qualifiedIdent() {
 			return GetRuleContext<QualifiedIdentContext>(0);
@@ -2473,7 +2473,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class CaseExprContext : ParserRuleContext {
+	internal partial class CaseExprContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CASE() { return GetToken(LqlParser.CASE, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode END() { return GetToken(LqlParser.END, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public WhenClauseContext[] whenClause() {
@@ -2560,7 +2560,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class WhenClauseContext : ParserRuleContext {
+	internal partial class WhenClauseContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode WHEN() { return GetToken(LqlParser.WHEN, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ComparisonContext comparison() {
 			return GetRuleContext<ComparisonContext>(0);
@@ -2620,7 +2620,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class CaseResultContext : ParserRuleContext {
+	internal partial class CaseResultContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ArithmeticExprContext arithmeticExpr() {
 			return GetRuleContext<ArithmeticExprContext>(0);
 		}
@@ -2735,7 +2735,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class OrderDirectionContext : ParserRuleContext {
+	internal partial class OrderDirectionContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ASC() { return GetToken(LqlParser.ASC, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DESC() { return GetToken(LqlParser.DESC, 0); }
 		public OrderDirectionContext(ParserRuleContext parent, int invokingState)
@@ -2791,7 +2791,7 @@ public partial class LqlParser : Parser {
 		return _localctx;
 	}
 
-	public partial class ComparisonOpContext : ParserRuleContext {
+	internal partial class ComparisonOpContext : ParserRuleContext {
 		public ComparisonOpContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
 		{

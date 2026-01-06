@@ -35,7 +35,7 @@ using ParserRuleContext = Antlr4.Runtime.ParserRuleContext;
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.13.1")]
 [System.Diagnostics.DebuggerNonUserCode]
 [System.CLSCompliant(false)]
-public partial class LqlBaseVisitor<Result> : AbstractParseTreeVisitor<Result>, ILqlVisitor<Result> {
+internal partial class LqlBaseVisitor<Result> : AbstractParseTreeVisitor<Result>, ILqlVisitor<Result> {
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="LqlParser.program"/>.
 	/// <para>

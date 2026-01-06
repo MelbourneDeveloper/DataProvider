@@ -11,7 +11,7 @@ namespace DataProvider.SqlServer;
 /// <summary>
 /// SQL Server specific code generator static methods
 /// </summary>
-public static class SqlServerCodeGenerator
+internal static class SqlServerCodeGenerator
 {
     /// <summary>
     /// Generate C# source code for a SQL file (fallback method)

@@ -52,7 +52,7 @@ public sealed record ChangeNotification(string SubscriptionId, SyncLogEntry Chan
 /// Manages real-time subscriptions for sync notifications.
 /// Implements spec Section 10 (Real-Time Subscriptions).
 /// </summary>
-public static class SubscriptionManager
+internal static class SubscriptionManager
 {
     /// <summary>
     /// Creates a new record-level subscription.

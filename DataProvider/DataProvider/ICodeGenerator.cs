@@ -6,7 +6,7 @@ namespace DataProvider;
 /// <summary>
 /// Type aliases for code generation functions
 /// </summary>
-public static class CodeGenerators
+internal static class CodeGenerators
 {
     /// <summary>
     /// Function type for generating C# source code from SQL metadata

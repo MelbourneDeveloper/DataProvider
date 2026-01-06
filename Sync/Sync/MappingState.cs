@@ -44,7 +44,7 @@ public sealed record RecordHashEntry(
 /// Static methods for managing mapping state.
 /// Implements spec Section 7.5.3 - Sync Decision Logic.
 /// </summary>
-public static class MappingStateManager
+internal static class MappingStateManager
 {
     /// <summary>
     /// Determines if a change should be synced based on version tracking.

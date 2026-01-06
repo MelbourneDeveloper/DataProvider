@@ -7,6 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Sync.Tests" />
+    <InternalsVisibleTo Include="Sync.Http.Tests" />
+    <InternalsVisibleTo Include="Sync.Integration.Tests" />
+    <InternalsVisibleTo Include="Sync.Postgres.Tests" />
+    <InternalsVisibleTo Include="Sync.SQLite.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
     <ProjectReference Include="..\..\Lql\Lql\Lql.csproj" />
     <ProjectReference Include="..\..\Migration\Migration\Migration.csproj" />
