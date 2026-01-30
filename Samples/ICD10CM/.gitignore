@@ -17,3 +17,4 @@ obj/
 .idea/
 .vs/
 *.user
+icd10cm.db.backup
