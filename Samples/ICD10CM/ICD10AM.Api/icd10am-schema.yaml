@@ -22,7 +22,6 @@ tables:
   - name: idx_icd10am_chapter_number
     columns:
     - ChapterNumber
-    unique: true
   primaryKey:
     name: PK_icd10am_chapter
     columns:
@@ -52,7 +51,6 @@ tables:
   - name: idx_icd10am_block_code
     columns:
     - BlockCode
-    unique: true
   - name: idx_icd10am_block_chapter
     columns:
     - ChapterId
@@ -88,7 +86,6 @@ tables:
   - name: idx_icd10am_category_code
     columns:
     - CategoryCode
-    unique: true
   - name: idx_icd10am_category_block
     columns:
     - BlockId
@@ -144,7 +141,6 @@ tables:
   - name: idx_icd10am_code_code
     columns:
     - Code
-    unique: true
   - name: idx_icd10am_code_category
     columns:
     - CategoryId
@@ -181,7 +177,6 @@ tables:
   - name: idx_icd10am_embedding_code
     columns:
     - CodeId
-    unique: true
   - name: idx_icd10am_embedding_model
     columns:
     - EmbeddingModel
@@ -219,7 +214,6 @@ tables:
   - name: idx_achi_block_number
     columns:
     - BlockNumber
-    unique: true
   primaryKey:
     name: PK_achi_block
     columns:
@@ -257,7 +251,6 @@ tables:
   - name: idx_achi_code_code
     columns:
     - Code
-    unique: true
   - name: idx_achi_code_block
     columns:
     - BlockId
@@ -291,7 +284,6 @@ tables:
   - name: idx_achi_embedding_code
     columns:
     - CodeId
-    unique: true
   primaryKey:
     name: PK_achi_code_embedding
     columns:

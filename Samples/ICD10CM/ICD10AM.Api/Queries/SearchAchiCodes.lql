@@ -1,6 +1,0 @@
-achi_code
-|> join(achi_block, on = achi_code.BlockId = achi_block.Id)
-|> filter(fn(row) => row.achi_code.Code LIKE @searchTerm or row.achi_code.ShortDescription LIKE @searchTerm or row.achi_code.LongDescription LIKE @searchTerm)
-|> select(achi_code.Id, achi_code.Code, achi_code.ShortDescription, achi_code.LongDescription, achi_code.Billable, achi_block.BlockNumber, achi_block.Title AS BlockTitle)
-|> order_by(achi_code.Code)
-|> limit(@limit)

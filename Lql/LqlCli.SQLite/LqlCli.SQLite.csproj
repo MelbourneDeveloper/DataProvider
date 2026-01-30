@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <PublishAot>true</PublishAot>
+    <PublishAot>false</PublishAot>
     <InvariantGlobalization>true</InvariantGlobalization>
     <AssemblyName>lql-sqlite</AssemblyName>
     <!-- Suppress analyzer rules that are inappropriate for CLI applications -->

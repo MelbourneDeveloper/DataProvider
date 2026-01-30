@@ -21,10 +21,6 @@
             "sqlFile": "Queries/GetCodeByCode.generated.sql"
         },
         {
-            "name": "SearchCodes",
-            "sqlFile": "Queries/SearchCodes.generated.sql"
-        },
-        {
             "name": "GetAchiBlocks",
             "sqlFile": "Queries/GetAchiBlocks.generated.sql"
         },
@@ -35,10 +31,6 @@
         {
             "name": "GetAchiCodeByCode",
             "sqlFile": "Queries/GetAchiCodeByCode.generated.sql"
-        },
-        {
-            "name": "SearchAchiCodes",
-            "sqlFile": "Queries/SearchAchiCodes.generated.sql"
         },
         {
             "name": "GetCodeEmbedding",

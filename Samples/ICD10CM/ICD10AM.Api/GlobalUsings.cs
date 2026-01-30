@@ -55,16 +55,6 @@ global using GetCodeByCodeError = Outcome.Result<
     Selecta.SqlError
 >.Error<System.Collections.Immutable.ImmutableList<Generated.GetCodeByCode>, Selecta.SqlError>;
 
-// SearchCodes query result type aliases
-global using SearchCodesOk = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.SearchCodes>,
-    Selecta.SqlError
->.Ok<System.Collections.Immutable.ImmutableList<Generated.SearchCodes>, Selecta.SqlError>;
-global using SearchCodesError = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.SearchCodes>,
-    Selecta.SqlError
->.Error<System.Collections.Immutable.ImmutableList<Generated.SearchCodes>, Selecta.SqlError>;
-
 // GetAchiBlocks query result type aliases
 global using GetAchiBlocksOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetAchiBlocks>,
@@ -95,26 +85,6 @@ global using GetAchiCodeByCodeError = Outcome.Result<
     Selecta.SqlError
 >.Error<System.Collections.Immutable.ImmutableList<Generated.GetAchiCodeByCode>, Selecta.SqlError>;
 
-// SearchAchiCodes query result type aliases
-global using SearchAchiCodesOk = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.SearchAchiCodes>,
-    Selecta.SqlError
->.Ok<System.Collections.Immutable.ImmutableList<Generated.SearchAchiCodes>, Selecta.SqlError>;
-global using SearchAchiCodesError = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.SearchAchiCodes>,
-    Selecta.SqlError
->.Error<System.Collections.Immutable.ImmutableList<Generated.SearchAchiCodes>, Selecta.SqlError>;
-
-// GetCodeEmbedding query result type aliases
-global using GetCodeEmbeddingOk = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.GetCodeEmbedding>,
-    Selecta.SqlError
->.Ok<System.Collections.Immutable.ImmutableList<Generated.GetCodeEmbedding>, Selecta.SqlError>;
-global using GetCodeEmbeddingError = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.GetCodeEmbedding>,
-    Selecta.SqlError
->.Error<System.Collections.Immutable.ImmutableList<Generated.GetCodeEmbedding>, Selecta.SqlError>;
-
 // GetAllCodeEmbeddings query result type aliases
 global using GetAllCodeEmbeddingsOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetAllCodeEmbeddings>,
@@ -124,7 +94,3 @@ global using GetAllCodeEmbeddingsError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetAllCodeEmbeddings>,
     Selecta.SqlError
 >.Error<System.Collections.Immutable.ImmutableList<Generated.GetAllCodeEmbeddings>, Selecta.SqlError>;
-
-// Insert result type aliases
-global using InsertOk = Outcome.Result<int, Selecta.SqlError>.Ok<int, Selecta.SqlError>;
-global using InsertError = Outcome.Result<int, Selecta.SqlError>.Error<int, Selecta.SqlError>;

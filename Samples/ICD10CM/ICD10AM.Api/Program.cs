@@ -1,11 +1,9 @@
 #pragma warning disable IDE0037 // Use inferred member name - prefer explicit for clarity in API responses
+#pragma warning disable CA1812 // Avoid uninstantiated internal classes - records are instantiated by JSON deserialization
 
-using System.Collections.Immutable;
-using System.Net.Http.Json;
 using System.Text.Json;
 using ICD10AM.Api;
 using Microsoft.AspNetCore.Http.Json;
-using Samples.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +53,13 @@ builder.Services.AddHttpClient(
     }
 );
 
+// Register Func<HttpClient> for embedding service injection
+builder.Services.AddSingleton<Func<HttpClient>>(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    return () => factory.CreateClient("EmbeddingService");
+});
+
 // Gatekeeper configuration for authorization
 var gatekeeperUrl = builder.Configuration["Gatekeeper:BaseUrl"] ?? "http://localhost:5002";
 var signingKeyBase64 = builder.Configuration["Jwt:SigningKey"];
@@ -81,8 +86,7 @@ using (var conn = new SqliteConnection(connectionString))
 
 app.UseCors("Dashboard");
 
-var httpClientFactory = app.Services.GetRequiredService<IHttpClientFactory>();
-Func<HttpClient> getEmbeddingClient = () => httpClientFactory.CreateClient("EmbeddingService");
+// Note: Func<HttpClient> for embedding service is registered in DI below
 
 // ============================================================================
 // ICD-10-AM HIERARCHICAL BROWSE ENDPOINTS
@@ -175,12 +179,41 @@ icdGroup.MapGet(
         using var conn = getConn();
         var searchLimit = limit ?? 20;
         var searchTerm = $"%{q}%";
-        var result = await conn.SearchCodesAsync(searchTerm, searchLimit).ConfigureAwait(false);
-        return result switch
+
+        // Manual search implementation (LIKE queries not supported by generator)
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT c.Id, c.Code, c.ShortDescription, c.LongDescription, c.Billable,
+                   cat.CategoryCode, b.BlockCode, ch.ChapterNumber, ch.Title AS ChapterTitle
+            FROM icd10am_code c
+            INNER JOIN icd10am_category cat ON c.CategoryId = cat.Id
+            INNER JOIN icd10am_block b ON cat.BlockId = b.Id
+            INNER JOIN icd10am_chapter ch ON b.ChapterId = ch.Id
+            WHERE c.Code LIKE @term OR c.ShortDescription LIKE @term OR c.LongDescription LIKE @term
+            ORDER BY c.Code
+            LIMIT @limit
+            """;
+        cmd.Parameters.AddWithValue("@term", searchTerm);
+        cmd.Parameters.AddWithValue("@limit", searchLimit);
+
+        await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+        var results = new List<object>();
+        while (await reader.ReadAsync().ConfigureAwait(false))
         {
-            SearchCodesOk(var codes) => Results.Ok(codes),
-            SearchCodesError(var err) => Results.Problem(err.Message),
-        };
+            results.Add(new
+            {
+                Id = reader.GetString(0),
+                Code = reader.GetString(1),
+                ShortDescription = reader.GetString(2),
+                LongDescription = reader.GetString(3),
+                Billable = reader.GetInt64(4),
+                CategoryCode = reader.GetString(5),
+                BlockCode = reader.GetString(6),
+                ChapterNumber = reader.GetString(7),
+                ChapterTitle = reader.GetString(8),
+            });
+        }
+        return Results.Ok(results);
     }
 );
 
@@ -243,12 +276,34 @@ achiGroup.MapGet(
         using var conn = getConn();
         var searchLimit = limit ?? 20;
         var searchTerm = $"%{q}%";
-        var result = await conn.SearchAchiCodesAsync(searchTerm, searchLimit).ConfigureAwait(false);
-        return result switch
+
+        // Manual search implementation (LIKE queries not supported by generator)
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT Id, BlockId, Code, ShortDescription, LongDescription, Billable
+            FROM achi_code
+            WHERE Code LIKE @term OR ShortDescription LIKE @term OR LongDescription LIKE @term
+            ORDER BY Code
+            LIMIT @limit
+            """;
+        cmd.Parameters.AddWithValue("@term", searchTerm);
+        cmd.Parameters.AddWithValue("@limit", searchLimit);
+
+        await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+        var results = new List<object>();
+        while (await reader.ReadAsync().ConfigureAwait(false))
         {
-            SearchAchiCodesOk(var codes) => Results.Ok(codes),
-            SearchAchiCodesError(var err) => Results.Problem(err.Message),
-        };
+            results.Add(new
+            {
+                Id = reader.GetString(0),
+                BlockId = reader.GetString(1),
+                Code = reader.GetString(2),
+                ShortDescription = reader.GetString(3),
+                LongDescription = reader.GetString(4),
+                Billable = reader.GetInt64(5),
+            });
+        }
+        return Results.Ok(results);
     }
 );
 
@@ -358,7 +413,7 @@ static object ToFhirCodeSystem(GetCodeByCode code) =>
     {
         ResourceType = "CodeSystem",
         Url = "http://hl7.org/fhir/sid/icd-10-am",
-        Version = code.Edition.ToString(),
+        Version = code.Edition.ToString(System.Globalization.CultureInfo.InvariantCulture),
         Concept = new
         {
             Code = code.Code,
@@ -394,8 +449,9 @@ static ImmutableArray<float> ParseEmbedding(string embeddingJson)
         var values = JsonSerializer.Deserialize<float[]>(embeddingJson);
         return values is null ? [] : [.. values];
     }
-    catch
+    catch (JsonException)
     {
+        // Invalid JSON for embedding, return empty array
         return [];
     }
 }
