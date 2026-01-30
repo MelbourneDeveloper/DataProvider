@@ -400,11 +400,7 @@ sealed class Icd10Cli : IDisposable
             results.Add((new SearchResult(code, shortDesc, longDesc, similarity), similarity));
         }
 
-        return results
-            .OrderByDescending(r => r.Score)
-            .Take(limit)
-            .Select(r => r.Result)
-            .ToImmutableArray();
+        return [.. results.OrderByDescending(r => r.Score).Take(limit).Select(r => r.Result)];
     }
 
     static double CosineSimilarity(ImmutableArray<float> a, float[] b)
@@ -784,7 +780,7 @@ sealed class Icd10Cli : IDisposable
             );
         }
 
-        return codes.ToImmutableArray();
+        return [.. codes];
     }
 
     T ExecuteScalar<T>(string sql)

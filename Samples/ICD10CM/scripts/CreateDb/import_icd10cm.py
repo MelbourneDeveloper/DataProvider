@@ -2,8 +2,8 @@
 """
 ICD-10-CM Import Script (US Clinical Modification)
 
-Imports ICD-10-CM diagnosis codes from CDC (FREE, Public Domain).
-~74,000 codes from US Government.
+Imports ICD-10-CM diagnosis codes from CDC XML Tabular file (FREE, Public Domain).
+Includes full clinical details: inclusions, exclusions, code first, code also.
 
 Source: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10CM/
 
@@ -11,13 +11,11 @@ Usage:
     python import_icd10cm.py --db-path ./icd10cm.db
 """
 
-import json
 import logging
-import re
 import sqlite3
-import sys
 import uuid
 import zipfile
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import datetime
 from io import BytesIO
@@ -30,45 +28,20 @@ from tqdm import tqdm
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-CDC_ICD10CM_URL = "https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10CM/2025/ICD10-CM%20Code%20Descriptions%202025.zip"
-EMBEDDING_MODEL = "abhinand5/medembed-small-v0.1"
-BATCH_SIZE = 100
-
-
-@dataclass(frozen=True)
-class Chapter:
-    id: str
-    chapter_number: str
-    title: str
-    code_range_start: str
-    code_range_end: str
-
-
-@dataclass(frozen=True)
-class Block:
-    id: str
-    chapter_id: str
-    block_code: str
-    title: str
-    code_range_start: str
-    code_range_end: str
-
-
-@dataclass(frozen=True)
-class Category:
-    id: str
-    block_id: str
-    category_code: str
-    title: str
+CDC_XML_URL = "https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10CM/2025/icd10cm-table-index-2025.zip"
+XML_FILENAME = "icd-10-cm-tabular-2025.xml"
 
 
 @dataclass(frozen=True)
 class Code:
     id: str
-    category_id: str
     code: str
     short_description: str
     long_description: str
+    inclusion_terms: str
+    exclusion_terms: str
+    code_also: str
+    code_first: str
     billable: bool
 
 
@@ -80,117 +53,136 @@ def get_timestamp() -> str:
     return datetime.utcnow().isoformat() + "Z"
 
 
-CHAPTER_MAP = {
-    "A": ("I", "Certain infectious and parasitic diseases", "A00", "B99"),
-    "B": ("I", "Certain infectious and parasitic diseases", "A00", "B99"),
-    "C": ("II", "Neoplasms", "C00", "D49"),
-    "D": ("II", "Neoplasms", "C00", "D49"),
-    "E": ("IV", "Endocrine, nutritional and metabolic diseases", "E00", "E89"),
-    "F": ("V", "Mental, Behavioral and Neurodevelopmental disorders", "F01", "F99"),
-    "G": ("VI", "Diseases of the nervous system", "G00", "G99"),
-    "H": ("VII", "Diseases of the eye and adnexa", "H00", "H59"),
-    "I": ("IX", "Diseases of the circulatory system", "I00", "I99"),
-    "J": ("X", "Diseases of the respiratory system", "J00", "J99"),
-    "K": ("XI", "Diseases of the digestive system", "K00", "K95"),
-    "L": ("XII", "Diseases of the skin and subcutaneous tissue", "L00", "L99"),
-    "M": ("XIII", "Diseases of the musculoskeletal system and connective tissue", "M00", "M99"),
-    "N": ("XIV", "Diseases of the genitourinary system", "N00", "N99"),
-    "O": ("XV", "Pregnancy, childbirth and the puerperium", "O00", "O9A"),
-    "P": ("XVI", "Certain conditions originating in the perinatal period", "P00", "P96"),
-    "Q": ("XVII", "Congenital malformations, deformations and chromosomal abnormalities", "Q00", "Q99"),
-    "R": ("XVIII", "Symptoms, signs and abnormal clinical and laboratory findings", "R00", "R99"),
-    "S": ("XIX", "Injury, poisoning and certain other consequences of external causes", "S00", "T88"),
-    "T": ("XIX", "Injury, poisoning and certain other consequences of external causes", "S00", "T88"),
-    "V": ("XX", "External causes of morbidity", "V00", "Y99"),
-    "W": ("XX", "External causes of morbidity", "V00", "Y99"),
-    "X": ("XX", "External causes of morbidity", "V00", "Y99"),
-    "Y": ("XX", "External causes of morbidity", "V00", "Y99"),
-    "Z": ("XXI", "Factors influencing health status and contact with health services", "Z00", "Z99"),
-    "U": ("XXII", "Codes for special purposes", "U00", "U85"),
-}
+def extract_notes(element: ET.Element, tag: str) -> list[str]:
+    """Extract all note texts from a specific child element."""
+    notes = []
+    child = element.find(tag)
+    if child is not None:
+        for note in child.findall("note"):
+            if note.text:
+                notes.append(note.text.strip())
+    return notes
 
 
-class ICD10CMDownloader:
-    def __init__(self):
-        self.chapters: dict[str, Chapter] = {}
-        self.blocks: dict[str, Block] = {}
-        self.categories: dict[str, Category] = {}
+def extract_all_notes(element: ET.Element, tags: list[str]) -> str:
+    """Extract and combine notes from multiple tags."""
+    all_notes = []
+    for tag in tags:
+        all_notes.extend(extract_notes(element, tag))
+    return "; ".join(all_notes) if all_notes else ""
 
-    def download(self) -> Generator[Code, None, None]:
-        logger.info("Downloading ICD-10-CM from CDC...")
-        response = requests.get(CDC_ICD10CM_URL, timeout=120)
-        if response.status_code != 200:
-            raise Exception(f"CDC download failed: HTTP {response.status_code}")
-        logger.info("Downloaded CDC ICD-10-CM 2025")
 
-        lines = []
-        with zipfile.ZipFile(BytesIO(response.content)) as zf:
-            for name in zf.namelist():
-                if name.endswith(".txt"):
-                    logger.info(f"Extracting {name}...")
-                    with zf.open(name) as f:
-                        lines.extend(f.read().decode("utf-8", errors="ignore").strip().split("\n"))
+def parse_diag(diag: ET.Element, parent_includes: str = "", parent_excludes: str = "") -> Generator[Code, None, None]:
+    """Recursively parse a diag element and its children."""
+    name_elem = diag.find("name")
+    desc_elem = diag.find("desc")
 
-        logger.info(f"Loaded {len(lines)} lines")
+    if name_elem is None or name_elem.text is None:
+        return
 
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-            if len(line) > 7:
-                code_str, desc = line[:7].strip(), line[7:].strip()
-            else:
-                parts = line.split(None, 1)
-                if len(parts) < 2:
-                    continue
-                code_str, desc = parts[0].strip(), parts[1].strip() if len(parts) > 1 else ""
+    code = name_elem.text.strip()
+    desc = desc_elem.text.strip() if desc_elem is not None and desc_elem.text else ""
 
-            if not code_str or not re.match(r"^[A-Z]\d", code_str):
-                continue
-            if len(code_str) > 3 and "." not in code_str:
-                code_str = code_str[:3] + "." + code_str[3:]
+    # Extract clinical details
+    inclusion = extract_all_notes(diag, ["inclusionTerm", "includes"])
+    exclusion = extract_all_notes(diag, ["excludes1", "excludes2"])
+    code_also = extract_all_notes(diag, ["codeAlso", "useAdditionalCode"])
+    code_first = extract_all_notes(diag, ["codeFirst"])
 
-            chapter_id = self._get_or_create_chapter(code_str)
-            block_id = self._get_or_create_block(code_str, chapter_id)
-            category_id = self._get_or_create_category(code_str, block_id, desc)
+    # Inherit parent includes/excludes if this code has none
+    if not inclusion and parent_includes:
+        inclusion = parent_includes
+    if not exclusion and parent_excludes:
+        exclusion = parent_excludes
 
-            yield Code(generate_uuid(), category_id, code_str.upper(), desc[:100], desc, len(code_str.replace(".", "")) > 3)
+    # Check if billable (has no child diag elements with actual codes)
+    child_diags = [d for d in diag.findall("diag") if d.find("name") is not None]
+    billable = len(child_diags) == 0
 
-    def _get_or_create_chapter(self, code: str) -> str:
-        prefix = code[0].upper() if code else "Z"
-        info = CHAPTER_MAP.get(prefix, ("XXI", "Unknown", "Z00", "Z99"))
-        if info[0] not in self.chapters:
-            self.chapters[info[0]] = Chapter(generate_uuid(), info[0], info[1], info[2], info[3])
-        return self.chapters[info[0]].id
+    yield Code(
+        id=generate_uuid(),
+        code=code,
+        short_description=desc[:100] if desc else "",
+        long_description=desc,
+        inclusion_terms=inclusion,
+        exclusion_terms=exclusion,
+        code_also=code_also,
+        code_first=code_first,
+        billable=billable,
+    )
 
-    def _get_or_create_block(self, code: str, chapter_id: str) -> str:
-        block_code = code[:3].replace(".", "") if len(code) >= 3 else code
-        if block_code not in self.blocks:
-            self.blocks[block_code] = Block(generate_uuid(), chapter_id, block_code, f"Block {block_code}", block_code, block_code)
-        return self.blocks[block_code].id
+    # Recursively process child diag elements
+    for child_diag in child_diags:
+        yield from parse_diag(child_diag, inclusion, exclusion)
 
-    def _get_or_create_category(self, code: str, block_id: str, title: str = "") -> str:
-        cat_code = code[:3].replace(".", "") if len(code) >= 3 else code
-        if cat_code not in self.categories:
-            self.categories[cat_code] = Category(generate_uuid(), block_id, cat_code, title[:100] if title else f"Category {cat_code}")
-        return self.categories[cat_code].id
+
+def download_and_parse() -> Generator[Code, None, None]:
+    """Download CDC XML and parse all codes."""
+    logger.info("Downloading ICD-10-CM XML from CDC...")
+    response = requests.get(CDC_XML_URL, timeout=120)
+    if response.status_code != 200:
+        raise Exception(f"CDC download failed: HTTP {response.status_code}")
+    logger.info("Downloaded CDC ICD-10-CM 2025 XML Tabular")
+
+    # Extract XML from zip
+    with zipfile.ZipFile(BytesIO(response.content)) as zf:
+        logger.info(f"Extracting {XML_FILENAME}...")
+        with zf.open(XML_FILENAME) as f:
+            tree = ET.parse(f)
+
+    root = tree.getroot()
+
+    # Process all chapters
+    for chapter in root.findall(".//chapter"):
+        chapter_name = chapter.find("name")
+        if chapter_name is not None:
+            logger.info(f"Processing Chapter {chapter_name.text}...")
+
+        # Process all sections in chapter
+        for section in chapter.findall(".//section"):
+            # Process all diag elements in section
+            for diag in section.findall("diag"):
+                yield from parse_diag(diag)
 
 
 class SQLiteImporter:
-    """Imports into existing Migration-created schema (flat icd10cm_code table)."""
+    """Imports into existing Migration-created schema."""
 
     def __init__(self, db_path: str):
         self.conn = sqlite3.connect(db_path)
 
     def import_codes(self, codes: list[Code]):
-        """Import codes into flat icd10cm_code table (no hierarchy tables in CM schema)."""
+        """Import codes into icd10cm_code table."""
         logger.info(f"Importing {len(codes)} codes into icd10cm_code")
+
+        # Clear existing codes
+        self.conn.execute("DELETE FROM icd10cm_code_embedding")
+        self.conn.execute("DELETE FROM icd10cm_code")
+
         for c in codes:
             self.conn.execute(
-                """INSERT OR REPLACE INTO icd10cm_code
-                   (Id, CategoryId, Code, ShortDescription, LongDescription, InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Billable, EffectiveFrom, EffectiveTo, Edition, LastUpdated, VersionId)
+                """INSERT INTO icd10cm_code
+                   (Id, CategoryId, Code, ShortDescription, LongDescription,
+                    InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst,
+                    Billable, EffectiveFrom, EffectiveTo, Edition, LastUpdated, VersionId)
                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (c.id, "", c.code, c.short_description, c.long_description, "", "", "", "", 1 if c.billable else 0, "2025-10-01", "", 13, get_timestamp(), 1),
+                (
+                    c.id,
+                    "",
+                    c.code,
+                    c.short_description,
+                    c.long_description,
+                    c.inclusion_terms,
+                    c.exclusion_terms,
+                    c.code_also,
+                    c.code_first,
+                    1 if c.billable else 0,
+                    "2024-10-01",
+                    "",
+                    2025,
+                    get_timestamp(),
+                    1,
+                ),
             )
         self.conn.commit()
 
@@ -200,20 +192,31 @@ class SQLiteImporter:
 
 @click.command()
 @click.option("--db-path", default="icd10cm.db")
-@click.option("--skip-embeddings", is_flag=True)
-def main(db_path: str, skip_embeddings: bool):
+def main(db_path: str):
     logger.info("=" * 60)
-    logger.info("ICD-10-CM Import (CDC - US Clinical Modification)")
+    logger.info("ICD-10-CM Import (CDC XML Tabular - Full Clinical Details)")
     logger.info("=" * 60)
 
-    downloader = ICD10CMDownloader()
-    codes = list(tqdm(downloader.download(), desc="ICD-10-CM"))
-    logger.info(f"Total: {len(codes)} codes, {len(downloader.chapters)} chapters, {len(downloader.blocks)} blocks")
+    codes = list(tqdm(download_and_parse(), desc="Parsing XML"))
+    logger.info(f"Total: {len(codes)} codes parsed from XML")
+
+    # Stats
+    with_inclusions = sum(1 for c in codes if c.inclusion_terms)
+    with_exclusions = sum(1 for c in codes if c.exclusion_terms)
+    with_code_also = sum(1 for c in codes if c.code_also)
+    with_code_first = sum(1 for c in codes if c.code_first)
+    billable = sum(1 for c in codes if c.billable)
+
+    logger.info(f"  With inclusions: {with_inclusions}")
+    logger.info(f"  With exclusions: {with_exclusions}")
+    logger.info(f"  With code also: {with_code_also}")
+    logger.info(f"  With code first: {with_code_first}")
+    logger.info(f"  Billable codes: {billable}")
 
     importer = SQLiteImporter(db_path)
     try:
         importer.import_codes(codes)
-        logger.info(f"SUCCESS! {len(codes)} ICD-10-CM codes in {db_path}")
+        logger.info(f"SUCCESS! {len(codes)} ICD-10-CM codes imported to {db_path}")
     finally:
         importer.close()
 
