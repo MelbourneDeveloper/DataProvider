@@ -353,5 +353,86 @@ namespace Dashboard.Components
                 fill: "none",
                 children: Path(d: "M18 6L6 18M6 6l12 12", stroke: "currentColor", strokeWidth: 2)
             );
+
+        /// <summary>
+        /// Code/Book icon for clinical coding.
+        /// </summary>
+        public static ReactElement Code() =>
+            Svg(
+                className: "icon",
+                width: 20,
+                height: 20,
+                viewBox: "0 0 24 24",
+                fill: "none",
+                children: Path(
+                    d: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20 M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15z M8 7h8 M8 11h8 M8 15h5",
+                    stroke: "currentColor",
+                    strokeWidth: 2
+                )
+            );
+
+        /// <summary>
+        /// FileText icon for documents.
+        /// </summary>
+        public static ReactElement FileText() =>
+            Svg(
+                className: "icon",
+                width: 20,
+                height: 20,
+                viewBox: "0 0 24 24",
+                fill: "none",
+                children: Path(
+                    d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8",
+                    stroke: "currentColor",
+                    strokeWidth: 2
+                )
+            );
+
+        /// <summary>
+        /// Sparkles icon for AI/semantic search.
+        /// </summary>
+        public static ReactElement Sparkles() =>
+            Svg(
+                className: "icon",
+                width: 20,
+                height: 20,
+                viewBox: "0 0 24 24",
+                fill: "none",
+                children: Path(
+                    d: "M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z M19 13l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z M5 17l.5 1.5L7 19l-1.5.5L5 21l-.5-1.5L3 19l1.5-.5L5 17z",
+                    stroke: "currentColor",
+                    strokeWidth: 2
+                )
+            );
+
+        /// <summary>
+        /// Check icon for confirmation.
+        /// </summary>
+        public static ReactElement Check() =>
+            Svg(
+                className: "icon",
+                width: 20,
+                height: 20,
+                viewBox: "0 0 24 24",
+                fill: "none",
+                children: Path(d: "M20 6L9 17l-5-5", stroke: "currentColor", strokeWidth: 2)
+            );
+
+        /// <summary>
+        /// Copy icon for clipboard copy.
+        /// </summary>
+        public static ReactElement Copy() =>
+            Svg(
+                className: "icon",
+                width: 20,
+                height: 20,
+                viewBox: "0 0 24 24",
+                fill: "none",
+                children: Path(
+                    d: "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2 M9 2h6a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z",
+                    stroke: "currentColor",
+                    strokeWidth: 2
+                )
+            );
     }
 }

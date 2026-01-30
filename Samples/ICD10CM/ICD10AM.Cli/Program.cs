@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using Spectre.Console;
+using Spectre.Console.Rendering;
 
 var dbPath = args.Length > 0 ? args[0] : FindDatabase();
 if (dbPath is null)
@@ -42,6 +43,10 @@ sealed record Icd10Code(
     string Code,
     string ShortDescription,
     string LongDescription,
+    string InclusionTerms,
+    string ExclusionTerms,
+    string CodeAlso,
+    string CodeFirst,
     bool Billable
 );
 
@@ -65,6 +70,8 @@ sealed record EmbedResponse(ImmutableArray<float> Embedding);
 /// </summary>
 sealed class Icd10Cli : IDisposable
 {
+    static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+
     readonly SqliteConnection _db;
     readonly HttpClient _http;
     readonly List<string> _history = [];
@@ -162,7 +169,19 @@ sealed class Icd10Cli : IDisposable
                     Browse(arg);
                     break;
 
+                case "j":
+                case "json":
+                    if (string.IsNullOrWhiteSpace(arg))
+                        _console.MarkupLine("[yellow]Usage:[/] json <code>");
+                    else
+                        ShowJson(arg);
+                    break;
+
                 case "stats":
+                    _console.Clear();
+                    _console.MarkupLine("[bold cyan]ICD-10-CM Statistics[/]");
+                    _console.Write(new Rule().RuleStyle("grey"));
+                    _console.WriteLine();
                     RenderStats();
                     break;
 
@@ -201,6 +220,11 @@ sealed class Icd10Cli : IDisposable
 
     void RenderHelp()
     {
+        _console.Clear();
+        _console.MarkupLine("[bold cyan]ICD-10-CM Help[/]");
+        _console.Write(new Rule().RuleStyle("grey"));
+        _console.WriteLine();
+
         var table = new Table()
             .Border(TableBorder.Rounded)
             .BorderColor(Color.Grey)
@@ -213,6 +237,7 @@ sealed class Icd10Cli : IDisposable
         );
         table.AddRow("[green]find[/] [dim]<text>[/]", "Text search in descriptions");
         table.AddRow("[green]lookup[/] [dim]<code>[/]", "Direct code lookup (e.g., R07.9)");
+        table.AddRow("[green]json[/] [dim]<code>[/]", "Show raw JSON for a code");
         table.AddRow("[green]browse[/] [dim][[letter]][/]", "Browse codes by first letter");
         table.AddRow("[green]stats[/]", "Show database statistics");
         table.AddRow("[green]history[/]", "Show command history");
@@ -225,7 +250,7 @@ sealed class Icd10Cli : IDisposable
         _console.Write(table);
 
         _console.MarkupLine(
-            "\n[dim]Shortcuts: s=search, f=find, l=lookup, b=browse, h=help, q=quit[/]"
+            "\n[dim]Shortcuts: s=search, f=find, l=lookup, j=json, b=browse, h=help, q=quit[/]"
         );
     }
 
@@ -263,6 +288,11 @@ sealed class Icd10Cli : IDisposable
 
     void RenderHistory()
     {
+        _console.Clear();
+        _console.MarkupLine("[bold cyan]ICD-10-CM Command History[/]");
+        _console.Write(new Rule().RuleStyle("grey"));
+        _console.WriteLine();
+
         if (_history.Count == 0)
         {
             _console.MarkupLine("[dim]No history yet.[/]");
@@ -442,7 +472,8 @@ sealed class Icd10Cli : IDisposable
     {
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
-            SELECT Id, Code, ShortDescription, LongDescription, Billable
+            SELECT Id, Code, ShortDescription, LongDescription,
+                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Billable
             FROM icd10cm_code
             WHERE Code LIKE @search
                OR ShortDescription LIKE @search
@@ -469,7 +500,8 @@ sealed class Icd10Cli : IDisposable
 
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
-            SELECT Id, Code, ShortDescription, LongDescription, Billable
+            SELECT Id, Code, ShortDescription, LongDescription,
+                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Billable
             FROM icd10cm_code
             WHERE Code = @code OR Code = @normalized OR Code LIKE @prefix
             ORDER BY Code
@@ -503,7 +535,8 @@ sealed class Icd10Cli : IDisposable
 
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
-            SELECT Id, Code, ShortDescription, LongDescription, Billable
+            SELECT Id, Code, ShortDescription, LongDescription,
+                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Billable
             FROM icd10cm_code
             WHERE Code LIKE @prefix
             ORDER BY Code
@@ -517,6 +550,11 @@ sealed class Icd10Cli : IDisposable
 
     void RenderChapterOverview()
     {
+        _console.Clear();
+        _console.MarkupLine("[bold cyan]ICD-10-CM Chapter Overview[/]");
+        _console.Write(new Rule().RuleStyle("grey"));
+        _console.WriteLine();
+
         var chapters = new[]
         {
             ("A-B", "Infectious and parasitic diseases", Color.Red),
@@ -608,27 +646,114 @@ sealed class Icd10Cli : IDisposable
 
     void RenderCodeDetail(Icd10Code code)
     {
-        var panel = new Panel(
-            new Rows(
-                new Markup($"[bold cyan]{code.Code.EscapeMarkup()}[/]"),
-                new Rule().RuleStyle("grey"),
-                new Markup($"[bold]{code.ShortDescription.EscapeMarkup()}[/]"),
-                new Text(""),
-                new Markup($"[dim]{code.LongDescription.EscapeMarkup()}[/]"),
-                new Text(""),
-                new Markup(
-                    code.Billable
-                        ? "[green]\u2713 Billable[/]"
-                        : "[yellow]Not directly billable (category code)[/]"
-                )
+        _console.Clear();
+        _console.MarkupLine("[bold cyan]ICD-10-CM Code Detail[/]");
+        _console.Write(new Rule().RuleStyle("grey"));
+        _console.WriteLine();
+
+        var rows = new List<IRenderable>
+        {
+            new Markup($"[bold cyan]{code.Code.EscapeMarkup()}[/]"),
+            new Rule().RuleStyle("grey"),
+            new Markup($"[bold]{code.ShortDescription.EscapeMarkup()}[/]"),
+            new Text(""),
+            new Markup($"[dim]{code.LongDescription.EscapeMarkup()}[/]"),
+        };
+
+        if (!string.IsNullOrWhiteSpace(code.InclusionTerms))
+        {
+            rows.Add(new Text(""));
+            rows.Add(new Markup("[green]Includes:[/]"));
+            rows.Add(new Markup($"[dim]{code.InclusionTerms.EscapeMarkup()}[/]"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(code.ExclusionTerms))
+        {
+            rows.Add(new Text(""));
+            rows.Add(new Markup("[red]Excludes:[/]"));
+            rows.Add(new Markup($"[dim]{code.ExclusionTerms.EscapeMarkup()}[/]"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(code.CodeAlso))
+        {
+            rows.Add(new Text(""));
+            rows.Add(new Markup("[yellow]Code Also:[/]"));
+            rows.Add(new Markup($"[dim]{code.CodeAlso.EscapeMarkup()}[/]"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(code.CodeFirst))
+        {
+            rows.Add(new Text(""));
+            rows.Add(new Markup("[orange1]Code First:[/]"));
+            rows.Add(new Markup($"[dim]{code.CodeFirst.EscapeMarkup()}[/]"));
+        }
+
+        rows.Add(new Text(""));
+        rows.Add(
+            new Markup(
+                code.Billable
+                    ? "[green]\u2713 Billable[/]"
+                    : "[yellow]Not directly billable (category code)[/]"
             )
-        )
+        );
+
+        var panel = new Panel(new Rows(rows))
             .Border(BoxBorder.Rounded)
             .BorderColor(Color.Cyan1)
             .Header("[cyan] Code Detail [/]")
             .Padding(1, 1);
 
         _console.Write(panel);
+    }
+
+    void ShowJson(string code)
+    {
+        var normalized = code.ToUpperInvariant().Replace(".", "");
+        if (normalized.Length > 3)
+        {
+            normalized = normalized[..3] + "." + normalized[3..];
+        }
+
+        using var cmd = _db.CreateCommand();
+        cmd.CommandText = """
+            SELECT Id, Code, ShortDescription, LongDescription,
+                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Billable
+            FROM icd10cm_code
+            WHERE Code = @code OR Code = @normalized
+            LIMIT 1
+            """;
+        cmd.Parameters.AddWithValue("@code", code.ToUpperInvariant());
+        cmd.Parameters.AddWithValue("@normalized", normalized);
+
+        var codes = ReadCodes(cmd);
+        if (codes.Length == 0)
+        {
+            _console.MarkupLine($"[yellow]Code not found:[/] {code.EscapeMarkup()}");
+            return;
+        }
+
+        var c = codes[0];
+        var json = JsonSerializer.Serialize(
+            new
+            {
+                c.Id,
+                c.Code,
+                c.ShortDescription,
+                c.LongDescription,
+                c.InclusionTerms,
+                c.ExclusionTerms,
+                c.CodeAlso,
+                c.CodeFirst,
+                c.Billable,
+            },
+            JsonOptions
+        );
+
+        _console.Clear();
+        _console.MarkupLine("[bold cyan]ICD-10-CM JSON[/]");
+        _console.Write(new Rule().RuleStyle("grey"));
+        _console.MarkupLine($"[dim]Code:[/] [cyan]{c.Code.EscapeMarkup()}[/]\n");
+        _console.Write(new Panel(json).Border(BoxBorder.Rounded).BorderColor(Color.Grey));
     }
 
     void RenderGoodbye()
@@ -646,11 +771,15 @@ sealed class Icd10Cli : IDisposable
         {
             codes.Add(
                 new Icd10Code(
-                    reader.GetString(0),
-                    reader.GetString(1),
-                    reader.GetString(2),
-                    reader.GetString(3),
-                    reader.GetInt32(4) == 1
+                    Id: reader.GetString(0),
+                    Code: reader.GetString(1),
+                    ShortDescription: reader.GetString(2),
+                    LongDescription: reader.GetString(3),
+                    InclusionTerms: reader.IsDBNull(4) ? "" : reader.GetString(4),
+                    ExclusionTerms: reader.IsDBNull(5) ? "" : reader.GetString(5),
+                    CodeAlso: reader.IsDBNull(6) ? "" : reader.GetString(6),
+                    CodeFirst: reader.IsDBNull(7) ? "" : reader.GetString(7),
+                    Billable: reader.GetInt32(8) == 1
                 )
             );
         }

@@ -13,8 +13,10 @@ namespace Dashboard.Api
     {
         private static string _clinicalBaseUrl = "http://localhost:5080";
         private static string _schedulingBaseUrl = "http://localhost:5001";
+        private static string _icd10BaseUrl = "http://localhost:5090";
         private static string _clinicalToken = "";
         private static string _schedulingToken = "";
+        private static string _icd10Token = "";
 
         /// <summary>
         /// Sets the base URLs for the microservices.
@@ -26,12 +28,28 @@ namespace Dashboard.Api
         }
 
         /// <summary>
+        /// Sets the ICD-10 API base URL.
+        /// </summary>
+        public static void ConfigureIcd10(string icd10Url)
+        {
+            _icd10BaseUrl = icd10Url;
+        }
+
+        /// <summary>
         /// Sets the authentication tokens for the microservices.
         /// </summary>
         public static void SetTokens(string clinicalToken, string schedulingToken)
         {
             _clinicalToken = clinicalToken;
             _schedulingToken = schedulingToken;
+        }
+
+        /// <summary>
+        /// Sets the ICD-10 API authentication token.
+        /// </summary>
+        public static void SetIcd10Token(string icd10Token)
+        {
+            _icd10Token = icd10Token;
         }
 
         // === CLINICAL API ===
@@ -204,7 +222,153 @@ namespace Dashboard.Api
             return ParseJson<Appointment[]>(response);
         }
 
+        // === ICD-10 API ===
+
+        /// <summary>
+        /// Fetches all ICD-10-AM chapters.
+        /// </summary>
+        public static async Task<Icd10Chapter[]> GetIcd10ChaptersAsync()
+        {
+            var response = await FetchIcd10Async(_icd10BaseUrl + "/api/icd10am/chapters");
+            return ParseJson<Icd10Chapter[]>(response);
+        }
+
+        /// <summary>
+        /// Fetches blocks for a chapter.
+        /// </summary>
+        public static async Task<Icd10Block[]> GetIcd10BlocksAsync(string chapterId)
+        {
+            var response = await FetchIcd10Async(
+                _icd10BaseUrl + "/api/icd10am/chapters/" + chapterId + "/blocks"
+            );
+            return ParseJson<Icd10Block[]>(response);
+        }
+
+        /// <summary>
+        /// Fetches categories for a block.
+        /// </summary>
+        public static async Task<Icd10Category[]> GetIcd10CategoriesAsync(string blockId)
+        {
+            var response = await FetchIcd10Async(
+                _icd10BaseUrl + "/api/icd10am/blocks/" + blockId + "/categories"
+            );
+            return ParseJson<Icd10Category[]>(response);
+        }
+
+        /// <summary>
+        /// Fetches codes for a category.
+        /// </summary>
+        public static async Task<Icd10Code[]> GetIcd10CodesAsync(string categoryId)
+        {
+            var response = await FetchIcd10Async(
+                _icd10BaseUrl + "/api/icd10am/categories/" + categoryId + "/codes"
+            );
+            return ParseJson<Icd10Code[]>(response);
+        }
+
+        /// <summary>
+        /// Looks up a specific ICD-10 code.
+        /// </summary>
+        public static async Task<Icd10Code> GetIcd10CodeAsync(string code)
+        {
+            var response = await FetchIcd10Async(
+                _icd10BaseUrl + "/api/icd10am/codes/" + EncodeUri(code)
+            );
+            return ParseJson<Icd10Code>(response);
+        }
+
+        /// <summary>
+        /// Searches ICD-10 codes by keyword.
+        /// </summary>
+        public static async Task<Icd10Code[]> SearchIcd10CodesAsync(string query, int limit = 20)
+        {
+            var response = await FetchIcd10Async(
+                _icd10BaseUrl + "/api/icd10am/codes?q=" + EncodeUri(query) + "&limit=" + limit
+            );
+            return ParseJson<Icd10Code[]>(response);
+        }
+
+        /// <summary>
+        /// Searches ACHI procedure codes by keyword.
+        /// </summary>
+        public static async Task<AchiCode[]> SearchAchiCodesAsync(string query, int limit = 20)
+        {
+            var response = await FetchIcd10Async(
+                _icd10BaseUrl + "/api/achi/codes?q=" + EncodeUri(query) + "&limit=" + limit
+            );
+            return ParseJson<AchiCode[]>(response);
+        }
+
+        /// <summary>
+        /// Performs semantic search using AI embeddings.
+        /// </summary>
+        public static async Task<SemanticSearchResult[]> SemanticSearchAsync(
+            string query,
+            int limit = 10,
+            bool includeAchi = false
+        )
+        {
+            var request = new SemanticSearchRequest
+            {
+                Query = query,
+                Limit = limit,
+                IncludeAchi = includeAchi,
+            };
+            var response = await PostIcd10Async(_icd10BaseUrl + "/api/search", request);
+            return ParseJson<SemanticSearchResult[]>(response);
+        }
+
         // === HELPER METHODS ===
+
+        private static async Task<string> FetchIcd10Async(string url)
+        {
+            var response = await Script.Call<Task<Response>>(
+                "fetch",
+                url,
+                new
+                {
+                    method = "GET",
+                    headers = new
+                    {
+                        Accept = "application/json",
+                        Authorization = "Bearer " + _icd10Token,
+                    },
+                }
+            );
+
+            if (!response.Ok)
+            {
+                throw new Exception("HTTP " + response.Status);
+            }
+
+            return await response.Text();
+        }
+
+        private static async Task<string> PostIcd10Async(string url, object data)
+        {
+            var response = await Script.Call<Task<Response>>(
+                "fetch",
+                url,
+                new
+                {
+                    method = "POST",
+                    headers = new
+                    {
+                        Accept = "application/json",
+                        ContentType = "application/json",
+                        Authorization = "Bearer " + _icd10Token,
+                    },
+                    body = Script.Call<string>("JSON.stringify", data),
+                }
+            );
+
+            if (!response.Ok)
+            {
+                throw new Exception("HTTP " + response.Status);
+            }
+
+            return await response.Text();
+        }
 
         private static async Task<string> FetchClinicalAsync(string url)
         {
