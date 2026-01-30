@@ -2,51 +2,51 @@
     "queries": [
         {
             "name": "GetChapters",
-            "sqlFile": "Queries/GetChapters.sql"
+            "sqlFile": "Queries/GetChapters.generated.sql"
         },
         {
             "name": "GetBlocksByChapter",
-            "sqlFile": "Queries/GetBlocksByChapter.sql"
+            "sqlFile": "Queries/GetBlocksByChapter.generated.sql"
         },
         {
             "name": "GetCategoriesByBlock",
-            "sqlFile": "Queries/GetCategoriesByBlock.sql"
+            "sqlFile": "Queries/GetCategoriesByBlock.generated.sql"
         },
         {
             "name": "GetCodesByCategory",
-            "sqlFile": "Queries/GetCodesByCategory.sql"
+            "sqlFile": "Queries/GetCodesByCategory.generated.sql"
         },
         {
             "name": "GetCodeByCode",
-            "sqlFile": "Queries/GetCodeByCode.sql"
+            "sqlFile": "Queries/GetCodeByCode.generated.sql"
         },
         {
             "name": "SearchCodes",
-            "sqlFile": "Queries/SearchCodes.sql"
+            "sqlFile": "Queries/SearchCodes.generated.sql"
         },
         {
             "name": "GetAchiBlocks",
-            "sqlFile": "Queries/GetAchiBlocks.sql"
+            "sqlFile": "Queries/GetAchiBlocks.generated.sql"
         },
         {
             "name": "GetAchiCodesByBlock",
-            "sqlFile": "Queries/GetAchiCodesByBlock.sql"
+            "sqlFile": "Queries/GetAchiCodesByBlock.generated.sql"
         },
         {
             "name": "GetAchiCodeByCode",
-            "sqlFile": "Queries/GetAchiCodeByCode.sql"
+            "sqlFile": "Queries/GetAchiCodeByCode.generated.sql"
         },
         {
             "name": "SearchAchiCodes",
-            "sqlFile": "Queries/SearchAchiCodes.sql"
+            "sqlFile": "Queries/SearchAchiCodes.generated.sql"
         },
         {
             "name": "GetCodeEmbedding",
-            "sqlFile": "Queries/GetCodeEmbedding.sql"
+            "sqlFile": "Queries/GetCodeEmbedding.generated.sql"
         },
         {
             "name": "GetAllCodeEmbeddings",
-            "sqlFile": "Queries/GetAllCodeEmbeddings.sql"
+            "sqlFile": "Queries/GetAllCodeEmbeddings.generated.sql"
         }
     ],
     "tables": [
