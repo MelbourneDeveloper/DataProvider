@@ -22,10 +22,10 @@ public sealed class CalendarE2ETests
     [Fact]
     public async Task CalendarPage_DisplaysAppointmentsInCalendarGrid()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#calendar"
+        );
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync($"{E2EFixture.DashboardUrl}#calendar");
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -83,10 +83,8 @@ public sealed class CalendarE2ETests
         );
         createResponse.EnsureSuccessStatusCode();
 
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -158,10 +156,8 @@ public sealed class CalendarE2ETests
         );
         createResponse.EnsureSuccessStatusCode();
 
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -206,10 +202,8 @@ public sealed class CalendarE2ETests
     [Fact]
     public async Task CalendarPage_NavigationButtons_ChangeMonth()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -252,10 +246,10 @@ public sealed class CalendarE2ETests
     [Fact]
     public async Task CalendarPage_DeepLinkingWorks()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#calendar"
+        );
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync($"{E2EFixture.DashboardUrl}#calendar");
         await page.WaitForSelectorAsync(
             ".calendar-grid",
             new PageWaitForSelectorOptions { Timeout = 20000 }

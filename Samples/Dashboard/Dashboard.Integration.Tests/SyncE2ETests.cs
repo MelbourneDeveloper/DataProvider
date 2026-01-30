@@ -23,10 +23,8 @@ public sealed class SyncE2ETests
     [Fact]
     public async Task SyncDashboard_NavigatesToSyncPage_AndDisplaysStatus()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -77,7 +75,9 @@ public sealed class SyncE2ETests
     public async Task SyncDashboard_ServiceFilter_ShowsOnlySelectedService()
     {
         using var client = E2EFixture.CreateAuthenticatedClient();
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#sync"
+        );
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         // Create data in both services to ensure we have records from both
@@ -186,7 +186,9 @@ public sealed class SyncE2ETests
     public async Task SyncDashboard_ActionFilter_ShowsOnlySelectedOperation()
     {
         using var client = E2EFixture.CreateAuthenticatedClient();
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#sync"
+        );
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         // Create a patient (Insert operation = 0)
@@ -305,7 +307,9 @@ public sealed class SyncE2ETests
     public async Task SyncDashboard_CombinedFilters_WorkTogether()
     {
         using var client = E2EFixture.CreateAuthenticatedClient();
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#sync"
+        );
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         // Create data in Clinical.Api
@@ -408,7 +412,9 @@ public sealed class SyncE2ETests
     public async Task SyncDashboard_SearchFilter_FiltersCorrectly()
     {
         using var client = E2EFixture.CreateAuthenticatedClient();
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#sync"
+        );
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         // Create a patient with a known unique identifier
@@ -478,10 +484,10 @@ public sealed class SyncE2ETests
     [Fact]
     public async Task SyncDashboard_DeepLinkingWorks()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#sync"
+        );
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync($"{E2EFixture.DashboardUrl}#sync");
         await page.WaitForSelectorAsync(
             "[data-testid='sync-page']",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -627,7 +633,9 @@ public sealed class SyncE2ETests
     public async Task Sync_ChangesAppearInDashboardUI_Seamlessly()
     {
         using var client = E2EFixture.CreateAuthenticatedClient();
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#sync"
+        );
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         var uniqueId = $"DashSync{DateTime.UtcNow.Ticks % 1000000}";

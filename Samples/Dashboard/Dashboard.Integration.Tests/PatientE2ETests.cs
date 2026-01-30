@@ -23,10 +23,8 @@ public sealed class PatientE2ETests
     [Fact]
     public async Task Dashboard_DisplaysPatientData_FromClinicalApi()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -50,10 +48,8 @@ public sealed class PatientE2ETests
     [Fact]
     public async Task AddPatientButton_OpensModal_AndCreatesPatient()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -93,9 +89,7 @@ public sealed class PatientE2ETests
     [Fact]
     public async Task PatientSearchButton_NavigatesToSearch_AndFindsPatients()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -164,10 +158,8 @@ public sealed class PatientE2ETests
         Assert.True(patientIdMatch.Success);
         var patientId = patientIdMatch.Groups[1].Value;
 
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }

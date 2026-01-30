@@ -212,6 +212,8 @@ tables:
     type: Text
   - name: CodeFirst
     type: Text
+  - name: Synonyms
+    type: Text
   - name: Billable
     type: Int
     defaultValue: 1

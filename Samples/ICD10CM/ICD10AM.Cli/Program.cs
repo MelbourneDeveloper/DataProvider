@@ -47,6 +47,7 @@ sealed record Icd10Code(
     string ExclusionTerms,
     string CodeAlso,
     string CodeFirst,
+    string Synonyms,
     bool Billable
 );
 
@@ -469,11 +470,12 @@ sealed class Icd10Cli : IDisposable
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             SELECT Id, Code, ShortDescription, LongDescription,
-                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Billable
+                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Synonyms, Billable
             FROM icd10cm_code
             WHERE Code LIKE @search
                OR ShortDescription LIKE @search
                OR LongDescription LIKE @search
+               OR Synonyms LIKE @search
             ORDER BY
                 CASE WHEN Code LIKE @exact THEN 0 ELSE 1 END,
                 Code
@@ -497,7 +499,7 @@ sealed class Icd10Cli : IDisposable
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             SELECT Id, Code, ShortDescription, LongDescription,
-                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Billable
+                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Synonyms, Billable
             FROM icd10cm_code
             WHERE Code = @code OR Code = @normalized OR Code LIKE @prefix
             ORDER BY Code
@@ -532,7 +534,7 @@ sealed class Icd10Cli : IDisposable
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             SELECT Id, Code, ShortDescription, LongDescription,
-                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Billable
+                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Synonyms, Billable
             FROM icd10cm_code
             WHERE Code LIKE @prefix
             ORDER BY Code
@@ -656,6 +658,13 @@ sealed class Icd10Cli : IDisposable
             new Markup($"[dim]{code.LongDescription.EscapeMarkup()}[/]"),
         };
 
+        if (!string.IsNullOrWhiteSpace(code.Synonyms))
+        {
+            rows.Add(new Text(""));
+            rows.Add(new Markup("[magenta]Also Known As:[/]"));
+            rows.Add(new Markup($"[dim]{code.Synonyms.EscapeMarkup()}[/]"));
+        }
+
         if (!string.IsNullOrWhiteSpace(code.InclusionTerms))
         {
             rows.Add(new Text(""));
@@ -713,7 +722,7 @@ sealed class Icd10Cli : IDisposable
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             SELECT Id, Code, ShortDescription, LongDescription,
-                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Billable
+                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Synonyms, Billable
             FROM icd10cm_code
             WHERE Code = @code OR Code = @normalized
             LIMIT 1
@@ -740,6 +749,7 @@ sealed class Icd10Cli : IDisposable
                 c.ExclusionTerms,
                 c.CodeAlso,
                 c.CodeFirst,
+                c.Synonyms,
                 c.Billable,
             },
             JsonOptions
@@ -775,7 +785,8 @@ sealed class Icd10Cli : IDisposable
                     ExclusionTerms: reader.IsDBNull(5) ? "" : reader.GetString(5),
                     CodeAlso: reader.IsDBNull(6) ? "" : reader.GetString(6),
                     CodeFirst: reader.IsDBNull(7) ? "" : reader.GetString(7),
-                    Billable: reader.GetInt32(8) == 1
+                    Synonyms: reader.IsDBNull(8) ? "" : reader.GetString(8),
+                    Billable: reader.GetInt32(9) == 1
                 )
             );
         }

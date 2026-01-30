@@ -29,6 +29,7 @@ echo "Killing existing processes..."
 kill_port 5080
 kill_port 5001
 kill_port 5002
+kill_port 5090
 kill_port 5173
 
 # Delete databases if --fresh flag is set
@@ -40,6 +41,8 @@ if [ "$FRESH" = true ]; then
     rm -f "$SCRIPT_DIR/Scheduling/Scheduling.Api/bin/Release/net9.0/scheduling_*.db" 2>/dev/null || true
     rm -f "$SCRIPT_DIR/../Gatekeeper/Gatekeeper.Api/bin/Debug/net9.0/gatekeeper.db" 2>/dev/null || true
     rm -f "$SCRIPT_DIR/../Gatekeeper/Gatekeeper.Api/bin/Release/net9.0/gatekeeper.db" 2>/dev/null || true
+    rm -f "$SCRIPT_DIR/ICD10CM/ICD10AM.Api/bin/Debug/net9.0/icd10am.db" 2>/dev/null || true
+    rm -f "$SCRIPT_DIR/ICD10CM/ICD10AM.Api/bin/Release/net9.0/icd10am.db" 2>/dev/null || true
     echo "Databases cleared."
 else
     echo "Keeping existing databases (use --fresh to clear)."
@@ -58,6 +61,10 @@ dotnet run --urls "http://localhost:5001" &
 # Start Gatekeeper API (auth/access control)
 cd "$SCRIPT_DIR/../Gatekeeper/Gatekeeper.Api"
 dotnet run --urls "http://localhost:5002" &
+
+# Start ICD-10 API (clinical coding)
+cd "$SCRIPT_DIR/ICD10CM/ICD10AM.Api"
+dotnet run --urls "http://localhost:5090" &
 
 # Wait for APIs to start and create their databases
 echo "Waiting for APIs to initialize..."
@@ -87,6 +94,7 @@ echo "Services running:"
 echo "  Clinical API:   http://localhost:5080"
 echo "  Scheduling API: http://localhost:5001"
 echo "  Gatekeeper API: http://localhost:5002"
+echo "  ICD-10 API:     http://localhost:5090"
 echo "  Clinical Sync:  (background)"
 echo "  Scheduling Sync:(background)"
 echo "  Dashboard:      http://localhost:5173"

@@ -416,3 +416,5 @@ Lql/Lql.TypeProvider.FSharp.Tests.Data/Generated/
 
 *.snupkg
 Samples/ICD10CM/.venv
+
+.playwright-mcp/

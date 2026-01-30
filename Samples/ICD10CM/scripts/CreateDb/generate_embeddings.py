@@ -26,7 +26,8 @@ def get_codes_without_embeddings(conn: sqlite3.Connection, limit: int = 0) -> li
     """Get all codes that don't have embeddings yet."""
     cursor = conn.cursor()
     query = """
-        SELECT c.Id, c.Code, c.ShortDescription, c.LongDescription
+        SELECT c.Id, c.Code, c.ShortDescription, c.LongDescription,
+               c.InclusionTerms, c.ExclusionTerms, c.CodeAlso, c.CodeFirst, c.Synonyms
         FROM icd10cm_code c
         LEFT JOIN icd10cm_code_embedding e ON c.Id = e.CodeId
         WHERE e.Id IS NULL
@@ -38,9 +39,38 @@ def get_codes_without_embeddings(conn: sqlite3.Connection, limit: int = 0) -> li
     return cursor.fetchall()
 
 
-def create_embedding_text(code: str, short_desc: str, long_desc: str) -> str:
-    """Create the text to embed from code fields."""
-    return f"{code} | {short_desc} | {long_desc}"
+def create_embedding_text(
+    code: str,
+    short_desc: str,
+    long_desc: str,
+    inclusion_terms: str,
+    exclusion_terms: str,
+    code_also: str,
+    code_first: str,
+    synonyms: str,
+) -> str:
+    """Create the text to embed from ALL code fields including synonyms."""
+    parts = [f"{code} {short_desc}"]
+
+    if long_desc and long_desc != short_desc:
+        parts.append(long_desc)
+
+    if synonyms:
+        parts.append(f"Also known as: {synonyms}")
+
+    if inclusion_terms:
+        parts.append(f"Includes: {inclusion_terms}")
+
+    if exclusion_terms:
+        parts.append(f"Excludes: {exclusion_terms}")
+
+    if code_also:
+        parts.append(f"Code also: {code_also}")
+
+    if code_first:
+        parts.append(f"Code first: {code_first}")
+
+    return " | ".join(parts)
 
 
 def insert_embedding(
@@ -96,17 +126,17 @@ def main(db_path: str, batch_size: int, limit: int):
     for i in range(0, total, batch_size):
         batch = codes[i:i + batch_size]
 
-        # Create texts for batch
+        # Create texts for batch - include ALL fields for better semantic search
         texts = [
-            create_embedding_text(code, short_desc, long_desc)
-            for _, code, short_desc, long_desc in batch
+            create_embedding_text(code, short_desc, long_desc, incl, excl, code_also, code_first, synonyms)
+            for _, code, short_desc, long_desc, incl, excl, code_also, code_first, synonyms in batch
         ]
 
         # Generate embeddings in batch
         embeddings = model.encode(texts, show_progress_bar=False)
 
         # Insert into database
-        for j, (code_id, code, _, _) in enumerate(batch):
+        for j, (code_id, code, *_) in enumerate(batch):
             embedding_list = embeddings[j].tolist()
             insert_embedding(conn, code_id, embedding_list, EMBEDDING_MODEL)
 

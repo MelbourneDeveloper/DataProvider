@@ -26,7 +26,7 @@ public sealed class AuthE2ETests
         var page = await _fixture.Browser!.NewPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
 
-        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
+        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.EvaluateAsync(
             "() => { localStorage.removeItem('gatekeeper_token'); localStorage.removeItem('gatekeeper_user'); }"
         );
@@ -59,7 +59,7 @@ public sealed class AuthE2ETests
         var page = await _fixture.Browser!.NewPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
 
-        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
+        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.EvaluateAsync(
             "() => { localStorage.removeItem('gatekeeper_token'); localStorage.removeItem('gatekeeper_user'); }"
         );
@@ -172,7 +172,7 @@ public sealed class AuthE2ETests
                 networkRequests.Add($"{request.Method} {request.Url}");
         };
 
-        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
+        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.EvaluateAsync(
             "() => { localStorage.removeItem('gatekeeper_token'); localStorage.removeItem('gatekeeper_user'); }"
         );
@@ -201,10 +201,9 @@ public sealed class AuthE2ETests
     [Fact]
     public async Task UserMenu_ClickShowsDropdownWithSignOut()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
 
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -232,11 +231,9 @@ public sealed class AuthE2ETests
     [Fact]
     public async Task SignOutButton_ClickShowsLoginPage()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
 
-        // Use testMode URL to ensure app loads reliably
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -303,8 +300,8 @@ public sealed class AuthE2ETests
             }));
         }"
         );
-        // Navigate again with testMode to pick up custom user data
-        await page.GotoAsync(E2EFixture.DashboardUrl);
+        // Reload to pick up custom user data
+        await page.ReloadAsync();
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -337,7 +334,7 @@ public sealed class AuthE2ETests
         var page = await _fixture.Browser!.NewPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
 
-        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
+        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.EvaluateAsync(
             "() => { localStorage.removeItem('gatekeeper_token'); localStorage.removeItem('gatekeeper_user'); }"
         );
@@ -353,9 +350,12 @@ public sealed class AuthE2ETests
             new PageWaitForFunctionOptions { Timeout = 10000 }
         );
 
-        // Use the same DEV token that testMode uses - this token is accepted by the APIs
-        const string devToken =
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYXNoYm9hcmQtdXNlciIsImp0aSI6IjE1MTMwYTg0LTY4NTktNGNmMy05MjA3LTMyMGJhYWRiNzhjNSIsInJvbGVzIjpbImNsaW5pY2lhbiIsInNjaGVkdWxlciJdLCJleHAiOjIwODE5MjIxMDQsImlhdCI6MTc2NjM4OTMwNH0.mk66XyKaLWukzZOmGNwss74lSlXobt6Em0NoEbXRdKU";
+        // Generate a valid test token - this token is accepted by the APIs
+        var devToken = E2EFixture.GenerateTestToken(
+            userId: "test-user-123",
+            displayName: "Test User",
+            email: "test@example.com"
+        );
         await page.EvaluateAsync(
             $@"() => {{
             console.log('[TEST] Setting token and triggering login');

@@ -24,8 +24,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task Dashboard_MainPage_ShowsStatsFromBothApis()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
-        await page.GotoAsync(E2EFixture.DashboardUrl);
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -48,10 +47,8 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task AddPatientButton_OpensModal_AndCreatesPatient()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -103,10 +100,8 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task AddAppointmentButton_OpensModal_AndCreatesAppointment()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -155,9 +150,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task PatientSearchButton_NavigatesToSearch_AndFindsPatients()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -193,9 +186,7 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task ViewScheduleButton_NavigatesToAppointments()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -306,10 +297,8 @@ public sealed class DashboardE2ETests
         Assert.True(patientIdMatch.Success, "Should get patient ID from creation response");
         var patientId = patientIdMatch.Groups[1].Value;
 
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -377,10 +366,8 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task BrowserBackButton_NavigatesToPreviousView()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -430,11 +417,11 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task DeepLinking_LoadsCorrectView()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        // Navigate directly to patients page via hash with auth
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#patients"
+        );
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        // Navigate directly to patients page via hash
-        await page.GotoAsync($"{E2EFixture.DashboardUrl}#patients");
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -487,10 +474,8 @@ public sealed class DashboardE2ETests
         );
         var patientId = patientIdMatch.Groups[1].Value;
 
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -561,11 +546,8 @@ public sealed class DashboardE2ETests
         );
         var patientId = patientIdMatch.Groups[1].Value;
 
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        // Start at dashboard
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -635,10 +617,8 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task BrowserForwardButton_WorksAfterGoingBack()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -738,10 +718,8 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task AddPractitionerButton_OpensModal_AndCreatesPractitioner()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -816,10 +794,8 @@ public sealed class DashboardE2ETests
         );
         var practitionerId = practitionerIdMatch.Groups[1].Value;
 
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -955,11 +931,8 @@ public sealed class DashboardE2ETests
         );
         var practitionerId = practitionerIdMatch.Groups[1].Value;
 
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        // Start at dashboard
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -1028,10 +1001,8 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task SyncDashboard_NavigatesToSyncPage_AndDisplaysStatus()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -1092,10 +1063,10 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task SyncDashboard_FiltersWorkCorrectly()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#sync"
+        );
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync($"{E2EFixture.DashboardUrl}#sync");
         await page.WaitForSelectorAsync(
             "[data-testid='sync-page']",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -1139,11 +1110,10 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task SyncDashboard_DeepLinkingWorks()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#sync"
+        );
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        // Navigate directly to sync page via hash
-        await page.GotoAsync($"{E2EFixture.DashboardUrl}#sync");
 
         // Wait for sync page to load
         await page.WaitForSelectorAsync(
@@ -1194,10 +1164,8 @@ public sealed class DashboardE2ETests
         Assert.True(appointmentIdMatch.Success, "Should get appointment ID from creation response");
         var appointmentId = appointmentIdMatch.Groups[1].Value;
 
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -1252,11 +1220,10 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task CalendarPage_DisplaysAppointmentsInCalendarGrid()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#calendar"
+        );
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        // Navigate directly to calendar page via hash URL
-        await page.GotoAsync($"{E2EFixture.DashboardUrl}#calendar");
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -1331,10 +1298,8 @@ public sealed class DashboardE2ETests
             $"[TEST] Created appointment with ServiceType: {uniqueServiceType}, Start: {startTime}"
         );
 
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -1425,10 +1390,8 @@ public sealed class DashboardE2ETests
         );
         createResponse.EnsureSuccessStatusCode();
 
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -1483,10 +1446,8 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task CalendarPage_NavigationButtons_ChangeMonth()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -1542,11 +1503,10 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task CalendarPage_DeepLinkingWorks()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#calendar"
+        );
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        // Navigate directly to calendar page via hash
-        await page.GotoAsync($"{E2EFixture.DashboardUrl}#calendar");
         await page.WaitForSelectorAsync(
             ".calendar-grid",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -1571,8 +1531,8 @@ public sealed class DashboardE2ETests
         var page = await _fixture.Browser!.NewPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
 
-        // Navigate to Dashboard WITHOUT testMode - should show login page
-        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
+        // Navigate to Dashboard without auth - should show login page
+        await page.GotoAsync(E2EFixture.DashboardUrl);
 
         // Wait for login page to appear
         await page.WaitForSelectorAsync(
@@ -1610,8 +1570,8 @@ public sealed class DashboardE2ETests
         var page = await _fixture.Browser!.NewPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
 
-        // Navigate to Dashboard WITHOUT testMode
-        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
+        // Navigate to Dashboard without auth
+        await page.GotoAsync(E2EFixture.DashboardUrl);
 
         // Wait for login page
         await page.WaitForSelectorAsync(
@@ -1807,8 +1767,8 @@ public sealed class DashboardE2ETests
             }
         };
 
-        // Navigate to Dashboard WITHOUT testMode
-        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
+        // Navigate to Dashboard without auth
+        await page.GotoAsync(E2EFixture.DashboardUrl);
 
         // Wait for login page
         await page.WaitForSelectorAsync(
@@ -1854,10 +1814,9 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task UserMenu_ClickShowsDropdownWithSignOut()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
 
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -1889,31 +1848,8 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task SignOutButton_ClickShowsLoginPage()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
-
-        // Set up a valid test token in localStorage to simulate being logged in
-        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
-
-        // Inject a properly-signed token to simulate authenticated state
-        var testToken = E2EFixture.GenerateTestToken(
-            userId: "test-user",
-            displayName: "Test User",
-            email: "test@example.com"
-        );
-        await page.EvaluateAsync(
-            $@"() => {{
-                localStorage.setItem('gatekeeper_token', '{testToken}');
-                localStorage.setItem('gatekeeper_user', JSON.stringify({{
-                    userId: 'test-user',
-                    displayName: 'Test User',
-                    email: 'test@example.com'
-                }}));
-            }}"
-        );
-
-        // Reload to pick up the token
-        await page.ReloadAsync();
 
         // Wait for the sidebar to appear (authenticated state)
         await page.WaitForSelectorAsync(
@@ -1976,29 +1912,13 @@ public sealed class DashboardE2ETests
     [Fact]
     public async Task UserMenu_DisplaysUserInitialsAndNameInDropdown()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
-        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
-
-        // Inject a user with a specific name using a properly-signed token
-        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
-
-        var testToken = E2EFixture.GenerateTestToken(
+        // Create page with specific user details
+        var page = await _fixture.CreateAuthenticatedPageAsync(
             userId: "test-user",
             displayName: "Alice Smith",
             email: "alice@example.com"
         );
-        await page.EvaluateAsync(
-            $@"() => {{
-                localStorage.setItem('gatekeeper_token', '{testToken}');
-                localStorage.setItem('gatekeeper_user', JSON.stringify({{
-                    userId: 'test-user',
-                    displayName: 'Alice Smith',
-                    email: 'alice@example.com'
-                }}));
-            }}"
-        );
-
-        await page.ReloadAsync();
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
 
         await page.WaitForSelectorAsync(
             ".sidebar",
@@ -2041,8 +1961,8 @@ public sealed class DashboardE2ETests
         var page = await _fixture.Browser!.NewPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
 
-        // Navigate to Dashboard WITHOUT testMode - should show login page
-        await page.GotoAsync(E2EFixture.DashboardUrlNoTestMode);
+        // Navigate to Dashboard without auth - should show login page
+        await page.GotoAsync(E2EFixture.DashboardUrl);
 
         // Wait for login page to appear
         await page.WaitForSelectorAsync(

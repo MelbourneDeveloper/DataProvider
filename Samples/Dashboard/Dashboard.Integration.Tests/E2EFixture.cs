@@ -50,14 +50,8 @@ public sealed class E2EFixture : IAsyncLifetime
 
     /// <summary>
     /// Dashboard URL - SAME as real app default.
-    /// Uses testMode=true to bypass authentication in tests.
     /// </summary>
-    public const string DashboardUrl = "http://localhost:5173?testMode=true";
-
-    /// <summary>
-    /// Dashboard URL without test mode - for auth tests.
-    /// </summary>
-    public const string DashboardUrlNoTestMode = "http://localhost:5173";
+    public const string DashboardUrl = "http://localhost:5173";
 
     /// <summary>
     /// Start all services ONCE for all tests.
@@ -454,6 +448,57 @@ public sealed class E2EFixture : IAsyncLifetime
         client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateTestToken());
         return client;
+    }
+
+    /// <summary>
+    /// Creates a new browser page with authentication already set up via localStorage.
+    /// This is the proper E2E approach - no testMode backdoor in the frontend.
+    /// </summary>
+    /// <param name="navigateTo">Optional URL to navigate to after auth setup. Defaults to DashboardUrl.</param>
+    /// <param name="userId">User ID for the test token.</param>
+    /// <param name="displayName">Display name for the test token.</param>
+    /// <param name="email">Email for the test token.</param>
+    public async Task<IPage> CreateAuthenticatedPageAsync(
+        string? navigateTo = null,
+        string userId = "e2e-test-user",
+        string displayName = "E2E Test User",
+        string email = "e2etest@example.com"
+    )
+    {
+        var page = await Browser!.NewPageAsync();
+        var token = GenerateTestToken(userId, displayName, email);
+        var userJson = JsonSerializer.Serialize(
+            new
+            {
+                userId,
+                displayName,
+                email,
+            }
+        );
+
+        // Navigate first to establish the origin for localStorage
+        await page.GotoAsync(DashboardUrl);
+
+        // Set auth state in localStorage
+        await page.EvaluateAsync(
+            $@"() => {{
+                localStorage.setItem('gatekeeper_token', '{token}');
+                localStorage.setItem('gatekeeper_user', {userJson});
+            }}"
+        );
+
+        // Navigate to target URL (or reload if staying on same page)
+        var targetUrl = navigateTo ?? DashboardUrl;
+        if (targetUrl == DashboardUrl)
+        {
+            await page.ReloadAsync();
+        }
+        else
+        {
+            await page.GotoAsync(targetUrl);
+        }
+
+        return page;
     }
 
     /// <summary>
