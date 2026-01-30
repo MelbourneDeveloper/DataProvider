@@ -4,39 +4,38 @@ RAG semantic search for 74,260 ICD-10-CM diagnosis codes. Pure C# with ONNX Runt
 
 ## Quick Start
 
-### 1. Setup Database & Embeddings (One-Time)
-
 ```bash
-cd Samples/ICD10CM
+# First time: create database and import codes
+./scripts/CreateDb/run.sh
 
-# Install Python deps
-pip install click requests sentence-transformers torch
-
-# Import codes from CMS.gov (downloads ~5MB, creates 74,260 codes)
-python scripts/import_icd10cm.py --db-path icd10cm.db
-
-# Generate embeddings (~30-60 mins for all codes)
-python scripts/generate_embeddings.py --db-path icd10cm.db
+# Run the service
+./scripts/run.sh
 ```
 
-### 2. Export ONNX Model (One-Time)
+## Scripts
 
-The ONNX model (127MB) is gitignored. Export it locally:
-
-```bash
-cd ICD10AM.Api
-pip install optimum[onnxruntime]
-optimum-cli export onnx --model abhinand/MedEmbed-small-v0.1 onnx_model/
+```
+scripts/
+├── run.sh                 # Run the API (exports ONNX model if needed)
+├── Dependencies/          # Docker services
+│   ├── start.sh           # Start embedding service
+│   ├── stop.sh            # Stop embedding service
+│   └── embedding_service.py
+└── CreateDb/              # First-time database setup
+    ├── run.sh             # Migrate + import + embeddings
+    ├── import_icd10cm.py  # Import codes from CMS.gov
+    ├── generate_embeddings.py
+    ├── generate_sample_data.py
+    └── requirements.txt
 ```
 
-### 3. Run the API
+| Script/Folder | Purpose |
+|---------------|---------|
+| `run.sh` | Run the API and dependencies |
+| `Dependencies/` | Start/stop Docker services (embedding service) |
+| `CreateDb/` | One-time setup: migrate schema, import codes, generate embeddings |
 
-```bash
-cd ICD10AM.Api
-DbPath="../icd10cm.db" dotnet run --urls "http://localhost:5558"
-```
-
-### 4. Test It
+## Test It
 
 ```bash
 # Health check
@@ -55,28 +54,7 @@ curl http://localhost:5558/api/codes/R07.4
 
 ```bash
 cd ICD10AM.Api.Tests
-
-# Run all tests (requires icd10cm.db with embeddings)
 dotnet test
-
-# Run with verbose output
-dotnet test --logger "console;verbosity=detailed"
-```
-
-## Project Structure
-
-```
-Samples/ICD10CM/
-├── ICD10AM.Api/           # C# API (ONNX Runtime, no Python)
-│   ├── Program.cs         # Endpoints + ONNX embedding
-│   ├── onnx_model/        # MedEmbed ONNX model (gitignored)
-│   └── Vocabularies/      # BERT tokenizer vocab
-├── ICD10AM.Api.Tests/     # E2E integration tests
-├── scripts/
-│   ├── import_icd10cm.py      # Import codes from CMS.gov
-│   └── generate_embeddings.py # Generate vector embeddings
-├── icd10cm.db             # SQLite database (gitignored)
-└── SPEC.md                # Full specification
 ```
 
 ## API Endpoints
@@ -88,44 +66,19 @@ Samples/ICD10CM/
 | GET | `/api/codes/{code}` | Direct code lookup |
 | GET | `/api/codes` | List codes (paginated) |
 
-### RAG Search Request
-
-```json
-{
-  "Query": "severe abdominal pain",
-  "Limit": 10
-}
-```
-
-### RAG Search Response
-
-```json
-{
-  "Results": [
-    {
-      "Code": "R10.9",
-      "Description": "Unspecified abdominal pain",
-      "Confidence": 0.89
-    }
-  ],
-  "Query": "severe abdominal pain",
-  "Model": "MedEmbed-Small-v0.1"
-}
-```
-
 ## Architecture
 
 ```
-SETUP (Python - One-Time)           RUNTIME (C# Only)
+SETUP (One-Time)                    RUNTIME (C# Only)
 ┌─────────────────────┐            ┌──────────────────────┐
-│ import_icd10cm.py   │            │ ICD10AM.Api          │
-│ generate_embeddings │ ────────▶  │ ├── ONNX Runtime     │
-│ export ONNX model   │            │ ├── BERTTokenizers   │
-└─────────────────────┘            │ └── LQL Data Access  │
-        ↓                          └──────────────────────┘
-   icd10cm.db                              ↑
-   (74,260 codes)                     User Queries
-   (74,260 embeddings)
+│ CreateDb/run.sh     │            │ ICD10AM.Api          │
+│ ├── migrate schema  │ ────────▶  │ ├── ONNX Runtime     │
+│ ├── import codes    │            │ ├── BERTTokenizers   │
+│ └── gen embeddings  │            │ └── LQL Data Access  │
+└─────────────────────┘            └──────────────────────┘
+        ↓                                  ↑
+   icd10cm.db                         User Queries
+   (74,260 codes + embeddings)
 ```
 
 ## Environment Variables
@@ -138,17 +91,14 @@ SETUP (Python - One-Time)           RUNTIME (C# Only)
 ## Troubleshooting
 
 ### "model.onnx not found"
-Export the ONNX model - see step 2 above.
-
-### "base_uncased.txt not found"
-The `Vocabularies/` directory should be in the project. If missing:
+RunService/run.sh exports it automatically. Or manually:
 ```bash
-cp ~/.nuget/packages/berttokenizers/1.2.0/contentFiles/any/net6.0/Vocabularies/base_uncased.txt \
-   ICD10AM.Api/Vocabularies/
+pip install optimum[onnxruntime]
+optimum-cli export onnx --model abhinand/MedEmbed-small-v0.1 ICD10AM.Api/onnx_model/
 ```
 
 ### "No embeddings found"
-Run `generate_embeddings.py` - RAG search requires pre-computed embeddings.
+Run `CreateDb/run.sh` - RAG search requires pre-computed embeddings.
 
 ### Tests fail with "database not found"
-Ensure `icd10cm.db` exists with imported codes and embeddings.
+Run `CreateDb/run.sh` first.
