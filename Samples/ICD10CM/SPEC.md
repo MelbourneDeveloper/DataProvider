@@ -379,49 +379,93 @@ Example: `R07.4 | Chest pain, unspecified | Pain in chest, unspecified cause`
 
 **Storage Format**: JSON array of 384 floats in `Embedding` column.
 
-### Step 3: Start Embedding Service (FOR RUNTIME QUERIES)
-
-The API needs a running embedding service to encode user queries at runtime.
-
-```bash
-cd Samples/ICD10CM
-python scripts/embedding_service.py
-# Runs on http://localhost:8000
-```
-
-**API Contract**:
-```
-POST /embed
-Content-Type: application/json
-
-{"text": "chest pain with difficulty breathing"}
-
-Response:
-{"Embedding": [0.123, -0.456, ...]}  // 384 floats
-```
-
 ### Architecture Summary
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    SETUP (ONE-TIME)                              │
+│                    SETUP (ONE-TIME) - PYTHON                     │
 ├─────────────────────────────────────────────────────────────────┤
-│  1. import_icd10cm.py    →  Imports 74,260 codes from CMS.gov   │
-│  2. generate_embeddings.py →  Generates 74,260 embeddings        │
+│  1. import_icd10cm.py      →  Imports 74,260 codes from CMS.gov │
+│  2. generate_embeddings.py →  Generates 74,260 embeddings       │
+│  3. export_onnx.py         →  Exports MedEmbed to ONNX format   │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│                    RUNTIME                                       │
+│                    RUNTIME - C# ONLY (NO PYTHON!)                │
 ├─────────────────────────────────────────────────────────────────┤
-│  embedding_service.py (port 8000)  ←  Encodes user queries      │
-│  ICD10AM.Api (port 5000)           ←  Serves API requests       │
+│  ICD10AM.Api (.NET 9)                                           │
+│  ├── ONNX Runtime      →  Encodes user queries (medembed.onnx)  │
+│  ├── BertTokenizer     →  Tokenizes query text                  │
+│  ├── LQL Queries       →  All data access via generated code    │
+│  └── Cosine Similarity →  Ranks results                         │
 │                                                                  │
-│  User Query → Embedding Service → Vector → Cosine Similarity    │
-│                                      ↓                          │
-│                              icd10cm_code_embedding table        │
-│                                      ↓                          │
-│                              Ranked Results                      │
+│  User Query → C# ONNX Runtime → Vector → Cosine Similarity      │
+│                                    ↓                            │
+│                            icd10cm_code_embedding (LQL)          │
+│                                    ↓                            │
+│                            Ranked Results                        │
 └─────────────────────────────────────────────────────────────────┘
+```
+
+## CRITICAL: NO PYTHON AT RUNTIME
+
+**Python is ONLY for offline data preparation:**
+- `import_icd10cm.py` - One-time import of ICD-10 codes
+- `generate_embeddings.py` - One-time embedding generation
+
+### Download ONNX Model (Required)
+
+The ONNX model (127MB) is not stored in git. Download it once:
+
+```bash
+cd Samples/ICD10CM/ICD10AM.Api
+pip install optimum[onnxruntime]
+optimum-cli export onnx --model abhinand/MedEmbed-small-v0.1 onnx_model/
+```
+
+This exports `model.onnx` to `onnx_model/` directory.
+
+**The C# API handles ALL runtime operations:**
+- Query encoding via ONNX Runtime (Microsoft.ML.OnnxRuntime)
+- Tokenization via BERTTokenizers NuGet package
+- Vector similarity via cosine calculation
+- Data access via LQL-generated extension methods
+
+**⚠️ NEVER CALL PYTHON FROM C# ⚠️**
+
+### Required NuGet Packages
+
+```xml
+<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.19.2" />
+<PackageReference Include="BERTTokenizers" Version="1.2.0" />
+```
+
+### C# Embedding Implementation
+
+```csharp
+// Load ONNX model once at startup
+using var session = new InferenceSession("onnx_model/model.onnx");
+var tokenizer = new BertTokenizer("onnx_model/vocab.txt");
+
+// Encode query
+public static ImmutableArray<float> EncodeQuery(string query)
+{
+    var tokens = tokenizer.Encode(query);
+    var inputIds = new DenseTensor<long>(tokens.InputIds, new[] { 1, tokens.InputIds.Length });
+    var attentionMask = new DenseTensor<long>(tokens.AttentionMask, new[] { 1, tokens.AttentionMask.Length });
+
+    var inputs = new List<NamedOnnxValue>
+    {
+        NamedOnnxValue.CreateFromTensor("input_ids", inputIds),
+        NamedOnnxValue.CreateFromTensor("attention_mask", attentionMask)
+    };
+
+    using var results = session.Run(inputs);
+    var output = results.First().AsTensor<float>();
+
+    // Mean pooling over sequence dimension
+    return MeanPool(output, attentionMask);
+}
 ```
 
 ## Testing Strategy

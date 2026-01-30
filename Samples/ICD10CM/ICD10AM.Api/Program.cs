@@ -2,8 +2,11 @@
 #pragma warning disable CA1812 // Avoid uninstantiated internal classes - records are instantiated by JSON deserialization
 
 using System.Text.Json;
+using BERTTokenizers;
 using ICD10AM.Api;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.ML.OnnxRuntime;
+using Microsoft.ML.OnnxRuntime.Tensors;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,24 +44,10 @@ builder.Services.AddSingleton(() =>
     return conn;
 });
 
-// Embedding service configuration
-var embeddingServiceUrl =
-    builder.Configuration["EmbeddingService:BaseUrl"] ?? "http://localhost:8000";
-builder.Services.AddHttpClient(
-    "EmbeddingService",
-    client =>
-    {
-        client.BaseAddress = new Uri(embeddingServiceUrl);
-        client.Timeout = TimeSpan.FromSeconds(30);
-    }
-);
-
-// Register Func<HttpClient> for embedding service injection
-builder.Services.AddSingleton<Func<HttpClient>>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    return () => factory.CreateClient("EmbeddingService");
-});
+// ONNX Runtime for embedding generation - NO PYTHON!
+var onnxModelPath = Path.Combine(AppContext.BaseDirectory, "onnx_model", "model.onnx");
+builder.Services.AddSingleton(_ => new InferenceSession(onnxModelPath));
+builder.Services.AddSingleton(_ => new BertUncasedBaseTokenizer());
 
 // Gatekeeper configuration for authorization
 var gatekeeperUrl = builder.Configuration["Gatekeeper:BaseUrl"] ?? "http://localhost:5002";
@@ -308,38 +297,26 @@ achiGroup.MapGet(
 );
 
 // ============================================================================
-// RAG SEARCH ENDPOINT
+// RAG SEARCH ENDPOINT - USES ONNX RUNTIME (NO PYTHON!)
 // ============================================================================
 
 app.MapPost(
     "/api/search",
-    async (RagSearchRequest request, Func<SqliteConnection> getConn, Func<HttpClient> getEmbedding) =>
+    async (
+        RagSearchRequest request,
+        Func<SqliteConnection> getConn,
+        InferenceSession onnxSession,
+        BertUncasedBaseTokenizer tokenizer
+    ) =>
     {
         var limit = request.Limit ?? 10;
 
-        // Get embedding for the query from the embedding service
-        var embeddingClient = getEmbedding();
-        var embeddingResponse = await embeddingClient
-            .PostAsJsonAsync("/embed", new { text = request.Query })
-            .ConfigureAwait(false);
-
-        if (!embeddingResponse.IsSuccessStatusCode)
-        {
-            return Results.Problem("Failed to generate embedding for query");
-        }
-
-        var embeddingResult = await embeddingResponse
-            .Content.ReadFromJsonAsync<EmbeddingResponse>()
-            .ConfigureAwait(false);
-
-        if (embeddingResult?.Embedding is null)
-        {
-            return Results.Problem("Invalid embedding response");
-        }
+        // Encode query using ONNX Runtime - NO PYTHON!
+        var queryVector = EncodeWithOnnx(request.Query, onnxSession, tokenizer);
 
         using var conn = getConn();
 
-        // Get all embeddings and compute similarity
+        // Get all embeddings and compute similarity (via LQL)
         var allEmbeddingsResult = await conn.GetAllCodeEmbeddingsAsync().ConfigureAwait(false);
 
         if (allEmbeddingsResult is GetAllCodeEmbeddingsError(var err))
@@ -348,7 +325,6 @@ app.MapPost(
         }
 
         var allEmbeddings = ((GetAllCodeEmbeddingsOk)allEmbeddingsResult).Value;
-        var queryVector = embeddingResult.Embedding;
 
         // Compute cosine similarity for each code and rank
         var rankedResults = allEmbeddings
@@ -407,6 +383,80 @@ app.Run();
 // ============================================================================
 // HELPER METHODS
 // ============================================================================
+
+/// <summary>
+/// Encode text using ONNX Runtime - NO PYTHON!
+/// </summary>
+static ImmutableArray<float> EncodeWithOnnx(
+    string text,
+    InferenceSession session,
+    BertUncasedBaseTokenizer tokenizer
+)
+{
+    const int maxSeqLength = 128;
+
+    // Tokenize the input - BERTTokenizers uses (sequenceLength, text)
+    var encoded = tokenizer.Encode(maxSeqLength, text);
+    var inputIds = encoded.Select(t => (long)t.InputIds).ToArray();
+    var attentionMask = encoded.Select(t => (long)t.AttentionMask).ToArray();
+    var tokenTypeIds = encoded.Select(t => (long)t.TokenTypeIds).ToArray();
+
+    var seqLength = inputIds.Length;
+
+    // Create tensors
+    var inputIdsTensor = new DenseTensor<long>(inputIds, [1, seqLength]);
+    var attentionMaskTensor = new DenseTensor<long>(attentionMask, [1, seqLength]);
+    var tokenTypeIdsTensor = new DenseTensor<long>(tokenTypeIds, [1, seqLength]);
+
+    var inputs = new List<NamedOnnxValue>
+    {
+        NamedOnnxValue.CreateFromTensor("input_ids", inputIdsTensor),
+        NamedOnnxValue.CreateFromTensor("attention_mask", attentionMaskTensor),
+        NamedOnnxValue.CreateFromTensor("token_type_ids", tokenTypeIdsTensor),
+    };
+
+    // Run inference
+    using var results = session.Run(inputs);
+    var output = results.First().AsTensor<float>();
+
+    // Mean pooling over sequence dimension
+    var embeddingDim = (int)output.Dimensions[2];
+    var embedding = new float[embeddingDim];
+
+    var validTokens = 0;
+    for (var i = 0; i < seqLength; i++)
+    {
+        if (attentionMask[i] == 1)
+        {
+            validTokens++;
+            for (var j = 0; j < embeddingDim; j++)
+            {
+                embedding[j] += output[0, i, j];
+            }
+        }
+    }
+
+    // Average
+    if (validTokens > 0)
+    {
+        for (var j = 0; j < embeddingDim; j++)
+        {
+            embedding[j] /= validTokens;
+        }
+    }
+
+    // Normalize (L2)
+    var norm = (float)Math.Sqrt(embedding.Sum(x => x * x));
+    if (norm > 0)
+    {
+        for (var j = 0; j < embeddingDim; j++)
+        {
+            embedding[j] /= norm;
+        }
+    }
+
+    return [.. embedding];
+}
 
 static object ToFhirCodeSystem(GetCodeByCode code) =>
     new
@@ -489,11 +539,6 @@ namespace ICD10AM.Api
         bool IncludeAchi,
         string? Format
     );
-
-    /// <summary>
-    /// Response from embedding service.
-    /// </summary>
-    internal sealed record EmbeddingResponse(ImmutableArray<float> Embedding);
 
     /// <summary>
     /// Program entry point marker for WebApplicationFactory.
