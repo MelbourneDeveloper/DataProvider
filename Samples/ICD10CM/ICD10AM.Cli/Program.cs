@@ -81,7 +81,12 @@ sealed class Icd10Cli : IDisposable
     /// <summary>
     /// Creates CLI with injected HttpClient for testing.
     /// </summary>
-    public Icd10Cli(string dbPath, IAnsiConsole console, HttpClient httpClient, bool ownsHttpClient = false)
+    public Icd10Cli(
+        string dbPath,
+        IAnsiConsole console,
+        HttpClient httpClient,
+        bool ownsHttpClient = false
+    )
     {
         _db = new SqliteConnection($"Data Source={dbPath};Mode=ReadOnly");
         _db.Open();
@@ -92,6 +97,9 @@ sealed class Icd10Cli : IDisposable
             Environment.GetEnvironmentVariable("EMBEDDING_URL") ?? "http://localhost:8000";
     }
 
+    /// <summary>
+    /// Runs the interactive CLI loop.
+    /// </summary>
     public async Task RunAsync()
     {
         RenderHeader();
@@ -99,8 +107,9 @@ sealed class Icd10Cli : IDisposable
 
         while (true)
         {
-            AnsiConsole.WriteLine();
-            var input = AnsiConsole.Prompt(new TextPrompt<string>("[cyan]icd10>[/]").AllowEmpty());
+            _console.WriteLine();
+            _console.MarkupLine("[dim]Enter symptoms, condition, or code (h=help, q=quit):[/]");
+            var input = _console.Prompt(new TextPrompt<string>("[cyan]>[/]").AllowEmpty());
 
             if (string.IsNullOrWhiteSpace(input))
                 continue;
@@ -127,7 +136,7 @@ sealed class Icd10Cli : IDisposable
                 case "s":
                 case "search":
                     if (string.IsNullOrWhiteSpace(arg))
-                        AnsiConsole.MarkupLine("[yellow]Usage:[/] search <query>");
+                        _console.MarkupLine("[yellow]Usage:[/] search <query>");
                     else
                         await SearchAsync(arg);
                     break;
@@ -135,7 +144,7 @@ sealed class Icd10Cli : IDisposable
                 case "l":
                 case "lookup":
                     if (string.IsNullOrWhiteSpace(arg))
-                        AnsiConsole.MarkupLine("[yellow]Usage:[/] lookup <code>");
+                        _console.MarkupLine("[yellow]Usage:[/] lookup <code>");
                     else
                         Lookup(arg);
                     break;
@@ -143,7 +152,7 @@ sealed class Icd10Cli : IDisposable
                 case "f":
                 case "find":
                     if (string.IsNullOrWhiteSpace(arg))
-                        AnsiConsole.MarkupLine("[yellow]Usage:[/] find <text>");
+                        _console.MarkupLine("[yellow]Usage:[/] find <text>");
                     else
                         Find(arg);
                     break;
@@ -162,7 +171,7 @@ sealed class Icd10Cli : IDisposable
                     break;
 
                 case "clear":
-                    AnsiConsole.Clear();
+                    _console.Clear();
                     RenderHeader();
                     break;
 
@@ -177,7 +186,7 @@ sealed class Icd10Cli : IDisposable
     {
         var header = new FigletText("ICD-10-CM").Centered().Color(Color.Cyan1);
 
-        AnsiConsole.Write(header);
+        _console.Write(header);
 
         var panel = new Panel(
             "[grey]Medical Diagnosis Code Explorer[/]\n"
@@ -187,7 +196,7 @@ sealed class Icd10Cli : IDisposable
             .BorderColor(Color.Grey)
             .Padding(1, 0);
 
-        AnsiConsole.Write(panel);
+        _console.Write(panel);
     }
 
     void RenderHelp()
@@ -213,9 +222,9 @@ sealed class Icd10Cli : IDisposable
         table.AddEmptyRow();
         table.AddRow("[dim]<anything else>[/]", "[dim]Treated as search query[/]");
 
-        AnsiConsole.Write(table);
+        _console.Write(table);
 
-        AnsiConsole.MarkupLine(
+        _console.MarkupLine(
             "\n[dim]Shortcuts: s=search, f=find, l=lookup, b=browse, h=help, q=quit[/]"
         );
     }
@@ -242,11 +251,11 @@ sealed class Icd10Cli : IDisposable
                 .BorderColor(Color.Blue)
         );
 
-        AnsiConsole.Write(grid);
+        _console.Write(grid);
 
         if (embeddingCount == 0)
         {
-            AnsiConsole.MarkupLine(
+            _console.MarkupLine(
                 "[yellow]RAG search unavailable - no embeddings. Use [cyan]find[/] for text search.[/]"
             );
         }
@@ -256,7 +265,7 @@ sealed class Icd10Cli : IDisposable
     {
         if (_history.Count == 0)
         {
-            AnsiConsole.MarkupLine("[dim]No history yet.[/]");
+            _console.MarkupLine("[dim]No history yet.[/]");
             return;
         }
 
@@ -271,7 +280,7 @@ sealed class Icd10Cli : IDisposable
             table.AddRow($"[dim]{i + 1}[/]", _history[i].EscapeMarkup());
         }
 
-        AnsiConsole.Write(table);
+        _console.Write(table);
     }
 
     async Task SearchAsync(string query)
@@ -279,7 +288,7 @@ sealed class Icd10Cli : IDisposable
         var embeddingCount = ExecuteScalar<long>("SELECT COUNT(*) FROM icd10cm_code_embedding");
         if (embeddingCount == 0)
         {
-            AnsiConsole.MarkupLine(
+            _console.MarkupLine(
                 "[yellow]No embeddings in database. Using text search instead...[/]"
             );
             Find(query);
@@ -289,7 +298,7 @@ sealed class Icd10Cli : IDisposable
         ImmutableArray<float> queryEmbedding;
         try
         {
-            queryEmbedding = await AnsiConsole
+            queryEmbedding = await _console
                 .Status()
                 .Spinner(Spinner.Known.Dots)
                 .SpinnerStyle(Style.Parse("cyan"))
@@ -317,15 +326,15 @@ sealed class Icd10Cli : IDisposable
         }
         catch (Exception ex)
         {
-            AnsiConsole.MarkupLine(
+            _console.MarkupLine(
                 $"[red]Embedding service unavailable:[/] {ex.Message.EscapeMarkup()}"
             );
-            AnsiConsole.MarkupLine("[yellow]Falling back to text search...[/]");
+            _console.MarkupLine("[yellow]Falling back to text search...[/]");
             Find(query);
             return;
         }
 
-        var results = AnsiConsole
+        var results = _console
             .Status()
             .Spinner(Spinner.Known.Dots)
             .SpinnerStyle(Style.Parse("cyan"))
@@ -389,11 +398,14 @@ sealed class Icd10Cli : IDisposable
 
     void RenderSearchResults(string query, ImmutableArray<SearchResult> results)
     {
-        AnsiConsole.MarkupLine($"\n[dim]RAG search for:[/] [cyan]{query.EscapeMarkup()}[/]");
+        _console.Clear();
+        _console.MarkupLine("[bold cyan]ICD-10-CM Search Results[/]");
+        _console.Write(new Rule().RuleStyle("grey"));
+        _console.MarkupLine($"[dim]Query:[/] [cyan]{query.EscapeMarkup()}[/]\n");
 
         if (results.Length == 0)
         {
-            AnsiConsole.MarkupLine("[yellow]No results found.[/]");
+            _console.MarkupLine("[yellow]No results found.[/]");
             return;
         }
 
@@ -420,8 +432,10 @@ sealed class Icd10Cli : IDisposable
             );
         }
 
-        AnsiConsole.Write(table);
-        AnsiConsole.MarkupLine($"[dim]{results.Length} results[/]");
+        _console.Write(table);
+        _console.MarkupLine(
+            $"[dim]{results.Length} results - type [cyan]l <code>[/] for details[/]"
+        );
     }
 
     void Find(string text)
@@ -553,17 +567,20 @@ sealed class Icd10Cli : IDisposable
             );
         }
 
-        AnsiConsole.Write(table);
-        AnsiConsole.MarkupLine("\n[dim]Type [cyan]browse <letter>[/] to explore a chapter[/]");
+        _console.Write(table);
+        _console.MarkupLine("\n[dim]Type [cyan]browse <letter>[/] to explore a chapter[/]");
     }
 
     void RenderCodeList(string title, ImmutableArray<Icd10Code> codes)
     {
-        AnsiConsole.MarkupLine($"\n[dim]{title.EscapeMarkup()}[/]");
+        _console.Clear();
+        _console.MarkupLine("[bold cyan]ICD-10-CM Results[/]");
+        _console.Write(new Rule().RuleStyle("grey"));
+        _console.MarkupLine($"[dim]{title.EscapeMarkup()}[/]\n");
 
         if (codes.Length == 0)
         {
-            AnsiConsole.MarkupLine("[yellow]No codes found.[/]");
+            _console.MarkupLine("[yellow]No codes found.[/]");
             return;
         }
 
@@ -583,8 +600,10 @@ sealed class Icd10Cli : IDisposable
             );
         }
 
-        AnsiConsole.Write(table);
-        AnsiConsole.MarkupLine($"[dim]{codes.Length} codes ([green]\u2713[/] = billable)[/]");
+        _console.Write(table);
+        _console.MarkupLine(
+            $"[dim]{codes.Length} codes ([green]\u2713[/] = billable) - type [cyan]l <code>[/] for details[/]"
+        );
     }
 
     void RenderCodeDetail(Icd10Code code)
@@ -609,13 +628,13 @@ sealed class Icd10Cli : IDisposable
             .Header("[cyan] Code Detail [/]")
             .Padding(1, 1);
 
-        AnsiConsole.Write(panel);
+        _console.Write(panel);
     }
 
     void RenderGoodbye()
     {
-        AnsiConsole.WriteLine();
-        AnsiConsole.Write(new Rule("[cyan]Goodbye![/]").RuleStyle("grey"));
+        _console.WriteLine();
+        _console.Write(new Rule("[cyan]Goodbye![/]").RuleStyle("grey"));
     }
 
     ImmutableArray<Icd10Code> ReadCodes(SqliteCommand cmd)
@@ -653,6 +672,9 @@ sealed class Icd10Cli : IDisposable
     public void Dispose()
     {
         _db.Dispose();
-        _http.Dispose();
+        if (_ownsHttpClient)
+        {
+            _http.Dispose();
+        }
     }
 }
