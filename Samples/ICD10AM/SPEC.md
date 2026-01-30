@@ -1,39 +1,35 @@
-# ICD-10-AM Microservice Specification
+# ICD-10 Microservice Specification
 
 ## Overview
 
-The ICD-10-AM microservice provides clinical coders with RAG (Retrieval-Augmented Generation) search capabilities and standard lookup functionality for the Australian ICD-10-AM/ACHI/ACS classification system.
+The ICD-10 microservice provides clinical coders with RAG (Retrieval-Augmented Generation) search capabilities and standard lookup functionality for ICD-10-CM diagnosis codes.
 
-### What is ICD-10-AM?
+### What is ICD-10-CM?
 
-**ICD-10-AM** (International Statistical Classification of Diseases and Related Health Problems, Tenth Revision, Australian Modification) is used to classify diseases, injuries, and related health problems in Australian healthcare settings.
+**ICD-10-CM** (International Statistical Classification of Diseases and Related Health Problems, Tenth Revision, Clinical Modification) is used to classify diseases, injuries, and related health problems in healthcare settings.
 
-The complete classification system comprises:
-- **ICD-10-AM**: Disease and diagnosis classification
-- **ACHI**: Australian Classification of Health Interventions (procedures)
-- **ACS**: Australian Coding Standards (coding guidelines)
+The classification system comprises:
+- **ICD-10-CM**: Diagnosis classification (FREE from CMS.gov)
+- **ICD-10-PCS**: Procedure Coding System (FREE from CMS.gov)
 
-**Current Edition**: Thirteenth Edition (effective 1 July 2025)
-**Previous Edition**: Twelfth Edition (1 July 2022 - 30 June 2025)
+**Current Edition**: FY 2025 (effective October 1, 2024)
 
-### Data Source & Licensing
+### Data Source - FREE & OPEN SOURCE
 
-Official source: [IHACPA ICD-10-AM/ACHI/ACS Resources](https://www.ihacpa.gov.au/resources/icd-10-amachiacs-resources)
+**Primary Source**: [CMS.gov ICD-10 Codes](https://www.cms.gov/medicare/coding-billing/icd-10-codes) (US Government - FREE!)
 
-**IMPORTANT: Licensing Requirements**
+**Alternative Sources**:
+- [CDC ICD-10-CM Files](https://www.cdc.gov/nchs/icd/icd-10-cm/files.html)
+- [GitHub Mirror (JSON)](https://gist.github.com/cryocaustik/b86de96e66489ada97c25fc25f755de0)
 
-ICD-10-AM/ACHI/ACS is copyrighted material owned by the Independent Health and Aged Care Pricing Authority (IHACPA) and the World Health Organization (WHO). To use the complete classification:
+**NO LICENSE REQUIRED** - CMS.gov data is public domain.
 
-1. **Purchase License**: Contact IHACPA or Lane Print for licensed materials
-2. **Thirteenth Edition**: Available from April 2025 (effective 1 July 2025)
-3. **Mapping Tables**: Require license verification before distribution
-
-For development and testing, use the sample data generator:
+To import the full 71,000+ diagnosis codes:
 ```bash
-python scripts/generate_sample_data.py icd10am.db
+python scripts/import_icd10cm.py --db-path icd10.db
 ```
 
-This creates a test database with ~30 common codes for development purposes only.
+This downloads directly from CMS.gov and creates a complete database.
 
 ## Features
 
