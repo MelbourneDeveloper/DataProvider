@@ -334,27 +334,94 @@ Required extensions:
 
 ## Import Pipeline
 
-### Python Import Script
+### Step 1: Import ICD-10-CM Codes
 
-Location: `scripts/import_icd10am.py`
+Location: `scripts/import_icd10cm.py`
 
-**Capabilities**:
-1. Download official IHACPA data files
-2. Parse ICD-10-AM tabular list and index
-3. Parse ACHI procedures
-4. Generate embeddings using MedEmbed
-5. Bulk insert into PostgreSQL with pgvector
+Downloads FREE ICD-10-CM data from CMS.gov and populates the database.
 
-**Usage**:
 ```bash
-# Install dependencies
-pip install -r scripts/requirements.txt
+cd Samples/ICD10CM
+pip install click requests
+python scripts/import_icd10cm.py --db-path icd10cm.db
+```
 
-# Run import
-python scripts/import_icd10am.py \
-  --source /path/to/icd10am-data \
-  --db-url postgresql://user:pass@localhost/icd10am \
-  --edition 13
+**Result**: 74,260 ICD-10-CM codes imported into SQLite.
+
+### Step 2: Generate Embeddings (REQUIRED FOR RAG SEARCH)
+
+Location: `scripts/generate_embeddings.py`
+
+**CRITICAL**: RAG semantic search will NOT work until embeddings are generated!
+
+```bash
+cd Samples/ICD10CM
+pip install sentence-transformers torch click
+
+# Generate embeddings for all codes (takes ~30-60 minutes)
+python scripts/generate_embeddings.py --db-path icd10cm.db
+
+# Or generate in batches for large datasets
+python scripts/generate_embeddings.py --db-path icd10cm.db --batch-size 500
+```
+
+**What it does**:
+1. Loads MedEmbed-Small-v0.1 model (384 dimensions)
+2. For each ICD-10 code, generates embedding from: `{Code} {ShortDescription} {LongDescription}`
+3. Stores embedding as JSON array in `icd10cm_code_embedding` table
+4. Links embedding to code via `CodeId` foreign key
+
+**Embedding Text Format**:
+```
+{Code} | {ShortDescription} | {LongDescription}
+```
+Example: `R07.4 | Chest pain, unspecified | Pain in chest, unspecified cause`
+
+**Storage Format**: JSON array of 384 floats in `Embedding` column.
+
+### Step 3: Start Embedding Service (FOR RUNTIME QUERIES)
+
+The API needs a running embedding service to encode user queries at runtime.
+
+```bash
+cd Samples/ICD10CM
+python scripts/embedding_service.py
+# Runs on http://localhost:8000
+```
+
+**API Contract**:
+```
+POST /embed
+Content-Type: application/json
+
+{"text": "chest pain with difficulty breathing"}
+
+Response:
+{"Embedding": [0.123, -0.456, ...]}  // 384 floats
+```
+
+### Architecture Summary
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    SETUP (ONE-TIME)                              │
+├─────────────────────────────────────────────────────────────────┤
+│  1. import_icd10cm.py    →  Imports 74,260 codes from CMS.gov   │
+│  2. generate_embeddings.py →  Generates 74,260 embeddings        │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    RUNTIME                                       │
+├─────────────────────────────────────────────────────────────────┤
+│  embedding_service.py (port 8000)  ←  Encodes user queries      │
+│  ICD10AM.Api (port 5000)           ←  Serves API requests       │
+│                                                                  │
+│  User Query → Embedding Service → Vector → Cosine Similarity    │
+│                                      ↓                          │
+│                              icd10cm_code_embedding table        │
+│                                      ↓                          │
+│                              Ranked Results                      │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ## Testing Strategy
