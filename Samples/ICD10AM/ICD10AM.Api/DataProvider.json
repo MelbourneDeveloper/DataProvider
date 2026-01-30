@@ -1,0 +1,136 @@
+{
+    "queries": [
+        {
+            "name": "GetChapters",
+            "sqlFile": "Queries/GetChapters.sql"
+        },
+        {
+            "name": "GetBlocksByChapter",
+            "sqlFile": "Queries/GetBlocksByChapter.sql"
+        },
+        {
+            "name": "GetCategoriesByBlock",
+            "sqlFile": "Queries/GetCategoriesByBlock.sql"
+        },
+        {
+            "name": "GetCodesByCategory",
+            "sqlFile": "Queries/GetCodesByCategory.sql"
+        },
+        {
+            "name": "GetCodeByCode",
+            "sqlFile": "Queries/GetCodeByCode.sql"
+        },
+        {
+            "name": "SearchCodes",
+            "sqlFile": "Queries/SearchCodes.sql"
+        },
+        {
+            "name": "GetAchiBlocks",
+            "sqlFile": "Queries/GetAchiBlocks.sql"
+        },
+        {
+            "name": "GetAchiCodesByBlock",
+            "sqlFile": "Queries/GetAchiCodesByBlock.sql"
+        },
+        {
+            "name": "GetAchiCodeByCode",
+            "sqlFile": "Queries/GetAchiCodeByCode.sql"
+        },
+        {
+            "name": "SearchAchiCodes",
+            "sqlFile": "Queries/SearchAchiCodes.sql"
+        },
+        {
+            "name": "GetCodeEmbedding",
+            "sqlFile": "Queries/GetCodeEmbedding.sql"
+        },
+        {
+            "name": "GetAllCodeEmbeddings",
+            "sqlFile": "Queries/GetAllCodeEmbeddings.sql"
+        }
+    ],
+    "tables": [
+        {
+            "schema": "main",
+            "name": "icd10am_chapter",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "icd10am_block",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "icd10am_category",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "icd10am_code",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "icd10am_code_embedding",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "achi_block",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "achi_code",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "achi_code_embedding",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "user_search_history",
+            "generateInsert": true,
+            "generateUpdate": false,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        }
+    ],
+    "connectionString": "Data Source=icd10am.db"
+}
