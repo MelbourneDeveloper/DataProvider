@@ -415,3 +415,4 @@ Lql/Lql.TypeProvider.FSharp.Tests.Data/Generated/
 *.nupkg
 
 *.snupkg
+Samples/ICD10CM/.venv

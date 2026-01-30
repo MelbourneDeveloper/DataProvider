@@ -8,6 +8,7 @@ __pycache__/
 *.pyc
 .env
 venv/
+.venv/
 
 # Build outputs
 bin/

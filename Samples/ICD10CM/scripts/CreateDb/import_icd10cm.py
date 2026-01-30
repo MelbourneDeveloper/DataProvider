@@ -177,44 +177,21 @@ class ICD10CMDownloader:
 
 
 class SQLiteImporter:
+    """Imports into existing Migration-created schema (flat icd10cm_code table)."""
+
     def __init__(self, db_path: str):
         self.conn = sqlite3.connect(db_path)
-        self._create_schema()
-
-    def _create_schema(self):
-        self.conn.executescript("""
-            CREATE TABLE IF NOT EXISTS icd10cm_chapter (Id TEXT PRIMARY KEY, ChapterNumber TEXT UNIQUE, Title TEXT, CodeRangeStart TEXT, CodeRangeEnd TEXT, LastUpdated TEXT, VersionId INTEGER DEFAULT 1);
-            CREATE TABLE IF NOT EXISTS icd10cm_block (Id TEXT PRIMARY KEY, ChapterId TEXT, BlockCode TEXT UNIQUE, Title TEXT, CodeRangeStart TEXT, CodeRangeEnd TEXT, LastUpdated TEXT, VersionId INTEGER DEFAULT 1);
-            CREATE TABLE IF NOT EXISTS icd10cm_category (Id TEXT PRIMARY KEY, BlockId TEXT, CategoryCode TEXT UNIQUE, Title TEXT, LastUpdated TEXT, VersionId INTEGER DEFAULT 1);
-            CREATE TABLE IF NOT EXISTS icd10cm_code (Id TEXT PRIMARY KEY, CategoryId TEXT, Code TEXT UNIQUE, ShortDescription TEXT, LongDescription TEXT, Billable INTEGER DEFAULT 1, EffectiveFrom TEXT DEFAULT '2025-10-01', EffectiveTo TEXT DEFAULT '', LastUpdated TEXT, VersionId INTEGER DEFAULT 1);
-            CREATE TABLE IF NOT EXISTS icd10cm_code_embedding (Id TEXT PRIMARY KEY, CodeId TEXT UNIQUE, Embedding TEXT, EmbeddingModel TEXT DEFAULT 'MedEmbed-Small-v0.1', LastUpdated TEXT);
-            CREATE INDEX IF NOT EXISTS idx_icd10cm_code_code ON icd10cm_code(Code);
-            CREATE INDEX IF NOT EXISTS idx_icd10cm_code_desc ON icd10cm_code(ShortDescription);
-        """)
-        self.conn.commit()
-
-    def import_chapters(self, chapters: list[Chapter]):
-        logger.info(f"Importing {len(chapters)} chapters")
-        for c in chapters:
-            self.conn.execute("INSERT OR REPLACE INTO icd10cm_chapter VALUES (?,?,?,?,?,?,1)", (c.id, c.chapter_number, c.title, c.code_range_start, c.code_range_end, get_timestamp()))
-        self.conn.commit()
-
-    def import_blocks(self, blocks: list[Block]):
-        logger.info(f"Importing {len(blocks)} blocks")
-        for b in blocks:
-            self.conn.execute("INSERT OR REPLACE INTO icd10cm_block VALUES (?,?,?,?,?,?,?,1)", (b.id, b.chapter_id, b.block_code, b.title, b.code_range_start, b.code_range_end, get_timestamp()))
-        self.conn.commit()
-
-    def import_categories(self, categories: list[Category]):
-        logger.info(f"Importing {len(categories)} categories")
-        for c in categories:
-            self.conn.execute("INSERT OR REPLACE INTO icd10cm_category VALUES (?,?,?,?,?,1)", (c.id, c.block_id, c.category_code, c.title, get_timestamp()))
-        self.conn.commit()
 
     def import_codes(self, codes: list[Code]):
-        logger.info(f"Importing {len(codes)} codes")
+        """Import codes into flat icd10cm_code table (no hierarchy tables in CM schema)."""
+        logger.info(f"Importing {len(codes)} codes into icd10cm_code")
         for c in codes:
-            self.conn.execute("INSERT OR REPLACE INTO icd10cm_code VALUES (?,?,?,?,?,?,?,?,?,1)", (c.id, c.category_id, c.code, c.short_description, c.long_description, 1 if c.billable else 0, "2025-10-01", "", get_timestamp()))
+            self.conn.execute(
+                """INSERT OR REPLACE INTO icd10cm_code
+                   (Id, CategoryId, Code, ShortDescription, LongDescription, InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Billable, EffectiveFrom, EffectiveTo, Edition, LastUpdated, VersionId)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (c.id, "", c.code, c.short_description, c.long_description, "", "", "", "", 1 if c.billable else 0, "2025-10-01", "", 13, get_timestamp(), 1),
+            )
         self.conn.commit()
 
     def close(self):
@@ -235,9 +212,6 @@ def main(db_path: str, skip_embeddings: bool):
 
     importer = SQLiteImporter(db_path)
     try:
-        importer.import_chapters(list(downloader.chapters.values()))
-        importer.import_blocks(list(downloader.blocks.values()))
-        importer.import_categories(list(downloader.categories.values()))
         importer.import_codes(codes)
         logger.info(f"SUCCESS! {len(codes)} ICD-10-CM codes in {db_path}")
     finally:
