@@ -15,21 +15,13 @@ echo "=== Starting ICD-10-CM Service ==="
 # Check database exists
 if [ ! -f "$DB_PATH" ]; then
     echo "ERROR: Database not found at $DB_PATH"
-    echo "Run CreateDb/run.sh first"
+    echo "Run CreateDb/import.sh first"
     exit 1
 fi
 
-# Check ONNX model exists
-if [ ! -f "$API_DIR/onnx_model/model.onnx" ]; then
-    echo "ONNX model not found. Exporting..."
-    pip install optimum[onnxruntime]
-    optimum-cli export onnx --model abhinand/MedEmbed-small-v0.1 "$API_DIR/onnx_model"
-    echo ""
-fi
-
-# Start embedding service (optional, for generating new embeddings)
+# Start embedding service (required for RAG search)
 echo "Starting embedding service..."
-"$SCRIPT_DIR/Dependencies/start.sh" || echo "Embedding service not started (optional)"
+"$SCRIPT_DIR/Dependencies/start.sh"
 
 echo ""
 echo "=== Starting API ==="

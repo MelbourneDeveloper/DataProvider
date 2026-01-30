@@ -1,12 +1,12 @@
 # ICD-10-CM Microservice
 
-RAG semantic search for 74,260 ICD-10-CM diagnosis codes. Pure C# with ONNX Runtime - no Python at runtime.
+RAG semantic search for 74,260 ICD-10-CM diagnosis codes. C# API with Docker-based embedding service.
 
 ## Quick Start
 
 ```bash
 # First time: create database and import codes
-./scripts/CreateDb/run.sh
+./scripts/CreateDb/import.sh
 
 # Run the service
 ./scripts/run.sh
@@ -16,13 +16,12 @@ RAG semantic search for 74,260 ICD-10-CM diagnosis codes. Pure C# with ONNX Runt
 
 ```
 scripts/
-├── run.sh                 # Run the API (exports ONNX model if needed)
+├── run.sh                 # Run the API and embedding service
 ├── Dependencies/          # Docker services
-│   ├── start.sh           # Start embedding service
-│   ├── stop.sh            # Stop embedding service
-│   └── embedding_service.py
+│   ├── start.sh           # Start embedding service container
+│   └── stop.sh            # Stop embedding service container
 └── CreateDb/              # First-time database setup
-    ├── run.sh             # Migrate + import + embeddings
+    ├── import.sh          # Migrate + import + embeddings
     ├── import_icd10cm.py  # Import codes from CMS.gov
     ├── generate_embeddings.py
     ├── generate_sample_data.py
@@ -68,17 +67,18 @@ dotnet test
 
 ## Architecture
 
-```
-SETUP (One-Time)                    RUNTIME (C# Only)
-┌─────────────────────┐            ┌──────────────────────┐
-│ CreateDb/run.sh     │            │ ICD10AM.Api          │
-│ ├── migrate schema  │ ────────▶  │ ├── ONNX Runtime     │
-│ ├── import codes    │            │ ├── BERTTokenizers   │
-│ └── gen embeddings  │            │ └── LQL Data Access  │
-└─────────────────────┘            └──────────────────────┘
-        ↓                                  ↑
-   icd10cm.db                         User Queries
-   (74,260 codes + embeddings)
+```mermaid
+flowchart LR
+    Client([User]) --> |POST /api/search| API["ICD10AM.Api<br/>(C# / .NET)"]
+    API --> |POST /embed| Container
+    subgraph Container["Docker Container"]
+        PyAPI["FastAPI<br/>(Python)"]
+        PyAPI --> ST["sentence-transformers"]
+        ST --> Model["MedEmbed-small"]
+    end
+    Container --> |vector| API
+    API --> |cosine similarity| DB[(SQLite)]
+    API --> |ranked results| Client
 ```
 
 ## Environment Variables
@@ -86,19 +86,18 @@ SETUP (One-Time)                    RUNTIME (C# Only)
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `DbPath` | Path to SQLite database | `icd10cm.db` |
-| `ASPNETCORE_URLS` | API listen URL | `http://localhost:5000` |
+| `EmbeddingService:BaseUrl` | Embedding service URL | `http://localhost:8000` |
 
 ## Troubleshooting
 
-### "model.onnx not found"
-RunService/run.sh exports it automatically. Or manually:
+### "Embedding service unavailable"
+Start the Docker container:
 ```bash
-pip install optimum[onnxruntime]
-optimum-cli export onnx --model abhinand/MedEmbed-small-v0.1 ICD10AM.Api/onnx_model/
+./scripts/Dependencies/start.sh
 ```
 
 ### "No embeddings found"
-Run `CreateDb/run.sh` - RAG search requires pre-computed embeddings.
+Run `CreateDb/import.sh` - RAG search requires pre-computed embeddings.
 
 ### Tests fail with "database not found"
-Run `CreateDb/run.sh` first.
+Run `CreateDb/import.sh` first.

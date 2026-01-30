@@ -1,12 +1,10 @@
 #pragma warning disable IDE0037 // Use inferred member name - prefer explicit for clarity in API responses
 #pragma warning disable CA1812 // Avoid uninstantiated internal classes - records are instantiated by JSON deserialization
 
+using System.Net.Http.Json;
 using System.Text.Json;
-using BERTTokenizers;
 using ICD10AM.Api;
 using Microsoft.AspNetCore.Http.Json;
-using Microsoft.ML.OnnxRuntime;
-using Microsoft.ML.OnnxRuntime.Tensors;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,10 +42,17 @@ builder.Services.AddSingleton(() =>
     return conn;
 });
 
-// ONNX Runtime for embedding generation - NO PYTHON!
-var onnxModelPath = Path.Combine(AppContext.BaseDirectory, "onnx_model", "model.onnx");
-builder.Services.AddSingleton(_ => new InferenceSession(onnxModelPath));
-builder.Services.AddSingleton(_ => new BertUncasedBaseTokenizer());
+// Embedding service (Docker container)
+var embeddingServiceUrl =
+    builder.Configuration["EmbeddingService:BaseUrl"] ?? "http://localhost:8000";
+builder.Services.AddHttpClient(
+    "EmbeddingService",
+    client =>
+    {
+        client.BaseAddress = new Uri(embeddingServiceUrl);
+        client.Timeout = TimeSpan.FromSeconds(30);
+    }
+);
 
 // Gatekeeper configuration for authorization
 var gatekeeperUrl = builder.Configuration["Gatekeeper:BaseUrl"] ?? "http://localhost:5002";
@@ -297,7 +302,7 @@ achiGroup.MapGet(
 );
 
 // ============================================================================
-// RAG SEARCH ENDPOINT - USES ONNX RUNTIME (NO PYTHON!)
+// RAG SEARCH ENDPOINT - CALLS DOCKER EMBEDDING SERVICE
 // ============================================================================
 
 app.MapPost(
@@ -305,14 +310,33 @@ app.MapPost(
     async (
         RagSearchRequest request,
         Func<SqliteConnection> getConn,
-        InferenceSession onnxSession,
-        BertUncasedBaseTokenizer tokenizer
+        IHttpClientFactory httpClientFactory
     ) =>
     {
         var limit = request.Limit ?? 10;
 
-        // Encode query using ONNX Runtime - NO PYTHON!
-        var queryVector = EncodeWithOnnx(request.Query, onnxSession, tokenizer);
+        // Get embedding from Docker service
+        var embeddingClient = httpClientFactory.CreateClient("EmbeddingService");
+        var embeddingResponse = await embeddingClient
+            .PostAsJsonAsync("/embed", new { text = request.Query })
+            .ConfigureAwait(false);
+
+        if (!embeddingResponse.IsSuccessStatusCode)
+        {
+            return Results.Problem("Embedding service unavailable");
+        }
+
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var embeddingResult = await embeddingResponse
+            .Content.ReadFromJsonAsync<EmbeddingResponse>(jsonOptions)
+            .ConfigureAwait(false);
+
+        if (embeddingResult is null)
+        {
+            return Results.Problem("Invalid embedding response");
+        }
+
+        var queryVector = embeddingResult.Embedding.ToImmutableArray();
 
         using var conn = getConn();
 
@@ -383,80 +407,6 @@ app.Run();
 // ============================================================================
 // HELPER METHODS
 // ============================================================================
-
-/// <summary>
-/// Encode text using ONNX Runtime - NO PYTHON!
-/// </summary>
-static ImmutableArray<float> EncodeWithOnnx(
-    string text,
-    InferenceSession session,
-    BertUncasedBaseTokenizer tokenizer
-)
-{
-    const int maxSeqLength = 128;
-
-    // Tokenize the input - BERTTokenizers uses (sequenceLength, text)
-    var encoded = tokenizer.Encode(maxSeqLength, text);
-    var inputIds = encoded.Select(t => (long)t.InputIds).ToArray();
-    var attentionMask = encoded.Select(t => (long)t.AttentionMask).ToArray();
-    var tokenTypeIds = encoded.Select(t => (long)t.TokenTypeIds).ToArray();
-
-    var seqLength = inputIds.Length;
-
-    // Create tensors
-    var inputIdsTensor = new DenseTensor<long>(inputIds, [1, seqLength]);
-    var attentionMaskTensor = new DenseTensor<long>(attentionMask, [1, seqLength]);
-    var tokenTypeIdsTensor = new DenseTensor<long>(tokenTypeIds, [1, seqLength]);
-
-    var inputs = new List<NamedOnnxValue>
-    {
-        NamedOnnxValue.CreateFromTensor("input_ids", inputIdsTensor),
-        NamedOnnxValue.CreateFromTensor("attention_mask", attentionMaskTensor),
-        NamedOnnxValue.CreateFromTensor("token_type_ids", tokenTypeIdsTensor),
-    };
-
-    // Run inference
-    using var results = session.Run(inputs);
-    var output = results.First().AsTensor<float>();
-
-    // Mean pooling over sequence dimension
-    var embeddingDim = (int)output.Dimensions[2];
-    var embedding = new float[embeddingDim];
-
-    var validTokens = 0;
-    for (var i = 0; i < seqLength; i++)
-    {
-        if (attentionMask[i] == 1)
-        {
-            validTokens++;
-            for (var j = 0; j < embeddingDim; j++)
-            {
-                embedding[j] += output[0, i, j];
-            }
-        }
-    }
-
-    // Average
-    if (validTokens > 0)
-    {
-        for (var j = 0; j < embeddingDim; j++)
-        {
-            embedding[j] /= validTokens;
-        }
-    }
-
-    // Normalize (L2)
-    var norm = (float)Math.Sqrt(embedding.Sum(x => x * x));
-    if (norm > 0)
-    {
-        for (var j = 0; j < embeddingDim; j++)
-        {
-            embedding[j] /= norm;
-        }
-    }
-
-    return [.. embedding];
-}
 
 static object ToFhirCodeSystem(GetCodeByCode code) =>
     new
@@ -538,6 +488,15 @@ namespace ICD10AM.Api
         int? Limit,
         bool IncludeAchi,
         string? Format
+    );
+
+    /// <summary>
+    /// Response from embedding service.
+    /// </summary>
+    internal sealed record EmbeddingResponse(
+        ImmutableArray<float> Embedding,
+        string Model,
+        int Dimensions
     );
 
     /// <summary>

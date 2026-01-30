@@ -19,7 +19,7 @@ from sentence_transformers import SentenceTransformer
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-MODEL_NAME = "abhinand5/MedEmbed-small-v0.1"
+MODEL_NAME = "abhinand/MedEmbed-small-v0.1"
 MODEL_DIMENSIONS = 384
 
 model: SentenceTransformer | None = None

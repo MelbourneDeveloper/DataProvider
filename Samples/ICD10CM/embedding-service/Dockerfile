@@ -16,7 +16,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Download model at build time for faster startup
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('abhinand5/MedEmbed-small-v0.1')"
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('abhinand/MedEmbed-small-v0.1')"
 
 # Copy application code
 COPY main.py .

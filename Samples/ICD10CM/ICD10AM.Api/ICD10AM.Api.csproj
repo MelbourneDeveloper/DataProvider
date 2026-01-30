@@ -14,15 +14,6 @@
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="9.0.2" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.19.2" />
-    <PackageReference Include="BERTTokenizers" Version="1.2.0" />
-  </ItemGroup>
-
-  <!-- ONNX model for embedding generation - copy to output -->
-  <ItemGroup>
-    <Content Update="onnx_model/**/*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>

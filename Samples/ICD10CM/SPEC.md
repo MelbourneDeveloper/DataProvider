@@ -379,94 +379,37 @@ Example: `R07.4 | Chest pain, unspecified | Pain in chest, unspecified cause`
 
 **Storage Format**: JSON array of 384 floats in `Embedding` column.
 
-### Architecture Summary
+### Runtime Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    SETUP (ONE-TIME) - PYTHON                     │
-├─────────────────────────────────────────────────────────────────┤
-│  1. import_icd10cm.py      →  Imports 74,260 codes from CMS.gov │
-│  2. generate_embeddings.py →  Generates 74,260 embeddings       │
-│  3. export_onnx.py         →  Exports MedEmbed to ONNX format   │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    RUNTIME - C# ONLY (NO PYTHON!)                │
-├─────────────────────────────────────────────────────────────────┤
-│  ICD10AM.Api (.NET 9)                                           │
-│  ├── ONNX Runtime      →  Encodes user queries (medembed.onnx)  │
-│  ├── BertTokenizer     →  Tokenizes query text                  │
-│  ├── LQL Queries       →  All data access via generated code    │
-│  └── Cosine Similarity →  Ranks results                         │
-│                                                                  │
-│  User Query → C# ONNX Runtime → Vector → Cosine Similarity      │
-│                                    ↓                            │
-│                            icd10cm_code_embedding (LQL)          │
-│                                    ↓                            │
-│                            Ranked Results                        │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    Client([User]) --> |POST /api/search| API["ICD10AM.Api<br/>(C# / .NET)"]
+    API --> |POST /embed| Container
+    subgraph Container["Docker Container"]
+        PyAPI["FastAPI<br/>(Python)"]
+        PyAPI --> ST["sentence-transformers"]
+        ST --> Model["MedEmbed-small"]
+    end
+    Container --> |vector| API
+    API --> |cosine similarity| DB[(PostgreSQL)]
+    API --> |ranked results| Client
 ```
 
-## CRITICAL: NO PYTHON AT RUNTIME
+### Setup (One-Time)
 
-**Python is ONLY for offline data preparation:**
-- `import_icd10cm.py` - One-time import of ICD-10 codes
-- `generate_embeddings.py` - One-time embedding generation
+**Python scripts for data preparation:**
+- `import_icd10cm.py` - Import 74,260 codes from CMS.gov
+- `generate_embeddings.py` - Generate embeddings for all codes
 
-### Download ONNX Model (Required)
+### Runtime
 
-The ONNX model (127MB) is not stored in git. Download it once:
-
-```bash
-cd Samples/ICD10CM/ICD10AM.Api
-pip install optimum[onnxruntime]
-optimum-cli export onnx --model abhinand/MedEmbed-small-v0.1 onnx_model/
-```
-
-This exports `model.onnx` to `onnx_model/` directory.
-
-**The C# API handles ALL runtime operations:**
-- Query encoding via ONNX Runtime (Microsoft.ML.OnnxRuntime)
-- Tokenization via BERTTokenizers NuGet package
-- Vector similarity via cosine calculation
-- Data access via LQL-generated extension methods
-
-**⚠️ NEVER CALL PYTHON FROM C# ⚠️**
-
-### Required NuGet Packages
-
-```xml
-<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.19.2" />
-<PackageReference Include="BERTTokenizers" Version="1.2.0" />
-```
-
-### C# Embedding Implementation
-
-```csharp
-// Load ONNX model once at startup
-using var session = new InferenceSession("onnx_model/model.onnx");
-var tokenizer = new BertTokenizer("onnx_model/vocab.txt");
-
-// Encode query
-public static ImmutableArray<float> EncodeQuery(string query)
-{
-    var tokens = tokenizer.Encode(query);
-    var inputIds = new DenseTensor<long>(tokens.InputIds, new[] { 1, tokens.InputIds.Length });
-    var attentionMask = new DenseTensor<long>(tokens.AttentionMask, new[] { 1, tokens.AttentionMask.Length });
-
-    var inputs = new List<NamedOnnxValue>
-    {
-        NamedOnnxValue.CreateFromTensor("input_ids", inputIds),
-        NamedOnnxValue.CreateFromTensor("attention_mask", attentionMask)
-    };
-
-    using var results = session.Run(inputs);
-    var output = results.First().AsTensor<float>();
-
-    // Mean pooling over sequence dimension
-    return MeanPool(output, attentionMask);
-}
-```
+**C# API** calls **Docker Embedding Service** for query encoding:
+- ICD10AM.Api receives search request
+- Calls `POST /embed` on Docker container (port 8000)
+- Container runs FastAPI + sentence-transformers + MedEmbed
+- Returns embedding vector
+- C# computes cosine similarity against stored embeddings
+- Returns ranked results
 
 ## Testing Strategy
 
