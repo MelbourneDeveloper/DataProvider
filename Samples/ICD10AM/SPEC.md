@@ -16,9 +16,24 @@ The complete classification system comprises:
 **Current Edition**: Thirteenth Edition (effective 1 July 2025)
 **Previous Edition**: Twelfth Edition (1 July 2022 - 30 June 2025)
 
-### Data Source
+### Data Source & Licensing
 
 Official source: [IHACPA ICD-10-AM/ACHI/ACS Resources](https://www.ihacpa.gov.au/resources/icd-10-amachiacs-resources)
+
+**IMPORTANT: Licensing Requirements**
+
+ICD-10-AM/ACHI/ACS is copyrighted material owned by the Independent Health and Aged Care Pricing Authority (IHACPA) and the World Health Organization (WHO). To use the complete classification:
+
+1. **Purchase License**: Contact IHACPA or Lane Print for licensed materials
+2. **Thirteenth Edition**: Available from April 2025 (effective 1 July 2025)
+3. **Mapping Tables**: Require license verification before distribution
+
+For development and testing, use the sample data generator:
+```bash
+python scripts/generate_sample_data.py icd10am.db
+```
+
+This creates a test database with ~30 common codes for development purposes only.
 
 ## Features
 
