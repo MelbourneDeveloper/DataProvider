@@ -1,7 +1,6 @@
 #pragma warning disable IDE0037 // Use inferred member name - prefer explicit for clarity in API responses
 #pragma warning disable CA1812 // Avoid uninstantiated internal classes - records are instantiated by JSON deserialization
 
-using System.Net.Http.Json;
 using System.Text.Json;
 using ICD10AM.Api;
 using Microsoft.AspNetCore.Http.Json;
@@ -156,10 +155,9 @@ icdGroup.MapGet(
         var result = await conn.GetCodeByCodeAsync(code).ConfigureAwait(false);
         return result switch
         {
-            GetCodeByCodeOk(var codes) when codes.Count > 0 =>
-                format == "fhir"
-                    ? Results.Ok(ToFhirCodeSystem(codes[0]))
-                    : Results.Ok(codes[0]),
+            GetCodeByCodeOk(var codes) when codes.Count > 0 => format == "fhir"
+                ? Results.Ok(ToFhirCodeSystem(codes[0]))
+                : Results.Ok(codes[0]),
             GetCodeByCodeOk => Results.NotFound(),
             GetCodeByCodeError(var err) => Results.Problem(err.Message),
         };
@@ -177,16 +175,16 @@ icdGroup.MapGet(
         // Manual search implementation (LIKE queries not supported by generator)
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = """
-            SELECT c.Id, c.Code, c.ShortDescription, c.LongDescription, c.Billable,
-                   cat.CategoryCode, b.BlockCode, ch.ChapterNumber, ch.Title AS ChapterTitle
-            FROM icd10am_code c
-            INNER JOIN icd10am_category cat ON c.CategoryId = cat.Id
-            INNER JOIN icd10am_block b ON cat.BlockId = b.Id
-            INNER JOIN icd10am_chapter ch ON b.ChapterId = ch.Id
-            WHERE c.Code LIKE @term OR c.ShortDescription LIKE @term OR c.LongDescription LIKE @term
-            ORDER BY c.Code
-            LIMIT @limit
-            """;
+        SELECT c.Id, c.Code, c.ShortDescription, c.LongDescription, c.Billable,
+               cat.CategoryCode, b.BlockCode, ch.ChapterNumber, ch.Title AS ChapterTitle
+        FROM icd10am_code c
+        INNER JOIN icd10am_category cat ON c.CategoryId = cat.Id
+        INNER JOIN icd10am_block b ON cat.BlockId = b.Id
+        INNER JOIN icd10am_chapter ch ON b.ChapterId = ch.Id
+        WHERE c.Code LIKE @term OR c.ShortDescription LIKE @term OR c.LongDescription LIKE @term
+        ORDER BY c.Code
+        LIMIT @limit
+        """;
         cmd.Parameters.AddWithValue("@term", searchTerm);
         cmd.Parameters.AddWithValue("@limit", searchLimit);
 
@@ -194,18 +192,20 @@ icdGroup.MapGet(
         var results = new List<object>();
         while (await reader.ReadAsync().ConfigureAwait(false))
         {
-            results.Add(new
-            {
-                Id = reader.GetString(0),
-                Code = reader.GetString(1),
-                ShortDescription = reader.GetString(2),
-                LongDescription = reader.GetString(3),
-                Billable = reader.GetInt64(4),
-                CategoryCode = reader.GetString(5),
-                BlockCode = reader.GetString(6),
-                ChapterNumber = reader.GetString(7),
-                ChapterTitle = reader.GetString(8),
-            });
+            results.Add(
+                new
+                {
+                    Id = reader.GetString(0),
+                    Code = reader.GetString(1),
+                    ShortDescription = reader.GetString(2),
+                    LongDescription = reader.GetString(3),
+                    Billable = reader.GetInt64(4),
+                    CategoryCode = reader.GetString(5),
+                    BlockCode = reader.GetString(6),
+                    ChapterNumber = reader.GetString(7),
+                    ChapterTitle = reader.GetString(8),
+                }
+            );
         }
         return Results.Ok(results);
     }
@@ -253,10 +253,9 @@ achiGroup.MapGet(
         var result = await conn.GetAchiCodeByCodeAsync(code).ConfigureAwait(false);
         return result switch
         {
-            GetAchiCodeByCodeOk(var codes) when codes.Count > 0 =>
-                format == "fhir"
-                    ? Results.Ok(ToFhirProcedure(codes[0]))
-                    : Results.Ok(codes[0]),
+            GetAchiCodeByCodeOk(var codes) when codes.Count > 0 => format == "fhir"
+                ? Results.Ok(ToFhirProcedure(codes[0]))
+                : Results.Ok(codes[0]),
             GetAchiCodeByCodeOk => Results.NotFound(),
             GetAchiCodeByCodeError(var err) => Results.Problem(err.Message),
         };
@@ -274,12 +273,12 @@ achiGroup.MapGet(
         // Manual search implementation (LIKE queries not supported by generator)
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = """
-            SELECT Id, BlockId, Code, ShortDescription, LongDescription, Billable
-            FROM achi_code
-            WHERE Code LIKE @term OR ShortDescription LIKE @term OR LongDescription LIKE @term
-            ORDER BY Code
-            LIMIT @limit
-            """;
+        SELECT Id, BlockId, Code, ShortDescription, LongDescription, Billable
+        FROM achi_code
+        WHERE Code LIKE @term OR ShortDescription LIKE @term OR LongDescription LIKE @term
+        ORDER BY Code
+        LIMIT @limit
+        """;
         cmd.Parameters.AddWithValue("@term", searchTerm);
         cmd.Parameters.AddWithValue("@limit", searchLimit);
 
@@ -287,15 +286,17 @@ achiGroup.MapGet(
         var results = new List<object>();
         while (await reader.ReadAsync().ConfigureAwait(false))
         {
-            results.Add(new
-            {
-                Id = reader.GetString(0),
-                BlockId = reader.GetString(1),
-                Code = reader.GetString(2),
-                ShortDescription = reader.GetString(3),
-                LongDescription = reader.GetString(4),
-                Billable = reader.GetInt64(5),
-            });
+            results.Add(
+                new
+                {
+                    Id = reader.GetString(0),
+                    BlockId = reader.GetString(1),
+                    Code = reader.GetString(2),
+                    ShortDescription = reader.GetString(3),
+                    LongDescription = reader.GetString(4),
+                    Billable = reader.GetInt64(5),
+                }
+            );
         }
         return Results.Ok(results);
     }
