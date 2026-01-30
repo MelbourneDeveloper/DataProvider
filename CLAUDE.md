@@ -1,11 +1,5 @@
 # CLAUDE.md
 
-## Multi-Agent (Too Many Cooks)
-- Keep your key! Don't lose it!
-- Check messages, lock files before editing, unlock after
-- Don't edit locked files; telegraph intent via plans/messages
-- Coordinator: delegate. Worker: ask for tasks. Update plans constantly.
-
 ## Coding Rules
 
 - **NEVER THROW** - Return `Result<T,E>``. Wrap failures in try/catch
