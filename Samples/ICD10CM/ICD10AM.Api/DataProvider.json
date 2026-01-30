@@ -89,6 +89,24 @@
         },
         {
             "schema": "main",
+            "name": "icd10cm_code",
+            "generateInsert": false,
+            "generateUpdate": false,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "icd10cm_code_embedding",
+            "generateInsert": false,
+            "generateUpdate": false,
+            "generateDelete": false,
+            "excludeColumns": ["Id"],
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
             "name": "achi_block",
             "generateInsert": true,
             "generateUpdate": false,

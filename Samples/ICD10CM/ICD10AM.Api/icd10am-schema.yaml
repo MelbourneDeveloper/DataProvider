@@ -192,6 +192,90 @@ tables:
     referencedColumns:
     - Id
 
+- name: icd10cm_code
+  columns:
+  - name: Id
+    type: Text
+  - name: CategoryId
+    type: Text
+  - name: Code
+    type: Text
+  - name: ShortDescription
+    type: Text
+  - name: LongDescription
+    type: Text
+  - name: InclusionTerms
+    type: Text
+  - name: ExclusionTerms
+    type: Text
+  - name: CodeAlso
+    type: Text
+  - name: CodeFirst
+    type: Text
+  - name: Billable
+    type: Int
+    defaultValue: 1
+  - name: EffectiveFrom
+    type: Text
+  - name: EffectiveTo
+    type: Text
+  - name: Edition
+    type: Int
+    defaultValue: 13
+  - name: LastUpdated
+    type: Text
+    defaultValue: (now())
+  - name: VersionId
+    type: Int
+    defaultValue: 1
+  indexes:
+  - name: idx_icd10cm_code_code
+    columns:
+    - Code
+  - name: idx_icd10cm_code_category
+    columns:
+    - CategoryId
+  - name: idx_icd10cm_code_billable
+    columns:
+    - Billable
+  primaryKey:
+    name: PK_icd10cm_code
+    columns:
+    - Id
+
+- name: icd10cm_code_embedding
+  columns:
+  - name: Id
+    type: Text
+  - name: CodeId
+    type: Text
+  - name: Embedding
+    type: Text
+  - name: EmbeddingModel
+    type: Text
+    defaultValue: "'MedEmbed-Small-v0.1'"
+  - name: LastUpdated
+    type: Text
+    defaultValue: (now())
+  indexes:
+  - name: idx_icd10cm_embedding_code
+    columns:
+    - CodeId
+  - name: idx_icd10cm_embedding_model
+    columns:
+    - EmbeddingModel
+  primaryKey:
+    name: PK_icd10cm_code_embedding
+    columns:
+    - Id
+  foreignKeys:
+  - name: FK_icd10cm_code_embedding_CodeId
+    columns:
+    - CodeId
+    referencedTable: icd10cm_code
+    referencedColumns:
+    - Id
+
 - name: achi_block
   columns:
   - name: Id
