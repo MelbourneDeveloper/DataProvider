@@ -341,7 +341,7 @@ app.MapPost(
 
         using var conn = getConn();
 
-        // Get all embeddings and compute similarity (via LQL)
+        // Get ICD-10 embeddings
         var allEmbeddingsResult = await conn.GetAllCodeEmbeddingsAsync().ConfigureAwait(false);
 
         if (allEmbeddingsResult is GetAllCodeEmbeddingsError(var err))
@@ -351,20 +351,60 @@ app.MapPost(
 
         var allEmbeddings = ((GetAllCodeEmbeddingsOk)allEmbeddingsResult).Value;
 
-        // Compute cosine similarity for each code and rank
-        var rankedResults = allEmbeddings
+        // Compute cosine similarity for ICD codes
+        var icdResults = allEmbeddings
             .Select(e =>
             {
                 var storedVector = ParseEmbedding(e.Embedding);
                 var similarity = CosineSimilarity(queryVector, storedVector);
-                return new
-                {
-                    Code = e.Code,
-                    Description = e.ShortDescription,
-                    LongDescription = e.LongDescription,
-                    Confidence = similarity,
-                };
-            })
+                return new SearchResult(
+                    Code: e.Code,
+                    Description: e.ShortDescription,
+                    LongDescription: e.LongDescription,
+                    Confidence: similarity,
+                    CodeType: "ICD10AM"
+                );
+            });
+
+        // Include ACHI if requested
+        var achiResults = Enumerable.Empty<SearchResult>();
+        if (request.IncludeAchi)
+        {
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                SELECT e.Embedding, c.Code, c.ShortDescription, c.LongDescription
+                FROM achi_code_embedding e
+                INNER JOIN achi_code c ON e.CodeId = c.Id
+                """;
+            await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            var achiEmbeddings = new List<(string Embedding, string Code, string ShortDesc, string LongDesc)>();
+            while (await reader.ReadAsync().ConfigureAwait(false))
+            {
+                achiEmbeddings.Add((
+                    reader.GetString(0),
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    reader.GetString(3)
+                ));
+            }
+
+            achiResults = achiEmbeddings.Select(e =>
+            {
+                var storedVector = ParseEmbedding(e.Embedding);
+                var similarity = CosineSimilarity(queryVector, storedVector);
+                return new SearchResult(
+                    Code: e.Code,
+                    Description: e.ShortDesc,
+                    LongDescription: e.LongDesc,
+                    Confidence: similarity,
+                    CodeType: "ACHI"
+                );
+            });
+        }
+
+        // Combine and rank all results
+        var rankedResults = icdResults
+            .Concat(achiResults)
             .OrderByDescending(r => r.Confidence)
             .Take(limit)
             .ToList();

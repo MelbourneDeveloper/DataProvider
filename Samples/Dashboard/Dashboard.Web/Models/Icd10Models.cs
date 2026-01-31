@@ -187,4 +187,21 @@ namespace Dashboard.Models
         /// <summary>Whether to include ACHI codes.</summary>
         public bool IncludeAchi { get; set; }
     }
+
+    /// <summary>
+    /// Semantic search API response model.
+    /// </summary>
+    [External]
+    [Name("Object")]
+    public class SemanticSearchResponse
+    {
+        /// <summary>Search results.</summary>
+        public extern SemanticSearchResult[] Results { get; set; }
+
+        /// <summary>Original query.</summary>
+        public extern string Query { get; set; }
+
+        /// <summary>Model used for embeddings.</summary>
+        public extern string Model { get; set; }
+    }
 }

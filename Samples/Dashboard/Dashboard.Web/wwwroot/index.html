@@ -1987,7 +1987,7 @@
               });
               if (response.ok) {
                 const data = await response.json();
-                setResults(data);
+                setResults(data.Results || []);
               } else {
                 throw new Error('Search failed');
               }

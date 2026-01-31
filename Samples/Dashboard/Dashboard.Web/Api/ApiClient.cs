@@ -315,7 +315,8 @@ namespace Dashboard.Api
                 IncludeAchi = includeAchi,
             };
             var response = await PostIcd10Async(_icd10BaseUrl + "/api/search", request);
-            return ParseJson<SemanticSearchResult[]>(response);
+            var parsed = ParseJson<SemanticSearchResponse>(response);
+            return parsed.Results ?? new SemanticSearchResult[0];
         }
 
         // === HELPER METHODS ===
