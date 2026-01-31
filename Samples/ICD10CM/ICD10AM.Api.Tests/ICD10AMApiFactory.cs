@@ -140,6 +140,106 @@ public sealed class ICD10AMApiFactory : WebApplicationFactory<Program>
             longDescription: "Chest pain, unspecified - pain in the chest region"
         );
 
+        InsertCode(
+            conn,
+            id: "code-r0789",
+            categoryId: "cat-r07",
+            code: "R07.89",
+            shortDescription: "Other chest pain",
+            longDescription: "Other chest pain including pleuritic pain"
+        );
+
+        InsertCode(
+            conn,
+            id: "code-r0600",
+            categoryId: "cat-r07",
+            code: "R06.00",
+            shortDescription: "Dyspnea, unspecified",
+            longDescription: "Dyspnea unspecified - shortness of breath"
+        );
+
+        // Seed respiratory chapter, block, category, and codes for pneumonia tests
+        InsertChapter(
+            conn,
+            id: "ch-10",
+            chapterNumber: "X",
+            title: "Diseases of the respiratory system",
+            codeRangeStart: "J00",
+            codeRangeEnd: "J99"
+        );
+
+        InsertBlock(
+            conn,
+            id: "blk-j09",
+            chapterId: "ch-10",
+            blockCode: "J09-J18",
+            title: "Influenza and pneumonia",
+            codeRangeStart: "J09",
+            codeRangeEnd: "J18"
+        );
+
+        InsertBlock(
+            conn,
+            id: "blk-j20",
+            chapterId: "ch-10",
+            blockCode: "J20-J22",
+            title: "Other acute lower respiratory infections",
+            codeRangeStart: "J20",
+            codeRangeEnd: "J22"
+        );
+
+        InsertCategory(conn, id: "cat-j18", blockId: "blk-j09", categoryCode: "J18", title: "Pneumonia, unspecified organism");
+        InsertCategory(conn, id: "cat-j20", blockId: "blk-j20", categoryCode: "J20", title: "Acute bronchitis");
+
+        InsertCode(
+            conn,
+            id: "code-j189",
+            categoryId: "cat-j18",
+            code: "J18.9",
+            shortDescription: "Pneumonia, unspecified organism",
+            longDescription: "Pneumonia unspecified organism - lung infection"
+        );
+
+        InsertCode(
+            conn,
+            id: "code-j209",
+            categoryId: "cat-j20",
+            code: "J20.9",
+            shortDescription: "Acute bronchitis, unspecified",
+            longDescription: "Acute bronchitis unspecified - inflammation of bronchial tubes"
+        );
+
+        // Seed endocrine chapter, block, category, and codes for diabetes tests
+        InsertChapter(
+            conn,
+            id: "ch-04",
+            chapterNumber: "IV",
+            title: "Endocrine, nutritional and metabolic diseases",
+            codeRangeStart: "E00",
+            codeRangeEnd: "E90"
+        );
+
+        InsertBlock(
+            conn,
+            id: "blk-e10",
+            chapterId: "ch-04",
+            blockCode: "E10-E14",
+            title: "Diabetes mellitus",
+            codeRangeStart: "E10",
+            codeRangeEnd: "E14"
+        );
+
+        InsertCategory(conn, id: "cat-e11", blockId: "blk-e10", categoryCode: "E11", title: "Type 2 diabetes mellitus");
+
+        InsertCode(
+            conn,
+            id: "code-e119",
+            categoryId: "cat-e11",
+            code: "E11.9",
+            shortDescription: "Type 2 diabetes mellitus without complications",
+            longDescription: "Type 2 diabetes mellitus without complications - adult onset diabetes"
+        );
+
         // Seed ACHI test data
         InsertAchiBlock(
             conn,

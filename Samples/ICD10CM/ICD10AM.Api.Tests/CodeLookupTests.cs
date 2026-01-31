@@ -87,7 +87,7 @@ public sealed class CodeLookupTests : IClassFixture<ICD10AMApiFactory>
         var codes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(codes);
-        Assert.Contains(codes, c => c.GetProperty("Code").GetString()!.StartsWith("R07"));
+        Assert.Contains(codes, c => c.GetProperty("Code").GetString()!.StartsWith("R07", StringComparison.Ordinal));
     }
 
     [Fact]

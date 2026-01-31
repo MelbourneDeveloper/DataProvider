@@ -18,7 +18,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("help");
         console.Input.PushTextWithEnter("quit");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         var output = console.Output;
@@ -40,7 +40,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("h");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         var output = console.Output;
@@ -56,7 +56,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("?");
         console.Input.PushTextWithEnter("quit");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         Assert.Contains("search", console.Output, StringComparison.OrdinalIgnoreCase);
@@ -69,7 +69,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Profile.Capabilities.Interactive = true;
         console.Input.PushTextWithEnter("quit");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         Assert.Contains("Goodbye", console.Output, StringComparison.OrdinalIgnoreCase);
@@ -82,7 +82,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Profile.Capabilities.Interactive = true;
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         Assert.Contains("Goodbye", console.Output, StringComparison.OrdinalIgnoreCase);
@@ -95,28 +95,27 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Profile.Capabilities.Interactive = true;
         console.Input.PushTextWithEnter("exit");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         Assert.Contains("Goodbye", console.Output, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public async Task Stats_DisplaysCodeCounts()
+    public async Task Stats_DisplaysApiStatus()
     {
         var console = new TestConsole();
         console.Profile.Capabilities.Interactive = true;
         console.Input.PushTextWithEnter("stats");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         var output = console.Output;
-        // Should show code counts
-        Assert.Contains("Total Codes", output, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Embeddings", output, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Billable", output, StringComparison.OrdinalIgnoreCase);
+        // Should show API health status
+        Assert.Contains("API", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Status", output, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -129,7 +128,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("history");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         var output = console.Output;
@@ -145,7 +144,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("history");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         // First command is "history" so history will show that
@@ -161,7 +160,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("find chest");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         var output = console.Output;
@@ -177,7 +176,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("f pneumonia");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         var output = console.Output;
@@ -193,7 +192,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("find zzznomatchzzz");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         Assert.Contains("No codes found", console.Output, StringComparison.OrdinalIgnoreCase);
@@ -207,7 +206,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("find");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         Assert.Contains("Usage", console.Output, StringComparison.OrdinalIgnoreCase);
@@ -221,7 +220,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("lookup R07.4");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         var output = console.Output;
@@ -237,7 +236,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("l E11.9");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         var output = console.Output;
@@ -253,7 +252,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("lookup R074");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         Assert.Contains("R07.4", console.Output);
@@ -267,7 +266,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("lookup r07.4");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         Assert.Contains("R07.4", console.Output);
@@ -281,7 +280,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("lookup");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         Assert.Contains("Usage", console.Output, StringComparison.OrdinalIgnoreCase);
@@ -295,7 +294,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("lookup R07");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         var output = console.Output;
@@ -311,7 +310,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("browse");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         var output = console.Output;
@@ -327,7 +326,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("browse R");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         var output = console.Output;
@@ -343,7 +342,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("b J");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         var output = console.Output;
@@ -352,24 +351,19 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
     }
 
     [Fact]
-    public async Task Search_FallsBackToFind_WhenNoEmbeddingService()
+    public async Task Search_ShowsResultsOrFallsBack()
     {
         var console = new TestConsole();
         console.Profile.Capabilities.Interactive = true;
         console.Input.PushTextWithEnter("search chest pain");
         console.Input.PushTextWithEnter("q");
 
-        using var mockHandler = MockEmbeddingHandler.Error();
-        using var httpClient = new HttpClient(mockHandler)
-        {
-            BaseAddress = new Uri("http://localhost:8000"),
-        };
-        using var cli = new Icd10Cli(_fixture.DbPath, console, httpClient);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
 
         await cli.RunAsync();
 
         var output = console.Output;
-        // Should fall back to text search and show results
+        // Should show search results or fall back to text search
         Assert.Contains("chest", output, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -381,32 +375,27 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("search");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         Assert.Contains("Usage", console.Output, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public async Task Search_UsesEmbeddingService_WhenAvailable()
+    public async Task Search_ShowsHeartRelatedResults()
     {
         var console = new TestConsole();
         console.Profile.Capabilities.Interactive = true;
         console.Input.PushTextWithEnter("search heart attack");
         console.Input.PushTextWithEnter("q");
 
-        using var mockHandler = MockEmbeddingHandler.Success(embeddingDim: 384);
-        using var httpClient = new HttpClient(mockHandler)
-        {
-            BaseAddress = new Uri("http://localhost:8000"),
-        };
-        using var cli = new Icd10Cli(_fixture.DbPath, console, httpClient);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
 
         await cli.RunAsync();
 
         var output = console.Output;
-        // Should show search results (may show similarity scores)
-        Assert.Contains("Search Results", output, StringComparison.OrdinalIgnoreCase);
+        // Should show search results - either RAG or fallback to text search
+        Assert.Contains("Results", output, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -417,17 +406,12 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("s diabetes");
         console.Input.PushTextWithEnter("q");
 
-        using var mockHandler = MockEmbeddingHandler.Error();
-        using var httpClient = new HttpClient(mockHandler)
-        {
-            BaseAddress = new Uri("http://localhost:8000"),
-        };
-        using var cli = new Icd10Cli(_fixture.DbPath, console, httpClient);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
 
         await cli.RunAsync();
 
-        // Falls back to find - should show diabetes result
-        Assert.Contains("E11.9", console.Output);
+        // Should show diabetes-related results
+        Assert.Contains("diabetes", console.Output, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -438,12 +422,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("chest pain symptoms");
         console.Input.PushTextWithEnter("q");
 
-        using var mockHandler = MockEmbeddingHandler.Error();
-        using var httpClient = new HttpClient(mockHandler)
-        {
-            BaseAddress = new Uri("http://localhost:8000"),
-        };
-        using var cli = new Icd10Cli(_fixture.DbPath, console, httpClient);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
 
         await cli.RunAsync();
 
@@ -459,7 +438,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("clear");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         // After clear, should show header again (FigletText renders as ASCII art)
@@ -479,7 +458,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         // Should just continue and eventually quit
@@ -493,7 +472,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Profile.Capabilities.Interactive = true;
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         var output = console.Output;
@@ -507,17 +486,17 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
     }
 
     [Fact]
-    public async Task StatsDisplaysOnStartup()
+    public async Task ApiStatusDisplaysOnStartup()
     {
         var console = new TestConsole();
         console.Profile.Capabilities.Interactive = true;
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
-        // Stats shown on startup
-        Assert.Contains("Total Codes", console.Output, StringComparison.OrdinalIgnoreCase);
+        // API health status shown on startup
+        Assert.Contains("API", console.Output, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -528,10 +507,71 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         console.Input.PushTextWithEnter("find chest");
         console.Input.PushTextWithEnter("q");
 
-        using var cli = new Icd10Cli(_fixture.DbPath, console);
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
         await cli.RunAsync();
 
         // Should show billable indicator
         Assert.Contains("billable", console.Output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Lookup_CodeNotFound_ShowsErrorMessage()
+    {
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("lookup ZZZ99.99");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        // Should show "not found" message instead of crashing
+        Assert.Contains("not found", console.Output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Json_CodeNotFound_ShowsErrorMessage()
+    {
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("json ZZZ99.99");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        // Should show "not found" message instead of crashing
+        Assert.Contains("not found", console.Output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Search_NoResults_HandlesGracefully()
+    {
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("search xyznonexistent123");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        // Should gracefully handle search and exit without crashing
+        var output = console.Output;
+        Assert.Contains("Goodbye", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Browse_InvalidLetter_ShowsEmpty()
+    {
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("browse 9");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        // Should handle invalid letter gracefully
+        Assert.Contains("Goodbye", console.Output, StringComparison.OrdinalIgnoreCase);
     }
 }

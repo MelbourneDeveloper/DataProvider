@@ -1,5 +1,10 @@
 # CLAUDE.md
 
+## Too Many Cooks
+- Register on TMC immediately
+- Don't edit files that are locked; lock files when editing
+- COMMUNICATE REGULARLY AND COORDINATE WITH OTHERS THROUGH MESSAGES
+
 ## Coding Rules
 
 - **NEVER THROW** - Return `Result<T,E>``. Wrap failures in try/catch

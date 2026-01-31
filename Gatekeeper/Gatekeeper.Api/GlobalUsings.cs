@@ -15,10 +15,6 @@ global using CheckResourceGrantOk = Outcome.Result<
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.CheckResourceGrant>, Selecta.SqlError>;
 // Insert result type alias
-global using CountSystemRolesOk = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.CountSystemRoles>,
-    Selecta.SqlError
->.Ok<System.Collections.Immutable.ImmutableList<Generated.CountSystemRoles>, Selecta.SqlError>;
 global using GetChallengeByIdOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetChallengeById>,
     Selecta.SqlError

@@ -4,6 +4,7 @@
     <!-- IDE Analyzers = IDE0042 etc-->
     <Rules AnalyzerId="Microsoft.CodeAnalysis.CSharp.CodeStyle" RuleNamespace="Microsoft.CodeAnalysis.CSharp.CodeStyle">
         <!-- Remove unused parameter -->
+        <Rule Id="EXHAUSTION001" Action="Error" />
         <Rule Id="IDE0290" Action="None" />
         <Rule Id="CA1031" Action="None" />
         <Rule Id="CA1016" Action="None" />

@@ -54,7 +54,13 @@ internal sealed record SearchResponse(
 /// <summary>
 /// Chapter from API.
 /// </summary>
-internal sealed record Chapter(string Id, string ChapterNumber, string Title);
+internal sealed record Chapter(
+    string Id,
+    string ChapterNumber,
+    string Title,
+    string CodeRangeStart,
+    string CodeRangeEnd
+);
 
 /// <summary>
 /// Health response from API.
@@ -83,6 +89,7 @@ sealed class Icd10Cli : IDisposable
     };
 
     readonly HttpClient _httpClient;
+    readonly HttpClient? _ownedHttpClient;
     readonly List<string> _history = [];
     readonly string _apiUrl;
     readonly IAnsiConsole _console;
@@ -91,10 +98,17 @@ sealed class Icd10Cli : IDisposable
     /// Creates CLI with API URL.
     /// </summary>
     public Icd10Cli(string apiUrl, IAnsiConsole console)
+        : this(apiUrl, console, null) { }
+
+    /// <summary>
+    /// Creates CLI with API URL and optional HTTP client for testing.
+    /// </summary>
+    public Icd10Cli(string apiUrl, IAnsiConsole console, HttpClient? httpClient)
     {
         _apiUrl = apiUrl.TrimEnd('/');
         _console = console;
-        _httpClient = new HttpClient();
+        _ownedHttpClient = httpClient is null ? new HttpClient() : null;
+        _httpClient = httpClient ?? _ownedHttpClient!;
     }
 
     /// <summary>
@@ -159,7 +173,7 @@ sealed class Icd10Cli : IDisposable
 
                 case "b":
                 case "browse":
-                    await BrowseAsync().ConfigureAwait(false);
+                    await BrowseAsync(arg).ConfigureAwait(false);
                     break;
 
                 case "j":
@@ -270,7 +284,8 @@ sealed class Icd10Cli : IDisposable
                 _console.Write(grid);
                 break;
 
-            default:
+            case HealthErrorResponse(ApiErrorResponseError _):
+            case HealthErrorResponse(ApiExceptionError _):
                 _console.MarkupLine($"[red]API unavailable[/]");
                 _console.MarkupLine(
                     $"[yellow]Make sure the API is running at {_apiUrl.EscapeMarkup()}[/]"
@@ -336,7 +351,8 @@ sealed class Icd10Cli : IDisposable
                     return result switch
                     {
                         OkSearch(var response) => response.Results,
-                        _ => [],
+                        SearchErrorResponse(ApiErrorResponseError _) => [],
+                        SearchErrorResponse(ApiExceptionError _) => [],
                     };
                 }
             )
@@ -415,7 +431,8 @@ sealed class Icd10Cli : IDisposable
                     return result switch
                     {
                         OkCodes(var c) => c,
-                        _ => [],
+                        CodesErrorResponse(ApiErrorResponseError _) => [],
+                        CodesErrorResponse(ApiExceptionError _) => [],
                     };
                 }
             )
@@ -451,7 +468,8 @@ sealed class Icd10Cli : IDisposable
                     return r switch
                     {
                         OkCode(var c) => c,
-                        _ => null,
+                        CodeErrorResponse(ApiErrorResponseError _) => null,
+                        CodeErrorResponse(ApiExceptionError _) => null,
                     };
                 }
             )
@@ -460,6 +478,42 @@ sealed class Icd10Cli : IDisposable
         if (result is not null)
         {
             RenderCodeDetail(result);
+            return;
+        }
+
+        // Exact match not found - try searching for codes starting with input
+        var codes = await _console
+            .Status()
+            .Spinner(Spinner.Known.Dots)
+            .SpinnerStyle(Style.Parse("cyan"))
+            .StartAsync(
+                "Searching for matching codes...",
+                async _ =>
+                {
+                    var r = await _httpClient
+                        .GetAsync(
+                            url: $"{_apiUrl}/api/icd10am/codes?q={Uri.EscapeDataString(normalized)}&limit=20".ToAbsoluteUrl(),
+                            deserializeSuccess: DeserializeCodes,
+                            deserializeError: DeserializeError
+                        )
+                        .ConfigureAwait(false);
+
+                    return r switch
+                    {
+                        OkCodes(var c) => c.Where(x =>
+                                x.Code.StartsWith(normalized, StringComparison.OrdinalIgnoreCase)
+                            )
+                            .ToImmutableArray(),
+                        CodesErrorResponse(ApiErrorResponseError _) => [],
+                        CodesErrorResponse(ApiExceptionError _) => [],
+                    };
+                }
+            )
+            .ConfigureAwait(false);
+
+        if (codes.Length > 0)
+        {
+            RenderCodeList($"Codes matching {code}", codes);
         }
         else
         {
@@ -467,8 +521,45 @@ sealed class Icd10Cli : IDisposable
         }
     }
 
-    async Task BrowseAsync()
+    async Task BrowseAsync(string letterFilter)
     {
+        if (!string.IsNullOrWhiteSpace(letterFilter))
+        {
+            // Filter codes by starting letter
+            var letter = letterFilter.Trim().ToUpperInvariant();
+            var codes = await _console
+                .Status()
+                .Spinner(Spinner.Known.Dots)
+                .SpinnerStyle(Style.Parse("cyan"))
+                .StartAsync(
+                    $"Loading codes starting with {letter}...",
+                    async _ =>
+                    {
+                        var result = await _httpClient
+                            .GetAsync(
+                                url: $"{_apiUrl}/api/icd10am/codes?q={Uri.EscapeDataString(letter)}&limit=50".ToAbsoluteUrl(),
+                                deserializeSuccess: DeserializeCodes,
+                                deserializeError: DeserializeError
+                            )
+                            .ConfigureAwait(false);
+
+                        return result switch
+                        {
+                            OkCodes(var c) => c.Where(code =>
+                                    code.Code.StartsWith(letter, StringComparison.OrdinalIgnoreCase)
+                                )
+                                .ToImmutableArray(),
+                            CodesErrorResponse(ApiErrorResponseError _) => [],
+                            CodesErrorResponse(ApiExceptionError _) => [],
+                        };
+                    }
+                )
+                .ConfigureAwait(false);
+
+            RenderCodeList($"Codes starting with {letter}", codes);
+            return;
+        }
+
         var chapters = await _console
             .Status()
             .Spinner(Spinner.Known.Dots)
@@ -488,7 +579,8 @@ sealed class Icd10Cli : IDisposable
                     return result switch
                     {
                         OkChapters(var c) => c,
-                        _ => [],
+                        ChaptersErrorResponse(ApiErrorResponseError _) => [],
+                        ChaptersErrorResponse(ApiExceptionError _) => [],
                     };
                 }
             )
@@ -506,7 +598,7 @@ sealed class Icd10Cli : IDisposable
 
         if (chapters.Length == 0)
         {
-            _console.MarkupLine("[yellow]No chapters found. Database may be empty.[/]");
+            _console.MarkupLine("[yellow]No chapters found.[/]");
             return;
         }
 
@@ -514,18 +606,28 @@ sealed class Icd10Cli : IDisposable
             .Border(TableBorder.Rounded)
             .BorderColor(Color.Grey)
             .AddColumn(new TableColumn("[cyan]#[/]").Width(5))
+            .AddColumn(new TableColumn("[cyan]Range[/]").Width(8))
             .AddColumn(new TableColumn("[cyan]Title[/]"));
 
         foreach (var chapter in chapters)
         {
+            var rangeStart =
+                chapter.CodeRangeStart.Length > 0 ? chapter.CodeRangeStart[0].ToString() : "";
+            var rangeEnd =
+                chapter.CodeRangeEnd.Length > 0 ? chapter.CodeRangeEnd[0].ToString() : "";
+            var range = rangeStart == rangeEnd ? rangeStart : $"{rangeStart}-{rangeEnd}";
+
             table.AddRow(
                 $"[bold]{chapter.ChapterNumber.EscapeMarkup()}[/]",
+                $"[green]{range}[/]",
                 chapter.Title.EscapeMarkup()
             );
         }
 
         _console.Write(table);
-        _console.MarkupLine($"\n[dim]{chapters.Length} chapters[/]");
+        _console.MarkupLine(
+            $"\n[dim]{chapters.Length} chapters - type [cyan]b <letter>[/] to browse codes[/]"
+        );
     }
 
     void RenderCodeList(string title, ImmutableArray<Icd10Code> codes)
@@ -649,7 +751,8 @@ sealed class Icd10Cli : IDisposable
                 _console.Write(new Panel(json).Border(BoxBorder.Rounded).BorderColor(Color.Grey));
                 break;
 
-            default:
+            case CodeErrorResponse(ApiErrorResponseError _):
+            case CodeErrorResponse(ApiExceptionError _):
                 _console.MarkupLine($"[yellow]Code not found:[/] {code.EscapeMarkup()}");
                 break;
         }
@@ -728,17 +831,22 @@ sealed class Icd10Cli : IDisposable
         return chapters is null ? [] : [.. chapters];
     }
 
-    static async Task<ErrorResponse?> DeserializeError(
-        HttpResponseMessage r,
-        CancellationToken ct
-    ) =>
-        await JsonSerializer
-            .DeserializeAsync<ErrorResponse>(
-                await r.Content.ReadAsStreamAsync(ct).ConfigureAwait(false),
-                JsonOptions,
-                ct
-            )
-            .ConfigureAwait(false);
+    static async Task<ErrorResponse?> DeserializeError(HttpResponseMessage r, CancellationToken ct)
+    {
+        try
+        {
+            var stream = await r.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+            return stream.Length == 0
+                ? null
+                : await JsonSerializer
+                    .DeserializeAsync<ErrorResponse>(stream, JsonOptions, ct)
+                    .ConfigureAwait(false);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
 
-    public void Dispose() => _httpClient.Dispose();
+    public void Dispose() => _ownedHttpClient?.Dispose();
 }

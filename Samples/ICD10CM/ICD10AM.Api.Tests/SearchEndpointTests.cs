@@ -90,9 +90,9 @@ public sealed class SearchEndpointTests : IClassFixture<ICD10AMApiFactory>
 
         // At least one chest pain or shortness of breath code should be in top results
         var hasRelevantCode = codes.Any(c =>
-            c.StartsWith("R07") || // Chest pain
-            c.StartsWith("R06") || // Dyspnea/breathing problems
-            c.StartsWith("I21")    // Heart attack (also chest pain related)
+            c.StartsWith("R07", StringComparison.Ordinal) || // Chest pain
+            c.StartsWith("R06", StringComparison.Ordinal) || // Dyspnea/breathing problems
+            c.StartsWith("I21", StringComparison.Ordinal)    // Heart attack (also chest pain related)
         );
 
         Assert.True(hasRelevantCode, $"Expected chest pain/dyspnea codes in top results. Got: {string.Join(", ", codes)}");
@@ -291,8 +291,8 @@ public sealed class SearchEndpointTests : IClassFixture<ICD10AMApiFactory>
 
         // Top result for heart attack query should be heart-related
         var isHeartRelated =
-            topCode.StartsWith("I21") || // MI codes
-            topCode.StartsWith("I22") || // Subsequent MI
+            topCode.StartsWith("I21", StringComparison.Ordinal) || // MI codes
+            topCode.StartsWith("I22", StringComparison.Ordinal) || // Subsequent MI
             topDesc.Contains("myocardial") ||
             topDesc.Contains("infarction") ||
             topDesc.Contains("heart") ||
