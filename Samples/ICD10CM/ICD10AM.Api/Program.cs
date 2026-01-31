@@ -26,8 +26,31 @@ builder.Services.AddCors(options =>
 });
 
 // Always use a real SQLite file - NEVER in-memory
-var dbPath =
-    builder.Configuration["DbPath"] ?? Path.Combine(AppContext.BaseDirectory, "icd10am.db");
+// Look for icd10cm.db (populated by Python import script) in parent directories
+var dbPath = builder.Configuration["DbPath"] ?? FindDatabaseFile();
+
+static string FindDatabaseFile()
+{
+    var searchPaths = new[]
+    {
+        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "icd10cm.db"),
+        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "icd10cm.db"),
+        Path.Combine(AppContext.BaseDirectory, "..", "icd10cm.db"),
+        Path.Combine(AppContext.BaseDirectory, "icd10cm.db"),
+    };
+
+    foreach (var path in searchPaths)
+    {
+        var fullPath = Path.GetFullPath(path);
+        if (File.Exists(fullPath))
+        {
+            return fullPath;
+        }
+    }
+
+    // Fallback to default location
+    return Path.Combine(AppContext.BaseDirectory, "icd10am.db");
+}
 var connectionString = new SqliteConnectionStringBuilder
 {
     DataSource = dbPath,

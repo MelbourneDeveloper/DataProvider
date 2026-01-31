@@ -1051,10 +1051,7 @@ namespace Dashboard.Pages
                 ),
                 P(
                     className: "text-sm text-gray-600 mb-3",
-                    children: new[]
-                    {
-                        Text(result.LongDescription ?? result.Description ?? ""),
-                    }
+                    children: new[] { Text(result.LongDescription ?? result.Description ?? "") }
                 ),
             };
 
@@ -1131,16 +1128,10 @@ namespace Dashboard.Pages
                     className: "text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200",
                     children: new[]
                     {
-                        Span(
-                            className: "font-semibold",
-                            children: new[] { Text("Type: ") }
-                        ),
+                        Span(className: "font-semibold", children: new[] { Text("Type: ") }),
                         Text(result.CodeType ?? "ICD10CM"),
                         Text(" | "),
-                        Span(
-                            className: "font-semibold",
-                            children: new[] { Text("Confidence: ") }
-                        ),
+                        Span(className: "font-semibold", children: new[] { Text("Confidence: ") }),
                         Span(
                             style: new { color = confidenceColor },
                             children: new[] { Text(confidencePercent + "%") }
