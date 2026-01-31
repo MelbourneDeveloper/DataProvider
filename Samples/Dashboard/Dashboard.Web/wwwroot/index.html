@@ -2186,45 +2186,81 @@
                 ? React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, React.createElement(Icons.Sparkles), `${results.length} AI-matched results`)
                 : `${results.length} results found`
             ),
-            React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' } },
-              results.map((result, idx) => {
-                const code = searchMode === 'semantic' ? result.Code : result.Code;
-                const description = searchMode === 'semantic' ? result.Description : result.ShortDescription;
-                const confidence = searchMode === 'semantic' ? result.Confidence : null;
-                const codeType = searchMode === 'semantic' ? result.CodeType : 'ICD10AM';
-
-                return React.createElement('div', {
-                  key: idx,
-                  className: 'card',
-                  style: { padding: '20px', cursor: 'pointer', transition: 'all 0.15s' },
-                  onClick: () => lookupCode(code)
-                },
-                  React.createElement('div', { style: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' } },
-                    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-                      React.createElement('span', {
-                        style: {
-                          background: codeType === 'ACHI' ? 'linear-gradient(135deg, #14b8a6, #0d9488)' : 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-                          color: 'white', padding: '4px 12px', borderRadius: '6px', fontWeight: '600', fontSize: '14px'
-                        }
-                      }, code),
-                      result.Billable && React.createElement('span', { className: 'badge badge-success' }, 'Billable'),
-                      codeType && React.createElement('span', { className: 'badge badge-gray' }, codeType)
-                    ),
-                    confidence && React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-                      React.createElement('div', { style: { width: '40px', height: '6px', background: '#e5e7eb', borderRadius: '3px', overflow: 'hidden' } },
-                        React.createElement('div', { style: { width: `${confidence * 100}%`, height: '100%', background: confidence >= 0.8 ? '#22c55e' : confidence >= 0.6 ? '#f59e0b' : '#ef4444' } })
-                      ),
-                      React.createElement('span', { style: { fontSize: '12px', fontWeight: '500', color: confidence >= 0.8 ? '#22c55e' : confidence >= 0.6 ? '#f59e0b' : '#ef4444' } }, `${Math.round(confidence * 100)}%`)
-                    )
-                  ),
-                  React.createElement('p', { style: { fontSize: '14px', color: '#374151', marginBottom: '12px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } }, description),
-                  !searchMode.includes('semantic') && result.ChapterNumber && React.createElement('div', { style: { display: 'flex', gap: '16px', fontSize: '12px', color: '#9ca3af' } },
-                    React.createElement('span', null, `Chapter ${result.ChapterNumber}`),
-                    result.BlockCode && React.createElement('span', null, result.BlockCode),
-                    result.CategoryCode && React.createElement('span', null, result.CategoryCode)
+            React.createElement('div', { className: 'table-container' },
+              React.createElement('table', { className: 'table' },
+                React.createElement('thead', null,
+                  React.createElement('tr', null,
+                    React.createElement('th', null, 'Code'),
+                    searchMode === 'semantic' && React.createElement('th', null, 'Type'),
+                    React.createElement('th', null, 'Description'),
+                    !searchMode.includes('semantic') && React.createElement('th', null, 'Chapter'),
+                    !searchMode.includes('semantic') && React.createElement('th', null, 'Category'),
+                    !searchMode.includes('semantic') && React.createElement('th', null, 'Status'),
+                    searchMode === 'semantic' && React.createElement('th', null, 'Confidence')
                   )
-                );
-              })
+                ),
+                React.createElement('tbody', null,
+                  results.map((result, idx) => {
+                    const code = searchMode === 'semantic' ? result.Code : result.Code;
+                    const description = searchMode === 'semantic' ? result.Description : result.ShortDescription;
+                    const confidence = searchMode === 'semantic' ? result.Confidence : null;
+                    const codeType = searchMode === 'semantic' ? result.CodeType : 'ICD10AM';
+                    const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
+                    const confidenceColor = confidencePercent >= 80 ? '#22c55e' : confidencePercent >= 60 ? '#f59e0b' : '#ef4444';
+
+                    return React.createElement('tr', {
+                      key: idx,
+                      className: 'search-result-row',
+                      style: { cursor: 'pointer' },
+                      onClick: () => lookupCode(code)
+                    },
+                      React.createElement('td', null,
+                        React.createElement('span', {
+                          className: 'badge badge-primary',
+                          style: {
+                            background: codeType === 'ACHI' ? 'linear-gradient(135deg, #14b8a6, #0d9488)' : 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                            color: 'white', fontWeight: '600'
+                          }
+                        }, code)
+                      ),
+                      searchMode === 'semantic' && React.createElement('td', null,
+                        React.createElement('span', { className: codeType === 'ACHI' ? 'badge badge-teal' : 'badge badge-violet' }, codeType || 'ICD10AM')
+                      ),
+                      React.createElement('td', { className: 'result-description-cell' },
+                        React.createElement('span', null, description),
+                        React.createElement('div', { className: 'result-tooltip' },
+                          React.createElement('h4', { style: { fontWeight: '600', marginBottom: '8px' } }, `${code} - ${description}`),
+                          React.createElement('p', { style: { fontSize: '14px', color: '#6b7280', marginBottom: '8px' } }, result.LongDescription || description),
+                          searchMode === 'semantic' && React.createElement('div', { style: { fontSize: '12px', color: '#9ca3af' } },
+                            React.createElement('span', { style: { fontWeight: '600' } }, 'Code Type: '), codeType || 'ICD10AM'
+                          ),
+                          searchMode === 'semantic' && confidence && React.createElement('div', { style: { fontSize: '12px', marginTop: '4px' } },
+                            React.createElement('span', { style: { fontWeight: '600' } }, 'AI Confidence: '),
+                            React.createElement('span', { style: { color: confidenceColor } }, `${confidencePercent}%`)
+                          )
+                        )
+                      ),
+                      !searchMode.includes('semantic') && React.createElement('td', { style: { fontSize: '14px', color: '#6b7280' } }, result.ChapterNumber ? `Ch. ${result.ChapterNumber}` : '-'),
+                      !searchMode.includes('semantic') && React.createElement('td', { style: { fontSize: '14px', color: '#6b7280' } }, result.CategoryCode || '-'),
+                      !searchMode.includes('semantic') && React.createElement('td', null,
+                        result.Billable
+                          ? React.createElement('span', { className: 'badge badge-success' }, 'Billable')
+                          : React.createElement('span', { className: 'badge badge-gray' }, 'Non-billable')
+                      ),
+                      searchMode === 'semantic' && confidence && React.createElement('td', null,
+                        React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+                          React.createElement('div', { style: { width: '60px', height: '8px', background: '#e5e7eb', borderRadius: '4px', overflow: 'hidden' } },
+                            React.createElement('div', { style: { width: `${confidencePercent}%`, height: '100%', background: confidenceColor } })
+                          ),
+                          React.createElement('span', {
+                            className: `badge ${confidencePercent >= 80 ? 'badge-success' : confidencePercent >= 60 ? 'badge-warning' : 'badge-error'}`
+                          }, `${confidencePercent}%`)
+                        )
+                      )
+                    );
+                  })
+                )
+              )
             )
           ),
           // Empty State

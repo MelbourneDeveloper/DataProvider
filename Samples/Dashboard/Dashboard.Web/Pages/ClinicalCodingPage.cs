@@ -682,23 +682,20 @@ namespace Dashboard.Pages
                                 className: "table",
                                 children: new[]
                                 {
-                                    Thead(
-                                        children: new[]
-                                        {
-                                            Tr(
-                                                children: new[]
-                                                {
-                                                    Th(children: new[] { Text("Code") }),
-                                                    Th(children: new[] { Text("Description") }),
-                                                    Th(children: new[] { Text("Chapter") }),
-                                                    Th(children: new[] { Text("Category") }),
-                                                    Th(children: new[] { Text("Status") }),
-                                                    Th(children: new[] { Text("") }),
-                                                }
-                                            ),
-                                        }
+                                    THead(
+                                        Tr(
+                                            children: new[]
+                                            {
+                                                Th(children: new[] { Text("Code") }),
+                                                Th(children: new[] { Text("Description") }),
+                                                Th(children: new[] { Text("Chapter") }),
+                                                Th(children: new[] { Text("Category") }),
+                                                Th(children: new[] { Text("Status") }),
+                                                Th(children: new[] { Text("") }),
+                                            }
+                                        )
                                     ),
-                                    Tbody(children: resultRows),
+                                    TBody(resultRows),
                                 }
                             ),
                         }
@@ -751,9 +748,7 @@ namespace Dashboard.Pages
                                         children: new[]
                                         {
                                             Text(
-                                                code.LongDescription
-                                                    ?? code.ShortDescription
-                                                    ?? ""
+                                                code.LongDescription ?? code.ShortDescription ?? ""
                                             ),
                                         }
                                     ),
@@ -877,11 +872,11 @@ namespace Dashboard.Pages
             Action<ClinicalCodingState> setState
         )
         {
-            var resultCards = new ReactElement[state.SemanticResults.Length];
+            var resultRows = new ReactElement[state.SemanticResults.Length];
             for (int i = 0; i < state.SemanticResults.Length; i++)
             {
                 var result = state.SemanticResults[i];
-                resultCards[i] = RenderSemanticCard(result, state, setState);
+                resultRows[i] = RenderSemanticRow(result, state, setState);
             }
 
             return Div(
@@ -909,12 +904,35 @@ namespace Dashboard.Pages
                             ),
                         }
                     ),
-                    Div(className: "code-results-grid", children: resultCards),
+                    Div(
+                        className: "table-container",
+                        children: new[]
+                        {
+                            Table(
+                                className: "table",
+                                children: new[]
+                                {
+                                    THead(
+                                        Tr(
+                                            children: new[]
+                                            {
+                                                Th(children: new[] { Text("Code") }),
+                                                Th(children: new[] { Text("Type") }),
+                                                Th(children: new[] { Text("Description") }),
+                                                Th(children: new[] { Text("Confidence") }),
+                                            }
+                                        )
+                                    ),
+                                    TBody(resultRows),
+                                }
+                            ),
+                        }
+                    ),
                 }
             );
         }
 
-        private static ReactElement RenderSemanticCard(
+        private static ReactElement RenderSemanticRow(
             SemanticSearchResult result,
             ClinicalCodingState state,
             Action<ClinicalCodingState> setState
@@ -925,42 +943,62 @@ namespace Dashboard.Pages
                 confidencePercent >= 80 ? "#22c55e"
                 : confidencePercent >= 60 ? "#f59e0b"
                 : "#ef4444";
+            var badgeClass =
+                confidencePercent >= 80 ? "badge-success"
+                : confidencePercent >= 60 ? "badge-warning"
+                : "badge-error";
 
-            return Div(
-                className: "card code-card hover-lift cursor-pointer",
+            return Tr(
+                className: "search-result-row",
                 onClick: () => LookupSemanticCode(result.Code, state, setState),
                 children: new[]
                 {
-                    Div(
-                        className: "flex items-start justify-between mb-3",
+                    Td(
                         children: new[]
                         {
-                            Div(
-                                className: "flex items-center gap-2",
-                                children: new[]
+                            Span(
+                                className: "badge badge-primary",
+                                style: new
                                 {
-                                    Span(
-                                        className: "code-badge",
-                                        style: new
-                                        {
-                                            background = result.CodeType == "ACHI"
-                                                ? "linear-gradient(135deg, #14b8a6, #0d9488)"
-                                                : "linear-gradient(135deg, #3b82f6, #8b5cf6)",
-                                            color = "white",
-                                            padding = "4px 12px",
-                                            borderRadius = "6px",
-                                            fontWeight = "600",
-                                            fontSize = "14px",
-                                        },
-                                        children: new[] { Text(result.Code) }
-                                    ),
-                                    Span(
-                                        className: "badge",
-                                        style: new { background = "#f3f4f6" },
-                                        children: new[] { Text(result.CodeType ?? "ICD10AM") }
-                                    ),
-                                }
+                                    background = result.CodeType == "ACHI"
+                                        ? "linear-gradient(135deg, #14b8a6, #0d9488)"
+                                        : "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+                                    color = "white",
+                                    fontWeight = "600",
+                                },
+                                children: new[] { Text(result.Code) }
                             ),
+                        }
+                    ),
+                    Td(
+                        children: new[]
+                        {
+                            Span(
+                                className: result.CodeType == "ACHI"
+                                    ? "badge badge-teal"
+                                    : "badge badge-violet",
+                                children: new[] { Text(result.CodeType ?? "ICD10CM") }
+                            ),
+                        }
+                    ),
+                    Td(
+                        className: "result-description-cell",
+                        children: new[]
+                        {
+                            Span(children: new[] { Text(result.Description ?? "") }),
+                            Div(
+                                className: "result-tooltip",
+                                children: RenderSemanticTooltipContent(
+                                    result: result,
+                                    confidenceColor: confidenceColor,
+                                    confidencePercent: confidencePercent
+                                )
+                            ),
+                        }
+                    ),
+                    Td(
+                        children: new[]
+                        {
                             Div(
                                 className: "flex items-center gap-2",
                                 children: new[]
@@ -968,10 +1006,10 @@ namespace Dashboard.Pages
                                     Div(
                                         style: new
                                         {
-                                            width = "40px",
-                                            height = "6px",
+                                            width = "60px",
+                                            height = "8px",
                                             background = "#e5e7eb",
-                                            borderRadius = "3px",
+                                            borderRadius = "4px",
                                             overflow = "hidden",
                                         },
                                         children: new[]
@@ -987,20 +1025,131 @@ namespace Dashboard.Pages
                                         }
                                     ),
                                     Span(
-                                        className: "text-xs font-medium",
-                                        style: new { color = confidenceColor },
+                                        className: "badge " + badgeClass,
                                         children: new[] { Text(confidencePercent + "%") }
                                     ),
                                 }
                             ),
                         }
                     ),
-                    P(
-                        className: "text-sm text-gray-700",
-                        children: new[] { Text(result.Description ?? "") }
-                    ),
                 }
             );
+        }
+
+        private static ReactElement[] RenderSemanticTooltipContent(
+            SemanticSearchResult result,
+            string confidenceColor,
+            int confidencePercent
+        )
+        {
+            var elements = new System.Collections.Generic.List<ReactElement>
+            {
+                H(
+                    4,
+                    className: "font-semibold mb-2",
+                    children: new[] { Text(result.Code + " - " + (result.Description ?? "")) }
+                ),
+                P(
+                    className: "text-sm text-gray-600 mb-3",
+                    children: new[]
+                    {
+                        Text(result.LongDescription ?? result.Description ?? ""),
+                    }
+                ),
+            };
+
+            if (!string.IsNullOrEmpty(result.InclusionTerms))
+            {
+                elements.Add(
+                    Div(
+                        className: "text-xs text-green-700 mb-2",
+                        children: new[]
+                        {
+                            Span(
+                                className: "font-semibold",
+                                children: new[] { Text("Includes: ") }
+                            ),
+                            Text(result.InclusionTerms),
+                        }
+                    )
+                );
+            }
+
+            if (!string.IsNullOrEmpty(result.ExclusionTerms))
+            {
+                elements.Add(
+                    Div(
+                        className: "text-xs text-red-700 mb-2",
+                        children: new[]
+                        {
+                            Span(
+                                className: "font-semibold",
+                                children: new[] { Text("Excludes: ") }
+                            ),
+                            Text(result.ExclusionTerms),
+                        }
+                    )
+                );
+            }
+
+            if (!string.IsNullOrEmpty(result.CodeAlso))
+            {
+                elements.Add(
+                    Div(
+                        className: "text-xs text-blue-700 mb-2",
+                        children: new[]
+                        {
+                            Span(
+                                className: "font-semibold",
+                                children: new[] { Text("Code also: ") }
+                            ),
+                            Text(result.CodeAlso),
+                        }
+                    )
+                );
+            }
+
+            if (!string.IsNullOrEmpty(result.CodeFirst))
+            {
+                elements.Add(
+                    Div(
+                        className: "text-xs text-purple-700 mb-2",
+                        children: new[]
+                        {
+                            Span(
+                                className: "font-semibold",
+                                children: new[] { Text("Code first: ") }
+                            ),
+                            Text(result.CodeFirst),
+                        }
+                    )
+                );
+            }
+
+            elements.Add(
+                Div(
+                    className: "text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200",
+                    children: new[]
+                    {
+                        Span(
+                            className: "font-semibold",
+                            children: new[] { Text("Type: ") }
+                        ),
+                        Text(result.CodeType ?? "ICD10CM"),
+                        Text(" | "),
+                        Span(
+                            className: "font-semibold",
+                            children: new[] { Text("Confidence: ") }
+                        ),
+                        Span(
+                            style: new { color = confidenceColor },
+                            children: new[] { Text(confidencePercent + "%") }
+                        ),
+                    }
+                )
+            );
+
+            return elements.ToArray();
         }
 
         private static async void LookupSemanticCode(

@@ -778,12 +778,14 @@ internal static class Program
             if (col.IsNullable)
             {
                 _ = sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName} ?? (object)DBNull.Value);"
                 );
             }
             else
             {
                 _ = sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName});"
                 );
             }
@@ -821,6 +823,7 @@ internal static class Program
         _ = sb.AppendLine();
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    /// <summary>");
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    /// Bulk upserts rows into {table.Name} using batched multi-row VALUES."
         );
         _ = sb.AppendLine(
@@ -837,6 +840,7 @@ internal static class Program
             $"    /// <param name=\"records\">Records to upsert as tuples.</param>"
         );
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    /// <param name=\"batchSize\">Max rows per batch (default 1000).</param>"
         );
         _ = sb.AppendLine(
@@ -844,6 +848,7 @@ internal static class Program
             $"    /// <returns>Total rows affected.</returns>"
         );
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    public static async Task<Result<int, SqlError>> BulkUpsert{pascalName}Async("
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        this NpgsqlConnection conn,");
@@ -867,6 +872,7 @@ internal static class Program
         _ = sb.AppendLine("                if (batch.Count >= batchSize)");
         _ = sb.AppendLine("                {");
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"                    var result = await ExecuteBulkUpsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);"
         );
         _ = sb.AppendLine(
@@ -883,6 +889,7 @@ internal static class Program
         _ = sb.AppendLine("            if (batch.Count > 0)");
         _ = sb.AppendLine("            {");
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"                var finalResult = await ExecuteBulkUpsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);"
         );
         _ = sb.AppendLine(
@@ -909,6 +916,7 @@ internal static class Program
 
         // Generate batch execution helper
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    private static async Task<Result<int, SqlError>> ExecuteBulkUpsert{pascalName}BatchAsync("
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        NpgsqlConnection conn,");
@@ -924,6 +932,7 @@ internal static class Program
         var updateSet = string.Join(", ", updateCols.Select(c => $"{c.Name} = EXCLUDED.{c.Name}"));
 
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"        var sql = new System.Text.StringBuilder(\"INSERT INTO {table.Schema}.{table.Name} ({colNames}) VALUES \");"
         );
         _ = sb.AppendLine();
@@ -946,6 +955,7 @@ internal static class Program
         if (updateCols.Count > 0)
         {
             _ = sb.AppendLine(
+                CultureInfo.InvariantCulture,
                 $"        sql.Append(\" ON CONFLICT ({pkColNames}) DO UPDATE SET {updateSet}\");"
             );
         }
@@ -972,12 +982,14 @@ internal static class Program
             if (col.IsNullable)
             {
                 _ = sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName} ?? (object)DBNull.Value);"
                 );
             }
             else
             {
                 _ = sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"p\" + (i * {insertable.Count} + {i}), rec.{propName});"
                 );
             }

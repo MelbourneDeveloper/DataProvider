@@ -29,7 +29,11 @@ internal sealed record Icd10Code(
     string? CategoryCode,
     string? BlockCode,
     string? ChapterNumber,
-    string? ChapterTitle
+    string? ChapterTitle,
+    string? InclusionTerms,
+    string? ExclusionTerms,
+    string? CodeAlso,
+    string? CodeFirst
 );
 
 /// <summary>
@@ -740,6 +744,34 @@ sealed class Icd10Cli : IDisposable
             rows.Add(new Text(""));
             rows.Add(new Markup("[yellow]Category:[/]"));
             rows.Add(new Markup($"[dim]{code.CategoryCode.EscapeMarkup()}[/]"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(code.InclusionTerms))
+        {
+            rows.Add(new Text(""));
+            rows.Add(new Markup("[blue]Includes:[/]"));
+            rows.Add(new Markup($"[dim]{code.InclusionTerms.EscapeMarkup()}[/]"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(code.ExclusionTerms))
+        {
+            rows.Add(new Text(""));
+            rows.Add(new Markup("[red]Excludes:[/]"));
+            rows.Add(new Markup($"[dim]{code.ExclusionTerms.EscapeMarkup()}[/]"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(code.CodeAlso))
+        {
+            rows.Add(new Text(""));
+            rows.Add(new Markup("[olive]Code Also:[/]"));
+            rows.Add(new Markup($"[dim]{code.CodeAlso.EscapeMarkup()}[/]"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(code.CodeFirst))
+        {
+            rows.Add(new Text(""));
+            rows.Add(new Markup("[orange3]Code First:[/]"));
+            rows.Add(new Markup($"[dim]{code.CodeFirst.EscapeMarkup()}[/]"));
         }
 
         rows.Add(new Text(""));

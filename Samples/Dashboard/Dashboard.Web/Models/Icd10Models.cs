@@ -166,11 +166,26 @@ namespace Dashboard.Models
         /// <summary>Code description.</summary>
         public extern string Description { get; set; }
 
+        /// <summary>Long description with clinical details.</summary>
+        public extern string LongDescription { get; set; }
+
         /// <summary>Confidence score (0-1).</summary>
         public extern double Confidence { get; set; }
 
-        /// <summary>Code type (ICD10AM or ACHI).</summary>
+        /// <summary>Code type (ICD10CM or ACHI).</summary>
         public extern string CodeType { get; set; }
+
+        /// <summary>Inclusion terms for the code.</summary>
+        public extern string InclusionTerms { get; set; }
+
+        /// <summary>Exclusion terms for the code.</summary>
+        public extern string ExclusionTerms { get; set; }
+
+        /// <summary>Code also references.</summary>
+        public extern string CodeAlso { get; set; }
+
+        /// <summary>Code first references.</summary>
+        public extern string CodeFirst { get; set; }
     }
 
     /// <summary>

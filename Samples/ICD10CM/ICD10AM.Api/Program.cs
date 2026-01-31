@@ -500,7 +500,11 @@ app.MapPost(
                 Description: e.ShortDescription,
                 LongDescription: e.LongDescription,
                 Confidence: similarity,
-                CodeType: "ICD10AM"
+                CodeType: "ICD10CM",
+                InclusionTerms: e.InclusionTerms,
+                ExclusionTerms: e.ExclusionTerms,
+                CodeAlso: e.CodeAlso,
+                CodeFirst: e.CodeFirst
             );
         });
 
@@ -547,7 +551,11 @@ app.MapPost(
                             Description: e.ShortDesc,
                             LongDescription: e.LongDesc,
                             Confidence: similarity,
-                            CodeType: "ACHI"
+                            CodeType: "ACHI",
+                            InclusionTerms: "",
+                            ExclusionTerms: "",
+                            CodeAlso: "",
+                            CodeFirst: ""
                         );
                     });
                 }
@@ -693,14 +701,18 @@ namespace ICD10AM.Api
     );
 
     /// <summary>
-    /// Semantic search result with code type.
+    /// Semantic search result with code type and clinical details.
     /// </summary>
     internal sealed record SearchResult(
         string Code,
         string Description,
         string LongDescription,
         double Confidence,
-        string CodeType
+        string CodeType,
+        string InclusionTerms,
+        string ExclusionTerms,
+        string CodeAlso,
+        string CodeFirst
     );
 
     /// <summary>
