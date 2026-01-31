@@ -1,11 +1,12 @@
 using System.CommandLine;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using DataProvider.CodeGeneration;
 using Npgsql;
 using Outcome;
 using Selecta;
 
+#pragma warning disable CA1812 // Avoid uninstantiated internal classes - records are instantiated by JSON deserialization
 #pragma warning disable CA1849 // Call async methods when in an async method
 #pragma warning disable CA2100 // Review SQL queries for security vulnerabilities
 
@@ -327,10 +328,13 @@ internal static class Program
         sb.AppendLine();
 
         // Extension class
-        sb.AppendLine($"/// <summary>");
-        sb.AppendLine($"/// Generated CRUD operations for {table.Name} table.");
-        sb.AppendLine($"/// </summary>");
-        sb.AppendLine($"public static class {pascalName}Extensions");
+        sb.AppendLine("/// <summary>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"/// Generated CRUD operations for {table.Name} table."
+        );
+        sb.AppendLine("/// </summary>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"public static class {pascalName}Extensions");
         sb.AppendLine("{");
 
         // Generate INSERT method
@@ -387,26 +391,31 @@ internal static class Program
         );
 
         sb.AppendLine();
-        sb.AppendLine($"    /// <summary>");
+        sb.AppendLine("    /// <summary>");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    /// Inserts a row into {table.Name}. Returns inserted id or null on conflict."
         );
-        sb.AppendLine($"    /// </summary>");
+        sb.AppendLine("    /// </summary>");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    public static async Task<Result<Guid?, SqlError>> Insert{pascalName}Async("
         );
-        sb.AppendLine($"        this NpgsqlConnection conn,");
-        sb.AppendLine($"        {parameters})");
+        sb.AppendLine("        this NpgsqlConnection conn,");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
         sb.AppendLine("    {");
 
         var colNames = string.Join(", ", insertable.Select(c => c.Name));
         var paramNames = string.Join(", ", insertable.Select(c => $"@{ToCamelCase(c.Name)}"));
 
-        sb.AppendLine($"        const string sql = @\"");
-        sb.AppendLine($"            INSERT INTO {table.Schema}.{table.Name} ({colNames})");
-        sb.AppendLine($"            VALUES ({paramNames})");
-        sb.AppendLine($"            ON CONFLICT DO NOTHING");
-        sb.AppendLine($"            RETURNING id\";");
+        sb.AppendLine("        const string sql = @\"");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            INSERT INTO {table.Schema}.{table.Name} ({colNames})"
+        );
+        sb.AppendLine(CultureInfo.InvariantCulture, $"            VALUES ({paramNames})");
+        sb.AppendLine("            ON CONFLICT DO NOTHING");
+        sb.AppendLine("            RETURNING id\";");
         sb.AppendLine();
         sb.AppendLine("        try");
         sb.AppendLine("        {");
@@ -418,12 +427,14 @@ internal static class Program
             if (col.IsNullable)
             {
                 sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName} ?? (object)DBNull.Value);"
                 );
             }
             else
             {
                 sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName});"
                 );
             }
@@ -468,14 +479,18 @@ internal static class Program
         );
 
         sb.AppendLine();
-        sb.AppendLine($"    /// <summary>");
-        sb.AppendLine($"    /// Updates a row in {table.Name} by primary key.");
-        sb.AppendLine($"    /// </summary>");
+        sb.AppendLine("    /// <summary>");
         sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// Updates a row in {table.Name} by primary key."
+        );
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    public static async Task<Result<int, SqlError>> Update{pascalName}Async("
         );
-        sb.AppendLine($"        this NpgsqlConnection conn,");
-        sb.AppendLine($"        {parameters})");
+        sb.AppendLine("        this NpgsqlConnection conn,");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
         sb.AppendLine("    {");
 
         var setClauses = string.Join(
@@ -487,10 +502,13 @@ internal static class Program
             pkCols.Select(c => $"{c.Name} = @{ToCamelCase(c.Name)}")
         );
 
-        sb.AppendLine($"        const string sql = @\"");
-        sb.AppendLine($"            UPDATE {table.Schema}.{table.Name}");
-        sb.AppendLine($"            SET {setClauses}");
-        sb.AppendLine($"            WHERE {whereClauses}\";");
+        sb.AppendLine("        const string sql = @\"");
+        sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            UPDATE {table.Schema}.{table.Name}"
+        );
+        sb.AppendLine(CultureInfo.InvariantCulture, $"            SET {setClauses}");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"            WHERE {whereClauses}\";");
         sb.AppendLine();
         sb.AppendLine("        try");
         sb.AppendLine("        {");
@@ -502,12 +520,14 @@ internal static class Program
             if (col.IsNullable)
             {
                 sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName} ?? (object)DBNull.Value);"
                 );
             }
             else
             {
                 sb.AppendLine(
+                    CultureInfo.InvariantCulture,
                     $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName});"
                 );
             }
@@ -1322,10 +1342,10 @@ internal sealed record TableConfigItem
     /// <summary>
     /// Columns to exclude from generation.
     /// </summary>
-    public IReadOnlyList<string> ExcludeColumns { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> ExcludeColumns { get; init; } = [];
 
     /// <summary>
     /// Primary key columns.
     /// </summary>
-    public IReadOnlyList<string> PrimaryKeyColumns { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> PrimaryKeyColumns { get; init; } = [];
 }

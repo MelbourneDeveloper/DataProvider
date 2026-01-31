@@ -1,108 +1,100 @@
 using System.Collections.Immutable;
-using System.Net.Http.Json;
 using System.Text.Json;
-using Microsoft.Data.Sqlite;
+using RestClient.Net;
 using Spectre.Console;
 using Spectre.Console.Rendering;
+using Urls;
 
-var dbPath = args.Length > 0 ? args[0] : FindDatabase();
-if (dbPath is null)
-{
-    AnsiConsole.MarkupLine(
-        "[red]Database not found![/] Pass path as argument or set DbPath env var."
-    );
-    return 1;
-}
+var apiUrl = args.Length > 0 ? args[0] : FindApiUrl();
 
-using var app = new Icd10Cli(dbPath, AnsiConsole.Console);
+using var app = new Icd10Cli(apiUrl, AnsiConsole.Console);
 await app.RunAsync();
 return 0;
 
-static string? FindDatabase()
+static string FindApiUrl()
 {
-    var envPath = Environment.GetEnvironmentVariable("DbPath");
-    if (envPath is not null && File.Exists(envPath))
-        return envPath;
-
-    var candidates = new[]
-    {
-        "../icd10cm.db",
-        "../../icd10cm.db",
-        "../../../icd10cm.db",
-        "./icd10cm.db",
-    };
-
-    return candidates.Select(Path.GetFullPath).FirstOrDefault(File.Exists);
+    var envUrl = Environment.GetEnvironmentVariable("ICD10_API_URL");
+    return envUrl ?? "http://localhost:5558";
 }
 
 /// <summary>
-/// ICD-10-CM code record from database.
+/// ICD-10-AM code from API.
 /// </summary>
-sealed record Icd10Code(
+internal sealed record Icd10Code(
     string Id,
     string Code,
     string ShortDescription,
     string LongDescription,
-    string InclusionTerms,
-    string ExclusionTerms,
-    string CodeAlso,
-    string CodeFirst,
-    string Synonyms,
-    bool Billable
+    long Billable,
+    string? CategoryCode,
+    string? BlockCode,
+    string? ChapterNumber,
+    string? ChapterTitle
 );
 
 /// <summary>
-/// RAG search result with similarity score.
+/// RAG search result from API.
 /// </summary>
-sealed record SearchResult(
+internal sealed record SearchResult(
     string Code,
-    string ShortDescription,
+    string Description,
     string LongDescription,
-    double Similarity
+    double Confidence
 );
 
 /// <summary>
-/// Embedding service response.
+/// API search response.
 /// </summary>
-sealed record EmbedResponse(ImmutableArray<float> Embedding);
+internal sealed record SearchResponse(
+    ImmutableArray<SearchResult> Results,
+    string Query,
+    string Model
+);
 
 /// <summary>
-/// Beautiful TUI for ICD-10-CM code lookup.
+/// Chapter from API.
+/// </summary>
+internal sealed record Chapter(string Id, string ChapterNumber, string Title);
+
+/// <summary>
+/// Health response from API.
+/// </summary>
+internal sealed record HealthResponse(string Status, string Service);
+
+/// <summary>
+/// Search request to API.
+/// </summary>
+internal sealed record SearchRequest(string Query, int? Limit, bool IncludeAchi, string? Format);
+
+/// <summary>
+/// Error response from API.
+/// </summary>
+internal sealed record ErrorResponse(string? Detail);
+
+/// <summary>
+/// Beautiful TUI for ICD-10-AM code lookup via API.
 /// </summary>
 sealed class Icd10Cli : IDisposable
 {
-    static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
-
-    readonly SqliteConnection _db;
-    readonly HttpClient _http;
-    readonly List<string> _history = [];
-    readonly string _embeddingUrl;
-    readonly IAnsiConsole _console;
-    readonly bool _ownsHttpClient;
-
-    /// <summary>
-    /// Creates CLI with default HttpClient.
-    /// </summary>
-    public Icd10Cli(string dbPath, IAnsiConsole console)
-        : this(dbPath, console, new HttpClient(), ownsHttpClient: true) { }
-
-    /// <summary>
-    /// Creates CLI with injected HttpClient for testing.
-    /// </summary>
-    public Icd10Cli(
-        string dbPath,
-        IAnsiConsole console,
-        HttpClient httpClient,
-        bool ownsHttpClient = false
-    )
+    static readonly JsonSerializerOptions JsonOptions = new()
     {
-        _db = new SqliteConnection($"Data Source={dbPath};Mode=ReadOnly");
-        _db.Open();
-        _http = httpClient;
-        _ownsHttpClient = ownsHttpClient;
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true,
+    };
+
+    readonly HttpClient _httpClient;
+    readonly List<string> _history = [];
+    readonly string _apiUrl;
+    readonly IAnsiConsole _console;
+
+    /// <summary>
+    /// Creates CLI with API URL.
+    /// </summary>
+    public Icd10Cli(string apiUrl, IAnsiConsole console)
+    {
+        _apiUrl = apiUrl.TrimEnd('/');
         _console = console;
-        _embeddingUrl =
-            Environment.GetEnvironmentVariable("EMBEDDING_URL") ?? "http://localhost:8000";
+        _httpClient = new HttpClient();
     }
 
     /// <summary>
@@ -111,7 +103,7 @@ sealed class Icd10Cli : IDisposable
     public async Task RunAsync()
     {
         RenderHeader();
-        RenderStats();
+        await RenderStatsAsync().ConfigureAwait(false);
 
         while (true)
         {
@@ -146,7 +138,7 @@ sealed class Icd10Cli : IDisposable
                     if (string.IsNullOrWhiteSpace(arg))
                         _console.MarkupLine("[yellow]Usage:[/] search <query>");
                     else
-                        await SearchAsync(arg);
+                        await SearchAsync(arg).ConfigureAwait(false);
                     break;
 
                 case "l":
@@ -154,7 +146,7 @@ sealed class Icd10Cli : IDisposable
                     if (string.IsNullOrWhiteSpace(arg))
                         _console.MarkupLine("[yellow]Usage:[/] lookup <code>");
                     else
-                        Lookup(arg);
+                        await LookupAsync(arg).ConfigureAwait(false);
                     break;
 
                 case "f":
@@ -162,12 +154,12 @@ sealed class Icd10Cli : IDisposable
                     if (string.IsNullOrWhiteSpace(arg))
                         _console.MarkupLine("[yellow]Usage:[/] find <text>");
                     else
-                        Find(arg);
+                        await FindAsync(arg).ConfigureAwait(false);
                     break;
 
                 case "b":
                 case "browse":
-                    Browse(arg);
+                    await BrowseAsync().ConfigureAwait(false);
                     break;
 
                 case "j":
@@ -175,15 +167,15 @@ sealed class Icd10Cli : IDisposable
                     if (string.IsNullOrWhiteSpace(arg))
                         _console.MarkupLine("[yellow]Usage:[/] json <code>");
                     else
-                        ShowJson(arg);
+                        await ShowJsonAsync(arg).ConfigureAwait(false);
                     break;
 
                 case "stats":
                     _console.Clear();
-                    _console.MarkupLine("[bold cyan]ICD-10-CM Statistics[/]");
+                    _console.MarkupLine("[bold cyan]ICD-10-AM Statistics[/]");
                     _console.Write(new Rule().RuleStyle("grey"));
                     _console.WriteLine();
-                    RenderStats();
+                    await RenderStatsAsync().ConfigureAwait(false);
                     break;
 
                 case "history":
@@ -196,7 +188,7 @@ sealed class Icd10Cli : IDisposable
                     break;
 
                 default:
-                    await SearchAsync(input);
+                    await SearchAsync(input).ConfigureAwait(false);
                     break;
             }
         }
@@ -204,12 +196,13 @@ sealed class Icd10Cli : IDisposable
 
     void RenderHeader()
     {
-        var header = new FigletText("ICD-10-CM").Centered().Color(Color.Cyan1);
+        var header = new FigletText("ICD-10-AM").Centered().Color(Color.Cyan1);
 
         _console.Write(header);
 
         var panel = new Panel(
             "[grey]Medical Diagnosis Code Explorer[/]\n"
+                + $"[dim]API: {_apiUrl.EscapeMarkup()}[/]\n"
                 + "[dim]Type [cyan]help[/] for commands, or just start typing to search[/]"
         )
             .Border(BoxBorder.Rounded)
@@ -222,7 +215,7 @@ sealed class Icd10Cli : IDisposable
     void RenderHelp()
     {
         _console.Clear();
-        _console.MarkupLine("[bold cyan]ICD-10-CM Help[/]");
+        _console.MarkupLine("[bold cyan]ICD-10-AM Help[/]");
         _console.Write(new Rule().RuleStyle("grey"));
         _console.WriteLine();
 
@@ -232,15 +225,12 @@ sealed class Icd10Cli : IDisposable
             .AddColumn(new TableColumn("[cyan]Command[/]").Width(20))
             .AddColumn(new TableColumn("[cyan]Description[/]"));
 
-        table.AddRow(
-            "[green]search[/] [dim]<query>[/]",
-            "Semantic RAG search (requires embeddings)"
-        );
+        table.AddRow("[green]search[/] [dim]<query>[/]", "Semantic RAG search (AI-powered)");
         table.AddRow("[green]find[/] [dim]<text>[/]", "Text search in descriptions");
         table.AddRow("[green]lookup[/] [dim]<code>[/]", "Direct code lookup (e.g., R07.9)");
         table.AddRow("[green]json[/] [dim]<code>[/]", "Show raw JSON for a code");
-        table.AddRow("[green]browse[/] [dim][[letter]][/]", "Browse codes by first letter");
-        table.AddRow("[green]stats[/]", "Show database statistics");
+        table.AddRow("[green]browse[/]", "Browse chapters");
+        table.AddRow("[green]stats[/]", "Show API status");
         table.AddRow("[green]history[/]", "Show command history");
         table.AddRow("[green]clear[/]", "Clear screen");
         table.AddRow("[green]help[/]", "Show this help");
@@ -255,42 +245,44 @@ sealed class Icd10Cli : IDisposable
         );
     }
 
-    void RenderStats()
+    async Task RenderStatsAsync()
     {
-        var codeCount = ExecuteScalar<long>("SELECT COUNT(*) FROM icd10cm_code");
-        var embeddingCount = ExecuteScalar<long>("SELECT COUNT(*) FROM icd10cm_code_embedding");
-        var billableCount = ExecuteScalar<long>(
-            "SELECT COUNT(*) FROM icd10cm_code WHERE Billable = 1"
-        );
+        var result = await _httpClient
+            .GetAsync(
+                url: $"{_apiUrl}/health".ToAbsoluteUrl(),
+                deserializeSuccess: DeserializeHealth,
+                deserializeError: DeserializeError
+            )
+            .ConfigureAwait(false);
 
-        var grid = new Grid().AddColumn().AddColumn().AddColumn();
-
-        grid.AddRow(
-            new Panel($"[bold cyan]{codeCount:N0}[/]\n[dim]Total Codes[/]")
-                .Border(BoxBorder.Rounded)
-                .BorderColor(Color.Cyan1),
-            new Panel($"[bold green]{embeddingCount:N0}[/]\n[dim]Embeddings[/]")
-                .Border(BoxBorder.Rounded)
-                .BorderColor(embeddingCount > 0 ? Color.Green : Color.Yellow),
-            new Panel($"[bold blue]{billableCount:N0}[/]\n[dim]Billable[/]")
-                .Border(BoxBorder.Rounded)
-                .BorderColor(Color.Blue)
-        );
-
-        _console.Write(grid);
-
-        if (embeddingCount == 0)
+        switch (result)
         {
-            _console.MarkupLine(
-                "[yellow]RAG search unavailable - no embeddings. Use [cyan]find[/] for text search.[/]"
-            );
+            case OkHealth(var health):
+                var grid = new Grid().AddColumn().AddColumn();
+                grid.AddRow(
+                    new Panel($"[bold green]✓[/]\n[dim]API Status[/]")
+                        .Border(BoxBorder.Rounded)
+                        .BorderColor(Color.Green),
+                    new Panel($"[bold cyan]{_apiUrl.EscapeMarkup()}[/]\n[dim]Endpoint[/]")
+                        .Border(BoxBorder.Rounded)
+                        .BorderColor(Color.Cyan1)
+                );
+                _console.Write(grid);
+                break;
+
+            default:
+                _console.MarkupLine($"[red]API unavailable[/]");
+                _console.MarkupLine(
+                    $"[yellow]Make sure the API is running at {_apiUrl.EscapeMarkup()}[/]"
+                );
+                break;
         }
     }
 
     void RenderHistory()
     {
         _console.Clear();
-        _console.MarkupLine("[bold cyan]ICD-10-CM Command History[/]");
+        _console.MarkupLine("[bold cyan]ICD-10-AM Command History[/]");
         _console.Write(new Rule().RuleStyle("grey"));
         _console.WriteLine();
 
@@ -316,117 +308,54 @@ sealed class Icd10Cli : IDisposable
 
     async Task SearchAsync(string query)
     {
-        var embeddingCount = ExecuteScalar<long>("SELECT COUNT(*) FROM icd10cm_code_embedding");
-        if (embeddingCount == 0)
-        {
-            _console.MarkupLine(
-                "[yellow]No embeddings in database. Using text search instead...[/]"
-            );
-            Find(query);
-            return;
-        }
-
-        ImmutableArray<float> queryEmbedding;
-        try
-        {
-            queryEmbedding = await _console
-                .Status()
-                .Spinner(Spinner.Known.Dots)
-                .SpinnerStyle(Style.Parse("cyan"))
-                .StartAsync(
-                    "Generating embedding...",
-                    async _ =>
-                    {
-                        var response = await _http.PostAsJsonAsync(
-                            $"{_embeddingUrl}/embed",
-                            new { text = query }
-                        );
-
-                        if (!response.IsSuccessStatusCode)
-                        {
-                            throw new InvalidOperationException(
-                                $"Embedding service error: {response.StatusCode}"
-                            );
-                        }
-
-                        var result = await response.Content.ReadFromJsonAsync<EmbedResponse>();
-                        return result?.Embedding
-                            ?? throw new InvalidOperationException("Empty embedding response");
-                    }
-                );
-        }
-        catch (Exception ex)
-        {
-            _console.MarkupLine(
-                $"[red]Embedding service unavailable:[/] {ex.Message.EscapeMarkup()}"
-            );
-            _console.MarkupLine("[yellow]Falling back to text search...[/]");
-            Find(query);
-            return;
-        }
-
-        var results = _console
+        var results = await _console
             .Status()
             .Spinner(Spinner.Known.Dots)
             .SpinnerStyle(Style.Parse("cyan"))
-            .Start("Searching...", _ => ComputeSimilarity(queryEmbedding, limit: 15));
+            .StartAsync(
+                "Searching via AI...",
+                async _ =>
+                {
+                    var requestBody = new SearchRequest(query, 15, false, null);
+                    var json = JsonSerializer.Serialize(requestBody, JsonOptions);
+                    var content = new StringContent(
+                        json,
+                        System.Text.Encoding.UTF8,
+                        "application/json"
+                    );
+
+                    var result = await _httpClient
+                        .PostAsync(
+                            $"{_apiUrl}/api/search".ToAbsoluteUrl(),
+                            content,
+                            DeserializeSearchResponse,
+                            DeserializeError
+                        )
+                        .ConfigureAwait(false);
+
+                    return result switch
+                    {
+                        OkSearch(var response) => response.Results,
+                        _ => [],
+                    };
+                }
+            )
+            .ConfigureAwait(false);
+
+        if (results.Length == 0)
+        {
+            _console.MarkupLine("[yellow]No results. Falling back to text search...[/]");
+            await FindAsync(query).ConfigureAwait(false);
+            return;
+        }
 
         RenderSearchResults(query, results);
-    }
-
-    ImmutableArray<SearchResult> ComputeSimilarity(ImmutableArray<float> queryEmbedding, int limit)
-    {
-        using var cmd = _db.CreateCommand();
-        cmd.CommandText = """
-            SELECT c.Code, c.ShortDescription, c.LongDescription, e.Embedding
-            FROM icd10cm_code c
-            INNER JOIN icd10cm_code_embedding e ON c.Id = e.CodeId
-            """;
-
-        var results = new List<(SearchResult Result, double Score)>();
-        using var reader = cmd.ExecuteReader();
-
-        while (reader.Read())
-        {
-            var code = reader.GetString(0);
-            var shortDesc = reader.GetString(1);
-            var longDesc = reader.GetString(2);
-            var embeddingJson = reader.GetString(3);
-
-            var embedding = JsonSerializer.Deserialize<float[]>(embeddingJson);
-            if (embedding is null)
-                continue;
-
-            var similarity = CosineSimilarity(queryEmbedding, embedding);
-            results.Add((new SearchResult(code, shortDesc, longDesc, similarity), similarity));
-        }
-
-        return [.. results.OrderByDescending(r => r.Score).Take(limit).Select(r => r.Result)];
-    }
-
-    static double CosineSimilarity(ImmutableArray<float> a, float[] b)
-    {
-        if (a.Length != b.Length)
-            return 0;
-
-        double dot = 0,
-            magA = 0,
-            magB = 0;
-        for (var i = 0; i < a.Length; i++)
-        {
-            dot += a[i] * b[i];
-            magA += a[i] * a[i];
-            magB += b[i] * b[i];
-        }
-
-        var magnitude = Math.Sqrt(magA) * Math.Sqrt(magB);
-        return magnitude > 0 ? dot / magnitude : 0;
     }
 
     void RenderSearchResults(string query, ImmutableArray<SearchResult> results)
     {
         _console.Clear();
-        _console.MarkupLine("[bold cyan]ICD-10-CM Search Results[/]");
+        _console.MarkupLine("[bold cyan]ICD-10-AM AI Search Results[/]");
         _console.Write(new Rule().RuleStyle("grey"));
         _console.MarkupLine($"[dim]Query:[/] [cyan]{query.EscapeMarkup()}[/]\n");
 
@@ -445,7 +374,7 @@ sealed class Icd10Cli : IDisposable
 
         foreach (var r in results)
         {
-            var scoreColor = r.Similarity switch
+            var scoreColor = r.Confidence switch
             {
                 > 0.8 => "green",
                 > 0.6 => "yellow",
@@ -453,9 +382,9 @@ sealed class Icd10Cli : IDisposable
             };
 
             table.AddRow(
-                $"[{scoreColor}]{r.Similarity:P0}[/]",
+                $"[{scoreColor}]{r.Confidence:P0}[/]",
                 $"[bold]{r.Code.EscapeMarkup()}[/]",
-                Truncate(r.ShortDescription, 60).EscapeMarkup()
+                Truncate(r.Description, 60).EscapeMarkup()
             );
         }
 
@@ -465,30 +394,37 @@ sealed class Icd10Cli : IDisposable
         );
     }
 
-    void Find(string text)
+    async Task FindAsync(string text)
     {
-        using var cmd = _db.CreateCommand();
-        cmd.CommandText = """
-            SELECT Id, Code, ShortDescription, LongDescription,
-                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Synonyms, Billable
-            FROM icd10cm_code
-            WHERE Code LIKE @search
-               OR ShortDescription LIKE @search
-               OR LongDescription LIKE @search
-               OR Synonyms LIKE @search
-            ORDER BY
-                CASE WHEN Code LIKE @exact THEN 0 ELSE 1 END,
-                Code
-            LIMIT 20
-            """;
-        cmd.Parameters.AddWithValue("@search", $"%{text}%");
-        cmd.Parameters.AddWithValue("@exact", text);
+        var codes = await _console
+            .Status()
+            .Spinner(Spinner.Known.Dots)
+            .SpinnerStyle(Style.Parse("cyan"))
+            .StartAsync(
+                "Searching...",
+                async _ =>
+                {
+                    var result = await _httpClient
+                        .GetAsync(
+                            url: $"{_apiUrl}/api/icd10am/codes?q={Uri.EscapeDataString(text)}&limit=20".ToAbsoluteUrl(),
+                            deserializeSuccess: DeserializeCodes,
+                            deserializeError: DeserializeError
+                        )
+                        .ConfigureAwait(false);
 
-        var codes = ReadCodes(cmd);
+                    return result switch
+                    {
+                        OkCodes(var c) => c,
+                        _ => [],
+                    };
+                }
+            )
+            .ConfigureAwait(false);
+
         RenderCodeList($"Text search: {text}", codes);
     }
 
-    void Lookup(string code)
+    async Task LookupAsync(string code)
     {
         var normalized = code.ToUpperInvariant().Replace(".", "");
         if (normalized.Length > 3)
@@ -496,121 +432,106 @@ sealed class Icd10Cli : IDisposable
             normalized = normalized[..3] + "." + normalized[3..];
         }
 
-        using var cmd = _db.CreateCommand();
-        cmd.CommandText = """
-            SELECT Id, Code, ShortDescription, LongDescription,
-                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Synonyms, Billable
-            FROM icd10cm_code
-            WHERE Code = @code OR Code = @normalized OR Code LIKE @prefix
-            ORDER BY Code
-            LIMIT 20
-            """;
-        cmd.Parameters.AddWithValue("@code", code.ToUpperInvariant());
-        cmd.Parameters.AddWithValue("@normalized", normalized);
-        cmd.Parameters.AddWithValue("@prefix", $"{code.ToUpperInvariant()}%");
+        var result = await _console
+            .Status()
+            .Spinner(Spinner.Known.Dots)
+            .SpinnerStyle(Style.Parse("cyan"))
+            .StartAsync(
+                "Looking up...",
+                async _ =>
+                {
+                    var r = await _httpClient
+                        .GetAsync(
+                            url: $"{_apiUrl}/api/icd10am/codes/{Uri.EscapeDataString(normalized)}".ToAbsoluteUrl(),
+                            deserializeSuccess: DeserializeCode,
+                            deserializeError: DeserializeError
+                        )
+                        .ConfigureAwait(false);
 
-        var codes = ReadCodes(cmd);
+                    return r switch
+                    {
+                        OkCode(var c) => c,
+                        _ => null,
+                    };
+                }
+            )
+            .ConfigureAwait(false);
 
-        if (codes.Length == 1)
+        if (result is not null)
         {
-            RenderCodeDetail(codes[0]);
+            RenderCodeDetail(result);
         }
         else
         {
-            RenderCodeList($"Lookup: {code}", codes);
+            _console.MarkupLine($"[yellow]Code not found:[/] {code.EscapeMarkup()}");
         }
     }
 
-    void Browse(string letter)
+    async Task BrowseAsync()
     {
-        var prefix = string.IsNullOrEmpty(letter) ? "" : letter.ToUpperInvariant()[..1];
+        var chapters = await _console
+            .Status()
+            .Spinner(Spinner.Known.Dots)
+            .SpinnerStyle(Style.Parse("cyan"))
+            .StartAsync(
+                "Loading chapters...",
+                async _ =>
+                {
+                    var result = await _httpClient
+                        .GetAsync(
+                            url: $"{_apiUrl}/api/icd10am/chapters".ToAbsoluteUrl(),
+                            deserializeSuccess: DeserializeChapters,
+                            deserializeError: DeserializeError
+                        )
+                        .ConfigureAwait(false);
 
-        if (string.IsNullOrEmpty(prefix))
-        {
-            RenderChapterOverview();
-            return;
-        }
+                    return result switch
+                    {
+                        OkChapters(var c) => c,
+                        _ => [],
+                    };
+                }
+            )
+            .ConfigureAwait(false);
 
-        using var cmd = _db.CreateCommand();
-        cmd.CommandText = """
-            SELECT Id, Code, ShortDescription, LongDescription,
-                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Synonyms, Billable
-            FROM icd10cm_code
-            WHERE Code LIKE @prefix
-            ORDER BY Code
-            LIMIT 50
-            """;
-        cmd.Parameters.AddWithValue("@prefix", $"{prefix}%");
-
-        var codes = ReadCodes(cmd);
-        RenderCodeList($"Codes starting with {prefix}", codes);
+        RenderChapters(chapters);
     }
 
-    void RenderChapterOverview()
+    void RenderChapters(ImmutableArray<Chapter> chapters)
     {
         _console.Clear();
-        _console.MarkupLine("[bold cyan]ICD-10-CM Chapter Overview[/]");
+        _console.MarkupLine("[bold cyan]ICD-10-AM Chapters[/]");
         _console.Write(new Rule().RuleStyle("grey"));
         _console.WriteLine();
 
-        var chapters = new[]
+        if (chapters.Length == 0)
         {
-            ("A-B", "Infectious and parasitic diseases", Color.Red),
-            ("C-D", "Neoplasms / Blood diseases", Color.Maroon),
-            ("E", "Endocrine, nutritional, metabolic", Color.Orange1),
-            ("F", "Mental and behavioral disorders", Color.Yellow),
-            ("G", "Nervous system diseases", Color.Green),
-            ("H", "Eye and ear diseases", Color.Cyan1),
-            ("I", "Circulatory system diseases", Color.Blue),
-            ("J", "Respiratory system diseases", Color.Purple),
-            ("K", "Digestive system diseases", Color.Fuchsia),
-            ("L", "Skin diseases", Color.Pink1),
-            ("M", "Musculoskeletal diseases", Color.Salmon1),
-            ("N", "Genitourinary diseases", Color.Aqua),
-            ("O", "Pregnancy and childbirth", Color.LightPink1),
-            ("P", "Perinatal conditions", Color.LightYellow3),
-            ("Q", "Congenital malformations", Color.LightGreen),
-            ("R", "Symptoms and signs", Color.Grey),
-            ("S-T", "Injury and poisoning", Color.DarkOrange),
-            ("V-Y", "External causes", Color.DarkRed),
-            ("Z", "Health status factors", Color.SteelBlue),
-        };
+            _console.MarkupLine("[yellow]No chapters found. Database may be empty.[/]");
+            return;
+        }
 
         var table = new Table()
             .Border(TableBorder.Rounded)
             .BorderColor(Color.Grey)
-            .AddColumn(new TableColumn("[cyan]Range[/]").Width(8))
-            .AddColumn(new TableColumn("[cyan]Chapter[/]"))
-            .AddColumn(new TableColumn("[cyan]Count[/]").RightAligned());
+            .AddColumn(new TableColumn("[cyan]#[/]").Width(5))
+            .AddColumn(new TableColumn("[cyan]Title[/]"));
 
-        foreach (var (range, desc, color) in chapters)
+        foreach (var chapter in chapters)
         {
-            var letters = range.Contains('-')
-                ? string.Join(
-                    ",",
-                    Enumerable.Range(range[0], range[2] - range[0] + 1).Select(c => $"'{(char)c}%'")
-                )
-                : $"'{range}%'";
-
-            var count = ExecuteScalar<long>(
-                $"SELECT COUNT(*) FROM icd10cm_code WHERE {string.Join(" OR ", range.Replace("-", "").Select(c => $"Code LIKE '{c}%'"))}"
-            );
-
             table.AddRow(
-                $"[{color.ToMarkup()}]{range}[/]",
-                desc.EscapeMarkup(),
-                $"[dim]{count:N0}[/]"
+                $"[bold]{chapter.ChapterNumber.EscapeMarkup()}[/]",
+                chapter.Title.EscapeMarkup()
             );
         }
 
         _console.Write(table);
-        _console.MarkupLine("\n[dim]Type [cyan]browse <letter>[/] to explore a chapter[/]");
+        _console.MarkupLine($"\n[dim]{chapters.Length} chapters[/]");
     }
 
     void RenderCodeList(string title, ImmutableArray<Icd10Code> codes)
     {
         _console.Clear();
-        _console.MarkupLine("[bold cyan]ICD-10-CM Results[/]");
+        _console.MarkupLine("[bold cyan]ICD-10-AM Results[/]");
         _console.Write(new Rule().RuleStyle("grey"));
         _console.MarkupLine($"[dim]{title.EscapeMarkup()}[/]\n");
 
@@ -632,20 +553,20 @@ sealed class Icd10Cli : IDisposable
             table.AddRow(
                 $"[bold]{code.Code.EscapeMarkup()}[/]",
                 Truncate(code.ShortDescription, 55).EscapeMarkup(),
-                code.Billable ? "[green]\u2713[/]" : "[dim]-[/]"
+                code.Billable == 1 ? "[green]✓[/]" : "[dim]-[/]"
             );
         }
 
         _console.Write(table);
         _console.MarkupLine(
-            $"[dim]{codes.Length} codes ([green]\u2713[/] = billable) - type [cyan]l <code>[/] for details[/]"
+            $"[dim]{codes.Length} codes ([green]✓[/] = billable) - type [cyan]l <code>[/] for details[/]"
         );
     }
 
     void RenderCodeDetail(Icd10Code code)
     {
         _console.Clear();
-        _console.MarkupLine("[bold cyan]ICD-10-CM Code Detail[/]");
+        _console.MarkupLine("[bold cyan]ICD-10-AM Code Detail[/]");
         _console.Write(new Rule().RuleStyle("grey"));
         _console.WriteLine();
 
@@ -658,46 +579,36 @@ sealed class Icd10Cli : IDisposable
             new Markup($"[dim]{code.LongDescription.EscapeMarkup()}[/]"),
         };
 
-        if (!string.IsNullOrWhiteSpace(code.Synonyms))
+        if (!string.IsNullOrWhiteSpace(code.ChapterNumber))
         {
             rows.Add(new Text(""));
-            rows.Add(new Markup("[magenta]Also Known As:[/]"));
-            rows.Add(new Markup($"[dim]{code.Synonyms.EscapeMarkup()}[/]"));
+            rows.Add(new Markup("[magenta]Chapter:[/]"));
+            rows.Add(
+                new Markup(
+                    $"[dim]{code.ChapterNumber.EscapeMarkup()} - {(code.ChapterTitle ?? "").EscapeMarkup()}[/]"
+                )
+            );
         }
 
-        if (!string.IsNullOrWhiteSpace(code.InclusionTerms))
+        if (!string.IsNullOrWhiteSpace(code.BlockCode))
         {
             rows.Add(new Text(""));
-            rows.Add(new Markup("[green]Includes:[/]"));
-            rows.Add(new Markup($"[dim]{code.InclusionTerms.EscapeMarkup()}[/]"));
+            rows.Add(new Markup("[green]Block:[/]"));
+            rows.Add(new Markup($"[dim]{code.BlockCode.EscapeMarkup()}[/]"));
         }
 
-        if (!string.IsNullOrWhiteSpace(code.ExclusionTerms))
+        if (!string.IsNullOrWhiteSpace(code.CategoryCode))
         {
             rows.Add(new Text(""));
-            rows.Add(new Markup("[red]Excludes:[/]"));
-            rows.Add(new Markup($"[dim]{code.ExclusionTerms.EscapeMarkup()}[/]"));
-        }
-
-        if (!string.IsNullOrWhiteSpace(code.CodeAlso))
-        {
-            rows.Add(new Text(""));
-            rows.Add(new Markup("[yellow]Code Also:[/]"));
-            rows.Add(new Markup($"[dim]{code.CodeAlso.EscapeMarkup()}[/]"));
-        }
-
-        if (!string.IsNullOrWhiteSpace(code.CodeFirst))
-        {
-            rows.Add(new Text(""));
-            rows.Add(new Markup("[orange1]Code First:[/]"));
-            rows.Add(new Markup($"[dim]{code.CodeFirst.EscapeMarkup()}[/]"));
+            rows.Add(new Markup("[yellow]Category:[/]"));
+            rows.Add(new Markup($"[dim]{code.CategoryCode.EscapeMarkup()}[/]"));
         }
 
         rows.Add(new Text(""));
         rows.Add(
             new Markup(
-                code.Billable
-                    ? "[green]\u2713 Billable[/]"
+                code.Billable == 1
+                    ? "[green]✓ Billable[/]"
                     : "[yellow]Not directly billable (category code)[/]"
             )
         );
@@ -711,7 +622,7 @@ sealed class Icd10Cli : IDisposable
         _console.Write(panel);
     }
 
-    void ShowJson(string code)
+    async Task ShowJsonAsync(string code)
     {
         var normalized = code.ToUpperInvariant().Replace(".", "");
         if (normalized.Length > 3)
@@ -719,47 +630,29 @@ sealed class Icd10Cli : IDisposable
             normalized = normalized[..3] + "." + normalized[3..];
         }
 
-        using var cmd = _db.CreateCommand();
-        cmd.CommandText = """
-            SELECT Id, Code, ShortDescription, LongDescription,
-                   InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst, Synonyms, Billable
-            FROM icd10cm_code
-            WHERE Code = @code OR Code = @normalized
-            LIMIT 1
-            """;
-        cmd.Parameters.AddWithValue("@code", code.ToUpperInvariant());
-        cmd.Parameters.AddWithValue("@normalized", normalized);
+        var result = await _httpClient
+            .GetAsync(
+                url: $"{_apiUrl}/api/icd10am/codes/{Uri.EscapeDataString(normalized)}".ToAbsoluteUrl(),
+                deserializeSuccess: DeserializeCode,
+                deserializeError: DeserializeError
+            )
+            .ConfigureAwait(false);
 
-        var codes = ReadCodes(cmd);
-        if (codes.Length == 0)
+        switch (result)
         {
-            _console.MarkupLine($"[yellow]Code not found:[/] {code.EscapeMarkup()}");
-            return;
+            case OkCode(var c):
+                var json = JsonSerializer.Serialize(c, JsonOptions);
+                _console.Clear();
+                _console.MarkupLine("[bold cyan]ICD-10-AM JSON[/]");
+                _console.Write(new Rule().RuleStyle("grey"));
+                _console.MarkupLine($"[dim]Code:[/] [cyan]{c.Code.EscapeMarkup()}[/]\n");
+                _console.Write(new Panel(json).Border(BoxBorder.Rounded).BorderColor(Color.Grey));
+                break;
+
+            default:
+                _console.MarkupLine($"[yellow]Code not found:[/] {code.EscapeMarkup()}");
+                break;
         }
-
-        var c = codes[0];
-        var json = JsonSerializer.Serialize(
-            new
-            {
-                c.Id,
-                c.Code,
-                c.ShortDescription,
-                c.LongDescription,
-                c.InclusionTerms,
-                c.ExclusionTerms,
-                c.CodeAlso,
-                c.CodeFirst,
-                c.Synonyms,
-                c.Billable,
-            },
-            JsonOptions
-        );
-
-        _console.Clear();
-        _console.MarkupLine("[bold cyan]ICD-10-CM JSON[/]");
-        _console.Write(new Rule().RuleStyle("grey"));
-        _console.MarkupLine($"[dim]Code:[/] [cyan]{c.Code.EscapeMarkup()}[/]\n");
-        _console.Write(new Panel(json).Border(BoxBorder.Rounded).BorderColor(Color.Grey));
     }
 
     void RenderGoodbye()
@@ -768,49 +661,84 @@ sealed class Icd10Cli : IDisposable
         _console.Write(new Rule("[cyan]Goodbye![/]").RuleStyle("grey"));
     }
 
-    ImmutableArray<Icd10Code> ReadCodes(SqliteCommand cmd)
-    {
-        using var reader = cmd.ExecuteReader();
-        var codes = new List<Icd10Code>();
-
-        while (reader.Read())
-        {
-            codes.Add(
-                new Icd10Code(
-                    Id: reader.GetString(0),
-                    Code: reader.GetString(1),
-                    ShortDescription: reader.GetString(2),
-                    LongDescription: reader.GetString(3),
-                    InclusionTerms: reader.IsDBNull(4) ? "" : reader.GetString(4),
-                    ExclusionTerms: reader.IsDBNull(5) ? "" : reader.GetString(5),
-                    CodeAlso: reader.IsDBNull(6) ? "" : reader.GetString(6),
-                    CodeFirst: reader.IsDBNull(7) ? "" : reader.GetString(7),
-                    Synonyms: reader.IsDBNull(8) ? "" : reader.GetString(8),
-                    Billable: reader.GetInt32(9) == 1
-                )
-            );
-        }
-
-        return [.. codes];
-    }
-
-    T ExecuteScalar<T>(string sql)
-    {
-        using var cmd = _db.CreateCommand();
-        cmd.CommandText = sql;
-        var result = cmd.ExecuteScalar();
-        return (T)Convert.ChangeType(result!, typeof(T));
-    }
-
     static string Truncate(string text, int maxLength) =>
         text.Length <= maxLength ? text : text[..(maxLength - 3)] + "...";
 
-    public void Dispose()
+    // Deserialization helpers
+    static async Task<HealthResponse?> DeserializeHealth(
+        HttpResponseMessage r,
+        CancellationToken ct
+    ) =>
+        await JsonSerializer
+            .DeserializeAsync<HealthResponse>(
+                await r.Content.ReadAsStreamAsync(ct).ConfigureAwait(false),
+                JsonOptions,
+                ct
+            )
+            .ConfigureAwait(false);
+
+    static async Task<SearchResponse?> DeserializeSearchResponse(
+        HttpResponseMessage r,
+        CancellationToken ct
+    ) =>
+        await JsonSerializer
+            .DeserializeAsync<SearchResponse>(
+                await r.Content.ReadAsStreamAsync(ct).ConfigureAwait(false),
+                JsonOptions,
+                ct
+            )
+            .ConfigureAwait(false);
+
+    static async Task<ImmutableArray<Icd10Code>> DeserializeCodes(
+        HttpResponseMessage r,
+        CancellationToken ct
+    )
     {
-        _db.Dispose();
-        if (_ownsHttpClient)
-        {
-            _http.Dispose();
-        }
+        var codes = await JsonSerializer
+            .DeserializeAsync<Icd10Code[]>(
+                await r.Content.ReadAsStreamAsync(ct).ConfigureAwait(false),
+                JsonOptions,
+                ct
+            )
+            .ConfigureAwait(false);
+        return codes is null ? [] : [.. codes];
     }
+
+    static async Task<Icd10Code?> DeserializeCode(HttpResponseMessage r, CancellationToken ct) =>
+        await JsonSerializer
+            .DeserializeAsync<Icd10Code>(
+                await r.Content.ReadAsStreamAsync(ct).ConfigureAwait(false),
+                JsonOptions,
+                ct
+            )
+            .ConfigureAwait(false);
+
+    static async Task<ImmutableArray<Chapter>> DeserializeChapters(
+        HttpResponseMessage r,
+        CancellationToken ct
+    )
+    {
+        var chapters = await JsonSerializer
+            .DeserializeAsync<Chapter[]>(
+                await r.Content.ReadAsStreamAsync(ct).ConfigureAwait(false),
+                JsonOptions,
+                ct
+            )
+            .ConfigureAwait(false);
+        return chapters is null ? [] : [.. chapters];
+    }
+
+    static async Task<ErrorResponse?> DeserializeError(
+        HttpResponseMessage r,
+        CancellationToken ct
+    ) =>
+        await JsonSerializer
+            .DeserializeAsync<ErrorResponse>(
+                await r.Content.ReadAsStreamAsync(ct).ConfigureAwait(false),
+                JsonOptions,
+                ct
+            )
+            .ConfigureAwait(false);
+
+    public void Dispose() => _httpClient.Dispose();
 }

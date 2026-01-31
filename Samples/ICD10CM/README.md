@@ -69,17 +69,22 @@ dotnet test
 
 ```mermaid
 flowchart LR
-    Client([User]) --> |POST /api/search| API["ICD10AM.Api<br/>(C# / .NET)"]
-    API --> |POST /embed| Container
-    subgraph Container["Docker Container"]
-        PyAPI["FastAPI<br/>(Python)"]
-        PyAPI --> ST["sentence-transformers"]
-        ST --> Model["MedEmbed-small"]
+    subgraph Clients["Clients"]
+        CLI["ICD10AM.Cli<br/>(C# / RestClient.Net)"]
+        Dashboard["Dashboard<br/>(React)"]
     end
-    Container --> |vector| API
-    API --> |cosine similarity| DB[(SQLite)]
-    API --> |ranked results| Client
+
+    Clients --> |HTTP| API["ICD10AM.Api<br/>(C# / .NET)<br/>:5558"]
+
+    API --> |cosine similarity| DB[(SQLite<br/>icd10am.db)]
+
+    API --> |POST /embed| Embedding
+    subgraph Embedding["Docker Container :8000"]
+        PyAPI["FastAPI + sentence-transformers<br/>MedEmbed-small"]
+    end
 ```
+
+**Single Database**: All clients (CLI, Dashboard) access data through the API. The API owns the database. No client accesses the database directly.
 
 ## Environment Variables
 
