@@ -18,11 +18,18 @@ internal static class DatabaseSetup
             // Check if tables already exist (e.g., in test scenarios)
             using (var checkCmd = connection.CreateCommand())
             {
-                checkCmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='icd10am_chapter'";
-                var count = Convert.ToInt64(checkCmd.ExecuteScalar(), System.Globalization.CultureInfo.InvariantCulture);
+                checkCmd.CommandText =
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='icd10am_chapter'";
+                var count = Convert.ToInt64(
+                    checkCmd.ExecuteScalar(),
+                    System.Globalization.CultureInfo.InvariantCulture
+                );
                 if (count > 0)
                 {
-                    logger.Log(LogLevel.Information, "ICD-10-AM database schema already exists, skipping initialization");
+                    logger.Log(
+                        LogLevel.Information,
+                        "ICD-10-AM database schema already exists, skipping initialization"
+                    );
                     return;
                 }
             }

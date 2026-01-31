@@ -574,4 +574,161 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         // Should handle invalid letter gracefully
         Assert.Contains("Goodbye", console.Output, StringComparison.OrdinalIgnoreCase);
     }
+
+    // =========================================================================
+    // CRITICAL: Lookup tests for ICD-10-CM codes (returned by RAG search)
+    // These tests ensure codes from search can actually be looked up
+    // =========================================================================
+
+    [Fact]
+    public async Task Lookup_FindsIcd10CmCode_I10()
+    {
+        // I10 (Essential hypertension) is in icd10cm_code (used by RAG search)
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l I10");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+        Assert.Contains("I10", output);
+        Assert.Contains("hypertension", output, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Lookup_FindsIcd10CmCode_I2111_HeartAttack()
+    {
+        // I21.11 (ST elevation MI) is in icd10cm_code - critical for "heart attack" search
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l I21.11");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+        Assert.Contains("I21.11", output);
+        Assert.Contains("myocardial infarction", output, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Lookup_FindsIcd10CmCode_M545_BackPain()
+    {
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l M54.5");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+        Assert.Contains("M54.5", output);
+        Assert.Contains("back pain", output, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Lookup_FindsIcd10CmCode_G43909_Migraine()
+    {
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l G43.909");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+        Assert.Contains("G43.909", output);
+        Assert.Contains("migraine", output, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Lookup_ShowsFullCodeDetails()
+    {
+        // Verify lookup shows ALL required information
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l R07.4");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+        // Must show code
+        Assert.Contains("R07.4", output);
+        // Must show description
+        Assert.Contains("chest pain", output, StringComparison.OrdinalIgnoreCase);
+        // Must show billable indicator
+        Assert.Contains("Billable", output, StringComparison.OrdinalIgnoreCase);
+        // Must NOT say not found
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Lookup_AllSeededCodes_Succeed()
+    {
+        // Verify ALL seeded ICD-10-CM codes can be looked up
+        var codesToTest = new[]
+        {
+            ("R07.4", "chest pain"),
+            ("R06.02", "shortness of breath"),
+            ("I21.11", "myocardial infarction"),
+            ("J18.9", "pneumonia"),
+            ("E11.9", "diabetes"),
+            ("I10", "hypertension"),
+            ("M54.5", "back pain"),
+        };
+
+        foreach (var (code, expectedText) in codesToTest)
+        {
+            var console = new TestConsole();
+            console.Profile.Capabilities.Interactive = true;
+            console.Input.PushTextWithEnter($"l {code}");
+            console.Input.PushTextWithEnter("q");
+
+            using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+            await cli.RunAsync();
+
+            var output = console.Output;
+            Assert.True(
+                output.Contains(code, StringComparison.Ordinal),
+                $"Lookup for {code} should show the code in output"
+            );
+            Assert.True(
+                output.Contains(expectedText, StringComparison.OrdinalIgnoreCase),
+                $"Lookup for {code} should show '{expectedText}' in output"
+            );
+            Assert.False(
+                output.Contains("not found", StringComparison.OrdinalIgnoreCase),
+                $"Lookup for {code} should NOT show 'not found'"
+            );
+        }
+    }
+
+    [Fact]
+    public async Task Json_FindsIcd10CmCode()
+    {
+        // JSON command should also find ICD-10-CM codes
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("json I10");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+        Assert.Contains("I10", output);
+        Assert.Contains("hypertension", output, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
+    }
 }

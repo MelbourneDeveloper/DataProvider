@@ -457,7 +457,22 @@ sealed class Icd10Cli : IDisposable
                 "Looking up...",
                 async _ =>
                 {
+                    // Try ICD-10-CM first (matches RAG search results)
                     var r = await _httpClient
+                        .GetAsync(
+                            url: $"{_apiUrl}/api/icd10cm/codes/{Uri.EscapeDataString(normalized)}".ToAbsoluteUrl(),
+                            deserializeSuccess: DeserializeCode,
+                            deserializeError: DeserializeError
+                        )
+                        .ConfigureAwait(false);
+
+                    if (r is OkCode(var cmCode))
+                    {
+                        return cmCode;
+                    }
+
+                    // Fall back to ICD-10-AM
+                    var amResult = await _httpClient
                         .GetAsync(
                             url: $"{_apiUrl}/api/icd10am/codes/{Uri.EscapeDataString(normalized)}".ToAbsoluteUrl(),
                             deserializeSuccess: DeserializeCode,
@@ -465,7 +480,7 @@ sealed class Icd10Cli : IDisposable
                         )
                         .ConfigureAwait(false);
 
-                    return r switch
+                    return amResult switch
                     {
                         OkCode(var c) => c,
                         CodeErrorResponse(ApiErrorResponseError _) => null,
@@ -490,7 +505,26 @@ sealed class Icd10Cli : IDisposable
                 "Searching for matching codes...",
                 async _ =>
                 {
+                    // Try ICD-10-CM first
                     var r = await _httpClient
+                        .GetAsync(
+                            url: $"{_apiUrl}/api/icd10cm/codes?q={Uri.EscapeDataString(normalized)}&limit=20".ToAbsoluteUrl(),
+                            deserializeSuccess: DeserializeCodes,
+                            deserializeError: DeserializeError
+                        )
+                        .ConfigureAwait(false);
+
+                    if (r is OkCodes(var cmCodes) && cmCodes.Length > 0)
+                    {
+                        return cmCodes
+                            .Where(x =>
+                                x.Code.StartsWith(normalized, StringComparison.OrdinalIgnoreCase)
+                            )
+                            .ToImmutableArray();
+                    }
+
+                    // Fall back to ICD-10-AM
+                    var amResult = await _httpClient
                         .GetAsync(
                             url: $"{_apiUrl}/api/icd10am/codes?q={Uri.EscapeDataString(normalized)}&limit=20".ToAbsoluteUrl(),
                             deserializeSuccess: DeserializeCodes,
@@ -498,12 +532,14 @@ sealed class Icd10Cli : IDisposable
                         )
                         .ConfigureAwait(false);
 
-                    return r switch
+                    return amResult switch
                     {
-                        OkCodes(var c) => c.Where(x =>
+                        OkCodes(var c) =>
+                        [
+                            .. c.Where(x =>
                                 x.Code.StartsWith(normalized, StringComparison.OrdinalIgnoreCase)
-                            )
-                            .ToImmutableArray(),
+                            ),
+                        ],
                         CodesErrorResponse(ApiErrorResponseError _) => [],
                         CodesErrorResponse(ApiExceptionError _) => [],
                     };
@@ -732,20 +768,33 @@ sealed class Icd10Cli : IDisposable
             normalized = normalized[..3] + "." + normalized[3..];
         }
 
+        // Try ICD-10-CM first (matches RAG search results)
         var result = await _httpClient
             .GetAsync(
-                url: $"{_apiUrl}/api/icd10am/codes/{Uri.EscapeDataString(normalized)}".ToAbsoluteUrl(),
+                url: $"{_apiUrl}/api/icd10cm/codes/{Uri.EscapeDataString(normalized)}".ToAbsoluteUrl(),
                 deserializeSuccess: DeserializeCode,
                 deserializeError: DeserializeError
             )
             .ConfigureAwait(false);
+
+        if (result is not OkCode)
+        {
+            // Fall back to ICD-10-AM
+            result = await _httpClient
+                .GetAsync(
+                    url: $"{_apiUrl}/api/icd10am/codes/{Uri.EscapeDataString(normalized)}".ToAbsoluteUrl(),
+                    deserializeSuccess: DeserializeCode,
+                    deserializeError: DeserializeError
+                )
+                .ConfigureAwait(false);
+        }
 
         switch (result)
         {
             case OkCode(var c):
                 var json = JsonSerializer.Serialize(c, JsonOptions);
                 _console.Clear();
-                _console.MarkupLine("[bold cyan]ICD-10-AM JSON[/]");
+                _console.MarkupLine("[bold cyan]ICD-10 JSON[/]");
                 _console.Write(new Rule().RuleStyle("grey"));
                 _console.MarkupLine($"[dim]Code:[/] [cyan]{c.Code.EscapeMarkup()}[/]\n");
                 _console.Write(new Panel(json).Border(BoxBorder.Rounded).BorderColor(Color.Grey));

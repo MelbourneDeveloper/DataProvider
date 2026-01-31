@@ -651,11 +651,11 @@ namespace Dashboard.Pages
             Action<ClinicalCodingState> setState
         )
         {
-            var resultCards = new ReactElement[state.Icd10Results.Length];
+            var resultRows = new ReactElement[state.Icd10Results.Length];
             for (int i = 0; i < state.Icd10Results.Length; i++)
             {
                 var code = state.Icd10Results[i];
-                resultCards[i] = RenderCodeCard(code, state, setState);
+                resultRows[i] = RenderCodeRow(code, state, setState);
             }
 
             return Div(
@@ -674,50 +674,144 @@ namespace Dashboard.Pages
                             ),
                         }
                     ),
-                    Div(className: "code-results-grid", children: resultCards),
+                    Div(
+                        className: "table-container",
+                        children: new[]
+                        {
+                            Table(
+                                className: "table",
+                                children: new[]
+                                {
+                                    Thead(
+                                        children: new[]
+                                        {
+                                            Tr(
+                                                children: new[]
+                                                {
+                                                    Th(children: new[] { Text("Code") }),
+                                                    Th(children: new[] { Text("Description") }),
+                                                    Th(children: new[] { Text("Chapter") }),
+                                                    Th(children: new[] { Text("Category") }),
+                                                    Th(children: new[] { Text("Status") }),
+                                                    Th(children: new[] { Text("") }),
+                                                }
+                                            ),
+                                        }
+                                    ),
+                                    Tbody(children: resultRows),
+                                }
+                            ),
+                        }
+                    ),
                 }
             );
         }
 
-        private static ReactElement RenderCodeCard(
+        private static ReactElement RenderCodeRow(
             Icd10Code code,
             ClinicalCodingState state,
             Action<ClinicalCodingState> setState
         ) =>
-            Div(
-                className: "card code-card hover-lift cursor-pointer",
+            Tr(
+                className: "search-result-row",
                 onClick: () => SelectCode(code, state, setState),
                 children: new[]
                 {
-                    Div(
-                        className: "flex items-start justify-between mb-3",
+                    Td(
                         children: new[]
                         {
+                            Span(
+                                className: "badge badge-primary",
+                                style: new
+                                {
+                                    background = "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+                                    color = "white",
+                                    fontWeight = "600",
+                                },
+                                children: new[] { Text(code.Code) }
+                            ),
+                        }
+                    ),
+                    Td(
+                        className: "result-description-cell",
+                        children: new[]
+                        {
+                            Span(children: new[] { Text(code.ShortDescription ?? "") }),
                             Div(
-                                className: "flex items-center gap-2",
+                                className: "result-tooltip",
                                 children: new[]
                                 {
-                                    Span(
-                                        className: "code-badge",
-                                        style: new
-                                        {
-                                            background = "linear-gradient(135deg, #3b82f6, #8b5cf6)",
-                                            color = "white",
-                                            padding = "4px 12px",
-                                            borderRadius = "6px",
-                                            fontWeight = "600",
-                                            fontSize = "14px",
-                                        },
-                                        children: new[] { Text(code.Code) }
+                                    H(
+                                        4,
+                                        className: "font-semibold mb-2",
+                                        children: new[] { Text(code.ShortDescription ?? "") }
                                     ),
-                                    code.Billable
-                                        ? Span(
-                                            className: "badge badge-success",
-                                            children: new[] { Text("Billable") }
+                                    P(
+                                        className: "text-sm text-gray-600 mb-3",
+                                        children: new[]
+                                        {
+                                            Text(
+                                                code.LongDescription
+                                                    ?? code.ShortDescription
+                                                    ?? ""
+                                            ),
+                                        }
+                                    ),
+                                    !string.IsNullOrEmpty(code.InclusionTerms)
+                                        ? Div(
+                                            className: "text-xs text-gray-500 mb-2",
+                                            children: new[]
+                                            {
+                                                Span(
+                                                    className: "font-semibold",
+                                                    children: new[] { Text("Includes: ") }
+                                                ),
+                                                Text(code.InclusionTerms),
+                                            }
+                                        )
+                                        : Text(""),
+                                    !string.IsNullOrEmpty(code.ExclusionTerms)
+                                        ? Div(
+                                            className: "text-xs text-gray-500",
+                                            children: new[]
+                                            {
+                                                Span(
+                                                    className: "font-semibold",
+                                                    children: new[] { Text("Excludes: ") }
+                                                ),
+                                                Text(code.ExclusionTerms),
+                                            }
                                         )
                                         : Text(""),
                                 }
                             ),
+                        }
+                    ),
+                    Td(
+                        className: "text-sm text-gray-600",
+                        children: new[] { Text("Ch. " + code.ChapterNumber) }
+                    ),
+                    Td(
+                        className: "text-sm text-gray-600",
+                        children: new[] { Text(code.CategoryCode ?? "") }
+                    ),
+                    Td(
+                        children: new[]
+                        {
+                            code.Billable
+                                ? Span(
+                                    className: "badge badge-success",
+                                    children: new[] { Text("Billable") }
+                                )
+                                : Span(
+                                    className: "badge badge-gray",
+                                    children: new[] { Text("Non-billable") }
+                                ),
+                        }
+                    ),
+                    Td(
+                        children: new[]
+                        {
                             Button(
                                 className: "btn btn-ghost btn-sm",
                                 onClick: () => CopyCode(code.Code, state, setState),
@@ -726,27 +820,6 @@ namespace Dashboard.Pages
                                     state.CopiedCode == code.Code ? Icons.Check() : Icons.Copy(),
                                 }
                             ),
-                        }
-                    ),
-                    H(
-                        4,
-                        className: "font-medium mb-2",
-                        children: new[] { Text(code.ShortDescription ?? "") }
-                    ),
-                    P(
-                        className: "text-sm text-gray-600 mb-3 line-clamp-2",
-                        children: new[]
-                        {
-                            Text(code.LongDescription ?? code.ShortDescription ?? ""),
-                        }
-                    ),
-                    Div(
-                        className: "flex items-center gap-4 text-xs text-gray-500",
-                        children: new[]
-                        {
-                            Span(children: new[] { Text("Chapter " + code.ChapterNumber) }),
-                            Span(children: new[] { Text(code.BlockCode ?? "") }),
-                            Span(children: new[] { Text(code.CategoryCode ?? "") }),
                         }
                     ),
                 }

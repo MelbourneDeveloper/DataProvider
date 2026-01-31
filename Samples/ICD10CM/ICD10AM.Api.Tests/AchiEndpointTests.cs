@@ -65,7 +65,11 @@ public sealed class AchiEndpointTests : IClassFixture<ICD10AMApiFactory>
         var code = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         Assert.Equal("38497-00", code.GetProperty("Code").GetString());
-        Assert.Contains("angiography", code.GetProperty("ShortDescription").GetString()!, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "angiography",
+            code.GetProperty("ShortDescription").GetString()!,
+            StringComparison.OrdinalIgnoreCase
+        );
     }
 
     [Fact]

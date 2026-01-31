@@ -303,6 +303,145 @@ achiGroup.MapGet(
 );
 
 // ============================================================================
+// ICD-10-CM CODE LOOKUP ENDPOINTS (for codes returned by RAG search)
+// ============================================================================
+
+var icd10cmGroup = app.MapGroup("/api/icd10cm").WithTags("ICD-10-CM");
+
+icd10cmGroup.MapGet(
+    "/codes/{code}",
+    async (string code, string? format, Func<SqliteConnection> getConn) =>
+    {
+        using var conn = getConn();
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+        SELECT Id, CategoryId, Code, ShortDescription, LongDescription,
+               InclusionTerms, ExclusionTerms, CodeAlso, CodeFirst,
+               Billable, EffectiveFrom, EffectiveTo, Edition, LastUpdated, VersionId
+        FROM icd10cm_code
+        WHERE Code = @code
+        """;
+        cmd.Parameters.AddWithValue("@code", code);
+
+        await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+        if (!await reader.ReadAsync().ConfigureAwait(false))
+        {
+            return Results.NotFound();
+        }
+
+        // Pre-read nullable values asynchronously to avoid CA1849
+        var categoryId = await reader.IsDBNullAsync(1).ConfigureAwait(false)
+            ? null
+            : reader.GetString(1);
+        var inclusionTerms = await reader.IsDBNullAsync(5).ConfigureAwait(false)
+            ? null
+            : reader.GetString(5);
+        var exclusionTerms = await reader.IsDBNullAsync(6).ConfigureAwait(false)
+            ? null
+            : reader.GetString(6);
+        var codeAlso = await reader.IsDBNullAsync(7).ConfigureAwait(false)
+            ? null
+            : reader.GetString(7);
+        var codeFirst = await reader.IsDBNullAsync(8).ConfigureAwait(false)
+            ? null
+            : reader.GetString(8);
+        var effectiveFrom = await reader.IsDBNullAsync(10).ConfigureAwait(false)
+            ? null
+            : reader.GetString(10);
+        var effectiveTo = await reader.IsDBNullAsync(11).ConfigureAwait(false)
+            ? null
+            : reader.GetString(11);
+        var lastUpdated = await reader.IsDBNullAsync(13).ConfigureAwait(false)
+            ? null
+            : reader.GetString(13);
+
+        var result = new
+        {
+            Id = reader.GetString(0),
+            CategoryId = categoryId,
+            Code = reader.GetString(2),
+            ShortDescription = reader.GetString(3),
+            LongDescription = reader.GetString(4),
+            InclusionTerms = inclusionTerms,
+            ExclusionTerms = exclusionTerms,
+            CodeAlso = codeAlso,
+            CodeFirst = codeFirst,
+            Billable = reader.GetInt64(9),
+            EffectiveFrom = effectiveFrom,
+            EffectiveTo = effectiveTo,
+            Edition = reader.GetInt64(12),
+            LastUpdated = lastUpdated,
+            VersionId = reader.GetInt64(14),
+        };
+
+        if (format == "fhir")
+        {
+            return Results.Ok(
+                new
+                {
+                    ResourceType = "CodeSystem",
+                    Url = "http://hl7.org/fhir/sid/icd-10-cm",
+                    Version = result.Edition.ToString(
+                        System.Globalization.CultureInfo.InvariantCulture
+                    ),
+                    Concept = new
+                    {
+                        Code = result.Code,
+                        Display = result.ShortDescription,
+                        Definition = result.LongDescription,
+                    },
+                }
+            );
+        }
+
+        return Results.Ok(result);
+    }
+);
+
+icd10cmGroup.MapGet(
+    "/codes",
+    async (string q, int? limit, Func<SqliteConnection> getConn) =>
+    {
+        using var conn = getConn();
+        var searchLimit = limit ?? 20;
+        var searchTerm = $"%{q}%";
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+        SELECT Id, CategoryId, Code, ShortDescription, LongDescription, Billable
+        FROM icd10cm_code
+        WHERE Code LIKE @term OR ShortDescription LIKE @term OR LongDescription LIKE @term
+        ORDER BY Code
+        LIMIT @limit
+        """;
+        cmd.Parameters.AddWithValue("@term", searchTerm);
+        cmd.Parameters.AddWithValue("@limit", searchLimit);
+
+        await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+        var results = new List<object>();
+        while (await reader.ReadAsync().ConfigureAwait(false))
+        {
+            var categoryId = await reader.IsDBNullAsync(1).ConfigureAwait(false)
+                ? null
+                : reader.GetString(1);
+            results.Add(
+                new
+                {
+                    Id = reader.GetString(0),
+                    CategoryId = categoryId,
+                    Code = reader.GetString(2),
+                    ShortDescription = reader.GetString(3),
+                    LongDescription = reader.GetString(4),
+                    Billable = reader.GetInt64(5),
+                }
+            );
+        }
+        return Results.Ok(results);
+    }
+);
+
+// ============================================================================
 // RAG SEARCH ENDPOINT - CALLS DOCKER EMBEDDING SERVICE
 // ============================================================================
 
@@ -352,54 +491,67 @@ app.MapPost(
         var allEmbeddings = ((GetAllCodeEmbeddingsOk)allEmbeddingsResult).Value;
 
         // Compute cosine similarity for ICD codes
-        var icdResults = allEmbeddings
-            .Select(e =>
-            {
-                var storedVector = ParseEmbedding(e.Embedding);
-                var similarity = CosineSimilarity(queryVector, storedVector);
-                return new SearchResult(
-                    Code: e.Code,
-                    Description: e.ShortDescription,
-                    LongDescription: e.LongDescription,
-                    Confidence: similarity,
-                    CodeType: "ICD10AM"
-                );
-            });
+        var icdResults = allEmbeddings.Select(e =>
+        {
+            var storedVector = ParseEmbedding(e.Embedding);
+            var similarity = CosineSimilarity(queryVector, storedVector);
+            return new SearchResult(
+                Code: e.Code,
+                Description: e.ShortDescription,
+                LongDescription: e.LongDescription,
+                Confidence: similarity,
+                CodeType: "ICD10AM"
+            );
+        });
 
         // Include ACHI if requested
         var achiResults = Enumerable.Empty<SearchResult>();
         if (request.IncludeAchi)
         {
-            await using var cmd = conn.CreateCommand();
-            cmd.CommandText = """
+            var cmd = conn.CreateCommand();
+            await using (cmd.ConfigureAwait(false))
+            {
+                cmd.CommandText = """
                 SELECT e.Embedding, c.Code, c.ShortDescription, c.LongDescription
                 FROM achi_code_embedding e
                 INNER JOIN achi_code c ON e.CodeId = c.Id
                 """;
-            await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-            var achiEmbeddings = new List<(string Embedding, string Code, string ShortDesc, string LongDesc)>();
-            while (await reader.ReadAsync().ConfigureAwait(false))
-            {
-                achiEmbeddings.Add((
-                    reader.GetString(0),
-                    reader.GetString(1),
-                    reader.GetString(2),
-                    reader.GetString(3)
-                ));
-            }
+                var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+                await using (reader.ConfigureAwait(false))
+                {
+                    var achiEmbeddings =
+                        new List<(
+                            string Embedding,
+                            string Code,
+                            string ShortDesc,
+                            string LongDesc
+                        )>();
+                    while (await reader.ReadAsync().ConfigureAwait(false))
+                    {
+                        achiEmbeddings.Add(
+                            (
+                                reader.GetString(0),
+                                reader.GetString(1),
+                                reader.GetString(2),
+                                reader.GetString(3)
+                            )
+                        );
+                    }
 
-            achiResults = achiEmbeddings.Select(e =>
-            {
-                var storedVector = ParseEmbedding(e.Embedding);
-                var similarity = CosineSimilarity(queryVector, storedVector);
-                return new SearchResult(
-                    Code: e.Code,
-                    Description: e.ShortDesc,
-                    LongDescription: e.LongDesc,
-                    Confidence: similarity,
-                    CodeType: "ACHI"
-                );
-            });
+                    achiResults = achiEmbeddings.Select(e =>
+                    {
+                        var storedVector = ParseEmbedding(e.Embedding);
+                        var similarity = CosineSimilarity(queryVector, storedVector);
+                        return new SearchResult(
+                            Code: e.Code,
+                            Description: e.ShortDesc,
+                            LongDescription: e.LongDesc,
+                            Confidence: similarity,
+                            CodeType: "ACHI"
+                        );
+                    });
+                }
+            }
         }
 
         // Combine and rank all results
@@ -538,6 +690,17 @@ namespace ICD10AM.Api
         ImmutableArray<float> Embedding,
         string Model,
         int Dimensions
+    );
+
+    /// <summary>
+    /// Semantic search result with code type.
+    /// </summary>
+    internal sealed record SearchResult(
+        string Code,
+        string Description,
+        string LongDescription,
+        double Confidence,
+        string CodeType
     );
 
     /// <summary>

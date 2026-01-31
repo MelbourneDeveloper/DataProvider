@@ -575,6 +575,7 @@ internal static class Program
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    /// </summary>");
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    public static async Task<Result<int, SqlError>> Delete{pascalName}Async("
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        this NpgsqlConnection conn,");
@@ -587,6 +588,7 @@ internal static class Program
         );
 
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"        const string sql = @\"DELETE FROM {table.Schema}.{table.Name} WHERE {whereClauses}\";"
         );
         _ = sb.AppendLine();
@@ -597,6 +599,7 @@ internal static class Program
         foreach (var col in pkCols)
         {
             _ = sb.AppendLine(
+                CultureInfo.InvariantCulture,
                 $"            cmd.Parameters.AddWithValue(\"{ToCamelCase(col.Name)}\", {ToCamelCase(col.Name)});"
             );
         }
@@ -637,6 +640,7 @@ internal static class Program
         _ = sb.AppendLine();
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    /// <summary>");
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    /// Bulk inserts rows into {table.Name} using batched multi-row VALUES."
         );
         _ = sb.AppendLine(
@@ -653,6 +657,7 @@ internal static class Program
             $"    /// <param name=\"records\">Records to insert as tuples.</param>"
         );
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    /// <param name=\"batchSize\">Max rows per batch (default 1000).</param>"
         );
         _ = sb.AppendLine(
@@ -660,6 +665,7 @@ internal static class Program
             $"    /// <returns>Total rows inserted.</returns>"
         );
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    public static async Task<Result<int, SqlError>> BulkInsert{pascalName}Async("
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        this NpgsqlConnection conn,");
@@ -683,6 +689,7 @@ internal static class Program
         _ = sb.AppendLine("                if (batch.Count >= batchSize)");
         _ = sb.AppendLine("                {");
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"                    var result = await ExecuteBulkInsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);"
         );
         _ = sb.AppendLine(
@@ -699,6 +706,7 @@ internal static class Program
         _ = sb.AppendLine("            if (batch.Count > 0)");
         _ = sb.AppendLine("            {");
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"                var finalResult = await ExecuteBulkInsert{pascalName}BatchAsync(conn, batch).ConfigureAwait(false);"
         );
         _ = sb.AppendLine(
@@ -725,6 +733,7 @@ internal static class Program
 
         // Generate batch execution helper
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    private static async Task<Result<int, SqlError>> ExecuteBulkInsert{pascalName}BatchAsync("
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        NpgsqlConnection conn,");
@@ -736,6 +745,7 @@ internal static class Program
 
         var colNames = string.Join(", ", insertable.Select(c => c.Name));
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"        var sql = new System.Text.StringBuilder(\"INSERT INTO {table.Schema}.{table.Name} ({colNames}) VALUES \");"
         );
         _ = sb.AppendLine();

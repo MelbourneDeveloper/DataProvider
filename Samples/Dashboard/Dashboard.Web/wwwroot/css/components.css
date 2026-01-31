@@ -1831,3 +1831,60 @@
   to { transform: rotate(360deg); }
 }
 
+/* === SEARCH RESULT TABLE ROW WITH HOVER TOOLTIP === */
+.search-result-row {
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.search-result-row:hover {
+  background: var(--primary-blue-subtle);
+}
+
+.result-description-cell {
+  position: relative;
+  max-width: 400px;
+}
+
+.result-description-cell > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-tooltip {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  z-index: 100;
+  min-width: 320px;
+  max-width: 400px;
+  padding: var(--space-4);
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: all var(--transition-fast);
+  pointer-events: none;
+}
+
+.result-description-cell:hover .result-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(4px);
+}
+
+.result-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 24px;
+  border: 8px solid transparent;
+  border-bottom-color: var(--white);
+  border-top: none;
+}
+

@@ -63,7 +63,10 @@ public sealed class SearchEndpointTests : IClassFixture<ICD10AMApiFactory>
         var content = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<JsonElement>(content);
 
-        Assert.True(result.TryGetProperty("Results", out var results), "Response should have Results property");
+        Assert.True(
+            result.TryGetProperty("Results", out var results),
+            "Response should have Results property"
+        );
         Assert.True(results.GetArrayLength() > 0, "Should return at least one result");
     }
 
@@ -90,12 +93,17 @@ public sealed class SearchEndpointTests : IClassFixture<ICD10AMApiFactory>
 
         // At least one chest pain or shortness of breath code should be in top results
         var hasRelevantCode = codes.Any(c =>
-            c.StartsWith("R07", StringComparison.Ordinal) || // Chest pain
-            c.StartsWith("R06", StringComparison.Ordinal) || // Dyspnea/breathing problems
-            c.StartsWith("I21", StringComparison.Ordinal)    // Heart attack (also chest pain related)
+            c.StartsWith("R07", StringComparison.Ordinal)
+            || // Chest pain
+            c.StartsWith("R06", StringComparison.Ordinal)
+            || // Dyspnea/breathing problems
+            c.StartsWith("I21", StringComparison.Ordinal) // Heart attack (also chest pain related)
         );
 
-        Assert.True(hasRelevantCode, $"Expected chest pain/dyspnea codes in top results. Got: {string.Join(", ", codes)}");
+        Assert.True(
+            hasRelevantCode,
+            $"Expected chest pain/dyspnea codes in top results. Got: {string.Join(", ", codes)}"
+        );
     }
 
     [Fact]
@@ -114,9 +122,15 @@ public sealed class SearchEndpointTests : IClassFixture<ICD10AMApiFactory>
 
         foreach (var item in results.EnumerateArray())
         {
-            Assert.True(item.TryGetProperty("Confidence", out var confidence), "Each result should have Confidence score");
+            Assert.True(
+                item.TryGetProperty("Confidence", out var confidence),
+                "Each result should have Confidence score"
+            );
             var score = confidence.GetDouble();
-            Assert.True(score >= -1 && score <= 1, $"Confidence should be valid cosine similarity: {score}");
+            Assert.True(
+                score >= -1 && score <= 1,
+                $"Confidence should be valid cosine similarity: {score}"
+            );
         }
     }
 
@@ -164,7 +178,10 @@ public sealed class SearchEndpointTests : IClassFixture<ICD10AMApiFactory>
         var result = JsonSerializer.Deserialize<JsonElement>(content);
         var results = result.GetProperty("Results");
 
-        Assert.True(results.GetArrayLength() <= 3, $"Should respect limit=3, got {results.GetArrayLength()} results");
+        Assert.True(
+            results.GetArrayLength() <= 3,
+            $"Should respect limit=3, got {results.GetArrayLength()} results"
+        );
     }
 
     [Fact]
@@ -174,7 +191,12 @@ public sealed class SearchEndpointTests : IClassFixture<ICD10AMApiFactory>
 
         var response = await _client.PostAsJsonAsync(
             "/api/search",
-            new { Query = "pneumonia lung infection", Limit = 5, Format = "fhir" }
+            new
+            {
+                Query = "pneumonia lung infection",
+                Limit = 5,
+                Format = "fhir",
+            }
         );
 
         var content = await response.Content.ReadAsStringAsync();
@@ -183,14 +205,23 @@ public sealed class SearchEndpointTests : IClassFixture<ICD10AMApiFactory>
         Assert.Equal("Bundle", result.GetProperty("ResourceType").GetString());
         Assert.Equal("searchset", result.GetProperty("Type").GetString());
         Assert.True(result.TryGetProperty("Total", out _), "FHIR response should have Total");
-        Assert.True(result.TryGetProperty("Entry", out var entries), "FHIR response should have Entry array");
+        Assert.True(
+            result.TryGetProperty("Entry", out var entries),
+            "FHIR response should have Entry array"
+        );
 
         if (entries.GetArrayLength() > 0)
         {
             var firstEntry = entries[0];
-            Assert.True(firstEntry.TryGetProperty("Resource", out var resource), "Entry should have Resource");
+            Assert.True(
+                firstEntry.TryGetProperty("Resource", out var resource),
+                "Entry should have Resource"
+            );
             Assert.Equal("CodeSystem", resource.GetProperty("ResourceType").GetString());
-            Assert.True(firstEntry.TryGetProperty("Search", out var search), "Entry should have Search");
+            Assert.True(
+                firstEntry.TryGetProperty("Search", out var search),
+                "Entry should have Search"
+            );
             Assert.True(search.TryGetProperty("Score", out _), "Search should have Score");
         }
     }
@@ -264,7 +295,10 @@ public sealed class SearchEndpointTests : IClassFixture<ICD10AMApiFactory>
             Assert.True(item.TryGetProperty("Code", out var code), "Result should have Code");
             Assert.False(string.IsNullOrEmpty(code.GetString()), "Code should not be empty");
 
-            Assert.True(item.TryGetProperty("Description", out var desc), "Result should have Description");
+            Assert.True(
+                item.TryGetProperty("Description", out var desc),
+                "Result should have Description"
+            );
             Assert.False(string.IsNullOrEmpty(desc.GetString()), "Description should not be empty");
         }
     }
@@ -291,12 +325,14 @@ public sealed class SearchEndpointTests : IClassFixture<ICD10AMApiFactory>
 
         // Top result for heart attack query should be heart-related
         var isHeartRelated =
-            topCode.StartsWith("I21", StringComparison.Ordinal) || // MI codes
-            topCode.StartsWith("I22", StringComparison.Ordinal) || // Subsequent MI
-            topDesc.Contains("myocardial") ||
-            topDesc.Contains("infarction") ||
-            topDesc.Contains("heart") ||
-            topDesc.Contains("coronary");
+            topCode.StartsWith("I21", StringComparison.Ordinal)
+            || // MI codes
+            topCode.StartsWith("I22", StringComparison.Ordinal)
+            || // Subsequent MI
+            topDesc.Contains("myocardial")
+            || topDesc.Contains("infarction")
+            || topDesc.Contains("heart")
+            || topDesc.Contains("coronary");
 
         Assert.True(
             isHeartRelated,
@@ -309,9 +345,9 @@ public sealed class SearchEndpointTests : IClassFixture<ICD10AMApiFactory>
         if (!_factory.EmbeddingServiceAvailable)
         {
             Assert.Fail(
-                "EMBEDDING SERVICE NOT RUNNING! " +
-                "Start it with: ./scripts/Dependencies/start.sh " +
-                "(localhost:8000 must be available for RAG E2E tests)"
+                "EMBEDDING SERVICE NOT RUNNING! "
+                    + "Start it with: ./scripts/Dependencies/start.sh "
+                    + "(localhost:8000 must be available for RAG E2E tests)"
             );
         }
     }

@@ -112,7 +112,13 @@ public sealed class ICD10AMApiFactory : WebApplicationFactory<Program>
         );
 
         // Seed test categories
-        InsertCategory(conn, id: "cat-a00", blockId: "blk-a00", categoryCode: "A00", title: "Cholera");
+        InsertCategory(
+            conn,
+            id: "cat-a00",
+            blockId: "blk-a00",
+            categoryCode: "A00",
+            title: "Cholera"
+        );
         InsertCategory(
             conn,
             id: "cat-r07",
@@ -188,8 +194,20 @@ public sealed class ICD10AMApiFactory : WebApplicationFactory<Program>
             codeRangeEnd: "J22"
         );
 
-        InsertCategory(conn, id: "cat-j18", blockId: "blk-j09", categoryCode: "J18", title: "Pneumonia, unspecified organism");
-        InsertCategory(conn, id: "cat-j20", blockId: "blk-j20", categoryCode: "J20", title: "Acute bronchitis");
+        InsertCategory(
+            conn,
+            id: "cat-j18",
+            blockId: "blk-j09",
+            categoryCode: "J18",
+            title: "Pneumonia, unspecified organism"
+        );
+        InsertCategory(
+            conn,
+            id: "cat-j20",
+            blockId: "blk-j20",
+            categoryCode: "J20",
+            title: "Acute bronchitis"
+        );
 
         InsertCode(
             conn,
@@ -229,7 +247,13 @@ public sealed class ICD10AMApiFactory : WebApplicationFactory<Program>
             codeRangeEnd: "E14"
         );
 
-        InsertCategory(conn, id: "cat-e11", blockId: "blk-e10", categoryCode: "E11", title: "Type 2 diabetes mellitus");
+        InsertCategory(
+            conn,
+            id: "cat-e11",
+            blockId: "blk-e10",
+            categoryCode: "E11",
+            title: "Type 2 diabetes mellitus"
+        );
 
         InsertCode(
             conn,
@@ -397,18 +421,73 @@ public sealed class ICD10AMApiFactory : WebApplicationFactory<Program>
         // Test codes for semantic search - diverse medical conditions
         var testCodes = new (string id, string code, string shortDesc, string longDesc)[]
         {
-            ("cm-r074", "R07.4", "Chest pain, unspecified", "Chest pain, unspecified - pain in the thoracic region"),
-            ("cm-r0789", "R07.89", "Other chest pain", "Other chest pain including pleuritic pain and intercostal pain"),
-            ("cm-r0600", "R06.00", "Dyspnea, unspecified", "Dyspnea unspecified - shortness of breath, difficulty breathing"),
-            ("cm-r0602", "R06.02", "Shortness of breath", "Shortness of breath - breathlessness, respiratory distress"),
-            ("cm-i2111", "I21.11", "ST elevation myocardial infarction involving RCA", "ST elevation myocardial infarction involving right coronary artery - heart attack"),
-            ("cm-i2119", "I21.19", "ST elevation MI involving other coronary artery", "ST elevation myocardial infarction involving other coronary artery of inferior wall"),
-            ("cm-j189", "J18.9", "Pneumonia, unspecified organism", "Pneumonia unspecified organism - lung infection"),
-            ("cm-j209", "J20.9", "Acute bronchitis, unspecified", "Acute bronchitis unspecified - inflammation of bronchial tubes"),
-            ("cm-e119", "E11.9", "Type 2 diabetes mellitus without complications", "Type 2 diabetes mellitus without complications - adult onset diabetes"),
-            ("cm-i10", "I10", "Essential hypertension", "Essential primary hypertension - high blood pressure"),
+            (
+                "cm-r074",
+                "R07.4",
+                "Chest pain, unspecified",
+                "Chest pain, unspecified - pain in the thoracic region"
+            ),
+            (
+                "cm-r0789",
+                "R07.89",
+                "Other chest pain",
+                "Other chest pain including pleuritic pain and intercostal pain"
+            ),
+            (
+                "cm-r0600",
+                "R06.00",
+                "Dyspnea, unspecified",
+                "Dyspnea unspecified - shortness of breath, difficulty breathing"
+            ),
+            (
+                "cm-r0602",
+                "R06.02",
+                "Shortness of breath",
+                "Shortness of breath - breathlessness, respiratory distress"
+            ),
+            (
+                "cm-i2111",
+                "I21.11",
+                "ST elevation myocardial infarction involving RCA",
+                "ST elevation myocardial infarction involving right coronary artery - heart attack"
+            ),
+            (
+                "cm-i2119",
+                "I21.19",
+                "ST elevation MI involving other coronary artery",
+                "ST elevation myocardial infarction involving other coronary artery of inferior wall"
+            ),
+            (
+                "cm-j189",
+                "J18.9",
+                "Pneumonia, unspecified organism",
+                "Pneumonia unspecified organism - lung infection"
+            ),
+            (
+                "cm-j209",
+                "J20.9",
+                "Acute bronchitis, unspecified",
+                "Acute bronchitis unspecified - inflammation of bronchial tubes"
+            ),
+            (
+                "cm-e119",
+                "E11.9",
+                "Type 2 diabetes mellitus without complications",
+                "Type 2 diabetes mellitus without complications - adult onset diabetes"
+            ),
+            (
+                "cm-i10",
+                "I10",
+                "Essential hypertension",
+                "Essential primary hypertension - high blood pressure"
+            ),
             ("cm-m545", "M54.5", "Low back pain", "Low back pain - lumbago, lower back ache"),
-            ("cm-g43909", "G43.909", "Migraine, unspecified", "Migraine unspecified not intractable without status migrainosus - severe headache"),
+            (
+                "cm-g43909",
+                "G43.909",
+                "Migraine, unspecified",
+                "Migraine unspecified not intractable without status migrainosus - severe headache"
+            ),
         };
 
         // Try to get real embeddings from the embedding service
@@ -424,7 +503,13 @@ public sealed class ICD10AMApiFactory : WebApplicationFactory<Program>
 
         foreach (var (id, code, shortDesc, longDesc) in testCodes)
         {
-            InsertIcd10CmCode(conn, id: id, code: code, shortDescription: shortDesc, longDescription: longDesc);
+            InsertIcd10CmCode(
+                conn,
+                id: id,
+                code: code,
+                shortDescription: shortDesc,
+                longDescription: longDesc
+            );
 
             if (EmbeddingServiceAvailable)
             {
@@ -442,9 +527,7 @@ public sealed class ICD10AMApiFactory : WebApplicationFactory<Program>
     {
         try
         {
-            var response = _embeddingClient
-                .PostAsJsonAsync("/embed", new { text })
-                .Result;
+            var response = _embeddingClient.PostAsJsonAsync("/embed", new { text }).Result;
 
             if (!response.IsSuccessStatusCode)
             {
@@ -482,7 +565,11 @@ public sealed class ICD10AMApiFactory : WebApplicationFactory<Program>
         cmd.ExecuteNonQuery();
     }
 
-    private static void InsertIcd10CmEmbedding(SqliteConnection conn, string codeId, string embedding)
+    private static void InsertIcd10CmEmbedding(
+        SqliteConnection conn,
+        string codeId,
+        string embedding
+    )
     {
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """

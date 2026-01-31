@@ -43,9 +43,13 @@ public abstract partial record Result<TSuccess, TFailure> { private Result() { }
 
 ## CSS
 - **MINIMAL CSS** - Do not duplicate CSS clases
+- **Aggressively merge duplicate CSS** - consistency is key
 - **Name classes after component, NOT section** - Sections should not have their own CSS classes
 
 ## Testing
+- NEVER remove assertions
+- FAILING TEST = ✅ OK . TEST THAT DOESN'T ENFORCE BEHAVIOR = ⛔️ ILLEGAL
+- Bug fix process: write test that fails because of bug -> verify test fails because of bug -> fix bug -> verify that test passes
 - E2E with zero mocking
 - 100% coverage, Stryker score 70%+
 - Medical data: [FHIR spec](https://build.fhir.org/resourcelist.html)
