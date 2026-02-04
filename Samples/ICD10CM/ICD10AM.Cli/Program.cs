@@ -43,7 +43,11 @@ internal sealed record SearchResult(
     string Code,
     string Description,
     string LongDescription,
-    double Confidence
+    double Confidence,
+    string? CodeType,
+    string? Chapter,
+    string? ChapterTitle,
+    string? Category
 );
 
 /// <summary>
@@ -390,6 +394,8 @@ sealed class Icd10Cli : IDisposable
             .BorderColor(Color.Cyan1)
             .AddColumn(new TableColumn("[cyan]Score[/]").Width(7).RightAligned())
             .AddColumn(new TableColumn("[cyan]Code[/]").Width(10))
+            .AddColumn(new TableColumn("[cyan]Ch[/]").Width(4))
+            .AddColumn(new TableColumn("[cyan]Category[/]").Width(6))
             .AddColumn(new TableColumn("[cyan]Description[/]"));
 
         foreach (var r in results)
@@ -404,13 +410,15 @@ sealed class Icd10Cli : IDisposable
             table.AddRow(
                 $"[{scoreColor}]{r.Confidence:P0}[/]",
                 $"[bold]{r.Code.EscapeMarkup()}[/]",
-                Truncate(r.Description, 60).EscapeMarkup()
+                $"[magenta]{(r.Chapter ?? "").EscapeMarkup()}[/]",
+                $"[yellow]{(r.Category ?? "").EscapeMarkup()}[/]",
+                Truncate(r.Description, 50).EscapeMarkup()
             );
         }
 
         _console.Write(table);
         _console.MarkupLine(
-            $"[dim]{results.Length} results - type [cyan]l <code>[/] for details[/]"
+            $"[dim]{results.Length} results (Ch=Chapter) - type [cyan]l <code>[/] for details[/]"
         );
     }
 

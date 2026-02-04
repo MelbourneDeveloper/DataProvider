@@ -175,6 +175,15 @@ namespace Dashboard.Models
         /// <summary>Code type (ICD10CM or ACHI).</summary>
         public extern string CodeType { get; set; }
 
+        /// <summary>Chapter number (e.g., "19").</summary>
+        public extern string Chapter { get; set; }
+
+        /// <summary>Chapter title (e.g., "Injury, poisoning and external causes").</summary>
+        public extern string ChapterTitle { get; set; }
+
+        /// <summary>Category code (first 3 characters, e.g., "S70").</summary>
+        public extern string Category { get; set; }
+
         /// <summary>Inclusion terms for the code.</summary>
         public extern string InclusionTerms { get; set; }
 

@@ -918,6 +918,8 @@ namespace Dashboard.Pages
                                             {
                                                 Th(children: new[] { Text("Code") }),
                                                 Th(children: new[] { Text("Type") }),
+                                                Th(children: new[] { Text("Chapter") }),
+                                                Th(children: new[] { Text("Category") }),
                                                 Th(children: new[] { Text("Description") }),
                                                 Th(children: new[] { Text("Confidence") }),
                                             }
@@ -980,6 +982,21 @@ namespace Dashboard.Pages
                                 children: new[] { Text(result.CodeType ?? "ICD10CM") }
                             ),
                         }
+                    ),
+                    Td(
+                        className: "text-sm text-gray-600",
+                        children: new[]
+                        {
+                            Text(
+                                !string.IsNullOrEmpty(result.Chapter)
+                                    ? "Ch. " + result.Chapter
+                                    : "-"
+                            ),
+                        }
+                    ),
+                    Td(
+                        className: "text-sm text-gray-600",
+                        children: new[] { Text(result.Category ?? "-") }
                     ),
                     Td(
                         className: "result-description-cell",
@@ -1123,20 +1140,45 @@ namespace Dashboard.Pages
                 );
             }
 
+            var footerChildren = new System.Collections.Generic.List<ReactElement>
+            {
+                Span(className: "font-semibold", children: new[] { Text("Type: ") }),
+                Text(result.CodeType ?? "ICD10CM"),
+            };
+
+            if (!string.IsNullOrEmpty(result.Chapter))
+            {
+                footerChildren.Add(Text(" | "));
+                footerChildren.Add(
+                    Span(className: "font-semibold", children: new[] { Text("Chapter: ") })
+                );
+                footerChildren.Add(Text(result.Chapter + " - " + (result.ChapterTitle ?? "")));
+            }
+
+            if (!string.IsNullOrEmpty(result.Category))
+            {
+                footerChildren.Add(Text(" | "));
+                footerChildren.Add(
+                    Span(className: "font-semibold", children: new[] { Text("Category: ") })
+                );
+                footerChildren.Add(Text(result.Category));
+            }
+
+            footerChildren.Add(Text(" | "));
+            footerChildren.Add(
+                Span(className: "font-semibold", children: new[] { Text("Confidence: ") })
+            );
+            footerChildren.Add(
+                Span(
+                    style: new { color = confidenceColor },
+                    children: new[] { Text(confidencePercent + "%") }
+                )
+            );
+
             elements.Add(
                 Div(
                     className: "text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200",
-                    children: new[]
-                    {
-                        Span(className: "font-semibold", children: new[] { Text("Type: ") }),
-                        Text(result.CodeType ?? "ICD10CM"),
-                        Text(" | "),
-                        Span(className: "font-semibold", children: new[] { Text("Confidence: ") }),
-                        Span(
-                            style: new { color = confidenceColor },
-                            children: new[] { Text(confidencePercent + "%") }
-                        ),
-                    }
+                    children: footerChildren.ToArray()
                 )
             );
 

@@ -340,6 +340,206 @@ public sealed class SearchEndpointTests : IClassFixture<ICD10AMApiFactory>
         );
     }
 
+    // =========================================================================
+    // CHAPTER AND CATEGORY TESTS
+    // =========================================================================
+
+    [Fact]
+    public async Task Search_ReturnsChapterInfo_ForAllIcd10CmResults()
+    {
+        SkipIfEmbeddingServiceUnavailable();
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/search",
+            new { Query = "chest pain", Limit = 10 }
+        );
+
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<JsonElement>(content);
+        var results = result.GetProperty("Results");
+
+        foreach (var item in results.EnumerateArray())
+        {
+            var codeType = item.GetProperty("CodeType").GetString();
+            if (codeType == "ICD10CM")
+            {
+                Assert.True(
+                    item.TryGetProperty("Chapter", out var chapter),
+                    "ICD10CM result should have Chapter"
+                );
+                Assert.False(
+                    string.IsNullOrEmpty(chapter.GetString()),
+                    "Chapter should not be empty for ICD10CM codes"
+                );
+
+                Assert.True(
+                    item.TryGetProperty("ChapterTitle", out var chapterTitle),
+                    "ICD10CM result should have ChapterTitle"
+                );
+                Assert.False(
+                    string.IsNullOrEmpty(chapterTitle.GetString()),
+                    "ChapterTitle should not be empty for ICD10CM codes"
+                );
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Search_ReturnsCategoryInfo_ForAllIcd10CmResults()
+    {
+        SkipIfEmbeddingServiceUnavailable();
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/search",
+            new { Query = "diabetes", Limit = 10 }
+        );
+
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<JsonElement>(content);
+        var results = result.GetProperty("Results");
+
+        foreach (var item in results.EnumerateArray())
+        {
+            var codeType = item.GetProperty("CodeType").GetString();
+            if (codeType == "ICD10CM")
+            {
+                Assert.True(
+                    item.TryGetProperty("Category", out var category),
+                    "ICD10CM result should have Category"
+                );
+                Assert.False(
+                    string.IsNullOrEmpty(category.GetString()),
+                    "Category should not be empty for ICD10CM codes"
+                );
+
+                // Category should be first 3 characters of the code
+                var code = item.GetProperty("Code").GetString()!;
+                var expectedCategory = code.Length >= 3 ? code[..3] : code;
+                Assert.Equal(
+                    expectedCategory.ToUpperInvariant(),
+                    category.GetString()!.ToUpperInvariant()
+                );
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Search_ChapterNumber_MatchesCodePrefix()
+    {
+        SkipIfEmbeddingServiceUnavailable();
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/search",
+            new { Query = "respiratory breathing", Limit = 10 }
+        );
+
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<JsonElement>(content);
+        var results = result.GetProperty("Results");
+
+        foreach (var item in results.EnumerateArray())
+        {
+            var codeType = item.GetProperty("CodeType").GetString();
+            if (codeType != "ICD10CM")
+                continue;
+
+            var code = item.GetProperty("Code").GetString()!;
+            var chapter = item.GetProperty("Chapter").GetString()!;
+
+            // Verify chapter is valid (non-empty string)
+            Assert.False(
+                string.IsNullOrEmpty(chapter),
+                $"Chapter should not be empty for code {code}"
+            );
+
+            // Verify chapter matches known ICD-10-CM structure
+            var firstChar = char.ToUpperInvariant(code[0]);
+            // J codes (respiratory) should be chapter 10
+            if (firstChar == 'J')
+            {
+                Assert.Equal("10", chapter);
+            }
+            // R codes (symptoms) should be chapter 18
+            else if (firstChar == 'R')
+            {
+                Assert.Equal("18", chapter);
+            }
+            // I codes (circulatory) should be chapter 9
+            else if (firstChar == 'I')
+            {
+                Assert.Equal("9", chapter);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Search_ChapterTitle_IsDescriptive()
+    {
+        SkipIfEmbeddingServiceUnavailable();
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/search",
+            new { Query = "heart disease", Limit = 5 }
+        );
+
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<JsonElement>(content);
+        var results = result.GetProperty("Results");
+
+        foreach (var item in results.EnumerateArray())
+        {
+            var codeType = item.GetProperty("CodeType").GetString();
+            if (codeType != "ICD10CM")
+                continue;
+
+            var code = item.GetProperty("Code").GetString()!;
+            var chapterTitle = item.GetProperty("ChapterTitle").GetString()!;
+
+            // I codes should have circulatory chapter title
+            if (char.ToUpperInvariant(code[0]) == 'I')
+            {
+                Assert.Contains("circulatory", chapterTitle, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Search_AchiCodes_HaveEmptyChapterAndCategory()
+    {
+        SkipIfEmbeddingServiceUnavailable();
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/search",
+            new
+            {
+                Query = "heart procedure",
+                Limit = 20,
+                IncludeAchi = true,
+            }
+        );
+
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<JsonElement>(content);
+        var results = result.GetProperty("Results");
+
+        foreach (var item in results.EnumerateArray())
+        {
+            var codeType = item.GetProperty("CodeType").GetString();
+            if (codeType == "ACHI")
+            {
+                // ACHI codes don't have ICD-10-CM chapter/category structure
+                var chapter = item.GetProperty("Chapter").GetString();
+                var category = item.GetProperty("Category").GetString();
+
+                Assert.True(string.IsNullOrEmpty(chapter), "ACHI codes should have empty Chapter");
+                Assert.True(
+                    string.IsNullOrEmpty(category),
+                    "ACHI codes should have empty Category"
+                );
+            }
+        }
+    }
+
     private void SkipIfEmbeddingServiceUnavailable()
     {
         if (!_factory.EmbeddingServiceAvailable)

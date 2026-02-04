@@ -1,6 +1,7 @@
 #pragma warning disable IDE0037 // Use inferred member name - prefer explicit for clarity in API responses
 #pragma warning disable CA1812 // Avoid uninstantiated internal classes - records are instantiated by JSON deserialization
 
+using System.Collections.Frozen;
 using System.Text.Json;
 using ICD10AM.Api;
 using Microsoft.AspNetCore.Http.Json;
@@ -518,12 +519,17 @@ app.MapPost(
         {
             var storedVector = ParseEmbedding(e.Embedding);
             var similarity = CosineSimilarity(queryVector, storedVector);
+            var (chapterNum, chapterTitle) = Icd10CmChapters.GetChapter(e.Code);
+            var category = Icd10CmChapters.GetCategory(e.Code);
             return new SearchResult(
                 Code: e.Code,
                 Description: e.ShortDescription,
                 LongDescription: e.LongDescription,
                 Confidence: similarity,
                 CodeType: "ICD10CM",
+                Chapter: chapterNum,
+                ChapterTitle: chapterTitle,
+                Category: category,
                 InclusionTerms: e.InclusionTerms,
                 ExclusionTerms: e.ExclusionTerms,
                 CodeAlso: e.CodeAlso,
@@ -575,6 +581,9 @@ app.MapPost(
                             LongDescription: e.LongDesc,
                             Confidence: similarity,
                             CodeType: "ACHI",
+                            Chapter: "",
+                            ChapterTitle: "",
+                            Category: "",
                             InclusionTerms: "",
                             ExclusionTerms: "",
                             CodeAlso: "",
@@ -724,7 +733,7 @@ namespace ICD10AM.Api
     );
 
     /// <summary>
-    /// Semantic search result with code type and clinical details.
+    /// Semantic search result with code type, hierarchy, and clinical details.
     /// </summary>
     internal sealed record SearchResult(
         string Code,
@@ -732,11 +741,110 @@ namespace ICD10AM.Api
         string LongDescription,
         double Confidence,
         string CodeType,
+        string Chapter,
+        string ChapterTitle,
+        string Category,
         string InclusionTerms,
         string ExclusionTerms,
         string CodeAlso,
         string CodeFirst
     );
+
+    /// <summary>
+    /// ICD-10-CM chapter lookup based on code prefix.
+    /// Official WHO/CDC chapter ranges.
+    /// </summary>
+    internal static class Icd10CmChapters
+    {
+        private static readonly FrozenDictionary<
+            string,
+            (string Number, string Title)
+        > ChapterLookup = new Dictionary<string, (string, string)>
+        {
+            { "A", ("1", "Certain infectious and parasitic diseases") },
+            { "B", ("1", "Certain infectious and parasitic diseases") },
+            { "C", ("2", "Neoplasms") },
+            { "D0", ("2", "Neoplasms") },
+            { "D1", ("2", "Neoplasms") },
+            { "D2", ("2", "Neoplasms") },
+            { "D3", ("2", "Neoplasms") },
+            { "D4", ("2", "Neoplasms") },
+            { "D5", ("3", "Diseases of the blood and blood-forming organs") },
+            { "D6", ("3", "Diseases of the blood and blood-forming organs") },
+            { "D7", ("3", "Diseases of the blood and blood-forming organs") },
+            { "D8", ("3", "Diseases of the blood and blood-forming organs") },
+            { "D89", ("3", "Diseases of the blood and blood-forming organs") },
+            { "E", ("4", "Endocrine, nutritional and metabolic diseases") },
+            { "F", ("5", "Mental, behavioral and neurodevelopmental disorders") },
+            { "G", ("6", "Diseases of the nervous system") },
+            { "H0", ("7", "Diseases of the eye and adnexa") },
+            { "H1", ("7", "Diseases of the eye and adnexa") },
+            { "H2", ("7", "Diseases of the eye and adnexa") },
+            { "H3", ("7", "Diseases of the eye and adnexa") },
+            { "H4", ("7", "Diseases of the eye and adnexa") },
+            { "H5", ("7", "Diseases of the eye and adnexa") },
+            { "H6", ("8", "Diseases of the ear and mastoid process") },
+            { "H7", ("8", "Diseases of the ear and mastoid process") },
+            { "H8", ("8", "Diseases of the ear and mastoid process") },
+            { "H9", ("8", "Diseases of the ear and mastoid process") },
+            { "I", ("9", "Diseases of the circulatory system") },
+            { "J", ("10", "Diseases of the respiratory system") },
+            { "K", ("11", "Diseases of the digestive system") },
+            { "L", ("12", "Diseases of the skin and subcutaneous tissue") },
+            { "M", ("13", "Diseases of the musculoskeletal system and connective tissue") },
+            { "N", ("14", "Diseases of the genitourinary system") },
+            { "O", ("15", "Pregnancy, childbirth and the puerperium") },
+            { "P", ("16", "Certain conditions originating in the perinatal period") },
+            { "Q", ("17", "Congenital malformations and chromosomal abnormalities") },
+            { "R", ("18", "Symptoms, signs and abnormal clinical findings") },
+            { "S", ("19", "Injury, poisoning and external causes") },
+            { "T", ("19", "Injury, poisoning and external causes") },
+            { "V", ("20", "External causes of morbidity") },
+            { "W", ("20", "External causes of morbidity") },
+            { "X", ("20", "External causes of morbidity") },
+            { "Y", ("20", "External causes of morbidity") },
+            { "Z", ("21", "Factors influencing health status and contact with health services") },
+        }.ToFrozenDictionary();
+
+        /// <summary>
+        /// Gets the chapter number and title for an ICD-10-CM code.
+        /// </summary>
+        public static (string Number, string Title) GetChapter(string code)
+        {
+            if (string.IsNullOrEmpty(code))
+            {
+                return ("", "");
+            }
+
+            // Try 2-character prefix first (for D codes with specific ranges)
+            if (
+                code.Length >= 2
+                && ChapterLookup.TryGetValue(code[..2].ToUpperInvariant(), out var chapter2)
+            )
+            {
+                return chapter2;
+            }
+
+            // Fall back to 1-character prefix
+            if (
+                code.Length >= 1
+                && ChapterLookup.TryGetValue(code[..1].ToUpperInvariant(), out var chapter1)
+            )
+            {
+                return chapter1;
+            }
+
+            return ("", "");
+        }
+
+        /// <summary>
+        /// Gets the category (first 3 characters) for an ICD-10-CM code.
+        /// </summary>
+        public static string GetCategory(string code) =>
+            string.IsNullOrEmpty(code) ? ""
+            : code.Length >= 3 ? code[..3].ToUpperInvariant()
+            : code.ToUpperInvariant();
+    }
 
     /// <summary>
     /// Program entry point marker for WebApplicationFactory.
