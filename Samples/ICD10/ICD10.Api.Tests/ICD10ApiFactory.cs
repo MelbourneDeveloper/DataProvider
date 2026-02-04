@@ -197,81 +197,90 @@ public sealed class ICD10ApiFactory : WebApplicationFactory<Program>
         }
 
         // Seed codes with embeddings (descriptions use American spelling to match tests)
-        var codes = new (string code, string catCode, string shortDesc, string longDesc)[]
+        var codes = new (string code, string catCode, string shortDesc, string longDesc, string? synonyms)[]
         {
             (
                 "A00.0",
                 "A00",
                 "Cholera due to Vibrio cholerae",
-                "Cholera due to Vibrio cholerae 01, biovar cholerae"
+                "Cholera due to Vibrio cholerae 01, biovar cholerae",
+                null
             ),
             (
                 "E10.9",
                 "E10",
                 "Type 1 diabetes without complications",
-                "Type 1 diabetes mellitus without complications"
+                "Type 1 diabetes mellitus without complications",
+                "juvenile diabetes; insulin-dependent diabetes"
             ),
             (
                 "E11.9",
                 "E11",
                 "Type 2 diabetes without complications",
-                "Type 2 diabetes mellitus without complications"
+                "Type 2 diabetes mellitus without complications",
+                "adult-onset diabetes; non-insulin-dependent diabetes"
             ),
             (
                 "G43.909",
                 "G43",
                 "Migraine, unspecified, not intractable",
-                "Migraine, unspecified, not intractable, without status migrainosus"
+                "Migraine, unspecified, not intractable, without status migrainosus",
+                "sick headache; hemicrania"
             ),
-            ("I10", "I10", "Essential (primary) hypertension", "Essential (primary) hypertension"),
+            ("I10", "I10", "Essential (primary) hypertension", "Essential (primary) hypertension", "high blood pressure"),
             (
                 "I21.0",
                 "I21",
                 "Acute transmural myocardial infarction of anterior wall",
-                "Acute transmural myocardial infarction of anterior wall"
+                "Acute transmural myocardial infarction of anterior wall",
+                "heart attack; AMI"
             ),
             (
                 "I21.11",
                 "I21",
                 "ST elevation myocardial infarction",
-                "ST elevation myocardial infarction involving diagonal coronary artery"
+                "ST elevation myocardial infarction involving diagonal coronary artery",
+                "STEMI"
             ),
             (
                 "I21.4",
                 "I21",
                 "Acute subendocardial myocardial infarction",
-                "Acute subendocardial myocardial infarction"
+                "Acute subendocardial myocardial infarction",
+                "NSTEMI"
             ),
             (
                 "J06.9",
                 "J06",
                 "Acute upper respiratory infection",
-                "Acute upper respiratory infection, unspecified"
+                "Acute upper respiratory infection, unspecified",
+                "common cold; URI"
             ),
-            ("J18.9", "J18", "Pneumonia, unspecified", "Pneumonia, unspecified organism"),
-            ("J20.9", "J20", "Acute bronchitis, unspecified", "Acute bronchitis, unspecified"),
-            ("M54.5", "M54", "Low back pain", "Low back pain"),
-            ("R06.00", "R06", "Dyspnea, unspecified", "Dyspnea, unspecified"),
-            ("R06.02", "R06", "Shortness of breath", "Shortness of breath"),
-            ("R07.4", "R07", "Chest pain, unspecified", "Chest pain, unspecified"),
-            ("R07.89", "R07", "Other chest pain", "Other chest pain"),
+            ("J18.9", "J18", "Pneumonia, unspecified", "Pneumonia, unspecified organism", "lung infection"),
+            ("J20.9", "J20", "Acute bronchitis, unspecified", "Acute bronchitis, unspecified", "chest cold"),
+            ("M54.5", "M54", "Low back pain", "Low back pain", "lumbago; backache"),
+            ("R06.00", "R06", "Dyspnea, unspecified", "Dyspnea, unspecified", "difficulty breathing"),
+            ("R06.02", "R06", "Shortness of breath", "Shortness of breath", "breathlessness; SOB"),
+            ("R07.4", "R07", "Chest pain, unspecified", "Chest pain, unspecified", "thoracic pain"),
+            ("R07.89", "R07", "Other chest pain", "Other chest pain", null),
         };
 
-        foreach (var (code, catCode, shortDesc, longDesc) in codes)
+        foreach (var (code, catCode, shortDesc, longDesc, synonyms) in codes)
         {
             var codeId = Guid.NewGuid().ToString();
             var categoryId = categories.First(c => c.code == catCode).id;
             Execute(
                 conn,
                 """
-                INSERT INTO icd10_code (Id, CategoryId, Code, ShortDescription, LongDescription, Billable, Edition, LastUpdated, VersionId)
-                VALUES (@id, @categoryId, @code, @short, @long, 1, '2025', datetime('now'), 1)
+                INSERT INTO icd10_code (Id, CategoryId, Code, ShortDescription, LongDescription, Synonyms, Billable, Edition, LastUpdated, VersionId)
+                VALUES (@id, @categoryId, @code, @short, @long, @synonyms, 1, '2025', datetime('now'), 1)
                 """,
                 ("@id", codeId),
                 ("@categoryId", categoryId),
                 ("@code", code),
                 ("@short", shortDesc),
-                ("@long", longDesc)
+                ("@long", longDesc),
+                ("@synonyms", (object?)synonyms ?? DBNull.Value)
             );
 
             // Insert fake embedding (384 dimensions for MedEmbed)

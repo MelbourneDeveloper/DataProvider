@@ -33,7 +33,8 @@ internal sealed record Icd10Code(
     string? InclusionTerms,
     string? ExclusionTerms,
     string? CodeAlso,
-    string? CodeFirst
+    string? CodeFirst,
+    string? Synonyms
 );
 
 /// <summary>
@@ -787,6 +788,13 @@ sealed class Icd10Cli : IDisposable
             rows.Add(new Text(""));
             rows.Add(new Markup("[orange3]Code First:[/]"));
             rows.Add(new Markup($"[dim]{code.CodeFirst.EscapeMarkup()}[/]"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(code.Synonyms))
+        {
+            rows.Add(new Text(""));
+            rows.Add(new Markup("[aqua]Synonyms:[/]"));
+            rows.Add(new Markup($"[dim]{code.Synonyms.EscapeMarkup()}[/]"));
         }
 
         rows.Add(new Text(""));

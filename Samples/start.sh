@@ -63,7 +63,7 @@ cd "$SCRIPT_DIR/../Gatekeeper/Gatekeeper.Api"
 dotnet run --urls "http://localhost:5002" &
 
 # Start ICD-10 API (clinical coding)
-cd "$SCRIPT_DIR/ICD10CM/ICD10AM.Api"
+cd "$SCRIPT_DIR/ICD10/ICD10.Api"
 dotnet run --urls "http://localhost:5090" &
 
 # Wait for APIs to start and create their databases

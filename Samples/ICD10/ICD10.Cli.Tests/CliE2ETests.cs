@@ -731,4 +731,74 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         Assert.Contains("hypertension", output, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public async Task Lookup_ShowsChapterInfo()
+    {
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l I10");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+        Assert.Contains("I10", output);
+        Assert.Contains("Chapter", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("IX", output);
+        Assert.Contains("circulatory", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Lookup_ShowsCategoryInfo()
+    {
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l E11.9");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+        Assert.Contains("E11.9", output);
+        Assert.Contains("Category", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("E11", output);
+    }
+
+    [Fact]
+    public async Task Lookup_ShowsSynonymsWhenPresent()
+    {
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l I10");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+        Assert.Contains("I10", output);
+        Assert.Contains("Synonyms", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("high blood pressure", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Lookup_ShowsMultipleSynonyms()
+    {
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l M54.5");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+        Assert.Contains("M54.5", output);
+        Assert.Contains("Synonyms", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("lumbago", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("backache", output, StringComparison.OrdinalIgnoreCase);
+    }
 }
