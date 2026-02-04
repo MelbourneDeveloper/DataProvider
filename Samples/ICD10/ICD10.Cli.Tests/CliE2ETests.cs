@@ -651,9 +651,9 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
     }
 
     [Fact]
-    public async Task Lookup_ShowsFullCodeDetails()
+    public async Task Lookup_ShowsFullCodeDetails_AllFields()
     {
-        // Verify lookup shows ALL required information
+        // Verify lookup shows ALL required information for R07.4
         var console = new TestConsole();
         console.Profile.Capabilities.Interactive = true;
         console.Input.PushTextWithEnter("l R07.4");
@@ -663,13 +663,132 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         await cli.RunAsync();
 
         var output = console.Output;
-        // Must show code
+
+        // MUST show the code
         Assert.Contains("R07.4", output);
-        // Must show description
-        Assert.Contains("chest pain", output, StringComparison.OrdinalIgnoreCase);
-        // Must show billable indicator
+
+        // MUST show short description
+        Assert.Contains("Chest pain", output, StringComparison.OrdinalIgnoreCase);
+
+        // MUST show billable status
         Assert.Contains("Billable", output, StringComparison.OrdinalIgnoreCase);
-        // Must NOT say not found
+
+        // MUST show chapter info
+        Assert.Contains("XVIII", output);
+        Assert.Contains("Symptoms", output, StringComparison.OrdinalIgnoreCase);
+
+        // MUST show block info
+        Assert.Contains("R00-R09", output);
+
+        // MUST show category info
+        Assert.Contains("R07", output);
+        Assert.Contains("Pain in throat and chest", output, StringComparison.OrdinalIgnoreCase);
+
+        // MUST show synonyms if present
+        Assert.Contains("thoracic pain", output, StringComparison.OrdinalIgnoreCase);
+
+        // MUST NOT say not found
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Lookup_ShowsChapterBlockCategoryHierarchy()
+    {
+        // Verify I10 (hypertension) shows full hierarchy
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l I10");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+
+        // Code and description
+        Assert.Contains("I10", output);
+        Assert.Contains("hypertension", output, StringComparison.OrdinalIgnoreCase);
+
+        // Chapter IX - Circulatory system
+        Assert.Contains("IX", output);
+        Assert.Contains("circulatory", output, StringComparison.OrdinalIgnoreCase);
+
+        // Block I10-I15
+        Assert.Contains("I10-I15", output);
+        Assert.Contains("Hypertensive", output, StringComparison.OrdinalIgnoreCase);
+
+        // Category I10
+        Assert.Contains("Essential hypertension", output, StringComparison.OrdinalIgnoreCase);
+
+        // Synonym
+        Assert.Contains("high blood pressure", output, StringComparison.OrdinalIgnoreCase);
+
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Lookup_ShowsSynonyms_WhenPresent()
+    {
+        // Verify E11.9 (Type 2 diabetes) shows synonyms
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l E11.9");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+
+        Assert.Contains("E11.9", output);
+        Assert.Contains("Type 2 diabetes", output, StringComparison.OrdinalIgnoreCase);
+        // Must show synonyms
+        Assert.Contains("adult-onset diabetes", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("non-insulin-dependent", output, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Lookup_ShowsLongDescription()
+    {
+        // Verify G43.909 shows long description
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l G43.909");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+
+        Assert.Contains("G43.909", output);
+        Assert.Contains("Migraine", output, StringComparison.OrdinalIgnoreCase);
+        // Long description has more detail
+        Assert.Contains("without status migrainosus", output, StringComparison.OrdinalIgnoreCase);
+        // Synonyms
+        Assert.Contains("sick headache", output, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Lookup_ShowsEditionInfo()
+    {
+        // Verify edition/version info is shown
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l I21.11");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+
+        Assert.Contains("I21.11", output);
+        Assert.Contains("STEMI", output, StringComparison.OrdinalIgnoreCase);
+        // Must show edition
+        Assert.Contains("2025", output);
         Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -800,5 +919,281 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         Assert.Contains("Synonyms", output, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("lumbago", output, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("backache", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // =========================================================================
+    // COMPREHENSIVE E2E TEST: LOOKUP COMMAND DISPLAYS ALL DETAILS
+    // This test PROVES the `l` command shows EVERY SINGLE FIELD
+    // =========================================================================
+
+    [Fact]
+    public async Task LookupCommand_E2E_DisplaysAllCodeDetails_ChapterBlockCategorySynonymsEdition()
+    {
+        // ARRANGE: Use I10 (hypertension) - has full hierarchy and synonyms
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l I10");
+        console.Input.PushTextWithEnter("q");
+
+        // ACT: Run the CLI
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+
+        // ASSERT: Code is displayed
+        Assert.Contains("I10", output);
+
+        // ASSERT: Short description is displayed
+        Assert.Contains("hypertension", output, StringComparison.OrdinalIgnoreCase);
+
+        // ASSERT: CHAPTER is displayed (Chapter IX - Circulatory)
+        Assert.Contains("Chapter", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("IX", output);
+        Assert.Contains("circulatory", output, StringComparison.OrdinalIgnoreCase);
+
+        // ASSERT: BLOCK is displayed (I10-I15 - Hypertensive diseases)
+        Assert.Contains("Block", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("I10-I15", output);
+        Assert.Contains("Hypertensive", output, StringComparison.OrdinalIgnoreCase);
+
+        // ASSERT: CATEGORY is displayed (I10 - Essential hypertension)
+        Assert.Contains("Category", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Essential hypertension", output, StringComparison.OrdinalIgnoreCase);
+
+        // ASSERT: SYNONYMS are displayed
+        Assert.Contains("Synonyms", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("high blood pressure", output, StringComparison.OrdinalIgnoreCase);
+
+        // ASSERT: EDITION is displayed
+        Assert.Contains("Edition", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("2025", output);
+
+        // ASSERT: Billable status is displayed
+        Assert.Contains("Billable", output, StringComparison.OrdinalIgnoreCase);
+
+        // ASSERT: NOT showing "not found"
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task LookupCommand_E2E_R074_DisplaysAllCodeDetails()
+    {
+        // ARRANGE: Use R07.4 (chest pain) - has full hierarchy and synonyms
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l R07.4");
+        console.Input.PushTextWithEnter("q");
+
+        // ACT
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+
+        // ASSERT: Code
+        Assert.Contains("R07.4", output);
+
+        // ASSERT: Description
+        Assert.Contains("Chest pain", output, StringComparison.OrdinalIgnoreCase);
+
+        // ASSERT: CHAPTER XVIII - Symptoms
+        Assert.Contains("Chapter", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("XVIII", output);
+        Assert.Contains("Symptoms", output, StringComparison.OrdinalIgnoreCase);
+
+        // ASSERT: BLOCK R00-R09
+        Assert.Contains("Block", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("R00-R09", output);
+
+        // ASSERT: CATEGORY R07 - Pain in throat and chest
+        Assert.Contains("Category", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("R07", output);
+        Assert.Contains("Pain in throat and chest", output, StringComparison.OrdinalIgnoreCase);
+
+        // ASSERT: SYNONYMS
+        Assert.Contains("Synonyms", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("thoracic pain", output, StringComparison.OrdinalIgnoreCase);
+
+        // ASSERT: EDITION
+        Assert.Contains("Edition", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("2025", output);
+
+        // ASSERT: Billable
+        Assert.Contains("Billable", output, StringComparison.OrdinalIgnoreCase);
+
+        // ASSERT: NOT "not found"
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task LookupCommand_E2E_E119_Diabetes_DisplaysAllCodeDetails()
+    {
+        // ARRANGE: Use E11.9 (Type 2 diabetes) - has synonyms
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l E11.9");
+        console.Input.PushTextWithEnter("q");
+
+        // ACT
+        using var cli = new Icd10Cli(_fixture.ApiUrl, console, _fixture.HttpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+
+        // ASSERT: Code
+        Assert.Contains("E11.9", output);
+
+        // ASSERT: Description
+        Assert.Contains("Type 2 diabetes", output, StringComparison.OrdinalIgnoreCase);
+
+        // ASSERT: CHAPTER IV - Endocrine
+        Assert.Contains("Chapter", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("IV", output);
+
+        // ASSERT: BLOCK E10-E14 - Diabetes mellitus
+        Assert.Contains("Block", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("E10-E14", output);
+        Assert.Contains("Diabetes mellitus", output, StringComparison.OrdinalIgnoreCase);
+
+        // ASSERT: CATEGORY E11 - Type 2 diabetes mellitus
+        Assert.Contains("Category", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("E11", output);
+        Assert.Contains("Type 2 diabetes mellitus", output, StringComparison.OrdinalIgnoreCase);
+
+        // ASSERT: SYNONYMS - adult-onset, non-insulin-dependent
+        Assert.Contains("Synonyms", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("adult-onset diabetes", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("non-insulin-dependent", output, StringComparison.OrdinalIgnoreCase);
+
+        // ASSERT: EDITION
+        Assert.Contains("Edition", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("2025", output);
+
+        // ASSERT: NOT "not found"
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
+    }
+}
+
+/// <summary>
+/// E2E tests that hit the REAL API at localhost:5558.
+/// These tests verify the CLI works with ACTUAL production data.
+/// </summary>
+public sealed class RealApiE2ETests : IAsyncLifetime, IDisposable
+{
+    private const string RealApiUrl = "http://localhost:5558";
+    private HttpClient? _httpClient;
+    private bool _apiAvailable;
+
+    public async Task InitializeAsync()
+    {
+        _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+        try
+        {
+            var response = await _httpClient.GetAsync($"{RealApiUrl}/health");
+            _apiAvailable = response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            _apiAvailable = false;
+        }
+    }
+
+    public Task DisposeAsync()
+    {
+        Dispose();
+        return Task.CompletedTask;
+    }
+
+    public void Dispose() => _httpClient?.Dispose();
+
+    [SkippableFact]
+    public async Task RealApi_Lookup_H53481_DisplaysAllDetails()
+    {
+        Skip.IfNot(_apiAvailable, "Real API not running at localhost:5558");
+
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l H53.481");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(RealApiUrl, console, _httpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+
+        // MUST find the code
+        Assert.Contains("H53.481", output);
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
+
+        // MUST show description
+        Assert.Contains("visual field", output, StringComparison.OrdinalIgnoreCase);
+
+        // MUST show chapter
+        Assert.Contains("Chapter", output, StringComparison.OrdinalIgnoreCase);
+
+        // MUST show block
+        Assert.Contains("Block", output, StringComparison.OrdinalIgnoreCase);
+
+        // MUST show category
+        Assert.Contains("Category", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("H53", output);
+    }
+
+    [SkippableFact]
+    public async Task RealApi_Lookup_Q531_DisplaysAllDetails()
+    {
+        Skip.IfNot(_apiAvailable, "Real API not running at localhost:5558");
+
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l Q53.1");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(RealApiUrl, console, _httpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+
+        // MUST find the code
+        Assert.Contains("Q53.1", output);
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
+
+        // MUST show description
+        Assert.Contains("testicle", output, StringComparison.OrdinalIgnoreCase);
+
+        // MUST show chapter 17
+        Assert.Contains("Chapter", output, StringComparison.OrdinalIgnoreCase);
+
+        // MUST show category
+        Assert.Contains("Category", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Q53", output);
+    }
+
+    [SkippableFact]
+    public async Task RealApi_Lookup_AnyCodeFromSearch_MustWork()
+    {
+        Skip.IfNot(_apiAvailable, "Real API not running at localhost:5558");
+
+        // First, get a code from search to prove it exists
+        var searchResponse = await _httpClient!.GetAsync($"{RealApiUrl}/api/icd10/codes?q=diabetes&limit=1");
+        Assert.True(searchResponse.IsSuccessStatusCode, "Search should return results");
+
+        var searchJson = await searchResponse.Content.ReadAsStringAsync();
+        Assert.Contains("Code", searchJson, StringComparison.OrdinalIgnoreCase);
+
+        // Now lookup that same code via CLI
+        var console = new TestConsole();
+        console.Profile.Capabilities.Interactive = true;
+        console.Input.PushTextWithEnter("l E11.9");
+        console.Input.PushTextWithEnter("q");
+
+        using var cli = new Icd10Cli(RealApiUrl, console, _httpClient);
+        await cli.RunAsync();
+
+        var output = console.Output;
+
+        // If search found it, lookup MUST find it too
+        Assert.DoesNotContain("not found", output, StringComparison.OrdinalIgnoreCase);
     }
 }

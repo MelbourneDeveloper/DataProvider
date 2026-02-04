@@ -27,14 +27,17 @@ internal sealed record Icd10Code(
     string LongDescription,
     long Billable,
     string? CategoryCode,
+    string? CategoryTitle,
     string? BlockCode,
+    string? BlockTitle,
     string? ChapterNumber,
     string? ChapterTitle,
     string? InclusionTerms,
     string? ExclusionTerms,
     string? CodeAlso,
     string? CodeFirst,
-    string? Synonyms
+    string? Synonyms,
+    string? Edition
 );
 
 /// <summary>
@@ -752,14 +755,22 @@ sealed class Icd10Cli : IDisposable
         {
             rows.Add(new Text(""));
             rows.Add(new Markup("[green]Block:[/]"));
-            rows.Add(new Markup($"[dim]{code.BlockCode.EscapeMarkup()}[/]"));
+            rows.Add(
+                new Markup(
+                    $"[dim]{code.BlockCode.EscapeMarkup()} - {(code.BlockTitle ?? "").EscapeMarkup()}[/]"
+                )
+            );
         }
 
         if (!string.IsNullOrWhiteSpace(code.CategoryCode))
         {
             rows.Add(new Text(""));
             rows.Add(new Markup("[yellow]Category:[/]"));
-            rows.Add(new Markup($"[dim]{code.CategoryCode.EscapeMarkup()}[/]"));
+            rows.Add(
+                new Markup(
+                    $"[dim]{code.CategoryCode.EscapeMarkup()} - {(code.CategoryTitle ?? "").EscapeMarkup()}[/]"
+                )
+            );
         }
 
         if (!string.IsNullOrWhiteSpace(code.InclusionTerms))
@@ -797,6 +808,13 @@ sealed class Icd10Cli : IDisposable
             rows.Add(new Markup($"[dim]{code.Synonyms.EscapeMarkup()}[/]"));
         }
 
+        if (!string.IsNullOrWhiteSpace(code.Edition))
+        {
+            rows.Add(new Text(""));
+            rows.Add(new Markup("[silver]Edition:[/]"));
+            rows.Add(new Markup($"[dim]{code.Edition.EscapeMarkup()}[/]"));
+        }
+
         rows.Add(new Text(""));
         rows.Add(
             new Markup(
@@ -805,6 +823,11 @@ sealed class Icd10Cli : IDisposable
                     : "[yellow]Not directly billable (category code)[/]"
             )
         );
+
+        if (!string.IsNullOrWhiteSpace(code.Edition))
+        {
+            rows.Add(new Markup($"[dim]Edition: {code.Edition.EscapeMarkup()}[/]"));
+        }
 
         var panel = new Panel(new Rows(rows))
             .Border(BoxBorder.Rounded)
