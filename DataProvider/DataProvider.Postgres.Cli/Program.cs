@@ -1155,12 +1155,15 @@ internal static class Program
         // Result type aliases must come after standard usings but before any type definitions
         // Use fully qualified names since type aliases don't use namespace context
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"using {fileName}Result = Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Selecta.SqlError>;"
         );
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"using {fileName}Ok = Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Selecta.SqlError>.Ok<System.Collections.Immutable.ImmutableList<{recordName}>, Selecta.SqlError>;"
         );
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"using {fileName}Error = Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Selecta.SqlError>.Error<System.Collections.Immutable.ImmutableList<{recordName}>, Selecta.SqlError>;"
         );
         _ = sb.AppendLine();
@@ -1211,6 +1214,7 @@ internal static class Program
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    /// Executes the {fileName} query.");
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    /// </summary>");
         _ = sb.Append(
+            CultureInfo.InvariantCulture,
             $"    public static async Task<{fileName}Result> {fileName}Async(this NpgsqlConnection conn"
         );
 
@@ -1224,6 +1228,7 @@ internal static class Program
         _ = sb.AppendLine("        try");
         _ = sb.AppendLine("        {");
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"            var results = ImmutableList.CreateBuilder<{recordName}>();"
         );
         _ = sb.AppendLine("            await using var cmd = new NpgsqlCommand(Sql, conn);");
@@ -1231,6 +1236,7 @@ internal static class Program
         foreach (var param in parameters)
         {
             _ = sb.AppendLine(
+                CultureInfo.InvariantCulture,
                 $"            cmd.Parameters.AddWithValue(\"{param}\", {ToCamelCase(param)});"
             );
         }
@@ -1264,6 +1270,7 @@ internal static class Program
 
         // Reader method
         _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
             $"    private static {recordName} Read{recordName}(NpgsqlDataReader reader) =>"
         );
         _ = sb.Append(CultureInfo.InvariantCulture, $"        new(");
