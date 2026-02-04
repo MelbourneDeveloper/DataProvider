@@ -96,6 +96,14 @@ public sealed class ICD10ApiFactory : WebApplicationFactory<Program>
         using var conn = new SqliteConnection($"Data Source={_dbPath}");
         conn.Open();
 
+        // Clear ALL existing ICD-10 data so tests only see seeded test data
+        // Delete in reverse FK order: embeddings -> codes -> categories -> blocks -> chapters
+        Execute(conn, "DELETE FROM icd10_code_embedding");
+        Execute(conn, "DELETE FROM icd10_code");
+        Execute(conn, "DELETE FROM icd10_category");
+        Execute(conn, "DELETE FROM icd10_block");
+        Execute(conn, "DELETE FROM icd10_chapter");
+
         // Seed chapters with predictable IDs matching test expectations
         var chapters = new (string id, string num, string title, string start, string end)[]
         {

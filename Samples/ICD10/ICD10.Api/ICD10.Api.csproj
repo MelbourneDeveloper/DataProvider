@@ -35,8 +35,8 @@
     </Content>
   </ItemGroup>
 
-  <!-- Create database from YAML using Migration.Cli (YAML stored in git) -->
-  <Target Name="CreateDatabaseSchema" BeforeTargets="TranspileLqlAndGenerateDataProvider">
+  <!-- Create database from YAML using Migration.Cli (only if db doesn't exist - don't delete production data!) -->
+  <Target Name="CreateDatabaseSchema" BeforeTargets="TranspileLqlAndGenerateDataProvider" Condition="!Exists('$(MSBuildProjectDirectory)/icd10.db')">
     <Exec Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)../../../Migration/Migration.Cli/Migration.Cli.csproj&quot; -- --schema &quot;$(MSBuildProjectDirectory)/icd10-schema.yaml&quot; --output &quot;$(MSBuildProjectDirectory)/icd10.db&quot; --provider sqlite" WorkingDirectory="$(MSBuildProjectDirectory)" StandardOutputImportance="High" StandardErrorImportance="High" />
   </Target>
 

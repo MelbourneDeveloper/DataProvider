@@ -181,7 +181,7 @@ icdGroup.MapGet(
         {
             GetCodeByCodeOk(var codes) when codes.Count > 0 => format == "fhir"
                 ? Results.Ok(ToFhirCodeSystem(codes[0]))
-                : Results.Ok(codes[0]),
+                : Results.Ok(EnrichCodeWithDerivedHierarchy(codes[0])),
             GetCodeByCodeOk => Results.NotFound(),
             GetCodeByCodeError(var err) => Results.Problem(err.Message),
         };
@@ -197,14 +197,19 @@ icdGroup.MapGet(
         var searchTerm = $"%{q}%";
 
         // Manual search implementation (LIKE queries not supported by generator)
+        // Use LEFT JOINs to handle databases with codes but no hierarchy
+        // Returns all fields that CLI expects for proper deserialization
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = """
         SELECT c.Id, c.Code, c.ShortDescription, c.LongDescription, c.Billable,
-               cat.CategoryCode, b.BlockCode, ch.ChapterNumber, ch.Title AS ChapterTitle
+               cat.CategoryCode, cat.Title AS CategoryTitle,
+               b.BlockCode, b.Title AS BlockTitle,
+               ch.ChapterNumber, ch.Title AS ChapterTitle,
+               c.InclusionTerms, c.ExclusionTerms, c.CodeAlso, c.CodeFirst, c.Synonyms, c.Edition
         FROM icd10_code c
-        INNER JOIN icd10_category cat ON c.CategoryId = cat.Id
-        INNER JOIN icd10_block b ON cat.BlockId = b.Id
-        INNER JOIN icd10_chapter ch ON b.ChapterId = ch.Id
+        LEFT JOIN icd10_category cat ON c.CategoryId = cat.Id
+        LEFT JOIN icd10_block b ON cat.BlockId = b.Id
+        LEFT JOIN icd10_chapter ch ON b.ChapterId = ch.Id
         WHERE c.Code LIKE @term OR c.ShortDescription LIKE @term OR c.LongDescription LIKE @term
         ORDER BY c.Code
         LIMIT @limit
@@ -216,18 +221,45 @@ icdGroup.MapGet(
         var results = new List<object>();
         while (await reader.ReadAsync().ConfigureAwait(false))
         {
+            var code = reader.GetString(1);
+
+            // Read nullable hierarchy fields
+            var catCodeNull = await reader.IsDBNullAsync(5).ConfigureAwait(false);
+            var catTitleNull = await reader.IsDBNullAsync(6).ConfigureAwait(false);
+            var blockCodeNull = await reader.IsDBNullAsync(7).ConfigureAwait(false);
+            var blockTitleNull = await reader.IsDBNullAsync(8).ConfigureAwait(false);
+            var chapNumNull = await reader.IsDBNullAsync(9).ConfigureAwait(false);
+            var chapTitleNull = await reader.IsDBNullAsync(10).ConfigureAwait(false);
+
+            // Derive hierarchy from code prefix when DB values are null
+            var (derivedChapNum, derivedChapTitle) = chapNumNull
+                ? Icd10Chapters.GetChapter(code)
+                : (reader.GetString(9), chapTitleNull ? "" : reader.GetString(10));
+            var derivedCatCode = catCodeNull ? Icd10Chapters.GetCategory(code) : reader.GetString(5);
+            var (derivedBlockCode, derivedBlockTitle) = blockCodeNull
+                ? Icd10Chapters.GetBlock(code)
+                : (reader.GetString(7), blockTitleNull ? "" : reader.GetString(8));
+
             results.Add(
                 new
                 {
                     Id = reader.GetString(0),
-                    Code = reader.GetString(1),
+                    Code = code,
                     ShortDescription = reader.GetString(2),
                     LongDescription = reader.GetString(3),
                     Billable = reader.GetInt64(4),
-                    CategoryCode = reader.GetString(5),
-                    BlockCode = reader.GetString(6),
-                    ChapterNumber = reader.GetString(7),
-                    ChapterTitle = reader.GetString(8),
+                    CategoryCode = derivedCatCode,
+                    CategoryTitle = catTitleNull ? "" : reader.GetString(6),
+                    BlockCode = derivedBlockCode,
+                    BlockTitle = derivedBlockTitle,
+                    ChapterNumber = derivedChapNum,
+                    ChapterTitle = derivedChapTitle,
+                    InclusionTerms = await reader.IsDBNullAsync(11).ConfigureAwait(false) ? "" : reader.GetString(11),
+                    ExclusionTerms = await reader.IsDBNullAsync(12).ConfigureAwait(false) ? "" : reader.GetString(12),
+                    CodeAlso = await reader.IsDBNullAsync(13).ConfigureAwait(false) ? "" : reader.GetString(13),
+                    CodeFirst = await reader.IsDBNullAsync(14).ConfigureAwait(false) ? "" : reader.GetString(14),
+                    Synonyms = await reader.IsDBNullAsync(15).ConfigureAwait(false) ? "" : reader.GetString(15),
+                    Edition = await reader.IsDBNullAsync(16).ConfigureAwait(false) ? "" : reader.GetString(16),
                 }
             );
         }
@@ -494,13 +526,59 @@ app.MapPost(
     }
 );
 
-app.MapGet("/health", () => Results.Ok(new { Status = "healthy", Service = "ICD10.Api" }));
+app.MapGet(
+    "/health",
+    (Func<SqliteConnection> getConn) =>
+    {
+        using var conn = getConn();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM icd10_code";
+        var count = Convert.ToInt64(cmd.ExecuteScalar(), System.Globalization.CultureInfo.InvariantCulture);
+
+        return count > 0
+            ? Results.Ok(new { Status = "healthy", Service = "ICD10.Api", CodesLoaded = count })
+            : Results.Json(
+                new { Status = "unhealthy", Service = "ICD10.Api", Error = "No ICD-10 codes loaded" },
+                statusCode: 503
+            );
+    }
+);
 
 app.Run();
 
 // ============================================================================
 // HELPER METHODS
 // ============================================================================
+
+/// <summary>
+/// Enriches a code record with derived hierarchy info when DB values are null.
+/// Uses Icd10Chapters to derive chapter/category from code prefix.
+/// </summary>
+static GetCodeByCode EnrichCodeWithDerivedHierarchy(GetCodeByCode code)
+{
+    var (chapterNum, chapterTitle) = string.IsNullOrEmpty(code.ChapterNumber)
+        ? ICD10.Api.Icd10Chapters.GetChapter(code.Code)
+        : (code.ChapterNumber, code.ChapterTitle ?? "");
+
+    var categoryCode = string.IsNullOrEmpty(code.CategoryCode)
+        ? ICD10.Api.Icd10Chapters.GetCategory(code.Code)
+        : code.CategoryCode;
+
+    // Derive block from category when not in DB - use category code as pseudo-block
+    var (blockCode, blockTitle) = string.IsNullOrEmpty(code.BlockCode)
+        ? ICD10.Api.Icd10Chapters.GetBlock(code.Code)
+        : (code.BlockCode, code.BlockTitle ?? "");
+
+    return code with
+    {
+        CategoryCode = categoryCode,
+        CategoryTitle = code.CategoryTitle ?? "",
+        BlockCode = blockCode,
+        BlockTitle = blockTitle,
+        ChapterNumber = chapterNum,
+        ChapterTitle = chapterTitle,
+    };
+}
 
 static object ToFhirCodeSystem(GetCodeByCode code) =>
     new
@@ -705,6 +783,39 @@ namespace ICD10.Api
             string.IsNullOrEmpty(code) ? ""
             : code.Length >= 3 ? code[..3].ToUpperInvariant()
             : code.ToUpperInvariant();
+
+        /// <summary>
+        /// Gets the block code and title for an ICD-10 code.
+        /// Derives block range from category prefix.
+        /// </summary>
+        public static (string Code, string Title) GetBlock(string code)
+        {
+            if (string.IsNullOrEmpty(code) || code.Length < 3)
+            {
+                return ("", "");
+            }
+
+            var category = code[..3].ToUpperInvariant();
+
+            // Common ICD-10-CM block ranges (simplified)
+            return category switch
+            {
+                // Eye blocks (Chapter 7)
+                var c when c.StartsWith("H53", StringComparison.Ordinal) || c.StartsWith("H54", StringComparison.Ordinal)
+                    => ("H53-H54", "Visual disturbances and blindness"),
+                var c when c.StartsWith("H49", StringComparison.Ordinal) || c.StartsWith("H50", StringComparison.Ordinal)
+                    || c.StartsWith("H51", StringComparison.Ordinal) || c.StartsWith("H52", StringComparison.Ordinal)
+                    => ("H49-H52", "Disorders of ocular muscles and binocular movement"),
+                // Congenital malformations (Chapter 17)
+                var c when c.StartsWith("Q50", StringComparison.Ordinal) || c.StartsWith("Q51", StringComparison.Ordinal)
+                    || c.StartsWith("Q52", StringComparison.Ordinal) || c.StartsWith("Q53", StringComparison.Ordinal)
+                    || c.StartsWith("Q54", StringComparison.Ordinal) || c.StartsWith("Q55", StringComparison.Ordinal)
+                    || c.StartsWith("Q56", StringComparison.Ordinal)
+                    => ("Q50-Q56", "Congenital malformations of genital organs"),
+                // Default: use category as pseudo-block
+                _ => (category, ""),
+            };
+        }
     }
 
     /// <summary>
