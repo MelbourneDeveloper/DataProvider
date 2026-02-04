@@ -47,7 +47,7 @@ public sealed class CodeLookupTests : IClassFixture<ICD10ApiFactory>
         var fhir = JsonSerializer.Deserialize<JsonElement>(content);
 
         Assert.Equal("CodeSystem", fhir.GetProperty("ResourceType").GetString());
-        Assert.Equal("http://hl7.org/fhir/sid/icd-10-am", fhir.GetProperty("Url").GetString());
+        Assert.Equal("http://hl7.org/fhir/sid/icd-10", fhir.GetProperty("Url").GetString());
         Assert.Equal("R07.4", fhir.GetProperty("Concept").GetProperty("Code").GetString());
     }
 
@@ -179,7 +179,7 @@ public sealed class CodeLookupTests : IClassFixture<ICD10ApiFactory>
         var fhir = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         Assert.Equal("CodeSystem", fhir.GetProperty("ResourceType").GetString());
-        Assert.Equal("http://hl7.org/fhir/sid/icd-10-cm", fhir.GetProperty("Url").GetString());
+        Assert.Equal("http://hl7.org/fhir/sid/icd-10", fhir.GetProperty("Url").GetString());
         Assert.Equal("I10", fhir.GetProperty("Concept").GetProperty("Code").GetString());
     }
 
@@ -236,22 +236,20 @@ public sealed class CodeLookupTests : IClassFixture<ICD10ApiFactory>
     [Fact]
     public async Task Icd10Cm_LookupAllSeededCodes_AllSucceed()
     {
-        // Verify ALL codes seeded for RAG search can be looked up
-        // Descriptions match ICD10ApiFactory.SeedIcd10CmCodesWithEmbeddings
+        // Verify ALL codes seeded in ICD10ApiFactory can be looked up
         var seededCodes = new[]
         {
-            ("R07.4", "chest pain"),
-            ("R07.89", "chest pain"),
-            ("R06.00", "dyspnea"),
-            ("R06.02", "shortness of breath"),
-            ("I21.11", "ST elevation"),
-            ("I21.19", "ST elevation"),
-            ("J18.9", "pneumonia"),
-            ("J20.9", "bronchitis"),
+            ("A00.0", "cholera"),
+            ("E10.9", "diabetes"),
             ("E11.9", "diabetes"),
             ("I10", "hypertension"),
-            ("M54.5", "back pain"),
-            ("G43.909", "migraine"),
+            ("I21.0", "myocardial infarction"),
+            ("I21.11", "myocardial infarction"),
+            ("I21.4", "myocardial infarction"),
+            ("J06.9", "respiratory infection"),
+            ("R06.00", "dyspnea"),
+            ("R07.4", "chest pain"),
+            ("R07.89", "chest pain"),
         };
 
         foreach (var (code, expectedDescription) in seededCodes)

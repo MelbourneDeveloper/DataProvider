@@ -29,6 +29,10 @@
     <Content Include="icd10-schema.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- Database is created from YAML schema during build -->
+    <Content Include="icd10.db">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <!-- Create database from YAML using Migration.Cli (YAML stored in git) -->
