@@ -155,7 +155,7 @@ tables:
     type: Text
   - name: SyncedAt
     type: Text
-    defaultValue: (datetime('now'))
+    defaultValue: CURRENT_TIMESTAMP
   primaryKey:
     name: PK_sync_ScheduledPatient
     columns:

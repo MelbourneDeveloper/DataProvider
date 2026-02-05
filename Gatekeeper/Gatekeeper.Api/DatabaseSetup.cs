@@ -63,7 +63,7 @@ public static class DatabaseSetup
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
 
         using var checkCmd = conn.CreateCommand();
-        checkCmd.CommandText = "SELECT COUNT(*) FROM gk_role WHERE is_system = 1";
+        checkCmd.CommandText = "SELECT COUNT(*) FROM gk_role WHERE is_system = true";
         var count = Convert.ToInt64(checkCmd.ExecuteScalar(), CultureInfo.InvariantCulture);
 
         if (count > 0)
@@ -78,8 +78,8 @@ public static class DatabaseSetup
             conn,
             """
             INSERT INTO gk_role (id, name, description, is_system, created_at)
-            VALUES ('role-admin', 'admin', 'Full system access', 1, @now),
-                   ('role-user', 'user', 'Basic authenticated user', 1, @now)
+            VALUES ('role-admin', 'admin', 'Full system access', true, @now),
+                   ('role-user', 'user', 'Basic authenticated user', true, @now)
             """,
             ("@now", now)
         );

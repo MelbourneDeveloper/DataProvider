@@ -2,19 +2,17 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copy solution and project files for restore
-COPY *.sln ./
-COPY Directory.Build.props ./
-COPY Directory.Packages.props ./
-COPY Samples/Dashboard/Dashboard.Web/Dashboard.Web.csproj Samples/Dashboard/Dashboard.Web/
+# Copy only Dashboard project (skip Directory.Build.props - incompatible with H5/netstandard2.1)
+COPY Samples/Dashboard/Dashboard.Web/ Samples/Dashboard/Dashboard.Web/
 
-# Restore
-RUN dotnet restore Samples/Dashboard/Dashboard.Web/Dashboard.Web.csproj
-
-# Copy everything and build
-COPY . .
+# Restore and build
 WORKDIR /src/Samples/Dashboard/Dashboard.Web
-RUN dotnet publish -c Release -o /app/publish --no-restore
+
+# Create local tool manifest and install H5
+RUN dotnet new tool-manifest --force && dotnet tool install h5 --version 24.11.53878
+
+RUN dotnet restore
+RUN dotnet publish -c Release -o /app/publish
 
 # Nginx image for serving static files
 FROM nginx:alpine AS runtime

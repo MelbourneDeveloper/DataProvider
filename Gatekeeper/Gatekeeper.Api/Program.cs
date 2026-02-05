@@ -6,8 +6,11 @@ using Microsoft.AspNetCore.Http.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// File logging
-var logPath = Path.Combine(AppContext.BaseDirectory, "gatekeeper.log");
+// File logging - use LOG_PATH env var or default to /tmp in containers
+var logPath = Environment.GetEnvironmentVariable("LOG_PATH")
+    ?? (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true"
+        ? "/tmp/gatekeeper.log"
+        : Path.Combine(AppContext.BaseDirectory, "gatekeeper.log"));
 builder.Logging.AddFileLogging(logPath);
 
 builder.Services.Configure<JsonOptions>(options =>

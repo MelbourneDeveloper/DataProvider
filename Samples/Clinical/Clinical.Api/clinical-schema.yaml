@@ -32,7 +32,7 @@ tables:
     type: Text
   - name: LastUpdated
     type: Text
-    defaultValue: (datetime('now'))
+    defaultValue: CURRENT_TIMESTAMP
   - name: VersionId
     type: Int
     defaultValue: 1
@@ -73,7 +73,7 @@ tables:
     type: Text
   - name: LastUpdated
     type: Text
-    defaultValue: (datetime('now'))
+    defaultValue: CURRENT_TIMESTAMP
   - name: VersionId
     type: Int
     defaultValue: 1
@@ -123,14 +123,14 @@ tables:
     type: Text
   - name: RecordedDate
     type: Text
-    defaultValue: (date('now'))
+    defaultValue: CURRENT_DATE
   - name: RecorderReference
     type: Text
   - name: NoteText
     type: Text
   - name: LastUpdated
     type: Text
-    defaultValue: (datetime('now'))
+    defaultValue: CURRENT_TIMESTAMP
   - name: VersionId
     type: Int
     defaultValue: 1
@@ -180,10 +180,10 @@ tables:
     defaultValue: 0
   - name: AuthoredOn
     type: Text
-    defaultValue: (datetime('now'))
+    defaultValue: CURRENT_TIMESTAMP
   - name: LastUpdated
     type: Text
-    defaultValue: (datetime('now'))
+    defaultValue: CURRENT_TIMESTAMP
   - name: VersionId
     type: Int
     defaultValue: 1
@@ -220,7 +220,7 @@ tables:
     type: Text
   - name: SyncedAt
     type: Text
-    defaultValue: (datetime('now'))
+    defaultValue: CURRENT_TIMESTAMP
   primaryKey:
     name: PK_sync_Provider
     columns:

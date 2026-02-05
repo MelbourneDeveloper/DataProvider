@@ -1,288 +1,66 @@
-version: '3.8'
-
 services:
-  # ============================================================================
-  # DATABASES
-  # ============================================================================
-
-  gatekeeper-db:
+  # Single Postgres with all databases
+  db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: gatekeeper
-      POSTGRES_USER: gatekeeper
-      POSTGRES_PASSWORD: ${GATEKEEPER_DB_PASSWORD:-changeme}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
     volumes:
-      - gatekeeper-data:/var/lib/postgresql/data
-    networks:
-      - healthcare-net
+      - db-data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gatekeeper"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
-  clinical-db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: clinical
-      POSTGRES_USER: clinical
-      POSTGRES_PASSWORD: ${CLINICAL_DB_PASSWORD:-changeme}
-    volumes:
-      - clinical-data:/var/lib/postgresql/data
-    networks:
-      - healthcare-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U clinical"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  scheduling-db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: scheduling
-      POSTGRES_USER: scheduling
-      POSTGRES_PASSWORD: ${SCHEDULING_DB_PASSWORD:-changeme}
-    volumes:
-      - scheduling-data:/var/lib/postgresql/data
-    networks:
-      - healthcare-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U scheduling"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  icd10-db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: icd10
-      POSTGRES_USER: icd10
-      POSTGRES_PASSWORD: ${ICD10_DB_PASSWORD:-changeme}
-    volumes:
-      - icd10-data:/var/lib/postgresql/data
-    networks:
-      - healthcare-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U icd10"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ============================================================================
-  # APIS
-  # ============================================================================
-
-  gatekeeper-api:
+  # All .NET services in one container
+  app:
     build:
       context: ../..
-      dockerfile: Samples/docker/Dockerfile.api
-      args:
-        PROJECT_PATH: Gatekeeper/Gatekeeper.Api
-        DLL_NAME: Gatekeeper.Api
-        SCHEMA_FILE: gatekeeper-schema.yaml
+      dockerfile: Samples/docker/Dockerfile.app
     environment:
-      ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__Postgres: Host=gatekeeper-db;Database=gatekeeper;Username=gatekeeper;Password=${GATEKEEPER_DB_PASSWORD:-changeme}
+      # Gatekeeper
+      ConnectionStrings__Postgres: Host=db;Database=gatekeeper;Username=gatekeeper;Password=${DB_PASSWORD:-changeme}
       Jwt__SigningKey: ${JWT_SIGNING_KEY:-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
-      Fido2__ServerName: ${FIDO2_SERVER_NAME:-Healthcare Platform}
-      Fido2__ServerDomain: ${FIDO2_SERVER_DOMAIN:-localhost}
-      Fido2__Origins__0: ${FIDO2_ORIGINS:-http://localhost:5173}
+      Fido2__ServerName: Healthcare Platform
+      Fido2__ServerDomain: localhost
+      Fido2__Origins__0: http://localhost:5173
+      # Clinical API
+      ConnectionStrings__Postgres_Clinical: Host=db;Database=clinical;Username=clinical;Password=${DB_PASSWORD:-changeme}
+      # Scheduling API
+      ConnectionStrings__Postgres_Scheduling: Host=db;Database=scheduling;Username=scheduling;Password=${DB_PASSWORD:-changeme}
+      # ICD10 API
+      ConnectionStrings__Postgres_ICD10: Host=db;Database=icd10;Username=icd10;Password=${DB_PASSWORD:-changeme}
+      # Sync workers
+      CLINICAL_CONNECTION_STRING: Host=db;Database=clinical;Username=clinical;Password=${DB_PASSWORD:-changeme}
+      SCHEDULING_CONNECTION_STRING: Host=db;Database=scheduling;Username=scheduling;Password=${DB_PASSWORD:-changeme}
+      SCHEDULING_API_URL: http://localhost:5001
+      CLINICAL_API_URL: http://localhost:5080
+      Gatekeeper__BaseUrl: http://localhost:5002
     ports:
-      - "5002:8080"
+      - "5002:5002"
+      - "5080:5080"
+      - "5001:5001"
+      - "5090:5090"
     depends_on:
-      gatekeeper-db:
+      db:
         condition: service_healthy
-    networks:
-      - healthcare-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 
-  clinical-api:
-    build:
-      context: ../..
-      dockerfile: Samples/docker/Dockerfile.api
-      args:
-        PROJECT_PATH: Samples/Clinical/Clinical.Api
-        DLL_NAME: Clinical.Api
-        SCHEMA_FILE: clinical-schema.yaml
-    environment:
-      ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__Postgres: Host=clinical-db;Database=clinical;Username=clinical;Password=${CLINICAL_DB_PASSWORD:-changeme}
-      Gatekeeper__BaseUrl: http://gatekeeper-api:8080
-      Jwt__SigningKey: ${JWT_SIGNING_KEY:-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
-    ports:
-      - "5080:8080"
-    depends_on:
-      clinical-db:
-        condition: service_healthy
-      gatekeeper-api:
-        condition: service_healthy
-    networks:
-      - healthcare-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  scheduling-api:
-    build:
-      context: ../..
-      dockerfile: Samples/docker/Dockerfile.api
-      args:
-        PROJECT_PATH: Samples/Scheduling/Scheduling.Api
-        DLL_NAME: Scheduling.Api
-        SCHEMA_FILE: scheduling-schema.yaml
-    environment:
-      ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__Postgres: Host=scheduling-db;Database=scheduling;Username=scheduling;Password=${SCHEDULING_DB_PASSWORD:-changeme}
-      Gatekeeper__BaseUrl: http://gatekeeper-api:8080
-      Jwt__SigningKey: ${JWT_SIGNING_KEY:-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
-    ports:
-      - "5001:8080"
-    depends_on:
-      scheduling-db:
-        condition: service_healthy
-      gatekeeper-api:
-        condition: service_healthy
-    networks:
-      - healthcare-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  icd10-api:
-    build:
-      context: ../..
-      dockerfile: Samples/docker/Dockerfile.api
-      args:
-        PROJECT_PATH: Samples/ICD10/ICD10.Api
-        DLL_NAME: ICD10.Api
-        SCHEMA_FILE: icd10-schema.yaml
-    environment:
-      ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__Postgres: Host=icd10-db;Database=icd10;Username=icd10;Password=${ICD10_DB_PASSWORD:-changeme}
-      Gatekeeper__BaseUrl: http://gatekeeper-api:8080
-      EmbeddingService__BaseUrl: ${EMBEDDING_SERVICE_URL:-http://embedding:8000}
-      Jwt__SigningKey: ${JWT_SIGNING_KEY:-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
-    ports:
-      - "5090:8080"
-    depends_on:
-      icd10-db:
-        condition: service_healthy
-      gatekeeper-api:
-        condition: service_healthy
-    networks:
-      - healthcare-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # ============================================================================
-  # SYNC WORKERS
-  # ============================================================================
-
-  clinical-sync:
-    build:
-      context: ../..
-      dockerfile: Samples/docker/Dockerfile.sync
-      args:
-        PROJECT_PATH: Samples/Clinical/Clinical.Sync
-        DLL_NAME: Clinical.Sync
-    environment:
-      CLINICAL_CONNECTION_STRING: Host=clinical-db;Database=clinical;Username=clinical;Password=${CLINICAL_DB_PASSWORD:-changeme}
-      SCHEDULING_API_URL: http://scheduling-api:8080
-    depends_on:
-      clinical-api:
-        condition: service_healthy
-      scheduling-api:
-        condition: service_healthy
-    networks:
-      - healthcare-net
-    restart: unless-stopped
-
-  scheduling-sync:
-    build:
-      context: ../..
-      dockerfile: Samples/docker/Dockerfile.sync
-      args:
-        PROJECT_PATH: Samples/Scheduling/Scheduling.Sync
-        DLL_NAME: Scheduling.Sync
-    environment:
-      SCHEDULING_CONNECTION_STRING: Host=scheduling-db;Database=scheduling;Username=scheduling;Password=${SCHEDULING_DB_PASSWORD:-changeme}
-      CLINICAL_API_URL: http://clinical-api:8080
-    depends_on:
-      clinical-api:
-        condition: service_healthy
-      scheduling-api:
-        condition: service_healthy
-    networks:
-      - healthcare-net
-    restart: unless-stopped
-
-  # ============================================================================
-  # EMBEDDING SERVICE (existing)
-  # ============================================================================
-
-  embedding:
-    build:
-      context: ../ICD10/embedding-service
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    networks:
-      - healthcare-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-  # ============================================================================
-  # DASHBOARD
-  # ============================================================================
-
-  dashboard:
-    build:
-      context: ../..
-      dockerfile: Samples/docker/Dockerfile.dashboard
-    ports:
-      - "5173:80"
-    depends_on:
-      gatekeeper-api:
-        condition: service_healthy
-      clinical-api:
-        condition: service_healthy
-      scheduling-api:
-        condition: service_healthy
-      icd10-api:
-        condition: service_healthy
-    networks:
-      - healthcare-net
-
-# ============================================================================
-# NETWORKS AND VOLUMES
-# ============================================================================
-
-networks:
-  healthcare-net:
-    driver: bridge
+  # Dashboard (H5 static files via nginx)
+  # NOTE: H5 transpiler doesn't work in Docker Linux. Build locally first:
+  #   cd Samples/Dashboard/Dashboard.Web && dotnet publish -c Release
+  # Then uncomment this section and copy wwwroot to a pre-built image.
+  # dashboard:
+  #   build:
+  #     context: ../..
+  #     dockerfile: Samples/docker/Dockerfile.dashboard
+  #   ports:
+  #     - "5173:80"
+  #   depends_on:
+  #     - app
 
 volumes:
-  gatekeeper-data:
-  clinical-data:
-  scheduling-data:
-  icd10-data:
+  db-data:
