@@ -225,11 +225,11 @@ namespace Dashboard.Api
         // === ICD-10 API ===
 
         /// <summary>
-        /// Fetches all ICD-10-AM chapters.
+        /// Fetches all ICD-10 chapters.
         /// </summary>
         public static async Task<Icd10Chapter[]> GetIcd10ChaptersAsync()
         {
-            var response = await FetchIcd10Async(_icd10BaseUrl + "/api/icd10am/chapters");
+            var response = await FetchIcd10Async(_icd10BaseUrl + "/api/icd10/chapters");
             return ParseJson<Icd10Chapter[]>(response);
         }
 
@@ -239,7 +239,7 @@ namespace Dashboard.Api
         public static async Task<Icd10Block[]> GetIcd10BlocksAsync(string chapterId)
         {
             var response = await FetchIcd10Async(
-                _icd10BaseUrl + "/api/icd10am/chapters/" + chapterId + "/blocks"
+                _icd10BaseUrl + "/api/icd10/chapters/" + chapterId + "/blocks"
             );
             return ParseJson<Icd10Block[]>(response);
         }
@@ -250,7 +250,7 @@ namespace Dashboard.Api
         public static async Task<Icd10Category[]> GetIcd10CategoriesAsync(string blockId)
         {
             var response = await FetchIcd10Async(
-                _icd10BaseUrl + "/api/icd10am/blocks/" + blockId + "/categories"
+                _icd10BaseUrl + "/api/icd10/blocks/" + blockId + "/categories"
             );
             return ParseJson<Icd10Category[]>(response);
         }
@@ -261,7 +261,7 @@ namespace Dashboard.Api
         public static async Task<Icd10Code[]> GetIcd10CodesAsync(string categoryId)
         {
             var response = await FetchIcd10Async(
-                _icd10BaseUrl + "/api/icd10am/categories/" + categoryId + "/codes"
+                _icd10BaseUrl + "/api/icd10/categories/" + categoryId + "/codes"
             );
             return ParseJson<Icd10Code[]>(response);
         }
@@ -272,7 +272,7 @@ namespace Dashboard.Api
         public static async Task<Icd10Code> GetIcd10CodeAsync(string code)
         {
             var response = await FetchIcd10Async(
-                _icd10BaseUrl + "/api/icd10am/codes/" + EncodeUri(code)
+                _icd10BaseUrl + "/api/icd10/codes/" + EncodeUri(code)
             );
             return ParseJson<Icd10Code>(response);
         }
@@ -283,7 +283,7 @@ namespace Dashboard.Api
         public static async Task<Icd10Code[]> SearchIcd10CodesAsync(string query, int limit = 20)
         {
             var response = await FetchIcd10Async(
-                _icd10BaseUrl + "/api/icd10am/codes?q=" + EncodeUri(query) + "&limit=" + limit
+                _icd10BaseUrl + "/api/icd10/codes?q=" + EncodeUri(query) + "&limit=" + limit
             );
             return ParseJson<Icd10Code[]>(response);
         }

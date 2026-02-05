@@ -3,7 +3,7 @@ using H5;
 namespace Dashboard.Models
 {
     /// <summary>
-    /// ICD-10-AM chapter model.
+    /// ICD-10 chapter model.
     /// </summary>
     [External]
     [Name("Object")]
@@ -13,7 +13,7 @@ namespace Dashboard.Models
         public extern string Id { get; set; }
 
         /// <summary>Chapter number (1-22).</summary>
-        public extern int ChapterNumber { get; set; }
+        public extern string ChapterNumber { get; set; }
 
         /// <summary>Chapter title.</summary>
         public extern string Title { get; set; }
@@ -26,7 +26,7 @@ namespace Dashboard.Models
     }
 
     /// <summary>
-    /// ICD-10-AM block model.
+    /// ICD-10 block model.
     /// </summary>
     [External]
     [Name("Object")]
@@ -52,7 +52,7 @@ namespace Dashboard.Models
     }
 
     /// <summary>
-    /// ICD-10-AM category model.
+    /// ICD-10 category model.
     /// </summary>
     [External]
     [Name("Object")]
@@ -72,7 +72,7 @@ namespace Dashboard.Models
     }
 
     /// <summary>
-    /// ICD-10-AM code model.
+    /// ICD-10 code model.
     /// </summary>
     [External]
     [Name("Object")]
@@ -105,17 +105,29 @@ namespace Dashboard.Models
         /// <summary>Code first reference.</summary>
         public extern string CodeFirst { get; set; }
 
+        /// <summary>Synonyms for the code.</summary>
+        public extern string Synonyms { get; set; }
+
         /// <summary>Whether code is billable.</summary>
         public extern bool Billable { get; set; }
+
+        /// <summary>Edition of the code.</summary>
+        public extern string Edition { get; set; }
 
         /// <summary>Category code.</summary>
         public extern string CategoryCode { get; set; }
 
+        /// <summary>Category title.</summary>
+        public extern string CategoryTitle { get; set; }
+
         /// <summary>Block code.</summary>
         public extern string BlockCode { get; set; }
 
+        /// <summary>Block title.</summary>
+        public extern string BlockTitle { get; set; }
+
         /// <summary>Chapter number.</summary>
-        public extern int ChapterNumber { get; set; }
+        public extern string ChapterNumber { get; set; }
 
         /// <summary>Chapter title.</summary>
         public extern string ChapterTitle { get; set; }
@@ -147,7 +159,7 @@ namespace Dashboard.Models
         public extern bool Billable { get; set; }
 
         /// <summary>Block number.</summary>
-        public extern int BlockNumber { get; set; }
+        public extern string BlockNumber { get; set; }
 
         /// <summary>Block title.</summary>
         public extern string BlockTitle { get; set; }
