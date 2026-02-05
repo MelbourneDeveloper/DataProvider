@@ -181,6 +181,7 @@ tables:
   - name: idx_icd10_embedding_code
     columns:
     - CodeId
+    isUnique: true
   - name: idx_icd10_embedding_model
     columns:
     - EmbeddingModel

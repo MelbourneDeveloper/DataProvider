@@ -5,6 +5,7 @@ ICD-10-CM Import Script for PostgreSQL (Docker)
 Imports ICD-10-CM diagnosis codes from CDC XML files into PostgreSQL.
 """
 
+import json
 import logging
 import os
 import uuid
@@ -19,6 +20,8 @@ from typing import Generator, Union
 import click
 import psycopg2
 import requests
+
+EMBEDDING_SERVICE_URL = os.environ.get("EMBEDDING_SERVICE_URL", "http://localhost:8000")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -356,11 +359,40 @@ def parse_diag_with_hierarchy(
         )
 
 
+def normalize_connection_string(conn_str: str) -> str:
+    """Convert ASP.NET style connection string to psycopg2 format (lowercase keys)."""
+    # psycopg2 requires lowercase keys: host, database, user, password, port
+    key_map = {
+        "host": "host",
+        "server": "host",
+        "database": "dbname",
+        "initial catalog": "dbname",
+        "user": "user",
+        "username": "user",
+        "user id": "user",
+        "password": "password",
+        "port": "port",
+    }
+
+    parts = []
+    for part in conn_str.split(";"):
+        if "=" not in part:
+            continue
+        key, value = part.split("=", 1)
+        key_lower = key.strip().lower()
+        if key_lower in key_map:
+            parts.append(f"{key_map[key_lower]}={value.strip()}")
+
+    return " ".join(parts)
+
+
 class PostgresImporter:
     """Imports ICD-10 data into PostgreSQL."""
 
     def __init__(self, connection_string: str):
-        self.conn = psycopg2.connect(connection_string)
+        normalized = normalize_connection_string(connection_string)
+        logger.info(f"Connecting to PostgreSQL...")
+        self.conn = psycopg2.connect(normalized)
         self.conn.autocommit = False
 
     def import_chapters(self, chapters: list[Chapter]):
@@ -468,6 +500,74 @@ class PostgresImporter:
         self.conn.commit()
         logger.info(f"Imported {len(ACHI_SAMPLE_BLOCKS)} ACHI blocks and {len(ACHI_SAMPLE_CODES)} ACHI codes")
 
+    def generate_embeddings(self, batch_size: int = 50):
+        """Generate embeddings for all ICD-10 codes using the embedding service."""
+        logger.info("Generating embeddings for ICD-10 codes...")
+        cur = self.conn.cursor()
+
+        # Get all codes that don't have embeddings yet
+        cur.execute("""
+            SELECT c."Id", c."Code", c."ShortDescription", c."LongDescription"
+            FROM icd10_code c
+            LEFT JOIN icd10_code_embedding e ON c."Id" = e."CodeId"
+            WHERE e."Id" IS NULL
+        """)
+        codes = cur.fetchall()
+        logger.info(f"Found {len(codes)} codes needing embeddings")
+
+        if not codes:
+            logger.info("All codes already have embeddings")
+            return
+
+        # Process in batches
+        total_generated = 0
+        for i in range(0, len(codes), batch_size):
+            batch = codes[i:i + batch_size]
+
+            # Create text for embedding (combine code + descriptions)
+            texts = []
+            for code_id, code, short_desc, long_desc in batch:
+                text = f"{code}: {short_desc}"
+                if long_desc and long_desc != short_desc:
+                    text += f" - {long_desc}"
+                texts.append(text)
+
+            # Call embedding service
+            try:
+                response = requests.post(
+                    f"{EMBEDDING_SERVICE_URL}/embed/batch",
+                    json={"texts": texts},
+                    timeout=60,
+                )
+                if response.status_code != 200:
+                    logger.error(f"Embedding service error: {response.status_code}")
+                    continue
+
+                result = response.json()
+                embeddings = result.get("embeddings", [])
+
+                # Store embeddings (skip if already exists for this code)
+                for j, (code_id, code, _, _) in enumerate(batch):
+                    if j < len(embeddings):
+                        embedding_json = json.dumps(embeddings[j])
+                        cur.execute(
+                            """INSERT INTO "public"."icd10_code_embedding"
+                               ("Id", "CodeId", "Embedding", "EmbeddingModel", "LastUpdated")
+                               VALUES (%s, %s, %s, %s, %s)
+                               ON CONFLICT ("CodeId") DO NOTHING""",
+                            (generate_uuid(), code_id, embedding_json, "MedEmbed-Small-v0.1", get_timestamp()),
+                        )
+                        total_generated += 1
+
+                self.conn.commit()
+                logger.info(f"Generated embeddings: {total_generated}/{len(codes)}")
+
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Failed to call embedding service: {e}")
+                continue
+
+        logger.info(f"Finished generating {total_generated} embeddings")
+
     def close(self):
         self.conn.close()
 
@@ -493,7 +593,12 @@ def main(connection_string: str):
         importer.import_categories(categories)
         importer.import_codes(codes, synonyms)
         importer.import_achi_sample_data()
-        logger.info("SUCCESS! ICD-10-CM imported to PostgreSQL")
+        logger.info("ICD-10-CM codes imported to PostgreSQL")
+
+        # Generate embeddings for AI search
+        logger.info("Generating embeddings for AI search...")
+        importer.generate_embeddings()
+        logger.info("SUCCESS! ICD-10-CM import complete with embeddings")
     finally:
         importer.close()
 
