@@ -138,7 +138,7 @@
       const CLINICAL_API = window.dashboardConfig?.CLINICAL_API_URL || 'http://localhost:5080';
       const SCHEDULING_API = window.dashboardConfig?.SCHEDULING_API_URL || 'http://localhost:5001';
       const GATEKEEPER_API = window.dashboardConfig?.GATEKEEPER_API_URL || 'http://localhost:5002';
-      const ICD10_API = window.dashboardConfig?.ICD10_API_URL || 'http://localhost:5558';
+      const ICD10_API = window.dashboardConfig?.ICD10_API_URL || 'http://localhost:5090';
 
       // Auth token storage
       const AUTH_TOKEN_KEY = 'gatekeeper_token';
@@ -1971,7 +1971,7 @@
           try {
             let response;
             if (searchMode === 'lookup') {
-              response = await fetch(`${ICD10_API}/api/icd10am/codes/${encodeURIComponent(searchQuery)}`);
+              response = await fetch(`${ICD10_API}/api/icd10/codes/${encodeURIComponent(searchQuery)}`);
               if (response.ok) {
                 const code = await response.json();
                 setSelectedCode(code);
@@ -1992,7 +1992,7 @@
                 throw new Error('Search failed');
               }
             } else {
-              response = await fetch(`${ICD10_API}/api/icd10am/codes?q=${encodeURIComponent(searchQuery)}&limit=50`);
+              response = await fetch(`${ICD10_API}/api/icd10/codes?q=${encodeURIComponent(searchQuery)}&limit=50`);
               if (response.ok) {
                 const data = await response.json();
                 setResults(data);
@@ -2022,7 +2022,7 @@
           setSearchMode('lookup');
           setLoading(true);
           try {
-            const response = await fetch(`${ICD10_API}/api/icd10am/codes/${encodeURIComponent(code)}`);
+            const response = await fetch(`${ICD10_API}/api/icd10/codes/${encodeURIComponent(code)}`);
             if (response.ok) {
               const data = await response.json();
               setSelectedCode(data);

@@ -1,22 +1,10 @@
-# Dashboard build with H5 transpilation then nginx serving
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-WORKDIR /src
+# Dashboard - serves pre-built H5 static files
+# NOTE: H5 transpiler doesn't work in Docker Linux
+# Build Dashboard locally first: dotnet publish -c Release
+FROM nginx:alpine
 
-# Copy only Dashboard project (skip Directory.Build.props - incompatible with H5/netstandard2.1)
-COPY Samples/Dashboard/Dashboard.Web/ Samples/Dashboard/Dashboard.Web/
-
-# Restore and build
-WORKDIR /src/Samples/Dashboard/Dashboard.Web
-
-# Create local tool manifest and install H5
-RUN dotnet new tool-manifest --force && dotnet tool install h5 --version 24.11.53878
-
-RUN dotnet restore
-RUN dotnet publish -c Release -o /app/publish
-
-# Nginx image for serving static files
-FROM nginx:alpine AS runtime
-COPY --from=build /app/publish/wwwroot /usr/share/nginx/html
+# Copy pre-built wwwroot from local build
+COPY Samples/docker/dashboard-build/wwwroot /usr/share/nginx/html
 COPY Samples/docker/nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80

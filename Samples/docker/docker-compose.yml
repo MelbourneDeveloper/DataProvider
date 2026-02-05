@@ -50,17 +50,15 @@ services:
         condition: service_healthy
 
   # Dashboard (H5 static files via nginx)
-  # NOTE: H5 transpiler doesn't work in Docker Linux. Build locally first:
-  #   cd Samples/Dashboard/Dashboard.Web && dotnet publish -c Release
-  # Then uncomment this section and copy wwwroot to a pre-built image.
-  # dashboard:
-  #   build:
-  #     context: ../..
-  #     dockerfile: Samples/docker/Dockerfile.dashboard
-  #   ports:
-  #     - "5173:80"
-  #   depends_on:
-  #     - app
+  # start.sh builds Dashboard locally first (H5 doesn't work in Docker Linux)
+  dashboard:
+    build:
+      context: ../..
+      dockerfile: Samples/docker/Dockerfile.dashboard
+    ports:
+      - "5173:80"
+    depends_on:
+      - app
 
 volumes:
   db-data:

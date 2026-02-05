@@ -7,7 +7,6 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR/docker"
 
 FRESH=false
 BUILD=""
@@ -18,6 +17,14 @@ for arg in "$@"; do
         --build) BUILD="--build" ;;
     esac
 done
+
+# Build Dashboard locally (H5 transpiler doesn't work in Docker Linux)
+echo "Building Dashboard locally (H5 requires native build)..."
+cd "$SCRIPT_DIR/Dashboard/Dashboard.Web"
+dotnet publish -c Release -o "$SCRIPT_DIR/docker/dashboard-build" --nologo -v q
+echo "Dashboard built successfully"
+
+cd "$SCRIPT_DIR/docker"
 
 if [ "$FRESH" = true ]; then
     echo "Fresh start - removing volumes..."

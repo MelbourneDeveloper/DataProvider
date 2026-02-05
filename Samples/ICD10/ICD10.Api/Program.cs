@@ -173,17 +173,17 @@ icdGroup.MapGet(
         // Returns all fields that CLI expects for proper deserialization
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = """
-        SELECT c.Id, c.Code, c.ShortDescription, c.LongDescription, c.Billable,
-               cat.CategoryCode, cat.Title AS CategoryTitle,
-               b.BlockCode, b.Title AS BlockTitle,
-               ch.ChapterNumber, ch.Title AS ChapterTitle,
-               c.InclusionTerms, c.ExclusionTerms, c.CodeAlso, c.CodeFirst, c.Synonyms, c.Edition
+        SELECT c."Id", c."Code", c."ShortDescription", c."LongDescription", c."Billable",
+               cat."CategoryCode", cat."Title" AS "CategoryTitle",
+               b."BlockCode", b."Title" AS "BlockTitle",
+               ch."ChapterNumber", ch."Title" AS "ChapterTitle",
+               c."InclusionTerms", c."ExclusionTerms", c."CodeAlso", c."CodeFirst", c."Synonyms", c."Edition"
         FROM icd10_code c
-        LEFT JOIN icd10_category cat ON c.CategoryId = cat.Id
-        LEFT JOIN icd10_block b ON cat.BlockId = b.Id
-        LEFT JOIN icd10_chapter ch ON b.ChapterId = ch.Id
-        WHERE c.Code LIKE @term OR c.ShortDescription LIKE @term OR c.LongDescription LIKE @term
-        ORDER BY c.Code
+        LEFT JOIN icd10_category cat ON c."CategoryId" = cat."Id"
+        LEFT JOIN icd10_block b ON cat."BlockId" = b."Id"
+        LEFT JOIN icd10_chapter ch ON b."ChapterId" = ch."Id"
+        WHERE c."Code" ILIKE @term OR c."ShortDescription" ILIKE @term OR c."LongDescription" ILIKE @term
+        ORDER BY c."Code"
         LIMIT @limit
         """;
         cmd.Parameters.AddWithValue("@term", searchTerm);
@@ -424,9 +424,9 @@ app.MapPost(
             await using (cmd.ConfigureAwait(false))
             {
                 cmd.CommandText = """
-                SELECT e.Embedding, c.Code, c.ShortDescription, c.LongDescription
+                SELECT e."Embedding", c."Code", c."ShortDescription", c."LongDescription"
                 FROM achi_code_embedding e
-                INNER JOIN achi_code c ON e.CodeId = c.Id
+                INNER JOIN achi_code c ON e."CodeId" = c."Id"
                 """;
                 var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
                 await using (reader.ConfigureAwait(false))
