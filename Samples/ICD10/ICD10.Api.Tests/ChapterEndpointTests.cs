@@ -1,7 +1,7 @@
 namespace ICD10.Api.Tests;
 
 /// <summary>
-/// E2E tests for ICD-10-AM chapter endpoints - REAL database, NO mocks.
+/// E2E tests for ICD-10-CM chapter endpoints - REAL database, NO mocks.
 /// </summary>
 public sealed class ChapterEndpointTests : IClassFixture<ICD10ApiFactory>
 {
@@ -21,15 +21,16 @@ public sealed class ChapterEndpointTests : IClassFixture<ICD10ApiFactory>
     }
 
     [Fact]
-    public async Task GetChapters_ReturnsSeededChapters()
+    public async Task GetChapters_ReturnsChaptersFromDatabase()
     {
         var response = await _client.GetAsync("/api/icd10/chapters");
         var chapters = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(chapters);
-        Assert.True(chapters.Length >= 2, "Expected at least 2 seeded chapters");
-        Assert.Contains(chapters, c => c.GetProperty("ChapterNumber").GetString() == "I");
-        Assert.Contains(chapters, c => c.GetProperty("ChapterNumber").GetString() == "XVIII");
+        Assert.True(chapters.Length >= 20, $"Expected at least 20 chapters from ICD-10-CM, got {chapters.Length}");
+        // ICD-10-CM uses numeric chapter numbers (1, 2, 3... not Roman numerals)
+        Assert.Contains(chapters, c => c.GetProperty("ChapterNumber").GetString() == "1");
+        Assert.Contains(chapters, c => c.GetProperty("ChapterNumber").GetString() == "18");
     }
 
     [Fact]
@@ -52,7 +53,14 @@ public sealed class ChapterEndpointTests : IClassFixture<ICD10ApiFactory>
     [Fact]
     public async Task GetBlocksByChapter_ReturnsOk_WhenChapterExists()
     {
-        var response = await _client.GetAsync("/api/icd10/chapters/ch-01/blocks");
+        // First get a real chapter ID from the database
+        var chaptersResponse = await _client.GetAsync("/api/icd10/chapters");
+        var chapters = await chaptersResponse.Content.ReadFromJsonAsync<JsonElement[]>();
+        Assert.NotNull(chapters);
+        Assert.NotEmpty(chapters);
+
+        var chapterId = chapters[0].GetProperty("Id").GetString();
+        var response = await _client.GetAsync($"/api/icd10/chapters/{chapterId}/blocks");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -60,7 +68,13 @@ public sealed class ChapterEndpointTests : IClassFixture<ICD10ApiFactory>
     [Fact]
     public async Task GetBlocksByChapter_ReturnsBlocks()
     {
-        var response = await _client.GetAsync("/api/icd10/chapters/ch-01/blocks");
+        // Get chapter 1 (Infectious diseases) which has block A00-A09
+        var chaptersResponse = await _client.GetAsync("/api/icd10/chapters");
+        var chapters = await chaptersResponse.Content.ReadFromJsonAsync<JsonElement[]>();
+        var chapter1 = chapters!.First(c => c.GetProperty("ChapterNumber").GetString() == "1");
+        var chapterId = chapter1.GetProperty("Id").GetString();
+
+        var response = await _client.GetAsync($"/api/icd10/chapters/{chapterId}/blocks");
         var blocks = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(blocks);
@@ -71,7 +85,7 @@ public sealed class ChapterEndpointTests : IClassFixture<ICD10ApiFactory>
     [Fact]
     public async Task GetBlocksByChapter_ReturnsEmptyArray_WhenChapterNotExists()
     {
-        var response = await _client.GetAsync("/api/icd10/chapters/nonexistent/blocks");
+        var response = await _client.GetAsync("/api/icd10/chapters/nonexistent-uuid/blocks");
         var blocks = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(blocks);

@@ -7,8 +7,8 @@ for semantic RAG search. Works with ANY ICD-10 variant (CM, AM, GM, etc.).
 MUST be run after importing codes.
 
 Usage:
-    python generate_embeddings.py --db-path ../icd10.db
-    python generate_embeddings.py --db-path ../icd10.db --batch-size 500
+    python generate_embeddings.py --db-path ../ICD10.Api/icd10.db
+    python generate_embeddings.py --db-path ../ICD10.Api/icd10.db --batch-size 500
 """
 
 import json
@@ -24,13 +24,19 @@ EMBEDDING_DIMENSIONS = 384
 
 
 def get_codes_without_embeddings(conn: sqlite3.Connection, limit: int = 0) -> list:
-    """Get all codes that don't have embeddings yet."""
+    """Get all codes that don't have embeddings yet, including hierarchy."""
     cursor = conn.cursor()
     query = """
         SELECT c.Id, c.Code, c.ShortDescription, c.LongDescription,
-               c.InclusionTerms, c.ExclusionTerms, c.CodeAlso, c.CodeFirst, c.Synonyms
+               c.InclusionTerms, c.CodeAlso, c.CodeFirst, c.Synonyms,
+               cat.CategoryCode, cat.Title AS CategoryTitle,
+               b.BlockCode, b.Title AS BlockTitle,
+               ch.ChapterNumber, ch.Title AS ChapterTitle
         FROM icd10_code c
         LEFT JOIN icd10_code_embedding e ON c.Id = e.CodeId
+        LEFT JOIN icd10_category cat ON c.CategoryId = cat.Id
+        LEFT JOIN icd10_block b ON cat.BlockId = b.Id
+        LEFT JOIN icd10_chapter ch ON b.ChapterId = ch.Id
         WHERE e.Id IS NULL
     """
     if limit > 0:
@@ -45,13 +51,31 @@ def create_embedding_text(
     short_desc: str,
     long_desc: str,
     inclusion_terms: str,
-    exclusion_terms: str,
     code_also: str,
     code_first: str,
     synonyms: str,
+    category_code: str,
+    category_title: str,
+    block_code: str,
+    block_title: str,
+    chapter_number: str,
+    chapter_title: str,
 ) -> str:
-    """Create the text to embed from ALL code fields including synonyms."""
-    parts = [f"{code} {short_desc}"]
+    """Create embedding text from code fields + hierarchy. Excludes exclusion terms."""
+    parts = []
+
+    # Hierarchy context first
+    if chapter_title:
+        parts.append(f"Chapter {chapter_number}: {chapter_title}")
+
+    if block_title:
+        parts.append(f"Block {block_code}: {block_title}")
+
+    if category_title:
+        parts.append(f"Category {category_code}: {category_title}")
+
+    # Main code info
+    parts.append(f"{code} {short_desc}")
 
     if long_desc and long_desc != short_desc:
         parts.append(long_desc)
@@ -62,8 +86,7 @@ def create_embedding_text(
     if inclusion_terms:
         parts.append(f"Includes: {inclusion_terms}")
 
-    if exclusion_terms:
-        parts.append(f"Excludes: {exclusion_terms}")
+    # Note: Exclusion terms deliberately NOT included - they describe what this code is NOT
 
     if code_also:
         parts.append(f"Code also: {code_also}")
@@ -127,10 +150,15 @@ def main(db_path: str, batch_size: int, limit: int):
     for i in range(0, total, batch_size):
         batch = codes[i:i + batch_size]
 
-        # Create texts for batch - include ALL fields for better semantic search
+        # Create texts for batch - include hierarchy + all relevant fields (excluding exclusions)
         texts = [
-            create_embedding_text(code, short_desc, long_desc, incl, excl, code_also, code_first, synonyms)
-            for _, code, short_desc, long_desc, incl, excl, code_also, code_first, synonyms in batch
+            create_embedding_text(
+                code, short_desc, long_desc, incl, code_also, code_first, synonyms,
+                cat_code or "", cat_title or "", block_code or "", block_title or "",
+                chap_num or "", chap_title or ""
+            )
+            for _, code, short_desc, long_desc, incl, code_also, code_first, synonyms,
+                cat_code, cat_title, block_code, block_title, chap_num, chap_title in batch
         ]
 
         # Generate embeddings in batch

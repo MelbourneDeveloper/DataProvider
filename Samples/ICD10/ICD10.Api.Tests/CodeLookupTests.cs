@@ -1,7 +1,7 @@
 namespace ICD10.Api.Tests;
 
 /// <summary>
-/// E2E tests for ICD-10-AM code lookup endpoints - REAL database, NO mocks.
+/// E2E tests for ICD-10-CM code lookup endpoints - REAL database, NO mocks.
 /// </summary>
 public sealed class CodeLookupTests : IClassFixture<ICD10ApiFactory>
 {
@@ -28,7 +28,8 @@ public sealed class CodeLookupTests : IClassFixture<ICD10ApiFactory>
 
         Assert.Equal("A00.0", code.GetProperty("Code").GetString());
         Assert.Contains("Cholera", code.GetProperty("ShortDescription").GetString());
-        Assert.Equal("I", code.GetProperty("ChapterNumber").GetString());
+        // Chapter number is numeric in ICD-10-CM XML (1, not I)
+        Assert.Equal("1", code.GetProperty("ChapterNumber").GetString());
     }
 
     [Fact]
@@ -42,13 +43,14 @@ public sealed class CodeLookupTests : IClassFixture<ICD10ApiFactory>
     [Fact]
     public async Task GetCodeByCode_ReturnsFhirFormat_WhenRequested()
     {
-        var response = await _client.GetAsync("/api/icd10/codes/R07.4?format=fhir");
+        // Use A00.0 which exists in the database (R07.4 doesn't exist in ICD-10-CM 2025)
+        var response = await _client.GetAsync("/api/icd10/codes/A00.0?format=fhir");
         var content = await response.Content.ReadAsStringAsync();
         var fhir = JsonSerializer.Deserialize<JsonElement>(content);
 
         Assert.Equal("CodeSystem", fhir.GetProperty("ResourceType").GetString());
         Assert.Equal("http://hl7.org/fhir/sid/icd-10", fhir.GetProperty("Url").GetString());
-        Assert.Equal("R07.4", fhir.GetProperty("Concept").GetProperty("Code").GetString());
+        Assert.Equal("A00.0", fhir.GetProperty("Concept").GetProperty("Code").GetString());
     }
 
     [Fact]
@@ -106,7 +108,18 @@ public sealed class CodeLookupTests : IClassFixture<ICD10ApiFactory>
     [Fact]
     public async Task GetCategoriesByBlock_ReturnsCategories()
     {
-        var response = await _client.GetAsync("/api/icd10/blocks/blk-a00/categories");
+        // First get a real block ID from the database
+        var chaptersResponse = await _client.GetAsync("/api/icd10/chapters");
+        var chapters = await chaptersResponse.Content.ReadFromJsonAsync<JsonElement[]>();
+        var chapter1 = chapters!.First(c => c.GetProperty("ChapterNumber").GetString() == "1");
+        var chapterId = chapter1.GetProperty("Id").GetString();
+
+        var blocksResponse = await _client.GetAsync($"/api/icd10/chapters/{chapterId}/blocks");
+        var blocks = await blocksResponse.Content.ReadFromJsonAsync<JsonElement[]>();
+        var blockA00 = blocks!.First(b => b.GetProperty("BlockCode").GetString() == "A00-A09");
+        var blockId = blockA00.GetProperty("Id").GetString();
+
+        var response = await _client.GetAsync($"/api/icd10/blocks/{blockId}/categories");
         var categories = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(categories);
@@ -117,7 +130,23 @@ public sealed class CodeLookupTests : IClassFixture<ICD10ApiFactory>
     [Fact]
     public async Task GetCodesByCategory_ReturnsCodes()
     {
-        var response = await _client.GetAsync("/api/icd10/categories/cat-a00/codes");
+        // First get a real category ID from the database
+        var chaptersResponse = await _client.GetAsync("/api/icd10/chapters");
+        var chapters = await chaptersResponse.Content.ReadFromJsonAsync<JsonElement[]>();
+        var chapter1 = chapters!.First(c => c.GetProperty("ChapterNumber").GetString() == "1");
+        var chapterId = chapter1.GetProperty("Id").GetString();
+
+        var blocksResponse = await _client.GetAsync($"/api/icd10/chapters/{chapterId}/blocks");
+        var blocks = await blocksResponse.Content.ReadFromJsonAsync<JsonElement[]>();
+        var blockA00 = blocks!.First(b => b.GetProperty("BlockCode").GetString() == "A00-A09");
+        var blockId = blockA00.GetProperty("Id").GetString();
+
+        var categoriesResponse = await _client.GetAsync($"/api/icd10/blocks/{blockId}/categories");
+        var categories = await categoriesResponse.Content.ReadFromJsonAsync<JsonElement[]>();
+        var catA00 = categories!.First(c => c.GetProperty("CategoryCode").GetString() == "A00");
+        var categoryId = catA00.GetProperty("Id").GetString();
+
+        var response = await _client.GetAsync($"/api/icd10/categories/{categoryId}/codes");
         var codes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(codes);
@@ -219,7 +248,7 @@ public sealed class CodeLookupTests : IClassFixture<ICD10ApiFactory>
         // Codes returned by RAG search (from icd10_code_embedding) MUST be lookupable
         // via /api/icd10/codes/{code}
 
-        // I21.11 is seeded in icd10_code (used by RAG search)
+        // I21.11 exists in the database
         var response = await _client.GetAsync("/api/icd10/codes/I21.11");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -234,10 +263,10 @@ public sealed class CodeLookupTests : IClassFixture<ICD10ApiFactory>
     }
 
     [Fact]
-    public async Task Icd10Cm_LookupAllSeededCodes_AllSucceed()
+    public async Task Icd10Cm_LookupCommonCodes_AllSucceed()
     {
-        // Verify ALL codes seeded in ICD10ApiFactory can be looked up
-        var seededCodes = new[]
+        // Verify common ICD-10-CM codes can be looked up (these all exist in CDC 2025 data)
+        var commonCodes = new[]
         {
             ("A00.0", "cholera"),
             ("E10.9", "diabetes"),
@@ -248,11 +277,11 @@ public sealed class CodeLookupTests : IClassFixture<ICD10ApiFactory>
             ("I21.4", "myocardial infarction"),
             ("J06.9", "respiratory infection"),
             ("R06.00", "dyspnea"),
-            ("R07.4", "chest pain"),
+            ("R07.9", "chest pain"),  // R07.4 doesn't exist, R07.9 does
             ("R07.89", "chest pain"),
         };
 
-        foreach (var (code, expectedDescription) in seededCodes)
+        foreach (var (code, expectedDescription) in commonCodes)
         {
             var response = await _client.GetAsync($"/api/icd10/codes/{code}");
             Assert.True(

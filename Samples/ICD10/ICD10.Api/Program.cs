@@ -27,31 +27,8 @@ builder.Services.AddCors(options =>
 });
 
 // Always use a real SQLite file - NEVER in-memory
-// Look for icd10.db (populated by Python import script) in parent directories
-var dbPath = builder.Configuration["DbPath"] ?? FindDatabaseFile();
-
-static string FindDatabaseFile()
-{
-    var searchPaths = new[]
-    {
-        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "icd10.db"),
-        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "icd10.db"),
-        Path.Combine(AppContext.BaseDirectory, "..", "icd10.db"),
-        Path.Combine(AppContext.BaseDirectory, "icd10.db"),
-    };
-
-    foreach (var path in searchPaths)
-    {
-        var fullPath = Path.GetFullPath(path);
-        if (File.Exists(fullPath))
-        {
-            return fullPath;
-        }
-    }
-
-    // Fallback to default location
-    return Path.Combine(AppContext.BaseDirectory, "icd10.db");
-}
+// Database is in ICD10.Api project folder, copied to output by csproj
+var dbPath = builder.Configuration["DbPath"] ?? Path.Combine(AppContext.BaseDirectory, "icd10.db");
 var connectionString = new SqliteConnectionStringBuilder
 {
     DataSource = dbPath,
@@ -235,7 +212,9 @@ icdGroup.MapGet(
             var (derivedChapNum, derivedChapTitle) = chapNumNull
                 ? Icd10Chapters.GetChapter(code)
                 : (reader.GetString(9), chapTitleNull ? "" : reader.GetString(10));
-            var derivedCatCode = catCodeNull ? Icd10Chapters.GetCategory(code) : reader.GetString(5);
+            var derivedCatCode = catCodeNull
+                ? Icd10Chapters.GetCategory(code)
+                : reader.GetString(5);
             var (derivedBlockCode, derivedBlockTitle) = blockCodeNull
                 ? Icd10Chapters.GetBlock(code)
                 : (reader.GetString(7), blockTitleNull ? "" : reader.GetString(8));
@@ -254,12 +233,24 @@ icdGroup.MapGet(
                     BlockTitle = derivedBlockTitle,
                     ChapterNumber = derivedChapNum,
                     ChapterTitle = derivedChapTitle,
-                    InclusionTerms = await reader.IsDBNullAsync(11).ConfigureAwait(false) ? "" : reader.GetString(11),
-                    ExclusionTerms = await reader.IsDBNullAsync(12).ConfigureAwait(false) ? "" : reader.GetString(12),
-                    CodeAlso = await reader.IsDBNullAsync(13).ConfigureAwait(false) ? "" : reader.GetString(13),
-                    CodeFirst = await reader.IsDBNullAsync(14).ConfigureAwait(false) ? "" : reader.GetString(14),
-                    Synonyms = await reader.IsDBNullAsync(15).ConfigureAwait(false) ? "" : reader.GetString(15),
-                    Edition = await reader.IsDBNullAsync(16).ConfigureAwait(false) ? "" : reader.GetString(16),
+                    InclusionTerms = await reader.IsDBNullAsync(11).ConfigureAwait(false)
+                        ? ""
+                        : reader.GetString(11),
+                    ExclusionTerms = await reader.IsDBNullAsync(12).ConfigureAwait(false)
+                        ? ""
+                        : reader.GetString(12),
+                    CodeAlso = await reader.IsDBNullAsync(13).ConfigureAwait(false)
+                        ? ""
+                        : reader.GetString(13),
+                    CodeFirst = await reader.IsDBNullAsync(14).ConfigureAwait(false)
+                        ? ""
+                        : reader.GetString(14),
+                    Synonyms = await reader.IsDBNullAsync(15).ConfigureAwait(false)
+                        ? ""
+                        : reader.GetString(15),
+                    Edition = await reader.IsDBNullAsync(16).ConfigureAwait(false)
+                        ? ""
+                        : reader.GetString(16),
                 }
             );
         }
@@ -533,12 +524,27 @@ app.MapGet(
         using var conn = getConn();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT COUNT(*) FROM icd10_code";
-        var count = Convert.ToInt64(cmd.ExecuteScalar(), System.Globalization.CultureInfo.InvariantCulture);
+        var count = Convert.ToInt64(
+            cmd.ExecuteScalar(),
+            System.Globalization.CultureInfo.InvariantCulture
+        );
 
         return count > 0
-            ? Results.Ok(new { Status = "healthy", Service = "ICD10.Api", CodesLoaded = count })
+            ? Results.Ok(
+                new
+                {
+                    Status = "healthy",
+                    Service = "ICD10.Api",
+                    CodesLoaded = count,
+                }
+            )
             : Results.Json(
-                new { Status = "unhealthy", Service = "ICD10.Api", Error = "No ICD-10 codes loaded" },
+                new
+                {
+                    Status = "unhealthy",
+                    Service = "ICD10.Api",
+                    Error = "No ICD-10 codes loaded",
+                },
                 statusCode: 503
             );
     }
@@ -801,17 +807,32 @@ namespace ICD10.Api
             return category switch
             {
                 // Eye blocks (Chapter 7)
-                var c when c.StartsWith("H53", StringComparison.Ordinal) || c.StartsWith("H54", StringComparison.Ordinal)
-                    => ("H53-H54", "Visual disturbances and blindness"),
-                var c when c.StartsWith("H49", StringComparison.Ordinal) || c.StartsWith("H50", StringComparison.Ordinal)
-                    || c.StartsWith("H51", StringComparison.Ordinal) || c.StartsWith("H52", StringComparison.Ordinal)
-                    => ("H49-H52", "Disorders of ocular muscles and binocular movement"),
+                var c
+                    when c.StartsWith("H53", StringComparison.Ordinal)
+                        || c.StartsWith("H54", StringComparison.Ordinal) => (
+                    "H53-H54",
+                    "Visual disturbances and blindness"
+                ),
+                var c
+                    when c.StartsWith("H49", StringComparison.Ordinal)
+                        || c.StartsWith("H50", StringComparison.Ordinal)
+                        || c.StartsWith("H51", StringComparison.Ordinal)
+                        || c.StartsWith("H52", StringComparison.Ordinal) => (
+                    "H49-H52",
+                    "Disorders of ocular muscles and binocular movement"
+                ),
                 // Congenital malformations (Chapter 17)
-                var c when c.StartsWith("Q50", StringComparison.Ordinal) || c.StartsWith("Q51", StringComparison.Ordinal)
-                    || c.StartsWith("Q52", StringComparison.Ordinal) || c.StartsWith("Q53", StringComparison.Ordinal)
-                    || c.StartsWith("Q54", StringComparison.Ordinal) || c.StartsWith("Q55", StringComparison.Ordinal)
-                    || c.StartsWith("Q56", StringComparison.Ordinal)
-                    => ("Q50-Q56", "Congenital malformations of genital organs"),
+                var c
+                    when c.StartsWith("Q50", StringComparison.Ordinal)
+                        || c.StartsWith("Q51", StringComparison.Ordinal)
+                        || c.StartsWith("Q52", StringComparison.Ordinal)
+                        || c.StartsWith("Q53", StringComparison.Ordinal)
+                        || c.StartsWith("Q54", StringComparison.Ordinal)
+                        || c.StartsWith("Q55", StringComparison.Ordinal)
+                        || c.StartsWith("Q56", StringComparison.Ordinal) => (
+                    "Q50-Q56",
+                    "Congenital malformations of genital organs"
+                ),
                 // Default: use category as pseudo-block
                 _ => (category, ""),
             };

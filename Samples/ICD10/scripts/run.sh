@@ -7,7 +7,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 API_DIR="${PROJECT_DIR}/ICD10.Api"
-DB_PATH="${PROJECT_DIR}/icd10.db"
+DB_PATH="${PROJECT_DIR}/ICD10.Api/icd10.db"
 PORT="${1:-5558}"
 
 echo "=== Starting ICD-10 Service ==="
