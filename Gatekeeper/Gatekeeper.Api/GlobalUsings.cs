@@ -6,8 +6,8 @@ global using System.Text.Json;
 global using Fido2NetLib;
 global using Fido2NetLib.Objects;
 global using Generated;
-global using Microsoft.Data.Sqlite;
 global using Microsoft.Extensions.Logging;
+global using Npgsql;
 global using Outcome;
 global using Selecta;
 global using CheckResourceGrantOk = Outcome.Result<

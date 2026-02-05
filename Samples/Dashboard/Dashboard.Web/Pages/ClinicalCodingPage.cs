@@ -820,7 +820,7 @@ namespace Dashboard.Pages
                 }
             );
 
-        private static void SelectCode(
+        private static async void SelectCode(
             Icd10Code code,
             ClinicalCodingState state,
             Action<ClinicalCodingState> setState
@@ -834,13 +834,51 @@ namespace Dashboard.Pages
                     Icd10Results = state.Icd10Results,
                     AchiResults = state.AchiResults,
                     SemanticResults = state.SemanticResults,
-                    SelectedCode = code,
-                    Loading = false,
+                    SelectedCode = null,
+                    Loading = true,
                     Error = null,
                     IncludeAchi = state.IncludeAchi,
                     CopiedCode = state.CopiedCode,
                 }
             );
+
+            try
+            {
+                var fullCode = await ApiClient.GetIcd10CodeAsync(code: code.Code);
+                setState(
+                    new ClinicalCodingState
+                    {
+                        SearchQuery = state.SearchQuery,
+                        SearchMode = state.SearchMode,
+                        Icd10Results = state.Icd10Results,
+                        AchiResults = state.AchiResults,
+                        SemanticResults = state.SemanticResults,
+                        SelectedCode = fullCode,
+                        Loading = false,
+                        Error = null,
+                        IncludeAchi = state.IncludeAchi,
+                        CopiedCode = state.CopiedCode,
+                    }
+                );
+            }
+            catch (Exception ex)
+            {
+                setState(
+                    new ClinicalCodingState
+                    {
+                        SearchQuery = state.SearchQuery,
+                        SearchMode = state.SearchMode,
+                        Icd10Results = state.Icd10Results,
+                        AchiResults = state.AchiResults,
+                        SemanticResults = state.SemanticResults,
+                        SelectedCode = null,
+                        Loading = false,
+                        Error = "Failed to load code details: " + ex.Message,
+                        IncludeAchi = state.IncludeAchi,
+                        CopiedCode = state.CopiedCode,
+                    }
+                );
+            }
         }
 
         private static void CopyCode(

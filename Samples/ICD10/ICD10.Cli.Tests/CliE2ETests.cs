@@ -717,7 +717,11 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         Assert.Contains("Hypertensive", output, StringComparison.OrdinalIgnoreCase);
 
         // Category I10 - "Essential (primary) hypertension"
-        Assert.Contains("Essential (primary) hypertension", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "Essential (primary) hypertension",
+            output,
+            StringComparison.OrdinalIgnoreCase
+        );
 
         // Synonym (actual database synonym)
         Assert.Contains("benign", output, StringComparison.OrdinalIgnoreCase);
@@ -863,7 +867,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
         var output = console.Output;
         Assert.Contains("I10", output);
         Assert.Contains("Chapter", output, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("9", output);  // ICD-10-CM uses numeric chapter numbers
+        Assert.Contains("9", output); // ICD-10-CM uses numeric chapter numbers
         Assert.Contains("circulatory", output, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -947,7 +951,7 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
 
         // ASSERT: CHAPTER is displayed (Chapter 9 - Circulatory)
         Assert.Contains("Chapter", output, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("9", output);  // ICD-10-CM uses numeric chapter numbers
+        Assert.Contains("9", output); // ICD-10-CM uses numeric chapter numbers
         Assert.Contains("circulatory", output, StringComparison.OrdinalIgnoreCase);
 
         // ASSERT: BLOCK is displayed (I10-I1A - Hypertensive diseases, ICD-10-CM 2025)
@@ -957,7 +961,11 @@ public sealed class CliE2ETests : IClassFixture<CliTestFixture>
 
         // ASSERT: CATEGORY is displayed (I10 - Essential (primary) hypertension)
         Assert.Contains("Category", output, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Essential (primary) hypertension", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "Essential (primary) hypertension",
+            output,
+            StringComparison.OrdinalIgnoreCase
+        );
 
         // ASSERT: SYNONYMS are displayed (actual database synonyms)
         Assert.Contains("Synonym", output, StringComparison.OrdinalIgnoreCase);

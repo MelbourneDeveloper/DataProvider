@@ -277,7 +277,7 @@ public sealed class CodeLookupTests : IClassFixture<ICD10ApiFactory>
             ("I21.4", "myocardial infarction"),
             ("J06.9", "respiratory infection"),
             ("R06.00", "dyspnea"),
-            ("R07.9", "chest pain"),  // R07.4 doesn't exist, R07.9 does
+            ("R07.9", "chest pain"), // R07.4 doesn't exist, R07.9 does
             ("R07.89", "chest pain"),
         };
 

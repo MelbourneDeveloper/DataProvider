@@ -33,15 +33,9 @@ builder.Services.AddFido2(options =>
     options.TimestampDriftTolerance = 300000;
 });
 
-var dbPath =
-    builder.Configuration["DbPath"] ?? Path.Combine(AppContext.BaseDirectory, "gatekeeper.db");
-var connectionString = new SqliteConnectionStringBuilder
-{
-    DataSource = dbPath,
-    ForeignKeys = true,
-    Pooling = false, // Disable pooling for test isolation
-    Cache = SqliteCacheMode.Shared, // Use shared cache for better cross-connection visibility
-}.ToString();
+var connectionString =
+    builder.Configuration.GetConnectionString("Postgres")
+    ?? throw new InvalidOperationException("PostgreSQL connection string 'Postgres' is required");
 
 builder.Services.AddSingleton(new DbConfig(connectionString));
 
@@ -53,7 +47,7 @@ builder.Services.AddSingleton(new JwtConfig(signingKey, TimeSpan.FromHours(24)))
 
 var app = builder.Build();
 
-using (var conn = new SqliteConnection(connectionString))
+using (var conn = new NpgsqlConnection(connectionString))
 {
     conn.Open();
     DatabaseSetup.Initialize(conn, app.Logger);
@@ -63,9 +57,9 @@ app.UseCors("Dashboard");
 
 static string Now() => DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
 
-static SqliteConnection OpenConnection(DbConfig db)
+static NpgsqlConnection OpenConnection(DbConfig db)
 {
-    var conn = new SqliteConnection(db.ConnectionString);
+    var conn = new NpgsqlConnection(db.ConnectionString);
     conn.Open();
     return conn;
 }

@@ -27,7 +27,10 @@ public sealed class ChapterEndpointTests : IClassFixture<ICD10ApiFactory>
         var chapters = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(chapters);
-        Assert.True(chapters.Length >= 20, $"Expected at least 20 chapters from ICD-10-CM, got {chapters.Length}");
+        Assert.True(
+            chapters.Length >= 20,
+            $"Expected at least 20 chapters from ICD-10-CM, got {chapters.Length}"
+        );
         // ICD-10-CM uses numeric chapter numbers (1, 2, 3... not Roman numerals)
         Assert.Contains(chapters, c => c.GetProperty("ChapterNumber").GetString() == "1");
         Assert.Contains(chapters, c => c.GetProperty("ChapterNumber").GetString() == "18");

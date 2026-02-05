@@ -1,0 +1,27 @@
+# Dashboard build with H5 transpilation then nginx serving
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+# Copy solution and project files for restore
+COPY *.sln ./
+COPY Directory.Build.props ./
+COPY Directory.Packages.props ./
+COPY Samples/Dashboard/Dashboard.Web/Dashboard.Web.csproj Samples/Dashboard/Dashboard.Web/
+
+# Restore
+RUN dotnet restore Samples/Dashboard/Dashboard.Web/Dashboard.Web.csproj
+
+# Copy everything and build
+COPY . .
+WORKDIR /src/Samples/Dashboard/Dashboard.Web
+RUN dotnet publish -c Release -o /app/publish --no-restore
+
+# Nginx image for serving static files
+FROM nginx:alpine AS runtime
+COPY --from=build /app/publish/wwwroot /usr/share/nginx/html
+COPY Samples/docker/nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost/health || exit 1

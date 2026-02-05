@@ -1,6 +1,5 @@
 using System.Globalization;
-using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using Outcome;
 
 namespace Gatekeeper.Api.Tests;
@@ -349,23 +348,42 @@ public sealed class AuthorizationTests : IClassFixture<GatekeeperTestFixture>
 /// <summary>
 /// Test fixture providing shared setup for Gatekeeper tests.
 /// Creates test users and tokens without WebAuthn ceremony.
+/// Uses PostgreSQL test database.
 /// </summary>
 public sealed class GatekeeperTestFixture : IDisposable
 {
     private readonly WebApplicationFactory<Program> _factory;
     private readonly byte[] _signingKey;
+    private readonly string _dbName;
+    private readonly string _connectionString;
 
     public GatekeeperTestFixture()
     {
-        // Use full absolute path for the test database
-        var dbPath = Path.GetFullPath(
-            Path.Combine(Path.GetTempPath(), $"gatekeeper-test-{Guid.NewGuid()}.db")
-        );
+        var baseConnectionString =
+            Environment.GetEnvironmentVariable("TEST_POSTGRES_CONNECTION")
+            ?? "Host=localhost;Database=postgres;Username=postgres;Password=postgres";
+
+        _dbName = $"test_gatekeeper_{Guid.NewGuid():N}";
         _signingKey = new byte[32];
+
+        // Create test database
+        using (var adminConn = new NpgsqlConnection(baseConnectionString))
+        {
+            adminConn.Open();
+            using var createCmd = adminConn.CreateCommand();
+            createCmd.CommandText = $"CREATE DATABASE {_dbName}";
+            createCmd.ExecuteNonQuery();
+        }
+
+        // Build connection string for test database
+        _connectionString = baseConnectionString.Replace(
+            "Database=postgres",
+            $"Database={_dbName}"
+        );
 
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
-            builder.UseSetting("DbPath", dbPath);
+            builder.UseSetting("ConnectionStrings:Postgres", _connectionString);
             builder.UseSetting("Jwt:SigningKey", Convert.ToBase64String(_signingKey));
         });
 
@@ -376,17 +394,13 @@ public sealed class GatekeeperTestFixture : IDisposable
         _ = client.PostAsJsonAsync("/auth/login/begin", new { }).GetAwaiter().GetResult();
     }
 
-    /// <summary>Gets the connection string from the app's DbConfig singleton.</summary>
-    private string GetConnectionString() =>
-        _factory.Services.GetRequiredService<DbConfig>().ConnectionString;
-
     /// <summary>Creates a fresh HTTP client for testing.</summary>
     public HttpClient CreateClient() => _factory.CreateClient();
 
     /// <summary>Opens a database connection for direct data access.</summary>
-    public SqliteConnection OpenConnection()
+    public NpgsqlConnection OpenConnection()
     {
-        var conn = new SqliteConnection(GetConnectionString());
+        var conn = new NpgsqlConnection(_connectionString);
         conn.Open();
         return conn;
     }
@@ -409,7 +423,7 @@ public sealed class GatekeeperTestFixture : IDisposable
     public async Task<(string Token, string UserId)> CreateTestUserAndGetTokenWithId(string email)
     {
         using var conn = OpenConnection();
-        using var tx = conn.BeginTransaction();
+        await using var tx = await conn.BeginTransactionAsync().ConfigureAwait(false);
 
         var userId = Guid.NewGuid().ToString();
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
@@ -436,10 +450,7 @@ public sealed class GatekeeperTestFixture : IDisposable
             )
             .ConfigureAwait(false);
 
-        tx.Commit();
-
-        // Force WAL checkpoint to ensure changes are visible to other connections
-        _ = await conn.WalCheckpointAsync().ConfigureAwait(false);
+        await tx.CommitAsync().ConfigureAwait(false);
 
         var token = TokenService.CreateToken(
             userId,
@@ -460,7 +471,7 @@ public sealed class GatekeeperTestFixture : IDisposable
     public async Task<string> CreateAdminUserAndGetToken(string email)
     {
         using var conn = OpenConnection();
-        using var tx = conn.BeginTransaction();
+        await using var tx = await conn.BeginTransactionAsync().ConfigureAwait(false);
 
         var userId = Guid.NewGuid().ToString();
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
@@ -487,10 +498,7 @@ public sealed class GatekeeperTestFixture : IDisposable
             )
             .ConfigureAwait(false);
 
-        tx.Commit();
-
-        // Force WAL checkpoint to ensure changes are visible to other connections
-        _ = await conn.WalCheckpointAsync().ConfigureAwait(false);
+        await tx.CommitAsync().ConfigureAwait(false);
 
         var token = TokenService.CreateToken(
             userId,
@@ -534,7 +542,7 @@ public sealed class GatekeeperTestFixture : IDisposable
                 $"Permission '{permissionCode}' not found in seeded database"
             );
 
-        using var tx = conn.BeginTransaction();
+        await using var tx = await conn.BeginTransactionAsync().ConfigureAwait(false);
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
         var grantId = Guid.NewGuid().ToString();
 
@@ -558,10 +566,7 @@ public sealed class GatekeeperTestFixture : IDisposable
             );
         }
 
-        tx.Commit();
-
-        // Force WAL checkpoint to ensure changes are visible to other connections
-        _ = await conn.WalCheckpointAsync().ConfigureAwait(false);
+        await tx.CommitAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -594,7 +599,7 @@ public sealed class GatekeeperTestFixture : IDisposable
                 $"Permission '{permissionCode}' not found in seeded database"
             );
 
-        using var tx = conn.BeginTransaction();
+        await using var tx = await conn.BeginTransactionAsync().ConfigureAwait(false);
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
         var expired = DateTime.UtcNow.AddHours(-1).ToString("o", CultureInfo.InvariantCulture);
         var grantId = Guid.NewGuid().ToString();
@@ -612,12 +617,30 @@ public sealed class GatekeeperTestFixture : IDisposable
             )
             .ConfigureAwait(false);
 
-        tx.Commit();
-
-        // Force WAL checkpoint to ensure changes are visible to other connections
-        _ = await conn.WalCheckpointAsync().ConfigureAwait(false);
+        await tx.CommitAsync().ConfigureAwait(false);
     }
 
-    /// <summary>Disposes the test fixture.</summary>
-    public void Dispose() => _factory.Dispose();
+    /// <summary>Disposes the test fixture and cleans up test database.</summary>
+    public void Dispose()
+    {
+        _factory.Dispose();
+
+        var baseConnectionString =
+            Environment.GetEnvironmentVariable("TEST_POSTGRES_CONNECTION")
+            ?? "Host=localhost;Database=postgres;Username=postgres;Password=postgres";
+
+        // Drop the test database
+        using var adminConn = new NpgsqlConnection(baseConnectionString);
+        adminConn.Open();
+
+        // Terminate any existing connections to the database
+        using var terminateCmd = adminConn.CreateCommand();
+        terminateCmd.CommandText =
+            $"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{_dbName}'";
+        terminateCmd.ExecuteNonQuery();
+
+        using var dropCmd = adminConn.CreateCommand();
+        dropCmd.CommandText = $"DROP DATABASE IF EXISTS {_dbName}";
+        dropCmd.ExecuteNonQuery();
+    }
 }

@@ -1,7 +1,7 @@
 using System.Globalization;
-using Microsoft.Data.Sqlite;
 using Migration;
-using Migration.SQLite;
+using Migration.Postgres;
+using Npgsql;
 
 namespace Gatekeeper.Api.Tests;
 
@@ -508,10 +508,30 @@ public sealed class TokenServiceTests
         Assert.Null(token);
     }
 
-    private static (SqliteConnection Connection, string DbPath) CreateTestDb()
+    private static (NpgsqlConnection Connection, string DbName) CreateTestDb()
     {
-        var dbPath = Path.Combine(Path.GetTempPath(), $"tokenservice_{Guid.NewGuid():N}.db");
-        var conn = new SqliteConnection($"Data Source={dbPath}");
+        // Connect to PostgreSQL server - use environment variable or default to localhost
+        var baseConnectionString =
+            Environment.GetEnvironmentVariable("TEST_POSTGRES_CONNECTION")
+            ?? "Host=localhost;Database=postgres;Username=postgres;Password=postgres";
+
+        var dbName = $"test_tokenservice_{Guid.NewGuid():N}";
+
+        // Create test database
+        using (var adminConn = new NpgsqlConnection(baseConnectionString))
+        {
+            adminConn.Open();
+            using var createCmd = adminConn.CreateCommand();
+            createCmd.CommandText = $"CREATE DATABASE {dbName}";
+            createCmd.ExecuteNonQuery();
+        }
+
+        // Connect to the new test database
+        var testConnectionString = baseConnectionString.Replace(
+            "Database=postgres",
+            $"Database={dbName}"
+        );
+        var conn = new NpgsqlConnection(testConnectionString);
         conn.Open();
 
         // Use the YAML schema to create only the needed tables
@@ -522,7 +542,7 @@ public sealed class TokenServiceTests
 
         foreach (var table in schema.Tables.Where(t => neededTables.Contains(t.Name)))
         {
-            var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
+            var ddl = PostgresDdlGenerator.Generate(new CreateTableOperation(table));
             foreach (
                 var statement in ddl.Split(
                     ';',
@@ -540,23 +560,31 @@ public sealed class TokenServiceTests
             }
         }
 
-        return (conn, dbPath);
+        return (conn, dbName);
     }
 
-    private static void CleanupTestDb(SqliteConnection connection, string dbPath)
+    private static void CleanupTestDb(NpgsqlConnection connection, string dbName)
     {
+        var baseConnectionString =
+            Environment.GetEnvironmentVariable("TEST_POSTGRES_CONNECTION")
+            ?? "Host=localhost;Database=postgres;Username=postgres;Password=postgres";
+
         connection.Close();
         connection.Dispose();
-        if (File.Exists(dbPath))
-        {
-            try
-            {
-                File.Delete(dbPath);
-            }
-            catch
-            { /* File may be locked */
-            }
-        }
+
+        // Drop the test database
+        using var adminConn = new NpgsqlConnection(baseConnectionString);
+        adminConn.Open();
+
+        // Terminate any existing connections to the database
+        using var terminateCmd = adminConn.CreateCommand();
+        terminateCmd.CommandText =
+            $"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{dbName}'";
+        terminateCmd.ExecuteNonQuery();
+
+        using var dropCmd = adminConn.CreateCommand();
+        dropCmd.CommandText = $"DROP DATABASE IF EXISTS {dbName}";
+        dropCmd.ExecuteNonQuery();
     }
 
     private static string Base64UrlDecode(string input)

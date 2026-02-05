@@ -26,18 +26,13 @@ builder.Services.AddCors(options =>
     );
 });
 
-// Always use a real SQLite file - NEVER in-memory
-// Database is in ICD10.Api project folder, copied to output by csproj
-var dbPath = builder.Configuration["DbPath"] ?? Path.Combine(AppContext.BaseDirectory, "icd10.db");
-var connectionString = new SqliteConnectionStringBuilder
-{
-    DataSource = dbPath,
-    ForeignKeys = true,
-}.ToString();
+var connectionString =
+    builder.Configuration.GetConnectionString("Postgres")
+    ?? throw new InvalidOperationException("PostgreSQL connection string 'Postgres' is required");
 
 builder.Services.AddSingleton(() =>
 {
-    var conn = new SqliteConnection(connectionString);
+    var conn = new NpgsqlConnection(connectionString);
     conn.Open();
     return conn;
 });
@@ -72,7 +67,7 @@ builder.Services.AddHttpClient(
 
 var app = builder.Build();
 
-using (var conn = new SqliteConnection(connectionString))
+using (var conn = new NpgsqlConnection(connectionString))
 {
     conn.Open();
     DatabaseSetup.Initialize(conn, app.Logger);
@@ -90,7 +85,7 @@ var icdGroup = app.MapGroup("/api/icd10").WithTags("ICD-10");
 
 icdGroup.MapGet(
     "/chapters",
-    async (Func<SqliteConnection> getConn) =>
+    async (Func<NpgsqlConnection> getConn) =>
     {
         using var conn = getConn();
         var result = await conn.GetChaptersAsync().ConfigureAwait(false);
@@ -104,7 +99,7 @@ icdGroup.MapGet(
 
 icdGroup.MapGet(
     "/chapters/{chapterId}/blocks",
-    async (string chapterId, Func<SqliteConnection> getConn) =>
+    async (string chapterId, Func<NpgsqlConnection> getConn) =>
     {
         using var conn = getConn();
         var result = await conn.GetBlocksByChapterAsync(chapterId).ConfigureAwait(false);
@@ -118,7 +113,7 @@ icdGroup.MapGet(
 
 icdGroup.MapGet(
     "/blocks/{blockId}/categories",
-    async (string blockId, Func<SqliteConnection> getConn) =>
+    async (string blockId, Func<NpgsqlConnection> getConn) =>
     {
         using var conn = getConn();
         var result = await conn.GetCategoriesByBlockAsync(blockId).ConfigureAwait(false);
@@ -132,7 +127,7 @@ icdGroup.MapGet(
 
 icdGroup.MapGet(
     "/categories/{categoryId}/codes",
-    async (string categoryId, Func<SqliteConnection> getConn) =>
+    async (string categoryId, Func<NpgsqlConnection> getConn) =>
     {
         using var conn = getConn();
         var result = await conn.GetCodesByCategoryAsync(categoryId).ConfigureAwait(false);
@@ -150,7 +145,7 @@ icdGroup.MapGet(
 
 icdGroup.MapGet(
     "/codes/{code}",
-    async (string code, string? format, Func<SqliteConnection> getConn) =>
+    async (string code, string? format, Func<NpgsqlConnection> getConn) =>
     {
         using var conn = getConn();
         var result = await conn.GetCodeByCodeAsync(code).ConfigureAwait(false);
@@ -167,7 +162,7 @@ icdGroup.MapGet(
 
 icdGroup.MapGet(
     "/codes",
-    async (string q, int? limit, Func<SqliteConnection> getConn) =>
+    async (string q, int? limit, Func<NpgsqlConnection> getConn) =>
     {
         using var conn = getConn();
         var searchLimit = limit ?? 20;
@@ -266,7 +261,7 @@ var achiGroup = app.MapGroup("/api/achi").WithTags("ACHI");
 
 achiGroup.MapGet(
     "/blocks",
-    async (Func<SqliteConnection> getConn) =>
+    async (Func<NpgsqlConnection> getConn) =>
     {
         using var conn = getConn();
         var result = await conn.GetAchiBlocksAsync().ConfigureAwait(false);
@@ -280,7 +275,7 @@ achiGroup.MapGet(
 
 achiGroup.MapGet(
     "/blocks/{blockId}/codes",
-    async (string blockId, Func<SqliteConnection> getConn) =>
+    async (string blockId, Func<NpgsqlConnection> getConn) =>
     {
         using var conn = getConn();
         var result = await conn.GetAchiCodesByBlockAsync(blockId).ConfigureAwait(false);
@@ -294,7 +289,7 @@ achiGroup.MapGet(
 
 achiGroup.MapGet(
     "/codes/{code}",
-    async (string code, string? format, Func<SqliteConnection> getConn) =>
+    async (string code, string? format, Func<NpgsqlConnection> getConn) =>
     {
         using var conn = getConn();
         var result = await conn.GetAchiCodeByCodeAsync(code).ConfigureAwait(false);
@@ -311,7 +306,7 @@ achiGroup.MapGet(
 
 achiGroup.MapGet(
     "/codes",
-    async (string q, int? limit, Func<SqliteConnection> getConn) =>
+    async (string q, int? limit, Func<NpgsqlConnection> getConn) =>
     {
         using var conn = getConn();
         var searchLimit = limit ?? 20;
@@ -357,7 +352,7 @@ app.MapPost(
     "/api/search",
     async (
         RagSearchRequest request,
-        Func<SqliteConnection> getConn,
+        Func<NpgsqlConnection> getConn,
         IHttpClientFactory httpClientFactory
     ) =>
     {
@@ -519,7 +514,7 @@ app.MapPost(
 
 app.MapGet(
     "/health",
-    (Func<SqliteConnection> getConn) =>
+    (Func<NpgsqlConnection> getConn) =>
     {
         using var conn = getConn();
         using var cmd = conn.CreateCommand();

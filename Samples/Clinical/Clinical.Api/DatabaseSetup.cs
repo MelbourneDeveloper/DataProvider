@@ -1,5 +1,5 @@
 using Migration;
-using Migration.SQLite;
+using Migration.Postgres;
 
 namespace Clinical.Api;
 
@@ -11,10 +11,10 @@ internal static class DatabaseSetup
     /// <summary>
     /// Creates the database schema and sync infrastructure using Migration.
     /// </summary>
-    public static void Initialize(SqliteConnection connection, ILogger logger)
+    public static void Initialize(NpgsqlConnection connection, ILogger logger)
     {
-        var schemaResult = SyncSchema.CreateSchema(connection);
-        var originResult = SyncSchema.SetOriginId(connection, Guid.NewGuid().ToString());
+        var schemaResult = PostgresSyncSchema.CreateSchema(connection);
+        var originResult = PostgresSyncSchema.SetOriginId(connection, Guid.NewGuid().ToString());
 
         if (schemaResult is Result<bool, SyncError>.Error<bool, SyncError> schemaErr)
         {
@@ -44,7 +44,7 @@ internal static class DatabaseSetup
 
             foreach (var table in schema.Tables)
             {
-                var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
+                var ddl = PostgresDdlGenerator.Generate(new CreateTableOperation(table));
                 using var cmd = connection.CreateCommand();
                 cmd.CommandText = ddl;
                 cmd.ExecuteNonQuery();
@@ -68,7 +68,7 @@ internal static class DatabaseSetup
         };
         foreach (var table in triggerTables)
         {
-            var triggerResult = TriggerGenerator.CreateTriggers(connection, table, logger);
+            var triggerResult = PostgresTriggerGenerator.CreateTriggers(connection, table, logger);
             if (triggerResult is Result<bool, SyncError>.Error<bool, SyncError> triggerErr)
             {
                 logger.Log(

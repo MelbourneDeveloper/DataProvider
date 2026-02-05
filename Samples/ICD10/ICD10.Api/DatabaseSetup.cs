@@ -1,5 +1,5 @@
 using Migration;
-using Migration.SQLite;
+using Migration.Postgres;
 
 namespace ICD10.Api;
 
@@ -11,7 +11,7 @@ internal static class DatabaseSetup
     /// <summary>
     /// Creates the database schema using Migration.
     /// </summary>
-    public static void Initialize(SqliteConnection connection, ILogger logger)
+    public static void Initialize(NpgsqlConnection connection, ILogger logger)
     {
         try
         {
@@ -19,7 +19,7 @@ internal static class DatabaseSetup
             using (var checkCmd = connection.CreateCommand())
             {
                 checkCmd.CommandText =
-                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='icd10_chapter'";
+                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'icd10_chapter'";
                 var count = Convert.ToInt64(
                     checkCmd.ExecuteScalar(),
                     System.Globalization.CultureInfo.InvariantCulture
@@ -39,7 +39,7 @@ internal static class DatabaseSetup
 
             foreach (var table in schema.Tables)
             {
-                var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
+                var ddl = PostgresDdlGenerator.Generate(new CreateTableOperation(table));
                 using var cmd = connection.CreateCommand();
                 cmd.CommandText = ddl;
                 cmd.ExecuteNonQuery();

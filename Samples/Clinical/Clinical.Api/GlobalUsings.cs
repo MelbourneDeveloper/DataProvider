@@ -1,10 +1,10 @@
 global using System;
 global using Generated;
-global using Microsoft.Data.Sqlite;
 global using Microsoft.Extensions.Logging;
+global using Npgsql;
 global using Outcome;
 global using Sync;
-global using Sync.SQLite;
+global using Sync.Postgres;
 global using GetConditionsError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetConditionsByPatient>,
     Selecta.SqlError

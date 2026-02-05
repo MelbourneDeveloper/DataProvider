@@ -61,7 +61,11 @@ namespace Dashboard.React
             Action<object> clickHandler = null;
             if (onClick != null)
             {
-                clickHandler = _ => onClick();
+                clickHandler = e =>
+                {
+                    Script.Write("e.stopPropagation()");
+                    onClick();
+                };
             }
             var props = new
             {

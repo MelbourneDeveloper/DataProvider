@@ -1,11 +1,11 @@
 global using System;
 global using Generated;
-global using Microsoft.Data.Sqlite;
 global using Microsoft.Extensions.Logging;
+global using Npgsql;
 global using Outcome;
 global using Selecta;
 global using Sync;
-global using Sync.SQLite;
+global using Sync.Postgres;
 // Sync result type aliases
 global using BoolSyncError = Outcome.Result<bool, Sync.SyncError>.Error<bool, Sync.SyncError>;
 global using GetAllPractitionersError = Outcome.Result<

@@ -30,18 +30,13 @@ builder.Services.AddCors(options =>
     );
 });
 
-// Always use a real SQLite file - NEVER in-memory
-var dbPath =
-    builder.Configuration["DbPath"] ?? Path.Combine(AppContext.BaseDirectory, "clinical.db");
-var connectionString = new SqliteConnectionStringBuilder
-{
-    DataSource = dbPath,
-    ForeignKeys = true, // ENFORCE REFERENTIAL INTEGRITY
-}.ToString();
+var connectionString =
+    builder.Configuration.GetConnectionString("Postgres")
+    ?? throw new InvalidOperationException("PostgreSQL connection string 'Postgres' is required");
 
 builder.Services.AddSingleton(() =>
 {
-    var conn = new SqliteConnection(connectionString);
+    var conn = new NpgsqlConnection(connectionString);
     conn.Open();
     return conn;
 });
@@ -64,7 +59,7 @@ builder.Services.AddHttpClient(
 
 var app = builder.Build();
 
-using (var conn = new SqliteConnection(connectionString))
+using (var conn = new NpgsqlConnection(connectionString))
 {
     conn.Open();
     DatabaseSetup.Initialize(conn, app.Logger);
@@ -87,7 +82,7 @@ patientGroup
             string? familyName,
             string? givenName,
             string? gender,
-            Func<SqliteConnection> getConn
+            Func<NpgsqlConnection> getConn
         ) =>
         {
             using var conn = getConn();
@@ -117,7 +112,7 @@ patientGroup
 patientGroup
     .MapGet(
         "/{id}",
-        async (string id, Func<SqliteConnection> getConn) =>
+        async (string id, Func<NpgsqlConnection> getConn) =>
         {
             using var conn = getConn();
             var result = await conn.GetPatientByIdAsync(id).ConfigureAwait(false);
@@ -142,7 +137,7 @@ patientGroup
 patientGroup
     .MapPost(
         "/",
-        async (CreatePatientRequest request, Func<SqliteConnection> getConn) =>
+        async (CreatePatientRequest request, Func<NpgsqlConnection> getConn) =>
         {
             using var conn = getConn();
             var transaction = await conn.BeginTransactionAsync().ConfigureAwait(false);
@@ -217,7 +212,7 @@ patientGroup
 patientGroup
     .MapPut(
         "/{id}",
-        async (string id, UpdatePatientRequest request, Func<SqliteConnection> getConn) =>
+        async (string id, UpdatePatientRequest request, Func<NpgsqlConnection> getConn) =>
         {
             using var conn = getConn();
 
@@ -307,7 +302,7 @@ patientGroup
 patientGroup
     .MapGet(
         "/_search",
-        async (string q, Func<SqliteConnection> getConn) =>
+        async (string q, Func<NpgsqlConnection> getConn) =>
         {
             using var conn = getConn();
             var result = await conn.SearchPatientsAsync($"%{q}%").ConfigureAwait(false);
@@ -332,7 +327,7 @@ var encounterGroup = patientGroup.MapGroup("/{patientId}/Encounter").WithTags("E
 encounterGroup
     .MapGet(
         "/",
-        async (string patientId, Func<SqliteConnection> getConn) =>
+        async (string patientId, Func<NpgsqlConnection> getConn) =>
         {
             using var conn = getConn();
             var result = await conn.GetEncountersByPatientAsync(patientId).ConfigureAwait(false);
@@ -355,7 +350,7 @@ encounterGroup
 encounterGroup
     .MapPost(
         "/",
-        async (string patientId, CreateEncounterRequest request, Func<SqliteConnection> getConn) =>
+        async (string patientId, CreateEncounterRequest request, Func<NpgsqlConnection> getConn) =>
         {
             using var conn = getConn();
             var transaction = await conn.BeginTransactionAsync().ConfigureAwait(false);
@@ -427,7 +422,7 @@ var conditionGroup = patientGroup.MapGroup("/{patientId}/Condition").WithTags("C
 conditionGroup
     .MapGet(
         "/",
-        async (string patientId, Func<SqliteConnection> getConn) =>
+        async (string patientId, Func<NpgsqlConnection> getConn) =>
         {
             using var conn = getConn();
             var result = await conn.GetConditionsByPatientAsync(patientId).ConfigureAwait(false);
@@ -450,7 +445,7 @@ conditionGroup
 conditionGroup
     .MapPost(
         "/",
-        async (string patientId, CreateConditionRequest request, Func<SqliteConnection> getConn) =>
+        async (string patientId, CreateConditionRequest request, Func<NpgsqlConnection> getConn) =>
         {
             using var conn = getConn();
             var transaction = await conn.BeginTransactionAsync().ConfigureAwait(false);
@@ -533,7 +528,7 @@ var medicationGroup = patientGroup
 medicationGroup
     .MapGet(
         "/",
-        async (string patientId, Func<SqliteConnection> getConn) =>
+        async (string patientId, Func<NpgsqlConnection> getConn) =>
         {
             using var conn = getConn();
             var result = await conn.GetMedicationsByPatientAsync(patientId).ConfigureAwait(false);
@@ -559,7 +554,7 @@ medicationGroup
         async (
             string patientId,
             CreateMedicationRequestRequest request,
-            Func<SqliteConnection> getConn
+            Func<NpgsqlConnection> getConn
         ) =>
         {
             using var conn = getConn();
@@ -635,10 +630,14 @@ medicationGroup
 
 app.MapGet(
         "/sync/changes",
-        (long? fromVersion, int? limit, Func<SqliteConnection> getConn) =>
+        (long? fromVersion, int? limit, Func<NpgsqlConnection> getConn) =>
         {
             using var conn = getConn();
-            var result = SyncLogRepository.FetchChanges(conn, fromVersion ?? 0, limit ?? 100);
+            var result = PostgresSyncLogRepository.FetchChanges(
+                conn,
+                fromVersion ?? 0,
+                limit ?? 100
+            );
             return result switch
             {
                 SyncLogListOk(var logs) => Results.Ok(logs),
@@ -657,10 +656,10 @@ app.MapGet(
 
 app.MapGet(
         "/sync/origin",
-        (Func<SqliteConnection> getConn) =>
+        (Func<NpgsqlConnection> getConn) =>
         {
             using var conn = getConn();
-            var result = SyncSchema.GetOriginId(conn);
+            var result = PostgresSyncSchema.GetOriginId(conn);
             return result switch
             {
                 StringSyncOk(var originId) => Results.Ok(new { originId }),
@@ -679,10 +678,10 @@ app.MapGet(
 
 app.MapGet(
         "/sync/status",
-        (Func<SqliteConnection> getConn) =>
+        (Func<NpgsqlConnection> getConn) =>
         {
             using var conn = getConn();
-            var changesResult = SyncLogRepository.FetchChanges(conn, 0, 1000);
+            var changesResult = PostgresSyncLogRepository.FetchChanges(conn, 0, 1000);
 
             var (totalCount, lastSyncTime) = changesResult switch
             {
@@ -727,12 +726,12 @@ app.MapGet(
 
 app.MapGet(
         "/sync/records",
-        (string? search, int? page, int? pageSize, Func<SqliteConnection> getConn) =>
+        (string? search, int? page, int? pageSize, Func<NpgsqlConnection> getConn) =>
         {
             using var conn = getConn();
             var currentPage = page ?? 1;
             var size = pageSize ?? 50;
-            var changesResult = SyncLogRepository.FetchChanges(conn, 0, 1000);
+            var changesResult = PostgresSyncLogRepository.FetchChanges(conn, 0, 1000);
 
             return changesResult switch
             {
@@ -772,7 +771,7 @@ app.MapPost(
 
 app.MapGet(
         "/sync/providers",
-        (Func<SqliteConnection> getConn) =>
+        (Func<NpgsqlConnection> getConn) =>
         {
             using var conn = getConn();
             using var cmd = conn.CreateCommand();

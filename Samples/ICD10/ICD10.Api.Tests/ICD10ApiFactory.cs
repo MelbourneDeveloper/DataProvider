@@ -88,5 +88,4 @@ public sealed class ICD10ApiFactory : WebApplicationFactory<Program>
             }
         }
     }
-
 }

@@ -1,5 +1,5 @@
 using Migration;
-using Migration.SQLite;
+using Migration.Postgres;
 
 namespace Gatekeeper.Api;
 
@@ -11,32 +11,26 @@ public static class DatabaseSetup
     /// <summary>
     /// Initializes the database schema and seeds default data.
     /// </summary>
-    public static void Initialize(SqliteConnection conn, ILogger logger)
+    public static void Initialize(NpgsqlConnection conn, ILogger logger)
     {
         CreateSchemaFromMigration(conn, logger);
         SeedDefaultData(conn, logger);
     }
 
-    private static void CreateSchemaFromMigration(SqliteConnection conn, ILogger logger)
+    private static void CreateSchemaFromMigration(NpgsqlConnection conn, ILogger logger)
     {
         logger.LogInformation("Creating database schema from gatekeeper-schema.yaml");
 
         try
         {
-            // Set journal mode to DELETE and synchronous to FULL for test isolation
-            using var pragmaCmd = conn.CreateCommand();
-            pragmaCmd.CommandText = "PRAGMA journal_mode = DELETE; PRAGMA synchronous = FULL;";
-            pragmaCmd.ExecuteNonQuery();
-
             // Load schema from YAML (source of truth)
             var yamlPath = Path.Combine(AppContext.BaseDirectory, "gatekeeper-schema.yaml");
             var schema = SchemaYamlSerializer.FromYamlFile(yamlPath);
 
             foreach (var table in schema.Tables)
             {
-                var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
+                var ddl = PostgresDdlGenerator.Generate(new CreateTableOperation(table));
                 // DDL may contain multiple statements (CREATE TABLE + CREATE INDEX)
-                // SQLite ExecuteNonQuery only executes the first statement, so split them
                 foreach (
                     var statement in ddl.Split(
                         ';',
@@ -64,7 +58,7 @@ public static class DatabaseSetup
         }
     }
 
-    private static void SeedDefaultData(SqliteConnection conn, ILogger logger)
+    private static void SeedDefaultData(NpgsqlConnection conn, ILogger logger)
     {
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
 
@@ -122,7 +116,7 @@ public static class DatabaseSetup
     }
 
     private static void ExecuteNonQuery(
-        SqliteConnection conn,
+        NpgsqlConnection conn,
         string sql,
         params (string name, object value)[] parameters
     )

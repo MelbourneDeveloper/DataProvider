@@ -10,15 +10,14 @@
 
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="9.0.2" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\DataProvider\DataProvider\DataProvider.csproj" />
-    <ProjectReference Include="..\..\..\Lql\Lql.SQLite\Lql.SQLite.csproj" />
+    <ProjectReference Include="..\..\..\Lql\Lql.Postgres\Lql.Postgres.csproj" />
     <ProjectReference Include="..\..\..\Other\Selecta\Selecta.csproj" />
     <ProjectReference Include="..\..\..\Migration\Migration\Migration.csproj" />
-    <ProjectReference Include="..\..\..\Migration\Migration.SQLite\Migration.SQLite.csproj" />
+    <ProjectReference Include="..\..\..\Migration\Migration.Postgres\Migration.Postgres.csproj" />
     <ProjectReference Include="..\..\Shared\Authorization\Authorization.csproj" />
   </ItemGroup>
 
@@ -29,34 +28,19 @@
     <Content Include="icd10-schema.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <!-- Database is created from YAML schema during build -->
-    <Content Include="icd10.db">
+    <!-- SQLite database for local testing -->
+    <Content Include="icd10.db" Condition="Exists('icd10.db')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
-  <!-- Create database from YAML using Migration.Cli (only if db doesn't exist - don't delete production data!) -->
-  <Target Name="CreateDatabaseSchema" BeforeTargets="TranspileLqlAndGenerateDataProvider" Condition="!Exists('$(MSBuildProjectDirectory)/icd10.db')">
-    <Exec Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)../../../Migration/Migration.Cli/Migration.Cli.csproj&quot; -- --schema &quot;$(MSBuildProjectDirectory)/icd10-schema.yaml&quot; --output &quot;$(MSBuildProjectDirectory)/icd10.db&quot; --provider sqlite" WorkingDirectory="$(MSBuildProjectDirectory)" StandardOutputImportance="High" StandardErrorImportance="High" />
-  </Target>
-
-  <!-- Pre-compile: transpile LQL to SQL, then generate C# from SQL using external CLI -->
-  <Target Name="TranspileLqlAndGenerateDataProvider" BeforeTargets="BeforeCompile;CoreCompile" Inputs="$(MSBuildProjectDirectory)/DataProvider.json;@(AdditionalFiles);@(LqlFiles)" Outputs="$(MSBuildProjectDirectory)/Generated/.timestamp">
-    <!-- Clean and recreate Generated folder to avoid stale files -->
-    <RemoveDir Directories="$(MSBuildProjectDirectory)/Generated" />
-    <MakeDir Directories="$(MSBuildProjectDirectory)/Generated" />
-    <!-- Transpile each .lql to .generated.sql into Queries directory -->
-    <ItemGroup>
-      <LqlFiles Include="$(MSBuildProjectDirectory)/Queries/*.lql" />
-    </ItemGroup>
-    <Message Importance="High" Text="Transpiling LQL files (@(LqlFiles))" />
-    <Exec Command="dotnet run --project $(MSBuildThisFileDirectory)../../../Lql/LqlCli.SQLite/LqlCli.SQLite.csproj -- --input &quot;%(LqlFiles.Identity)&quot; --output &quot;%(LqlFiles.RootDir)%(LqlFiles.Directory)%(LqlFiles.Filename).generated.sql&quot;" Condition="'$(EnableLqlTranspile)' == 'true' and @(LqlFiles) != ''" WorkingDirectory="$(MSBuildProjectDirectory)" StandardOutputImportance="High" StandardErrorImportance="High" ContinueOnError="WarnAndContinue" />
-    <!-- Run SQLite generator CLI to emit .g.cs into Generated folder -->
-    <Exec Command="dotnet run --project $(MSBuildThisFileDirectory)..\..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj -- --project-dir &quot;$(MSBuildProjectDirectory)&quot; --config &quot;$(MSBuildProjectDirectory)/DataProvider.json&quot; --out &quot;$(MSBuildProjectDirectory)/Generated&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" StandardOutputImportance="High" StandardErrorImportance="High" IgnoreExitCode="true" />
-    <Touch Files="$(MSBuildProjectDirectory)/Generated/.timestamp" AlwaysCreate="true" />
-    <ItemGroup>
-      <Compile Include="$(MSBuildProjectDirectory)/Generated/**/*.g.cs" />
-    </ItemGroup>
-  </Target>
+  <!--
+    Code generation requires a running PostgreSQL database.
+    Run 'docker compose -f docker/docker-compose.codegen.yml up codegen' to regenerate.
+    Generated code is committed to git and included directly.
+  -->
+  <ItemGroup>
+    <Compile Include="$(MSBuildProjectDirectory)/Generated/**/*.g.cs" />
+  </ItemGroup>
 
 </Project>

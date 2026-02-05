@@ -1,5 +1,5 @@
 using Migration;
-using Migration.SQLite;
+using Migration.Postgres;
 
 namespace Scheduling.Api;
 
@@ -14,10 +14,10 @@ internal static class DatabaseSetup
     /// Creates the database schema and sync infrastructure using Migration.
     /// Tables conform to FHIR R4 resources.
     /// </summary>
-    public static void Initialize(SqliteConnection connection, ILogger logger)
+    public static void Initialize(NpgsqlConnection connection, ILogger logger)
     {
         // Create sync infrastructure
-        var schemaResult = SyncSchema.CreateSchema(connection);
+        var schemaResult = PostgresSyncSchema.CreateSchema(connection);
         if (schemaResult is BoolSyncError err)
         {
             logger.Log(
@@ -28,7 +28,7 @@ internal static class DatabaseSetup
             return;
         }
 
-        _ = SyncSchema.SetOriginId(connection, Guid.NewGuid().ToString());
+        _ = PostgresSyncSchema.SetOriginId(connection, Guid.NewGuid().ToString());
 
         // Use Migration tool to create schema from YAML (source of truth)
         try
@@ -38,7 +38,7 @@ internal static class DatabaseSetup
 
             foreach (var table in schema.Tables)
             {
-                var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
+                var ddl = PostgresDdlGenerator.Generate(new CreateTableOperation(table));
                 using var cmd = connection.CreateCommand();
                 cmd.CommandText = ddl;
                 cmd.ExecuteNonQuery();
@@ -54,10 +54,10 @@ internal static class DatabaseSetup
         }
 
         // Create sync triggers for FHIR resources
-        _ = TriggerGenerator.CreateTriggers(connection, "fhir_Practitioner", logger);
-        _ = TriggerGenerator.CreateTriggers(connection, "fhir_Appointment", logger);
-        _ = TriggerGenerator.CreateTriggers(connection, "fhir_Schedule", logger);
-        _ = TriggerGenerator.CreateTriggers(connection, "fhir_Slot", logger);
+        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_Practitioner", logger);
+        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_Appointment", logger);
+        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_Schedule", logger);
+        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_Slot", logger);
 
         logger.Log(
             LogLevel.Information,

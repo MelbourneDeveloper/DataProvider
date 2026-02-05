@@ -5,21 +5,21 @@
     <NoWarn>CA1515;CA2100;RS1035;CA1508;CA2234;CA1812</NoWarn>
   </PropertyGroup>
 
-  <!-- Exclude Generated folder from default globbing - we include it explicitly in the target -->
+  <!-- Exclude Generated folder from default globbing - we include it explicitly -->
   <ItemGroup>
     <Compile Remove="Generated/**" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+    <PackageReference Include="Npgsql" Version="9.0.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\DataProvider\DataProvider\DataProvider.csproj" />
-    <ProjectReference Include="..\..\..\Sync\Sync.SQLite\Sync.SQLite.csproj" />
+    <ProjectReference Include="..\..\..\Sync\Sync.Postgres\Sync.Postgres.csproj" />
     <ProjectReference Include="..\..\..\Other\Selecta\Selecta.csproj" />
     <ProjectReference Include="..\..\..\Migration\Migration\Migration.csproj" />
-    <ProjectReference Include="..\..\..\Migration\Migration.SQLite\Migration.SQLite.csproj" />
+    <ProjectReference Include="..\..\..\Migration\Migration.Postgres\Migration.Postgres.csproj" />
     <ProjectReference Include="..\..\Shared\Authorization\Authorization.csproj" />
   </ItemGroup>
 
@@ -32,20 +32,13 @@
     </Content>
   </ItemGroup>
 
-  <!-- Create database from YAML using Migration.Cli (YAML stored in git) -->
-  <Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider">
-    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../../Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/scheduling-schema.yaml" --output "$(MSBuildProjectDirectory)/scheduling.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
-  </Target>
-
-  <!-- Generate C# from SQL using DataProvider.SQLite.Cli -->
-  <Target Name="GenerateDataProvider" BeforeTargets="BeforeCompile;CoreCompile" Inputs="$(MSBuildProjectDirectory)/DataProvider.json;@(AdditionalFiles)" Outputs="$(MSBuildProjectDirectory)/Generated/.timestamp">
-    <RemoveDir Directories="$(MSBuildProjectDirectory)/Generated" />
-    <MakeDir Directories="$(MSBuildProjectDirectory)/Generated" />
-    <Exec Command='dotnet run --project $(MSBuildThisFileDirectory)..\..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(MSBuildProjectDirectory)/Generated"' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
-    <Touch Files="$(MSBuildProjectDirectory)/Generated/.timestamp" AlwaysCreate="true" />
-    <ItemGroup>
-      <Compile Include="$(MSBuildProjectDirectory)/Generated/**/*.g.cs" />
-    </ItemGroup>
-  </Target>
+  <!--
+    Code generation requires a running PostgreSQL database.
+    Run 'docker compose -f docker/docker-compose.codegen.yml up codegen' to regenerate.
+    Generated code is committed to git and included directly.
+  -->
+  <ItemGroup>
+    <Compile Include="$(MSBuildProjectDirectory)/Generated/**/*.g.cs" />
+  </ItemGroup>
 
 </Project>

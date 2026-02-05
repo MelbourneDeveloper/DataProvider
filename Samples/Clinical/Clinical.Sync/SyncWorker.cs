@@ -12,7 +12,7 @@ namespace Clinical.Sync;
 internal sealed class SyncWorker : BackgroundService
 {
     private readonly ILogger<SyncWorker> _logger;
-    private readonly Func<SqliteConnection> _getConnection;
+    private readonly Func<NpgsqlConnection> _getConnection;
     private readonly string _schedulingApiUrl;
 
     /// <summary>
@@ -20,7 +20,7 @@ internal sealed class SyncWorker : BackgroundService
     /// </summary>
     public SyncWorker(
         ILogger<SyncWorker> logger,
-        Func<SqliteConnection> getConnection,
+        Func<NpgsqlConnection> getConnection,
         string schedulingApiUrl
     )
     {
@@ -210,7 +210,7 @@ internal sealed class SyncWorker : BackgroundService
     }
 
     private void ApplyMappedChange(
-        SqliteConnection conn,
+        NpgsqlConnection conn,
         System.Data.Common.DbTransaction transaction,
         SyncChange change
     )
@@ -222,7 +222,7 @@ internal sealed class SyncWorker : BackgroundService
         if (change.Operation == SyncChange.Delete)
         {
             using var cmd = conn.CreateCommand();
-            cmd.Transaction = (SqliteTransaction)transaction;
+            cmd.Transaction = (NpgsqlTransaction)transaction;
             cmd.CommandText = "DELETE FROM sync_Provider WHERE ProviderId = @id";
             cmd.Parameters.AddWithValue("@id", rowId);
             cmd.ExecuteNonQuery();
@@ -242,7 +242,7 @@ internal sealed class SyncWorker : BackgroundService
         }
 
         using var upsertCmd = conn.CreateCommand();
-        upsertCmd.Transaction = (SqliteTransaction)transaction;
+        upsertCmd.Transaction = (NpgsqlTransaction)transaction;
         upsertCmd.CommandText = """
             INSERT INTO sync_Provider (ProviderId, FirstName, LastName, Specialty, SyncedAt)
             VALUES (@providerId, @firstName, @lastName, @specialty, @syncedAt)
@@ -279,7 +279,7 @@ internal sealed class SyncWorker : BackgroundService
         );
     }
 
-    private static long GetLastSyncVersion(SqliteConnection connection)
+    private static long GetLastSyncVersion(NpgsqlConnection connection)
     {
         // Ensure _sync_state table exists
         using var createCmd = connection.CreateCommand();
@@ -299,7 +299,7 @@ internal sealed class SyncWorker : BackgroundService
         return result is string str && long.TryParse(str, out var version) ? version : 0;
     }
 
-    private static void UpdateLastSyncVersion(SqliteConnection connection, long version)
+    private static void UpdateLastSyncVersion(NpgsqlConnection connection, long version)
     {
         using var cmd = connection.CreateCommand();
         cmd.CommandText = """
