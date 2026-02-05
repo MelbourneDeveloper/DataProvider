@@ -325,10 +325,10 @@ achiGroup.MapGet(
         // Manual search implementation (LIKE queries not supported by generator)
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = """
-        SELECT Id, BlockId, Code, ShortDescription, LongDescription, Billable
+        SELECT "Id", "BlockId", "Code", "ShortDescription", "LongDescription", "Billable"
         FROM achi_code
-        WHERE Code LIKE @term OR ShortDescription LIKE @term OR LongDescription LIKE @term
-        ORDER BY Code
+        WHERE "Code" ILIKE @term OR "ShortDescription" ILIKE @term OR "LongDescription" ILIKE @term
+        ORDER BY "Code"
         LIMIT @limit
         """;
         cmd.Parameters.AddWithValue("@term", searchTerm);
@@ -404,49 +404,52 @@ app.MapPost(
         var icdResults = new List<SearchResult>();
 
         // Use pgvector for fast similarity search IN THE DATABASE
-        await using var icdCmd = conn.CreateCommand();
-        icdCmd.CommandText = """
-        SELECT c."Code", c."ShortDescription", c."LongDescription",
-               c."InclusionTerms", c."ExclusionTerms", c."CodeAlso", c."CodeFirst",
-               1 - (e."Embedding"::vector <=> @queryVector::vector) as similarity
-        FROM icd10_code c
-        JOIN icd10_code_embedding e ON c."Id" = e."CodeId"
-        ORDER BY e."Embedding"::vector <=> @queryVector::vector
-        LIMIT @limit
-        """;
-        icdCmd.Parameters.AddWithValue("@queryVector", vectorString);
-        icdCmd.Parameters.AddWithValue("@limit", request.IncludeAchi ? limit : limit);
-
-        await using var icdReader = await icdCmd.ExecuteReaderAsync().ConfigureAwait(false);
-        while (await icdReader.ReadAsync().ConfigureAwait(false))
+        // Scope the reader to ensure it's disposed before ACHI query
         {
-            var code = icdReader.GetString(0);
-            var (chapterNum, chapterTitle) = Icd10Chapters.GetChapter(code);
-            var category = Icd10Chapters.GetCategory(code);
+            await using var icdCmd = conn.CreateCommand();
+            icdCmd.CommandText = """
+            SELECT c."Code", c."ShortDescription", c."LongDescription",
+                   c."InclusionTerms", c."ExclusionTerms", c."CodeAlso", c."CodeFirst",
+                   1 - (e."Embedding"::vector <=> @queryVector::vector) as similarity
+            FROM icd10_code c
+            JOIN icd10_code_embedding e ON c."Id" = e."CodeId"
+            ORDER BY e."Embedding"::vector <=> @queryVector::vector
+            LIMIT @limit
+            """;
+            icdCmd.Parameters.AddWithValue("@queryVector", vectorString);
+            icdCmd.Parameters.AddWithValue("@limit", request.IncludeAchi ? limit : limit);
 
-            // Read nullable fields with async null checks
-            var inclusionNull = await icdReader.IsDBNullAsync(3).ConfigureAwait(false);
-            var exclusionNull = await icdReader.IsDBNullAsync(4).ConfigureAwait(false);
-            var codeAlsoNull = await icdReader.IsDBNullAsync(5).ConfigureAwait(false);
-            var codeFirstNull = await icdReader.IsDBNullAsync(6).ConfigureAwait(false);
+            await using var icdReader = await icdCmd.ExecuteReaderAsync().ConfigureAwait(false);
+            while (await icdReader.ReadAsync().ConfigureAwait(false))
+            {
+                var code = icdReader.GetString(0);
+                var (chapterNum, chapterTitle) = Icd10Chapters.GetChapter(code);
+                var category = Icd10Chapters.GetCategory(code);
 
-            icdResults.Add(
-                new SearchResult(
-                    Code: code,
-                    Description: icdReader.GetString(1),
-                    LongDescription: icdReader.GetString(2),
-                    Confidence: icdReader.GetDouble(7),
-                    CodeType: "ICD10",
-                    Chapter: chapterNum,
-                    ChapterTitle: chapterTitle,
-                    Category: category,
-                    InclusionTerms: inclusionNull ? "" : icdReader.GetString(3),
-                    ExclusionTerms: exclusionNull ? "" : icdReader.GetString(4),
-                    CodeAlso: codeAlsoNull ? "" : icdReader.GetString(5),
-                    CodeFirst: codeFirstNull ? "" : icdReader.GetString(6)
-                )
-            );
-        }
+                // Read nullable fields with async null checks
+                var inclusionNull = await icdReader.IsDBNullAsync(3).ConfigureAwait(false);
+                var exclusionNull = await icdReader.IsDBNullAsync(4).ConfigureAwait(false);
+                var codeAlsoNull = await icdReader.IsDBNullAsync(5).ConfigureAwait(false);
+                var codeFirstNull = await icdReader.IsDBNullAsync(6).ConfigureAwait(false);
+
+                icdResults.Add(
+                    new SearchResult(
+                        Code: code,
+                        Description: icdReader.GetString(1),
+                        LongDescription: icdReader.GetString(2),
+                        Confidence: icdReader.GetDouble(7),
+                        CodeType: "ICD10",
+                        Chapter: chapterNum,
+                        ChapterTitle: chapterTitle,
+                        Category: category,
+                        InclusionTerms: inclusionNull ? "" : icdReader.GetString(3),
+                        ExclusionTerms: exclusionNull ? "" : icdReader.GetString(4),
+                        CodeAlso: codeAlsoNull ? "" : icdReader.GetString(5),
+                        CodeFirst: codeFirstNull ? "" : icdReader.GetString(6)
+                    )
+                );
+            }
+        } // icdReader and icdCmd disposed here
 
         // Include ACHI if requested (also using pgvector)
         var achiResults = new List<SearchResult>();

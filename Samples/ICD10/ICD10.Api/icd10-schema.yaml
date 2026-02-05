@@ -16,7 +16,7 @@ tables:
     type: Text
     defaultValue: (now())
   - name: VersionId
-    type: Int
+    type: BigInt
     defaultValue: 1
   indexes:
   - name: idx_icd10_chapter_number
@@ -45,7 +45,7 @@ tables:
     type: Text
     defaultValue: (now())
   - name: VersionId
-    type: Int
+    type: BigInt
     defaultValue: 1
   indexes:
   - name: idx_icd10_block_code
@@ -80,7 +80,7 @@ tables:
     type: Text
     defaultValue: (now())
   - name: VersionId
-    type: Int
+    type: BigInt
     defaultValue: 1
   indexes:
   - name: idx_icd10_category_code
@@ -124,7 +124,7 @@ tables:
   - name: Synonyms
     type: Text
   - name: Billable
-    type: Int
+    type: BigInt
     defaultValue: 1
   - name: EffectiveFrom
     type: Text
@@ -136,7 +136,7 @@ tables:
     type: Text
     defaultValue: (now())
   - name: VersionId
-    type: Int
+    type: BigInt
     defaultValue: 1
   indexes:
   - name: idx_icd10_code_code
@@ -213,7 +213,7 @@ tables:
     type: Text
     defaultValue: (now())
   - name: VersionId
-    type: Int
+    type: BigInt
     defaultValue: 1
   indexes:
   - name: idx_achi_block_number
@@ -237,7 +237,7 @@ tables:
   - name: LongDescription
     type: Text
   - name: Billable
-    type: Int
+    type: BigInt
     defaultValue: 1
   - name: EffectiveFrom
     type: Text
@@ -249,7 +249,7 @@ tables:
     type: Text
     defaultValue: (now())
   - name: VersionId
-    type: Int
+    type: BigInt
     defaultValue: 1
   indexes:
   - name: idx_achi_code_code
@@ -316,13 +316,13 @@ tables:
   - name: ApplicableCodes
     type: Text
   - name: Edition
-    type: Int
+    type: BigInt
     defaultValue: 13
   - name: LastUpdated
     type: Text
     defaultValue: (now())
   - name: VersionId
-    type: Int
+    type: BigInt
     defaultValue: 1
   indexes:
   - name: idx_coding_standard_number
