@@ -34,18 +34,6 @@ global using GetAchiCodesByBlockOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetAchiCodesByBlock>,
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.GetAchiCodesByBlock>, Selecta.SqlError>;
-global using GetAllCodeEmbeddingsError = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.GetAllCodeEmbeddings>,
-    Selecta.SqlError
->.Error<
-    System.Collections.Immutable.ImmutableList<Generated.GetAllCodeEmbeddings>,
-    Selecta.SqlError
->;
-// GetAllCodeEmbeddings query result type aliases
-global using GetAllCodeEmbeddingsOk = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.GetAllCodeEmbeddings>,
-    Selecta.SqlError
->.Ok<System.Collections.Immutable.ImmutableList<Generated.GetAllCodeEmbeddings>, Selecta.SqlError>;
 global using GetBlocksByChapterError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetBlocksByChapter>,
     Selecta.SqlError

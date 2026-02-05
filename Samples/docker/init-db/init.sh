@@ -25,3 +25,8 @@ for db in gatekeeper clinical scheduling icd10; do
         GRANT ALL ON SCHEMA public TO $db;
 EOSQL
 done
+
+# Enable pgvector extension for ICD10 database (vector similarity search)
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "icd10" <<-EOSQL
+    CREATE EXTENSION IF NOT EXISTS vector;
+EOSQL

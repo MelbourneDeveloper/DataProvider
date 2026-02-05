@@ -1,42 +1,20 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 
 namespace ICD10.Api.Tests;
 
 /// <summary>
 /// WebApplicationFactory for ICD10.Api e2e testing.
-/// Uses production database with real ICD-10 codes.
+/// Uses PostgreSQL container with real ICD-10 codes.
 /// </summary>
 public sealed class ICD10ApiFactory : WebApplicationFactory<Program>
 {
-    private readonly string _dbPath;
-
     /// <summary>
-    /// Creates a new instance using the production database.
+    /// PostgreSQL connection string for Docker container.
     /// </summary>
-    public ICD10ApiFactory()
-    {
-        _dbPath = Path.Combine(Path.GetTempPath(), $"icd10_test_{Guid.NewGuid()}.db");
-
-        var sourceDb = Path.Combine(
-            Path.GetDirectoryName(typeof(Program).Assembly.Location)!,
-            "icd10.db"
-        );
-
-        if (!File.Exists(sourceDb))
-        {
-            throw new FileNotFoundException(
-                $"Schema database not found at {sourceDb}. Build the API project first."
-            );
-        }
-
-        File.Copy(sourceDb, _dbPath);
-    }
-
-    /// <summary>
-    /// Gets the database path for direct access in tests if needed.
-    /// </summary>
-    public string DbPath => _dbPath;
+    private const string DefaultConnectionString =
+        "Host=localhost;Port=5432;Database=icd10;Username=icd10;Password=changeme";
 
     /// <summary>
     /// Checks if the embedding service at localhost:8000 is available.
@@ -61,31 +39,26 @@ public sealed class ICD10ApiFactory : WebApplicationFactory<Program>
     /// <inheritdoc />
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseSetting("DbPath", _dbPath);
+        // Use environment variable or default to Docker container
+        var connectionString =
+            Environment.GetEnvironmentVariable("ICD10_TEST_CONNECTION_STRING")
+            ?? DefaultConnectionString;
+
+        builder.ConfigureAppConfiguration(
+            (context, config) =>
+            {
+                config.AddInMemoryCollection(
+                    new Dictionary<string, string?>
+                    {
+                        ["ConnectionStrings:Postgres"] = connectionString,
+                        ["EmbeddingService:BaseUrl"] = "http://localhost:8000",
+                    }
+                );
+            }
+        );
 
         var apiAssembly = typeof(Program).Assembly;
         var contentRoot = Path.GetDirectoryName(apiAssembly.Location)!;
         builder.UseContentRoot(contentRoot);
-    }
-
-    /// <inheritdoc />
-    protected override void Dispose(bool disposing)
-    {
-        base.Dispose(disposing);
-
-        if (disposing)
-        {
-            try
-            {
-                if (File.Exists(_dbPath))
-                {
-                    File.Delete(_dbPath);
-                }
-            }
-            catch
-            {
-                // Ignore cleanup errors
-            }
-        }
     }
 }

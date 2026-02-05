@@ -26,15 +26,21 @@ builder.Services.AddCors(options =>
     );
 });
 
-var connectionString =
-    builder.Configuration.GetConnectionString("Postgres")
-    ?? throw new InvalidOperationException("PostgreSQL connection string 'Postgres' is required");
-
-builder.Services.AddSingleton(() =>
+// Register connection factory - defers connection string validation to service resolution
+builder.Services.AddSingleton<Func<NpgsqlConnection>>(sp =>
 {
-    var conn = new NpgsqlConnection(connectionString);
-    conn.Open();
-    return conn;
+    var config = sp.GetRequiredService<IConfiguration>();
+    var connStr =
+        config.GetConnectionString("Postgres")
+        ?? throw new InvalidOperationException(
+            "PostgreSQL connection string 'Postgres' is required"
+        );
+    return () =>
+    {
+        var conn = new NpgsqlConnection(connStr);
+        conn.Open();
+        return conn;
+    };
 });
 
 // Embedding service (Docker container)
@@ -67,7 +73,11 @@ builder.Services.AddHttpClient(
 
 var app = builder.Build();
 
-using (var conn = new NpgsqlConnection(connectionString))
+// Initialize database schema using connection string from configuration
+var dbConnectionString =
+    app.Configuration.GetConnectionString("Postgres")
+    ?? throw new InvalidOperationException("PostgreSQL connection string 'Postgres' is required");
+using (var conn = new NpgsqlConnection(dbConnectionString))
 {
     conn.Open();
     DatabaseSetup.Initialize(conn, app.Logger);
@@ -379,97 +389,100 @@ app.MapPost(
             return Results.Problem("Invalid embedding response");
         }
 
-        var queryVector = embeddingResult.Embedding.ToImmutableArray();
+        // Convert embedding to pgvector format: [0.1,0.2,0.3,...]
+        var vectorString =
+            "["
+            + string.Join(
+                ",",
+                embeddingResult.Embedding.Select(f =>
+                    f.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                )
+            )
+            + "]";
 
         using var conn = getConn();
+        var icdResults = new List<SearchResult>();
 
-        // Get ICD-10 embeddings
-        var allEmbeddingsResult = await conn.GetAllCodeEmbeddingsAsync().ConfigureAwait(false);
+        // Use pgvector for fast similarity search IN THE DATABASE
+        await using var icdCmd = conn.CreateCommand();
+        icdCmd.CommandText = """
+        SELECT c."Code", c."ShortDescription", c."LongDescription",
+               c."InclusionTerms", c."ExclusionTerms", c."CodeAlso", c."CodeFirst",
+               1 - (e."Embedding"::vector <=> @queryVector::vector) as similarity
+        FROM icd10_code c
+        JOIN icd10_code_embedding e ON c."Id" = e."CodeId"
+        ORDER BY e."Embedding"::vector <=> @queryVector::vector
+        LIMIT @limit
+        """;
+        icdCmd.Parameters.AddWithValue("@queryVector", vectorString);
+        icdCmd.Parameters.AddWithValue("@limit", request.IncludeAchi ? limit : limit);
 
-        if (allEmbeddingsResult is GetAllCodeEmbeddingsError(var err))
+        await using var icdReader = await icdCmd.ExecuteReaderAsync().ConfigureAwait(false);
+        while (await icdReader.ReadAsync().ConfigureAwait(false))
         {
-            return Results.Problem(err.Message);
+            var code = icdReader.GetString(0);
+            var (chapterNum, chapterTitle) = Icd10Chapters.GetChapter(code);
+            var category = Icd10Chapters.GetCategory(code);
+
+            // Read nullable fields with async null checks
+            var inclusionNull = await icdReader.IsDBNullAsync(3).ConfigureAwait(false);
+            var exclusionNull = await icdReader.IsDBNullAsync(4).ConfigureAwait(false);
+            var codeAlsoNull = await icdReader.IsDBNullAsync(5).ConfigureAwait(false);
+            var codeFirstNull = await icdReader.IsDBNullAsync(6).ConfigureAwait(false);
+
+            icdResults.Add(
+                new SearchResult(
+                    Code: code,
+                    Description: icdReader.GetString(1),
+                    LongDescription: icdReader.GetString(2),
+                    Confidence: icdReader.GetDouble(7),
+                    CodeType: "ICD10",
+                    Chapter: chapterNum,
+                    ChapterTitle: chapterTitle,
+                    Category: category,
+                    InclusionTerms: inclusionNull ? "" : icdReader.GetString(3),
+                    ExclusionTerms: exclusionNull ? "" : icdReader.GetString(4),
+                    CodeAlso: codeAlsoNull ? "" : icdReader.GetString(5),
+                    CodeFirst: codeFirstNull ? "" : icdReader.GetString(6)
+                )
+            );
         }
 
-        var allEmbeddings = ((GetAllCodeEmbeddingsOk)allEmbeddingsResult).Value;
-
-        // Compute cosine similarity for ICD codes
-        var icdResults = allEmbeddings.Select(e =>
-        {
-            var storedVector = ParseEmbedding(e.Embedding);
-            var similarity = CosineSimilarity(queryVector, storedVector);
-            var (chapterNum, chapterTitle) = Icd10Chapters.GetChapter(e.Code);
-            var category = Icd10Chapters.GetCategory(e.Code);
-            return new SearchResult(
-                Code: e.Code,
-                Description: e.ShortDescription,
-                LongDescription: e.LongDescription,
-                Confidence: similarity,
-                CodeType: "ICD10",
-                Chapter: chapterNum,
-                ChapterTitle: chapterTitle,
-                Category: category,
-                InclusionTerms: e.InclusionTerms,
-                ExclusionTerms: e.ExclusionTerms,
-                CodeAlso: e.CodeAlso,
-                CodeFirst: e.CodeFirst
-            );
-        });
-
-        // Include ACHI if requested
-        var achiResults = Enumerable.Empty<SearchResult>();
+        // Include ACHI if requested (also using pgvector)
+        var achiResults = new List<SearchResult>();
         if (request.IncludeAchi)
         {
-            var cmd = conn.CreateCommand();
-            await using (cmd.ConfigureAwait(false))
-            {
-                cmd.CommandText = """
-                SELECT e."Embedding", c."Code", c."ShortDescription", c."LongDescription"
-                FROM achi_code_embedding e
-                INNER JOIN achi_code c ON e."CodeId" = c."Id"
-                """;
-                var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-                await using (reader.ConfigureAwait(false))
-                {
-                    var achiEmbeddings =
-                        new List<(
-                            string Embedding,
-                            string Code,
-                            string ShortDesc,
-                            string LongDesc
-                        )>();
-                    while (await reader.ReadAsync().ConfigureAwait(false))
-                    {
-                        achiEmbeddings.Add(
-                            (
-                                reader.GetString(0),
-                                reader.GetString(1),
-                                reader.GetString(2),
-                                reader.GetString(3)
-                            )
-                        );
-                    }
+            await using var achiCmd = conn.CreateCommand();
+            achiCmd.CommandText = """
+            SELECT c."Code", c."ShortDescription", c."LongDescription",
+                   1 - (e."Embedding"::vector <=> @queryVector::vector) as similarity
+            FROM achi_code c
+            JOIN achi_code_embedding e ON c."Id" = e."CodeId"
+            ORDER BY e."Embedding"::vector <=> @queryVector::vector
+            LIMIT @limit
+            """;
+            achiCmd.Parameters.AddWithValue("@queryVector", vectorString);
+            achiCmd.Parameters.AddWithValue("@limit", limit);
 
-                    achiResults = achiEmbeddings.Select(e =>
-                    {
-                        var storedVector = ParseEmbedding(e.Embedding);
-                        var similarity = CosineSimilarity(queryVector, storedVector);
-                        return new SearchResult(
-                            Code: e.Code,
-                            Description: e.ShortDesc,
-                            LongDescription: e.LongDesc,
-                            Confidence: similarity,
-                            CodeType: "ACHI",
-                            Chapter: "",
-                            ChapterTitle: "",
-                            Category: "",
-                            InclusionTerms: "",
-                            ExclusionTerms: "",
-                            CodeAlso: "",
-                            CodeFirst: ""
-                        );
-                    });
-                }
+            await using var achiReader = await achiCmd.ExecuteReaderAsync().ConfigureAwait(false);
+            while (await achiReader.ReadAsync().ConfigureAwait(false))
+            {
+                achiResults.Add(
+                    new SearchResult(
+                        Code: achiReader.GetString(0),
+                        Description: achiReader.GetString(1),
+                        LongDescription: achiReader.GetString(2),
+                        Confidence: achiReader.GetDouble(3),
+                        CodeType: "ACHI",
+                        Chapter: "",
+                        ChapterTitle: "",
+                        Category: "",
+                        InclusionTerms: "",
+                        ExclusionTerms: "",
+                        CodeAlso: "",
+                        CodeFirst: ""
+                    )
+                );
             }
         }
 
@@ -614,42 +627,6 @@ static object ToFhirProcedure(GetAchiCodeByCode code) =>
         },
         Property = new[] { new { Code = "block", ValueString = code.BlockNumber } },
     };
-
-static ImmutableArray<float> ParseEmbedding(string embeddingJson)
-{
-    try
-    {
-        var values = JsonSerializer.Deserialize<float[]>(embeddingJson);
-        return values is null ? [] : [.. values];
-    }
-    catch (JsonException)
-    {
-        // Invalid JSON for embedding, return empty array
-        return [];
-    }
-}
-
-static double CosineSimilarity(ImmutableArray<float> a, ImmutableArray<float> b)
-{
-    if (a.Length != b.Length || a.Length == 0)
-    {
-        return 0;
-    }
-
-    double dotProduct = 0;
-    double normA = 0;
-    double normB = 0;
-
-    for (var i = 0; i < a.Length; i++)
-    {
-        dotProduct += a[i] * b[i];
-        normA += a[i] * a[i];
-        normB += b[i] * b[i];
-    }
-
-    var denominator = Math.Sqrt(normA) * Math.Sqrt(normB);
-    return denominator == 0 ? 0 : dotProduct / denominator;
-}
 
 namespace ICD10.Api
 {
