@@ -13,7 +13,7 @@ namespace Dashboard.Api
     {
         private static string _clinicalBaseUrl = "http://localhost:5080";
         private static string _schedulingBaseUrl = "http://localhost:5001";
-        private static string _icd10BaseUrl = "http://localhost:5558";
+        private static string _icd10BaseUrl = "http://localhost:5090";
         private static string _clinicalToken = "";
         private static string _schedulingToken = "";
         private static string _icd10Token = "";
