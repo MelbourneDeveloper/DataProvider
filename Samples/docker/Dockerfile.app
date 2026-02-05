@@ -22,6 +22,9 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
+# Create logs directory for gatekeeper
+RUN mkdir -p /app/logs
+
 # Copy all published apps
 COPY --from=build /app/gatekeeper ./gatekeeper
 COPY --from=build /app/clinical-api ./clinical-api

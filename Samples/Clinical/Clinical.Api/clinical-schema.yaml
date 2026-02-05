@@ -15,7 +15,7 @@ tables:
     type: Text
   - name: Gender
     type: Text
-    checkConstraint: Gender IN ('male', 'female', 'other', 'unknown')
+    checkConstraint: '"Gender" IN (''male'', ''female'', ''other'', ''unknown'')'
   - name: Phone
     type: Text
   - name: Email
@@ -53,10 +53,10 @@ tables:
     type: Text
   - name: Status
     type: Text
-    checkConstraint: Status IN ('planned', 'arrived', 'triaged', 'in-progress', 'onleave', 'finished', 'cancelled', 'entered-in-error')
+    checkConstraint: '"Status" IN (''planned'', ''arrived'', ''triaged'', ''in-progress'', ''onleave'', ''finished'', ''cancelled'', ''entered-in-error'')'
   - name: Class
     type: Text
-    checkConstraint: Class IN ('ambulatory', 'emergency', 'inpatient', 'observation', 'virtual')
+    checkConstraint: '"Class" IN (''ambulatory'', ''emergency'', ''inpatient'', ''observation'', ''virtual'')'
   - name: PatientId
     type: Text
   - name: PractitionerId
@@ -98,16 +98,16 @@ tables:
     type: Text
   - name: ClinicalStatus
     type: Text
-    checkConstraint: ClinicalStatus IN ('active', 'recurrence', 'relapse', 'inactive', 'remission', 'resolved')
+    checkConstraint: '"ClinicalStatus" IN (''active'', ''recurrence'', ''relapse'', ''inactive'', ''remission'', ''resolved'')'
   - name: VerificationStatus
     type: Text
-    checkConstraint: VerificationStatus IN ('unconfirmed', 'provisional', 'differential', 'confirmed', 'refuted', 'entered-in-error')
+    checkConstraint: '"VerificationStatus" IN (''unconfirmed'', ''provisional'', ''differential'', ''confirmed'', ''refuted'', ''entered-in-error'')'
   - name: Category
     type: Text
     defaultValue: "'problem-list-item'"
   - name: Severity
     type: Text
-    checkConstraint: Severity IN ('mild', 'moderate', 'severe')
+    checkConstraint: '"Severity" IN (''mild'', ''moderate'', ''severe'')'
   - name: CodeSystem
     type: Text
     defaultValue: "'http://hl7.org/fhir/sid/icd-10-cm'"
@@ -155,10 +155,10 @@ tables:
     type: Text
   - name: Status
     type: Text
-    checkConstraint: Status IN ('active', 'on-hold', 'cancelled', 'completed', 'entered-in-error', 'stopped', 'draft')
+    checkConstraint: '"Status" IN (''active'', ''on-hold'', ''cancelled'', ''completed'', ''entered-in-error'', ''stopped'', ''draft'')'
   - name: Intent
     type: Text
-    checkConstraint: Intent IN ('proposal', 'plan', 'order', 'original-order', 'reflex-order', 'filler-order', 'instance-order', 'option')
+    checkConstraint: '"Intent" IN (''proposal'', ''plan'', ''order'', ''original-order'', ''reflex-order'', ''filler-order'', ''instance-order'', ''option'')'
   - name: PatientId
     type: Text
   - name: PractitionerId
