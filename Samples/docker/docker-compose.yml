@@ -1,5 +1,4 @@
 services:
-  # Single Postgres with all databases
   db:
     image: postgres:16-alpine
     environment:
@@ -16,25 +15,19 @@ services:
       timeout: 3s
       retries: 10
 
-  # All .NET services in one container
   app:
     build:
       context: ../..
       dockerfile: Samples/docker/Dockerfile.app
     environment:
-      # Gatekeeper
       ConnectionStrings__Postgres: Host=db;Database=gatekeeper;Username=gatekeeper;Password=${DB_PASSWORD:-changeme}
       Jwt__SigningKey: ${JWT_SIGNING_KEY:-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
       Fido2__ServerName: Healthcare Platform
       Fido2__ServerDomain: localhost
       Fido2__Origins__0: http://localhost:5173
-      # Clinical API
       ConnectionStrings__Postgres_Clinical: Host=db;Database=clinical;Username=clinical;Password=${DB_PASSWORD:-changeme}
-      # Scheduling API
       ConnectionStrings__Postgres_Scheduling: Host=db;Database=scheduling;Username=scheduling;Password=${DB_PASSWORD:-changeme}
-      # ICD10 API
       ConnectionStrings__Postgres_ICD10: Host=db;Database=icd10;Username=icd10;Password=${DB_PASSWORD:-changeme}
-      # Sync workers
       CLINICAL_CONNECTION_STRING: Host=db;Database=clinical;Username=clinical;Password=${DB_PASSWORD:-changeme}
       SCHEDULING_CONNECTION_STRING: Host=db;Database=scheduling;Username=scheduling;Password=${DB_PASSWORD:-changeme}
       SCHEDULING_API_URL: http://localhost:5001
@@ -45,12 +38,11 @@ services:
       - "5080:5080"
       - "5001:5001"
       - "5090:5090"
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
 
-  # Dashboard (H5 static files via nginx)
-  # start.sh builds Dashboard locally first (H5 doesn't work in Docker Linux)
   dashboard:
     build:
       context: ../..
