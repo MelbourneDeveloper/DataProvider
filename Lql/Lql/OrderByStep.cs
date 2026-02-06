@@ -18,6 +18,6 @@ public sealed class OrderByStep : StepBase
     /// <param name="orderItems">The order items.</param>
     public OrderByStep(IEnumerable<(string Column, string Direction)> orderItems)
     {
-        OrderItems = new Collection<(string Column, string Direction)>([.. orderItems]);
+        OrderItems = new(orderItems.ToList());
     }
 }

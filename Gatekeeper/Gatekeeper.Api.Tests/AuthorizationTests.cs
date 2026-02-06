@@ -435,7 +435,7 @@ public sealed class GatekeeperTestFixture : IDisposable
                 email,
                 now,
                 null, // last_login_at
-                1, // is_active
+                true, // is_active
                 null // metadata
             )
             .ConfigureAwait(false);
@@ -483,7 +483,7 @@ public sealed class GatekeeperTestFixture : IDisposable
                 email,
                 now,
                 null, // last_login_at
-                1, // is_active
+                true, // is_active
                 null // metadata
             )
             .ConfigureAwait(false);

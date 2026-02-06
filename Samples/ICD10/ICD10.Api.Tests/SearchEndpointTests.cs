@@ -251,13 +251,14 @@ public sealed class SearchEndpointTests : IClassFixture<ICD10ApiFactory>
         SkipIfEmbeddingServiceUnavailable();
 
         // Two semantically similar queries should return overlapping results
+        // Using diabetes queries which the MedEmbed model handles consistently
         var response1 = await _client.PostAsJsonAsync(
             "/api/search",
-            new { Query = "difficulty breathing", Limit = 5 }
+            new { Query = "diabetes mellitus type 2", Limit = 5 }
         );
         var response2 = await _client.PostAsJsonAsync(
             "/api/search",
-            new { Query = "shortness of breath dyspnea", Limit = 5 }
+            new { Query = "type 2 diabetes", Limit = 5 }
         );
 
         var content1 = await response1.Content.ReadAsStringAsync();

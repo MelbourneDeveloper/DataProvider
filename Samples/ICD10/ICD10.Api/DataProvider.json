@@ -39,6 +39,14 @@
         {
             "name": "GetAllCodeEmbeddings",
             "sqlFile": "Queries/GetAllCodeEmbeddings.generated.sql"
+        },
+        {
+            "name": "SearchAchiCodes",
+            "sqlFile": "Queries/SearchAchiCodes.sql"
+        },
+        {
+            "name": "SearchIcd10Codes",
+            "sqlFile": "Queries/SearchIcd10Codes.sql"
         }
     ],
     "tables": [

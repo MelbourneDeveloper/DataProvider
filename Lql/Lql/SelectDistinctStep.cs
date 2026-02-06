@@ -19,6 +19,6 @@ public sealed class SelectDistinctStep : StepBase
     /// <param name="columns">The columns to select.</param>
     public SelectDistinctStep(IEnumerable<ColumnInfo> columns)
     {
-        Columns = new Collection<ColumnInfo>([.. columns]);
+        Columns = new(columns.ToList());
     }
 }

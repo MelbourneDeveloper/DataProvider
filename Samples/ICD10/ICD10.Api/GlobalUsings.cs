@@ -82,3 +82,21 @@ global using GetCodesByCategoryOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetCodesByCategory>,
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.GetCodesByCategory>, Selecta.SqlError>;
+global using SearchAchiCodesError = Outcome.Result<
+    System.Collections.Immutable.ImmutableList<Generated.SearchAchiCodes>,
+    Selecta.SqlError
+>.Error<System.Collections.Immutable.ImmutableList<Generated.SearchAchiCodes>, Selecta.SqlError>;
+// SearchAchiCodes query result type aliases
+global using SearchAchiCodesOk = Outcome.Result<
+    System.Collections.Immutable.ImmutableList<Generated.SearchAchiCodes>,
+    Selecta.SqlError
+>.Ok<System.Collections.Immutable.ImmutableList<Generated.SearchAchiCodes>, Selecta.SqlError>;
+global using SearchIcd10CodesError = Outcome.Result<
+    System.Collections.Immutable.ImmutableList<Generated.SearchIcd10Codes>,
+    Selecta.SqlError
+>.Error<System.Collections.Immutable.ImmutableList<Generated.SearchIcd10Codes>, Selecta.SqlError>;
+// SearchIcd10Codes query result type aliases
+global using SearchIcd10CodesOk = Outcome.Result<
+    System.Collections.Immutable.ImmutableList<Generated.SearchIcd10Codes>,
+    Selecta.SqlError
+>.Ok<System.Collections.Immutable.ImmutableList<Generated.SearchIcd10Codes>, Selecta.SqlError>;

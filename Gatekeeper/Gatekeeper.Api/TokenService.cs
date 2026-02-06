@@ -159,7 +159,7 @@ public static class TokenService
         var result = await conn.GetSessionRevokedAsync(jti).ConfigureAwait(false);
         return result switch
         {
-            GetSessionRevokedOk ok => ok.Value.FirstOrDefault()?.is_revoked == 1,
+            GetSessionRevokedOk ok => ok.Value.FirstOrDefault()?.is_revoked == true,
             GetSessionRevokedError => false,
         };
     }

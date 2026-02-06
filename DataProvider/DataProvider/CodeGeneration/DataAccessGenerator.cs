@@ -259,7 +259,7 @@ public static class DataAccessGenerator
 
             sb.AppendLine(
                 CultureInfo.InvariantCulture,
-                $"                            reader.IsDBNull({i}) ? {(column.IsNullable ? "null" : $"default({column.CSharpType})")} : ({column.CSharpType})reader.GetValue({i}){comma}"
+                $"                            reader.IsDBNull({i}) ? {(column.IsNullable ? "null" : $"default({column.CSharpType})")} : reader.GetFieldValue<{column.CSharpType}>({i}){comma}"
             );
         }
 

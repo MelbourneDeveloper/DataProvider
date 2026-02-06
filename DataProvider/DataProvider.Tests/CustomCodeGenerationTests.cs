@@ -14,8 +14,8 @@ namespace DataProvider.Tests;
 /// </summary>
 public class CustomCodeGenerationTests
 {
-    private static readonly List<DatabaseColumn> TestColumns = new()
-    {
+    private static readonly List<DatabaseColumn> TestColumns =
+    [
         new DatabaseColumn
         {
             Name = "Id",
@@ -46,7 +46,7 @@ public class CustomCodeGenerationTests
             IsIdentity = false,
             IsComputed = false,
         },
-    };
+    ];
 
     private static readonly SelectStatement TestStatement = new()
     {

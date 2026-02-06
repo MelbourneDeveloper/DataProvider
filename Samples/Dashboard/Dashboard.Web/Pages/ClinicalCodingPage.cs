@@ -258,7 +258,7 @@ namespace Dashboard.Pages
                 return "Search by code, description, or keywords (e.g., 'diabetes', 'fracture')";
             if (mode == "semantic")
                 return "Describe symptoms or conditions in natural language...";
-            return "Enter exact ICD-10 code (e.g., 'E11.9', 'J18.9')";
+            return "Enter ICD-10 code or prefix (e.g., 'O9A.', 'E11', 'J18.9')";
         }
 
         private static void UpdateQuery(
@@ -416,22 +416,64 @@ namespace Dashboard.Pages
                 }
                 else
                 {
-                    var code = await ApiClient.GetIcd10CodeAsync(code: state.SearchQuery);
-                    setState(
-                        new ClinicalCodingState
-                        {
-                            SearchQuery = state.SearchQuery,
-                            SearchMode = state.SearchMode,
-                            Icd10Results = new Icd10Code[0],
-                            AchiResults = new AchiCode[0],
-                            SemanticResults = new SemanticSearchResult[0],
-                            SelectedCode = code,
-                            Loading = false,
-                            Error = null,
-                            IncludeAchi = state.IncludeAchi,
-                            CopiedCode = null,
-                        }
+                    // Code Lookup: Use keyword search with prefix filter
+                    var allResults = await ApiClient.SearchIcd10CodesAsync(
+                        query: state.SearchQuery,
+                        limit: 100
                     );
+
+                    // Filter to codes that start with the search query (case-insensitive prefix match)
+                    var query = state.SearchQuery.ToUpper();
+                    var matchingCodes = new System.Collections.Generic.List<Icd10Code>();
+                    foreach (var c in allResults)
+                    {
+                        if (c.Code != null && c.Code.ToUpper().StartsWith(query))
+                        {
+                            matchingCodes.Add(c);
+                        }
+                    }
+
+                    // If exactly one result, show detail view; otherwise show list
+                    if (matchingCodes.Count == 1)
+                    {
+                        var fullCode = await ApiClient.GetIcd10CodeAsync(
+                            code: matchingCodes[0].Code
+                        );
+                        setState(
+                            new ClinicalCodingState
+                            {
+                                SearchQuery = state.SearchQuery,
+                                SearchMode = state.SearchMode,
+                                Icd10Results = new Icd10Code[0],
+                                AchiResults = new AchiCode[0],
+                                SemanticResults = new SemanticSearchResult[0],
+                                SelectedCode = fullCode,
+                                Loading = false,
+                                Error = null,
+                                IncludeAchi = state.IncludeAchi,
+                                CopiedCode = null,
+                            }
+                        );
+                    }
+                    else
+                    {
+                        // Multiple matches or no matches - show as list
+                        setState(
+                            new ClinicalCodingState
+                            {
+                                SearchQuery = state.SearchQuery,
+                                SearchMode = state.SearchMode,
+                                Icd10Results = matchingCodes.ToArray(),
+                                AchiResults = new AchiCode[0],
+                                SemanticResults = new SemanticSearchResult[0],
+                                SelectedCode = null,
+                                Loading = false,
+                                Error = null,
+                                IncludeAchi = state.IncludeAchi,
+                                CopiedCode = null,
+                            }
+                        );
+                    }
                 }
             }
             catch (Exception ex)
@@ -474,8 +516,56 @@ namespace Dashboard.Pages
             if (state.Icd10Results.Length > 0)
                 return RenderKeywordResults(state, setState);
 
+            // Show "no results" for Code Lookup when search was performed
+            if (
+                state.SearchMode == "lookup"
+                && !string.IsNullOrWhiteSpace(state.SearchQuery)
+                && !state.Loading
+            )
+                return RenderNoResults(state.SearchQuery);
+
             return RenderEmptyState(state);
         }
+
+        private static ReactElement RenderNoResults(string query) =>
+            Div(
+                className: "card",
+                children: new[]
+                {
+                    Div(
+                        className: "empty-state",
+                        children: new[]
+                        {
+                            Div(
+                                style: new
+                                {
+                                    background = "linear-gradient(135deg, #6b7280, #9ca3af)",
+                                    borderRadius = "16px",
+                                    padding = "20px",
+                                    marginBottom = "16px",
+                                },
+                                children: new[] { Icons.Search() }
+                            ),
+                            H(
+                                4,
+                                className: "empty-state-title",
+                                children: new[] { Text("No codes found") }
+                            ),
+                            P(
+                                className: "empty-state-description",
+                                children: new[]
+                                {
+                                    Text(
+                                        "No ICD-10 codes match '"
+                                            + query
+                                            + "'. Try a different code or use keyword search."
+                                    ),
+                                }
+                            ),
+                        }
+                    ),
+                }
+            );
 
         private static ReactElement RenderLoading() =>
             Div(
@@ -591,7 +681,7 @@ namespace Dashboard.Pages
             if (mode == "semantic")
                 return "Describe symptoms in natural language and let AI find the right codes.";
             if (mode == "lookup")
-                return "Enter an exact ICD-10 or ACHI code to view its full details.";
+                return "Enter an ICD-10 code or prefix to find matching codes (e.g., 'O9A.' lists all O9A codes).";
             return "Search diagnosis codes by keyword, description, or code fragment.";
         }
 

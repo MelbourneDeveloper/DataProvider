@@ -25,6 +25,6 @@ public sealed class InsertStep : StepBase
     public InsertStep(string table, IEnumerable<string> columns)
     {
         Table = table;
-        Columns = new Collection<string>([.. columns]);
+        Columns = new(columns.ToList());
     }
 }

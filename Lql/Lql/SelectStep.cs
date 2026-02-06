@@ -19,6 +19,6 @@ public sealed class SelectStep : StepBase
     /// <param name="columns">The columns to select.</param>
     public SelectStep(IEnumerable<ColumnInfo> columns)
     {
-        Columns = new Collection<ColumnInfo>([.. columns]);
+        Columns = new(columns.ToList());
     }
 }

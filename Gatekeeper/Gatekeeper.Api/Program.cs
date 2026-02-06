@@ -7,10 +7,13 @@ using Microsoft.AspNetCore.Http.Json;
 var builder = WebApplication.CreateBuilder(args);
 
 // File logging - use LOG_PATH env var or default to /tmp in containers
-var logPath = Environment.GetEnvironmentVariable("LOG_PATH")
-    ?? (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true"
-        ? "/tmp/gatekeeper.log"
-        : Path.Combine(AppContext.BaseDirectory, "gatekeeper.log"));
+var logPath =
+    Environment.GetEnvironmentVariable("LOG_PATH")
+    ?? (
+        Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true"
+            ? "/tmp/gatekeeper.log"
+            : Path.Combine(AppContext.BaseDirectory, "gatekeeper.log")
+    );
 builder.Logging.AddFileLogging(logPath);
 
 builder.Services.Configure<JsonOptions>(options =>
@@ -93,7 +96,7 @@ authGroup.MapPost(
                         request.Email,
                         now,
                         null,
-                        1,
+                        true,
                         null
                     )
                     .ConfigureAwait(false);
@@ -105,9 +108,7 @@ authGroup.MapPost(
             var excludeCredentials = existingCredentials switch
             {
                 GetUserCredentialsOk ok => ok
-                    .Value.Select(c => new PublicKeyCredentialDescriptor(
-                        Convert.FromBase64String(c.id)
-                    ))
+                    .Value.Select(c => new PublicKeyCredentialDescriptor(Base64Url.Decode(c.id)))
                     .ToList(),
                 GetUserCredentialsError _ => [],
             };
@@ -275,8 +276,8 @@ authGroup.MapPost(
                     now,
                     null,
                     request.DeviceName,
-                    cred.IsBackupEligible ? 1 : 0,
-                    cred.IsBackedUp ? 1 : 0
+                    cred.IsBackupEligible,
+                    cred.IsBackedUp
                 )
                 .ConfigureAwait(false);
 
@@ -360,11 +361,12 @@ authGroup.MapPost(
 
             var storedChallenge = challengeOk.Value[0];
 
-            // Get credential from database - Id is already base64url encoded
             var credentialId = request.AssertionResponse.Id;
+            logger.LogInformation("Login attempt - credential ID: {CredentialId}", credentialId);
             var credResult = await conn.GetCredentialByIdAsync(credentialId).ConfigureAwait(false);
             if (credResult is not GetCredentialByIdOk { Value.Count: > 0 } credOk)
             {
+                logger.LogWarning("Credential not found for ID: {CredentialId}", credentialId);
                 return Results.BadRequest(new { Error = "Credential not found" });
             }
 

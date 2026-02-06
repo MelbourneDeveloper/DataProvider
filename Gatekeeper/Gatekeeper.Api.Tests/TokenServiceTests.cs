@@ -302,7 +302,7 @@ public sealed class TokenServiceTests
             userCmd.Transaction = tx;
             userCmd.CommandText =
                 @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
-                                    VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
+                                    VALUES (@id, @name, @email, @now, NULL, true, NULL)";
             userCmd.Parameters.AddWithValue("@id", "user-revoked");
             userCmd.Parameters.AddWithValue("@name", "Revoked User");
             userCmd.Parameters.AddWithValue("@email", DBNull.Value);
@@ -313,7 +313,7 @@ public sealed class TokenServiceTests
             sessionCmd.Transaction = tx;
             sessionCmd.CommandText =
                 @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
-                                       VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 1)";
+                                       VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, true)";
             sessionCmd.Parameters.AddWithValue("@id", jti);
             sessionCmd.Parameters.AddWithValue("@user_id", "user-revoked");
             sessionCmd.Parameters.AddWithValue("@created", now);
@@ -371,7 +371,7 @@ public sealed class TokenServiceTests
             userCmd.Transaction = tx;
             userCmd.CommandText =
                 @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
-                                    VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
+                                    VALUES (@id, @name, @email, @now, NULL, true, NULL)";
             userCmd.Parameters.AddWithValue("@id", "user-revoked2");
             userCmd.Parameters.AddWithValue("@name", "Revoked User 2");
             userCmd.Parameters.AddWithValue("@email", DBNull.Value);
@@ -382,7 +382,7 @@ public sealed class TokenServiceTests
             sessionCmd.Transaction = tx;
             sessionCmd.CommandText =
                 @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
-                                       VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 1)";
+                                       VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, true)";
             sessionCmd.Parameters.AddWithValue("@id", jti);
             sessionCmd.Parameters.AddWithValue("@user_id", "user-revoked2");
             sessionCmd.Parameters.AddWithValue("@created", now);
@@ -426,7 +426,7 @@ public sealed class TokenServiceTests
             userCmd.Transaction = tx;
             userCmd.CommandText =
                 @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
-                                    VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
+                                    VALUES (@id, @name, @email, @now, NULL, true, NULL)";
             userCmd.Parameters.AddWithValue("@id", userId);
             userCmd.Parameters.AddWithValue("@name", "Test User");
             userCmd.Parameters.AddWithValue("@email", DBNull.Value);
@@ -437,7 +437,7 @@ public sealed class TokenServiceTests
             sessionCmd.Transaction = tx;
             sessionCmd.CommandText =
                 @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
-                                       VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 0)";
+                                       VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, false)";
             sessionCmd.Parameters.AddWithValue("@id", jti);
             sessionCmd.Parameters.AddWithValue("@user_id", userId);
             sessionCmd.Parameters.AddWithValue("@created", now);
@@ -454,13 +454,13 @@ public sealed class TokenServiceTests
             var revokedResult = await conn.GetSessionRevokedAsync(jti);
             var isRevoked = revokedResult switch
             {
-                GetSessionRevokedOk ok => ok.Value.FirstOrDefault()?.is_revoked ?? -1L,
+                GetSessionRevokedOk ok => ok.Value.FirstOrDefault()?.is_revoked ?? false,
                 GetSessionRevokedError err => throw new InvalidOperationException(
                     $"GetSessionRevoked failed: {err.Value.Message}, {err.Value.InnerException?.Message}"
                 ),
             };
 
-            Assert.Equal(1L, isRevoked);
+            Assert.True(isRevoked);
         }
         finally
         {

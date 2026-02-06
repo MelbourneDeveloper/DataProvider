@@ -18,6 +18,6 @@ public sealed class GroupByStep : StepBase
     /// <param name="columns">The columns to group by.</param>
     public GroupByStep(IEnumerable<string> columns)
     {
-        Columns = new Collection<string>([.. columns]);
+        Columns = new(columns.ToList());
     }
 }

@@ -2604,13 +2604,16 @@
               body: JSON.stringify({ ChallengeId: beginData.ChallengeId, OptionsJson: beginData.OptionsJson, AttestationResponse: attestation })
             });
             if (!completeRes.ok) throw new Error((await completeRes.json()).Error || 'Registration failed');
-            setSuccess('Registration successful! You can now login.'); setMode('login');
+            const result = await completeRes.json();
+            setAuthToken(result.Token);
+            setAuthUser({ userId: result.UserId, displayName: result.DisplayName, email: result.Email });
+            onLogin({ userId: result.UserId, displayName: result.DisplayName, email: result.Email });
           } catch (err) { setError(err.message); } finally { setLoading(false); }
         };
 
         const handleLogin = async (e) => {
           e.preventDefault();
-          setLoading(true); setError(null);
+          setLoading(true); setError(null); setSuccess(null);
           try {
             // Check for WebAuthn support and secure context
             if (!navigator.credentials || !navigator.credentials.get) {

@@ -178,88 +178,13 @@ icdGroup.MapGet(
         var searchLimit = limit ?? 20;
         var searchTerm = $"%{q}%";
 
-        // Manual search implementation (LIKE queries not supported by generator)
-        // Use LEFT JOINs to handle databases with codes but no hierarchy
-        // Returns all fields that CLI expects for proper deserialization
-        await using var cmd = conn.CreateCommand();
-        cmd.CommandText = """
-        SELECT c."Id", c."Code", c."ShortDescription", c."LongDescription", c."Billable",
-               cat."CategoryCode", cat."Title" AS "CategoryTitle",
-               b."BlockCode", b."Title" AS "BlockTitle",
-               ch."ChapterNumber", ch."Title" AS "ChapterTitle",
-               c."InclusionTerms", c."ExclusionTerms", c."CodeAlso", c."CodeFirst", c."Synonyms", c."Edition"
-        FROM icd10_code c
-        LEFT JOIN icd10_category cat ON c."CategoryId" = cat."Id"
-        LEFT JOIN icd10_block b ON cat."BlockId" = b."Id"
-        LEFT JOIN icd10_chapter ch ON b."ChapterId" = ch."Id"
-        WHERE c."Code" ILIKE @term OR c."ShortDescription" ILIKE @term OR c."LongDescription" ILIKE @term
-        ORDER BY c."Code"
-        LIMIT @limit
-        """;
-        cmd.Parameters.AddWithValue("@term", searchTerm);
-        cmd.Parameters.AddWithValue("@limit", searchLimit);
-
-        await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-        var results = new List<object>();
-        while (await reader.ReadAsync().ConfigureAwait(false))
+        var result = await conn.SearchIcd10CodesAsync(term: searchTerm, limit: searchLimit)
+            .ConfigureAwait(false);
+        return result switch
         {
-            var code = reader.GetString(1);
-
-            // Read nullable hierarchy fields
-            var catCodeNull = await reader.IsDBNullAsync(5).ConfigureAwait(false);
-            var catTitleNull = await reader.IsDBNullAsync(6).ConfigureAwait(false);
-            var blockCodeNull = await reader.IsDBNullAsync(7).ConfigureAwait(false);
-            var blockTitleNull = await reader.IsDBNullAsync(8).ConfigureAwait(false);
-            var chapNumNull = await reader.IsDBNullAsync(9).ConfigureAwait(false);
-            var chapTitleNull = await reader.IsDBNullAsync(10).ConfigureAwait(false);
-
-            // Derive hierarchy from code prefix when DB values are null
-            var (derivedChapNum, derivedChapTitle) = chapNumNull
-                ? Icd10Chapters.GetChapter(code)
-                : (reader.GetString(9), chapTitleNull ? "" : reader.GetString(10));
-            var derivedCatCode = catCodeNull
-                ? Icd10Chapters.GetCategory(code)
-                : reader.GetString(5);
-            var (derivedBlockCode, derivedBlockTitle) = blockCodeNull
-                ? Icd10Chapters.GetBlock(code)
-                : (reader.GetString(7), blockTitleNull ? "" : reader.GetString(8));
-
-            results.Add(
-                new
-                {
-                    Id = reader.GetString(0),
-                    Code = code,
-                    ShortDescription = reader.GetString(2),
-                    LongDescription = reader.GetString(3),
-                    Billable = reader.GetInt64(4),
-                    CategoryCode = derivedCatCode,
-                    CategoryTitle = catTitleNull ? "" : reader.GetString(6),
-                    BlockCode = derivedBlockCode,
-                    BlockTitle = derivedBlockTitle,
-                    ChapterNumber = derivedChapNum,
-                    ChapterTitle = derivedChapTitle,
-                    InclusionTerms = await reader.IsDBNullAsync(11).ConfigureAwait(false)
-                        ? ""
-                        : reader.GetString(11),
-                    ExclusionTerms = await reader.IsDBNullAsync(12).ConfigureAwait(false)
-                        ? ""
-                        : reader.GetString(12),
-                    CodeAlso = await reader.IsDBNullAsync(13).ConfigureAwait(false)
-                        ? ""
-                        : reader.GetString(13),
-                    CodeFirst = await reader.IsDBNullAsync(14).ConfigureAwait(false)
-                        ? ""
-                        : reader.GetString(14),
-                    Synonyms = await reader.IsDBNullAsync(15).ConfigureAwait(false)
-                        ? ""
-                        : reader.GetString(15),
-                    Edition = await reader.IsDBNullAsync(16).ConfigureAwait(false)
-                        ? ""
-                        : reader.GetString(16),
-                }
-            );
-        }
-        return Results.Ok(results);
+            SearchIcd10CodesOk(var codes) => Results.Ok(codes.Select(EnrichSearchResult).ToList()),
+            SearchIcd10CodesError(var err) => Results.Problem(err.Message),
+        };
     }
 );
 
@@ -322,35 +247,13 @@ achiGroup.MapGet(
         var searchLimit = limit ?? 20;
         var searchTerm = $"%{q}%";
 
-        // Manual search implementation (LIKE queries not supported by generator)
-        await using var cmd = conn.CreateCommand();
-        cmd.CommandText = """
-        SELECT "Id", "BlockId", "Code", "ShortDescription", "LongDescription", "Billable"
-        FROM achi_code
-        WHERE "Code" ILIKE @term OR "ShortDescription" ILIKE @term OR "LongDescription" ILIKE @term
-        ORDER BY "Code"
-        LIMIT @limit
-        """;
-        cmd.Parameters.AddWithValue("@term", searchTerm);
-        cmd.Parameters.AddWithValue("@limit", searchLimit);
-
-        await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-        var results = new List<object>();
-        while (await reader.ReadAsync().ConfigureAwait(false))
+        var result = await conn.SearchAchiCodesAsync(term: searchTerm, limit: searchLimit)
+            .ConfigureAwait(false);
+        return result switch
         {
-            results.Add(
-                new
-                {
-                    Id = reader.GetString(0),
-                    BlockId = reader.GetString(1),
-                    Code = reader.GetString(2),
-                    ShortDescription = reader.GetString(3),
-                    LongDescription = reader.GetString(4),
-                    Billable = reader.GetInt64(5),
-                }
-            );
-        }
-        return Results.Ok(results);
+            SearchAchiCodesOk(var codes) => Results.Ok(codes),
+            SearchAchiCodesError(var err) => Results.Problem(err.Message),
+        };
     }
 );
 
@@ -630,6 +533,44 @@ static object ToFhirProcedure(GetAchiCodeByCode code) =>
         },
         Property = new[] { new { Code = "block", ValueString = code.BlockNumber } },
     };
+
+/// <summary>
+/// Enriches search result with derived hierarchy when DB values are null.
+/// </summary>
+static object EnrichSearchResult(SearchIcd10Codes code)
+{
+    var codeValue = code.Code ?? "";
+    var (derivedChapNum, derivedChapTitle) = string.IsNullOrEmpty(code.ChapterNumber)
+        ? Icd10Chapters.GetChapter(codeValue)
+        : (code.ChapterNumber, code.ChapterTitle ?? "");
+    var derivedCatCode = string.IsNullOrEmpty(code.CategoryCode)
+        ? Icd10Chapters.GetCategory(codeValue)
+        : code.CategoryCode;
+    var (derivedBlockCode, derivedBlockTitle) = string.IsNullOrEmpty(code.BlockCode)
+        ? Icd10Chapters.GetBlock(codeValue)
+        : (code.BlockCode, code.BlockTitle ?? "");
+
+    return new
+    {
+        Id = code.Id ?? "",
+        Code = codeValue,
+        ShortDescription = code.ShortDescription ?? "",
+        LongDescription = code.LongDescription ?? "",
+        Billable = code.Billable,
+        CategoryCode = derivedCatCode,
+        CategoryTitle = code.CategoryTitle ?? "",
+        BlockCode = derivedBlockCode,
+        BlockTitle = derivedBlockTitle,
+        ChapterNumber = derivedChapNum,
+        ChapterTitle = derivedChapTitle,
+        InclusionTerms = code.InclusionTerms ?? "",
+        ExclusionTerms = code.ExclusionTerms ?? "",
+        CodeAlso = code.CodeAlso ?? "",
+        CodeFirst = code.CodeFirst ?? "",
+        Synonyms = code.Synonyms ?? "",
+        Edition = code.Edition ?? "",
+    };
+}
 
 namespace ICD10.Api
 {
