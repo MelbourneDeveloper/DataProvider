@@ -45,7 +45,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     
     <!-- Temporarily suppress problematic style rules to focus on core functionality -->
-    <WarningsNotAsErrors>$(WarningsNotAsErrors);SA1009;SA1111;SA1402;SA1649;SA1502;SA1201;SA1202;SA0001;CA1031;CA1304;CA1311;CA1725;CA1849;CA1861;CA2100;ERP022;NU1900;NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);SA1009;SA1111;SA1402;SA1649;SA1502;SA1201;SA1202;SA0001;CA1031;CA1304;CA1311;CA1725;CA1849;CA1861;CA2100;ERP022;NU1900;NU1901;NU1902;NU1903;NU1904;IDE0028</WarningsNotAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

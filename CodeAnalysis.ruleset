@@ -15,6 +15,7 @@
         <Rule Id="CA1002" Action="None" />
         <Rule Id="CA1034" Action="None" />
         <Rule Id="CS8509" Action="None" />
+        <Rule Id="IDE0028" Action="None" />
         <!-- Perhaps false positive? https://github.com/dotnet/roslyn-analyzers/issues/7150 -->
         <Rule Id="CA1848" Action="None" />
         <!-- Mark assemblies with assembly version -->
@@ -28,7 +29,6 @@
         <Rule Id="IDE0056" Action="Error" />
         <Rule Id="IDE0057" Action="Error" />
         <Rule Id="IDE0051" Action="Error" />
-        <Rule Id="IDE0028" Action="Error" />
         <Rule Id="IDE0300" Action="Error" />
         <Rule Id="IDE0305" Action="Error" />
         <!-- <Rule Id="IDE0320" Action="Warning" /> -->

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+using System.Collections.Immutable;
 using Selecta;
 
 namespace Lql;
@@ -11,7 +11,7 @@ public sealed class SelectStep : StepBase
     /// <summary>
     /// Gets the columns to select.
     /// </summary>
-    public Collection<ColumnInfo> Columns { get; }
+    public ImmutableArray<ColumnInfo> Columns { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SelectStep"/> class.
@@ -19,6 +19,6 @@ public sealed class SelectStep : StepBase
     /// <param name="columns">The columns to select.</param>
     public SelectStep(IEnumerable<ColumnInfo> columns)
     {
-        Columns = new(columns.ToList());
+        Columns = [.. columns];
     }
 }
