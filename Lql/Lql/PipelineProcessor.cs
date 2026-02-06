@@ -155,7 +155,7 @@ public static class PipelineProcessor
     )
     {
         // If columns are explicitly specified in the InsertStep, use them
-        if (insertStep.Columns.Count > 0)
+        if (insertStep.Columns.Length > 0)
         {
             var explicitColumns = $" ({string.Join(", ", insertStep.Columns)})";
             return $"INSERT INTO {insertStep.Table}{explicitColumns}\n{selectSql}";
