@@ -93,7 +93,7 @@ patientGroup
         {
             using var conn = getConn();
             var result = await conn.GetPatientsAsync(
-                    active.HasValue ? (active.Value ? 1L : 0L) : DBNull.Value,
+                    active.HasValue ? (object)(active.Value ? 1 : 0) : DBNull.Value,
                     familyName ?? (object)DBNull.Value,
                     givenName ?? (object)DBNull.Value,
                     gender ?? (object)DBNull.Value
@@ -157,7 +157,7 @@ patientGroup
             var result = await transaction
                 .Insertfhir_PatientAsync(
                     id,
-                    request.Active ? 1L : 0L,
+                    request.Active ? 1 : 0,
                     request.GivenName,
                     request.FamilyName,
                     request.BirthDate,
@@ -170,7 +170,7 @@ patientGroup
                     request.PostalCode,
                     request.Country,
                     now,
-                    1L
+                    1
                 )
                 .ConfigureAwait(false);
 
@@ -195,7 +195,7 @@ patientGroup
                         PostalCode = request.PostalCode,
                         Country = request.Country,
                         LastUpdated = now,
-                        VersionId = 1L,
+                        VersionId = 1,
                     }
                 );
             }
@@ -247,7 +247,7 @@ patientGroup
             var result = await transaction
                 .Updatefhir_PatientAsync(
                     id,
-                    request.Active ? 1L : 0L,
+                    request.Active ? 1 : 0,
                     request.GivenName,
                     request.FamilyName,
                     request.BirthDate ?? string.Empty,
@@ -380,7 +380,7 @@ encounterGroup
                     request.PeriodEnd,
                     request.Notes,
                     now,
-                    1L
+                    1
                 )
                 .ConfigureAwait(false);
 
@@ -402,7 +402,7 @@ encounterGroup
                         PeriodEnd = request.PeriodEnd,
                         Notes = request.Notes,
                         LastUpdated = now,
-                        VersionId = 1L,
+                        VersionId = 1,
                     }
                 );
             }
@@ -480,7 +480,7 @@ conditionGroup
                     recorderreference: request.RecorderReference,
                     notetext: request.NoteText,
                     lastupdated: now,
-                    versionid: 1L
+                    versionid: 1
                 )
                 .ConfigureAwait(false);
 
@@ -506,7 +506,7 @@ conditionGroup
                         RecorderReference = request.RecorderReference,
                         NoteText = request.NoteText,
                         LastUpdated = now,
-                        VersionId = 1L,
+                        VersionId = 1,
                     }
                 );
             }
@@ -588,7 +588,7 @@ medicationGroup
                     request.Refills,
                     now,
                     now,
-                    1L
+                    1
                 )
                 .ConfigureAwait(false);
 
@@ -613,7 +613,7 @@ medicationGroup
                         Refills = request.Refills,
                         AuthoredOn = now,
                         LastUpdated = now,
-                        VersionId = 1L,
+                        VersionId = 1,
                     }
                 );
             }

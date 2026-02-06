@@ -73,12 +73,13 @@ public static class PostgresDdlGenerator
             AddCheckConstraintOperation op => GenerateAddCheckConstraint(op),
             AddUniqueConstraintOperation op => GenerateAddUniqueConstraint(op),
             DropTableOperation op =>
-                $"DROP TABLE IF EXISTS \"{op.Schema}\".\"{op.TableName}\" CASCADE",
+                $"DROP TABLE IF EXISTS \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" CASCADE",
             DropColumnOperation op =>
-                $"ALTER TABLE \"{op.Schema}\".\"{op.TableName}\" DROP COLUMN \"{op.ColumnName}\"",
-            DropIndexOperation op => $"DROP INDEX IF EXISTS \"{op.Schema}\".\"{op.IndexName}\"",
+                $"ALTER TABLE \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" DROP COLUMN \"{op.ColumnName}\"",
+            DropIndexOperation op =>
+                $"DROP INDEX IF EXISTS \"{op.Schema.ToLowerInvariant()}\".\"{op.IndexName.ToLowerInvariant()}\"",
             DropForeignKeyOperation op =>
-                $"ALTER TABLE \"{op.Schema}\".\"{op.TableName}\" DROP CONSTRAINT \"{op.ConstraintName}\"",
+                $"ALTER TABLE \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" DROP CONSTRAINT \"{op.ConstraintName.ToLowerInvariant()}\"",
             _ => throw new NotSupportedException(
                 $"Unknown operation type: {operation.GetType().Name}"
             ),
@@ -87,9 +88,11 @@ public static class PostgresDdlGenerator
     private static string GenerateCreateTable(TableDefinition table)
     {
         var sb = new StringBuilder();
+        var tableName = table.Name.ToLowerInvariant();
+        var schemaName = table.Schema.ToLowerInvariant();
         sb.Append(
             CultureInfo.InvariantCulture,
-            $"CREATE TABLE IF NOT EXISTS \"{table.Schema}\".\"{table.Name}\" ("
+            $"CREATE TABLE IF NOT EXISTS \"{schemaName}\".\"{tableName}\" ("
         );
 
         var columnDefs = new List<string>();
@@ -102,29 +105,38 @@ public static class PostgresDdlGenerator
         // Add primary key constraint
         if (table.PrimaryKey is not null && table.PrimaryKey.Columns.Count > 0)
         {
-            var pkName = table.PrimaryKey.Name ?? $"PK_{table.Name}";
-            var pkCols = string.Join(", ", table.PrimaryKey.Columns.Select(c => $"\"{c}\""));
+            var pkName = (table.PrimaryKey.Name ?? $"PK_{table.Name}").ToLowerInvariant();
+            var pkCols = string.Join(", ", table.PrimaryKey.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
             columnDefs.Add($"CONSTRAINT \"{pkName}\" PRIMARY KEY ({pkCols})");
         }
 
         // Add foreign key constraints
         foreach (var fk in table.ForeignKeys)
         {
-            var fkName = fk.Name ?? $"FK_{table.Name}_{string.Join("_", fk.Columns)}";
-            var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c}\""));
-            var refCols = string.Join(", ", fk.ReferencedColumns.Select(c => $"\"{c}\""));
+            var fkName = (
+                fk.Name ?? $"FK_{table.Name}_{string.Join("_", fk.Columns)}"
+            ).ToLowerInvariant();
+            var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
+            var refCols = string.Join(
+                ", ",
+                fk.ReferencedColumns.Select(c => $"\"{c.ToLowerInvariant()}\"")
+            );
             var onDelete = ForeignKeyActionToSql(fk.OnDelete);
             var onUpdate = ForeignKeyActionToSql(fk.OnUpdate);
+            var refTable = fk.ReferencedTable.ToLowerInvariant();
+            var refSchema = fk.ReferencedSchema.ToLowerInvariant();
 
             columnDefs.Add(
-                $"CONSTRAINT \"{fkName}\" FOREIGN KEY ({fkCols}) REFERENCES \"{fk.ReferencedSchema}\".\"{fk.ReferencedTable}\" ({refCols}) ON DELETE {onDelete} ON UPDATE {onUpdate}"
+                $"CONSTRAINT \"{fkName}\" FOREIGN KEY ({fkCols}) REFERENCES \"{refSchema}\".\"{refTable}\" ({refCols}) ON DELETE {onDelete} ON UPDATE {onUpdate}"
             );
         }
 
         // Add unique constraints
         foreach (var uc in table.UniqueConstraints)
         {
-            var ucName = uc.Name ?? $"UQ_{table.Name}_{string.Join("_", uc.Columns)}";
+            var ucName = (
+                uc.Name ?? $"UQ_{table.Name}_{string.Join("_", uc.Columns)}"
+            ).ToLowerInvariant();
             var ucCols = string.Join(", ", uc.Columns.Select(c => $"\"{c}\""));
             columnDefs.Add($"CONSTRAINT \"{ucName}\" UNIQUE ({ucCols})");
         }
@@ -132,7 +144,7 @@ public static class PostgresDdlGenerator
         // Add check constraints
         foreach (var cc in table.CheckConstraints)
         {
-            columnDefs.Add($"CONSTRAINT \"{cc.Name}\" CHECK ({cc.Expression})");
+            columnDefs.Add($"CONSTRAINT \"{cc.Name.ToLowerInvariant()}\" CHECK ({cc.Expression})");
         }
 
         sb.Append(string.Join(", ", columnDefs));
@@ -149,9 +161,10 @@ public static class PostgresDdlGenerator
                     ? string.Join(", ", index.Expressions)
                     : string.Join(", ", index.Columns.Select(c => $"\"{c}\""));
             var filter = index.Filter is not null ? $" WHERE {index.Filter}" : "";
+            var indexName = index.Name.ToLowerInvariant();
             sb.Append(
                 CultureInfo.InvariantCulture,
-                $"CREATE {unique}INDEX IF NOT EXISTS \"{index.Name}\" ON \"{table.Schema}\".\"{table.Name}\" ({indexItems}){filter}"
+                $"CREATE {unique}INDEX IF NOT EXISTS \"{indexName}\" ON \"{schemaName}\".\"{tableName}\" ({indexItems}){filter}"
             );
         }
 
@@ -199,7 +212,8 @@ public static class PostgresDdlGenerator
 
         if (column.CheckConstraint is not null)
         {
-            sb.Append(CultureInfo.InvariantCulture, $" CHECK ({column.CheckConstraint})");
+            var constraint = LowercaseQuotedIdentifiers(column.CheckConstraint);
+            sb.Append(CultureInfo.InvariantCulture, $" CHECK ({constraint})");
         }
 
         return sb.ToString();
@@ -208,7 +222,7 @@ public static class PostgresDdlGenerator
     private static string GenerateAddColumn(AddColumnOperation op)
     {
         var colDef = GenerateColumnDef(op.Column);
-        return $"ALTER TABLE \"{op.Schema}\".\"{op.TableName}\" ADD COLUMN {colDef}";
+        return $"ALTER TABLE \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" ADD COLUMN {colDef}";
     }
 
     private static string GenerateCreateIndex(CreateIndexOperation op)
@@ -221,30 +235,37 @@ public static class PostgresDdlGenerator
                 : string.Join(", ", op.Index.Columns.Select(c => $"\"{c}\""));
         var filter = op.Index.Filter is not null ? $" WHERE {op.Index.Filter}" : "";
 
-        return $"CREATE {unique}INDEX IF NOT EXISTS \"{op.Index.Name}\" ON \"{op.Schema}\".\"{op.TableName}\" ({indexItems}){filter}";
+        return $"CREATE {unique}INDEX IF NOT EXISTS \"{op.Index.Name.ToLowerInvariant()}\" ON \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" ({indexItems}){filter}";
     }
 
     private static string GenerateAddForeignKey(AddForeignKeyOperation op)
     {
         var fk = op.ForeignKey;
-        var fkName = fk.Name ?? $"FK_{op.TableName}_{string.Join("_", fk.Columns)}";
+        var fkName = (
+            fk.Name ?? $"FK_{op.TableName}_{string.Join("_", fk.Columns)}"
+        ).ToLowerInvariant();
         var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c}\""));
-        var refCols = string.Join(", ", fk.ReferencedColumns.Select(c => $"\"{c}\""));
+        var refCols = string.Join(
+            ", ",
+            fk.ReferencedColumns.Select(c => $"\"{c}\"")
+        );
         var onDelete = ForeignKeyActionToSql(fk.OnDelete);
         var onUpdate = ForeignKeyActionToSql(fk.OnUpdate);
 
-        return $"ALTER TABLE \"{op.Schema}\".\"{op.TableName}\" ADD CONSTRAINT \"{fkName}\" FOREIGN KEY ({fkCols}) REFERENCES \"{fk.ReferencedSchema}\".\"{fk.ReferencedTable}\" ({refCols}) ON DELETE {onDelete} ON UPDATE {onUpdate}";
+        return $"ALTER TABLE \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" ADD CONSTRAINT \"{fkName}\" FOREIGN KEY ({fkCols}) REFERENCES \"{fk.ReferencedSchema.ToLowerInvariant()}\".\"{fk.ReferencedTable.ToLowerInvariant()}\" ({refCols}) ON DELETE {onDelete} ON UPDATE {onUpdate}";
     }
 
     private static string GenerateAddCheckConstraint(AddCheckConstraintOperation op) =>
-        $"ALTER TABLE \"{op.Schema}\".\"{op.TableName}\" ADD CONSTRAINT \"{op.CheckConstraint.Name}\" CHECK ({op.CheckConstraint.Expression})";
+        $"ALTER TABLE \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" ADD CONSTRAINT \"{op.CheckConstraint.Name.ToLowerInvariant()}\" CHECK ({op.CheckConstraint.Expression})";
 
     private static string GenerateAddUniqueConstraint(AddUniqueConstraintOperation op)
     {
         var uc = op.UniqueConstraint;
-        var ucName = uc.Name ?? $"UQ_{op.TableName}_{string.Join("_", uc.Columns)}";
+        var ucName = (
+            uc.Name ?? $"UQ_{op.TableName}_{string.Join("_", uc.Columns)}"
+        ).ToLowerInvariant();
         var ucCols = string.Join(", ", uc.Columns.Select(c => $"\"{c}\""));
-        return $"ALTER TABLE \"{op.Schema}\".\"{op.TableName}\" ADD CONSTRAINT \"{ucName}\" UNIQUE ({ucCols})";
+        return $"ALTER TABLE \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" ADD CONSTRAINT \"{ucName}\" UNIQUE ({ucCols})";
     }
 
     /// <summary>
@@ -297,6 +318,40 @@ public static class PostgresDdlGenerator
 
             _ => "TEXT",
         };
+
+    /// <summary>
+    /// Lowercases double-quoted identifiers in a SQL expression.
+    /// E.g. "Gender" IN ('male') becomes "gender" IN ('male').
+    /// </summary>
+    private static string LowercaseQuotedIdentifiers(string expression)
+    {
+        var sb = new StringBuilder(expression.Length);
+        var i = 0;
+        while (i < expression.Length)
+        {
+            if (expression[i] == '"')
+            {
+                sb.Append('"');
+                i++;
+                while (i < expression.Length && expression[i] != '"')
+                {
+                    sb.Append(char.ToLowerInvariant(expression[i]));
+                    i++;
+                }
+                if (i < expression.Length)
+                {
+                    sb.Append('"');
+                    i++;
+                }
+            }
+            else
+            {
+                sb.Append(expression[i]);
+                i++;
+            }
+        }
+        return sb.ToString();
+    }
 
     private static string ForeignKeyActionToSql(ForeignKeyAction action) =>
         action switch

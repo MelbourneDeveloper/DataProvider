@@ -1,35 +1,25 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Scheduling.Api.Tests;
 
 /// <summary>
 /// Sync tests for Scheduling domain.
+/// Uses shared SchedulingApiFactory with PostgreSQL - NO mocks.
 /// </summary>
-public sealed class SchedulingSyncTests : IDisposable
+public sealed class SchedulingSyncTests : IClassFixture<SchedulingApiFactory>
 {
-    private readonly WebApplicationFactory<Program> _schedulingFactory;
     private readonly HttpClient _schedulingClient;
-    private readonly string _schedulingDbPath;
     private static readonly string AuthToken = TestTokenHelper.GenerateSchedulerToken();
 
     /// <summary>
-    /// Creates test instance with Scheduling API running.
+    /// Creates test instance with Scheduling API running against PostgreSQL.
     /// </summary>
-    public SchedulingSyncTests()
+    /// <param name="factory">Shared factory instance.</param>
+    public SchedulingSyncTests(SchedulingApiFactory factory)
     {
-        _schedulingDbPath = Path.Combine(
-            Path.GetTempPath(),
-            $"scheduling_sync_test_{Guid.NewGuid()}.db"
-        );
-
-        _schedulingFactory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-            builder.UseSetting("DbPath", _schedulingDbPath)
-        );
-
-        _schedulingClient = _schedulingFactory.CreateClient();
+        _schedulingClient = factory.CreateClient();
         _schedulingClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Bearer",
             AuthToken
@@ -370,24 +360,5 @@ public sealed class SchedulingSyncTests : IDisposable
             .ToList();
         Assert.Contains("fhir_Practitioner", tableNames);
         Assert.Contains("fhir_Appointment", tableNames);
-    }
-
-    /// <inheritdoc />
-    public void Dispose()
-    {
-        _schedulingClient.Dispose();
-        _schedulingFactory.Dispose();
-
-        try
-        {
-            if (File.Exists(_schedulingDbPath))
-            {
-                File.Delete(_schedulingDbPath);
-            }
-        }
-        catch
-        {
-            // Ignore cleanup errors
-        }
     }
 }

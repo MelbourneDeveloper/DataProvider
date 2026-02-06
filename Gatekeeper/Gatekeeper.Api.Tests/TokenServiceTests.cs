@@ -513,7 +513,7 @@ public sealed class TokenServiceTests
         // Connect to PostgreSQL server - use environment variable or default to localhost
         var baseConnectionString =
             Environment.GetEnvironmentVariable("TEST_POSTGRES_CONNECTION")
-            ?? "Host=localhost;Database=postgres;Username=postgres;Password=postgres";
+            ?? "Host=localhost;Database=postgres;Username=postgres;Password=changeme";
 
         var dbName = $"test_tokenservice_{Guid.NewGuid():N}";
 
@@ -567,7 +567,7 @@ public sealed class TokenServiceTests
     {
         var baseConnectionString =
             Environment.GetEnvironmentVariable("TEST_POSTGRES_CONNECTION")
-            ?? "Host=localhost;Database=postgres;Username=postgres;Password=postgres";
+            ?? "Host=localhost;Database=postgres;Username=postgres;Password=changeme";
 
         connection.Close();
         connection.Dispose();

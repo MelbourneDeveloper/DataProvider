@@ -5,6 +5,8 @@
 - Don't edit files that are locked; lock files when editing
 - COMMUNICATE REGULARLY AND COORDINATE WITH OTHERS THROUGH MESSAGES
 
+⛔️ DO NOT RUN DOCKER COMMANDS!!!
+
 ## Coding Rules
 
 - **NEVER THROW** - Return `Result<T,E>``. Wrap failures in try/catch

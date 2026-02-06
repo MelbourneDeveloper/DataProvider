@@ -131,83 +131,6 @@ public static partial class UserExtensions
     /// <summary>
     /// Executes 'User.sql' and maps results.
     /// </summary>
-    /// <param name=""connection"">The open SqliteConnection connection.</param>
-    /// <param name=""userId"">Query parameter.</param>
-    /// <returns>Result of records or SQL error.</returns>
-    public static async Task<Result<ImmutableList<User>, SqlError>> UserAsync(this SqliteConnection connection, object userId)
-    {
-        const string sql = @""SELECT Id, Name, Email FROM Users WHERE Id = @userId"";
-
-        try
-        {
-            var results = ImmutableList.CreateBuilder<User>();
-
-            using (var command = new SqliteCommand(sql, connection))
-            {
-                command.Parameters.AddWithValue(""@userId"", userId ?? (object)DBNull.Value);
-
-                using (var reader = await command.ExecuteReaderAsync().ConfigureAwait(false))
-                {
-                    while (await reader.ReadAsync().ConfigureAwait(false))
-                    {
-                        var item = new User(
-                            reader.IsDBNull(0) ? default(int) : (int)reader.GetValue(0),
-                            reader.IsDBNull(1) ? default(string) : (string)reader.GetValue(1),
-                            reader.IsDBNull(2) ? null : (string?)reader.GetValue(2)
-                        );
-                        results.Add(item);
-                    }
-                }
-            }
-
-            return new Result<ImmutableList<User>, SqlError>.Ok<ImmutableList<User>, SqlError>(results.ToImmutable());
-        }
-        catch (Exception ex)
-        {
-            return new Result<ImmutableList<User>, SqlError>.Error<ImmutableList<User>, SqlError>(new SqlError(""Database error"", ex));
-        }
-    }
-}
-
-/// <summary>
-/// Mutable data class for User (Custom Style)
-/// </summary>
-public class UserData
-{
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public string? Email { get; set; }
-
-    public UserData() { }
-    
-    public UserData Clone() => new UserData
-    {
-        Id = this.Id,
-        Name = this.Name,
-        Email = this.Email
-    };
-}";
-
-        // This is a snapshot/golden test - ensure exact match with generated output
-        expectedCode =
-            @"using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
-using Outcome;
-using Selecta;
-
-namespace CustomGenerated;
-
-/// <summary>
-/// Extension methods for 'User'.
-/// </summary>
-public static partial class UserExtensions
-{
-    /// <summary>
-    /// Executes 'User.sql' and maps results.
-    /// </summary>
     /// <param name=""connection"">Open SqliteConnection connection.</param>
     /// <param name=""userId"">Query parameter.</param>
     /// <returns>Result of records or SQL error.</returns>
@@ -228,9 +151,9 @@ public static partial class UserExtensions
                     while (await reader.ReadAsync().ConfigureAwait(false))
                     {
                         var item = new User(
-                            reader.IsDBNull(0) ? default(int) : (int)reader.GetValue(0),
-                            reader.IsDBNull(1) ? default(string) : (string)reader.GetValue(1),
-                            reader.IsDBNull(2) ? null : (string?)reader.GetValue(2)
+                            reader.IsDBNull(0) ? default(int) : reader.GetFieldValue<int>(0),
+                            reader.IsDBNull(1) ? default(string) : reader.GetFieldValue<string>(1),
+                            reader.IsDBNull(2) ? null : reader.GetFieldValue<string?>(2)
                         );
                         results.Add(item);
                     }

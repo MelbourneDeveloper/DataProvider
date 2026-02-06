@@ -69,7 +69,7 @@ tables:
     type: Text
   - name: Status
     type: Text
-    checkConstraint: '"Status" IN (''free'', ''busy'', ''busy-unavailable'', ''busy-tentative'')'
+    checkConstraint: '"status" IN (''free'', ''busy'', ''busy-unavailable'', ''busy-tentative'')'
   - name: StartTime
     type: Text
   - name: EndTime
@@ -103,7 +103,7 @@ tables:
     type: Text
   - name: Status
     type: Text
-    checkConstraint: '"Status" IN (''proposed'', ''pending'', ''booked'', ''arrived'', ''fulfilled'', ''cancelled'', ''noshow'', ''entered-in-error'', ''checked-in'', ''waitlist'')'
+    checkConstraint: '"status" IN (''proposed'', ''pending'', ''booked'', ''arrived'', ''fulfilled'', ''cancelled'', ''noshow'', ''entered-in-error'', ''checked-in'', ''waitlist'')'
   - name: ServiceCategory
     type: Text
   - name: ServiceType
@@ -112,7 +112,7 @@ tables:
     type: Text
   - name: Priority
     type: Text
-    checkConstraint: '"Priority" IN (''routine'', ''urgent'', ''asap'', ''stat'')'
+    checkConstraint: '"priority" IN (''routine'', ''urgent'', ''asap'', ''stat'')'
   - name: Description
     type: Text
   - name: StartTime

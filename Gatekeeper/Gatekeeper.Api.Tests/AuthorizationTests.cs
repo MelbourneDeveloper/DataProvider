@@ -361,7 +361,7 @@ public sealed class GatekeeperTestFixture : IDisposable
     {
         var baseConnectionString =
             Environment.GetEnvironmentVariable("TEST_POSTGRES_CONNECTION")
-            ?? "Host=localhost;Database=postgres;Username=postgres;Password=postgres";
+            ?? "Host=localhost;Database=postgres;Username=postgres;Password=changeme";
 
         _dbName = $"test_gatekeeper_{Guid.NewGuid():N}";
         _signingKey = new byte[32];
@@ -627,7 +627,7 @@ public sealed class GatekeeperTestFixture : IDisposable
 
         var baseConnectionString =
             Environment.GetEnvironmentVariable("TEST_POSTGRES_CONNECTION")
-            ?? "Host=localhost;Database=postgres;Username=postgres;Password=postgres";
+            ?? "Host=localhost;Database=postgres;Username=postgres;Password=changeme";
 
         // Drop the test database
         using var adminConn = new NpgsqlConnection(baseConnectionString);
