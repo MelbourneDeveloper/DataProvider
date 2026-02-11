@@ -1,5 +1,8 @@
 using Migration;
 using Migration.Postgres;
+using InitError = Outcome.Result<bool, string>.Error<bool, string>;
+using InitOk = Outcome.Result<bool, string>.Ok<bool, string>;
+using InitResult = Outcome.Result<bool, string>;
 
 namespace Clinical.Api;
 
@@ -11,29 +14,23 @@ internal static class DatabaseSetup
     /// <summary>
     /// Creates the database schema and sync infrastructure using Migration.
     /// </summary>
-    public static void Initialize(NpgsqlConnection connection, ILogger logger)
+    public static InitResult Initialize(NpgsqlConnection connection, ILogger logger)
     {
         var schemaResult = PostgresSyncSchema.CreateSchema(connection);
         var originResult = PostgresSyncSchema.SetOriginId(connection, Guid.NewGuid().ToString());
 
         if (schemaResult is Result<bool, SyncError>.Error<bool, SyncError> schemaErr)
         {
-            logger.Log(
-                LogLevel.Error,
-                "Failed to create sync schema: {Message}",
-                SyncHelpers.ToMessage(schemaErr.Value)
-            );
-            return;
+            var msg = SyncHelpers.ToMessage(schemaErr.Value);
+            logger.Log(LogLevel.Error, "Failed to create sync schema: {Message}", msg);
+            return new InitError($"Failed to create sync schema: {msg}");
         }
 
         if (originResult is Result<bool, SyncError>.Error<bool, SyncError> originErr)
         {
-            logger.Log(
-                LogLevel.Error,
-                "Failed to set origin ID: {Message}",
-                SyncHelpers.ToMessage(originErr.Value)
-            );
-            return;
+            var msg = SyncHelpers.ToMessage(originErr.Value);
+            logger.Log(LogLevel.Error, "Failed to set origin ID: {Message}", msg);
+            return new InitError($"Failed to set origin ID: {msg}");
         }
 
         // Use Migration tool to create schema from YAML (source of truth)
@@ -56,7 +53,7 @@ internal static class DatabaseSetup
         catch (Exception ex)
         {
             logger.Log(LogLevel.Error, ex, "Failed to create Clinical database schema");
-            return;
+            return new InitError($"Failed to create Clinical database schema: {ex.Message}");
         }
 
         var triggerTables = new[]
@@ -81,5 +78,6 @@ internal static class DatabaseSetup
         }
 
         logger.Log(LogLevel.Information, "Clinical.Api database initialized with sync triggers");
+        return new InitOk(true);
     }
 }

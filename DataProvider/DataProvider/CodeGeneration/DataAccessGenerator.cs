@@ -597,13 +597,24 @@ public static class DataAccessGenerator
         );
         sb.AppendLine("            {");
 
-        // Add parameters
+        // Add parameters (nullable types use null-coalescing to DBNull.Value)
         foreach (var column in allColumns)
         {
-            sb.AppendLine(
-                CultureInfo.InvariantCulture,
-                $"                command.Parameters.AddWithValue(\"@{column.Name}\", {EscapeReservedKeyword(column.Name)});"
-            );
+            var escaped = EscapeReservedKeyword(column.Name);
+            if (column.IsNullable)
+            {
+                sb.AppendLine(
+                    CultureInfo.InvariantCulture,
+                    $"                command.Parameters.AddWithValue(\"@{column.Name}\", {escaped} ?? (object)DBNull.Value);"
+                );
+            }
+            else
+            {
+                sb.AppendLine(
+                    CultureInfo.InvariantCulture,
+                    $"                command.Parameters.AddWithValue(\"@{column.Name}\", {escaped});"
+                );
+            }
         }
 
         sb.AppendLine();

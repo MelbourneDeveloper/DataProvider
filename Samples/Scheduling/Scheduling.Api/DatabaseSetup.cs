@@ -1,5 +1,8 @@
 using Migration;
 using Migration.Postgres;
+using InitError = Outcome.Result<bool, string>.Error<bool, string>;
+using InitOk = Outcome.Result<bool, string>.Ok<bool, string>;
+using InitResult = Outcome.Result<bool, string>;
 
 namespace Scheduling.Api;
 
@@ -14,18 +17,15 @@ internal static class DatabaseSetup
     /// Creates the database schema and sync infrastructure using Migration.
     /// Tables conform to FHIR R4 resources.
     /// </summary>
-    public static void Initialize(NpgsqlConnection connection, ILogger logger)
+    public static InitResult Initialize(NpgsqlConnection connection, ILogger logger)
     {
         // Create sync infrastructure
         var schemaResult = PostgresSyncSchema.CreateSchema(connection);
         if (schemaResult is BoolSyncError err)
         {
-            logger.Log(
-                LogLevel.Error,
-                "Failed to create sync schema: {Error}",
-                SyncHelpers.ToMessage(err.Value)
-            );
-            return;
+            var msg = SyncHelpers.ToMessage(err.Value);
+            logger.Log(LogLevel.Error, "Failed to create sync schema: {Error}", msg);
+            return new InitError($"Failed to create sync schema: {msg}");
         }
 
         _ = PostgresSyncSchema.SetOriginId(connection, Guid.NewGuid().ToString());
@@ -50,7 +50,7 @@ internal static class DatabaseSetup
         catch (Exception ex)
         {
             logger.Log(LogLevel.Error, ex, "Failed to create Scheduling database schema");
-            return;
+            return new InitError($"Failed to create Scheduling database schema: {ex.Message}");
         }
 
         // Create sync triggers for FHIR resources
@@ -63,5 +63,6 @@ internal static class DatabaseSetup
             LogLevel.Information,
             "Scheduling.Api database initialized with FHIR tables and sync triggers"
         );
+        return new InitOk(true);
     }
 }

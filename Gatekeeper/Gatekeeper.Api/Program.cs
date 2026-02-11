@@ -3,6 +3,7 @@
 using System.Text;
 using Gatekeeper.Api;
 using Microsoft.AspNetCore.Http.Json;
+using InitError = Outcome.Result<bool, string>.Error<bool, string>;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,7 +57,8 @@ var app = builder.Build();
 using (var conn = new NpgsqlConnection(connectionString))
 {
     conn.Open();
-    DatabaseSetup.Initialize(conn, app.Logger);
+    if (DatabaseSetup.Initialize(conn, app.Logger) is InitError initErr)
+        Environment.FailFast(initErr.Value);
 }
 
 app.UseCors("Dashboard");

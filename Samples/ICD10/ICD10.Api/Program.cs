@@ -5,6 +5,7 @@ using System.Collections.Frozen;
 using System.Text.Json;
 using ICD10.Api;
 using Microsoft.AspNetCore.Http.Json;
+using InitError = Outcome.Result<bool, string>.Error<bool, string>;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,7 +81,8 @@ var dbConnectionString =
 using (var conn = new NpgsqlConnection(dbConnectionString))
 {
     conn.Open();
-    DatabaseSetup.Initialize(conn, app.Logger);
+    if (DatabaseSetup.Initialize(conn, app.Logger) is InitError initErr)
+        Environment.FailFast(initErr.Value);
 }
 
 app.UseCors("Dashboard");

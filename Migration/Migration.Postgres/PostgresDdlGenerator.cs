@@ -106,7 +106,7 @@ public static class PostgresDdlGenerator
         if (table.PrimaryKey is not null && table.PrimaryKey.Columns.Count > 0)
         {
             var pkName = (table.PrimaryKey.Name ?? $"PK_{table.Name}").ToLowerInvariant();
-            var pkCols = string.Join(", ", table.PrimaryKey.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
+            var pkCols = string.Join(", ", table.PrimaryKey.Columns.Select(c => $"\"{c}\""));
             columnDefs.Add($"CONSTRAINT \"{pkName}\" PRIMARY KEY ({pkCols})");
         }
 
@@ -116,11 +116,8 @@ public static class PostgresDdlGenerator
             var fkName = (
                 fk.Name ?? $"FK_{table.Name}_{string.Join("_", fk.Columns)}"
             ).ToLowerInvariant();
-            var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
-            var refCols = string.Join(
-                ", ",
-                fk.ReferencedColumns.Select(c => $"\"{c.ToLowerInvariant()}\"")
-            );
+            var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c}\""));
+            var refCols = string.Join(", ", fk.ReferencedColumns.Select(c => $"\"{c}\""));
             var onDelete = ForeignKeyActionToSql(fk.OnDelete);
             var onUpdate = ForeignKeyActionToSql(fk.OnUpdate);
             var refTable = fk.ReferencedTable.ToLowerInvariant();
@@ -245,10 +242,7 @@ public static class PostgresDdlGenerator
             fk.Name ?? $"FK_{op.TableName}_{string.Join("_", fk.Columns)}"
         ).ToLowerInvariant();
         var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c}\""));
-        var refCols = string.Join(
-            ", ",
-            fk.ReferencedColumns.Select(c => $"\"{c}\"")
-        );
+        var refCols = string.Join(", ", fk.ReferencedColumns.Select(c => $"\"{c}\""));
         var onDelete = ForeignKeyActionToSql(fk.OnDelete);
         var onUpdate = ForeignKeyActionToSql(fk.OnUpdate);
 

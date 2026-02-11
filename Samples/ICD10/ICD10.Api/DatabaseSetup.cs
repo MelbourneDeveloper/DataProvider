@@ -1,5 +1,8 @@
 using Migration;
 using Migration.Postgres;
+using InitError = Outcome.Result<bool, string>.Error<bool, string>;
+using InitOk = Outcome.Result<bool, string>.Ok<bool, string>;
+using InitResult = Outcome.Result<bool, string>;
 
 namespace ICD10.Api;
 
@@ -11,7 +14,7 @@ internal static class DatabaseSetup
     /// <summary>
     /// Creates the database schema using Migration.
     /// </summary>
-    public static void Initialize(NpgsqlConnection connection, ILogger logger)
+    public static InitResult Initialize(NpgsqlConnection connection, ILogger logger)
     {
         try
         {
@@ -41,7 +44,7 @@ internal static class DatabaseSetup
 
                     // Ensure vector indexes exist even if schema already created
                     EnsureVectorIndexes(connection, logger);
-                    return;
+                    return new InitOk(true);
                 }
             }
 
@@ -61,10 +64,12 @@ internal static class DatabaseSetup
             EnsureVectorIndexes(connection, logger);
 
             logger.Log(LogLevel.Information, "Created ICD-10 database schema from YAML");
+            return new InitOk(true);
         }
         catch (Exception ex)
         {
             logger.Log(LogLevel.Error, ex, "Failed to create ICD-10 database schema");
+            return new InitError($"Failed to create ICD-10 database schema: {ex.Message}");
         }
     }
 

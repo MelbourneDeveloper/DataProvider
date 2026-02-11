@@ -5,6 +5,7 @@ using System.Globalization;
 using Clinical.Api;
 using Microsoft.AspNetCore.Http.Json;
 using Samples.Authorization;
+using InitError = Outcome.Result<bool, string>.Error<bool, string>;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -68,7 +69,8 @@ var app = builder.Build();
 using (var conn = new NpgsqlConnection(connectionString))
 {
     conn.Open();
-    DatabaseSetup.Initialize(conn, app.Logger);
+    if (DatabaseSetup.Initialize(conn, app.Logger) is InitError initErr)
+        Environment.FailFast(initErr.Value);
 }
 
 // Enable CORS

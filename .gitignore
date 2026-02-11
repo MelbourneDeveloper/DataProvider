@@ -420,3 +420,5 @@ Samples/ICD10CM/.venv
 .playwright-mcp/
 
 .too_many_cooks/
+
+.commandtree/

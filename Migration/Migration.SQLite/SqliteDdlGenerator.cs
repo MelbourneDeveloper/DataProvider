@@ -168,7 +168,7 @@ public static class SqliteDdlGenerator
         {
             // Integer types -> INTEGER
             TinyIntType or SmallIntType or IntType or BigIntType => "INTEGER",
-            BooleanType => "INTEGER",
+            BooleanType => "BOOLEAN",
 
             // Decimal/float types -> REAL
             DecimalType or MoneyType or SmallMoneyType => "REAL",

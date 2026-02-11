@@ -7,6 +7,9 @@
   </PropertyGroup>
 
   <!-- Exclude Generated folder from default globbing - we include it explicitly in the target -->
+  <ItemGroup>
+    <Compile Remove="Generated/**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="9.0.2" />
@@ -34,13 +37,25 @@
     </Content>
   </ItemGroup>
 
-  <!--
-    Code generation requires a running PostgreSQL database.
-    Run 'docker compose -f docker/docker-compose.codegen.yml up codegen' to regenerate.
-    Generated code is committed to git and included directly.
-  -->
-  <ItemGroup>
-    <Compile Include="$(MSBuildProjectDirectory)/Generated/**/*.g.cs" />
-  </ItemGroup>
+  <!-- Create database from YAML using Migration.Cli -->
+  <Target Name="CreateDatabaseSchema" BeforeTargets="TranspileLqlAndGenerateDataProvider">
+    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)..\..\..\Migration\Migration.Cli\Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/icd10-schema.yaml" --output "$(MSBuildProjectDirectory)/icd10.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
+  </Target>
+
+  <!-- Pre-compile: transpile LQL to SQL, then generate C# from SQL using external CLI -->
+  <Target Name="TranspileLqlAndGenerateDataProvider" BeforeTargets="BeforeCompile;CoreCompile" Inputs="$(MSBuildProjectDirectory)/DataProvider.json;@(AdditionalFiles);@(LqlFiles)" Outputs="$(MSBuildProjectDirectory)/Generated/.timestamp">
+    <RemoveDir Directories="$(MSBuildProjectDirectory)/Generated" />
+    <MakeDir Directories="$(MSBuildProjectDirectory)/Generated" />
+    <ItemGroup>
+      <LqlFiles Include="$(MSBuildProjectDirectory)/**/*.lql" />
+    </ItemGroup>
+    <Message Importance="High" Text="Transpiling LQL files (@(LqlFiles))" />
+    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)..\..\..\Lql\LqlCli.SQLite\LqlCli.SQLite.csproj" -- --input &quot;%(LqlFiles.Identity)&quot; --output &quot;%(LqlFiles.RootDir)%(LqlFiles.Directory)%(LqlFiles.Filename).generated.sql&quot;' Condition="'$(EnableLqlTranspile)' == 'true' and @(LqlFiles) != ''" WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' ContinueOnError="WarnAndContinue" />
+    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)..\..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj" -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(MSBuildProjectDirectory)/Generated" --connection-type NpgsqlConnection' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
+    <Touch Files="$(MSBuildProjectDirectory)/Generated/.timestamp" AlwaysCreate="true" />
+    <ItemGroup>
+      <Compile Include="$(MSBuildProjectDirectory)/Generated/**/*.g.cs" />
+    </ItemGroup>
+  </Target>
 
 </Project>
