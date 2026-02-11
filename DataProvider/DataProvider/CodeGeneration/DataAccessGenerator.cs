@@ -332,7 +332,11 @@ public static class DataAccessGenerator
         sb.AppendLine("    {");
 
         // Generate INSERT SQL (no last_insert_rowid - all PKs are UUIDs)
-        var columnNames = string.Join(", ", insertableColumns.Select(c => c.Name));
+        // Column names must be double-quoted to preserve case in PostgreSQL
+        var columnNames = string.Join(
+            ", ",
+            insertableColumns.Select(c => $"\\\"{c.Name}\\\"")
+        );
         var parameterNames = string.Join(", ", insertableColumns.Select(c => $"@{c.Name}"));
 
         sb.AppendLine(
@@ -565,11 +569,14 @@ public static class DataAccessGenerator
         );
         sb.AppendLine("    {");
 
-        // Generate UPDATE SQL
-        var setClause = string.Join(", ", updateableColumns.Select(c => $"{c.Name} = @{c.Name}"));
+        // Generate UPDATE SQL - column names must be double-quoted for PostgreSQL
+        var setClause = string.Join(
+            ", ",
+            updateableColumns.Select(c => $"\\\"{c.Name}\\\" = @{c.Name}")
+        );
         var whereClause = string.Join(
             " AND ",
-            primaryKeyColumns.Select(c => $"{c.Name} = @{c.Name}")
+            primaryKeyColumns.Select(c => $"\\\"{c.Name}\\\" = @{c.Name}")
         );
 
         sb.AppendLine(
@@ -758,8 +765,11 @@ public static class DataAccessGenerator
         );
         sb.AppendLine();
 
-        // Build the SQL with placeholders
-        var columnNames = string.Join(", ", insertableColumns.Select(c => c.Name));
+        // Build the SQL with placeholders - column names double-quoted for PostgreSQL
+        var columnNames = string.Join(
+            ", ",
+            insertableColumns.Select(c => $"\\\"{c.Name}\\\"")
+        );
         sb.AppendLine(
             CultureInfo.InvariantCulture,
             $"        var sql = new StringBuilder(\"INSERT INTO {table.Name} ({columnNames}) VALUES \");"
@@ -954,14 +964,21 @@ public static class DataAccessGenerator
         sb.AppendLine();
 
         // Build the SQL with placeholders - database-specific upsert syntax
-        var columnNames = string.Join(", ", allColumns.Select(c => c.Name));
-        var pkColumnNames = string.Join(", ", primaryKeyColumns.Select(c => c.Name));
+        // Column names double-quoted for PostgreSQL case preservation
+        var columnNames = string.Join(
+            ", ",
+            allColumns.Select(c => $"\\\"{c.Name}\\\"")
+        );
+        var pkColumnNames = string.Join(
+            ", ",
+            primaryKeyColumns.Select(c => $"\\\"{c.Name}\\\"")
+        );
         var updateColumns = allColumns
             .Where(c => !primaryKeyColumns.Any(pk => pk.Name == c.Name))
             .ToList();
         var updateSet = string.Join(
             ", ",
-            updateColumns.Select(c => $"{c.Name} = EXCLUDED.{c.Name}")
+            updateColumns.Select(c => $"\\\"{c.Name}\\\" = EXCLUDED.\\\"{c.Name}\\\"")
         );
 
         if (databaseType.Equals("Postgres", StringComparison.OrdinalIgnoreCase))

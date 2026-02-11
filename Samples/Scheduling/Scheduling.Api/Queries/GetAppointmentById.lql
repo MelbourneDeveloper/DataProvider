@@ -1,6 +1,5 @@
--- Get appointments for a patient
--- Parameters: @patientReference
+-- Get appointment by ID
+-- Parameters: @id
 fhir_Appointment
-|> filter(fn(row) => row.fhir_Appointment.PatientReference = @patientReference)
+|> filter(fn(row) => row.fhir_Appointment.Id = @id)
 |> select(fhir_Appointment.Id, fhir_Appointment.Status, fhir_Appointment.ServiceCategory, fhir_Appointment.ServiceType, fhir_Appointment.ReasonCode, fhir_Appointment.Priority, fhir_Appointment.Description, fhir_Appointment.StartTime, fhir_Appointment.EndTime, fhir_Appointment.MinutesDuration, fhir_Appointment.PatientReference, fhir_Appointment.PractitionerReference, fhir_Appointment.Created, fhir_Appointment.Comment)
-|> order_by(fhir_Appointment.StartTime desc)

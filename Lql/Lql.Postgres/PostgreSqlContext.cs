@@ -311,18 +311,20 @@ public sealed class PostgreSqlContext : ISqlContext
             return "";
         }
 
+        var quotedBase = QuoteTableName(baseTable.Name);
+
         if (statement.HasJoins)
         {
             sql.Append(
                 System.Globalization.CultureInfo.InvariantCulture,
-                $"\nFROM {baseTable.Name} {baseTable.Alias}"
+                $"\nFROM {quotedBase} {baseTable.Alias}"
             );
         }
         else
         {
             sql.Append(
                 System.Globalization.CultureInfo.InvariantCulture,
-                $"\nFROM {baseTable.Name}"
+                $"\nFROM {quotedBase}"
             );
         }
 
@@ -334,10 +336,11 @@ public sealed class PostgreSqlContext : ISqlContext
         {
             var relationship = joinRelationships.FirstOrDefault(j => j.RightTable == table.Name);
             var joinType = relationship?.JoinType ?? "INNER JOIN";
+            var quotedJoinTable = QuoteTableName(table.Name);
 
             sql.Append(
                 System.Globalization.CultureInfo.InvariantCulture,
-                $"\n{joinType} {table.Name} {table.Alias}"
+                $"\n{joinType} {quotedJoinTable} {table.Alias}"
             );
 
             if (relationship != null && !string.IsNullOrEmpty(relationship.Condition))
@@ -415,6 +418,12 @@ public sealed class PostgreSqlContext : ISqlContext
         // Use first letter of the table name (to match expected test output)
         return tableName.Length > 0 ? tableName[0].ToString().ToLowerInvariant() : "t";
     }
+
+    /// <summary>
+    /// Quotes a table name for PostgreSQL using double quotes and lowercasing.
+    /// </summary>
+    private static string QuoteTableName(string tableName) =>
+        $"\"{tableName.ToLowerInvariant()}\"";
 
     /// <summary>
     /// Generates the GROUP BY clause

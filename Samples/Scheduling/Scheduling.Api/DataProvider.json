@@ -2,31 +2,51 @@
     "queries": [
         {
             "name": "GetUpcomingAppointments",
-            "sqlFile": "Queries/GetUpcomingAppointments.sql"
+            "sqlFile": "Queries/GetUpcomingAppointments.generated.sql"
         },
         {
             "name": "GetAppointmentById",
-            "sqlFile": "Queries/GetAppointmentById.sql"
+            "sqlFile": "Queries/GetAppointmentById.generated.sql"
         },
         {
             "name": "GetAppointmentsByPatient",
-            "sqlFile": "Queries/GetAppointmentsByPatient.sql"
+            "sqlFile": "Queries/GetAppointmentsByPatient.generated.sql"
         },
         {
             "name": "GetAppointmentsByPractitioner",
-            "sqlFile": "Queries/GetAppointmentsByPractitioner.sql"
+            "sqlFile": "Queries/GetAppointmentsByPractitioner.generated.sql"
         },
         {
             "name": "GetAllPractitioners",
-            "sqlFile": "Queries/GetAllPractitioners.sql"
+            "sqlFile": "Queries/GetAllPractitioners.generated.sql"
         },
         {
             "name": "GetPractitionerById",
-            "sqlFile": "Queries/GetPractitionerById.sql"
+            "sqlFile": "Queries/GetPractitionerById.generated.sql"
         },
         {
             "name": "SearchPractitionersBySpecialty",
             "sqlFile": "Queries/SearchPractitionersBySpecialty.sql"
+        },
+        {
+            "name": "GetAvailableSlots",
+            "sqlFile": "Queries/GetAvailableSlots.generated.sql"
+        },
+        {
+            "name": "GetAppointmentsByStatus",
+            "sqlFile": "Queries/GetAppointmentsByStatus.generated.sql"
+        },
+        {
+            "name": "CheckSchedulingConflicts",
+            "sqlFile": "Queries/CheckSchedulingConflicts.generated.sql"
+        },
+        {
+            "name": "GetProviderAvailability",
+            "sqlFile": "Queries/GetProviderAvailability.generated.sql"
+        },
+        {
+            "name": "GetProviderDailySchedule",
+            "sqlFile": "Queries/GetProviderDailySchedule.generated.sql"
         }
     ],
     "tables": [

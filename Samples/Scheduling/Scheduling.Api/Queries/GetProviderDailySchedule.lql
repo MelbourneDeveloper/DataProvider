@@ -1,12 +1,7 @@
+-- Get provider daily schedule with patient info
+-- Parameters: @practitionerRef, @dateStart, @dateEnd
 fhir_Appointment
-|> join(sync_ScheduledPatient, patient_reference, PatientId)
-|> select(
-    id, start_time, end_time, minutes_duration,
-    status, service_category, service_type, reason_code, description,
-    patient_reference, PatientId, DisplayName, ContactPhone,
-    practitioner_reference
-)
-|> where(practitioner_reference = @practitionerRef)
-|> where(start_time >= @dateStart)
-|> where(start_time < @dateEnd)
-|> orderBy(start_time)
+|> join(sync_ScheduledPatient, on = fhir_Appointment.PatientReference = sync_ScheduledPatient.PatientId)
+|> filter(fn(row) => row.fhir_Appointment.PractitionerReference = @practitionerRef and row.fhir_Appointment.StartTime >= @dateStart and row.fhir_Appointment.StartTime < @dateEnd)
+|> select(fhir_Appointment.Id, fhir_Appointment.StartTime, fhir_Appointment.EndTime, fhir_Appointment.MinutesDuration, fhir_Appointment.Status, fhir_Appointment.ServiceCategory, fhir_Appointment.ServiceType, fhir_Appointment.ReasonCode, fhir_Appointment.Description, fhir_Appointment.PatientReference, sync_ScheduledPatient.PatientId, sync_ScheduledPatient.DisplayName, sync_ScheduledPatient.ContactPhone, fhir_Appointment.PractitionerReference)
+|> order_by(fhir_Appointment.StartTime)

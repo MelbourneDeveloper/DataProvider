@@ -43,6 +43,9 @@ public abstract partial record Result<TSuccess, TFailure> { private Result() { }
 - **No placeholders** - If incomplete, leave LOUD compilation error with TODO
 - **Never use Fluent Assertions**
 
+## LQL 
+- LQL is database platform INDEPENDENT. It MUST work exactly the same on whatever platform it is transpiled to. Failure for this to happen must be logged as a GitHub issue
+
 ## CSS
 - **MINIMAL CSS** - Do not duplicate CSS clases
 - **Aggressively merge duplicate CSS** - consistency is key

@@ -209,8 +209,7 @@ public static class PostgresDdlGenerator
 
         if (column.CheckConstraint is not null)
         {
-            var constraint = LowercaseQuotedIdentifiers(column.CheckConstraint);
-            sb.Append(CultureInfo.InvariantCulture, $" CHECK ({constraint})");
+            sb.Append(CultureInfo.InvariantCulture, $" CHECK ({column.CheckConstraint})");
         }
 
         return sb.ToString();
@@ -312,40 +311,6 @@ public static class PostgresDdlGenerator
 
             _ => "TEXT",
         };
-
-    /// <summary>
-    /// Lowercases double-quoted identifiers in a SQL expression.
-    /// E.g. "Gender" IN ('male') becomes "gender" IN ('male').
-    /// </summary>
-    private static string LowercaseQuotedIdentifiers(string expression)
-    {
-        var sb = new StringBuilder(expression.Length);
-        var i = 0;
-        while (i < expression.Length)
-        {
-            if (expression[i] == '"')
-            {
-                sb.Append('"');
-                i++;
-                while (i < expression.Length && expression[i] != '"')
-                {
-                    sb.Append(char.ToLowerInvariant(expression[i]));
-                    i++;
-                }
-                if (i < expression.Length)
-                {
-                    sb.Append('"');
-                    i++;
-                }
-            }
-            else
-            {
-                sb.Append(expression[i]);
-                i++;
-            }
-        }
-        return sb.ToString();
-    }
 
     private static string ForeignKeyActionToSql(ForeignKeyAction action) =>
         action switch

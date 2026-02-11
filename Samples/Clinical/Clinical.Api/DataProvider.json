@@ -6,7 +6,7 @@
         },
         {
             "name": "GetPatientById",
-            "sqlFile": "Queries/GetPatientById.sql"
+            "sqlFile": "Queries/GetPatientById.generated.sql"
         },
         {
             "name": "SearchPatients",
@@ -14,15 +14,15 @@
         },
         {
             "name": "GetEncountersByPatient",
-            "sqlFile": "Queries/GetEncountersByPatient.sql"
+            "sqlFile": "Queries/GetEncountersByPatient.generated.sql"
         },
         {
             "name": "GetConditionsByPatient",
-            "sqlFile": "Queries/GetConditionsByPatient.sql"
+            "sqlFile": "Queries/GetConditionsByPatient.generated.sql"
         },
         {
             "name": "GetMedicationsByPatient",
-            "sqlFile": "Queries/GetMedicationsByPatient.sql"
+            "sqlFile": "Queries/GetMedicationsByPatient.generated.sql"
         }
     ],
     "tables": [

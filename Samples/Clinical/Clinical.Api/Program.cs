@@ -95,7 +95,11 @@ patientGroup
         {
             using var conn = getConn();
             var result = await conn.GetPatientsAsync(
-                    active.HasValue ? (object)(active.Value ? 1 : 0) : DBNull.Value,
+                    active.HasValue
+                        ? active.Value
+                            ? 1
+                            : 0
+                        : DBNull.Value,
                     familyName ?? (object)DBNull.Value,
                     givenName ?? (object)DBNull.Value,
                     gender ?? (object)DBNull.Value
