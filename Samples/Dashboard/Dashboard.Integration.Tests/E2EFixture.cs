@@ -5,6 +5,9 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Playwright;
@@ -15,9 +18,18 @@ namespace Dashboard.Integration.Tests;
 
 /// <summary>
 /// Shared fixture that starts all services ONCE for all E2E tests.
+/// Set E2E_USE_LOCAL=true to skip Testcontainers/process startup and run against
+/// an already-running local dev stack (started via scripts/start-local.sh).
 /// </summary>
 public sealed class E2EFixture : IAsyncLifetime
 {
+    /// <summary>
+    /// When true, tests run against an already-running local dev stack
+    /// instead of spinning up Testcontainers and API processes.
+    /// </summary>
+    private static readonly bool UseLocalStack =
+        Environment.GetEnvironmentVariable("E2E_USE_LOCAL") is "true" or "1";
+
     private PostgreSqlContainer? _postgresContainer;
     private Process? _clinicalProcess;
     private Process? _schedulingProcess;
@@ -37,34 +49,58 @@ public sealed class E2EFixture : IAsyncLifetime
     public IBrowser? Browser { get; private set; }
 
     /// <summary>
-    /// Clinical API URL - SAME as real app default.
+    /// Clinical API URL. Override with E2E_CLINICAL_URL env var.
     /// </summary>
-    public const string ClinicalUrl = "http://localhost:5080";
+    public static string ClinicalUrl { get; } =
+        Environment.GetEnvironmentVariable("E2E_CLINICAL_URL") ?? "http://localhost:5080";
 
     /// <summary>
-    /// Scheduling API URL - SAME as real app default.
+    /// Scheduling API URL. Override with E2E_SCHEDULING_URL env var.
     /// </summary>
-    public const string SchedulingUrl = "http://localhost:5001";
+    public static string SchedulingUrl { get; } =
+        Environment.GetEnvironmentVariable("E2E_SCHEDULING_URL") ?? "http://localhost:5001";
 
     /// <summary>
-    /// Gatekeeper Auth API URL - SAME as real app default.
+    /// Gatekeeper Auth API URL. Override with E2E_GATEKEEPER_URL env var.
     /// </summary>
-    public const string GatekeeperUrl = "http://localhost:5002";
+    public static string GatekeeperUrl { get; } =
+        Environment.GetEnvironmentVariable("E2E_GATEKEEPER_URL") ?? "http://localhost:5002";
 
     /// <summary>
-    /// Dashboard URL - SAME as real app default.
+    /// Dashboard URL - dynamically assigned in container mode, defaults to local in local mode.
     /// </summary>
-    public const string DashboardUrl = "http://localhost:5173";
+    public static string DashboardUrl { get; private set; } = "http://localhost:5173";
 
     /// <summary>
     /// Start all services ONCE for all tests.
+    /// When E2E_USE_LOCAL=true, skips all infrastructure and connects to already-running services.
     /// </summary>
     public async Task InitializeAsync()
     {
+        if (UseLocalStack)
+        {
+            Console.WriteLine("[E2E] LOCAL MODE: connecting to already-running services");
+            Console.WriteLine($"[E2E]   Clinical:   {ClinicalUrl}");
+            Console.WriteLine($"[E2E]   Scheduling: {SchedulingUrl}");
+            Console.WriteLine($"[E2E]   Gatekeeper: {GatekeeperUrl}");
+            Console.WriteLine($"[E2E]   Dashboard:  {DashboardUrl}");
+
+            await WaitForApiAsync(ClinicalUrl, "/fhir/Patient/");
+            await WaitForApiAsync(SchedulingUrl, "/Practitioner");
+            await WaitForGatekeeperApiAsync();
+
+            await SeedTestDataAsync();
+
+            Playwright = await Microsoft.Playwright.Playwright.CreateAsync();
+            Browser = await Playwright.Chromium.LaunchAsync(
+                new BrowserTypeLaunchOptions { Headless = true }
+            );
+            return;
+        }
+
         await KillProcessOnPortAsync(5080);
         await KillProcessOnPortAsync(5001);
         await KillProcessOnPortAsync(5002);
-        await KillProcessOnPortAsync(5173);
         await Task.Delay(2000);
 
         // Start PostgreSQL container for all APIs
@@ -217,6 +253,11 @@ public sealed class E2EFixture : IAsyncLifetime
         _dashboardHost = CreateDashboardHost();
         await _dashboardHost.StartAsync();
 
+        var server = _dashboardHost.Services.GetRequiredService<IServer>();
+        var addressFeature = server.Features.Get<IServerAddressesFeature>();
+        DashboardUrl = addressFeature!.Addresses.First();
+        Console.WriteLine($"[E2E] Dashboard started on {DashboardUrl}");
+
         await SeedTestDataAsync();
 
         Playwright = await Microsoft.Playwright.Playwright.CreateAsync();
@@ -228,6 +269,7 @@ public sealed class E2EFixture : IAsyncLifetime
     /// <summary>
     /// Stop all services ONCE after all tests.
     /// Order matters: stop sync workers FIRST to prevent connection errors.
+    /// In local mode, only Playwright is cleaned up.
     /// </summary>
     public async Task DisposeAsync()
     {
@@ -238,6 +280,9 @@ public sealed class E2EFixture : IAsyncLifetime
         }
         catch { }
         Playwright?.Dispose();
+
+        if (UseLocalStack)
+            return;
 
         StopProcess(_clinicalSyncProcess);
         StopProcess(_schedulingSyncProcess);
@@ -258,7 +303,6 @@ public sealed class E2EFixture : IAsyncLifetime
         await KillProcessOnPortAsync(5080);
         await KillProcessOnPortAsync(5001);
         await KillProcessOnPortAsync(5002);
-        await KillProcessOnPortAsync(5173);
 
         if (_postgresContainer is not null)
             await _postgresContainer.DisposeAsync();
@@ -583,7 +627,7 @@ public sealed class E2EFixture : IAsyncLifetime
         return Host.CreateDefaultBuilder()
             .ConfigureWebHostDefaults(webBuilder =>
             {
-                webBuilder.UseUrls("http://localhost:5173");
+                webBuilder.UseUrls("http://127.0.0.1:0");
                 webBuilder.Configure(app =>
                 {
                     app.UseDefaultFiles();
