@@ -400,10 +400,10 @@ class PostgresImporter:
         cur = self.conn.cursor()
         for c in chapters:
             cur.execute(
-                """INSERT INTO "public"."icd10_chapter"
-                   ("Id", "ChapterNumber", "Title", "CodeRangeStart", "CodeRangeEnd", "LastUpdated", "VersionId")
+                """INSERT INTO icd10_chapter
+                   (id, chapternumber, title, coderangestart, coderangeend, lastupdated, versionid)
                    VALUES (%s,%s,%s,%s,%s,%s,%s)
-                   ON CONFLICT ("Id") DO NOTHING""",
+                   ON CONFLICT (id) DO NOTHING""",
                 (c.id, c.chapter_number, c.title, c.code_range_start, c.code_range_end, get_timestamp(), 1),
             )
         self.conn.commit()
@@ -413,10 +413,10 @@ class PostgresImporter:
         cur = self.conn.cursor()
         for b in blocks:
             cur.execute(
-                """INSERT INTO "public"."icd10_block"
-                   ("Id", "ChapterId", "BlockCode", "Title", "CodeRangeStart", "CodeRangeEnd", "LastUpdated", "VersionId")
+                """INSERT INTO icd10_block
+                   (id, chapterid, blockcode, title, coderangestart, coderangeend, lastupdated, versionid)
                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-                   ON CONFLICT ("Id") DO NOTHING""",
+                   ON CONFLICT (id) DO NOTHING""",
                 (b.id, b.chapter_id, b.block_code, b.title, b.code_range_start, b.code_range_end, get_timestamp(), 1),
             )
         self.conn.commit()
@@ -426,10 +426,10 @@ class PostgresImporter:
         cur = self.conn.cursor()
         for c in categories:
             cur.execute(
-                """INSERT INTO "public"."icd10_category"
-                   ("Id", "BlockId", "CategoryCode", "Title", "LastUpdated", "VersionId")
+                """INSERT INTO icd10_category
+                   (id, blockid, categorycode, title, lastupdated, versionid)
                    VALUES (%s,%s,%s,%s,%s,%s)
-                   ON CONFLICT ("Id") DO NOTHING""",
+                   ON CONFLICT (id) DO NOTHING""",
                 (c.id, c.block_id, c.category_code, c.title, get_timestamp(), 1),
             )
         self.conn.commit()
@@ -447,12 +447,12 @@ class PostgresImporter:
             synonyms_str = "; ".join(unique_synonyms[:20])
 
             cur.execute(
-                """INSERT INTO "public"."icd10_code"
-                   ("Id", "CategoryId", "Code", "ShortDescription", "LongDescription",
-                    "InclusionTerms", "ExclusionTerms", "CodeAlso", "CodeFirst", "Synonyms",
-                    "Billable", "EffectiveFrom", "EffectiveTo", "Edition", "LastUpdated", "VersionId")
+                """INSERT INTO icd10_code
+                   (id, categoryid, code, shortdescription, longdescription,
+                    inclusionterms, exclusionterms, codealso, codefirst, synonyms,
+                    billable, effectivefrom, effectiveto, edition, lastupdated, versionid)
                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                   ON CONFLICT ("Id") DO NOTHING""",
+                   ON CONFLICT (id) DO NOTHING""",
                 (
                     c.id,
                     c.category_id if c.category_id else None,
@@ -480,20 +480,20 @@ class PostgresImporter:
 
         for block_id, block_num, title, start, end in ACHI_SAMPLE_BLOCKS:
             cur.execute(
-                """INSERT INTO "public"."achi_block"
-                   ("Id", "BlockNumber", "Title", "CodeRangeStart", "CodeRangeEnd", "LastUpdated", "VersionId")
+                """INSERT INTO achi_block
+                   (id, blocknumber, title, coderangestart, coderangeend, lastupdated, versionid)
                    VALUES (%s,%s,%s,%s,%s,%s,%s)
-                   ON CONFLICT ("Id") DO NOTHING""",
+                   ON CONFLICT (id) DO NOTHING""",
                 (block_id, block_num, title, start, end, get_timestamp(), 1),
             )
 
         for code_id, block_id, code, short_desc, long_desc in ACHI_SAMPLE_CODES:
             cur.execute(
-                """INSERT INTO "public"."achi_code"
-                   ("Id", "BlockId", "Code", "ShortDescription", "LongDescription", "Billable",
-                    "EffectiveFrom", "EffectiveTo", "Edition", "LastUpdated", "VersionId")
+                """INSERT INTO achi_code
+                   (id, blockid, code, shortdescription, longdescription, billable,
+                    effectivefrom, effectiveto, edition, lastupdated, versionid)
                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                   ON CONFLICT ("Id") DO NOTHING""",
+                   ON CONFLICT (id) DO NOTHING""",
                 (code_id, block_id, code, short_desc, long_desc, 1, "2024-07-01", "", "13", get_timestamp(), 1),
             )
 
@@ -507,10 +507,10 @@ class PostgresImporter:
 
         # Get all codes that don't have embeddings yet
         cur.execute("""
-            SELECT c."Id", c."Code", c."ShortDescription", c."LongDescription"
+            SELECT c.id, c.code, c.shortdescription, c.longdescription
             FROM icd10_code c
-            LEFT JOIN icd10_code_embedding e ON c."Id" = e."CodeId"
-            WHERE e."Id" IS NULL
+            LEFT JOIN icd10_code_embedding e ON c.id = e.codeid
+            WHERE e.id IS NULL
         """)
         codes = cur.fetchall()
         logger.info(f"Found {len(codes)} codes needing embeddings")
@@ -551,10 +551,10 @@ class PostgresImporter:
                     if j < len(embeddings):
                         embedding_json = json.dumps(embeddings[j])
                         cur.execute(
-                            """INSERT INTO "public"."icd10_code_embedding"
-                               ("Id", "CodeId", "Embedding", "EmbeddingModel", "LastUpdated")
+                            """INSERT INTO icd10_code_embedding
+                               (id, codeid, embedding, embeddingmodel, lastupdated)
                                VALUES (%s, %s, %s, %s, %s)
-                               ON CONFLICT ("CodeId") DO NOTHING""",
+                               ON CONFLICT (codeid) DO NOTHING""",
                             (generate_uuid(), code_id, embedding_json, "MedEmbed-Small-v0.1", get_timestamp()),
                         )
                         total_generated += 1

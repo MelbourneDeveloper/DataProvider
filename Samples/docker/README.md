@@ -49,13 +49,13 @@ Then serve the static files however you want (nginx, python, etc).
 
 ```bash
 # Start everything
-./start.sh
+./scripts/start.sh
 
 # Fresh start (wipe databases)
-./start.sh --fresh
+./scripts/start.sh --fresh
 
 # Rebuild containers
-./start.sh --build
+./scripts/start.sh --build
 ```
 
 ## Ports

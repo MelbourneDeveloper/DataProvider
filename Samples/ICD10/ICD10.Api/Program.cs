@@ -313,12 +313,12 @@ app.MapPost(
         {
             await using var icdCmd = conn.CreateCommand();
             icdCmd.CommandText = """
-            SELECT c."Code", c."ShortDescription", c."LongDescription",
-                   c."InclusionTerms", c."ExclusionTerms", c."CodeAlso", c."CodeFirst",
-                   1 - (e."Embedding"::vector <=> @queryVector::vector) as similarity
+            SELECT c."code", c."shortdescription", c."longdescription",
+                   c."inclusionterms", c."exclusionterms", c."codealso", c."codefirst",
+                   1 - (e."embedding"::vector <=> @queryVector::vector) as similarity
             FROM icd10_code c
-            JOIN icd10_code_embedding e ON c."Id" = e."CodeId"
-            ORDER BY e."Embedding"::vector <=> @queryVector::vector
+            JOIN icd10_code_embedding e ON c."id" = e."codeid"
+            ORDER BY e."embedding"::vector <=> @queryVector::vector
             LIMIT @limit
             """;
             icdCmd.Parameters.AddWithValue("@queryVector", vectorString);
@@ -362,11 +362,11 @@ app.MapPost(
         {
             await using var achiCmd = conn.CreateCommand();
             achiCmd.CommandText = """
-            SELECT c."Code", c."ShortDescription", c."LongDescription",
-                   1 - (e."Embedding"::vector <=> @queryVector::vector) as similarity
+            SELECT c."code", c."shortdescription", c."longdescription",
+                   1 - (e."embedding"::vector <=> @queryVector::vector) as similarity
             FROM achi_code c
-            JOIN achi_code_embedding e ON c."Id" = e."CodeId"
-            ORDER BY e."Embedding"::vector <=> @queryVector::vector
+            JOIN achi_code_embedding e ON c."id" = e."codeid"
+            ORDER BY e."embedding"::vector <=> @queryVector::vector
             LIMIT @limit
             """;
             achiCmd.Parameters.AddWithValue("@queryVector", vectorString);

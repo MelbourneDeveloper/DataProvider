@@ -14,7 +14,7 @@ IMPORTANT: Do NOT run in the background. Run in the foreground so the user can s
 Run with existing database volumes intact:
 
 ```bash
-cd /Users/christianfindlay/Documents/Code/DataProvider/Samples && ./start.sh
+cd /Users/christianfindlay/Documents/Code/DataProvider/Samples/scripts && ./start.sh
 ```
 
 ## Fresh start - blow away databases
@@ -22,7 +22,7 @@ cd /Users/christianfindlay/Documents/Code/DataProvider/Samples && ./start.sh
 If the user says "fresh", "clean", "reset", or `$ARGUMENTS` contains `--fresh`:
 
 ```bash
-cd /Users/christianfindlay/Documents/Code/DataProvider/Samples && ./start.sh --fresh
+cd /Users/christianfindlay/Documents/Code/DataProvider/Samples/scripts && ./start.sh --fresh
 ```
 
 ## Force rebuild containers
@@ -30,13 +30,13 @@ cd /Users/christianfindlay/Documents/Code/DataProvider/Samples && ./start.sh --f
 If the user says "rebuild" or `$ARGUMENTS` contains `--build`:
 
 ```bash
-cd /Users/christianfindlay/Documents/Code/DataProvider/Samples && ./start.sh --build
+cd /Users/christianfindlay/Documents/Code/DataProvider/Samples/scripts && ./start.sh --build
 ```
 
 ## Both fresh + rebuild
 
 ```bash
-cd /Users/christianfindlay/Documents/Code/DataProvider/Samples && ./start.sh --fresh --build
+cd /Users/christianfindlay/Documents/Code/DataProvider/Samples/scripts && ./start.sh --fresh --build
 ```
 
 ## Services

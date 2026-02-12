@@ -5,15 +5,15 @@
             "name": "Dashboard (Fresh)",
             "type": "node-terminal",
             "request": "launch",
-            "command": "${workspaceFolder}/Samples/start.sh --fresh",
-            "cwd": "${workspaceFolder}/Samples"
+            "command": "${workspaceFolder}/Samples/scripts/start.sh --fresh",
+            "cwd": "${workspaceFolder}/Samples/scripts"
         },
         {
             "name": "Dashboard (Continue)",
             "type": "node-terminal",
             "request": "launch",
-            "command": "${workspaceFolder}/Samples/start.sh",
-            "cwd": "${workspaceFolder}/Samples"
+            "command": "${workspaceFolder}/Samples/scripts/start.sh",
+            "cwd": "${workspaceFolder}/Samples/scripts"
         },
         {
             "name": "Launch Blazor LQL Website",

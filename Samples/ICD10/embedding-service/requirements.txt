@@ -1,6 +1,6 @@
-fastapi==0.115.6
-uvicorn[standard]==0.34.0
-sentence-transformers==3.3.1
-torch==2.5.1
-pydantic==2.10.4
-numpy==2.2.1
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+sentence-transformers>=2.2.2
+torch>=2.0.0
+pydantic>=2.0.0
+numpy>=1.24.0

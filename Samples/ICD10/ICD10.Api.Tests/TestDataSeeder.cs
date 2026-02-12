@@ -18,6 +18,204 @@ internal static class TestDataSeeder
         SeedAchiCodes(conn);
     }
 
+    /// <summary>
+    /// Seeds embeddings by calling the embedding service at localhost:8000.
+    /// If the service is unavailable, silently returns (search tests will fail via skip check).
+    /// </summary>
+    internal static void SeedEmbeddings(NpgsqlConnection conn)
+    {
+        var icdItems = new (string EmbId, string CodeId, string Text)[]
+        {
+            (
+                "emb-a00-0",
+                "code-a00-0",
+                "ICD-10 A00.0: Cholera due to Vibrio cholerae 01, biovar cholerae"
+            ),
+            (
+                "emb-e10-9",
+                "code-e10-9",
+                "ICD-10 E10.9: Type 1 diabetes mellitus without complications"
+            ),
+            (
+                "emb-e11-9",
+                "code-e11-9",
+                "ICD-10 E11.9: Type 2 diabetes mellitus without complications"
+            ),
+            (
+                "emb-i10",
+                "code-i10",
+                "ICD-10 I10: Essential (primary) hypertension, high blood pressure"
+            ),
+            (
+                "emb-i21-0",
+                "code-i21-0",
+                "ICD-10 I21.0: ST elevation myocardial infarction, heart attack, anterior wall"
+            ),
+            (
+                "emb-i21-11",
+                "code-i21-11",
+                "ICD-10 I21.11: ST elevation myocardial infarction, heart attack, right coronary artery"
+            ),
+            (
+                "emb-i21-4",
+                "code-i21-4",
+                "ICD-10 I21.4: Non-ST elevation myocardial infarction, NSTEMI, heart attack"
+            ),
+            (
+                "emb-j06-9",
+                "code-j06-9",
+                "ICD-10 J06.9: Acute upper respiratory infection, unspecified"
+            ),
+            (
+                "emb-r06-00",
+                "code-r06-00",
+                "ICD-10 R06.00: Dyspnea, shortness of breath, breathing difficulty"
+            ),
+            ("emb-r07-9", "code-r07-9", "ICD-10 R07.9: Chest pain, unspecified, thoracic pain"),
+            ("emb-r07-89", "code-r07-89", "ICD-10 R07.89: Other chest pain, thoracic pain"),
+            (
+                "emb-a00-1",
+                "code-a00-1",
+                "ICD-10 A00.1: Cholera due to Vibrio cholerae 01, biovar eltor"
+            ),
+            ("emb-m54-5", "code-m54-5", "ICD-10 M54.5: Low back pain, lumbago, dorsalgia"),
+            (
+                "emb-s72-00",
+                "code-s72-00",
+                "ICD-10 S72.00: Fracture of unspecified part of neck of femur, hip fracture"
+            ),
+        };
+
+        var achiItems = new (string EmbId, string CodeId, string Text)[]
+        {
+            (
+                "emb-achi-38497",
+                "achi-38497-00",
+                "ACHI 38497-00: Coronary angiography, heart catheterization"
+            ),
+            (
+                "emb-achi-38503",
+                "achi-38503-00",
+                "ACHI 38503-00: Percutaneous insertion of coronary artery stent, heart procedure"
+            ),
+            (
+                "emb-achi-90661",
+                "achi-90661-00",
+                "ACHI 90661-00: Appendicectomy, appendix removal surgery"
+            ),
+            (
+                "emb-achi-30571",
+                "achi-30571-00",
+                "ACHI 30571-00: Cholecystectomy, gallbladder removal surgery"
+            ),
+        };
+
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+
+            var healthCheck = client
+                .GetAsync("http://localhost:8000/health")
+                .GetAwaiter()
+                .GetResult();
+            if (!healthCheck.IsSuccessStatusCode)
+                return;
+
+            var allTexts = icdItems
+                .Select(t => t.Text)
+                .Concat(achiItems.Select(t => t.Text))
+                .ToList();
+
+            var batchResponse = client
+                .PostAsJsonAsync("http://localhost:8000/embed/batch", new { texts = allTexts })
+                .GetAwaiter()
+                .GetResult();
+
+            if (!batchResponse.IsSuccessStatusCode)
+                return;
+
+            var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var batchResult = batchResponse
+                .Content.ReadFromJsonAsync<BatchEmbeddingResponse>(jsonOptions)
+                .GetAwaiter()
+                .GetResult();
+
+            if (batchResult is null || batchResult.Embeddings.Count != allTexts.Count)
+                return;
+
+            InsertEmbeddings(
+                conn: conn,
+                table: "icd10_code_embedding",
+                items: icdItems,
+                embeddings: batchResult.Embeddings,
+                offset: 0
+            );
+
+            InsertEmbeddings(
+                conn: conn,
+                table: "achi_code_embedding",
+                items: achiItems,
+                embeddings: batchResult.Embeddings,
+                offset: icdItems.Length
+            );
+        }
+        catch
+        {
+            // Embedding service unavailable - search tests will be skipped
+        }
+    }
+
+    private static void InsertEmbeddings(
+        NpgsqlConnection conn,
+        string table,
+        (string EmbId, string CodeId, string Text)[] items,
+        List<List<float>> embeddings,
+        int offset
+    )
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"""
+            INSERT INTO "public"."{table}" ("id", "codeid", "embedding", "embeddingmodel")
+            VALUES (@id, @codeid, @embedding, @model)
+            """;
+
+        var pId = cmd.Parameters.Add(new NpgsqlParameter("@id", NpgsqlTypes.NpgsqlDbType.Text));
+        var pCodeId = cmd.Parameters.Add(
+            new NpgsqlParameter("@codeid", NpgsqlTypes.NpgsqlDbType.Text)
+        );
+        var pEmbedding = cmd.Parameters.Add(
+            new NpgsqlParameter("@embedding", NpgsqlTypes.NpgsqlDbType.Text)
+        );
+        var pModel = cmd.Parameters.Add(
+            new NpgsqlParameter("@model", NpgsqlTypes.NpgsqlDbType.Text)
+        );
+
+        cmd.Prepare();
+
+        for (var i = 0; i < items.Length; i++)
+        {
+            pId.Value = items[i].EmbId;
+            pCodeId.Value = items[i].CodeId;
+            pEmbedding.Value =
+                "["
+                + string.Join(
+                    ",",
+                    embeddings[offset + i]
+                        .Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                )
+                + "]";
+            pModel.Value = "MedEmbed-Small-v0.1";
+            cmd.ExecuteNonQuery();
+        }
+    }
+
+    private sealed record BatchEmbeddingResponse(
+        List<List<float>> Embeddings,
+        string Model,
+        int Dimensions,
+        int Count
+    );
+
     private static void SeedChapters(NpgsqlConnection conn)
     {
         // All 21 ICD-10-CM chapters with numeric chapter numbers

@@ -301,6 +301,7 @@ public static class PostgresTriggerGenerator
             END;
             $$ LANGUAGE plpgsql;
 
+            DROP TRIGGER IF EXISTS {0}_sync_insert ON {1};
             CREATE TRIGGER {0}_sync_insert
             AFTER INSERT ON {1}
             FOR EACH ROW EXECUTE FUNCTION {0}_sync_insert_fn();
@@ -339,6 +340,7 @@ public static class PostgresTriggerGenerator
             END;
             $$ LANGUAGE plpgsql;
 
+            DROP TRIGGER IF EXISTS {0}_sync_update ON {1};
             CREATE TRIGGER {0}_sync_update
             AFTER UPDATE ON {1}
             FOR EACH ROW EXECUTE FUNCTION {0}_sync_update_fn();
@@ -373,6 +375,7 @@ public static class PostgresTriggerGenerator
             END;
             $$ LANGUAGE plpgsql;
 
+            DROP TRIGGER IF EXISTS {0}_sync_delete ON {1};
             CREATE TRIGGER {0}_sync_delete
             AFTER DELETE ON {1}
             FOR EACH ROW EXECUTE FUNCTION {0}_sync_delete_fn();

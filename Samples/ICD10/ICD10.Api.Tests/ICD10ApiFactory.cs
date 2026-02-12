@@ -61,6 +61,9 @@ public sealed class ICD10ApiFactory : WebApplicationFactory<Program>
 
         // Seed reference data
         TestDataSeeder.Seed(conn);
+
+        // Seed embeddings from embedding service (if available)
+        TestDataSeeder.SeedEmbeddings(conn);
     }
 
     /// <summary>

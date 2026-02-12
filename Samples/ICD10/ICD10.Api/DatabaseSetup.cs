@@ -100,7 +100,7 @@ internal static class DatabaseSetup
                     cmd.CommandText = $"""
                         CREATE INDEX IF NOT EXISTS idx_icd10_embedding_vector
                         ON icd10_code_embedding
-                        USING ivfflat (("Embedding"::vector(384)) vector_cosine_ops)
+                        USING ivfflat (("embedding"::vector(384)) vector_cosine_ops)
                         WITH (lists = {lists})
                         """;
                     cmd.ExecuteNonQuery();
@@ -127,7 +127,7 @@ internal static class DatabaseSetup
                     cmd.CommandText = $"""
                         CREATE INDEX IF NOT EXISTS idx_achi_embedding_vector
                         ON achi_code_embedding
-                        USING ivfflat (("Embedding"::vector(384)) vector_cosine_ops)
+                        USING ivfflat (("embedding"::vector(384)) vector_cosine_ops)
                         WITH (lists = {lists})
                         """;
                     cmd.ExecuteNonQuery();
