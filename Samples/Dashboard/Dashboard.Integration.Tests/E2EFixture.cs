@@ -67,6 +67,12 @@ public sealed class E2EFixture : IAsyncLifetime
         Environment.GetEnvironmentVariable("E2E_GATEKEEPER_URL") ?? "http://localhost:5002";
 
     /// <summary>
+    /// ICD-10 API URL. Override with E2E_ICD10_URL env var.
+    /// </summary>
+    public static string Icd10Url { get; } =
+        Environment.GetEnvironmentVariable("E2E_ICD10_URL") ?? "http://localhost:5090";
+
+    /// <summary>
     /// Dashboard URL - dynamically assigned in container mode, defaults to local in local mode.
     /// </summary>
     public static string DashboardUrl { get; private set; } = "http://localhost:5173";
@@ -83,6 +89,7 @@ public sealed class E2EFixture : IAsyncLifetime
             Console.WriteLine($"[E2E]   Clinical:   {ClinicalUrl}");
             Console.WriteLine($"[E2E]   Scheduling: {SchedulingUrl}");
             Console.WriteLine($"[E2E]   Gatekeeper: {GatekeeperUrl}");
+            Console.WriteLine($"[E2E]   ICD-10:     {Icd10Url}");
             Console.WriteLine($"[E2E]   Dashboard:  {DashboardUrl}");
 
             await WaitForApiAsync(ClinicalUrl, "/fhir/Patient/");
@@ -148,10 +155,7 @@ public sealed class E2EFixture : IAsyncLifetime
             clinicalDll,
             clinicalProjectDir,
             ClinicalUrl,
-            new Dictionary<string, string>
-            {
-                ["ConnectionStrings__Postgres"] = clinicalConnStr,
-            }
+            new Dictionary<string, string> { ["ConnectionStrings__Postgres"] = clinicalConnStr }
         );
 
         var schedulingDll = Path.Combine(
@@ -165,10 +169,7 @@ public sealed class E2EFixture : IAsyncLifetime
             schedulingDll,
             schedulingProjectDir,
             SchedulingUrl,
-            new Dictionary<string, string>
-            {
-                ["ConnectionStrings__Postgres"] = schedulingConnStr,
-            }
+            new Dictionary<string, string> { ["ConnectionStrings__Postgres"] = schedulingConnStr }
         );
 
         var gatekeeperDll = Path.Combine(
@@ -182,10 +183,7 @@ public sealed class E2EFixture : IAsyncLifetime
             gatekeeperDll,
             gatekeeperProjectDir,
             GatekeeperUrl,
-            new Dictionary<string, string>
-            {
-                ["ConnectionStrings__Postgres"] = gatekeeperConnStr,
-            }
+            new Dictionary<string, string> { ["ConnectionStrings__Postgres"] = gatekeeperConnStr }
         );
 
         await Task.Delay(2000);
@@ -326,6 +324,10 @@ public sealed class E2EFixture : IAsyncLifetime
             CreateNoWindow = true,
         };
 
+        // Clear ASPNETCORE_URLS inherited from test process
+        // (Microsoft.AspNetCore.Mvc.Testing sets it to http://127.0.0.1:0)
+        startInfo.EnvironmentVariables.Remove("ASPNETCORE_URLS");
+
         if (envVars is not null)
         {
             foreach (var kvp in envVars)
@@ -367,6 +369,8 @@ public sealed class E2EFixture : IAsyncLifetime
             RedirectStandardError = true,
             CreateNoWindow = true,
         };
+
+        startInfo.EnvironmentVariables.Remove("ASPNETCORE_URLS");
 
         if (envVars is not null)
         {
@@ -461,10 +465,7 @@ public sealed class E2EFixture : IAsyncLifetime
         cmd.CommandText = $"CREATE DATABASE \"{dbName}\"";
         await cmd.ExecuteNonQueryAsync();
 
-        var builder = new NpgsqlConnectionStringBuilder(baseConnectionString)
-        {
-            Database = dbName,
-        };
+        var builder = new NpgsqlConnectionStringBuilder(baseConnectionString) { Database = dbName };
         return builder.ConnectionString;
     }
 
@@ -544,6 +545,10 @@ public sealed class E2EFixture : IAsyncLifetime
     )
     {
         var page = await Browser!.NewPageAsync();
+        page.Console += (_, msg) =>
+            Console.WriteLine($"[BROWSER {msg.Type}] {msg.Text}");
+        page.PageError += (_, err) => Console.WriteLine($"[PAGE ERROR] {err}");
+
         var token = GenerateTestToken(userId, displayName, email);
         var userJson = JsonSerializer.Serialize(
             new
@@ -552,6 +557,12 @@ public sealed class E2EFixture : IAsyncLifetime
                 displayName,
                 email,
             }
+        );
+
+        // Inject API URL config BEFORE any page script runs
+        await page.AddInitScriptAsync(
+            $@"window.dashboardConfig = window.dashboardConfig || {{}};
+               window.dashboardConfig.ICD10_API_URL = '{Icd10Url}';"
         );
 
         // Navigate first to establish the origin for localStorage
@@ -623,6 +634,11 @@ public sealed class E2EFixture : IAsyncLifetime
 
     private static IHost CreateDashboardHost()
     {
+        // Microsoft.AspNetCore.Mvc.Testing sets ASPNETCORE_URLS globally to
+        // http://127.0.0.1:0 which overrides UseUrls(). Clear it so the
+        // Dashboard host binds to the expected port.
+        Environment.SetEnvironmentVariable("ASPNETCORE_URLS", null);
+
         var wwwrootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot");
         return Host.CreateDefaultBuilder()
             .ConfigureWebHostDefaults(webBuilder =>

@@ -7,6 +7,8 @@ on:
       - '**/*.cs'
       - '**/*.csproj'
       - '**/*.sln'
+      - '**/*.py'
+      - '**/requirements.txt'
       - '**/Directory.Build.props'
       - '**/Directory.Packages.props'
       - '.github/workflows/ci.yml'
@@ -19,6 +21,8 @@ on:
       - '**/*.cs'
       - '**/*.csproj'
       - '**/*.sln'
+      - '**/*.py'
+      - '**/requirements.txt'
       - '**/Directory.Build.props'
       - '**/Directory.Packages.props'
       - '.github/workflows/ci.yml'
@@ -100,6 +104,7 @@ jobs:
               - 'Samples/ICD10/**'
               - 'DataProvider/**'
               - 'Migration/**'
+              - 'Lql/**'
               - 'Directory.Build.props'
               - 'Directory.Packages.props'
             docker:
@@ -407,6 +412,20 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, changes]
     if: needs.changes.outputs.gatekeeper == 'true'
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: changeme
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -428,6 +447,8 @@ jobs:
 
       - name: Test
         run: dotnet test Gatekeeper/Gatekeeper.Api.Tests --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        env:
+          TEST_POSTGRES_CONNECTION: "Host=localhost;Database=postgres;Username=postgres;Password=changeme"
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -442,6 +463,20 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, changes]
     if: needs.changes.outputs.samples == 'true'
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: changeme
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     strategy:
       fail-fast: false
       matrix:
@@ -474,6 +509,8 @@ jobs:
 
       - name: Test
         run: dotnet test ${{ matrix.project }} --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        env:
+          TEST_POSTGRES_CONNECTION: "Host=localhost;Database=postgres;Username=postgres;Password=changeme"
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -482,18 +519,26 @@ jobs:
           name: test-results-sample-api-${{ strategy.job-index }}
           path: '**/TestResults/*.trx'
 
-  # ICD10 API tests
+  # ICD10 API + CLI tests (need pgvector PostgreSQL + embedding service)
   icd10-tests:
     name: ICD10 Tests
     runs-on: ubuntu-latest
     needs: [build, changes]
     if: needs.changes.outputs.icd10 == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - Samples/ICD10/ICD10.Api.Tests
-          - Samples/ICD10/ICD10.Cli.Tests
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: changeme
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -510,17 +555,60 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore
-        run: dotnet restore ${{ matrix.project }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Test
-        run: dotnet test ${{ matrix.project }} --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+      - name: Build embedding service
+        uses: docker/build-push-action@v5
+        with:
+          context: Samples/ICD10/embedding-service
+          load: true
+          tags: medembed-service:latest
+          cache-from: type=gha,scope=embedding-service
+          cache-to: type=gha,mode=max,scope=embedding-service
+
+      - name: Start embedding service
+        run: |
+          docker run -d --name embedding-service -p 8000:8000 medembed-service:latest
+          echo "Waiting for embedding service to load model..."
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+              echo "Embedding service is healthy!"
+              break
+            fi
+            if [ $i -eq 90 ]; then
+              echo "Embedding service failed to start within timeout"
+              docker logs embedding-service
+              exit 1
+            fi
+            echo "Attempt $i/90 - waiting..."
+            sleep 5
+          done
+
+      - name: Restore
+        run: |
+          dotnet restore Samples/ICD10/ICD10.Api.Tests
+          dotnet restore Samples/ICD10/ICD10.Cli.Tests
+
+      - name: Test ICD10.Api.Tests
+        run: dotnet test Samples/ICD10/ICD10.Api.Tests --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        env:
+          ICD10_TEST_CONNECTION_STRING: "Host=localhost;Database=postgres;Username=postgres;Password=changeme"
+
+      - name: Test ICD10.Cli.Tests
+        run: dotnet test Samples/ICD10/ICD10.Cli.Tests --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        env:
+          ICD10_TEST_CONNECTION_STRING: "Host=localhost;Database=postgres;Username=postgres;Password=changeme"
+
+      - name: Embedding service logs
+        if: failure()
+        run: docker logs embedding-service || true
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results-icd10-${{ strategy.job-index }}
+          name: test-results-icd10
           path: '**/TestResults/*.trx'
 
   # Docker build validation
