@@ -10,7 +10,7 @@ For higher accuracy, use MedEmbed-large-v0.1 (1024 dimensions)
 
 import logging
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 MODEL_NAME = "abhinand/MedEmbed-small-v0.1"
 MODEL_DIMENSIONS = 384
 
-model: SentenceTransformer | None = None
+model: Optional[SentenceTransformer] = None
 
 
 class EmbedRequest(BaseModel):

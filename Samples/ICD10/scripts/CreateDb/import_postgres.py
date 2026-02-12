@@ -574,31 +574,32 @@ class PostgresImporter:
 
 @click.command()
 @click.option("--connection-string", envvar="DATABASE_URL", required=True, help="PostgreSQL connection string")
-def main(connection_string: str):
+@click.option("--embeddings-only", is_flag=True, default=False, help="Only generate missing embeddings, skip data import")
+def main(connection_string: str, embeddings_only: bool):
     logger.info("=" * 60)
     logger.info("ICD-10-CM Import for PostgreSQL")
     logger.info("=" * 60)
 
-    chapters, blocks, categories, codes, synonyms = download_and_parse()
-
-    logger.info(f"Total: {len(chapters)} chapters")
-    logger.info(f"Total: {len(blocks)} blocks")
-    logger.info(f"Total: {len(categories)} categories")
-    logger.info(f"Total: {len(codes)} codes")
-
     importer = PostgresImporter(connection_string)
     try:
-        importer.import_chapters(chapters)
-        importer.import_blocks(blocks)
-        importer.import_categories(categories)
-        importer.import_codes(codes, synonyms)
-        importer.import_achi_sample_data()
-        logger.info("ICD-10-CM codes imported to PostgreSQL")
+        if not embeddings_only:
+            chapters, blocks, categories, codes, synonyms = download_and_parse()
 
-        # Generate embeddings for AI search
+            logger.info(f"Total: {len(chapters)} chapters")
+            logger.info(f"Total: {len(blocks)} blocks")
+            logger.info(f"Total: {len(categories)} categories")
+            logger.info(f"Total: {len(codes)} codes")
+
+            importer.import_chapters(chapters)
+            importer.import_blocks(blocks)
+            importer.import_categories(categories)
+            importer.import_codes(codes, synonyms)
+            importer.import_achi_sample_data()
+            logger.info("ICD-10-CM codes imported to PostgreSQL")
+
         logger.info("Generating embeddings for AI search...")
         importer.generate_embeddings()
-        logger.info("SUCCESS! ICD-10-CM import complete with embeddings")
+        logger.info("SUCCESS! Embedding generation complete")
     finally:
         importer.close()
 

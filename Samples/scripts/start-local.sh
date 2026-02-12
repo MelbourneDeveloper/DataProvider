@@ -73,17 +73,7 @@ populate_icd10() {
         sleep 2
     done
 
-    # Check if data already exists (query the chapters endpoint)
-    local CHAPTERS
-    CHAPTERS=$(curl -sf http://localhost:5090/api/icd10/chapters 2>/dev/null || echo "[]")
-    if [ "$CHAPTERS" != "[]" ] && [ "$CHAPTERS" != "" ]; then
-        echo "  [icd10-import] ICD10 data already populated. Skipping import."
-        return
-    fi
-
-    echo "  [icd10-import] No ICD10 data found. Running Postgres import..."
-
-    # Wait for embedding service to be ready (for generating embeddings)
+    # Wait for embedding service to be ready (needed for AI search)
     echo "  [icd10-import] Waiting for embedding service..."
     for i in {1..120}; do
         if curl -sf http://localhost:8000/health >/dev/null 2>&1; then
@@ -93,10 +83,20 @@ populate_icd10() {
         sleep 2
     done
 
-    # Run the Postgres import (downloads CDC XML, populates tables + embeddings)
-    EMBEDDING_SERVICE_URL="http://localhost:8000" \
-        "$VENV_DIR/bin/python" "$SCRIPTS_DIR/import_postgres.py" \
-        --connection-string "$CONN_STR" || echo "  [icd10-import] Import encountered errors (check logs above)"
+    # Check if data already exists (query the chapters endpoint)
+    local CHAPTERS
+    CHAPTERS=$(curl -sf http://localhost:5090/api/icd10/chapters 2>/dev/null || echo "[]")
+    if [ "$CHAPTERS" = "[]" ] || [ "$CHAPTERS" = "" ]; then
+        echo "  [icd10-import] No ICD10 data found. Running full Postgres import..."
+        EMBEDDING_SERVICE_URL="http://localhost:8000" \
+            "$VENV_DIR/bin/python" "$SCRIPTS_DIR/import_postgres.py" \
+            --connection-string "$CONN_STR" || echo "  [icd10-import] Import encountered errors (check logs above)"
+    else
+        echo "  [icd10-import] ICD10 codes already populated. Generating missing embeddings..."
+        EMBEDDING_SERVICE_URL="http://localhost:8000" \
+            "$VENV_DIR/bin/python" "$SCRIPTS_DIR/import_postgres.py" \
+            --connection-string "$CONN_STR" --embeddings-only || echo "  [icd10-import] Embedding generation encountered errors"
+    fi
 }
 
 # ── Build all projects (avoids parallel build contention) ───────────
