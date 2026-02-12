@@ -311,7 +311,7 @@ public sealed class PostgreSqlContext : ISqlContext
             return "";
         }
 
-        var quotedBase = QuoteTableName(baseTable.Name);
+        var quotedBase = FormatTableName(baseTable.Name);
 
         if (statement.HasJoins)
         {
@@ -333,7 +333,7 @@ public sealed class PostgreSqlContext : ISqlContext
         {
             var relationship = joinRelationships.FirstOrDefault(j => j.RightTable == table.Name);
             var joinType = relationship?.JoinType ?? "INNER JOIN";
-            var quotedJoinTable = QuoteTableName(table.Name);
+            var quotedJoinTable = FormatTableName(table.Name);
 
             sql.Append(
                 System.Globalization.CultureInfo.InvariantCulture,
@@ -417,9 +417,9 @@ public sealed class PostgreSqlContext : ISqlContext
     }
 
     /// <summary>
-    /// Quotes a table name for PostgreSQL using double quotes and lowercasing.
+    /// Formats a table name for PostgreSQL by lowercasing.
     /// </summary>
-    private static string QuoteTableName(string tableName) => $"\"{tableName.ToLowerInvariant()}\"";
+    private static string FormatTableName(string tableName) => tableName.ToLowerInvariant();
 
     /// <summary>
     /// Generates the GROUP BY clause

@@ -1,3 +1,3 @@
 SELECT users.name, users.email
-FROM "users"
+FROM users
 WHERE users.name LIKE '%bob%'

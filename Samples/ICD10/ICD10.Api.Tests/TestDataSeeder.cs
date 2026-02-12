@@ -309,8 +309,10 @@ internal static class TestDataSeeder
         )[]
         {
             ("blk-a00-a09", "ch-01", "A00-A09", "Intestinal infectious diseases", "A00", "A09"),
-            ("blk-e10-e14", "ch-04", "E10-E14", "Diabetes mellitus", "E10", "E14"),
-            ("blk-i10-i15", "ch-09", "I10-I15", "Hypertensive diseases", "I10", "I15"),
+            ("blk-e08-e13", "ch-04", "E08-E13", "Diabetes mellitus", "E08", "E13"),
+            ("blk-g40-g47", "ch-06", "G40-G47", "Episodic and paroxysmal disorders", "G40", "G47"),
+            ("blk-h53-h54", "ch-07", "H53-H54", "Visual disturbances and blindness", "H53", "H54"),
+            ("blk-i10-i1a", "ch-09", "I10-I1A", "Hypertensive diseases", "I10", "I1A"),
             ("blk-i20-i25", "ch-09", "I20-I25", "Ischaemic heart diseases", "I20", "I25"),
             ("blk-j00-j06", "ch-10", "J00-J06", "Acute upper respiratory infections", "J00", "J06"),
             (
@@ -321,8 +323,10 @@ internal static class TestDataSeeder
                 "R00",
                 "R09"
             ),
+            ("blk-j09-j18", "ch-10", "J09-J18", "Influenza and pneumonia", "J09", "J18"),
             ("blk-r50-r69", "ch-18", "R50-R69", "General symptoms and signs", "R50", "R69"),
             ("blk-m50-m54", "ch-13", "M50-M54", "Other dorsopathies", "M50", "M54"),
+            ("blk-q50-q56", "ch-17", "Q50-Q56", "Congenital malformations of genital organs", "Q50", "Q56"),
             ("blk-s70-s79", "ch-19", "S70-S79", "Injuries to the hip and thigh", "S70", "S79"),
         };
 
@@ -362,9 +366,11 @@ internal static class TestDataSeeder
         var categories = new (string Id, string BlockId, string CategoryCode, string Title)[]
         {
             ("cat-a00", "blk-a00-a09", "A00", "Cholera"),
-            ("cat-e10", "blk-e10-e14", "E10", "Type 1 diabetes mellitus"),
-            ("cat-e11", "blk-e10-e14", "E11", "Type 2 diabetes mellitus"),
-            ("cat-i10", "blk-i10-i15", "I10", "Essential (primary) hypertension"),
+            ("cat-e10", "blk-e08-e13", "E10", "Type 1 diabetes mellitus"),
+            ("cat-e11", "blk-e08-e13", "E11", "Type 2 diabetes mellitus"),
+            ("cat-g43", "blk-g40-g47", "G43", "Migraine"),
+            ("cat-h53", "blk-h53-h54", "H53", "Visual disturbances"),
+            ("cat-i10", "blk-i10-i1a", "I10", "Essential (primary) hypertension"),
             ("cat-i21", "blk-i20-i25", "I21", "Acute myocardial infarction"),
             (
                 "cat-j06",
@@ -374,8 +380,10 @@ internal static class TestDataSeeder
             ),
             ("cat-r06", "blk-r00-r09", "R06", "Abnormalities of breathing"),
             ("cat-r07", "blk-r00-r09", "R07", "Pain in throat and chest"),
+            ("cat-j18", "blk-j09-j18", "J18", "Pneumonia, unspecified organism"),
             ("cat-r10", "blk-r00-r09", "R10", "Abdominal and pelvic pain"),
             ("cat-m54", "blk-m50-m54", "M54", "Dorsalgia"),
+            ("cat-q53", "blk-q50-q56", "Q53", "Undescended and ectopic testicle"),
             ("cat-s72", "blk-s70-s79", "S72", "Fracture of femur"),
         };
 
@@ -406,89 +414,162 @@ internal static class TestDataSeeder
 
     private static void SeedCodes(NpgsqlConnection conn)
     {
-        // All codes required by tests
-        var codes = new (string Id, string CategoryId, string Code, string Short, string Long)[]
+        // All codes required by tests (Id, CategoryId, Code, Short, Long, Synonyms)
+        var codes = new (
+            string Id,
+            string CategoryId,
+            string Code,
+            string Short,
+            string Long,
+            string Synonyms
+        )[]
         {
             (
                 "code-a00-0",
                 "cat-a00",
                 "A00.0",
                 "Cholera due to Vibrio cholerae 01, biovar cholerae",
-                "Cholera due to Vibrio cholerae 01, biovar cholerae"
+                "Cholera due to Vibrio cholerae 01, biovar cholerae",
+                ""
             ),
             (
                 "code-e10-9",
                 "cat-e10",
                 "E10.9",
                 "Type 1 diabetes mellitus without complications",
-                "Type 1 diabetes mellitus without complications"
+                "Type 1 diabetes mellitus without complications",
+                "juvenile diabetes"
             ),
             (
                 "code-e11-9",
                 "cat-e11",
                 "E11.9",
                 "Type 2 diabetes mellitus without complications",
-                "Type 2 diabetes mellitus without complications"
+                "Type 2 diabetes mellitus without complications",
+                "adult-onset diabetes; non-insulin-dependent diabetes"
+            ),
+            (
+                "code-g43-909",
+                "cat-g43",
+                "G43.909",
+                "Migraine, unspecified, not intractable",
+                "Migraine, unspecified, not intractable, without status migrainosus",
+                "Hemicrania; sick headache"
+            ),
+            (
+                "code-h53-481",
+                "cat-h53",
+                "H53.481",
+                "Generalized contraction of visual field, left eye",
+                "Generalized contraction of visual field, left eye",
+                ""
             ),
             (
                 "code-i10",
                 "cat-i10",
                 "I10",
                 "Essential (primary) hypertension",
-                "Essential (primary) hypertension"
+                "Essential (primary) hypertension",
+                "benign hypertension; high blood pressure"
             ),
             (
                 "code-i21-0",
                 "cat-i21",
                 "I21.0",
                 "Acute transmural myocardial infarction of anterior wall",
-                "ST elevation (STEMI) myocardial infarction involving left main coronary artery"
+                "ST elevation (STEMI) myocardial infarction involving left main coronary artery",
+                ""
             ),
             (
                 "code-i21-11",
                 "cat-i21",
                 "I21.11",
                 "ST elevation (STEMI) myocardial infarction involving right coronary artery",
-                "ST elevation (STEMI) myocardial infarction involving right coronary artery"
+                "ST elevation (STEMI) myocardial infarction involving right coronary artery",
+                ""
             ),
             (
                 "code-i21-4",
                 "cat-i21",
                 "I21.4",
                 "Acute subendocardial myocardial infarction",
-                "Non-ST elevation (NSTEMI) myocardial infarction"
+                "Non-ST elevation (NSTEMI) myocardial infarction",
+                ""
             ),
             (
                 "code-j06-9",
                 "cat-j06",
                 "J06.9",
                 "Acute upper respiratory infection, unspecified",
-                "Acute upper respiratory infection, unspecified"
+                "Acute upper respiratory infection, unspecified",
+                ""
             ),
-            ("code-r06-00", "cat-r06", "R06.00", "Dyspnea, unspecified", "Dyspnea, unspecified"),
+            (
+                "code-j18-9",
+                "cat-j18",
+                "J18.9",
+                "Pneumonia, unspecified organism",
+                "Pneumonia, unspecified organism",
+                ""
+            ),
+            (
+                "code-r06-00",
+                "cat-r06",
+                "R06.00",
+                "Dyspnea, unspecified",
+                "Dyspnea, unspecified",
+                ""
+            ),
+            (
+                "code-r06-02",
+                "cat-r06",
+                "R06.02",
+                "Shortness of breath",
+                "Shortness of breath",
+                ""
+            ),
             (
                 "code-r07-9",
                 "cat-r07",
                 "R07.9",
                 "Chest pain, unspecified",
-                "Chest pain, unspecified"
+                "Chest pain, unspecified",
+                ""
             ),
-            ("code-r07-89", "cat-r07", "R07.89", "Other chest pain", "Other chest pain"),
+            ("code-r07-89", "cat-r07", "R07.89", "Other chest pain", "Other chest pain", ""),
             // Additional codes for search tests
             (
                 "code-a00-1",
                 "cat-a00",
                 "A00.1",
                 "Cholera due to Vibrio cholerae 01, biovar eltor",
-                "Cholera due to Vibrio cholerae 01, biovar eltor"
+                "Cholera due to Vibrio cholerae 01, biovar eltor",
+                ""
             ),
-            ("code-m54-5", "cat-m54", "M54.5", "Low back pain", "Low back pain"),
+            ("code-m54-5", "cat-m54", "M54.5", "Low back pain", "Low back pain", ""),
+            (
+                "code-m54-50",
+                "cat-m54",
+                "M54.50",
+                "Low back pain, unspecified",
+                "Low back pain, unspecified",
+                "lumbago; lumbar pain"
+            ),
+            (
+                "code-q53-1",
+                "cat-q53",
+                "Q53.1",
+                "Undescended testicle, unilateral",
+                "Undescended testicle, unilateral",
+                ""
+            ),
             (
                 "code-s72-00",
                 "cat-s72",
                 "S72.00",
                 "Fracture of neck of femur, closed",
-                "Fracture of unspecified part of neck of femur, closed"
+                "Fracture of unspecified part of neck of femur, closed",
+                ""
             ),
         };
 
@@ -499,7 +580,7 @@ internal static class TestDataSeeder
                  "inclusionterms", "exclusionterms", "codealso", "codefirst", "synonyms",
                  "billable", "effectivefrom", "effectiveto", "edition")
             VALUES (@id, @catid, @code, @short, @long,
-                    '', '', '', '', '',
+                    '', '', '', '', @synonyms,
                     1, '2025-07-01', '', '2025')
             """;
 
@@ -512,16 +593,20 @@ internal static class TestDataSeeder
             new NpgsqlParameter("@short", NpgsqlTypes.NpgsqlDbType.Text)
         );
         var pLong = cmd.Parameters.Add(new NpgsqlParameter("@long", NpgsqlTypes.NpgsqlDbType.Text));
+        var pSynonyms = cmd.Parameters.Add(
+            new NpgsqlParameter("@synonyms", NpgsqlTypes.NpgsqlDbType.Text)
+        );
 
         cmd.Prepare();
 
-        foreach (var (id, categoryId, code, shortDesc, longDesc) in codes)
+        foreach (var (id, categoryId, code, shortDesc, longDesc, synonyms) in codes)
         {
             pId.Value = id;
             pCatId.Value = categoryId;
             pCode.Value = code;
             pShort.Value = shortDesc;
             pLong.Value = longDesc;
+            pSynonyms.Value = synonyms;
             cmd.ExecuteNonQuery();
         }
     }

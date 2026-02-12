@@ -17,7 +17,7 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         _postgresContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:16")
+            .WithImage("postgres:16-alpine")
             .WithDatabase("mapping_test")
             .WithUsername("test")
             .WithPassword("test")

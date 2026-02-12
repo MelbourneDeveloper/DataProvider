@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -7,6 +8,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Playwright;
+using Npgsql;
+using Testcontainers.PostgreSql;
 
 namespace Dashboard.Integration.Tests;
 
@@ -15,6 +18,7 @@ namespace Dashboard.Integration.Tests;
 /// </summary>
 public sealed class E2EFixture : IAsyncLifetime
 {
+    private PostgreSqlContainer? _postgresContainer;
     private Process? _clinicalProcess;
     private Process? _schedulingProcess;
     private Process? _gatekeeperProcess;
@@ -63,6 +67,24 @@ public sealed class E2EFixture : IAsyncLifetime
         await KillProcessOnPortAsync(5173);
         await Task.Delay(2000);
 
+        // Start PostgreSQL container for all APIs
+        _postgresContainer = new PostgreSqlBuilder()
+            .WithImage("postgres:16-alpine")
+            .WithDatabase("e2e_shared")
+            .WithUsername("test")
+            .WithPassword("test")
+            .Build();
+
+        await _postgresContainer.StartAsync();
+        var baseConnStr = _postgresContainer.GetConnectionString();
+
+        // Create separate databases for each API
+        var clinicalConnStr = await CreateDatabaseAsync(baseConnStr, "clinical_e2e");
+        var schedulingConnStr = await CreateDatabaseAsync(baseConnStr, "scheduling_e2e");
+        var gatekeeperConnStr = await CreateDatabaseAsync(baseConnStr, "gatekeeper_e2e");
+
+        Console.WriteLine("[E2E] PostgreSQL container started");
+
         var testAssemblyDir = Path.GetDirectoryName(typeof(E2EFixture).Assembly.Location)!;
         var samplesDir = Path.GetFullPath(
             Path.Combine(testAssemblyDir, "..", "..", "..", "..", "..")
@@ -72,12 +94,6 @@ public sealed class E2EFixture : IAsyncLifetime
         var schedulingProjectDir = Path.Combine(samplesDir, "Scheduling", "Scheduling.Api");
         var gatekeeperProjectDir = Path.Combine(rootDir, "Gatekeeper", "Gatekeeper.Api");
         var configuration = ResolveBuildConfiguration(testAssemblyDir);
-
-        // Delete existing databases to ensure fresh state for each test run
-        // This prevents sync version mismatch issues between runs
-        DeleteDatabaseIfExists(clinicalProjectDir, configuration, "clinical.db");
-        DeleteDatabaseIfExists(schedulingProjectDir, configuration, "scheduling.db");
-        DeleteDatabaseIfExists(gatekeeperProjectDir, configuration, "gatekeeper.db");
 
         Console.WriteLine($"[E2E] Test assembly dir: {testAssemblyDir}");
         Console.WriteLine($"[E2E] Build configuration: {configuration}");
@@ -92,7 +108,15 @@ public sealed class E2EFixture : IAsyncLifetime
             "net9.0",
             "Clinical.Api.dll"
         );
-        _clinicalProcess = StartApiFromDll(clinicalDll, clinicalProjectDir, ClinicalUrl);
+        _clinicalProcess = StartApiFromDll(
+            clinicalDll,
+            clinicalProjectDir,
+            ClinicalUrl,
+            new Dictionary<string, string>
+            {
+                ["ConnectionStrings__Postgres"] = clinicalConnStr,
+            }
+        );
 
         var schedulingDll = Path.Combine(
             schedulingProjectDir,
@@ -101,7 +125,15 @@ public sealed class E2EFixture : IAsyncLifetime
             "net9.0",
             "Scheduling.Api.dll"
         );
-        _schedulingProcess = StartApiFromDll(schedulingDll, schedulingProjectDir, SchedulingUrl);
+        _schedulingProcess = StartApiFromDll(
+            schedulingDll,
+            schedulingProjectDir,
+            SchedulingUrl,
+            new Dictionary<string, string>
+            {
+                ["ConnectionStrings__Postgres"] = schedulingConnStr,
+            }
+        );
 
         var gatekeeperDll = Path.Combine(
             gatekeeperProjectDir,
@@ -110,28 +142,21 @@ public sealed class E2EFixture : IAsyncLifetime
             "net9.0",
             "Gatekeeper.Api.dll"
         );
-        _gatekeeperProcess = StartApiFromDll(gatekeeperDll, gatekeeperProjectDir, GatekeeperUrl);
+        _gatekeeperProcess = StartApiFromDll(
+            gatekeeperDll,
+            gatekeeperProjectDir,
+            GatekeeperUrl,
+            new Dictionary<string, string>
+            {
+                ["ConnectionStrings__Postgres"] = gatekeeperConnStr,
+            }
+        );
 
         await Task.Delay(2000);
 
         await WaitForApiAsync(ClinicalUrl, "/fhir/Patient/");
         await WaitForApiAsync(SchedulingUrl, "/Practitioner");
         await WaitForGatekeeperApiAsync();
-
-        var clinicalDbPath = Path.Combine(
-            clinicalProjectDir,
-            "bin",
-            configuration,
-            "net9.0",
-            "clinical.db"
-        );
-        var schedulingDbPath = Path.Combine(
-            schedulingProjectDir,
-            "bin",
-            configuration,
-            "net9.0",
-            "scheduling.db"
-        );
 
         var clinicalSyncDir = Path.Combine(samplesDir, "Clinical", "Clinical.Sync");
         var clinicalSyncDll = Path.Combine(
@@ -145,9 +170,9 @@ public sealed class E2EFixture : IAsyncLifetime
         {
             var clinicalSyncEnv = new Dictionary<string, string>
             {
-                ["CLINICAL_DB_PATH"] = clinicalDbPath,
+                ["ConnectionStrings__Postgres"] = clinicalConnStr,
                 ["SCHEDULING_API_URL"] = SchedulingUrl,
-                ["POLL_INTERVAL_SECONDS"] = "5", // Fast polling for E2E tests
+                ["POLL_INTERVAL_SECONDS"] = "5",
             };
             _clinicalSyncProcess = StartSyncWorker(
                 clinicalSyncDll,
@@ -172,9 +197,9 @@ public sealed class E2EFixture : IAsyncLifetime
         {
             var schedulingSyncEnv = new Dictionary<string, string>
             {
-                ["SCHEDULING_DB_PATH"] = schedulingDbPath,
+                ["ConnectionStrings__Postgres"] = schedulingConnStr,
                 ["CLINICAL_API_URL"] = ClinicalUrl,
-                ["POLL_INTERVAL_SECONDS"] = "5", // Fast polling for E2E tests
+                ["POLL_INTERVAL_SECONDS"] = "5",
             };
             _schedulingSyncProcess = StartSyncWorker(
                 schedulingSyncDll,
@@ -234,23 +259,36 @@ public sealed class E2EFixture : IAsyncLifetime
         await KillProcessOnPortAsync(5001);
         await KillProcessOnPortAsync(5002);
         await KillProcessOnPortAsync(5173);
+
+        if (_postgresContainer is not null)
+            await _postgresContainer.DisposeAsync();
     }
 
-    private static Process StartApiFromDll(string dllPath, string contentRoot, string url)
+    private static Process StartApiFromDll(
+        string dllPath,
+        string contentRoot,
+        string url,
+        Dictionary<string, string>? envVars = null
+    )
     {
-        var process = new Process
+        var startInfo = new ProcessStartInfo
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "dotnet",
-                Arguments = $"\"{dllPath}\" --urls \"{url}\" --contentRoot \"{contentRoot}\"",
-                WorkingDirectory = contentRoot,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true,
-            },
+            FileName = "dotnet",
+            Arguments = $"\"{dllPath}\" --urls \"{url}\" --contentRoot \"{contentRoot}\"",
+            WorkingDirectory = contentRoot,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
         };
+
+        if (envVars is not null)
+        {
+            foreach (var kvp in envVars)
+                startInfo.EnvironmentVariables[kvp.Key] = kvp.Value;
+        }
+
+        var process = new Process { StartInfo = startInfo };
 
         process.OutputDataReceived += (_, e) =>
         {
@@ -368,25 +406,22 @@ public sealed class E2EFixture : IAsyncLifetime
         }
     }
 
-    private static void DeleteDatabaseIfExists(
-        string projectDir,
-        string configuration,
+    private static async Task<string> CreateDatabaseAsync(
+        string baseConnectionString,
         string dbName
     )
     {
-        var dbPath = Path.Combine(projectDir, "bin", configuration, "net9.0", dbName);
-        if (File.Exists(dbPath))
+        await using var conn = new NpgsqlConnection(baseConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"CREATE DATABASE \"{dbName}\"";
+        await cmd.ExecuteNonQueryAsync();
+
+        var builder = new NpgsqlConnectionStringBuilder(baseConnectionString)
         {
-            try
-            {
-                File.Delete(dbPath);
-                Console.WriteLine($"[E2E] Deleted database: {dbPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[E2E] Could not delete {dbPath}: {ex.Message}");
-            }
-        }
+            Database = dbName,
+        };
+        return builder.ConnectionString;
     }
 
     private static string ResolveBuildConfiguration(string testAssemblyDir)
