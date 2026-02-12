@@ -1,13 +1,13 @@
 {
   "profiles": {
-    "Clinical.Api": {
+    "ICD10.Api": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
-      "applicationUrl": "http://localhost:5080",
+      "applicationUrl": "http://localhost:5090",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ConnectionStrings__Postgres": "Host=localhost;Database=clinical;Username=clinical;Password=changeme"
+        "ConnectionStrings__Postgres": "Host=localhost;Database=icd10;Username=icd10;Password=changeme"
       }
     }
   }

@@ -18,6 +18,26 @@ for arg in "$@"; do
     esac
 done
 
+# Kill anything on our ports before Docker binds them
+kill_port() {
+    local port=$1
+    local pids
+    pids=$(lsof -ti :"$port" 2>/dev/null || true)
+    if [ -n "$pids" ]; then
+        echo "Killing processes on port $port: $pids"
+        echo "$pids" | xargs kill -9 2>/dev/null || true
+        sleep 0.5
+    fi
+}
+
+echo "Clearing ports..."
+kill_port 5432
+kill_port 5002
+kill_port 5080
+kill_port 5001
+kill_port 5090
+kill_port 5173
+
 # Build Dashboard locally (H5 transpiler doesn't work in Docker Linux)
 echo "Building Dashboard locally (H5 requires native build)..."
 cd "$SCRIPT_DIR/Dashboard/Dashboard.Web"
