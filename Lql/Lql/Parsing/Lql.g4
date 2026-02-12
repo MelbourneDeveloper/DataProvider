@@ -175,6 +175,7 @@ comparisonOp
     | '>'
     | '<='
     | '>='
+    | LIKE
     ;
 
 // Keywords - these must come before IDENT to have priority
@@ -206,6 +207,7 @@ INTERVAL: I N T E R V A L;
 CURRENT_DATE: C U R R E N T '_' D A T E;
 DATE_TRUNC: D A T E '_' T R U N C;
 ON: O N;
+LIKE: L I K E;
 
 // Case-insensitive character fragments
 fragment A: [aA];

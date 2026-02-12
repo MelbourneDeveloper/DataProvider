@@ -54,10 +54,10 @@ internal static class DatabaseSetup
         }
 
         // Create sync triggers for FHIR resources
-        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_Practitioner", logger);
-        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_Appointment", logger);
-        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_Schedule", logger);
-        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_Slot", logger);
+        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_practitioner", logger);
+        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_appointment", logger);
+        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_schedule", logger);
+        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_slot", logger);
 
         logger.Log(
             LogLevel.Information,

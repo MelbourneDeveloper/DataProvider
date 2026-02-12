@@ -58,10 +58,10 @@ internal static class DatabaseSetup
 
         var triggerTables = new[]
         {
-            "fhir_Patient",
-            "fhir_Encounter",
-            "fhir_Condition",
-            "fhir_MedicationRequest",
+            "fhir_patient",
+            "fhir_encounter",
+            "fhir_condition",
+            "fhir_medicationrequest",
         };
         foreach (var table in triggerTables)
         {

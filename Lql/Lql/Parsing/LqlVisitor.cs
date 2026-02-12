@@ -20,7 +20,6 @@
 #pragma warning disable 419
 
 namespace Lql.Parsing {
-
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using IToken = Antlr4.Runtime.IToken;
@@ -32,7 +31,7 @@ using IToken = Antlr4.Runtime.IToken;
 /// <typeparam name="Result">The return type of the visit operation.</typeparam>
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.13.1")]
 [System.CLSCompliant(false)]
-internal interface ILqlVisitor<Result> : IParseTreeVisitor<Result> {
+public interface ILqlVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="LqlParser.program"/>.
 	/// </summary>
@@ -214,4 +213,4 @@ internal interface ILqlVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitComparisonOp([NotNull] LqlParser.ComparisonOpContext context);
 }
-}
+} // namespace Lql.Parsing

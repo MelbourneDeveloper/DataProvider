@@ -2,7 +2,7 @@
     "queries": [
         {
             "name": "GetPatients",
-            "sqlFile": "Queries/GetPatients.sql"
+            "sqlFile": "Queries/GetPatients.generated.sql"
         },
         {
             "name": "GetPatientById",
@@ -10,7 +10,7 @@
         },
         {
             "name": "SearchPatients",
-            "sqlFile": "Queries/SearchPatients.sql"
+            "sqlFile": "Queries/SearchPatients.generated.sql"
         },
         {
             "name": "GetEncountersByPatient",

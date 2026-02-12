@@ -106,7 +106,10 @@ public static class PostgresDdlGenerator
         if (table.PrimaryKey is not null && table.PrimaryKey.Columns.Count > 0)
         {
             var pkName = (table.PrimaryKey.Name ?? $"PK_{table.Name}").ToLowerInvariant();
-            var pkCols = string.Join(", ", table.PrimaryKey.Columns.Select(c => $"\"{c}\""));
+            var pkCols = string.Join(
+                ", ",
+                table.PrimaryKey.Columns.Select(c => $"\"{c.ToLowerInvariant()}\"")
+            );
             columnDefs.Add($"CONSTRAINT \"{pkName}\" PRIMARY KEY ({pkCols})");
         }
 
@@ -116,8 +119,11 @@ public static class PostgresDdlGenerator
             var fkName = (
                 fk.Name ?? $"FK_{table.Name}_{string.Join("_", fk.Columns)}"
             ).ToLowerInvariant();
-            var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c}\""));
-            var refCols = string.Join(", ", fk.ReferencedColumns.Select(c => $"\"{c}\""));
+            var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
+            var refCols = string.Join(
+                ", ",
+                fk.ReferencedColumns.Select(c => $"\"{c.ToLowerInvariant()}\"")
+            );
             var onDelete = ForeignKeyActionToSql(fk.OnDelete);
             var onUpdate = ForeignKeyActionToSql(fk.OnUpdate);
             var refTable = fk.ReferencedTable.ToLowerInvariant();
@@ -134,7 +140,7 @@ public static class PostgresDdlGenerator
             var ucName = (
                 uc.Name ?? $"UQ_{table.Name}_{string.Join("_", uc.Columns)}"
             ).ToLowerInvariant();
-            var ucCols = string.Join(", ", uc.Columns.Select(c => $"\"{c}\""));
+            var ucCols = string.Join(", ", uc.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
             columnDefs.Add($"CONSTRAINT \"{ucName}\" UNIQUE ({ucCols})");
         }
 
@@ -156,7 +162,7 @@ public static class PostgresDdlGenerator
             var indexItems =
                 index.Expressions.Count > 0
                     ? string.Join(", ", index.Expressions)
-                    : string.Join(", ", index.Columns.Select(c => $"\"{c}\""));
+                    : string.Join(", ", index.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
             var filter = index.Filter is not null ? $" WHERE {index.Filter}" : "";
             var indexName = index.Name.ToLowerInvariant();
             sb.Append(
@@ -171,7 +177,7 @@ public static class PostgresDdlGenerator
     private static string GenerateColumnDef(ColumnDefinition column)
     {
         var sb = new StringBuilder();
-        sb.Append(CultureInfo.InvariantCulture, $"\"{column.Name}\" ");
+        sb.Append(CultureInfo.InvariantCulture, $"\"{column.Name.ToLowerInvariant()}\" ");
 
         // Handle identity columns
         if (column.IsIdentity)
@@ -228,7 +234,7 @@ public static class PostgresDdlGenerator
         var indexItems =
             op.Index.Expressions.Count > 0
                 ? string.Join(", ", op.Index.Expressions)
-                : string.Join(", ", op.Index.Columns.Select(c => $"\"{c}\""));
+                : string.Join(", ", op.Index.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
         var filter = op.Index.Filter is not null ? $" WHERE {op.Index.Filter}" : "";
 
         return $"CREATE {unique}INDEX IF NOT EXISTS \"{op.Index.Name.ToLowerInvariant()}\" ON \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" ({indexItems}){filter}";
@@ -240,8 +246,11 @@ public static class PostgresDdlGenerator
         var fkName = (
             fk.Name ?? $"FK_{op.TableName}_{string.Join("_", fk.Columns)}"
         ).ToLowerInvariant();
-        var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c}\""));
-        var refCols = string.Join(", ", fk.ReferencedColumns.Select(c => $"\"{c}\""));
+        var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
+        var refCols = string.Join(
+            ", ",
+            fk.ReferencedColumns.Select(c => $"\"{c.ToLowerInvariant()}\"")
+        );
         var onDelete = ForeignKeyActionToSql(fk.OnDelete);
         var onUpdate = ForeignKeyActionToSql(fk.OnUpdate);
 
@@ -257,7 +266,7 @@ public static class PostgresDdlGenerator
         var ucName = (
             uc.Name ?? $"UQ_{op.TableName}_{string.Join("_", uc.Columns)}"
         ).ToLowerInvariant();
-        var ucCols = string.Join(", ", uc.Columns.Select(c => $"\"{c}\""));
+        var ucCols = string.Join(", ", uc.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
         return $"ALTER TABLE \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" ADD CONSTRAINT \"{ucName}\" UNIQUE ({ucCols})";
     }
 

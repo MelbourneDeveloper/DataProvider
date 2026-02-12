@@ -322,10 +322,7 @@ public sealed class PostgreSqlContext : ISqlContext
         }
         else
         {
-            sql.Append(
-                System.Globalization.CultureInfo.InvariantCulture,
-                $"\nFROM {quotedBase}"
-            );
+            sql.Append(System.Globalization.CultureInfo.InvariantCulture, $"\nFROM {quotedBase}");
         }
 
         // Add joins - get from Tables (skip first one which is base table)
@@ -422,8 +419,7 @@ public sealed class PostgreSqlContext : ISqlContext
     /// <summary>
     /// Quotes a table name for PostgreSQL using double quotes and lowercasing.
     /// </summary>
-    private static string QuoteTableName(string tableName) =>
-        $"\"{tableName.ToLowerInvariant()}\"";
+    private static string QuoteTableName(string tableName) => $"\"{tableName.ToLowerInvariant()}\"";
 
     /// <summary>
     /// Generates the GROUP BY clause

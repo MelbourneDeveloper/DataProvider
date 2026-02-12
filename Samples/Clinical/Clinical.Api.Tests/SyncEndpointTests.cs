@@ -118,7 +118,7 @@ public sealed class SyncEndpointTests
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(changes);
-        Assert.Contains(changes, c => c.GetProperty("TableName").GetString() == "fhir_Patient");
+        Assert.Contains(changes, c => c.GetProperty("TableName").GetString() == "fhir_patient");
     }
 
     [Fact]
@@ -178,7 +178,7 @@ public sealed class SyncEndpointTests
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(changes);
-        Assert.Contains(changes, c => c.GetProperty("TableName").GetString() == "fhir_Encounter");
+        Assert.Contains(changes, c => c.GetProperty("TableName").GetString() == "fhir_encounter");
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public sealed class SyncEndpointTests
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(changes);
-        Assert.Contains(changes, c => c.GetProperty("TableName").GetString() == "fhir_Condition");
+        Assert.Contains(changes, c => c.GetProperty("TableName").GetString() == "fhir_condition");
     }
 
     [Fact]
@@ -249,7 +249,7 @@ public sealed class SyncEndpointTests
         Assert.NotNull(changes);
         Assert.Contains(
             changes,
-            c => c.GetProperty("TableName").GetString() == "fhir_MedicationRequest"
+            c => c.GetProperty("TableName").GetString() == "fhir_medicationrequest"
         );
     }
 

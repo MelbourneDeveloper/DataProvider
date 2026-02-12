@@ -118,7 +118,7 @@ public sealed class SyncEndpointTests
         Assert.NotNull(changes);
         Assert.Contains(
             changes,
-            c => c.GetProperty("TableName").GetString() == "fhir_Practitioner"
+            c => c.GetProperty("TableName").GetString() == "fhir_practitioner"
         );
     }
 
@@ -153,7 +153,7 @@ public sealed class SyncEndpointTests
         var changes = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(changes);
-        Assert.Contains(changes, c => c.GetProperty("TableName").GetString() == "fhir_Appointment");
+        Assert.Contains(changes, c => c.GetProperty("TableName").GetString() == "fhir_appointment");
     }
 
     [Fact]

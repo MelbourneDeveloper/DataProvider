@@ -48,7 +48,7 @@ public sealed class SchedulingSyncTests : IClassFixture<SchedulingApiFactory>
         Assert.NotNull(changes);
         Assert.Contains(
             changes,
-            c => c.GetProperty("TableName").GetString() == "fhir_Practitioner"
+            c => c.GetProperty("TableName").GetString() == "fhir_practitioner"
         );
     }
 
@@ -74,7 +74,7 @@ public sealed class SchedulingSyncTests : IClassFixture<SchedulingApiFactory>
         Assert.NotNull(changes);
 
         var practitionerChange = changes.FirstOrDefault(c =>
-            c.GetProperty("TableName").GetString() == "fhir_Practitioner"
+            c.GetProperty("TableName").GetString() == "fhir_practitioner"
         );
 
         Assert.True(practitionerChange.ValueKind != JsonValueKind.Undefined);
@@ -207,7 +207,7 @@ public sealed class SchedulingSyncTests : IClassFixture<SchedulingApiFactory>
         var changes = await changesResponse.Content.ReadFromJsonAsync<JsonElement[]>();
 
         Assert.NotNull(changes);
-        Assert.Contains(changes, c => c.GetProperty("TableName").GetString() == "fhir_Appointment");
+        Assert.Contains(changes, c => c.GetProperty("TableName").GetString() == "fhir_appointment");
     }
 
     /// <summary>
@@ -255,7 +255,7 @@ public sealed class SchedulingSyncTests : IClassFixture<SchedulingApiFactory>
         Assert.All(changes, c => Assert.True(c.TryGetProperty("Operation", out _)));
 
         var practitionerChange = changes.First(c =>
-            c.GetProperty("TableName").GetString() == "fhir_Practitioner"
+            c.GetProperty("TableName").GetString() == "fhir_practitioner"
         );
         // Operation is serialized as integer (0=Insert, 1=Update, 2=Delete)
         Assert.Equal(0, practitionerChange.GetProperty("Operation").GetInt32());
@@ -305,17 +305,18 @@ public sealed class SchedulingSyncTests : IClassFixture<SchedulingApiFactory>
 
         Assert.NotNull(changes);
         var practitionerChange = changes.First(c =>
-            c.GetProperty("TableName").GetString() == "fhir_Practitioner"
+            c.GetProperty("TableName").GetString() == "fhir_practitioner"
+            && c.GetProperty("Payload").GetString()!.Contains("NPI-FIELDS-123")
         );
 
         var payloadStr = practitionerChange.GetProperty("Payload").GetString();
         Assert.NotNull(payloadStr);
 
         var payload = JsonSerializer.Deserialize<JsonElement>(payloadStr);
-        Assert.Equal("NPI-FIELDS-123", payload.GetProperty("Identifier").GetString());
-        Assert.Equal("FieldsDoctor", payload.GetProperty("NameFamily").GetString());
-        Assert.Equal("John", payload.GetProperty("NameGiven").GetString());
-        Assert.Equal("Neurology", payload.GetProperty("Specialty").GetString());
+        Assert.Equal("NPI-FIELDS-123", payload.GetProperty("identifier").GetString());
+        Assert.Equal("FieldsDoctor", payload.GetProperty("namefamily").GetString());
+        Assert.Equal("John", payload.GetProperty("namegiven").GetString());
+        Assert.Equal("Neurology", payload.GetProperty("specialty").GetString());
     }
 
     /// <summary>
@@ -358,7 +359,7 @@ public sealed class SchedulingSyncTests : IClassFixture<SchedulingApiFactory>
             .Select(c => c.GetProperty("TableName").GetString())
             .Distinct()
             .ToList();
-        Assert.Contains("fhir_Practitioner", tableNames);
-        Assert.Contains("fhir_Appointment", tableNames);
+        Assert.Contains("fhir_practitioner", tableNames);
+        Assert.Contains("fhir_appointment", tableNames);
     }
 }

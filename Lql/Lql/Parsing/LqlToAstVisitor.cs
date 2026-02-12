@@ -370,7 +370,7 @@ internal sealed class LqlToAstVisitor : LqlBaseVisitor<INode>
         {
             var left = ProcessArithmeticExpressionToSql(comparison.arithmeticExpr(0), lambdaScope);
             var right = ProcessArithmeticExpressionToSql(comparison.arithmeticExpr(1), lambdaScope);
-            var op = comparison.comparisonOp().GetText();
+            var op = comparison.comparisonOp().GetText().ToUpperInvariant();
             return $"{left} {op} {right}";
         }
 
@@ -386,7 +386,7 @@ internal sealed class LqlToAstVisitor : LqlBaseVisitor<INode>
 
             if (comparison.comparisonOp() != null && parts.Count >= 2)
             {
-                var op = comparison.comparisonOp().GetText();
+                var op = comparison.comparisonOp().GetText().ToUpperInvariant();
                 return $"{parts[0]} {op} {parts[1]}";
             }
 

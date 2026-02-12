@@ -20,7 +20,6 @@
 #pragma warning disable 419
 
 namespace Lql.Parsing {
-
 using Antlr4.Runtime.Misc;
 using IParseTreeListener = Antlr4.Runtime.Tree.IParseTreeListener;
 using IToken = Antlr4.Runtime.IToken;
@@ -31,7 +30,7 @@ using IToken = Antlr4.Runtime.IToken;
 /// </summary>
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.13.1")]
 [System.CLSCompliant(false)]
-internal interface ILqlListener : IParseTreeListener {
+public interface ILqlListener : IParseTreeListener {
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="LqlParser.program"/>.
 	/// </summary>
@@ -333,4 +332,4 @@ internal interface ILqlListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitComparisonOp([NotNull] LqlParser.ComparisonOpContext context);
 }
-}
+} // namespace Lql.Parsing

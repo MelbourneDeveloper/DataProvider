@@ -8,7 +8,7 @@ namespace DataProvider.CodeGeneration;
 /// <summary>
 /// Static methods for generating data access extension methods
 /// </summary>
-public static class DataAccessGenerator
+public static partial class DataAccessGenerator
 {
     /// <summary>
     /// C# reserved keywords that need to be escaped when used as parameter names
@@ -225,15 +225,36 @@ public static class DataAccessGenerator
         );
         sb.AppendLine("            {");
 
-        // Add parameters
+        // Add parameters - for Npgsql, use AddWithValue for non-null (type inferred from value)
+        // and typed NpgsqlParameter for null/DBNull (type matched from result columns to avoid 42P08/42883)
         if (parameters != null)
         {
             foreach (var parameter in parameters)
             {
-                sb.AppendLine(
-                    CultureInfo.InvariantCulture,
-                    $"                command.Parameters.AddWithValue(\"@{parameter.Name}\", {parameter.Name} ?? (object)DBNull.Value);"
-                );
+                if (connectionType.Contains("Npgsql", StringComparison.Ordinal))
+                {
+                    var npgsqlType = ResolveNpgsqlDbTypeFromColumns(parameter.Name, columns);
+                    sb.AppendLine(
+                        CultureInfo.InvariantCulture,
+                        $"                if ({parameter.Name} is not null and not DBNull)"
+                    );
+                    sb.AppendLine(
+                        CultureInfo.InvariantCulture,
+                        $"                    command.Parameters.AddWithValue(\"@{parameter.Name}\", {parameter.Name});"
+                    );
+                    sb.AppendLine("                else");
+                    sb.AppendLine(
+                        CultureInfo.InvariantCulture,
+                        $"                    command.Parameters.Add(new NpgsqlParameter(\"@{parameter.Name}\", NpgsqlTypes.NpgsqlDbType.{npgsqlType}) {{ Value = DBNull.Value }});"
+                    );
+                }
+                else
+                {
+                    sb.AppendLine(
+                        CultureInfo.InvariantCulture,
+                        $"                command.Parameters.AddWithValue(\"@{parameter.Name}\", {parameter.Name} ?? (object)DBNull.Value);"
+                    );
+                }
             }
         }
 
@@ -332,11 +353,8 @@ public static class DataAccessGenerator
         sb.AppendLine("    {");
 
         // Generate INSERT SQL (no last_insert_rowid - all PKs are UUIDs)
-        // Column names must be double-quoted to preserve case in PostgreSQL
-        var columnNames = string.Join(
-            ", ",
-            insertableColumns.Select(c => $"\\\"{c.Name}\\\"")
-        );
+        // All identifiers are lowercase - no quoting needed for cross-platform compatibility
+        var columnNames = string.Join(", ", insertableColumns.Select(c => c.Name));
         var parameterNames = string.Join(", ", insertableColumns.Select(c => $"@{c.Name}"));
 
         sb.AppendLine(
@@ -569,14 +587,11 @@ public static class DataAccessGenerator
         );
         sb.AppendLine("    {");
 
-        // Generate UPDATE SQL - column names must be double-quoted for PostgreSQL
-        var setClause = string.Join(
-            ", ",
-            updateableColumns.Select(c => $"\\\"{c.Name}\\\" = @{c.Name}")
-        );
+        // Generate UPDATE SQL - all identifiers lowercase, no quoting needed
+        var setClause = string.Join(", ", updateableColumns.Select(c => $"{c.Name} = @{c.Name}"));
         var whereClause = string.Join(
             " AND ",
-            primaryKeyColumns.Select(c => $"\\\"{c.Name}\\\" = @{c.Name}")
+            primaryKeyColumns.Select(c => $"{c.Name} = @{c.Name}")
         );
 
         sb.AppendLine(
@@ -765,11 +780,8 @@ public static class DataAccessGenerator
         );
         sb.AppendLine();
 
-        // Build the SQL with placeholders - column names double-quoted for PostgreSQL
-        var columnNames = string.Join(
-            ", ",
-            insertableColumns.Select(c => $"\\\"{c.Name}\\\"")
-        );
+        // Build the SQL with placeholders - all identifiers lowercase, no quoting
+        var columnNames = string.Join(", ", insertableColumns.Select(c => c.Name));
         sb.AppendLine(
             CultureInfo.InvariantCulture,
             $"        var sql = new StringBuilder(\"INSERT INTO {table.Name} ({columnNames}) VALUES \");"
@@ -964,21 +976,15 @@ public static class DataAccessGenerator
         sb.AppendLine();
 
         // Build the SQL with placeholders - database-specific upsert syntax
-        // Column names double-quoted for PostgreSQL case preservation
-        var columnNames = string.Join(
-            ", ",
-            allColumns.Select(c => $"\\\"{c.Name}\\\"")
-        );
-        var pkColumnNames = string.Join(
-            ", ",
-            primaryKeyColumns.Select(c => $"\\\"{c.Name}\\\"")
-        );
+        // All identifiers lowercase, no quoting needed for cross-platform compatibility
+        var columnNames = string.Join(", ", allColumns.Select(c => c.Name));
+        var pkColumnNames = string.Join(", ", primaryKeyColumns.Select(c => c.Name));
         var updateColumns = allColumns
             .Where(c => !primaryKeyColumns.Any(pk => pk.Name == c.Name))
             .ToList();
         var updateSet = string.Join(
             ", ",
-            updateColumns.Select(c => $"\\\"{c.Name}\\\" = EXCLUDED.\\\"{c.Name}\\\"")
+            updateColumns.Select(c => $"{c.Name} = EXCLUDED.{c.Name}")
         );
 
         if (databaseType.Equals("Postgres", StringComparison.OrdinalIgnoreCase))
@@ -1067,5 +1073,34 @@ public static class DataAccessGenerator
         sb.AppendLine("    }");
 
         return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
+    }
+
+    /// <summary>
+    /// Resolves NpgsqlDbType for a parameter by matching its name to result columns.
+    /// Uses the column's C# type to determine the correct NpgsqlDbType. Falls back to Text.
+    /// </summary>
+    private static string ResolveNpgsqlDbTypeFromColumns(
+        string parameterName,
+        IReadOnlyList<DatabaseColumn> columns
+    )
+    {
+        var matchingColumn = columns?.FirstOrDefault(c =>
+            string.Equals(c.Name, parameterName, StringComparison.OrdinalIgnoreCase)
+        );
+
+        return matchingColumn?.CSharpType switch
+        {
+            "int" or "int?" => "Integer",
+            "long" or "long?" => "Bigint",
+            "short" or "short?" => "Smallint",
+            "bool" or "bool?" => "Boolean",
+            "float" or "float?" => "Real",
+            "double" or "double?" => "Double",
+            "decimal" or "decimal?" => "Numeric",
+            "DateTime" or "DateTime?" => "Timestamp",
+            "Guid" or "Guid?" => "Uuid",
+            "byte[]" => "Bytea",
+            _ => "Text",
+        };
     }
 }
