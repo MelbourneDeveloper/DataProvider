@@ -494,17 +494,11 @@ internal static class Program
         sb.AppendLine("using System.Collections.Generic;");
         sb.AppendLine("using System.Collections.Immutable;");
         sb.AppendLine("using System.Threading.Tasks;");
-        sb.AppendLine(
-            System.Globalization.CultureInfo.InvariantCulture,
-            $"using {connectionNamespace};"
-        );
+        sb.AppendLine(CultureInfo.InvariantCulture, $"using {connectionNamespace};");
         sb.AppendLine("using Outcome;");
         sb.AppendLine("using Selecta;");
         sb.AppendLine();
-        sb.AppendLine(
-            System.Globalization.CultureInfo.InvariantCulture,
-            $"namespace {namespaceName};"
-        );
+        sb.AppendLine(CultureInfo.InvariantCulture, $"namespace {namespaceName};");
         sb.AppendLine();
 
         if (!string.IsNullOrWhiteSpace(dataAccessCode))

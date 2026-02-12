@@ -69,7 +69,7 @@ internal sealed class SqliteDatabaseEffects : IDatabaseEffects
                 var fieldType = reader.GetFieldType(i);
                 var dataTypeName = reader.GetDataTypeName(i);
 
-                var csharpType = MapSqliteTypeToCSharpType(fieldType, dataTypeName);
+                var csharpType = MapSqliteTypeToCSharpType(fieldType);
                 var isNullable =
                     !fieldType.IsValueType || Nullable.GetUnderlyingType(fieldType) != null;
 
@@ -122,7 +122,7 @@ internal sealed class SqliteDatabaseEffects : IDatabaseEffects
     /// <summary>
     /// Maps SQLite data types to C# types
     /// </summary>
-    private static string MapSqliteTypeToCSharpType(Type fieldType, string? dataTypeName = null)
+    private static string MapSqliteTypeToCSharpType(Type fieldType)
     {
         // Use the .NET type first as it's more accurate
         if (fieldType == typeof(int) || fieldType == typeof(int?))
