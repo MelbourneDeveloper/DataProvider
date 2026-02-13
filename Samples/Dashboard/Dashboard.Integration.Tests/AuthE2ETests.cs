@@ -377,30 +377,16 @@ public sealed class AuthE2ETests
         // Wait longer for React state update and re-render
         await Task.Delay(2000);
 
-        try
-        {
-            await page.WaitForSelectorAsync(
-                ".sidebar",
-                new PageWaitForSelectorOptions { Timeout = 10000 }
-            );
-            var loginPageStillVisible = await page.IsVisibleAsync("[data-testid='login-page']");
-            Assert.False(
-                loginPageStillVisible,
-                "Login page should be hidden after successful login"
-            );
-            Assert.True(
-                await page.IsVisibleAsync(".sidebar"),
-                "Sidebar should be visible after successful login"
-            );
-        }
-        catch (TimeoutException)
-        {
-            var pageContent = await page.ContentAsync();
-            Console.WriteLine(
-                $"[TEST] Page content after timeout:\n{pageContent[..Math.Min(2000, pageContent.Length)]}"
-            );
-            Assert.Fail("FIRST-TIME SIGN-IN BUG: App did not transition to dashboard after login.");
-        }
+        await page.WaitForSelectorAsync(
+            ".sidebar",
+            new PageWaitForSelectorOptions { Timeout = 10000 }
+        );
+        var loginPageStillVisible = await page.IsVisibleAsync("[data-testid='login-page']");
+        Assert.False(loginPageStillVisible, "Login page should be hidden after successful login");
+        Assert.True(
+            await page.IsVisibleAsync(".sidebar"),
+            "Sidebar should be visible after successful login"
+        );
 
         await page.CloseAsync();
     }

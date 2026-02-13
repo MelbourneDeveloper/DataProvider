@@ -599,13 +599,17 @@ public sealed class E2EFixture : IAsyncLifetime
 
         // Navigate to target URL (or reload if staying on same page)
         var targetUrl = navigateTo ?? DashboardUrl;
-        if (targetUrl == DashboardUrl)
+
+        // Always reload first to ensure static files are fully loaded and auth state is picked up
+        await page.ReloadAsync();
+
+        // If target URL has a hash fragment, navigate to it after reload
+        if (targetUrl != DashboardUrl && targetUrl.Contains('#'))
         {
-            await page.ReloadAsync();
-        }
-        else
-        {
-            await page.GotoAsync(targetUrl);
+            var hash = targetUrl.Substring(targetUrl.IndexOf('#'));
+            await page.EvaluateAsync($"() => window.location.hash = '{hash}'");
+            // Give React time to process hash change
+            await Task.Delay(500);
         }
 
         return page;

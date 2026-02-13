@@ -54,6 +54,8 @@ public abstract partial record Result<TSuccess, TFailure> { private Result() { }
 ## Testing
 - NEVER remove assertions
 - FAILING TEST = ✅ OK . TEST THAT DOESN'T ENFORCE BEHAVIOR = ⛔️ ILLEGAL
+- No try/catch in tests
+- Timeout = ⛔️ FAILURE
 - Bug fix process: write test that fails because of bug -> verify test fails because of bug -> fix bug -> verify that test passes
 - E2E with zero mocking
 - 100% coverage, Stryker score 70%+
