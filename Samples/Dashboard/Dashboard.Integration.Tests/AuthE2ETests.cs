@@ -289,15 +289,22 @@ public sealed class AuthE2ETests
         var page = await _fixture.Browser!.NewPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Type}: {msg.Text}");
 
+        // Generate valid test token for custom user
+        var testToken = E2EFixture.GenerateTestToken(
+            userId: "test-user",
+            displayName: "Alice Smith",
+            email: "alice@example.com"
+        );
+
         // Set custom user data BEFORE loading
         await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.EvaluateAsync(
-            @"() => {
-            localStorage.setItem('gatekeeper_token', 'fake-token-for-testing');
-            localStorage.setItem('gatekeeper_user', JSON.stringify({
+            $@"() => {{
+            localStorage.setItem('gatekeeper_token', '{testToken}');
+            localStorage.setItem('gatekeeper_user', JSON.stringify({{
                 userId: 'test-user', displayName: 'Alice Smith', email: 'alice@example.com'
-            }));
-        }"
+            }}));
+        }}"
         );
         // Reload to pick up custom user data
         await page.ReloadAsync();
