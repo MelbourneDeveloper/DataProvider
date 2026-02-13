@@ -326,7 +326,14 @@ internal static class TestDataSeeder
             ("blk-j09-j18", "ch-10", "J09-J18", "Influenza and pneumonia", "J09", "J18"),
             ("blk-r50-r69", "ch-18", "R50-R69", "General symptoms and signs", "R50", "R69"),
             ("blk-m50-m54", "ch-13", "M50-M54", "Other dorsopathies", "M50", "M54"),
-            ("blk-q50-q56", "ch-17", "Q50-Q56", "Congenital malformations of genital organs", "Q50", "Q56"),
+            (
+                "blk-q50-q56",
+                "ch-17",
+                "Q50-Q56",
+                "Congenital malformations of genital organs",
+                "Q50",
+                "Q56"
+            ),
             ("blk-s70-s79", "ch-19", "S70-S79", "Injuries to the hip and thigh", "S70", "S79"),
         };
 
@@ -520,14 +527,7 @@ internal static class TestDataSeeder
                 "Dyspnea, unspecified",
                 ""
             ),
-            (
-                "code-r06-02",
-                "cat-r06",
-                "R06.02",
-                "Shortness of breath",
-                "Shortness of breath",
-                ""
-            ),
+            ("code-r06-02", "cat-r06", "R06.02", "Shortness of breath", "Shortness of breath", ""),
             (
                 "code-r07-9",
                 "cat-r07",
