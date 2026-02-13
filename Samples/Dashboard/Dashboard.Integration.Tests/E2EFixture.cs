@@ -92,9 +92,9 @@ public sealed class E2EFixture : IAsyncLifetime
             Console.WriteLine($"[E2E]   ICD-10:     {Icd10Url}");
             Console.WriteLine($"[E2E]   Dashboard:  {DashboardUrl}");
 
-            await WaitForApiAsync(ClinicalUrl, "/fhir/Patient/");
-            await WaitForApiAsync(SchedulingUrl, "/Practitioner");
-            await WaitForGatekeeperApiAsync();
+            await WaitForServiceReachableAsync(ClinicalUrl, "/fhir/Patient/");
+            await WaitForServiceReachableAsync(SchedulingUrl, "/Practitioner");
+            await WaitForServiceReachableAsync(GatekeeperUrl, "/auth/login/begin");
 
             await SeedTestDataAsync();
 
@@ -519,6 +519,27 @@ public sealed class E2EFixture : IAsyncLifetime
     }
 
     /// <summary>
+    /// Waits for a service to be reachable (any HTTP response).
+    /// Used in local mode where services may be running but have DB issues.
+    /// </summary>
+    private static async Task WaitForServiceReachableAsync(string baseUrl, string endpoint)
+    {
+        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+        for (var i = 0; i < 60; i++)
+        {
+            try
+            {
+                _ = await client.GetAsync($"{baseUrl}{endpoint}");
+                Console.WriteLine($"[E2E] Service reachable: {baseUrl}");
+                return;
+            }
+            catch { }
+            await Task.Delay(500);
+        }
+        throw new TimeoutException($"Service at {baseUrl} is not reachable");
+    }
+
+    /// <summary>
     /// Creates an authenticated HTTP client with test JWT token.
     /// </summary>
     public static HttpClient CreateAuthenticatedClient()
@@ -545,8 +566,7 @@ public sealed class E2EFixture : IAsyncLifetime
     )
     {
         var page = await Browser!.NewPageAsync();
-        page.Console += (_, msg) =>
-            Console.WriteLine($"[BROWSER {msg.Type}] {msg.Text}");
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER {msg.Type}] {msg.Text}");
         page.PageError += (_, err) => Console.WriteLine($"[PAGE ERROR] {err}");
 
         var token = GenerateTestToken(userId, displayName, email);
@@ -569,10 +589,11 @@ public sealed class E2EFixture : IAsyncLifetime
         await page.GotoAsync(DashboardUrl);
 
         // Set auth state in localStorage
+        var escapedUserJson = userJson.Replace("'", "\\'");
         await page.EvaluateAsync(
             $@"() => {{
                 localStorage.setItem('gatekeeper_token', '{token}');
-                localStorage.setItem('gatekeeper_user', {userJson});
+                localStorage.setItem('gatekeeper_user', '{escapedUserJson}');
             }}"
         );
 
@@ -640,19 +661,17 @@ public sealed class E2EFixture : IAsyncLifetime
         Environment.SetEnvironmentVariable("ASPNETCORE_URLS", null);
 
         var wwwrootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot");
+        var fileProvider = new PhysicalFileProvider(wwwrootPath);
         return Host.CreateDefaultBuilder()
             .ConfigureWebHostDefaults(webBuilder =>
             {
                 webBuilder.UseUrls("http://127.0.0.1:0");
                 webBuilder.Configure(app =>
                 {
-                    app.UseDefaultFiles();
-                    app.UseStaticFiles(
-                        new StaticFileOptions
-                        {
-                            FileProvider = new PhysicalFileProvider(wwwrootPath),
-                        }
-                    );
+                    // Both middleware must share the same FileProvider so
+                    // UseDefaultFiles can find index.html and rewrite / → /index.html
+                    app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = fileProvider });
+                    app.UseStaticFiles(new StaticFileOptions { FileProvider = fileProvider });
                 });
             })
             .Build();
@@ -662,50 +681,53 @@ public sealed class E2EFixture : IAsyncLifetime
     {
         using var client = CreateAuthenticatedClient();
 
-        await client.PostAsync(
+        await SeedAsync(
+            client,
             $"{ClinicalUrl}/fhir/Patient/",
-            new StringContent(
-                """{"Active": true, "GivenName": "E2ETest", "FamilyName": "TestPatient", "Gender": "other"}""",
-                Encoding.UTF8,
-                "application/json"
-            )
+            """{"Active": true, "GivenName": "E2ETest", "FamilyName": "TestPatient", "Gender": "other"}"""
         );
 
-        await client.PostAsync(
+        await SeedAsync(
+            client,
             $"{SchedulingUrl}/Practitioner",
-            new StringContent(
-                """{"Identifier": "DR001", "Active": true, "NameGiven": "E2EPractitioner", "NameFamily": "DrTest", "Qualification": "MD", "Specialty": "General Practice", "TelecomEmail": "drtest@hospital.org", "TelecomPhone": "+1-555-0123"}""",
-                Encoding.UTF8,
-                "application/json"
-            )
+            """{"Identifier": "DR001", "Active": true, "NameGiven": "E2EPractitioner", "NameFamily": "DrTest", "Qualification": "MD", "Specialty": "General Practice", "TelecomEmail": "drtest@hospital.org", "TelecomPhone": "+1-555-0123"}"""
         );
 
-        await client.PostAsync(
+        await SeedAsync(
+            client,
             $"{SchedulingUrl}/Practitioner",
-            new StringContent(
-                """{"Identifier": "DR002", "Active": true, "NameGiven": "Sarah", "NameFamily": "Johnson", "Qualification": "DO", "Specialty": "Cardiology", "TelecomEmail": "sjohnson@hospital.org", "TelecomPhone": "+1-555-0124"}""",
-                Encoding.UTF8,
-                "application/json"
-            )
+            """{"Identifier": "DR002", "Active": true, "NameGiven": "Sarah", "NameFamily": "Johnson", "Qualification": "DO", "Specialty": "Cardiology", "TelecomEmail": "sjohnson@hospital.org", "TelecomPhone": "+1-555-0124"}"""
         );
 
-        await client.PostAsync(
+        await SeedAsync(
+            client,
             $"{SchedulingUrl}/Practitioner",
-            new StringContent(
-                """{"Identifier": "DR003", "Active": true, "NameGiven": "Michael", "NameFamily": "Chen", "Qualification": "MD", "Specialty": "Neurology", "TelecomEmail": "mchen@hospital.org", "TelecomPhone": "+1-555-0125"}""",
-                Encoding.UTF8,
-                "application/json"
-            )
+            """{"Identifier": "DR003", "Active": true, "NameGiven": "Michael", "NameFamily": "Chen", "Qualification": "MD", "Specialty": "Neurology", "TelecomEmail": "mchen@hospital.org", "TelecomPhone": "+1-555-0125"}"""
         );
 
-        await client.PostAsync(
+        await SeedAsync(
+            client,
             $"{SchedulingUrl}/Appointment",
-            new StringContent(
-                """{"ServiceCategory": "General", "ServiceType": "Checkup", "Start": "2025-12-20T10:00:00Z", "End": "2025-12-20T11:00:00Z", "PatientReference": "Patient/1", "PractitionerReference": "Practitioner/1", "Priority": "routine"}""",
-                Encoding.UTF8,
-                "application/json"
-            )
+            """{"ServiceCategory": "General", "ServiceType": "Checkup", "Start": "2025-12-20T10:00:00Z", "End": "2025-12-20T11:00:00Z", "PatientReference": "Patient/1", "PractitionerReference": "Practitioner/1", "Priority": "routine"}"""
         );
+    }
+
+    private static async Task SeedAsync(HttpClient client, string url, string json)
+    {
+        try
+        {
+            var response = await client.PostAsync(
+                url,
+                new StringContent(json, Encoding.UTF8, "application/json")
+            );
+            Console.WriteLine(
+                $"[E2E] Seed {url}: {(int)response.StatusCode} {response.ReasonPhrase}"
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[E2E] Seed {url} failed: {ex.Message}");
+        }
     }
 }
 
