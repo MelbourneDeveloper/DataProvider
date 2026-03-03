@@ -19,7 +19,6 @@ using ConnOk = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>.Ok<
 >;
 using TranspileResult = Outcome.Result<string, Selecta.SqlError>;
 using TranspileError = Outcome.Result<string, Selecta.SqlError>.Error<string, Selecta.SqlError>;
-using TranspileOk = Outcome.Result<string, Selecta.SqlError>.Ok<string, Selecta.SqlError>;
 
 var builder = WebApplication.CreateBuilder(args);
 

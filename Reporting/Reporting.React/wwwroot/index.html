@@ -13,8 +13,8 @@
   <div id="root"></div>
 
   <script>
-    // Configuration - override these before loading the bundle
-    window.reportConfig = {
+    // Configuration - only set defaults if not already injected (e.g. by Playwright)
+    window.reportConfig = window.reportConfig || {
       apiBaseUrl: 'http://localhost:5100',
       reportId: '' // Leave empty to show report list
     };
@@ -24,7 +24,7 @@
   <script src="js/vendor/react.development.js"></script>
   <script src="js/vendor/react-dom.development.js"></script>
 
-  <!-- H5 transpiled application -->
-  <script src="js/Reporting.React.js"></script>
+  <!-- Report viewer application -->
+  <script src="js/reporting.js"></script>
 </body>
 </html>

@@ -45,4 +45,20 @@
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- Download React vendor files if Reporting.React has not been built yet -->
+  <Target Name="EnsureReactVendorFiles" BeforeTargets="Build"
+          Condition="!Exists('$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..\Reporting.React\wwwroot\js\vendor\react.development.js'))')">
+    <Message Importance="high" Text="[E2E Tests] Downloading React vendor files for Playwright tests..." />
+    <MakeDir Directories="$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..\Reporting.React\wwwroot\js\vendor'))" />
+    <DownloadFile
+      SourceUrl="https://unpkg.com/react@18/umd/react.development.js"
+      DestinationFolder="$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..\Reporting.React\wwwroot\js\vendor'))"
+      DestinationFileName="react.development.js" />
+    <DownloadFile
+      SourceUrl="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      DestinationFolder="$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..\Reporting.React\wwwroot\js\vendor'))"
+      DestinationFileName="react-dom.development.js" />
+    <Message Importance="high" Text="[E2E Tests] React vendor files downloaded successfully." />
+  </Target>
+
 </Project>
