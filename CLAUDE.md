@@ -70,6 +70,7 @@ public abstract partial record Result<TSuccess, TFailure> { private Result() { }
 | Sync | `Sync/` | Offline-first bidirectional sync |
 | Gatekeeper | `Gatekeeper/` | WebAuthn + RBAC auth |
 | Samples | `Samples/` | Clinical, Scheduling, Dashboard |
+| Reporting | `Reporting/` | Embeddable reporting platform (SQL/LQL data sources, JSON config, React renderer) |
 
 ## Config
 - .NET 9.0, C# latest, nullable, warnings as errors

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <PackageId>Reporting.Engine</PackageId>
+    <Description>Reporting engine: config parsing, data source execution, format adapters</Description>
+    <NoWarn>CA1515</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\DataProvider\DataProvider\DataProvider.csproj" />
+    <ProjectReference Include="..\..\Lql\Lql\Lql.csproj" />
+    <ProjectReference Include="..\..\Lql\Lql.SQLite\Lql.SQLite.csproj" />
+    <ProjectReference Include="..\..\Lql\Lql.Postgres\Lql.Postgres.csproj" />
+    <ProjectReference Include="..\..\Other\Selecta\Selecta.csproj" />
+  </ItemGroup>
+
+</Project>

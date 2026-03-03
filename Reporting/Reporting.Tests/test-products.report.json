@@ -1,0 +1,68 @@
+{
+  "id": "test-products",
+  "title": "Test Product Report",
+  "parameters": [],
+  "dataSources": [
+    {
+      "id": "allProducts",
+      "type": "Sql",
+      "connectionRef": "test-db",
+      "query": "SELECT Id, Name, Category, Price, Stock FROM products ORDER BY Name",
+      "parameters": []
+    },
+    {
+      "id": "categorySummary",
+      "type": "Sql",
+      "connectionRef": "test-db",
+      "query": "SELECT Category, COUNT(*) as ProductCount, SUM(Stock) as TotalStock FROM products GROUP BY Category ORDER BY ProductCount DESC",
+      "parameters": []
+    }
+  ],
+  "layout": {
+    "columns": 12,
+    "rows": [
+      {
+        "cells": [
+          {
+            "colSpan": 6,
+            "component": {
+              "type": "Chart",
+              "chartType": "Bar",
+              "dataSource": "categorySummary",
+              "title": "Products by Category",
+              "xAxis": { "field": "Category" },
+              "yAxis": { "field": "ProductCount", "label": "Count" }
+            }
+          },
+          {
+            "colSpan": 6,
+            "component": {
+              "type": "Table",
+              "dataSource": "allProducts",
+              "title": "All Products",
+              "columns": [
+                { "field": "Name", "header": "Product" },
+                { "field": "Category", "header": "Category" },
+                { "field": "Price", "header": "Price" },
+                { "field": "Stock", "header": "Stock" }
+              ],
+              "pageSize": 10
+            }
+          }
+        ]
+      },
+      {
+        "cells": [
+          {
+            "colSpan": 12,
+            "component": {
+              "type": "Text",
+              "content": "Test report for integration testing.",
+              "style": "caption"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
