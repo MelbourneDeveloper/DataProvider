@@ -1,0 +1,124 @@
+{
+  "id": "e2e-products",
+  "title": "E2E Product Report",
+  "parameters": [],
+  "dataSources": [
+    {
+      "id": "allProducts",
+      "type": "Sql",
+      "connectionRef": "reporting-db",
+      "query": "SELECT Id, Name, Category, Price, Stock FROM products ORDER BY Name",
+      "parameters": []
+    },
+    {
+      "id": "categorySummary",
+      "type": "Sql",
+      "connectionRef": "reporting-db",
+      "query": "SELECT Category, COUNT(*) as ProductCount, SUM(Stock) as TotalStock, ROUND(AVG(Price), 2) as AvgPrice FROM products GROUP BY Category ORDER BY ProductCount DESC",
+      "parameters": []
+    },
+    {
+      "id": "totals",
+      "type": "Sql",
+      "connectionRef": "reporting-db",
+      "query": "SELECT COUNT(*) as TotalProducts, SUM(Stock) as TotalStock, ROUND(SUM(Price * Stock), 2) as TotalValue FROM products",
+      "parameters": []
+    }
+  ],
+  "layout": {
+    "columns": 12,
+    "rows": [
+      {
+        "cells": [
+          {
+            "colSpan": 4,
+            "component": {
+              "type": "Metric",
+              "dataSource": "totals",
+              "title": "Total Products",
+              "value": "TotalProducts",
+              "format": "number"
+            }
+          },
+          {
+            "colSpan": 4,
+            "component": {
+              "type": "Metric",
+              "dataSource": "totals",
+              "title": "Total Stock",
+              "value": "TotalStock",
+              "format": "number"
+            }
+          },
+          {
+            "colSpan": 4,
+            "component": {
+              "type": "Metric",
+              "dataSource": "totals",
+              "title": "Total Value",
+              "value": "TotalValue",
+              "format": "currency"
+            }
+          }
+        ]
+      },
+      {
+        "cells": [
+          {
+            "colSpan": 6,
+            "component": {
+              "type": "Chart",
+              "chartType": "Bar",
+              "dataSource": "categorySummary",
+              "title": "Products by Category",
+              "xAxis": { "field": "Category" },
+              "yAxis": { "field": "ProductCount", "label": "Count" }
+            }
+          },
+          {
+            "colSpan": 6,
+            "component": {
+              "type": "Chart",
+              "chartType": "Bar",
+              "dataSource": "categorySummary",
+              "title": "Avg Price by Category",
+              "xAxis": { "field": "Category" },
+              "yAxis": { "field": "AvgPrice", "label": "Avg Price ($)" }
+            }
+          }
+        ]
+      },
+      {
+        "cells": [
+          {
+            "colSpan": 12,
+            "component": {
+              "type": "Table",
+              "dataSource": "allProducts",
+              "title": "All Products",
+              "columns": [
+                { "field": "Name", "header": "Product" },
+                { "field": "Category", "header": "Category" },
+                { "field": "Price", "header": "Price" },
+                { "field": "Stock", "header": "Stock" }
+              ],
+              "pageSize": 20
+            }
+          }
+        ]
+      },
+      {
+        "cells": [
+          {
+            "colSpan": 12,
+            "component": {
+              "type": "Text",
+              "content": "E2E test report - validates full stack rendering from database to browser.",
+              "style": "caption"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

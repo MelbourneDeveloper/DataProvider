@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <IsTestProject>true</IsTestProject>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Reporting.Integration.Tests</RootNamespace>
+    <NoWarn>CS1591;CA1707;CA1307;CA1062;CA1515;CA2100</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.8.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.50.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Reporting.Api\Reporting.Api.csproj" />
+    <ProjectReference Include="..\Reporting.Engine\Reporting.Engine.csproj" />
+    <ProjectReference Include="..\..\Migration\Migration\Migration.csproj" />
+    <ProjectReference Include="..\..\Migration\Migration.SQLite\Migration.SQLite.csproj" />
+  </ItemGroup>
+
+  <!-- Copy React renderer wwwroot for Playwright tests -->
+  <ItemGroup>
+    <None Include="..\Reporting.React\wwwroot\**\*" CopyToOutputDirectory="PreserveNewest" LinkBase="wwwroot" />
+  </ItemGroup>
+
+  <!-- Copy test report definitions and schema -->
+  <ItemGroup>
+    <Content Include="Reports\*.report.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="*.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
