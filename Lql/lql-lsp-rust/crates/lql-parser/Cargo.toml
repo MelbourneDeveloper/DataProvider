@@ -1,0 +1,7 @@
+[package]
+name = "lql-parser"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+antlr-rust = "0.3.0-beta"

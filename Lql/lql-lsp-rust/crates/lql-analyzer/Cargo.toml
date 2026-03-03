@@ -1,0 +1,7 @@
+[package]
+name = "lql-analyzer"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+lql-parser = { path = "../lql-parser" }
