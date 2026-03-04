@@ -2084,3 +2084,189 @@ describe("Schema-Aware LSP E2E Tests — Real PostgreSQL Database", function () 
     }
   });
 });
+
+describe("AI Provider Integration Tests", function () {
+  this.timeout(30000);
+
+  let client: LspClient;
+  let lspBinary: string;
+
+  before(function () {
+    try {
+      lspBinary = findLspBinary();
+    } catch {
+      this.skip();
+    }
+  });
+
+  afterEach(function () {
+    if (client) {
+      client.kill();
+    }
+  });
+
+  it("PROOF: AI provider config is parsed from initializationOptions and logged", async function () {
+    client = new LspClient(lspBinary);
+    await client.request("initialize", {
+      processId: process.pid,
+      capabilities: {},
+      rootUri: null,
+      initializationOptions: {
+        aiProvider: {
+          provider: "openai",
+          endpoint: "https://api.example.com/v1/completions",
+          model: "gpt-4",
+          apiKey: "test-key-123",
+          timeoutMs: 3000,
+          enabled: true,
+        },
+      },
+    });
+    client.notify("initialized", {});
+
+    // Wait for the AI config log message
+    await new Promise((r) => setTimeout(r, 3000));
+    const allLogs = client.drainNotifications("window/logMessage");
+    const allMessages = allLogs.map((n: any) => n.params?.message || n.message || JSON.stringify(n));
+    const aiLog = allLogs.find(
+      (n: any) => {
+        const msg = n.params?.message || n.message || "";
+        return msg.includes("AI completion provider configured");
+      },
+    );
+    assert.ok(
+      aiLog,
+      `Must log AI provider config. Got ${allLogs.length} logs: ${JSON.stringify(allMessages)}`,
+    );
+    const aiMessage = (aiLog as any).params?.message || (aiLog as any).message;
+    assert.ok(
+      aiMessage.includes("openai"),
+      "Log must include provider name",
+    );
+    assert.ok(
+      aiMessage.includes("gpt-4"),
+      "Log must include model name",
+    );
+    assert.ok(
+      aiMessage.includes("api.example.com"),
+      "Log must include endpoint",
+    );
+  });
+
+  it("PROOF: AI provider config with enabled=false is NOT logged as active", async function () {
+    client = new LspClient(lspBinary);
+    await client.request("initialize", {
+      processId: process.pid,
+      capabilities: {},
+      rootUri: null,
+      initializationOptions: {
+        aiProvider: {
+          provider: "anthropic",
+          endpoint: "https://api.anthropic.com/v1/messages",
+          model: "claude-sonnet-4-20250514",
+          enabled: false,
+        },
+      },
+    });
+    client.notify("initialized", {});
+
+    // Wait a bit for any log messages
+    await new Promise((r) => setTimeout(r, 2000));
+    const logs = client.drainNotifications("window/logMessage");
+    const aiLog = logs.find(
+      (l: any) =>
+        l.params &&
+        l.params.message &&
+        l.params.message.includes("AI completion provider configured"),
+    );
+    assert.ok(
+      !aiLog,
+      "Must NOT log AI provider as active when enabled=false",
+    );
+  });
+
+  it("PROOF: Completions work normally when AI config is present but no provider registered", async function () {
+    client = new LspClient(lspBinary);
+    await client.request("initialize", {
+      processId: process.pid,
+      capabilities: {},
+      rootUri: null,
+      initializationOptions: {
+        aiProvider: {
+          provider: "custom",
+          endpoint: "http://localhost:9999/completions",
+          model: "my-model",
+          timeoutMs: 1000,
+          enabled: true,
+        },
+      },
+    });
+    client.notify("initialized", {});
+    await new Promise((r) => setTimeout(r, 1000));
+
+    // Open a document and request completions
+    client.notify("textDocument/didOpen", {
+      textDocument: {
+        uri: "file:///test/ai_integration.lql",
+        languageId: "lql",
+        version: 1,
+        text: "orders |> ",
+      },
+    });
+    await new Promise((r) => setTimeout(r, 500));
+
+    const completions = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/ai_integration.lql" },
+      position: { line: 0, character: 10 },
+    });
+
+    const items = Array.isArray(completions)
+      ? completions
+      : completions.items || [];
+    const labels = items.map((i: any) => i.label);
+
+    // Pipeline completions still work — AI config doesn't break anything
+    assert.ok(
+      labels.includes("select"),
+      "Must still provide 'select' completion with AI config",
+    );
+    assert.ok(
+      labels.includes("filter"),
+      "Must still provide 'filter' completion with AI config",
+    );
+    assert.ok(
+      labels.includes("join"),
+      "Must still provide 'join' completion with AI config",
+    );
+  });
+
+  it("PROOF: AI provider initializationOptions accepts all config fields correctly", async function () {
+    client = new LspClient(lspBinary);
+    const result = await client.request("initialize", {
+      processId: process.pid,
+      capabilities: {},
+      rootUri: null,
+      initializationOptions: {
+        connectionString: "host=127.0.0.1 dbname=nonexistent",
+        aiProvider: {
+          provider: "ollama",
+          endpoint: "http://localhost:11434/api/generate",
+          model: "codellama:7b",
+          timeoutMs: 5000,
+          enabled: true,
+        },
+      },
+    });
+
+    // Server still initializes correctly with both DB and AI configs
+    assert.ok(result.capabilities, "Must return capabilities");
+    assert.ok(
+      result.capabilities.completionProvider,
+      "Must have completion provider",
+    );
+    assert.ok(
+      result.capabilities.completionProvider.triggerCharacters.includes("."),
+      "Must have dot trigger for IntelliPrompt",
+    );
+  });
+});

@@ -1,5 +1,7 @@
+pub mod ai;
 mod db;
 
+use ai::{AiCompletionContext, AiCompletionProvider, AiConfig};
 use lql_analyzer::{
     analyze, extract_symbols, get_completions, get_hover_with_schema, CompletionContext,
     CompletionKind, DiagnosticSeverity as LqlSeverity, SchemaCache, ScopeMap,
@@ -7,7 +9,8 @@ use lql_analyzer::{
 };
 use lql_parser::parse_lql;
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use tokio::sync::RwLock;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
@@ -18,6 +21,8 @@ struct LqlBackend {
     documents: Mutex<HashMap<Url, String>>,
     schema: RwLock<Option<SchemaCache>>,
     init_connection_string: Mutex<Option<String>>,
+    ai_provider: RwLock<Option<Arc<dyn AiCompletionProvider>>>,
+    ai_config: Mutex<Option<AiConfig>>,
 }
 
 impl LqlBackend {
@@ -27,7 +32,14 @@ impl LqlBackend {
             documents: Mutex::new(HashMap::new()),
             schema: RwLock::new(None),
             init_connection_string: Mutex::new(None),
+            ai_provider: RwLock::new(None),
+            ai_config: Mutex::new(None),
         }
+    }
+
+    /// Set an AI completion provider. Called externally to plug in a model.
+    pub async fn set_ai_provider(&self, provider: Arc<dyn AiCompletionProvider>) {
+        *self.ai_provider.write().await = Some(provider);
     }
 
     fn build_scope(source: &str) -> ScopeMap {
@@ -246,11 +258,16 @@ fn is_keyword_name(word: &str) -> bool {
 #[tower_lsp::async_trait]
 impl LanguageServer for LqlBackend {
     async fn initialize(&self, params: InitializeParams) -> Result<InitializeResult> {
-        // Extract connection string from initializationOptions if provided
+        // Extract connection string and AI config from initializationOptions
         if let Some(ref options) = params.initialization_options {
             if let Some(conn) = options.get("connectionString").and_then(|v| v.as_str()) {
                 if !conn.is_empty() {
                     *self.init_connection_string.lock().unwrap() = Some(conn.to_string());
+                }
+            }
+            if let Some(ai_obj) = options.get("aiProvider") {
+                if let Some(config) = AiConfig::from_json(ai_obj) {
+                    *self.ai_config.lock().unwrap() = Some(config);
                 }
             }
         }
@@ -284,6 +301,22 @@ impl LanguageServer for LqlBackend {
         self.client
             .log_message(MessageType::INFO, "LQL Language Server initialized")
             .await;
+
+        // Log AI provider config (before DB check, which may return early)
+        let ai_config = self.ai_config.lock().unwrap().clone();
+        if let Some(ref config) = ai_config {
+            if config.enabled {
+                self.client
+                    .log_message(
+                        MessageType::INFO,
+                        format!(
+                            "AI completion provider configured: {} (model: {}, endpoint: {})",
+                            config.provider, config.model, config.endpoint
+                        ),
+                    )
+                    .await;
+            }
+        }
 
         // Resolve connection string: initializationOptions > env var
         let conn_str = self
@@ -383,7 +416,42 @@ impl LanguageServer for LqlBackend {
 
         // Read schema (cheap clone — SchemaCache uses Arc internally)
         let schema = self.schema.read().await.clone();
-        let items = get_completions(&ctx, &scope, schema.as_ref());
+        let mut items = get_completions(&ctx, &scope, schema.as_ref());
+
+        // Merge AI completions if a provider is configured
+        let ai_provider = self.ai_provider.read().await.clone();
+        if let Some(ref provider) = ai_provider {
+            let ai_config = self.ai_config.lock().unwrap().clone();
+            let timeout_ms = ai_config.as_ref().map(|c| c.timeout_ms).unwrap_or(2000);
+            let enabled = ai_config.as_ref().map(|c| c.enabled).unwrap_or(true);
+
+            if enabled {
+                let ai_ctx = AiCompletionContext {
+                    document_text: source.clone(),
+                    line: position.line,
+                    column: position.character,
+                    line_prefix: ctx.line_prefix.clone(),
+                    word_prefix: ctx.word_prefix.clone(),
+                    file_uri: uri.to_string(),
+                    available_tables: schema
+                        .as_ref()
+                        .map(|s| s.table_names().iter().map(|n| n.to_string()).collect())
+                        .unwrap_or_default(),
+                };
+
+                match tokio::time::timeout(
+                    Duration::from_millis(timeout_ms),
+                    provider.complete(&ai_ctx),
+                )
+                .await
+                {
+                    Ok(ai_items) => items.extend(ai_items),
+                    Err(_) => {
+                        // AI provider timed out — silently proceed with schema/keyword completions
+                    }
+                }
+            }
+        }
 
         let lsp_items: Vec<tower_lsp::lsp_types::CompletionItem> = items
             .into_iter()
