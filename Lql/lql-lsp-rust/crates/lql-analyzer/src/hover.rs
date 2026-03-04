@@ -57,6 +57,19 @@ pub fn get_hover_with_schema(
                     )),
                 });
             }
+            // Table exists but column doesn't — show available columns
+            let available: Vec<&str> =
+                table.columns.iter().map(|c| c.name.as_str()).collect();
+            return Some(HoverInfo {
+                title: format!("{}.{} — Column not found", table.name, col_name),
+                detail: format!(
+                    "Column `{}` does not exist on table `{}`.\n\nAvailable columns: {}",
+                    col_name,
+                    table.name,
+                    available.join(", ")
+                ),
+                signature: None,
+            });
         }
     }
 

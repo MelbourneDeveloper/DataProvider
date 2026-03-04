@@ -9,6 +9,8 @@ pub struct CompletionItem {
     pub detail: String,
     pub documentation: String,
     pub insert_text: Option<String>,
+    /// Sort priority (lower = shown first). Column=0, Pipeline=1, Function=2, Keyword=3, Table=4, Variable=5
+    pub sort_priority: u8,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,6 +68,7 @@ pub fn get_completions(
                             col.type_description()
                         ),
                         insert_text: None,
+                        sort_priority: 0,
                     });
                 }
             }
@@ -114,6 +117,7 @@ pub fn get_completions(
                         "Table: {table_name}\nColumns: {col_list}"
                     ),
                     insert_text: None,
+                    sort_priority: 4,
                 });
             }
         }
@@ -128,6 +132,7 @@ pub fn get_completions(
                 detail: "let binding".into(),
                 documentation: format!("Variable bound with `let {name} = ...`"),
                 insert_text: None,
+                sort_priority: 5,
             });
         }
     }
@@ -144,9 +149,17 @@ pub fn get_completions(
                 detail: "table".into(),
                 documentation: format!("Table: {name}"),
                 insert_text: None,
+                sort_priority: 4,
             });
         }
     }
+
+    // Deduplicate by label (keep first occurrence — higher priority items are added first)
+    let mut seen = std::collections::HashSet::new();
+    items.retain(|item| seen.insert(item.label.clone()));
+
+    // Sort: by priority (lower first), then alphabetically
+    items.sort_by(|a, b| a.sort_priority.cmp(&b.sort_priority).then(a.label.cmp(&b.label)));
 
     items
 }
@@ -174,6 +187,7 @@ fn pipeline_completions(prefix: &str) -> Vec<CompletionItem> {
             detail: detail.into(),
             documentation: doc.into(),
             insert_text: Some(snippet.into()),
+            sort_priority: 1,
         })
         .collect()
 }
@@ -198,6 +212,7 @@ fn aggregate_completions(prefix: &str) -> Vec<CompletionItem> {
             detail: detail.into(),
             documentation: doc.into(),
             insert_text: Some(format!("{name}($0)")),
+            sort_priority: 2,
         })
         .collect()
 }
@@ -223,6 +238,7 @@ fn string_function_completions(prefix: &str) -> Vec<CompletionItem> {
             detail: detail.into(),
             documentation: doc.into(),
             insert_text: Some(format!("{name}($0)")),
+            sort_priority: 2,
         })
         .collect()
 }
@@ -246,6 +262,7 @@ fn keyword_completions(prefix: &str) -> Vec<CompletionItem> {
             detail: detail.into(),
             documentation: doc.into(),
             insert_text: None,
+            sort_priority: 3,
         })
         .collect()
 }
@@ -269,6 +286,7 @@ fn lambda_completions(prefix: &str) -> Vec<CompletionItem> {
             detail: detail.into(),
             documentation: doc.into(),
             insert_text: None,
+            sort_priority: 3,
         })
         .collect()
 }

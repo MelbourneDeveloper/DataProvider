@@ -1,5 +1,9 @@
 use lql_analyzer::{ColumnInfo, SchemaCache, TableInfo};
 use std::collections::HashMap;
+use std::time::Duration;
+
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+const QUERY_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Discover a connection string from environment variables.
 /// Priority: LQL_CONNECTION_STRING > DATABASE_URL
@@ -64,18 +68,20 @@ pub fn normalize_connection_string(input: &str) -> String {
 /// Fetch full database schema from PostgreSQL via information_schema.
 pub async fn fetch_schema(connection_string: &str) -> std::result::Result<SchemaCache, String> {
     let conn_str = normalize_connection_string(connection_string);
-    let (client, connection) = tokio_postgres::connect(&conn_str, tokio_postgres::NoTls)
-        .await
-        .map_err(|e| format!("DB connect failed: {e}"))?;
+
+    let (client, connection) = tokio::time::timeout(
+        CONNECT_TIMEOUT,
+        tokio_postgres::connect(&conn_str, tokio_postgres::NoTls),
+    )
+    .await
+    .map_err(|_| format!("DB connect timed out after {}s", CONNECT_TIMEOUT.as_secs()))?
+    .map_err(|e| format!("DB connect failed: {e}"))?;
 
     tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("DB connection error: {e}");
-        }
+        let _ = connection.await;
     });
 
-    let col_rows = client
-        .query(
+    let col_rows = tokio::time::timeout(QUERY_TIMEOUT, client.query(
             "SELECT c.table_schema, c.table_name, c.column_name, c.data_type, \
                     c.is_nullable, \
                     CASE WHEN pk.column_name IS NOT NULL THEN 'YES' ELSE 'NO' END as is_pk \
@@ -93,8 +99,9 @@ pub async fn fetch_schema(connection_string: &str) -> std::result::Result<Schema
              WHERE c.table_schema NOT IN ('pg_catalog', 'information_schema') \
              ORDER BY c.table_schema, c.table_name, c.ordinal_position",
             &[],
-        )
+        ))
         .await
+        .map_err(|_| format!("Schema query timed out after {}s", QUERY_TIMEOUT.as_secs()))?
         .map_err(|e| format!("Failed to query columns: {e}"))?;
 
     let mut tables_map: HashMap<(String, String), Vec<ColumnInfo>> = HashMap::new();

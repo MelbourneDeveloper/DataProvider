@@ -149,8 +149,8 @@ impl LqlBackend {
         }
         let word = line[start..end].to_string();
 
-        // Check for "qualifier." before the word
-        if start >= 2 && bytes[start - 1] == b'.' {
+        // Check for "qualifier." before the word (need at least 1 char + dot)
+        if start >= 1 && bytes[start - 1] == b'.' && start >= 2 {
             let dot_pos = start - 1;
             let mut q_start = dot_pos;
             while q_start > 0
