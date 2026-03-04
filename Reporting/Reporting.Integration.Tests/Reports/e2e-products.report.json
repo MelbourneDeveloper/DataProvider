@@ -5,23 +5,44 @@
   "dataSources": [
     {
       "id": "allProducts",
-      "type": "Sql",
+      "type": "Lql",
       "connectionRef": "reporting-db",
-      "query": "SELECT Id, Name, Category, Price, Stock FROM products ORDER BY Name",
+      "query": "products |> order_by(products.Name asc) |> select(products.Id, products.Name, products.Category, products.Price, products.Stock)",
       "parameters": []
     },
     {
       "id": "categorySummary",
-      "type": "Sql",
+      "type": "Lql",
       "connectionRef": "reporting-db",
-      "query": "SELECT Category, COUNT(*) as ProductCount, SUM(Stock) as TotalStock, ROUND(AVG(Price), 2) as AvgPrice FROM products GROUP BY Category ORDER BY ProductCount DESC",
+      "query": "products |> group_by(products.Category) |> select(products.Category, count(*) as ProductCount, sum(products.Stock) as TotalStock, avg(products.Price) as AvgPrice) |> order_by(ProductCount desc)",
       "parameters": []
     },
     {
       "id": "totals",
-      "type": "Sql",
+      "type": "Lql",
       "connectionRef": "reporting-db",
-      "query": "SELECT COUNT(*) as TotalProducts, SUM(Stock) as TotalStock, ROUND(SUM(Price * Stock), 2) as TotalValue FROM products",
+      "query": "products |> select(count(*) as TotalProducts, sum(products.Stock) as TotalStock, sum(products.Price * products.Stock) as TotalValue)",
+      "parameters": []
+    },
+    {
+      "id": "highValueProducts",
+      "type": "Lql",
+      "connectionRef": "reporting-db",
+      "query": "products |> filter(fn(row) => row.products.Price > 30) |> select(products.Name, products.Price, products.Stock, products.Price * products.Stock as InventoryValue) |> order_by(InventoryValue desc)",
+      "parameters": []
+    },
+    {
+      "id": "priceAnalysis",
+      "type": "Lql",
+      "connectionRef": "reporting-db",
+      "query": "products |> select(products.Name, products.Price, case when products.Price > 50 then 'Premium' when products.Price > 25 then 'Standard' else 'Budget' end as PriceTier, products.Price * products.Stock as InventoryValue) |> order_by(products.Price desc)",
+      "parameters": []
+    },
+    {
+      "id": "stockAnalysis",
+      "type": "Lql",
+      "connectionRef": "reporting-db",
+      "query": "products |> group_by(products.Category) |> having(fn(group) => count(*) > 1) |> select(products.Category, count(*) as Items, sum(products.Stock) as TotalStock, min(products.Price) as CheapestPrice, max(products.Price) as MostExpensive) |> order_by(TotalStock desc)",
       "parameters": []
     }
   ],
@@ -91,6 +112,32 @@
       {
         "cells": [
           {
+            "colSpan": 6,
+            "component": {
+              "type": "Chart",
+              "chartType": "Bar",
+              "dataSource": "stockAnalysis",
+              "title": "Stock Distribution by Category",
+              "xAxis": { "field": "Category" },
+              "yAxis": { "field": "TotalStock", "label": "Total Units" }
+            }
+          },
+          {
+            "colSpan": 6,
+            "component": {
+              "type": "Chart",
+              "chartType": "Bar",
+              "dataSource": "highValueProducts",
+              "title": "High-Value Product Inventory",
+              "xAxis": { "field": "Name" },
+              "yAxis": { "field": "InventoryValue", "label": "Value ($)" }
+            }
+          }
+        ]
+      },
+      {
+        "cells": [
+          {
             "colSpan": 12,
             "component": {
               "type": "Table",
@@ -112,8 +159,27 @@
           {
             "colSpan": 12,
             "component": {
+              "type": "Table",
+              "dataSource": "priceAnalysis",
+              "title": "Price Tier Analysis (LQL CASE Expression)",
+              "columns": [
+                { "field": "Name", "header": "Product" },
+                { "field": "Price", "header": "Price" },
+                { "field": "PriceTier", "header": "Tier" },
+                { "field": "InventoryValue", "header": "Inventory Value" }
+              ],
+              "pageSize": 20
+            }
+          }
+        ]
+      },
+      {
+        "cells": [
+          {
+            "colSpan": 12,
+            "component": {
               "type": "Text",
-              "content": "E2E test report - validates full stack rendering from database to browser.",
+              "content": "E2E test report powered by LQL - validates full stack rendering: LQL transpilation -> SQLite execution -> API response -> React DOM. Data sources use filter, group_by, having, case expressions, arithmetic, and aggregate functions.",
               "style": "caption"
             }
           }

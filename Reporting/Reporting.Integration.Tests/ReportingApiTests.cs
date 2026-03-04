@@ -62,9 +62,9 @@ public sealed class ReportingApiTests
         Assert.Equal("e2e-products", report.GetProperty("id").GetString());
         Assert.Equal("E2E Product Report", report.GetProperty("title").GetString());
 
-        // Verify data source IDs are present
+        // Verify data source IDs are present (6 LQL data sources)
         var dsIds = report.GetProperty("dataSourceIds");
-        Assert.Equal(3, dsIds.GetArrayLength());
+        Assert.Equal(6, dsIds.GetArrayLength());
 
         // Verify layout is present
         var layout = report.GetProperty("layout");
@@ -121,13 +121,110 @@ public sealed class ReportingApiTests
         Assert.Equal(6, allProducts.GetProperty("totalRows").GetInt32());
         Assert.Equal(6, productRows.GetArrayLength());
 
-        // Verify column names from real SQLite query
+        // Verify column names from LQL-transpiled query
         var columns = allProducts.GetProperty("columnNames");
         Assert.Contains("Id", columns.EnumerateArray().Select(c => c.GetString()));
         Assert.Contains("Name", columns.EnumerateArray().Select(c => c.GetString()));
         Assert.Contains("Category", columns.EnumerateArray().Select(c => c.GetString()));
         Assert.Contains("Price", columns.EnumerateArray().Select(c => c.GetString()));
         Assert.Contains("Stock", columns.EnumerateArray().Select(c => c.GetString()));
+    }
+
+    [Fact]
+    public async Task ExecuteReport_LqlHighValueFilter_ReturnsFilteredProducts()
+    {
+        // Arrange
+        using var client = new HttpClient();
+        var request = new StringContent(
+            """{"parameters": {}, "format": "json"}""",
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        // Act
+        var response = await client.PostAsync(
+            $"{_fixture.ApiUrl}/api/reports/e2e-products/execute",
+            request
+        );
+
+        // Assert - highValueProducts: filter(Price > 30) with arithmetic InventoryValue
+        var json = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<JsonElement>(json, JsonOptions);
+        var highValue = result.GetProperty("dataSources").GetProperty("highValueProducts");
+
+        // Products with Price > 30: Beta Gadget (49.99), Gamma Widget (NO - 19.99),
+        // Delta Gadget (79.99), Zeta Widget (39.99) = 3 products
+        Assert.True(
+            highValue.GetProperty("totalRows").GetInt32() >= 3,
+            "Should have at least 3 products with price > 30"
+        );
+
+        var hvColumns = highValue.GetProperty("columnNames");
+        Assert.Contains("Name", hvColumns.EnumerateArray().Select(c => c.GetString()));
+        Assert.Contains("InventoryValue", hvColumns.EnumerateArray().Select(c => c.GetString()));
+    }
+
+    [Fact]
+    public async Task ExecuteReport_LqlCaseExpression_ReturnsPriceTiers()
+    {
+        // Arrange
+        using var client = new HttpClient();
+        var request = new StringContent(
+            """{"parameters": {}, "format": "json"}""",
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        // Act
+        var response = await client.PostAsync(
+            $"{_fixture.ApiUrl}/api/reports/e2e-products/execute",
+            request
+        );
+
+        // Assert - priceAnalysis: CASE expression assigning PriceTier
+        var json = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<JsonElement>(json, JsonOptions);
+        var priceAnalysis = result.GetProperty("dataSources").GetProperty("priceAnalysis");
+
+        Assert.Equal(6, priceAnalysis.GetProperty("totalRows").GetInt32());
+
+        var paColumns = priceAnalysis.GetProperty("columnNames");
+        Assert.Contains("PriceTier", paColumns.EnumerateArray().Select(c => c.GetString()));
+        Assert.Contains("InventoryValue", paColumns.EnumerateArray().Select(c => c.GetString()));
+    }
+
+    [Fact]
+    public async Task ExecuteReport_LqlGroupByHaving_ReturnsFilteredAggregates()
+    {
+        // Arrange
+        using var client = new HttpClient();
+        var request = new StringContent(
+            """{"parameters": {}, "format": "json"}""",
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        // Act
+        var response = await client.PostAsync(
+            $"{_fixture.ApiUrl}/api/reports/e2e-products/execute",
+            request
+        );
+
+        // Assert - stockAnalysis: group_by + having(count > 1) + min/max aggregates
+        var json = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<JsonElement>(json, JsonOptions);
+        var stockAnalysis = result.GetProperty("dataSources").GetProperty("stockAnalysis");
+
+        // Widgets (3 items) and Gadgets (2 items) pass having(count > 1),
+        // Doohickeys (1 item) filtered out
+        Assert.Equal(2, stockAnalysis.GetProperty("totalRows").GetInt32());
+
+        var saColumns = stockAnalysis.GetProperty("columnNames");
+        Assert.Contains("Category", saColumns.EnumerateArray().Select(c => c.GetString()));
+        Assert.Contains("Items", saColumns.EnumerateArray().Select(c => c.GetString()));
+        Assert.Contains("TotalStock", saColumns.EnumerateArray().Select(c => c.GetString()));
+        Assert.Contains("CheapestPrice", saColumns.EnumerateArray().Select(c => c.GetString()));
+        Assert.Contains("MostExpensive", saColumns.EnumerateArray().Select(c => c.GetString()));
     }
 
     [Fact]
@@ -234,9 +331,12 @@ public sealed class ReportingApiTests
         var result = JsonSerializer.Deserialize<JsonElement>(json, JsonOptions);
         var dataSources = result.GetProperty("dataSources");
 
-        // All 3 data sources from the report definition should be present
+        // All 6 LQL data sources from the report definition should be present
         Assert.True(dataSources.TryGetProperty("allProducts", out _));
         Assert.True(dataSources.TryGetProperty("categorySummary", out _));
         Assert.True(dataSources.TryGetProperty("totals", out _));
+        Assert.True(dataSources.TryGetProperty("highValueProducts", out _));
+        Assert.True(dataSources.TryGetProperty("priceAnalysis", out _));
+        Assert.True(dataSources.TryGetProperty("stockAnalysis", out _));
     }
 }

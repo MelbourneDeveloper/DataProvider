@@ -235,6 +235,168 @@ public sealed class ReportEngineTests : IDisposable
         Assert.Equal(0, ok.Value.DataSources["testDs"].TotalRows);
     }
 
+    [Fact]
+    public void Execute_WithLqlSelect_TranspilesAndReturnsData()
+    {
+        // Arrange - LQL pipeline: select columns with ordering
+        var report = CreateTestReport(
+            dataSourceType: DataSourceType.Lql,
+            query: "products |> order_by(products.Name asc) |> select(products.Id, products.Name, products.Category, products.Price, products.Stock)"
+        );
+
+        // Act
+        var result = ReportEngine.Execute(
+            report: report,
+            parameters: ImmutableDictionary<string, string>.Empty,
+            connectionFactory: CreateTestConnection,
+            lqlTranspiler: TranspileLql,
+            logger: _logger
+        );
+
+        // Assert
+        Assert.True(result is EngineOk, $"Expected success but got {result.GetType()}");
+        var ok = (EngineOk)result;
+        var dsResult = ok.Value.DataSources["testDs"];
+        Assert.Equal(5, dsResult.ColumnNames.Length);
+        Assert.Equal(4, dsResult.TotalRows);
+    }
+
+    [Fact]
+    public void Execute_WithLqlGroupByAggregation_ReturnsAggregatedData()
+    {
+        // Arrange - LQL pipeline: group_by + count + sum + avg
+        var report = CreateTestReport(
+            dataSourceType: DataSourceType.Lql,
+            query: "products |> group_by(products.Category) |> select(products.Category, count(*) as ProductCount, sum(products.Stock) as TotalStock, avg(products.Price) as AvgPrice) |> order_by(ProductCount desc)"
+        );
+
+        // Act
+        var result = ReportEngine.Execute(
+            report: report,
+            parameters: ImmutableDictionary<string, string>.Empty,
+            connectionFactory: CreateTestConnection,
+            lqlTranspiler: TranspileLql,
+            logger: _logger
+        );
+
+        // Assert
+        Assert.True(result is EngineOk);
+        var ok = (EngineOk)result;
+        var dsResult = ok.Value.DataSources["testDs"];
+        Assert.Contains("Category", dsResult.ColumnNames);
+        Assert.Contains("ProductCount", dsResult.ColumnNames);
+        Assert.Contains("TotalStock", dsResult.ColumnNames);
+        Assert.Contains("AvgPrice", dsResult.ColumnNames);
+        Assert.Equal(2, dsResult.TotalRows);
+    }
+
+    [Fact]
+    public void Execute_WithLqlFilterAndArithmetic_ReturnsFilteredData()
+    {
+        // Arrange - LQL pipeline: filter + arithmetic expression
+        var report = CreateTestReport(
+            dataSourceType: DataSourceType.Lql,
+            query: "products |> filter(fn(row) => row.products.Price > 30) |> select(products.Name, products.Price, products.Stock, products.Price * products.Stock as InventoryValue) |> order_by(InventoryValue desc)"
+        );
+
+        // Act
+        var result = ReportEngine.Execute(
+            report: report,
+            parameters: ImmutableDictionary<string, string>.Empty,
+            connectionFactory: CreateTestConnection,
+            lqlTranspiler: TranspileLql,
+            logger: _logger
+        );
+
+        // Assert - only products with Price > 30: Beta Gadget (49.99), Delta Gadget (79.99)
+        Assert.True(result is EngineOk);
+        var ok = (EngineOk)result;
+        var dsResult = ok.Value.DataSources["testDs"];
+        Assert.Contains("InventoryValue", dsResult.ColumnNames);
+        Assert.Equal(2, dsResult.TotalRows);
+    }
+
+    [Fact]
+    public void Execute_WithLqlCaseExpression_ReturnsDerivedColumn()
+    {
+        // Arrange - LQL pipeline: CASE expression for price tiers
+        var report = CreateTestReport(
+            dataSourceType: DataSourceType.Lql,
+            query: "products |> select(products.Name, products.Price, case when products.Price > 50 then 'Premium' when products.Price > 25 then 'Standard' else 'Budget' end as PriceTier) |> order_by(products.Price desc)"
+        );
+
+        // Act
+        var result = ReportEngine.Execute(
+            report: report,
+            parameters: ImmutableDictionary<string, string>.Empty,
+            connectionFactory: CreateTestConnection,
+            lqlTranspiler: TranspileLql,
+            logger: _logger
+        );
+
+        // Assert
+        Assert.True(result is EngineOk);
+        var ok = (EngineOk)result;
+        var dsResult = ok.Value.DataSources["testDs"];
+        Assert.Contains("PriceTier", dsResult.ColumnNames);
+        Assert.Equal(4, dsResult.TotalRows);
+    }
+
+    [Fact]
+    public void Execute_WithLqlGroupByHaving_FiltersAggregates()
+    {
+        // Arrange - LQL pipeline: group_by + having + min/max
+        var report = CreateTestReport(
+            dataSourceType: DataSourceType.Lql,
+            query: "products |> group_by(products.Category) |> having(fn(group) => count(*) > 1) |> select(products.Category, count(*) as Items, sum(products.Stock) as TotalStock, min(products.Price) as CheapestPrice, max(products.Price) as MostExpensive) |> order_by(TotalStock desc)"
+        );
+
+        // Act
+        var result = ReportEngine.Execute(
+            report: report,
+            parameters: ImmutableDictionary<string, string>.Empty,
+            connectionFactory: CreateTestConnection,
+            lqlTranspiler: TranspileLql,
+            logger: _logger
+        );
+
+        // Assert - both categories (Widgets: 2, Gadgets: 2) pass having(count > 1)
+        Assert.True(result is EngineOk);
+        var ok = (EngineOk)result;
+        var dsResult = ok.Value.DataSources["testDs"];
+        Assert.Contains("CheapestPrice", dsResult.ColumnNames);
+        Assert.Contains("MostExpensive", dsResult.ColumnNames);
+        Assert.Equal(2, dsResult.TotalRows);
+    }
+
+    [Fact]
+    public void Execute_WithLqlAggregateNoGroupBy_ReturnsSingleRow()
+    {
+        // Arrange - LQL pipeline: aggregate functions without group_by (totals)
+        var report = CreateTestReport(
+            dataSourceType: DataSourceType.Lql,
+            query: "products |> select(count(*) as TotalProducts, sum(products.Stock) as TotalStock, sum(products.Price * products.Stock) as TotalValue)"
+        );
+
+        // Act
+        var result = ReportEngine.Execute(
+            report: report,
+            parameters: ImmutableDictionary<string, string>.Empty,
+            connectionFactory: CreateTestConnection,
+            lqlTranspiler: TranspileLql,
+            logger: _logger
+        );
+
+        // Assert
+        Assert.True(result is EngineOk);
+        var ok = (EngineOk)result;
+        var dsResult = ok.Value.DataSources["testDs"];
+        Assert.Contains("TotalProducts", dsResult.ColumnNames);
+        Assert.Contains("TotalStock", dsResult.ColumnNames);
+        Assert.Contains("TotalValue", dsResult.ColumnNames);
+        Assert.Equal(1, dsResult.TotalRows);
+    }
+
     private static ReportDefinition CreateTestReport(
         DataSourceType dataSourceType,
         string query,

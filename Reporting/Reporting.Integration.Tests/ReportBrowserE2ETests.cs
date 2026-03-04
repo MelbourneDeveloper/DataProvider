@@ -136,7 +136,10 @@ public sealed class ReportBrowserE2ETests
         );
 
         var charts = await page.QuerySelectorAllAsync(".report-chart");
-        Assert.True(charts.Count >= 2, $"Expected at least 2 charts, got {charts.Count}");
+        Assert.True(
+            charts.Count >= 4,
+            $"Expected at least 4 charts (LQL-powered), got {charts.Count}"
+        );
 
         // Verify SVG elements exist (real bar chart rendering)
         var svgs = await page.QuerySelectorAllAsync(".report-bar-chart");
@@ -151,7 +154,7 @@ public sealed class ReportBrowserE2ETests
 
         // Verify chart titles
         var chartTitles = await page.QuerySelectorAllAsync(".report-chart .report-component-title");
-        Assert.True(chartTitles.Count >= 2, "Should have chart titles");
+        Assert.True(chartTitles.Count >= 4, "Should have chart titles for all 4 LQL charts");
 
         var chartTitleTexts = new List<string>();
         foreach (var title in chartTitles)
@@ -247,7 +250,7 @@ public sealed class ReportBrowserE2ETests
         var caption = await page.QuerySelectorAsync(".report-text-caption");
         Assert.NotNull(caption);
         var text = await caption.TextContentAsync();
-        Assert.Contains("E2E test report", text ?? "", StringComparison.Ordinal);
+        Assert.Contains("LQL", text ?? "", StringComparison.Ordinal);
         Assert.Contains("validates full stack rendering", text ?? "", StringComparison.Ordinal);
 
         await page.CloseAsync();
@@ -255,7 +258,7 @@ public sealed class ReportBrowserE2ETests
 
     /// <summary>
     /// Verify the grid layout renders cells with correct structure.
-    /// Report has 4 rows of varying cell configurations.
+    /// Report has 6 rows of varying cell configurations (all LQL-powered).
     /// </summary>
     [Fact]
     public async Task Report_GridLayout_RendersRowsAndCells()
@@ -268,7 +271,10 @@ public sealed class ReportBrowserE2ETests
         );
 
         var rows = await page.QuerySelectorAllAsync(".report-row");
-        Assert.True(rows.Count >= 4, $"Expected at least 4 layout rows, got {rows.Count}");
+        Assert.True(
+            rows.Count >= 6,
+            $"Expected at least 6 layout rows (LQL report), got {rows.Count}"
+        );
 
         // First row should have 3 metric cells (colSpan 4 each)
         var firstRowCells = await rows[0].QuerySelectorAllAsync(".report-cell");
