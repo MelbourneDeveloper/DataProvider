@@ -33,7 +33,7 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors>IDE0301;IDE0063;IDE0005;MSB3243</WarningsAsErrors>
     <NoWarn>CA1016;CA1303;EPS06;IDE0290;CA1062;CA1002;IDE0090;CA1017;CS8509;IDE0037;NU1900;NU1901;NU1902;NU1903;NU1904</NoWarn>
     <WarningsNotAsErrors>$(WarningsNotAsErrors);CA1303;EPS06;CA1016;IDE0290;CA1062;CA1002;CA1017;CS8509;IDE0037</WarningsNotAsErrors>
