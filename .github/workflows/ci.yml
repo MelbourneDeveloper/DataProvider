@@ -32,7 +32,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '9.0.x'
+  DOTNET_VERSION: '10.0.x'
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
@@ -717,8 +717,8 @@ jobs:
           ls -la Samples/Dashboard/Dashboard.Web/wwwroot/js/ || echo "Dashboard.Web js folder not found"
           ls -la Samples/Dashboard/Dashboard.Web/wwwroot/js/vendor/ || echo "Dashboard.Web vendor folder not found"
           echo "=== Integration Tests wwwroot (output) ==="
-          ls -la Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net9.0/wwwroot/js/ || echo "Integration Tests js folder not found"
-          ls -la Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net9.0/wwwroot/js/vendor/ || echo "Integration Tests vendor folder not found"
+          ls -la Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net10.0/wwwroot/js/ || echo "Integration Tests js folder not found"
+          ls -la Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net10.0/wwwroot/js/vendor/ || echo "Integration Tests vendor folder not found"
 
       - name: Test
         run: dotnet test Samples/Dashboard/Dashboard.Integration.Tests -c Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"

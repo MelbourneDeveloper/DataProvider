@@ -29,7 +29,7 @@
 
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -57,9 +57,6 @@
     
     <!-- SqlParserCS for SQL parsing -->
     <PackageReference Include="SqlParserCS" Version="0.6.5" />
-
-    <!-- JSON serialization -->
-    <PackageReference Include="System.Text.Json" Version="9.0.0" />
 
     <!-- Result types for Railway Oriented Programming -->
     <PackageReference Include="Outcome" Version="1.0.0" />
