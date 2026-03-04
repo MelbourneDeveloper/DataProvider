@@ -311,48 +311,54 @@ app.MapPost(
         // Use pgvector for fast similarity search IN THE DATABASE
         // Scope the reader to ensure it's disposed before ACHI query
         {
-            await using var icdCmd = conn.CreateCommand();
-            icdCmd.CommandText = """
-            SELECT c."code", c."shortdescription", c."longdescription",
-                   c."inclusionterms", c."exclusionterms", c."codealso", c."codefirst",
-                   1 - (e."embedding"::vector <=> @queryVector::vector) as similarity
-            FROM icd10_code c
-            JOIN icd10_code_embedding e ON c."id" = e."codeid"
-            ORDER BY e."embedding"::vector <=> @queryVector::vector
-            LIMIT @limit
-            """;
-            icdCmd.Parameters.AddWithValue("@queryVector", vectorString);
-            icdCmd.Parameters.AddWithValue("@limit", request.IncludeAchi ? limit : limit);
-
-            await using var icdReader = await icdCmd.ExecuteReaderAsync().ConfigureAwait(false);
-            while (await icdReader.ReadAsync().ConfigureAwait(false))
+            var icdCmd = conn.CreateCommand();
+            await using (icdCmd.ConfigureAwait(false))
             {
-                var code = icdReader.GetString(0);
-                var (chapterNum, chapterTitle) = Icd10Chapters.GetChapter(code);
-                var category = Icd10Chapters.GetCategory(code);
+                icdCmd.CommandText = """
+                SELECT c."code", c."shortdescription", c."longdescription",
+                       c."inclusionterms", c."exclusionterms", c."codealso", c."codefirst",
+                       1 - (e."embedding"::vector <=> @queryVector::vector) as similarity
+                FROM icd10_code c
+                JOIN icd10_code_embedding e ON c."id" = e."codeid"
+                ORDER BY e."embedding"::vector <=> @queryVector::vector
+                LIMIT @limit
+                """;
+                icdCmd.Parameters.AddWithValue("@queryVector", vectorString);
+                icdCmd.Parameters.AddWithValue("@limit", request.IncludeAchi ? limit : limit);
 
-                // Read nullable fields with async null checks
-                var inclusionNull = await icdReader.IsDBNullAsync(3).ConfigureAwait(false);
-                var exclusionNull = await icdReader.IsDBNullAsync(4).ConfigureAwait(false);
-                var codeAlsoNull = await icdReader.IsDBNullAsync(5).ConfigureAwait(false);
-                var codeFirstNull = await icdReader.IsDBNullAsync(6).ConfigureAwait(false);
+                var icdReader = await icdCmd.ExecuteReaderAsync().ConfigureAwait(false);
+                await using (icdReader.ConfigureAwait(false))
+                {
+                    while (await icdReader.ReadAsync().ConfigureAwait(false))
+                    {
+                        var code = icdReader.GetString(0);
+                        var (chapterNum, chapterTitle) = Icd10Chapters.GetChapter(code);
+                        var category = Icd10Chapters.GetCategory(code);
 
-                icdResults.Add(
-                    new SearchResult(
-                        Code: code,
-                        Description: icdReader.GetString(1),
-                        LongDescription: icdReader.GetString(2),
-                        Confidence: icdReader.GetDouble(7),
-                        CodeType: "ICD10",
-                        Chapter: chapterNum,
-                        ChapterTitle: chapterTitle,
-                        Category: category,
-                        InclusionTerms: inclusionNull ? "" : icdReader.GetString(3),
-                        ExclusionTerms: exclusionNull ? "" : icdReader.GetString(4),
-                        CodeAlso: codeAlsoNull ? "" : icdReader.GetString(5),
-                        CodeFirst: codeFirstNull ? "" : icdReader.GetString(6)
-                    )
-                );
+                        // Read nullable fields with async null checks
+                        var inclusionNull = await icdReader.IsDBNullAsync(3).ConfigureAwait(false);
+                        var exclusionNull = await icdReader.IsDBNullAsync(4).ConfigureAwait(false);
+                        var codeAlsoNull = await icdReader.IsDBNullAsync(5).ConfigureAwait(false);
+                        var codeFirstNull = await icdReader.IsDBNullAsync(6).ConfigureAwait(false);
+
+                        icdResults.Add(
+                            new SearchResult(
+                                Code: code,
+                                Description: icdReader.GetString(1),
+                                LongDescription: icdReader.GetString(2),
+                                Confidence: icdReader.GetDouble(7),
+                                CodeType: "ICD10",
+                                Chapter: chapterNum,
+                                ChapterTitle: chapterTitle,
+                                Category: category,
+                                InclusionTerms: inclusionNull ? "" : icdReader.GetString(3),
+                                ExclusionTerms: exclusionNull ? "" : icdReader.GetString(4),
+                                CodeAlso: codeAlsoNull ? "" : icdReader.GetString(5),
+                                CodeFirst: codeFirstNull ? "" : icdReader.GetString(6)
+                            )
+                        );
+                    }
+                }
             }
         } // icdReader and icdCmd disposed here
 
@@ -360,7 +366,9 @@ app.MapPost(
         var achiResults = new List<SearchResult>();
         if (request.IncludeAchi)
         {
-            await using var achiCmd = conn.CreateCommand();
+            var achiCmd = conn.CreateCommand();
+            await using (achiCmd.ConfigureAwait(false))
+            {
             achiCmd.CommandText = """
             SELECT c."code", c."shortdescription", c."longdescription",
                    1 - (e."embedding"::vector <=> @queryVector::vector) as similarity
@@ -372,26 +380,30 @@ app.MapPost(
             achiCmd.Parameters.AddWithValue("@queryVector", vectorString);
             achiCmd.Parameters.AddWithValue("@limit", limit);
 
-            await using var achiReader = await achiCmd.ExecuteReaderAsync().ConfigureAwait(false);
-            while (await achiReader.ReadAsync().ConfigureAwait(false))
+            var achiReader = await achiCmd.ExecuteReaderAsync().ConfigureAwait(false);
+            await using (achiReader.ConfigureAwait(false))
             {
-                achiResults.Add(
-                    new SearchResult(
-                        Code: achiReader.GetString(0),
-                        Description: achiReader.GetString(1),
-                        LongDescription: achiReader.GetString(2),
-                        Confidence: achiReader.GetDouble(3),
-                        CodeType: "ACHI",
-                        Chapter: "",
-                        ChapterTitle: "",
-                        Category: "",
-                        InclusionTerms: "",
-                        ExclusionTerms: "",
-                        CodeAlso: "",
-                        CodeFirst: ""
-                    )
-                );
+                while (await achiReader.ReadAsync().ConfigureAwait(false))
+                {
+                    achiResults.Add(
+                        new SearchResult(
+                            Code: achiReader.GetString(0),
+                            Description: achiReader.GetString(1),
+                            LongDescription: achiReader.GetString(2),
+                            Confidence: achiReader.GetDouble(3),
+                            CodeType: "ACHI",
+                            Chapter: "",
+                            ChapterTitle: "",
+                            Category: "",
+                            InclusionTerms: "",
+                            ExclusionTerms: "",
+                            CodeAlso: "",
+                            CodeFirst: ""
+                        )
+                    );
+                }
             }
+            } // achiCmd disposed here
         }
 
         // Combine and rank all results
@@ -472,10 +484,8 @@ app.Run();
 // HELPER METHODS
 // ============================================================================
 
-/// <summary>
-/// Enriches a code record with derived hierarchy info when DB values are null.
-/// Uses Icd10Chapters to derive chapter/category from code prefix.
-/// </summary>
+// Enriches a code record with derived hierarchy info when DB values are null.
+// Uses Icd10Chapters to derive chapter/category from code prefix.
 static GetCodeByCode EnrichCodeWithDerivedHierarchy(GetCodeByCode code)
 {
     var (chapterNum, chapterTitle) = string.IsNullOrEmpty(code.ChapterNumber)
@@ -536,9 +546,7 @@ static object ToFhirProcedure(GetAchiCodeByCode code) =>
         Property = new[] { new { Code = "block", ValueString = code.BlockNumber } },
     };
 
-/// <summary>
-/// Enriches search result with derived hierarchy when DB values are null.
-/// </summary>
+// Enriches search result with derived hierarchy when DB values are null.
 static object EnrichSearchResult(SearchIcd10Codes code)
 {
     var codeValue = code.Code ?? "";
