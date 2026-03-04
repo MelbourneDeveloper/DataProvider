@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Data;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Migration;
@@ -8,22 +7,21 @@ using Outcome;
 using Reporting.Engine;
 using Selecta;
 using Xunit;
-
-using ConnResult = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>;
-using ConnOk = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>.Ok<
-    System.Data.IDbConnection,
-    Selecta.SqlError
->;
 using ConnError = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>.Error<
     System.Data.IDbConnection,
     Selecta.SqlError
 >;
-using EngineOk = Outcome.Result<ReportExecutionResult, Selecta.SqlError>.Ok<
-    ReportExecutionResult,
+using ConnOk = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>.Ok<
+    System.Data.IDbConnection,
     Selecta.SqlError
 >;
-using EngineError = Outcome.Result<ReportExecutionResult, Selecta.SqlError>.Error<
-    ReportExecutionResult,
+using ConnResult = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>;
+using EngineError = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Error<
+    Reporting.Engine.ReportExecutionResult,
+    Selecta.SqlError
+>;
+using EngineOk = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Ok<
+    Reporting.Engine.ReportExecutionResult,
     Selecta.SqlError
 >;
 
@@ -41,10 +39,7 @@ public sealed class ReportEngineTests : IDisposable
 
     public ReportEngineTests()
     {
-        _dbPath = Path.Combine(
-            Path.GetTempPath(),
-            $"reporting_test_{Guid.NewGuid()}.db"
-        );
+        _dbPath = Path.Combine(Path.GetTempPath(), $"reporting_test_{Guid.NewGuid()}.db");
         _connectionString = $"Data Source={_dbPath}";
         _connection = new SqliteConnection(_connectionString);
         _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
@@ -137,7 +132,7 @@ public sealed class ReportEngineTests : IDisposable
         // Assert
         Assert.True(result is EngineError, $"Expected error but got {result.GetType()}");
         var err = (EngineError)result;
-        Assert.Contains("not found", err.Value.Message);
+        Assert.Contains("not found", err.Value.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -240,7 +235,7 @@ public sealed class ReportEngineTests : IDisposable
         Assert.Equal(0, ok.Value.DataSources["testDs"].TotalRows);
     }
 
-    private ReportDefinition CreateTestReport(
+    private static ReportDefinition CreateTestReport(
         DataSourceType dataSourceType,
         string query,
         string connectionRef = "test-db"
@@ -288,12 +283,9 @@ public sealed class ReportEngineTests : IDisposable
             return new Result<string, SqlError>.Error<string, SqlError>(stmtErr.Value);
         }
 
-        var statement =
-            (
-                (
-                    Result<Lql.LqlStatement, SqlError>.Ok<Lql.LqlStatement, SqlError>
-                )statementResult
-            ).Value;
+        var statement = (
+            (Result<Lql.LqlStatement, SqlError>.Ok<Lql.LqlStatement, SqlError>)statementResult
+        ).Value;
         return Lql.SQLite.SqlStatementExtensionsSQLite.ToSQLite(statement);
     }
 
@@ -317,10 +309,34 @@ public sealed class ReportEngineTests : IDisposable
         }
 
         // Insert test data using parameterized inserts
-        InsertProduct(id: "prod-1", name: "Alpha Widget", category: "Widgets", price: 29.99, stock: 100);
-        InsertProduct(id: "prod-2", name: "Beta Gadget", category: "Gadgets", price: 49.99, stock: 50);
-        InsertProduct(id: "prod-3", name: "Gamma Widget", category: "Widgets", price: 19.99, stock: 200);
-        InsertProduct(id: "prod-4", name: "Delta Gadget", category: "Gadgets", price: 79.99, stock: 25);
+        InsertProduct(
+            id: "prod-1",
+            name: "Alpha Widget",
+            category: "Widgets",
+            price: 29.99,
+            stock: 100
+        );
+        InsertProduct(
+            id: "prod-2",
+            name: "Beta Gadget",
+            category: "Gadgets",
+            price: 49.99,
+            stock: 50
+        );
+        InsertProduct(
+            id: "prod-3",
+            name: "Gamma Widget",
+            category: "Widgets",
+            price: 19.99,
+            stock: 200
+        );
+        InsertProduct(
+            id: "prod-4",
+            name: "Delta Gadget",
+            category: "Gadgets",
+            price: 79.99,
+            stock: 25
+        );
     }
 
     private void InsertProduct(string id, string name, string category, double price, int stock)
@@ -343,8 +359,13 @@ public sealed class ReportEngineTests : IDisposable
         _loggerFactory?.Dispose();
         if (File.Exists(_dbPath))
         {
-            try { File.Delete(_dbPath); }
-            catch (IOException) { /* File may be locked */ }
+            try
+            {
+                File.Delete(_dbPath);
+            }
+            catch (IOException)
+            { /* File may be locked */
+            }
         }
     }
 }

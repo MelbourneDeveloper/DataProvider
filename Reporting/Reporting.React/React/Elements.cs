@@ -22,18 +22,14 @@ namespace Reporting.React.Core
         /// <summary>
         /// Creates a span element.
         /// </summary>
-        public static ReactElement Span(
-            string className = null,
-            params ReactElement[] children
-        ) => CreateElement("span", className, null, null, null, children);
+        public static ReactElement Span(string className = null, params ReactElement[] children) =>
+            CreateElement("span", className, null, null, null, children);
 
         /// <summary>
         /// Creates a paragraph element.
         /// </summary>
-        public static ReactElement P(
-            string className = null,
-            params ReactElement[] children
-        ) => CreateElement("p", className, null, null, null, children);
+        public static ReactElement P(string className = null, params ReactElement[] children) =>
+            CreateElement("p", className, null, null, null, children);
 
         /// <summary>
         /// Creates a heading element (h1-h6).
@@ -63,7 +59,13 @@ namespace Reporting.React.Core
                     onClick();
                 };
             }
-            var props = new { className = className, onClick = clickHandler, disabled = disabled, type = "button" };
+            var props = new
+            {
+                className = className,
+                onClick = clickHandler,
+                disabled = disabled,
+                type = "button",
+            };
             return Script.Call<ReactElement>("React.createElement", "button", props, children);
         }
 
@@ -84,7 +86,14 @@ namespace Reporting.React.Core
                 changeHandler = e =>
                     onChange(Script.Get<string>(Script.Get<object>(e, "target"), "value"));
             }
-            var props = new { className = className, type = type, value = value, placeholder = placeholder, onChange = changeHandler };
+            var props = new
+            {
+                className = className,
+                type = type,
+                value = value,
+                placeholder = placeholder,
+                onChange = changeHandler,
+            };
             return Script.Call<ReactElement>("React.createElement", "input", props);
         }
 
@@ -178,11 +187,23 @@ namespace Reporting.React.Core
         /// Creates an SVG rect element.
         /// </summary>
         public static ReactElement Rect(
-            double x, double y, double width, double height,
-            string fill = null, string className = null
+            double x,
+            double y,
+            double width,
+            double height,
+            string fill = null,
+            string className = null
         )
         {
-            var props = new { x = x, y = y, width = width, height = height, fill = fill, className = className };
+            var props = new
+            {
+                x = x,
+                y = y,
+                width = width,
+                height = height,
+                fill = fill,
+                className = className,
+            };
             return Script.Call<ReactElement>("React.createElement", "rect", props);
         }
 
@@ -190,12 +211,24 @@ namespace Reporting.React.Core
         /// Creates an SVG text element.
         /// </summary>
         public static ReactElement SvgText(
-            double x, double y, string content,
-            string fill = null, string textAnchor = null,
-            string fontSize = null, string transform = null
+            double x,
+            double y,
+            string content,
+            string fill = null,
+            string textAnchor = null,
+            string fontSize = null,
+            string transform = null
         )
         {
-            var props = new { x = x, y = y, fill = fill, textAnchor = textAnchor, fontSize = fontSize, transform = transform };
+            var props = new
+            {
+                x = x,
+                y = y,
+                fill = fill,
+                textAnchor = textAnchor,
+                fontSize = fontSize,
+                transform = transform,
+            };
             return Script.Call<ReactElement>("React.createElement", "text", props, content);
         }
 
@@ -203,11 +236,23 @@ namespace Reporting.React.Core
         /// Creates an SVG line element.
         /// </summary>
         public static ReactElement Line(
-            double x1, double y1, double x2, double y2,
-            string stroke = null, int strokeWidth = 1
+            double x1,
+            double y1,
+            double x2,
+            double y2,
+            string stroke = null,
+            int strokeWidth = 1
         )
         {
-            var props = new { x1 = x1, y1 = y1, x2 = x2, y2 = y2, stroke = stroke, strokeWidth = strokeWidth };
+            var props = new
+            {
+                x1 = x1,
+                y1 = y1,
+                x2 = x2,
+                y2 = y2,
+                stroke = stroke,
+                strokeWidth = strokeWidth,
+            };
             return Script.Call<ReactElement>("React.createElement", "line", props);
         }
 
@@ -223,13 +268,26 @@ namespace Reporting.React.Core
             );
 
         private static ReactElement CreateElement(
-            string tag, string className, string id,
-            object style, Action onClick, ReactElement[] children
+            string tag,
+            string className,
+            string id,
+            object style,
+            Action onClick,
+            ReactElement[] children
         )
         {
             Action<object> clickHandler = null;
-            if (onClick != null) { clickHandler = _ => onClick(); }
-            var props = new { className = className, id = id, style = style, onClick = clickHandler };
+            if (onClick != null)
+            {
+                clickHandler = _ => onClick();
+            }
+            var props = new
+            {
+                className = className,
+                id = id,
+                style = style,
+                onClick = clickHandler,
+            };
             return Script.Call<ReactElement>("React.createElement", tag, props, children);
         }
     }

@@ -6,14 +6,14 @@ using Selecta;
 
 namespace Reporting.Engine;
 
-using EngineResult = Result<ReportExecutionResult, SqlError>;
-using EngineError = Result<ReportExecutionResult, SqlError>.Error<ReportExecutionResult, SqlError>;
-using EngineOk = Result<ReportExecutionResult, SqlError>.Ok<ReportExecutionResult, SqlError>;
-using DsResult = Result<DataSourceResult, SqlError>;
-using DsError = Result<DataSourceResult, SqlError>.Error<DataSourceResult, SqlError>;
-using DsOk = Result<DataSourceResult, SqlError>.Ok<DataSourceResult, SqlError>;
 using ConnError = Result<IDbConnection, SqlError>.Error<IDbConnection, SqlError>;
 using ConnOk = Result<IDbConnection, SqlError>.Ok<IDbConnection, SqlError>;
+using DsError = Result<DataSourceResult, SqlError>.Error<DataSourceResult, SqlError>;
+using DsOk = Result<DataSourceResult, SqlError>.Ok<DataSourceResult, SqlError>;
+using DsResult = Result<DataSourceResult, SqlError>;
+using EngineError = Result<ReportExecutionResult, SqlError>.Error<ReportExecutionResult, SqlError>;
+using EngineOk = Result<ReportExecutionResult, SqlError>.Ok<ReportExecutionResult, SqlError>;
+using EngineResult = Result<ReportExecutionResult, SqlError>;
 using TranspileError = Result<string, SqlError>.Error<string, SqlError>;
 using TranspileOk = Result<string, SqlError>.Ok<string, SqlError>;
 

@@ -1,5 +1,4 @@
 <Project Sdk="h5.Target/24.11.53863">
-
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>netstandard2.1</TargetFramework>
@@ -32,18 +31,23 @@
   </ItemGroup>
 
   <!-- Download React vendor files before build -->
-  <Target Name="DownloadReactVendorFiles" BeforeTargets="Build" Condition="!Exists('$(MSBuildProjectDirectory)/wwwroot/js/vendor/react.development.js')">
+  <Target
+    Name="DownloadReactVendorFiles"
+    BeforeTargets="Build"
+    Condition="!Exists('$(MSBuildProjectDirectory)/wwwroot/js/vendor/react.development.js')"
+  >
     <Message Importance="high" Text="[Reporting] Downloading React vendor files..." />
     <MakeDir Directories="$(MSBuildProjectDirectory)/wwwroot/js/vendor" />
     <DownloadFile
       SourceUrl="https://unpkg.com/react@18/umd/react.development.js"
       DestinationFolder="$(MSBuildProjectDirectory)/wwwroot/js/vendor"
-      DestinationFileName="react.development.js" />
+      DestinationFileName="react.development.js"
+    />
     <DownloadFile
       SourceUrl="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
       DestinationFolder="$(MSBuildProjectDirectory)/wwwroot/js/vendor"
-      DestinationFileName="react-dom.development.js" />
+      DestinationFileName="react-dom.development.js"
+    />
     <Message Importance="high" Text="[Reporting] React vendor files downloaded successfully." />
   </Target>
-
 </Project>

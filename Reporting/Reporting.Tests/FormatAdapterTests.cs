@@ -72,10 +72,7 @@ public sealed class FormatAdapterTests
         // Arrange
         var dsResult = new DataSourceResult(
             ColumnNames: ["Name", "Notes"],
-            Rows:
-            [
-                ImmutableArray.Create<object?>("Widget", null),
-            ],
+            Rows: [ImmutableArray.Create<object?>("Widget", null)],
             TotalRows: 1
         );
 
@@ -93,10 +90,7 @@ public sealed class FormatAdapterTests
         // Arrange
         var dsResult = new DataSourceResult(
             ColumnNames: ["Name", "Description"],
-            Rows:
-            [
-                ImmutableArray.Create<object?>("Widget", (object?)"Small, portable device"),
-            ],
+            Rows: [ImmutableArray.Create<object?>("Widget", (object?)"Small, portable device")],
             TotalRows: 1
         );
 
@@ -105,18 +99,14 @@ public sealed class FormatAdapterTests
 
         // Assert
         var lines = csv.Split('\n');
-        Assert.Contains("\"Small, portable device\"", lines[1]);
+        Assert.Contains("\"Small, portable device\"", lines[1], StringComparison.Ordinal);
     }
 
     [Fact]
     public void ToCsv_WithEmptyResult_ReturnsHeaderOnly()
     {
         // Arrange
-        var dsResult = new DataSourceResult(
-            ColumnNames: ["Name", "Price"],
-            Rows: [],
-            TotalRows: 0
-        );
+        var dsResult = new DataSourceResult(ColumnNames: ["Name", "Price"], Rows: [], TotalRows: 0);
 
         // Act
         var csv = FormatAdapter.ToCsv(dsResult);

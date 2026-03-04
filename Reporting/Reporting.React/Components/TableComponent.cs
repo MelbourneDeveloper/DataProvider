@@ -87,10 +87,12 @@ namespace Reporting.React.Components
 
         private static int FindColumnIndex(string[] columnNames, string field)
         {
-            if (columnNames == null || field == null) return -1;
+            if (columnNames == null || field == null)
+                return -1;
             for (var i = 0; i < columnNames.Length; i++)
             {
-                if (columnNames[i] == field) return i;
+                if (columnNames[i] == field)
+                    return i;
             }
             return -1;
         }

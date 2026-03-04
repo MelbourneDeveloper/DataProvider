@@ -20,10 +20,7 @@ namespace Reporting.React.Components
                 _ => "report-text-body",
             };
 
-            return Div(
-                className: className,
-                children: new[] { Text(content ?? "") }
-            );
+            return Div(className: className, children: new[] { Text(content ?? "") });
         }
     }
 }

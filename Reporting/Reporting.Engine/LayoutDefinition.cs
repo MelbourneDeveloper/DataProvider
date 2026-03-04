@@ -6,25 +6,17 @@ namespace Reporting.Engine;
 /// <summary>
 /// Grid-based layout for the report.
 /// </summary>
-public sealed record LayoutDefinition(
-    int Columns,
-    ImmutableArray<LayoutRow> Rows
-);
+public sealed record LayoutDefinition(int Columns, ImmutableArray<LayoutRow> Rows);
 
 /// <summary>
 /// A row of cells in the report grid.
 /// </summary>
-public sealed record LayoutRow(
-    ImmutableArray<LayoutCell> Cells
-);
+public sealed record LayoutRow(ImmutableArray<LayoutCell> Cells);
 
 /// <summary>
 /// A cell in the report grid containing a component.
 /// </summary>
-public sealed record LayoutCell(
-    int ColSpan,
-    ComponentDefinition Component
-);
+public sealed record LayoutCell(int ColSpan, ComponentDefinition Component);
 
 /// <summary>
 /// A visual component that renders data.
@@ -60,7 +52,7 @@ public enum ComponentType
     Table,
 
     /// <summary>Static or templated text block.</summary>
-    Text
+    Text,
 }
 
 /// <summary>
@@ -79,22 +71,15 @@ public enum ChartType
     Pie,
 
     /// <summary>Area chart.</summary>
-    Area
+    Area,
 }
 
 /// <summary>
 /// Axis definition for charts.
 /// </summary>
-public sealed record AxisDefinition(
-    string Field,
-    string? Label,
-    string? Format
-);
+public sealed record AxisDefinition(string Field, string? Label, string? Format);
 
 /// <summary>
 /// Column definition for table components.
 /// </summary>
-public sealed record ColumnDefinition(
-    string Field,
-    string Header
-);
+public sealed record ColumnDefinition(string Field, string Header);

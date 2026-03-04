@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Playwright;
+using Xunit;
 
 namespace Reporting.Integration.Tests;
 
@@ -71,9 +71,9 @@ public sealed class ReportingApiTests
         Assert.Equal(12, layout.GetProperty("columns").GetInt32());
 
         // CRITICAL: connection strings must NOT be exposed
-        Assert.DoesNotContain("connectionRef", json);
-        Assert.DoesNotContain("Data Source", json);
-        Assert.DoesNotContain("reporting-db", json);
+        Assert.DoesNotContain("connectionRef", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("Data Source", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("reporting-db", json, StringComparison.Ordinal);
     }
 
     [Fact]

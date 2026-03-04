@@ -49,9 +49,13 @@ public static class FormatAdapter
         }
 
         var str = value.ToString() ?? "";
-        if (str.Contains(',') || str.Contains('"') || str.Contains('\n'))
+        if (
+            str.Contains(',', StringComparison.Ordinal)
+            || str.Contains('"', StringComparison.Ordinal)
+            || str.Contains('\n', StringComparison.Ordinal)
+        )
         {
-            return $"\"{str.Replace("\"", "\"\"")}\"";
+            return $"\"{str.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
         }
 
         return str;

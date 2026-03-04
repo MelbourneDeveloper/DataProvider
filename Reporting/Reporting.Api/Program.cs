@@ -4,11 +4,8 @@ using Lql;
 using Lql.SQLite;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Data.Sqlite;
-using Outcome;
 using Reporting.Engine;
 using Selecta;
-
-using ConnResult = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>;
 using ConnError = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>.Error<
     System.Data.IDbConnection,
     Selecta.SqlError
@@ -17,29 +14,13 @@ using ConnOk = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>.Ok<
     System.Data.IDbConnection,
     Selecta.SqlError
 >;
-using TranspileResult = Outcome.Result<string, Selecta.SqlError>;
-using TranspileError = Outcome.Result<string, Selecta.SqlError>.Error<string, Selecta.SqlError>;
-using LqlParseOk = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Ok<
-    Lql.LqlStatement,
-    Selecta.SqlError
->;
-using LqlParseError = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Error<
-    Lql.LqlStatement,
-    Selecta.SqlError
->;
-using EngineOk = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Ok<
-    Reporting.Engine.ReportExecutionResult,
-    Selecta.SqlError
->;
+using ConnResult = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>;
 using EngineError = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Error<
     Reporting.Engine.ReportExecutionResult,
     Selecta.SqlError
 >;
-using LoadDirOk = Outcome.Result<
-    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
-    Selecta.SqlError
->.Ok<
-    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
+using EngineOk = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Ok<
+    Reporting.Engine.ReportExecutionResult,
     Selecta.SqlError
 >;
 using LoadDirError = Outcome.Result<
@@ -49,13 +30,29 @@ using LoadDirError = Outcome.Result<
     System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
     Selecta.SqlError
 >;
+using LoadDirOk = Outcome.Result<
+    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
+    Selecta.SqlError
+>.Ok<
+    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
+    Selecta.SqlError
+>;
+using LqlParseError = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Error<
+    Lql.LqlStatement,
+    Selecta.SqlError
+>;
+using LqlParseOk = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Ok<
+    Lql.LqlStatement,
+    Selecta.SqlError
+>;
+using TranspileError = Outcome.Result<string, Selecta.SqlError>.Error<string, Selecta.SqlError>;
+using TranspileResult = Outcome.Result<string, Selecta.SqlError>;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<JsonOptions>(options =>
 {
-    options.SerializerOptions.PropertyNamingPolicy =
-        System.Text.Json.JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
 });
 
 builder.Services.AddCors(options =>
@@ -79,8 +76,7 @@ app.UseStaticFiles();
 
 // Load report definitions from the Reports directory
 var reportsDir =
-    app.Configuration["ReportsDirectory"]
-    ?? Path.Combine(AppContext.BaseDirectory, "Reports");
+    app.Configuration["ReportsDirectory"] ?? Path.Combine(AppContext.BaseDirectory, "Reports");
 
 var loadResult = ReportConfigLoader.LoadFromDirectory(
     directoryPath: reportsDir,
@@ -96,8 +92,8 @@ var reports = loadResult switch
 app.Logger.LogInformation("Loaded {Count} report definitions", reports.Count);
 
 // Connection registry from config
-var connectionStrings = app.Configuration
-    .GetSection("ConnectionStrings")
+var connectionStrings = app
+    .Configuration.GetSection("ConnectionStrings")
     .GetChildren()
     .ToImmutableDictionary(c => c.Key, c => c.Value ?? "");
 
@@ -110,7 +106,7 @@ ConnResult CreateConnection(string connectionRef)
 
     try
     {
-        IDbConnection connection = new SqliteConnection(connStr);
+        var connection = new SqliteConnection(connStr);
         connection.Open();
         return new ConnOk(connection);
     }
@@ -137,14 +133,9 @@ static IResult FormatExportResult(
 )
 {
     var targetDs = datasource ?? report.DataSources.FirstOrDefault()?.Id;
-    if (
-        targetDs is null
-        || !executionResult.DataSources.TryGetValue(targetDs, out var dsResult)
-    )
+    if (targetDs is null || !executionResult.DataSources.TryGetValue(targetDs, out var dsResult))
     {
-        return Results.NotFound(
-            new { Error = $"Data source '{targetDs}' not found" }
-        );
+        return Results.NotFound(new { Error = $"Data source '{targetDs}' not found" });
     }
 
     if (format == "csv")
@@ -162,12 +153,7 @@ var reportGroup = app.MapGroup("/api/reports").WithTags("Reports");
 
 reportGroup.MapGet(
     "/",
-    () =>
-        Results.Ok(
-            reports.Values
-                .Select(ReportMetadataMapper.ToMetadata)
-                .ToImmutableArray()
-        )
+    () => Results.Ok(reports.Values.Select(ReportMetadataMapper.ToMetadata).ToImmutableArray())
 );
 
 reportGroup.MapGet(

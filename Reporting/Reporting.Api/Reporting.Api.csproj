@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <NoWarn>CA1515;CA2100</NoWarn>
@@ -19,9 +18,8 @@
 
   <!-- Copy report definition files to output -->
   <ItemGroup>
-    <Content Include="Reports\*.report.json">
+    <Content Update="Reports\*.report.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-
 </Project>

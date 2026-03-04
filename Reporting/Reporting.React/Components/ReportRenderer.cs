@@ -30,11 +30,7 @@ namespace Reporting.React.Components
             var renderedRows = new ReactElement[rows.Length + 1];
 
             // Report title
-            renderedRows[0] = H(
-                1,
-                className: "report-title",
-                children: new[] { Text(title) }
-            );
+            renderedRows[0] = H(1, className: "report-title", children: new[] { Text(title) });
 
             for (var r = 0; r < rows.Length; r++)
             {

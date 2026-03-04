@@ -1,15 +1,11 @@
-using System.Collections.Immutable;
 using Microsoft.Extensions.Logging;
-using Outcome;
 using Reporting.Engine;
-using Selecta;
 using Xunit;
-
-using LoadOk = Outcome.Result<Reporting.Engine.ReportDefinition, Selecta.SqlError>.Ok<
+using LoadError = Outcome.Result<Reporting.Engine.ReportDefinition, Selecta.SqlError>.Error<
     Reporting.Engine.ReportDefinition,
     Selecta.SqlError
 >;
-using LoadError = Outcome.Result<Reporting.Engine.ReportDefinition, Selecta.SqlError>.Error<
+using LoadOk = Outcome.Result<Reporting.Engine.ReportDefinition, Selecta.SqlError>.Ok<
     Reporting.Engine.ReportDefinition,
     Selecta.SqlError
 >;
@@ -34,40 +30,40 @@ public sealed class ReportConfigLoaderTests : IDisposable
     {
         // Arrange
         var json = """
-        {
-            "id": "test-report",
-            "title": "Test Report",
-            "parameters": [
-                { "name": "startDate", "type": "Date", "label": "Start", "required": true, "default": null }
-            ],
-            "dataSources": [
-                {
-                    "id": "ds1",
-                    "type": "Sql",
-                    "connectionRef": "my-db",
-                    "query": "SELECT * FROM products",
-                    "parameters": ["startDate"]
-                }
-            ],
-            "layout": {
-                "columns": 12,
-                "rows": [
+            {
+                "id": "test-report",
+                "title": "Test Report",
+                "parameters": [
+                    { "name": "startDate", "type": "Date", "label": "Start", "required": true, "default": null }
+                ],
+                "dataSources": [
                     {
-                        "cells": [
-                            {
-                                "colSpan": 12,
-                                "component": {
-                                    "type": "Table",
-                                    "dataSource": "ds1",
-                                    "title": "Products"
-                                }
-                            }
-                        ]
+                        "id": "ds1",
+                        "type": "Sql",
+                        "connectionRef": "my-db",
+                        "query": "SELECT * FROM products",
+                        "parameters": ["startDate"]
                     }
-                ]
+                ],
+                "layout": {
+                    "columns": 12,
+                    "rows": [
+                        {
+                            "cells": [
+                                {
+                                    "colSpan": 12,
+                                    "component": {
+                                        "type": "Table",
+                                        "dataSource": "ds1",
+                                        "title": "Products"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
             }
-        }
-        """;
+            """;
 
         // Act
         var result = ReportConfigLoader.LoadFromJson(json: json, logger: _logger);
@@ -104,17 +100,17 @@ public sealed class ReportConfigLoaderTests : IDisposable
     {
         // Arrange
         var json = """
-        {
-            "id": "multi-ds",
-            "title": "Multi DS",
-            "parameters": [],
-            "dataSources": [
-                { "id": "sql-ds", "type": "Sql", "connectionRef": "db", "query": "SELECT 1", "parameters": [] },
-                { "id": "lql-ds", "type": "Lql", "connectionRef": "db", "query": "products |> select(Name)", "parameters": [] }
-            ],
-            "layout": { "columns": 12, "rows": [] }
-        }
-        """;
+            {
+                "id": "multi-ds",
+                "title": "Multi DS",
+                "parameters": [],
+                "dataSources": [
+                    { "id": "sql-ds", "type": "Sql", "connectionRef": "db", "query": "SELECT 1", "parameters": [] },
+                    { "id": "lql-ds", "type": "Lql", "connectionRef": "db", "query": "products |> select(Name)", "parameters": [] }
+                ],
+                "layout": { "columns": 12, "rows": [] }
+            }
+            """;
 
         // Act
         var result = ReportConfigLoader.LoadFromJson(json: json, logger: _logger);
@@ -132,43 +128,43 @@ public sealed class ReportConfigLoaderTests : IDisposable
     {
         // Arrange
         var json = """
-        {
-            "id": "layout-test",
-            "title": "Layout Test",
-            "parameters": [],
-            "dataSources": [],
-            "layout": {
-                "columns": 12,
-                "rows": [
-                    {
-                        "cells": [
-                            {
-                                "colSpan": 4,
-                                "component": {
-                                    "type": "Metric",
-                                    "dataSource": "ds1",
-                                    "title": "Total",
-                                    "value": "count",
-                                    "format": "number"
+            {
+                "id": "layout-test",
+                "title": "Layout Test",
+                "parameters": [],
+                "dataSources": [],
+                "layout": {
+                    "columns": 12,
+                    "rows": [
+                        {
+                            "cells": [
+                                {
+                                    "colSpan": 4,
+                                    "component": {
+                                        "type": "Metric",
+                                        "dataSource": "ds1",
+                                        "title": "Total",
+                                        "value": "count",
+                                        "format": "number"
+                                    }
+                                },
+                                {
+                                    "colSpan": 8,
+                                    "component": {
+                                        "type": "Chart",
+                                        "chartType": "Bar",
+                                        "dataSource": "ds1",
+                                        "title": "Chart",
+                                        "xAxis": { "field": "category" },
+                                        "yAxis": { "field": "count", "label": "Count" }
+                                    }
                                 }
-                            },
-                            {
-                                "colSpan": 8,
-                                "component": {
-                                    "type": "Chart",
-                                    "chartType": "Bar",
-                                    "dataSource": "ds1",
-                                    "title": "Chart",
-                                    "xAxis": { "field": "category" },
-                                    "yAxis": { "field": "count", "label": "Count" }
-                                }
-                            }
-                        ]
-                    }
-                ]
+                            ]
+                        }
+                    ]
+                }
             }
-        }
-        """;
+            """;
 
         // Act
         var result = ReportConfigLoader.LoadFromJson(json: json, logger: _logger);

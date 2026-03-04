@@ -6,9 +6,9 @@ using Selecta;
 
 namespace Reporting.Engine;
 
-using LoadResult = Result<ReportDefinition, SqlError>;
 using LoadError = Result<ReportDefinition, SqlError>.Error<ReportDefinition, SqlError>;
 using LoadOk = Result<ReportDefinition, SqlError>.Ok<ReportDefinition, SqlError>;
+using LoadResult = Result<ReportDefinition, SqlError>;
 
 /// <summary>
 /// Loads report definitions from JSON files.
@@ -56,7 +56,9 @@ public static class ReportConfigLoader
             var report = JsonSerializer.Deserialize<ReportDefinition>(json, JsonOptions);
             if (report is null)
             {
-                return new LoadError(SqlError.Create("Failed to deserialize report: result was null"));
+                return new LoadError(
+                    SqlError.Create("Failed to deserialize report: result was null")
+                );
             }
 
             logger.LogInformation(
@@ -91,10 +93,10 @@ public static class ReportConfigLoader
         {
             if (!Directory.Exists(directoryPath))
             {
-                return new Result<ImmutableArray<ReportDefinition>, SqlError>
-                    .Error<ImmutableArray<ReportDefinition>, SqlError>(
-                        SqlError.Create($"Report directory not found: {directoryPath}")
-                    );
+                return new Result<ImmutableArray<ReportDefinition>, SqlError>.Error<
+                    ImmutableArray<ReportDefinition>,
+                    SqlError
+                >(SqlError.Create($"Report directory not found: {directoryPath}"));
             }
 
             var reports = ImmutableArray.CreateBuilder<ReportDefinition>();
@@ -118,14 +120,18 @@ public static class ReportConfigLoader
 
             logger.LogInformation("Loaded {Count} reports from directory", reports.Count);
 
-            return new Result<ImmutableArray<ReportDefinition>, SqlError>
-                .Ok<ImmutableArray<ReportDefinition>, SqlError>(reports.ToImmutable());
+            return new Result<ImmutableArray<ReportDefinition>, SqlError>.Ok<
+                ImmutableArray<ReportDefinition>,
+                SqlError
+            >(reports.ToImmutable());
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to load reports from directory");
-            return new Result<ImmutableArray<ReportDefinition>, SqlError>
-                .Error<ImmutableArray<ReportDefinition>, SqlError>(SqlError.FromException(ex));
+            return new Result<ImmutableArray<ReportDefinition>, SqlError>.Error<
+                ImmutableArray<ReportDefinition>,
+                SqlError
+            >(SqlError.FromException(ex));
         }
     }
 }

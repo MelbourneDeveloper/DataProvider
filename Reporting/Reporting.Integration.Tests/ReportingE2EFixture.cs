@@ -10,6 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Playwright;
 using Migration;
 using Migration.SQLite;
+using Xunit;
 
 namespace Reporting.Integration.Tests;
 
@@ -51,10 +52,7 @@ public sealed class ReportingE2EFixture : IAsyncLifetime
 
     public ReportingE2EFixture()
     {
-        _dbPath = Path.Combine(
-            Path.GetTempPath(),
-            $"reporting_e2e_{Guid.NewGuid()}.db"
-        );
+        _dbPath = Path.Combine(Path.GetTempPath(), $"reporting_e2e_{Guid.NewGuid()}.db");
         _connectionString = $"Data Source={_dbPath}";
     }
 
@@ -101,7 +99,9 @@ public sealed class ReportingE2EFixture : IAsyncLifetime
             if (Browser is not null)
                 await Browser.CloseAsync();
         }
-        catch { /* best-effort cleanup */ }
+        catch
+        { /* best-effort cleanup */
+        }
         Playwright?.Dispose();
 
         try
@@ -109,7 +109,9 @@ public sealed class ReportingE2EFixture : IAsyncLifetime
             if (_frontendHost is not null)
                 await _frontendHost.StopAsync(TimeSpan.FromSeconds(5));
         }
-        catch { /* best-effort cleanup */ }
+        catch
+        { /* best-effort cleanup */
+        }
         _frontendHost?.Dispose();
 
         try
@@ -117,14 +119,21 @@ public sealed class ReportingE2EFixture : IAsyncLifetime
             if (_apiHost is not null)
                 await _apiHost.StopAsync(TimeSpan.FromSeconds(5));
         }
-        catch { /* best-effort cleanup */ }
+        catch
+        { /* best-effort cleanup */
+        }
         _apiHost?.Dispose();
 
         // Cleanup SQLite file
         if (File.Exists(_dbPath))
         {
-            try { File.Delete(_dbPath); }
-            catch (IOException) { /* file may be locked */ }
+            try
+            {
+                File.Delete(_dbPath);
+            }
+            catch (IOException)
+            { /* file may be locked */
+            }
         }
     }
 
@@ -257,13 +266,12 @@ public sealed class ReportingE2EFixture : IAsyncLifetime
             try
             {
                 var response = await client.GetAsync($"{baseUrl}{endpoint}");
-                if (
-                    response.IsSuccessStatusCode
-                    || response.StatusCode == HttpStatusCode.NotFound
-                )
+                if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NotFound)
                     return;
             }
-            catch { /* API not ready yet */ }
+            catch
+            { /* API not ready yet */
+            }
             await Task.Delay(500);
         }
         throw new TimeoutException($"Reporting API at {baseUrl} did not start within 30 seconds");

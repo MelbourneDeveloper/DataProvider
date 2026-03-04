@@ -14,10 +14,7 @@ public sealed record ConnectionRegistry(
 /// <summary>
 /// Configuration for a database connection.
 /// </summary>
-public sealed record ConnectionConfig(
-    DatabaseProvider Provider,
-    string ConnectionString
-);
+public sealed record ConnectionConfig(DatabaseProvider Provider, string ConnectionString);
 
 /// <summary>
 /// Supported database providers.
@@ -32,5 +29,5 @@ public enum DatabaseProvider
     Postgres,
 
     /// <summary>SQL Server database.</summary>
-    SqlServer
+    SqlServer,
 }

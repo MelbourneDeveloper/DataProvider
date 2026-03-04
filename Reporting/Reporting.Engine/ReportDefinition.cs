@@ -44,5 +44,5 @@ public enum ParameterType
     Decimal,
 
     /// <summary>Boolean parameter.</summary>
-    Boolean
+    Boolean,
 }

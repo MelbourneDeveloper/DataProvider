@@ -11,7 +11,7 @@ public sealed record DataSourceDefinition(
     DataSourceType Type,
     string? ConnectionRef,
     string? Query,
-    string? Url,
+    Uri? Url,
     string? Method,
     ImmutableDictionary<string, string>? Headers,
     ImmutableArray<string> Parameters
@@ -30,5 +30,5 @@ public enum DataSourceType
     Lql,
 
     /// <summary>REST API call returning JSON.</summary>
-    Api
+    Api,
 }

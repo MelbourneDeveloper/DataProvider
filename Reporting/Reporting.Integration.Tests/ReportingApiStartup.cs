@@ -10,11 +10,8 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Outcome;
 using Reporting.Engine;
 using Selecta;
-
-using ConnResult = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>;
 using ConnError = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>.Error<
     System.Data.IDbConnection,
     Selecta.SqlError
@@ -23,29 +20,13 @@ using ConnOk = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>.Ok<
     System.Data.IDbConnection,
     Selecta.SqlError
 >;
-using TranspileResult = Outcome.Result<string, Selecta.SqlError>;
-using TranspileError = Outcome.Result<string, Selecta.SqlError>.Error<string, Selecta.SqlError>;
-using LqlParseOk = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Ok<
-    Lql.LqlStatement,
-    Selecta.SqlError
->;
-using LqlParseError = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Error<
-    Lql.LqlStatement,
-    Selecta.SqlError
->;
-using EngineOk = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Ok<
-    Reporting.Engine.ReportExecutionResult,
-    Selecta.SqlError
->;
+using ConnResult = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>;
 using EngineError = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Error<
     Reporting.Engine.ReportExecutionResult,
     Selecta.SqlError
 >;
-using LoadDirOk = Outcome.Result<
-    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
-    Selecta.SqlError
->.Ok<
-    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
+using EngineOk = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Ok<
+    Reporting.Engine.ReportExecutionResult,
     Selecta.SqlError
 >;
 using LoadDirError = Outcome.Result<
@@ -55,6 +36,23 @@ using LoadDirError = Outcome.Result<
     System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
     Selecta.SqlError
 >;
+using LoadDirOk = Outcome.Result<
+    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
+    Selecta.SqlError
+>.Ok<
+    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
+    Selecta.SqlError
+>;
+using LqlParseError = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Error<
+    Lql.LqlStatement,
+    Selecta.SqlError
+>;
+using LqlParseOk = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Ok<
+    Lql.LqlStatement,
+    Selecta.SqlError
+>;
+using TranspileError = Outcome.Result<string, Selecta.SqlError>.Error<string, Selecta.SqlError>;
+using TranspileResult = Outcome.Result<string, Selecta.SqlError>;
 
 namespace Reporting.Integration.Tests;
 
@@ -81,10 +79,15 @@ public sealed class ReportingApiStartup
     /// <param name="services">Service collection to configure.</param>
     public void ConfigureServices(IServiceCollection services)
     {
+        services.AddSingleton(_configuration);
+
         services.Configure<JsonOptions>(options =>
         {
-            options.SerializerOptions.PropertyNamingPolicy =
-                System.Text.Json.JsonNamingPolicy.CamelCase;
+            options.SerializerOptions.PropertyNamingPolicy = System
+                .Text
+                .Json
+                .JsonNamingPolicy
+                .CamelCase;
         });
 
         services.AddCors(options =>
@@ -109,8 +112,7 @@ public sealed class ReportingApiStartup
 
         // Load report definitions
         var reportsDir =
-            _configuration["ReportsDirectory"]
-            ?? Path.Combine(AppContext.BaseDirectory, "Reports");
+            _configuration["ReportsDirectory"] ?? Path.Combine(AppContext.BaseDirectory, "Reports");
 
         var loadResult = ReportConfigLoader.LoadFromDirectory(
             directoryPath: reportsDir,
@@ -138,7 +140,7 @@ public sealed class ReportingApiStartup
 
             try
             {
-                IDbConnection connection = new SqliteConnection(connStr);
+                var connection = new SqliteConnection(connStr);
                 connection.Open();
                 return new ConnOk(connection);
             }
@@ -165,9 +167,7 @@ public sealed class ReportingApiStartup
                 "/",
                 () =>
                     Results.Ok(
-                        reports.Values
-                            .Select(ReportMetadataMapper.ToMetadata)
-                            .ToImmutableArray()
+                        reports.Values.Select(ReportMetadataMapper.ToMetadata).ToImmutableArray()
                     )
             );
 

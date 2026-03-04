@@ -74,7 +74,8 @@ namespace Reporting.React
             UseEffect(
                 () =>
                 {
-                    if (string.IsNullOrEmpty(apiBaseUrl)) return;
+                    if (string.IsNullOrEmpty(apiBaseUrl))
+                        return;
 
                     LoadReportList(state, setState);
 
@@ -117,7 +118,10 @@ namespace Reporting.React
             return RenderReportList(state, setState);
         }
 
-        private static ReactElement RenderReportList(AppState state, System.Action<AppState> setState)
+        private static ReactElement RenderReportList(
+            AppState state,
+            System.Action<AppState> setState
+        )
         {
             var reports = state.ReportList ?? new object[0];
 
@@ -128,7 +132,14 @@ namespace Reporting.React
                     children: new[]
                     {
                         H(2, children: new[] { Text("Report Viewer") }),
-                        P(children: new[] { Text("No reports available. Configure the API base URL and add report definitions.") }),
+                        P(
+                            children: new[]
+                            {
+                                Text(
+                                    "No reports available. Configure the API base URL and add report definitions."
+                                ),
+                            }
+                        ),
                     }
                 );
             }
@@ -144,10 +155,7 @@ namespace Reporting.React
                 reportItems[i] = Div(
                     className: "report-list-item",
                     onClick: () => LoadAndExecuteReport(capturedId, state, setState),
-                    children: new[]
-                    {
-                        H(3, children: new[] { Text(title) }),
-                    }
+                    children: new[] { H(3, children: new[] { Text(title) }) }
                 );
             }
 
@@ -161,7 +169,10 @@ namespace Reporting.React
             );
         }
 
-        private static async void LoadReportList(AppState currentState, System.Action<AppState> setState)
+        private static async void LoadReportList(
+            AppState currentState,
+            System.Action<AppState> setState
+        )
         {
             try
             {
@@ -238,7 +249,8 @@ namespace Reporting.React
             if (windowConfig != null)
             {
                 var value = Script.Get<string>(windowConfig, key);
-                if (!string.IsNullOrEmpty(value)) return value;
+                if (!string.IsNullOrEmpty(value))
+                    return value;
             }
             return defaultValue;
         }

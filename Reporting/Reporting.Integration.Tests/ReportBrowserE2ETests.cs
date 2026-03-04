@@ -1,4 +1,5 @@
 using Microsoft.Playwright;
+using Xunit;
 
 namespace Reporting.Integration.Tests;
 
@@ -32,9 +33,9 @@ public sealed class ReportBrowserE2ETests
         // Should show available reports or auto-load
         var pageContent = await page.ContentAsync();
         Assert.True(
-            pageContent.Contains("E2E Product Report")
-            || pageContent.Contains("Available Reports")
-            || pageContent.Contains("report"),
+            pageContent.Contains("E2E Product Report", StringComparison.Ordinal)
+                || pageContent.Contains("Available Reports", StringComparison.Ordinal)
+                || pageContent.Contains("report", StringComparison.Ordinal),
             "Page should display report content or report list"
         );
 
@@ -60,7 +61,7 @@ public sealed class ReportBrowserE2ETests
         if (titleElement is not null)
         {
             var titleText = await titleElement.TextContentAsync();
-            Assert.Contains("E2E Product Report", titleText ?? "");
+            Assert.Contains("E2E Product Report", titleText ?? "", StringComparison.Ordinal);
         }
 
         await page.CloseAsync();
@@ -112,9 +113,9 @@ public sealed class ReportBrowserE2ETests
             titleTexts.Add(await title.TextContentAsync() ?? "");
         }
 
-        Assert.Contains(titleTexts, t => t.Contains("Total Products"));
-        Assert.Contains(titleTexts, t => t.Contains("Total Stock"));
-        Assert.Contains(titleTexts, t => t.Contains("Total Value"));
+        Assert.Contains(titleTexts, t => t.Contains("Total Products", StringComparison.Ordinal));
+        Assert.Contains(titleTexts, t => t.Contains("Total Stock", StringComparison.Ordinal));
+        Assert.Contains(titleTexts, t => t.Contains("Total Value", StringComparison.Ordinal));
 
         await page.CloseAsync();
     }
@@ -158,8 +159,14 @@ public sealed class ReportBrowserE2ETests
             chartTitleTexts.Add(await title.TextContentAsync() ?? "");
         }
 
-        Assert.Contains(chartTitleTexts, t => t.Contains("Products by Category"));
-        Assert.Contains(chartTitleTexts, t => t.Contains("Avg Price by Category"));
+        Assert.Contains(
+            chartTitleTexts,
+            t => t.Contains("Products by Category", StringComparison.Ordinal)
+        );
+        Assert.Contains(
+            chartTitleTexts,
+            t => t.Contains("Avg Price by Category", StringComparison.Ordinal)
+        );
 
         // Verify axis labels exist in SVG
         var svgTexts = await page.QuerySelectorAllAsync(".report-bar-chart text");
@@ -206,12 +213,12 @@ public sealed class ReportBrowserE2ETests
 
         // Verify actual product names appear in the table
         var tableContent = await page.InnerTextAsync(".report-table");
-        Assert.Contains("Alpha Widget", tableContent);
-        Assert.Contains("Beta Gadget", tableContent);
-        Assert.Contains("Gamma Widget", tableContent);
-        Assert.Contains("Delta Gadget", tableContent);
-        Assert.Contains("Epsilon Doohickey", tableContent);
-        Assert.Contains("Zeta Widget", tableContent);
+        Assert.Contains("Alpha Widget", tableContent, StringComparison.Ordinal);
+        Assert.Contains("Beta Gadget", tableContent, StringComparison.Ordinal);
+        Assert.Contains("Gamma Widget", tableContent, StringComparison.Ordinal);
+        Assert.Contains("Delta Gadget", tableContent, StringComparison.Ordinal);
+        Assert.Contains("Epsilon Doohickey", tableContent, StringComparison.Ordinal);
+        Assert.Contains("Zeta Widget", tableContent, StringComparison.Ordinal);
 
         // Verify table title
         var tableTitle = await page.QuerySelectorAsync(
@@ -219,7 +226,7 @@ public sealed class ReportBrowserE2ETests
         );
         Assert.NotNull(tableTitle);
         var titleText = await tableTitle.TextContentAsync();
-        Assert.Contains("All Products", titleText ?? "");
+        Assert.Contains("All Products", titleText ?? "", StringComparison.Ordinal);
 
         await page.CloseAsync();
     }
@@ -240,8 +247,8 @@ public sealed class ReportBrowserE2ETests
         var caption = await page.QuerySelectorAsync(".report-text-caption");
         Assert.NotNull(caption);
         var text = await caption.TextContentAsync();
-        Assert.Contains("E2E test report", text ?? "");
-        Assert.Contains("validates full stack rendering", text ?? "");
+        Assert.Contains("E2E test report", text ?? "", StringComparison.Ordinal);
+        Assert.Contains("validates full stack rendering", text ?? "", StringComparison.Ordinal);
 
         await page.CloseAsync();
     }
@@ -261,10 +268,7 @@ public sealed class ReportBrowserE2ETests
         );
 
         var rows = await page.QuerySelectorAllAsync(".report-row");
-        Assert.True(
-            rows.Count >= 4,
-            $"Expected at least 4 layout rows, got {rows.Count}"
-        );
+        Assert.True(rows.Count >= 4, $"Expected at least 4 layout rows, got {rows.Count}");
 
         // First row should have 3 metric cells (colSpan 4 each)
         var firstRowCells = await rows[0].QuerySelectorAllAsync(".report-cell");
@@ -330,7 +334,10 @@ public sealed class ReportBrowserE2ETests
 
         // Verify no error states visible
         var errors = await page.QuerySelectorAllAsync(".report-error, .report-viewer-error");
-        Assert.True(errors.Count == 0, "No error elements should be visible on a successful render");
+        Assert.True(
+            errors.Count == 0,
+            "No error elements should be visible on a successful render"
+        );
 
         await page.CloseAsync();
     }

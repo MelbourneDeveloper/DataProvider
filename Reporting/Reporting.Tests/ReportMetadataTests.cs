@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Reporting.Engine;
 using Xunit;
 
@@ -53,9 +52,9 @@ public sealed class ReportMetadataTests
 
         // Metadata should NOT contain connection strings or queries
         var json = System.Text.Json.JsonSerializer.Serialize(metadata);
-        Assert.DoesNotContain("secret-connection", json);
-        Assert.DoesNotContain("sensitive_data", json);
-        Assert.DoesNotContain("secret_table", json);
+        Assert.DoesNotContain("secret-connection", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("sensitive_data", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("secret_table", json, StringComparison.Ordinal);
     }
 
     [Fact]

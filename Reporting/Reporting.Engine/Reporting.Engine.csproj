@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <PackageId>Reporting.Engine</PackageId>
     <Description>Reporting engine: config parsing, data source execution, format adapters</Description>
     <NoWarn>CA1515</NoWarn>
+    <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,5 +18,4 @@
     <ProjectReference Include="..\..\Lql\Lql.Postgres\Lql.Postgres.csproj" />
     <ProjectReference Include="..\..\Other\Selecta\Selecta.csproj" />
   </ItemGroup>
-
 </Project>
