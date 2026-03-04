@@ -101,18 +101,18 @@ public static class ReportConfigLoader
 
             foreach (var file in Directory.GetFiles(directoryPath, "*.report.json"))
             {
-                var result = LoadFromFile(filePath: file, logger: logger);
-                if (result is LoadOk ok)
+                switch (LoadFromFile(filePath: file, logger: logger))
                 {
-                    reports.Add(ok.Value);
-                }
-                else if (result is LoadError err)
-                {
-                    logger.LogWarning(
-                        "Skipping invalid report file {FilePath}: {Error}",
-                        file,
-                        err.Value.Message
-                    );
+                    case LoadOk ok:
+                        reports.Add(ok.Value);
+                        break;
+                    case LoadError err:
+                        logger.LogWarning(
+                            "Skipping invalid report file {FilePath}: {Error}",
+                            file,
+                            err.Value.Message
+                        );
+                        break;
                 }
             }
 

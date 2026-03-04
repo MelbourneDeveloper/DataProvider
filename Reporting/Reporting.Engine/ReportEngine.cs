@@ -12,6 +12,10 @@ using EngineOk = Result<ReportExecutionResult, SqlError>.Ok<ReportExecutionResul
 using DsResult = Result<DataSourceResult, SqlError>;
 using DsError = Result<DataSourceResult, SqlError>.Error<DataSourceResult, SqlError>;
 using DsOk = Result<DataSourceResult, SqlError>.Ok<DataSourceResult, SqlError>;
+using ConnError = Result<IDbConnection, SqlError>.Error<IDbConnection, SqlError>;
+using ConnOk = Result<IDbConnection, SqlError>.Ok<IDbConnection, SqlError>;
+using TranspileError = Result<string, SqlError>.Error<string, SqlError>;
+using TranspileOk = Result<string, SqlError>.Ok<string, SqlError>;
 
 /// <summary>
 /// Executes report data sources and assembles results.
@@ -59,24 +63,24 @@ public static class ReportEngine
                 logger: logger
             );
 
-            if (dsResult is DsError dsErr)
+            switch (dsResult)
             {
-                logger.LogError(
-                    "Data source {DataSourceId} failed: {Error}",
-                    ds.Id,
-                    dsErr.Value.Message
-                );
-                return new EngineError(dsErr.Value);
+                case DsError dsErr:
+                    logger.LogError(
+                        "Data source {DataSourceId} failed: {Error}",
+                        ds.Id,
+                        dsErr.Value.Message
+                    );
+                    return new EngineError(dsErr.Value);
+                case DsOk dsOk:
+                    results.Add(ds.Id, dsOk.Value);
+                    logger.LogInformation(
+                        "Data source {DataSourceId} returned {RowCount} rows",
+                        ds.Id,
+                        dsOk.Value.TotalRows
+                    );
+                    break;
             }
-
-            var ok = (DsOk)dsResult;
-            results.Add(ds.Id, ok.Value);
-
-            logger.LogInformation(
-                "Data source {DataSourceId} returned {RowCount} rows",
-                ds.Id,
-                ok.Value.TotalRows
-            );
         }
 
         return new EngineOk(
@@ -117,9 +121,6 @@ public static class ReportEngine
             DataSourceType.Api => new DsError(
                 SqlError.Create("API data sources are not yet supported")
             ),
-            _ => new DsError(
-                SqlError.Create($"Unknown data source type: {dataSource.Type}")
-            ),
         };
     }
 
@@ -140,21 +141,17 @@ public static class ReportEngine
             return new DsError(SqlError.Create("SQL data source has no connection reference"));
         }
 
-        var connResult = connectionFactory(dataSource.ConnectionRef);
-        if (connResult is Result<IDbConnection, SqlError>.Error<IDbConnection, SqlError> connErr)
+        return connectionFactory(dataSource.ConnectionRef) switch
         {
-            return new DsError(connErr.Value);
-        }
-
-        var connection = ((Result<IDbConnection, SqlError>.Ok<IDbConnection, SqlError>)connResult).Value;
-
-        return ExecuteQueryOnConnection(
-            connection: connection,
-            sql: dataSource.Query,
-            parameterNames: dataSource.Parameters,
-            parameterValues: parameters,
-            logger: logger
-        );
+            ConnError connErr => new DsError(connErr.Value),
+            ConnOk connOk => ExecuteQueryOnConnection(
+                connection: connOk.Value,
+                sql: dataSource.Query,
+                parameterNames: dataSource.Parameters,
+                parameterValues: parameters,
+                logger: logger
+            ),
+        };
     }
 
     private static DsResult ExecuteLql(
@@ -175,30 +172,42 @@ public static class ReportEngine
             return new DsError(SqlError.Create("LQL data source has no connection reference"));
         }
 
-        var transpileResult = lqlTranspiler(dataSource.Query);
-        if (transpileResult is Result<string, SqlError>.Error<string, SqlError> transpileErr)
+        return lqlTranspiler(dataSource.Query) switch
         {
-            return new DsError(transpileErr.Value);
-        }
+            TranspileError transpileErr => new DsError(transpileErr.Value),
+            TranspileOk transpileOk => ExecuteTranspiledSql(
+                sql: transpileOk.Value,
+                connectionRef: dataSource.ConnectionRef,
+                parameterNames: dataSource.Parameters,
+                parameterValues: parameters,
+                connectionFactory: connectionFactory,
+                logger: logger
+            ),
+        };
+    }
 
-        var sql = ((Result<string, SqlError>.Ok<string, SqlError>)transpileResult).Value;
+    private static DsResult ExecuteTranspiledSql(
+        string sql,
+        string connectionRef,
+        ImmutableArray<string> parameterNames,
+        ImmutableDictionary<string, string> parameterValues,
+        Func<string, Result<IDbConnection, SqlError>> connectionFactory,
+        ILogger logger
+    )
+    {
         logger.LogInformation("LQL transpiled to SQL: {Sql}", sql);
 
-        var connResult = connectionFactory(dataSource.ConnectionRef);
-        if (connResult is Result<IDbConnection, SqlError>.Error<IDbConnection, SqlError> connErr)
+        return connectionFactory(connectionRef) switch
         {
-            return new DsError(connErr.Value);
-        }
-
-        var connection = ((Result<IDbConnection, SqlError>.Ok<IDbConnection, SqlError>)connResult).Value;
-
-        return ExecuteQueryOnConnection(
-            connection: connection,
-            sql: sql,
-            parameterNames: dataSource.Parameters,
-            parameterValues: parameters,
-            logger: logger
-        );
+            ConnError connErr => new DsError(connErr.Value),
+            ConnOk connOk => ExecuteQueryOnConnection(
+                connection: connOk.Value,
+                sql: sql,
+                parameterNames: parameterNames,
+                parameterValues: parameterValues,
+                logger: logger
+            ),
+        };
     }
 
     private static DsResult ExecuteQueryOnConnection(

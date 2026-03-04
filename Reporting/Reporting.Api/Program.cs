@@ -19,6 +19,36 @@ using ConnOk = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>.Ok<
 >;
 using TranspileResult = Outcome.Result<string, Selecta.SqlError>;
 using TranspileError = Outcome.Result<string, Selecta.SqlError>.Error<string, Selecta.SqlError>;
+using LqlParseOk = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Ok<
+    Lql.LqlStatement,
+    Selecta.SqlError
+>;
+using LqlParseError = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Error<
+    Lql.LqlStatement,
+    Selecta.SqlError
+>;
+using EngineOk = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Ok<
+    Reporting.Engine.ReportExecutionResult,
+    Selecta.SqlError
+>;
+using EngineError = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Error<
+    Reporting.Engine.ReportExecutionResult,
+    Selecta.SqlError
+>;
+using LoadDirOk = Outcome.Result<
+    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
+    Selecta.SqlError
+>.Ok<
+    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
+    Selecta.SqlError
+>;
+using LoadDirError = Outcome.Result<
+    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
+    Selecta.SqlError
+>.Error<
+    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
+    Selecta.SqlError
+>;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,11 +89,8 @@ var loadResult = ReportConfigLoader.LoadFromDirectory(
 
 var reports = loadResult switch
 {
-    Result<ImmutableArray<ReportDefinition>, SqlError>.Ok<
-        ImmutableArray<ReportDefinition>,
-        SqlError
-    > ok => ok.Value.ToImmutableDictionary(r => r.Id),
-    _ => ImmutableDictionary<string, ReportDefinition>.Empty,
+    LoadDirOk ok => ok.Value.ToImmutableDictionary(r => r.Id),
+    LoadDirError => ImmutableDictionary<string, ReportDefinition>.Empty,
 };
 
 app.Logger.LogInformation("Loaded {Count} report definitions", reports.Count);
@@ -83,7 +110,7 @@ ConnResult CreateConnection(string connectionRef)
 
     try
     {
-        var connection = (IDbConnection)new SqliteConnection(connStr);
+        IDbConnection connection = new SqliteConnection(connStr);
         connection.Open();
         return new ConnOk(connection);
     }
@@ -95,20 +122,38 @@ ConnResult CreateConnection(string connectionRef)
 
 TranspileResult TranspileLql(string lqlCode)
 {
-    var statementResult = LqlStatementConverter.ToStatement(lqlCode);
+    return LqlStatementConverter.ToStatement(lqlCode) switch
+    {
+        LqlParseError stmtErr => new TranspileError(stmtErr.Value),
+        LqlParseOk stmtOk => stmtOk.Value.ToSQLite(),
+    };
+}
+
+static IResult FormatExportResult(
+    ReportExecutionResult executionResult,
+    ReportDefinition report,
+    string? datasource,
+    string? format
+)
+{
+    var targetDs = datasource ?? report.DataSources.FirstOrDefault()?.Id;
     if (
-        statementResult
-        is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> stmtErr
+        targetDs is null
+        || !executionResult.DataSources.TryGetValue(targetDs, out var dsResult)
     )
     {
-        return new TranspileError(stmtErr.Value);
+        return Results.NotFound(
+            new { Error = $"Data source '{targetDs}' not found" }
+        );
     }
 
-    var statement =
-        (
-            (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)statementResult
-        ).Value;
-    return statement.ToSQLite();
+    if (format == "csv")
+    {
+        var csv = FormatAdapter.ToCsv(dsResult);
+        return Results.Text(csv, contentType: "text/csv");
+    }
+
+    return Results.Ok(dsResult);
 }
 
 // --- API Endpoints ---
@@ -142,21 +187,16 @@ reportGroup.MapPost(
             return Results.NotFound(new { Error = $"Report '{id}' not found" });
         }
 
-        var result = ReportEngine.Execute(
+        return ReportEngine.Execute(
             report: report,
             parameters: request.Parameters,
             connectionFactory: CreateConnection,
             lqlTranspiler: TranspileLql,
             logger: app.Logger
-        );
-
-        return result switch
+        ) switch
         {
-            Result<ReportExecutionResult, SqlError>.Ok<ReportExecutionResult, SqlError> ok
-                => Results.Ok(ok.Value),
-            Result<ReportExecutionResult, SqlError>.Error<ReportExecutionResult, SqlError> err
-                => Results.Problem(err.Value.Message),
-            _ => Results.Problem("Unexpected result type"),
+            EngineOk ok => Results.Ok(ok.Value),
+            EngineError err => Results.Problem(err.Value.Message),
         };
     }
 );
@@ -170,52 +210,22 @@ reportGroup.MapGet(
             return Results.NotFound(new { Error = $"Report '{id}' not found" });
         }
 
-        var parameters = ImmutableDictionary<string, string>.Empty;
-
-        var result = ReportEngine.Execute(
+        return ReportEngine.Execute(
             report: report,
-            parameters: parameters,
+            parameters: ImmutableDictionary<string, string>.Empty,
             connectionFactory: CreateConnection,
             lqlTranspiler: TranspileLql,
             logger: app.Logger
-        );
-
-        if (
-            result
-            is not Result<ReportExecutionResult, SqlError>.Ok<
-                ReportExecutionResult,
-                SqlError
-            > ok
-        )
+        ) switch
         {
-            var err =
-                (
-                    Result<ReportExecutionResult, SqlError>.Error<
-                        ReportExecutionResult,
-                        SqlError
-                    >
-                )result;
-            return Results.Problem(err.Value.Message);
-        }
-
-        var targetDs = datasource ?? report.DataSources.FirstOrDefault()?.Id;
-        if (
-            targetDs is null
-            || !ok.Value.DataSources.TryGetValue(targetDs, out var dsResult)
-        )
-        {
-            return Results.NotFound(
-                new { Error = $"Data source '{targetDs}' not found" }
-            );
-        }
-
-        if (format == "csv")
-        {
-            var csv = FormatAdapter.ToCsv(dsResult);
-            return Results.Text(csv, contentType: "text/csv");
-        }
-
-        return Results.Ok(dsResult);
+            EngineError err => Results.Problem(err.Value.Message),
+            EngineOk ok => FormatExportResult(
+                executionResult: ok.Value,
+                report: report,
+                datasource: datasource,
+                format: format
+            ),
+        };
     }
 );
 

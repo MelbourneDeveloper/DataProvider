@@ -25,6 +25,36 @@ using ConnOk = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>.Ok<
 >;
 using TranspileResult = Outcome.Result<string, Selecta.SqlError>;
 using TranspileError = Outcome.Result<string, Selecta.SqlError>.Error<string, Selecta.SqlError>;
+using LqlParseOk = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Ok<
+    Lql.LqlStatement,
+    Selecta.SqlError
+>;
+using LqlParseError = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Error<
+    Lql.LqlStatement,
+    Selecta.SqlError
+>;
+using EngineOk = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Ok<
+    Reporting.Engine.ReportExecutionResult,
+    Selecta.SqlError
+>;
+using EngineError = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Error<
+    Reporting.Engine.ReportExecutionResult,
+    Selecta.SqlError
+>;
+using LoadDirOk = Outcome.Result<
+    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
+    Selecta.SqlError
+>.Ok<
+    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
+    Selecta.SqlError
+>;
+using LoadDirError = Outcome.Result<
+    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
+    Selecta.SqlError
+>.Error<
+    System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
+    Selecta.SqlError
+>;
 
 namespace Reporting.Integration.Tests;
 
@@ -36,11 +66,19 @@ public sealed class ReportingApiStartup
 {
     private readonly IConfiguration _configuration;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ReportingApiStartup"/> class.
+    /// </summary>
+    /// <param name="configuration">Application configuration.</param>
     public ReportingApiStartup(IConfiguration configuration)
     {
         _configuration = configuration;
     }
 
+    /// <summary>
+    /// Configures services for the reporting API.
+    /// </summary>
+    /// <param name="services">Service collection to configure.</param>
     public void ConfigureServices(IServiceCollection services)
     {
         services.Configure<JsonOptions>(options =>
@@ -58,6 +96,10 @@ public sealed class ReportingApiStartup
         });
     }
 
+    /// <summary>
+    /// Configures the application middleware and endpoints.
+    /// </summary>
+    /// <param name="app">Application builder.</param>
     public void Configure(IApplicationBuilder app)
     {
         var logger = app.ApplicationServices.GetRequiredService<ILogger<ReportingApiStartup>>();
@@ -77,11 +119,8 @@ public sealed class ReportingApiStartup
 
         var reports = loadResult switch
         {
-            Result<ImmutableArray<ReportDefinition>, SqlError>.Ok<
-                ImmutableArray<ReportDefinition>,
-                SqlError
-            > ok => ok.Value.ToImmutableDictionary(r => r.Id),
-            _ => ImmutableDictionary<string, ReportDefinition>.Empty,
+            LoadDirOk ok => ok.Value.ToImmutableDictionary(r => r.Id),
+            LoadDirError => ImmutableDictionary<string, ReportDefinition>.Empty,
         };
 
         logger.LogInformation("E2E API loaded {Count} reports", reports.Count);
@@ -99,7 +138,7 @@ public sealed class ReportingApiStartup
 
             try
             {
-                var connection = (IDbConnection)new SqliteConnection(connStr);
+                IDbConnection connection = new SqliteConnection(connStr);
                 connection.Open();
                 return new ConnOk(connection);
             }
@@ -111,16 +150,11 @@ public sealed class ReportingApiStartup
 
         static TranspileResult TranspileLql(string lqlCode)
         {
-            var statementResult = LqlStatementConverter.ToStatement(lqlCode);
-            if (
-                statementResult
-                is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> stmtErr
-            )
-                return new TranspileError(stmtErr.Value);
-
-            var statement =
-                ((Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)statementResult).Value;
-            return statement.ToSQLite();
+            return LqlStatementConverter.ToStatement(lqlCode) switch
+            {
+                LqlParseError stmtErr => new TranspileError(stmtErr.Value),
+                LqlParseOk stmtOk => stmtOk.Value.ToSQLite(),
+            };
         }
 
         app.UseEndpoints(endpoints =>
@@ -152,25 +186,16 @@ public sealed class ReportingApiStartup
                     if (!reports.TryGetValue(id, out var report))
                         return Results.NotFound(new { Error = $"Report '{id}' not found" });
 
-                    var result = ReportEngine.Execute(
+                    return ReportEngine.Execute(
                         report: report,
                         parameters: request.Parameters,
                         connectionFactory: CreateConnection,
                         lqlTranspiler: TranspileLql,
                         logger: logger
-                    );
-
-                    return result switch
+                    ) switch
                     {
-                        Result<ReportExecutionResult, SqlError>.Ok<
-                            ReportExecutionResult,
-                            SqlError
-                        > ok => Results.Ok(ok.Value),
-                        Result<ReportExecutionResult, SqlError>.Error<
-                            ReportExecutionResult,
-                            SqlError
-                        > err => Results.Problem(err.Value.Message),
-                        _ => Results.Problem("Unexpected result type"),
+                        EngineOk ok => Results.Ok(ok.Value),
+                        EngineError err => Results.Problem(err.Value.Message),
                     };
                 }
             );
