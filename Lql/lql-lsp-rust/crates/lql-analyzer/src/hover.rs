@@ -1,3 +1,5 @@
+use crate::schema::SchemaCache;
+
 /// Hover information for a word in the document.
 #[derive(Debug, Clone)]
 pub struct HoverInfo {
@@ -7,6 +9,7 @@ pub struct HoverInfo {
 }
 
 /// Get hover/IntelliPrompt information for a word at the cursor.
+/// Falls back gracefully with no schema.
 pub fn get_hover(word: &str) -> Option<HoverInfo> {
     let lower = word.to_ascii_lowercase();
     HOVER_DATABASE
@@ -17,6 +20,78 @@ pub fn get_hover(word: &str) -> Option<HoverInfo> {
             detail: detail.to_string(),
             signature: sig.map(|s| s.to_string()),
         })
+}
+
+/// Get hover info with schema awareness.
+/// If `qualified` is "Table.Column", shows column type from the database.
+/// If `word` is a table name, shows table schema (columns and types).
+pub fn get_hover_with_schema(
+    word: &str,
+    qualified: Option<(&str, &str)>,
+    schema: Option<&SchemaCache>,
+) -> Option<HoverInfo> {
+    // Try qualified column hover first: "Table.Column"
+    if let (Some((table_name, col_name)), Some(schema)) = (qualified, schema) {
+        if let Some(table) = schema.get_table(table_name) {
+            if let Some(col) = table.get_column(col_name) {
+                return Some(HoverInfo {
+                    title: format!(
+                        "{}.{} — {}",
+                        table.name,
+                        col.name,
+                        col.type_description()
+                    ),
+                    detail: format!(
+                        "Column `{}` on table `{}`\n\nType: `{}`\nNullable: {}\nPrimary Key: {}",
+                        col.name,
+                        table.name,
+                        col.sql_type,
+                        if col.is_nullable { "yes" } else { "no" },
+                        if col.is_primary_key { "yes" } else { "no" },
+                    ),
+                    signature: Some(format!(
+                        "{}.{} : {}",
+                        table.name,
+                        col.name,
+                        col.type_description()
+                    )),
+                });
+            }
+        }
+    }
+
+    // Try table name hover
+    if let Some(schema) = schema {
+        if let Some(table) = schema.get_table(word) {
+            let col_lines: Vec<String> = table
+                .columns
+                .iter()
+                .map(|c| format!("  {} : {}", c.name, c.type_description()))
+                .collect();
+            return Some(HoverInfo {
+                title: format!("{} — Table ({} columns)", table.name, table.columns.len()),
+                detail: format!(
+                    "Database table `{}`\nSchema: `{}`\n\nColumns:\n{}",
+                    table.name,
+                    table.schema,
+                    col_lines.join("\n")
+                ),
+                signature: Some(format!(
+                    "{} ({})",
+                    table.name,
+                    table
+                        .columns
+                        .iter()
+                        .map(|c| c.name.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )),
+            });
+        }
+    }
+
+    // Fall back to keyword hover
+    get_hover(word)
 }
 
 /// Static database of hover information for all LQL constructs.

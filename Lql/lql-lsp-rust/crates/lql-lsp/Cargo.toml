@@ -12,5 +12,7 @@ lql-parser = { path = "../lql-parser" }
 lql-analyzer = { path = "../lql-analyzer" }
 tower-lsp = "0.20"
 tokio = { version = "1", features = ["full"] }
+tokio-postgres = "0.7"
 serde_json = "1"
 serde = { version = "1", features = ["derive"] }
+tracing = "0.1"

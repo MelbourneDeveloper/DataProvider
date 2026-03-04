@@ -1,10 +1,14 @@
+mod db;
+
 use lql_analyzer::{
-    analyze, extract_symbols, get_completions, get_hover, CompletionContext, CompletionKind,
-    DiagnosticSeverity as LqlSeverity, ScopeMap, SymbolKind as LqlSymbolKind,
+    analyze, extract_symbols, get_completions, get_hover_with_schema, CompletionContext,
+    CompletionKind, DiagnosticSeverity as LqlSeverity, SchemaCache, ScopeMap,
+    SymbolKind as LqlSymbolKind,
 };
 use lql_parser::parse_lql;
 use std::collections::HashMap;
 use std::sync::Mutex;
+use tokio::sync::RwLock;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
@@ -12,6 +16,8 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 struct LqlBackend {
     client: Client,
     documents: Mutex<HashMap<Url, String>>,
+    schema: RwLock<Option<SchemaCache>>,
+    init_connection_string: Mutex<Option<String>>,
 }
 
 impl LqlBackend {
@@ -19,19 +25,17 @@ impl LqlBackend {
         Self {
             client,
             documents: Mutex::new(HashMap::new()),
+            schema: RwLock::new(None),
+            init_connection_string: Mutex::new(None),
         }
     }
 
     fn build_scope(source: &str) -> ScopeMap {
         let mut scope = ScopeMap::new();
-
         for line in source.lines() {
             let trimmed = line.trim();
-
-            // Extract let bindings
             if trimmed.starts_with("let ") {
-                let rest = &trimmed[4..];
-                let name: String = rest
+                let name: String = trimmed[4..]
                     .chars()
                     .take_while(|c| c.is_alphanumeric() || *c == '_')
                     .collect();
@@ -39,8 +43,6 @@ impl LqlBackend {
                     scope.add_binding(name, 0, 0);
                 }
             }
-
-            // Extract table references (first ident in a pipeline or after join)
             let bytes = trimmed.as_bytes();
             let mut i = 0;
             while i < bytes.len() {
@@ -52,7 +54,6 @@ impl LqlBackend {
                         i += 1;
                     }
                     let word = &trimmed[start..i];
-                    // Heuristic: if followed by `|>` or `.` it's likely a table
                     let rest_trimmed = trimmed[i..].trim_start();
                     if rest_trimmed.starts_with("|>") || rest_trimmed.starts_with('.') {
                         let lower = word.to_ascii_lowercase();
@@ -65,31 +66,27 @@ impl LqlBackend {
                 }
             }
         }
-
         scope
     }
 
     async fn publish_diagnostics(&self, uri: Url, source: &str) {
-        // Build diagnostics synchronously (ANTLR parse tree uses Rc, not Send)
         let diags = Self::collect_diagnostics(source);
         self.client.publish_diagnostics(uri, diags, None).await;
     }
 
     fn collect_diagnostics(source: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         let scope = Self::build_scope(source);
-
-        // Parse errors from ANTLR — parse_result contains Rc so must not cross await
         let parse_result = parse_lql(source);
         let mut diags: Vec<tower_lsp::lsp_types::Diagnostic> = parse_result
             .errors
             .iter()
             .map(|e| {
-                let (start_line, start_col) = e.span.start_line_col(source);
-                let (end_line, end_col) = e.span.end_line_col(source);
+                let (sl, sc) = e.span.start_line_col(source);
+                let (el, ec) = e.span.end_line_col(source);
                 tower_lsp::lsp_types::Diagnostic {
                     range: Range {
-                        start: Position::new(start_line, start_col),
-                        end: Position::new(end_line, end_col),
+                        start: Position::new(sl, sc),
+                        end: Position::new(el, ec),
                     },
                     severity: Some(tower_lsp::lsp_types::DiagnosticSeverity::ERROR),
                     source: Some("lql".into()),
@@ -98,11 +95,9 @@ impl LqlBackend {
                 }
             })
             .collect();
-        drop(parse_result); // Explicitly drop Rc-containing result
+        drop(parse_result);
 
-        // Semantic diagnostics from analyzer
-        let analyzer_diags = analyze(source, &scope);
-        for d in analyzer_diags {
+        for d in analyze(source, &scope) {
             let severity = match d.severity {
                 LqlSeverity::Error => tower_lsp::lsp_types::DiagnosticSeverity::ERROR,
                 LqlSeverity::Warning => tower_lsp::lsp_types::DiagnosticSeverity::WARNING,
@@ -120,22 +115,27 @@ impl LqlBackend {
                 ..Default::default()
             });
         }
-
         diags
     }
 
-    fn get_word_at_position(source: &str, position: Position) -> Option<String> {
-        let line = source.lines().nth(position.line as usize)?;
+    /// Detect qualified "Table.Column" at cursor for hover.
+    /// Returns (word, Option<(table_name, column_name)>).
+    fn get_qualified_at_position(
+        source: &str,
+        position: Position,
+    ) -> (Option<String>, Option<(String, String)>) {
+        let line = match source.lines().nth(position.line as usize) {
+            Some(l) => l,
+            None => return (None, None),
+        };
         let col = position.character as usize;
-
         if col > line.len() {
-            return None;
+            return (None, None);
         }
 
         let bytes = line.as_bytes();
         let mut start = col;
         let mut end = col;
-
         while start > 0
             && (bytes[start - 1].is_ascii_alphanumeric() || bytes[start - 1] == b'_')
         {
@@ -144,12 +144,27 @@ impl LqlBackend {
         while end < bytes.len() && (bytes[end].is_ascii_alphanumeric() || bytes[end] == b'_') {
             end += 1;
         }
-
         if start == end {
-            None
-        } else {
-            Some(line[start..end].to_string())
+            return (None, None);
         }
+        let word = line[start..end].to_string();
+
+        // Check for "qualifier." before the word
+        if start >= 2 && bytes[start - 1] == b'.' {
+            let dot_pos = start - 1;
+            let mut q_start = dot_pos;
+            while q_start > 0
+                && (bytes[q_start - 1].is_ascii_alphanumeric() || bytes[q_start - 1] == b'_')
+            {
+                q_start -= 1;
+            }
+            if q_start < dot_pos {
+                let qualifier = line[q_start..dot_pos].to_string();
+                return (Some(word.clone()), Some((qualifier, word)));
+            }
+        }
+
+        (Some(word), None)
     }
 
     fn compute_completion_context(source: &str, position: Position) -> CompletionContext {
@@ -160,7 +175,6 @@ impl LqlBackend {
         let col = (position.character as usize).min(line.len());
         let line_prefix = &line[..col];
 
-        // Determine word prefix
         let word_prefix: String = line_prefix
             .chars()
             .rev()
@@ -171,24 +185,39 @@ impl LqlBackend {
             .collect();
 
         let trimmed_prefix = line_prefix.trim();
-
-        // Check if after a pipe — also look at prefix without current word
-        let prefix_before_word = line_prefix.trim_end_matches(|c: char| c.is_alphanumeric() || c == '_');
+        let prefix_before_word =
+            line_prefix.trim_end_matches(|c: char| c.is_alphanumeric() || c == '_');
         let after_pipe = trimmed_prefix.ends_with("|>")
             || trimmed_prefix.ends_with("|> ")
             || prefix_before_word.trim_end().ends_with("|>");
 
-        // Check if we're in an argument list (simplified heuristic)
         let open_parens = line_prefix.matches('(').count();
         let close_parens = line_prefix.matches(')').count();
         let in_arg_list = open_parens > close_parens;
 
-        // Check if we're in a lambda (look for `fn(...)` pattern in context)
-        let in_lambda = source[..source.lines().take(position.line as usize + 1)
+        let in_lambda = source[..source
+            .lines()
+            .take(position.line as usize + 1)
             .map(|l| l.len() + 1)
             .sum::<usize>()
             .min(source.len())]
             .contains("=>");
+
+        // Detect table qualifier: "Table." or "Table.prefix"
+        let before_word = &line_prefix[..line_prefix.len() - word_prefix.len()];
+        let table_qualifier = if before_word.ends_with('.') {
+            let q: String = before_word[..before_word.len() - 1]
+                .chars()
+                .rev()
+                .take_while(|c| c.is_alphanumeric() || *c == '_')
+                .collect::<String>()
+                .chars()
+                .rev()
+                .collect();
+            if q.is_empty() { None } else { Some(q) }
+        } else {
+            None
+        };
 
         CompletionContext {
             line_prefix: line_prefix.to_string(),
@@ -196,6 +225,7 @@ impl LqlBackend {
             after_pipe,
             in_lambda,
             word_prefix,
+            table_qualifier,
         }
     }
 }
@@ -215,7 +245,16 @@ fn is_keyword_name(word: &str) -> bool {
 
 #[tower_lsp::async_trait]
 impl LanguageServer for LqlBackend {
-    async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
+    async fn initialize(&self, params: InitializeParams) -> Result<InitializeResult> {
+        // Extract connection string from initializationOptions if provided
+        if let Some(ref options) = params.initialization_options {
+            if let Some(conn) = options.get("connectionString").and_then(|v| v.as_str()) {
+                if !conn.is_empty() {
+                    *self.init_connection_string.lock().unwrap() = Some(conn.to_string());
+                }
+            }
+        }
+
         Ok(InitializeResult {
             capabilities: ServerCapabilities {
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
@@ -245,6 +284,53 @@ impl LanguageServer for LqlBackend {
         self.client
             .log_message(MessageType::INFO, "LQL Language Server initialized")
             .await;
+
+        // Resolve connection string: initializationOptions > env var
+        let conn_str = self
+            .init_connection_string
+            .lock()
+            .unwrap()
+            .clone()
+            .or_else(db::discover_connection_string);
+
+        let conn_str = match conn_str {
+            Some(s) => s,
+            None => {
+                self.client
+                    .log_message(
+                        MessageType::INFO,
+                        "No DB connection configured (set LQL_CONNECTION_STRING)",
+                    )
+                    .await;
+                return;
+            }
+        };
+
+        self.client
+            .log_message(MessageType::INFO, "Connecting to database for schema...")
+            .await;
+
+        // Initial schema fetch — write directly since we have &self
+        match db::fetch_schema(&conn_str).await {
+            Ok(cache) => {
+                let count = cache.table_count();
+                *self.schema.write().await = Some(cache);
+                self.client
+                    .log_message(
+                        MessageType::INFO,
+                        format!("Schema loaded: {count} tables"),
+                    )
+                    .await;
+            }
+            Err(e) => {
+                self.client
+                    .log_message(
+                        MessageType::WARNING,
+                        format!("Schema fetch failed: {e}"),
+                    )
+                    .await;
+            }
+        }
     }
 
     async fn shutdown(&self) -> Result<()> {
@@ -284,16 +370,20 @@ impl LanguageServer for LqlBackend {
         let uri = &params.text_document_position.text_document.uri;
         let position = params.text_document_position.position;
 
-        let docs = self.documents.lock().unwrap();
-        let source = match docs.get(uri) {
-            Some(s) => s.clone(),
-            None => return Ok(None),
+        let source = {
+            let docs = self.documents.lock().unwrap();
+            match docs.get(uri) {
+                Some(s) => s.clone(),
+                None => return Ok(None),
+            }
         };
-        drop(docs);
 
         let scope = Self::build_scope(&source);
         let ctx = Self::compute_completion_context(&source, position);
-        let items = get_completions(&ctx, &scope);
+
+        // Read schema (cheap clone — SchemaCache uses Arc internally)
+        let schema = self.schema.read().await.clone();
+        let items = get_completions(&ctx, &scope, schema.as_ref());
 
         let lsp_items: Vec<tower_lsp::lsp_types::CompletionItem> = items
             .into_iter()
@@ -325,34 +415,38 @@ impl LanguageServer for LqlBackend {
         let uri = &params.text_document_position_params.text_document.uri;
         let position = params.text_document_position_params.position;
 
-        let docs = self.documents.lock().unwrap();
-        let source = match docs.get(uri) {
-            Some(s) => s.clone(),
-            None => return Ok(None),
+        let source = {
+            let docs = self.documents.lock().unwrap();
+            match docs.get(uri) {
+                Some(s) => s.clone(),
+                None => return Ok(None),
+            }
         };
-        drop(docs);
 
-        let word = match Self::get_word_at_position(&source, position) {
+        let (word, qualified) = Self::get_qualified_at_position(&source, position);
+        let word = match word {
             Some(w) => w,
             None => return Ok(None),
         };
 
-        match get_hover(&word) {
-            Some(info) => {
-                let mut content = format!("**{}**\n\n{}", info.title, info.detail);
-                if let Some(sig) = info.signature {
-                    content.push_str(&format!("\n\n```lql\n{sig}\n```"));
-                }
-                Ok(Some(Hover {
-                    contents: HoverContents::Markup(MarkupContent {
-                        kind: MarkupKind::Markdown,
-                        value: content,
-                    }),
-                    range: None,
-                }))
-            }
-            None => Ok(None),
+        let schema = self.schema.read().await.clone();
+        let qualified_refs = qualified.as_ref().map(|(t, c)| (t.as_str(), c.as_str()));
+        let info = match get_hover_with_schema(&word, qualified_refs, schema.as_ref()) {
+            Some(info) => info,
+            None => return Ok(None),
+        };
+
+        let mut content = format!("**{}**\n\n{}", info.title, info.detail);
+        if let Some(sig) = info.signature {
+            content.push_str(&format!("\n\n```lql\n{sig}\n```"));
         }
+        Ok(Some(Hover {
+            contents: HoverContents::Markup(MarkupContent {
+                kind: MarkupKind::Markdown,
+                value: content,
+            }),
+            range: None,
+        }))
     }
 
     async fn document_symbol(
@@ -361,12 +455,13 @@ impl LanguageServer for LqlBackend {
     ) -> Result<Option<DocumentSymbolResponse>> {
         let uri = &params.text_document.uri;
 
-        let docs = self.documents.lock().unwrap();
-        let source = match docs.get(uri) {
-            Some(s) => s.clone(),
-            None => return Ok(None),
+        let source = {
+            let docs = self.documents.lock().unwrap();
+            match docs.get(uri) {
+                Some(s) => s.clone(),
+                None => return Ok(None),
+            }
         };
-        drop(docs);
 
         let symbols = extract_symbols(&source);
         let lsp_symbols: Vec<tower_lsp::lsp_types::SymbolInformation> = symbols
@@ -404,12 +499,13 @@ impl LanguageServer for LqlBackend {
     ) -> Result<Option<Vec<TextEdit>>> {
         let uri = &params.text_document.uri;
 
-        let docs = self.documents.lock().unwrap();
-        let source = match docs.get(uri) {
-            Some(s) => s.clone(),
-            None => return Ok(None),
+        let source = {
+            let docs = self.documents.lock().unwrap();
+            match docs.get(uri) {
+                Some(s) => s.clone(),
+                None => return Ok(None),
+            }
         };
-        drop(docs);
 
         let formatted = format_lql(&source);
         if formatted == source {
@@ -429,7 +525,6 @@ impl LanguageServer for LqlBackend {
     }
 }
 
-/// Basic LQL formatter — normalizes indentation.
 fn format_lql(source: &str) -> String {
     let mut result = String::new();
     let mut indent = 0usize;
@@ -441,22 +536,15 @@ fn format_lql(source: &str) -> String {
             result.push('\n');
             continue;
         }
-
-        // Decrease indent for closing parens at line start
         if trimmed.starts_with(')') {
             indent = indent.saturating_sub(1);
         }
-
-        // Pipeline continuation
         if trimmed.starts_with("|>") && indent == 0 {
             indent = 1;
         }
-
         result.push_str(&indent_str.repeat(indent));
         result.push_str(trimmed);
         result.push('\n');
-
-        // Increase indent after opening constructs
         if trimmed.ends_with('(') && !trimmed.starts_with("--") {
             indent += 1;
         }

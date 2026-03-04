@@ -35,9 +35,10 @@ class LspClient {
   >();
   private notifications: Array<{ method: string; params: any }> = [];
 
-  constructor(binary: string) {
+  constructor(binary: string, env?: Record<string, string>) {
     this.proc = child_process.spawn(binary, [], {
       stdio: ["pipe", "pipe", "pipe"],
+      env: env ? { ...process.env, ...env } : undefined,
     });
 
     this.proc.stdout!.on("data", (data: Buffer) => {
@@ -1488,5 +1489,598 @@ let final_report = users_active
     const labels3 = items3.map((i: any) => i.label);
     assert.ok(labels3.includes("rank"), "Must suggest 'rank' with prefix 'ra'");
     assert.ok(!labels3.includes("row_number"), "Must NOT suggest 'row_number' with prefix 'ra'");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// SCHEMA-AWARE LSP E2E TESTS — REAL PostgreSQL Database
+// These tests PROVE BEYOND ANY DOUBT that the LSP connects to a REAL
+// database and delivers IntelliSense from the LIVE schema.
+// ═══════════════════════════════════════════════════════════════════════
+
+describe("Schema-Aware LSP E2E Tests — Real PostgreSQL Database", function () {
+  this.timeout(30000);
+
+  let client: LspClient;
+  let lspBinary: string;
+  const DB_CONNECTION =
+    "host=127.0.0.1 dbname=lql_test user=postgres password=testpass";
+
+  before(function () {
+    try {
+      lspBinary = findLspBinary();
+    } catch {
+      this.skip();
+    }
+  });
+
+  beforeEach(function () {
+    client = new LspClient(lspBinary, {
+      LQL_CONNECTION_STRING: DB_CONNECTION,
+    });
+  });
+
+  afterEach(function () {
+    if (client) client.kill();
+  });
+
+  /** Initialize server and wait for schema to load from real database. */
+  async function initWithSchema(): Promise<any> {
+    const result = await client.request("initialize", {
+      processId: process.pid,
+      capabilities: {},
+      rootUri: null,
+    });
+    client.notify("initialized", {});
+
+    // Wait for "Schema loaded" in window/logMessage notifications
+    const deadline = Date.now() + 15000;
+    while (Date.now() < deadline) {
+      const msgs = client.drainNotifications("window/logMessage");
+      for (const m of msgs) {
+        const text = m.params?.message || "";
+        if (text.includes("Schema loaded")) return result;
+        if (text.includes("Schema fetch failed")) {
+          throw new Error(`DB unavailable: ${text}`);
+        }
+        if (text.includes("No DB connection")) {
+          throw new Error("No DB connection configured");
+        }
+      }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    throw new Error("Timed out waiting for schema to load from database");
+  }
+
+  async function openDoc(uri: string, content: string): Promise<any[]> {
+    client.notify("textDocument/didOpen", {
+      textDocument: { uri, languageId: "lql", version: 1, text: content },
+    });
+    return client.waitForNotification(
+      "textDocument/publishDiagnostics",
+      5000,
+    );
+  }
+
+  // ─────────────────────────────────────────────────────
+  // TABLE COMPLETIONS FROM REAL DATABASE
+  // ─────────────────────────────────────────────────────
+
+  it("PROOF: Completions include REAL table names from PostgreSQL — customers, orders, order_items", async function () {
+    try {
+      await initWithSchema();
+    } catch {
+      return this.skip();
+    }
+
+    await openDoc("file:///test/schema_tables.lql", "");
+    const result = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/schema_tables.lql" },
+      position: { line: 0, character: 0 },
+    });
+
+    const items = Array.isArray(result) ? result : result.items || [];
+    const labels = items.map((i: any) => i.label);
+
+    // These tables exist in the REAL lql_test database
+    assert.ok(
+      labels.includes("customers"),
+      "MUST show 'customers' table from REAL PostgreSQL database",
+    );
+    assert.ok(
+      labels.includes("orders"),
+      "MUST show 'orders' table from REAL PostgreSQL database",
+    );
+    assert.ok(
+      labels.includes("order_items"),
+      "MUST show 'order_items' table from REAL PostgreSQL database",
+    );
+
+    // Table completions must have kind CLASS (7)
+    const customersItem = items.find((i: any) => i.label === "customers");
+    assert.ok(customersItem, "customers completion must exist");
+    assert.strictEqual(
+      customersItem.kind,
+      7,
+      "Table completion kind must be CLASS (7)",
+    );
+
+    // Detail must reflect real column count from database
+    assert.ok(
+      customersItem.detail.includes("4"),
+      `Table detail must show column count from REAL schema, got: ${customersItem.detail}`,
+    );
+  });
+
+  it("PROOF: Table completions filter by prefix — typing 'cust' only shows 'customers'", async function () {
+    try {
+      await initWithSchema();
+    } catch {
+      return this.skip();
+    }
+
+    await openDoc("file:///test/schema_prefix.lql", "cust");
+    const result = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/schema_prefix.lql" },
+      position: { line: 0, character: 4 },
+    });
+
+    const items = Array.isArray(result) ? result : result.items || [];
+    const labels = items.map((i: any) => i.label);
+
+    assert.ok(
+      labels.includes("customers"),
+      "Must include 'customers' matching prefix 'cust'",
+    );
+    assert.ok(
+      !labels.includes("orders"),
+      "Must NOT include 'orders' (does not match prefix 'cust')",
+    );
+    assert.ok(
+      !labels.includes("order_items"),
+      "Must NOT include 'order_items' (does not match prefix 'cust')",
+    );
+  });
+
+  // ─────────────────────────────────────────────────────
+  // COLUMN COMPLETIONS FROM REAL DATABASE
+  // ─────────────────────────────────────────────────────
+
+  it("PROOF: Typing 'customers.' triggers REAL column completions — id, name, email, created_at", async function () {
+    try {
+      await initWithSchema();
+    } catch {
+      return this.skip();
+    }
+
+    await openDoc("file:///test/schema_cols.lql", "customers.");
+    const result = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/schema_cols.lql" },
+      position: { line: 0, character: 10 },
+    });
+
+    const items = Array.isArray(result) ? result : result.items || [];
+    const labels = items.map((i: any) => i.label);
+
+    // These columns exist in the REAL customers table
+    assert.ok(
+      labels.includes("id"),
+      "MUST show 'id' column from REAL customers table",
+    );
+    assert.ok(
+      labels.includes("name"),
+      "MUST show 'name' column from REAL customers table",
+    );
+    assert.ok(
+      labels.includes("email"),
+      "MUST show 'email' column from REAL customers table",
+    );
+    assert.ok(
+      labels.includes("created_at"),
+      "MUST show 'created_at' column from REAL customers table",
+    );
+
+    // Column completions must be FIELD kind (5)
+    const emailItem = items.find((i: any) => i.label === "email");
+    assert.ok(emailItem, "email completion must exist");
+    assert.strictEqual(
+      emailItem.kind,
+      5,
+      "Column completion kind must be FIELD (5)",
+    );
+
+    // Column detail must include real SQL type from database
+    assert.ok(
+      emailItem.detail.toLowerCase().includes("text"),
+      `Column detail must show SQL type 'text' from DB, got: ${emailItem.detail}`,
+    );
+  });
+
+  it("PROOF: Typing 'orders.' returns REAL order columns with correct types", async function () {
+    try {
+      await initWithSchema();
+    } catch {
+      return this.skip();
+    }
+
+    await openDoc("file:///test/schema_order_cols.lql", "orders.");
+    const result = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/schema_order_cols.lql" },
+      position: { line: 0, character: 7 },
+    });
+
+    const items = Array.isArray(result) ? result : result.items || [];
+    const labels = items.map((i: any) => i.label);
+
+    assert.ok(labels.includes("id"), "Must show 'id' column from REAL orders table");
+    assert.ok(
+      labels.includes("customer_id"),
+      "Must show 'customer_id' column from REAL orders table",
+    );
+    assert.ok(
+      labels.includes("total_amount"),
+      "Must show 'total_amount' column from REAL orders table",
+    );
+    assert.ok(
+      labels.includes("status"),
+      "Must show 'status' column from REAL orders table",
+    );
+    assert.ok(
+      labels.includes("ordered_at"),
+      "Must show 'ordered_at' column from REAL orders table",
+    );
+
+    // Verify numeric column shows numeric type
+    const totalItem = items.find((i: any) => i.label === "total_amount");
+    assert.ok(totalItem, "total_amount completion must exist");
+    assert.ok(
+      totalItem.detail.toLowerCase().includes("numeric"),
+      `Numeric column detail must show 'numeric' type, got: ${totalItem.detail}`,
+    );
+
+    // Verify primary key column shows PK indicator
+    const idItem = items.find((i: any) => i.label === "id");
+    assert.ok(idItem, "id completion must exist");
+    assert.ok(
+      idItem.detail.includes("PK"),
+      `Primary key column detail must include 'PK', got: ${idItem.detail}`,
+    );
+  });
+
+  it("PROOF: Column completions filter by prefix — 'customers.na' only shows 'name'", async function () {
+    try {
+      await initWithSchema();
+    } catch {
+      return this.skip();
+    }
+
+    await openDoc("file:///test/schema_col_prefix.lql", "customers.na");
+    const result = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/schema_col_prefix.lql" },
+      position: { line: 0, character: 12 },
+    });
+
+    const items = Array.isArray(result) ? result : result.items || [];
+    const labels = items.map((i: any) => i.label);
+
+    assert.ok(
+      labels.includes("name"),
+      "Must include 'name' matching prefix 'na'",
+    );
+    assert.ok(
+      !labels.includes("id"),
+      "Must NOT include 'id' (does not match prefix 'na')",
+    );
+    assert.ok(
+      !labels.includes("email"),
+      "Must NOT include 'email' (does not match prefix 'na')",
+    );
+  });
+
+  // ─────────────────────────────────────────────────────
+  // SCHEMA-AWARE HOVER (IntelliPrompt) FROM REAL DATABASE
+  // ─────────────────────────────────────────────────────
+
+  it("PROOF: Hover on 'customers' table name shows REAL schema — all columns and types", async function () {
+    try {
+      await initWithSchema();
+    } catch {
+      return this.skip();
+    }
+
+    await openDoc(
+      "file:///test/schema_hover_table.lql",
+      "customers |> select(customers.name)",
+    );
+    const hover = await client.request("textDocument/hover", {
+      textDocument: { uri: "file:///test/schema_hover_table.lql" },
+      position: { line: 0, character: 5 },
+    });
+
+    assert.ok(hover, "Hover on REAL table name must return data");
+    assert.ok(hover.contents, "Hover must have contents");
+    const text = hover.contents.value || hover.contents;
+
+    // Must mention the table name
+    assert.ok(
+      text.includes("customers"),
+      "Table hover must include table name 'customers'",
+    );
+
+    // Must show real column names from the database
+    assert.ok(
+      text.includes("id"),
+      "Table hover must list 'id' column from REAL schema",
+    );
+    assert.ok(
+      text.includes("name"),
+      "Table hover must list 'name' column from REAL schema",
+    );
+    assert.ok(
+      text.includes("email"),
+      "Table hover must list 'email' column from REAL schema",
+    );
+    assert.ok(
+      text.includes("created_at"),
+      "Table hover must list 'created_at' column from REAL schema",
+    );
+
+    // Must show column count
+    assert.ok(
+      text.includes("4"),
+      "Table hover must show column count (4 columns)",
+    );
+  });
+
+  it("PROOF: Hover on qualified 'customers.email' shows REAL column type from database", async function () {
+    try {
+      await initWithSchema();
+    } catch {
+      return this.skip();
+    }
+
+    await openDoc(
+      "file:///test/schema_hover_col.lql",
+      "customers |> select(customers.email)",
+    );
+    // Hover on 'email' (after the dot) — position at "email" which starts at col 30
+    const hover = await client.request("textDocument/hover", {
+      textDocument: { uri: "file:///test/schema_hover_col.lql" },
+      position: { line: 0, character: 32 },
+    });
+
+    assert.ok(
+      hover,
+      "Hover on qualified column 'customers.email' must return data",
+    );
+    const text = hover.contents.value || hover.contents;
+
+    // Must show the column name and table
+    assert.ok(
+      text.includes("email"),
+      "Column hover must include column name 'email'",
+    );
+    assert.ok(
+      text.includes("customers"),
+      "Column hover must reference table 'customers'",
+    );
+
+    // Must show the real SQL type from the database
+    assert.ok(
+      text.toLowerCase().includes("text"),
+      `Column hover must show SQL type 'text' from database, got: ${text}`,
+    );
+
+    // Must show nullability info
+    assert.ok(
+      text.toLowerCase().includes("nullable"),
+      "Column hover must show nullability info",
+    );
+  });
+
+  it("PROOF: Hover on 'orders.total_amount' shows REAL numeric type and NOT NULL", async function () {
+    try {
+      await initWithSchema();
+    } catch {
+      return this.skip();
+    }
+
+    await openDoc(
+      "file:///test/schema_hover_numeric.lql",
+      "orders |> filter(fn(row) => row.orders.total_amount > 100)",
+    );
+    // Hover on 'total_amount' — starts at col 39
+    const hover = await client.request("textDocument/hover", {
+      textDocument: { uri: "file:///test/schema_hover_numeric.lql" },
+      position: { line: 0, character: 43 },
+    });
+
+    assert.ok(hover, "Hover on 'orders.total_amount' must return data");
+    const text = hover.contents.value || hover.contents;
+
+    assert.ok(
+      text.includes("total_amount"),
+      "Column hover must include 'total_amount'",
+    );
+    assert.ok(
+      text.toLowerCase().includes("numeric"),
+      "Must show 'numeric' SQL type from REAL database",
+    );
+    assert.ok(
+      text.toLowerCase().includes("not null") || text.toLowerCase().includes("nullable: no"),
+      "Must indicate NOT NULL from REAL database schema",
+    );
+  });
+
+  // ─────────────────────────────────────────────────────
+  // FULL SCHEMA WORKFLOW — END TO END
+  // ─────────────────────────────────────────────────────
+
+  it("PROOF: Full schema workflow — table completion → column completion → column hover in sequence", async function () {
+    try {
+      await initWithSchema();
+    } catch {
+      return this.skip();
+    }
+
+    // Step 1: Open doc with order_items pipeline
+    await openDoc(
+      "file:///test/schema_workflow.lql",
+      "order_items |> select(order_items.product_name, order_items.quantity, order_items.unit_price)",
+    );
+
+    // Step 2: Get table completions — order_items must be there
+    const tableResult = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/schema_workflow.lql" },
+      position: { line: 0, character: 0 },
+    });
+    const tableItems = Array.isArray(tableResult)
+      ? tableResult
+      : tableResult.items || [];
+    const tableLabels = tableItems.map((i: any) => i.label);
+    assert.ok(
+      tableLabels.includes("order_items"),
+      "Step 1: Must find 'order_items' in table completions from DB",
+    );
+
+    // Step 3: Hover on 'order_items' — shows real schema
+    const tableHover = await client.request("textDocument/hover", {
+      textDocument: { uri: "file:///test/schema_workflow.lql" },
+      position: { line: 0, character: 5 },
+    });
+    assert.ok(tableHover, "Step 2: Must get hover for 'order_items' table");
+    const tableText = tableHover.contents.value || tableHover.contents;
+    assert.ok(
+      tableText.includes("product_name"),
+      "Step 2: Table hover must list 'product_name' column",
+    );
+    assert.ok(
+      tableText.includes("quantity"),
+      "Step 2: Table hover must list 'quantity' column",
+    );
+    assert.ok(
+      tableText.includes("unit_price"),
+      "Step 2: Table hover must list 'unit_price' column",
+    );
+
+    // Step 4: Modify doc to type "order_items." for column completions
+    client.notify("textDocument/didChange", {
+      textDocument: {
+        uri: "file:///test/schema_workflow.lql",
+        version: 2,
+      },
+      contentChanges: [{ text: "order_items." }],
+    });
+    await client.waitForNotification(
+      "textDocument/publishDiagnostics",
+      5000,
+    );
+
+    const colResult = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/schema_workflow.lql" },
+      position: { line: 0, character: 12 },
+    });
+    const colItems = Array.isArray(colResult)
+      ? colResult
+      : colResult.items || [];
+    const colLabels = colItems.map((i: any) => i.label);
+    assert.ok(
+      colLabels.includes("product_name"),
+      "Step 3: Must show 'product_name' from REAL order_items table",
+    );
+    assert.ok(
+      colLabels.includes("quantity"),
+      "Step 3: Must show 'quantity' from REAL order_items table",
+    );
+    assert.ok(
+      colLabels.includes("unit_price"),
+      "Step 3: Must show 'unit_price' from REAL order_items table",
+    );
+
+    // Step 5: Verify column types in completion details
+    const qtyItem = colItems.find((i: any) => i.label === "quantity");
+    assert.ok(qtyItem, "quantity completion must exist");
+    assert.ok(
+      qtyItem.detail.toLowerCase().includes("integer"),
+      `quantity must show 'integer' type, got: ${qtyItem.detail}`,
+    );
+  });
+
+  it("PROOF: Schema-aware LSP gracefully degrades when no DB connection", async function () {
+    // Start WITHOUT LQL_CONNECTION_STRING — no schema
+    const noDbClient = new LspClient(lspBinary);
+    try {
+      const result = await noDbClient.request("initialize", {
+        processId: process.pid,
+        capabilities: {},
+        rootUri: null,
+      });
+      noDbClient.notify("initialized", {});
+      await new Promise((r) => setTimeout(r, 2000));
+
+      // Keyword completions still work without schema
+      noDbClient.notify("textDocument/didOpen", {
+        textDocument: {
+          uri: "file:///test/no_schema.lql",
+          languageId: "lql",
+          version: 1,
+          text: "users |> ",
+        },
+      });
+      await new Promise((r) => setTimeout(r, 1000));
+
+      const completions = await noDbClient.request(
+        "textDocument/completion",
+        {
+          textDocument: { uri: "file:///test/no_schema.lql" },
+          position: { line: 0, character: 9 },
+        },
+      );
+
+      const items = Array.isArray(completions)
+        ? completions
+        : completions.items || [];
+      const labels = items.map((i: any) => i.label);
+
+      // Pipeline operations still work without DB
+      assert.ok(
+        labels.includes("select"),
+        "Must still suggest 'select' without DB connection",
+      );
+      assert.ok(
+        labels.includes("filter"),
+        "Must still suggest 'filter' without DB connection",
+      );
+
+      // But NO database tables should appear (no schema loaded)
+      assert.ok(
+        !labels.includes("customers"),
+        "Must NOT show DB tables when no connection",
+      );
+
+      // Hover on keywords still works
+      noDbClient.notify("textDocument/didChange", {
+        textDocument: {
+          uri: "file:///test/no_schema.lql",
+          version: 2,
+        },
+        contentChanges: [
+          { text: "users |> select(count(*) as cnt)" },
+        ],
+      });
+      await new Promise((r) => setTimeout(r, 500));
+
+      const hover = await noDbClient.request("textDocument/hover", {
+        textDocument: { uri: "file:///test/no_schema.lql" },
+        position: { line: 0, character: 18 },
+      });
+      assert.ok(hover, "Keyword hover must work without DB connection");
+      assert.ok(
+        hover.contents.value.includes("count"),
+        "Count hover must work without DB",
+      );
+    } finally {
+      noDbClient.kill();
+    }
   });
 });

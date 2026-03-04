@@ -1,3 +1,4 @@
+use crate::schema::SchemaCache;
 use crate::scope::ScopeMap;
 
 /// A completion item returned by the analyzer.
@@ -33,12 +34,47 @@ pub struct CompletionContext {
     pub in_lambda: bool,
     /// Current word prefix being typed.
     pub word_prefix: String,
+    /// The table qualifier if user typed "table." (the part before the dot).
+    pub table_qualifier: Option<String>,
 }
 
 /// Provide context-aware completions based on cursor position and scope.
-pub fn get_completions(ctx: &CompletionContext, scope: &ScopeMap) -> Vec<CompletionItem> {
+/// Falls back gracefully if schema is None (no DB connection).
+pub fn get_completions(
+    ctx: &CompletionContext,
+    scope: &ScopeMap,
+    schema: Option<&SchemaCache>,
+) -> Vec<CompletionItem> {
     let mut items = Vec::new();
     let prefix = ctx.word_prefix.to_ascii_lowercase();
+
+    // If user typed "table." — suggest columns for that table from schema
+    if let Some(ref qualifier) = ctx.table_qualifier {
+        if let Some(schema) = schema {
+            let columns = schema.get_columns(qualifier);
+            for col in columns {
+                let col_lower = col.name.to_lowercase();
+                if col_lower.starts_with(&prefix) {
+                    items.push(CompletionItem {
+                        label: col.name.clone(),
+                        kind: CompletionKind::Column,
+                        detail: col.type_description(),
+                        documentation: format!(
+                            "Column `{}.{}` — {}",
+                            qualifier,
+                            col.name,
+                            col.type_description()
+                        ),
+                        insert_text: None,
+                    });
+                }
+            }
+        }
+        // If we have a qualifier, column completions are primary
+        if !items.is_empty() {
+            return items;
+        }
+    }
 
     // After pipe operator: suggest pipeline operations
     if ctx.after_pipe {
@@ -55,6 +91,34 @@ pub fn get_completions(ctx: &CompletionContext, scope: &ScopeMap) -> Vec<Complet
     items.extend(aggregate_completions(&prefix));
     items.extend(string_function_completions(&prefix));
 
+    // Schema-based table completions (real tables from database)
+    if let Some(schema) = schema {
+        for table_name in schema.table_names() {
+            if table_name.to_lowercase().starts_with(&prefix) {
+                let table = schema.get_table(table_name).unwrap();
+                let col_names: Vec<&str> = table.columns.iter().map(|c| c.name.as_str()).collect();
+                let col_list = if col_names.len() <= 6 {
+                    col_names.join(", ")
+                } else {
+                    format!(
+                        "{}, ... ({} total)",
+                        col_names[..5].join(", "),
+                        col_names.len()
+                    )
+                };
+                items.push(CompletionItem {
+                    label: table_name.to_string(),
+                    kind: CompletionKind::Table,
+                    detail: format!("table ({} columns)", table.columns.len()),
+                    documentation: format!(
+                        "Table: {table_name}\nColumns: {col_list}"
+                    ),
+                    insert_text: None,
+                });
+            }
+        }
+    }
+
     // Scope-based completions
     for name in scope.binding_names() {
         if name.to_ascii_lowercase().starts_with(&prefix) {
@@ -70,6 +134,10 @@ pub fn get_completions(ctx: &CompletionContext, scope: &ScopeMap) -> Vec<Complet
 
     for name in scope.table_names() {
         if name.to_ascii_lowercase().starts_with(&prefix) {
+            // Skip if already provided by schema
+            if schema.map_or(false, |s| s.get_table(name).is_some()) {
+                continue;
+            }
             items.push(CompletionItem {
                 label: name.to_string(),
                 kind: CompletionKind::Table,
