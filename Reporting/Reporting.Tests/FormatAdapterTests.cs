@@ -36,9 +36,28 @@ public sealed class FormatAdapterTests
         // Assert
         var doc = JsonDocument.Parse(json);
         Assert.Equal("test", doc.RootElement.GetProperty("reportId").GetString());
+
+        // Verify executedAt is present and formatted
+        Assert.True(doc.RootElement.TryGetProperty("executedAt", out var executedAt));
+        Assert.Contains("2025", executedAt.GetString() ?? "", StringComparison.Ordinal);
+
         Assert.True(doc.RootElement.TryGetProperty("dataSources", out var ds));
         Assert.True(ds.TryGetProperty("ds1", out var ds1));
         Assert.Equal(2, ds1.GetProperty("totalRows").GetInt32());
+
+        // Verify column names in JSON
+        var cols = ds1.GetProperty("columnNames");
+        Assert.Equal(2, cols.GetArrayLength());
+        Assert.Equal("Name", cols[0].GetString());
+        Assert.Equal("Value", cols[1].GetString());
+
+        // Verify row data
+        var rows = ds1.GetProperty("rows");
+        Assert.Equal(2, rows.GetArrayLength());
+        Assert.Equal("Alpha", rows[0][0].GetString());
+        Assert.Equal(42, rows[0][1].GetInt32());
+        Assert.Equal("Beta", rows[1][0].GetString());
+        Assert.Equal(99, rows[1][1].GetInt32());
     }
 
     [Fact]
@@ -81,6 +100,8 @@ public sealed class FormatAdapterTests
 
         // Assert
         var lines = csv.Split('\n');
+        Assert.Equal(2, lines.Length);
+        Assert.Equal("Name,Notes", lines[0]);
         Assert.Equal("Widget,", lines[1]);
     }
 
@@ -99,6 +120,9 @@ public sealed class FormatAdapterTests
 
         // Assert
         var lines = csv.Split('\n');
+        Assert.Equal(2, lines.Length);
+        Assert.Equal("Name,Description", lines[0]);
+        Assert.Contains("Widget", lines[1], StringComparison.Ordinal);
         Assert.Contains("\"Small, portable device\"", lines[1], StringComparison.Ordinal);
     }
 

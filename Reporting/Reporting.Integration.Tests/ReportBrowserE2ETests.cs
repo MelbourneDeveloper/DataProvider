@@ -58,11 +58,13 @@ public sealed class ReportBrowserE2ETests
         );
 
         var titleElement = await page.QuerySelectorAsync(".report-title");
-        if (titleElement is not null)
-        {
-            var titleText = await titleElement.TextContentAsync();
-            Assert.Contains("E2E Product Report", titleText ?? "", StringComparison.Ordinal);
-        }
+        Assert.NotNull(titleElement);
+        var titleText = await titleElement.TextContentAsync();
+        Assert.Equal("E2E Product Report", titleText?.Trim());
+
+        // Verify report container exists
+        var container = await page.QuerySelectorAsync(".report-container");
+        Assert.NotNull(container);
 
         await page.CloseAsync();
     }
@@ -170,10 +172,27 @@ public sealed class ReportBrowserE2ETests
             chartTitleTexts,
             t => t.Contains("Avg Price by Category", StringComparison.Ordinal)
         );
+        Assert.Contains(
+            chartTitleTexts,
+            t => t.Contains("Stock Distribution by Category", StringComparison.Ordinal)
+        );
+        Assert.Contains(
+            chartTitleTexts,
+            t => t.Contains("High-Value Product Inventory", StringComparison.Ordinal)
+        );
 
         // Verify axis labels exist in SVG
         var svgTexts = await page.QuerySelectorAllAsync(".report-bar-chart text");
         Assert.True(svgTexts.Count > 0, "SVG should contain axis labels and value labels");
+
+        // Verify SVG contains actual category labels in text elements
+        var allSvgText = "";
+        foreach (var svgText in svgTexts)
+        {
+            allSvgText += await svgText.TextContentAsync() + " ";
+        }
+
+        Assert.Contains("Widgets", allSvgText, StringComparison.Ordinal);
 
         await page.CloseAsync();
     }
@@ -252,6 +271,13 @@ public sealed class ReportBrowserE2ETests
         var text = await caption.TextContentAsync();
         Assert.Contains("LQL", text ?? "", StringComparison.Ordinal);
         Assert.Contains("validates full stack rendering", text ?? "", StringComparison.Ordinal);
+        Assert.Contains("custom CSS styling", text ?? "", StringComparison.Ordinal);
+        Assert.Contains("cssClass", text ?? "", StringComparison.Ordinal);
+
+        // Caption should also have the text-banner custom class applied
+        var captionClass = await caption.GetAttributeAsync("class");
+        Assert.Contains("text-banner", captionClass ?? "", StringComparison.Ordinal);
+        Assert.Contains("report-text-caption", captionClass ?? "", StringComparison.Ordinal);
 
         await page.CloseAsync();
     }
@@ -290,12 +316,24 @@ public sealed class ReportBrowserE2ETests
             $"Second row should have 2 cells, got {secondRowCells.Count}"
         );
 
-        // Third row should have 1 full-width table cell
+        // Third row should have 2 chart cells (colSpan 6 each)
         var thirdRowCells = await rows[2].QuerySelectorAllAsync(".report-cell");
         Assert.True(
-            thirdRowCells.Count >= 1,
-            $"Third row should have at least 1 cell, got {thirdRowCells.Count}"
+            thirdRowCells.Count >= 2,
+            $"Third row should have 2 chart cells, got {thirdRowCells.Count}"
         );
+
+        // Verify colSpan classes are applied: first row has 3 x report-cell-4
+        var cell4s = await rows[0].QuerySelectorAllAsync("[class*='report-cell-4']");
+        Assert.Equal(3, cell4s.Count);
+
+        // Second row has 2 x report-cell-6
+        var cell6s = await rows[1].QuerySelectorAllAsync("[class*='report-cell-6']");
+        Assert.Equal(2, cell6s.Count);
+
+        // Fourth row is full-width table (report-cell-12)
+        var fourthRowCells = await rows[3].QuerySelectorAllAsync("[class*='report-cell-12']");
+        Assert.True(fourthRowCells.Count >= 1, "Fourth row should have a full-width cell");
 
         await page.CloseAsync();
     }
@@ -337,12 +375,25 @@ public sealed class ReportBrowserE2ETests
         Assert.NotNull(container);
         var title = await page.QuerySelectorAsync(".report-title");
         Assert.NotNull(title);
+        var titleText = await title.TextContentAsync();
+        Assert.Equal("E2E Product Report", titleText?.Trim());
 
         // Verify no error states visible
         var errors = await page.QuerySelectorAllAsync(".report-error, .report-viewer-error");
         Assert.True(
             errors.Count == 0,
             "No error elements should be visible on a successful render"
+        );
+
+        // Verify no unknown component types
+        var unknowns = await page.QuerySelectorAllAsync(".report-unknown-component");
+        Assert.True(unknowns.Count == 0, "No unknown component elements should be rendered");
+
+        // Verify custom CSS is also applied in the full pipeline
+        var styledMetrics = await page.QuerySelectorAllAsync(".report-metric.metric-highlight");
+        Assert.True(
+            styledMetrics.Count >= 2,
+            "Custom CSS classes should be applied in full pipeline"
         );
 
         await page.CloseAsync();
@@ -463,6 +514,19 @@ public sealed class ReportBrowserE2ETests
             fontWeight == "bold" || fontWeight == "700",
             $"Expected font-weight bold/700 on currency metric, got '{fontWeight}'"
         );
+
+        // Verify the compact table has inline border style
+        var tableBorder = await page.EvaluateAsync<string>(
+            "() => { const el = document.querySelector('.report-table-container.table-compact'); return el ? el.style.border : ''; }"
+        );
+        Assert.Contains("2px", tableBorder, StringComparison.Ordinal);
+        Assert.Contains("2E4450", tableBorder, StringComparison.OrdinalIgnoreCase);
+
+        // Verify chart with inline borderTop
+        var chartBorder = await page.EvaluateAsync<string>(
+            "() => { const el = document.querySelector('.report-chart:not(.chart-dark-theme)'); return el ? el.style.borderTop : ''; }"
+        );
+        Assert.Contains("FF6B6B", chartBorder, StringComparison.OrdinalIgnoreCase);
 
         await page.CloseAsync();
     }

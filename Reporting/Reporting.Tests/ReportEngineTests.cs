@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Migration;
@@ -74,12 +75,24 @@ public sealed class ReportEngineTests : IDisposable
         var ok = (EngineOk)result;
         Assert.Equal("test-report", ok.Value.ReportId);
         Assert.True(ok.Value.DataSources.ContainsKey("testDs"));
+        Assert.Single(ok.Value.DataSources);
 
         var dsResult = ok.Value.DataSources["testDs"];
         Assert.Equal(5, dsResult.ColumnNames.Length);
         Assert.Contains("Id", dsResult.ColumnNames);
         Assert.Contains("Name", dsResult.ColumnNames);
+        Assert.Contains("Category", dsResult.ColumnNames);
+        Assert.Contains("Price", dsResult.ColumnNames);
+        Assert.Contains("Stock", dsResult.ColumnNames);
         Assert.Equal(4, dsResult.TotalRows);
+        Assert.Equal(4, dsResult.Rows.Length);
+
+        // Rows ordered by Name: Alpha Widget, Beta Gadget, Delta Gadget, Gamma Widget
+        var nameColIdx = dsResult.ColumnNames.IndexOf("Name");
+        Assert.Equal("Alpha Widget", dsResult.Rows[0][nameColIdx]?.ToString());
+        Assert.Equal("Beta Gadget", dsResult.Rows[1][nameColIdx]?.ToString());
+        Assert.Equal("Delta Gadget", dsResult.Rows[2][nameColIdx]?.ToString());
+        Assert.Equal("Gamma Widget", dsResult.Rows[3][nameColIdx]?.ToString());
     }
 
     [Fact]
@@ -103,11 +116,20 @@ public sealed class ReportEngineTests : IDisposable
         // Assert
         Assert.True(result is EngineOk);
         var ok = (EngineOk)result;
+        Assert.Equal("test-report", ok.Value.ReportId);
         var dsResult = ok.Value.DataSources["testDs"];
         Assert.Equal(2, dsResult.ColumnNames.Length);
         Assert.Contains("Category", dsResult.ColumnNames);
         Assert.Contains("ProductCount", dsResult.ColumnNames);
-        Assert.True(dsResult.TotalRows >= 2);
+        Assert.Equal(2, dsResult.TotalRows);
+
+        // Widgets: 2 products, Gadgets: 2 products — ordered by count DESC
+        var catIdx = dsResult.ColumnNames.IndexOf("Category");
+        var countIdx = dsResult.ColumnNames.IndexOf("ProductCount");
+        var categories = dsResult.Rows.Select(r => r[catIdx]?.ToString()).ToArray();
+        Assert.Contains("Widgets", categories);
+        Assert.Contains("Gadgets", categories);
+        Assert.Equal(2L, Convert.ToInt64(dsResult.Rows[0][countIdx], CultureInfo.InvariantCulture));
     }
 
     [Fact]
@@ -133,6 +155,7 @@ public sealed class ReportEngineTests : IDisposable
         Assert.True(result is EngineError, $"Expected error but got {result.GetType()}");
         var err = (EngineError)result;
         Assert.Contains("not found", err.Value.Message, StringComparison.Ordinal);
+        Assert.Contains("nonexistent-db", err.Value.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -154,7 +177,10 @@ public sealed class ReportEngineTests : IDisposable
         );
 
         // Assert
-        Assert.True(result is EngineError);
+        Assert.True(result is EngineError, $"Expected error but got {result.GetType()}");
+        var err = (EngineError)result;
+        Assert.NotNull(err.Value.Message);
+        Assert.True(err.Value.Message.Length > 0, "Error message should be non-empty");
     }
 
     [Fact]
@@ -203,12 +229,24 @@ public sealed class ReportEngineTests : IDisposable
         // Assert
         Assert.True(result is EngineOk);
         var ok = (EngineOk)result;
+        Assert.Equal("multi-ds-report", ok.Value.ReportId);
         Assert.Equal(2, ok.Value.DataSources.Count);
         Assert.True(ok.Value.DataSources.ContainsKey("products"));
         Assert.True(ok.Value.DataSources.ContainsKey("summary"));
 
+        // Products data source
+        var productsResult = ok.Value.DataSources["products"];
+        Assert.Equal(2, productsResult.ColumnNames.Length);
+        Assert.Contains("Name", productsResult.ColumnNames);
+        Assert.Contains("Price", productsResult.ColumnNames);
+        Assert.Equal(4, productsResult.TotalRows);
+
+        // Summary data source
         var summaryResult = ok.Value.DataSources["summary"];
         Assert.Single(summaryResult.Rows);
+        Assert.Equal(1, summaryResult.TotalRows);
+        Assert.Contains("Total", summaryResult.ColumnNames);
+        Assert.Equal(4L, Convert.ToInt64(summaryResult.Rows[0][0], CultureInfo.InvariantCulture));
     }
 
     [Fact]
@@ -232,7 +270,14 @@ public sealed class ReportEngineTests : IDisposable
         // Assert
         Assert.True(result is EngineOk);
         var ok = (EngineOk)result;
-        Assert.Equal(0, ok.Value.DataSources["testDs"].TotalRows);
+        var dsResult = ok.Value.DataSources["testDs"];
+        Assert.Equal(0, dsResult.TotalRows);
+        Assert.Empty(dsResult.Rows);
+        // Column names should still be present even with no rows
+        Assert.True(
+            dsResult.ColumnNames.Length > 0,
+            "Column names should be present even with empty result"
+        );
     }
 
     [Fact]
@@ -258,7 +303,18 @@ public sealed class ReportEngineTests : IDisposable
         var ok = (EngineOk)result;
         var dsResult = ok.Value.DataSources["testDs"];
         Assert.Equal(5, dsResult.ColumnNames.Length);
+        Assert.Contains("Id", dsResult.ColumnNames);
+        Assert.Contains("Name", dsResult.ColumnNames);
+        Assert.Contains("Category", dsResult.ColumnNames);
+        Assert.Contains("Price", dsResult.ColumnNames);
+        Assert.Contains("Stock", dsResult.ColumnNames);
         Assert.Equal(4, dsResult.TotalRows);
+        Assert.Equal(4, dsResult.Rows.Length);
+
+        // Verify LQL ordering (order_by Name asc)
+        var nameIdx = dsResult.ColumnNames.IndexOf("Name");
+        Assert.Equal("Alpha Widget", dsResult.Rows[0][nameIdx]?.ToString());
+        Assert.Equal("Gamma Widget", dsResult.Rows[3][nameIdx]?.ToString());
     }
 
     [Fact]
@@ -312,8 +368,25 @@ public sealed class ReportEngineTests : IDisposable
         Assert.True(result is EngineOk);
         var ok = (EngineOk)result;
         var dsResult = ok.Value.DataSources["testDs"];
+        Assert.Equal(4, dsResult.ColumnNames.Length);
+        Assert.Contains("Name", dsResult.ColumnNames);
+        Assert.Contains("Price", dsResult.ColumnNames);
+        Assert.Contains("Stock", dsResult.ColumnNames);
         Assert.Contains("InventoryValue", dsResult.ColumnNames);
         Assert.Equal(2, dsResult.TotalRows);
+
+        // Verify filtered product names (ordered by InventoryValue desc)
+        var nameIdx = dsResult.ColumnNames.IndexOf("Name");
+        var names = dsResult.Rows.Select(r => r[nameIdx]?.ToString()).ToArray();
+        Assert.Contains("Beta Gadget", names);
+        Assert.Contains("Delta Gadget", names);
+        Assert.DoesNotContain("Alpha Widget", names);
+        Assert.DoesNotContain("Gamma Widget", names);
+
+        // Verify InventoryValue = Price * Stock (Delta: 79.99 * 25 = 1999.75)
+        var ivIdx = dsResult.ColumnNames.IndexOf("InventoryValue");
+        var firstIv = Convert.ToDouble(dsResult.Rows[0][ivIdx], CultureInfo.InvariantCulture);
+        Assert.True(firstIv > 0, "InventoryValue should be positive");
     }
 
     [Fact]
@@ -338,8 +411,20 @@ public sealed class ReportEngineTests : IDisposable
         Assert.True(result is EngineOk);
         var ok = (EngineOk)result;
         var dsResult = ok.Value.DataSources["testDs"];
+        Assert.Equal(3, dsResult.ColumnNames.Length);
+        Assert.Contains("Name", dsResult.ColumnNames);
+        Assert.Contains("Price", dsResult.ColumnNames);
         Assert.Contains("PriceTier", dsResult.ColumnNames);
         Assert.Equal(4, dsResult.TotalRows);
+
+        // Verify CASE expression produces correct tiers
+        var tierIdx = dsResult.ColumnNames.IndexOf("PriceTier");
+        var tiers = dsResult.Rows.Select(r => r[tierIdx]?.ToString()).ToArray();
+        // Delta Gadget (79.99) -> Premium, Beta Gadget (49.99) -> Standard,
+        // Alpha Widget (29.99) -> Standard, Gamma Widget (19.99) -> Budget
+        Assert.Contains("Premium", tiers);
+        Assert.Contains("Standard", tiers);
+        Assert.Contains("Budget", tiers);
     }
 
     [Fact]
@@ -364,9 +449,29 @@ public sealed class ReportEngineTests : IDisposable
         Assert.True(result is EngineOk);
         var ok = (EngineOk)result;
         var dsResult = ok.Value.DataSources["testDs"];
+        Assert.Equal(5, dsResult.ColumnNames.Length);
+        Assert.Contains("Category", dsResult.ColumnNames);
+        Assert.Contains("Items", dsResult.ColumnNames);
+        Assert.Contains("TotalStock", dsResult.ColumnNames);
         Assert.Contains("CheapestPrice", dsResult.ColumnNames);
         Assert.Contains("MostExpensive", dsResult.ColumnNames);
         Assert.Equal(2, dsResult.TotalRows);
+
+        // Verify both categories present and single-item categories filtered out
+        var catIdx = dsResult.ColumnNames.IndexOf("Category");
+        var categories = dsResult.Rows.Select(r => r[catIdx]?.ToString()).ToArray();
+        Assert.Contains("Widgets", categories);
+        Assert.Contains("Gadgets", categories);
+
+        // Verify Items count >= 2 for each (that's the having condition)
+        var itemsIdx = dsResult.ColumnNames.IndexOf("Items");
+        foreach (var row in dsResult.Rows)
+        {
+            Assert.True(
+                Convert.ToInt64(row[itemsIdx], CultureInfo.InvariantCulture) >= 2,
+                "Each group should have >= 2 items"
+            );
+        }
     }
 
     [Fact]
@@ -391,10 +496,25 @@ public sealed class ReportEngineTests : IDisposable
         Assert.True(result is EngineOk);
         var ok = (EngineOk)result;
         var dsResult = ok.Value.DataSources["testDs"];
+        Assert.Equal(3, dsResult.ColumnNames.Length);
         Assert.Contains("TotalProducts", dsResult.ColumnNames);
         Assert.Contains("TotalStock", dsResult.ColumnNames);
         Assert.Contains("TotalValue", dsResult.ColumnNames);
         Assert.Equal(1, dsResult.TotalRows);
+        Assert.Single(dsResult.Rows);
+
+        // Verify aggregate values: 4 products, Stock: 100+50+200+25=375
+        var prodIdx = dsResult.ColumnNames.IndexOf("TotalProducts");
+        var stockIdx = dsResult.ColumnNames.IndexOf("TotalStock");
+        var valueIdx = dsResult.ColumnNames.IndexOf("TotalValue");
+        Assert.Equal(4L, Convert.ToInt64(dsResult.Rows[0][prodIdx], CultureInfo.InvariantCulture));
+        Assert.Equal(
+            375L,
+            Convert.ToInt64(dsResult.Rows[0][stockIdx], CultureInfo.InvariantCulture)
+        );
+        // TotalValue = sum(Price*Stock) = 29.99*100 + 49.99*50 + 19.99*200 + 79.99*25
+        var totalValue = Convert.ToDouble(dsResult.Rows[0][valueIdx], CultureInfo.InvariantCulture);
+        Assert.True(totalValue > 9000, $"TotalValue should be > 9000, got {totalValue}");
     }
 
     private static ReportDefinition CreateTestReport(

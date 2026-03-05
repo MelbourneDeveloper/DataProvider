@@ -42,6 +42,14 @@ public sealed class ReportingApiTests
         Assert.Equal("e2e-products", id.GetString());
         Assert.True(firstReport.TryGetProperty("title", out var title));
         Assert.Equal("E2E Product Report", title.GetString());
+
+        // Verify metadata structure includes expected fields
+        Assert.True(firstReport.TryGetProperty("dataSourceIds", out var dsIds));
+        Assert.Equal(6, dsIds.GetArrayLength());
+        Assert.True(firstReport.TryGetProperty("layout", out var layout));
+        Assert.Equal(12, layout.GetProperty("columns").GetInt32());
+        Assert.True(firstReport.TryGetProperty("parameters", out var parameters));
+        Assert.Equal(0, parameters.GetArrayLength());
     }
 
     [Fact]
@@ -130,11 +138,25 @@ public sealed class ReportingApiTests
 
         // Verify column names from LQL-transpiled query
         var columns = allProducts.GetProperty("columnNames");
+        Assert.Equal(5, columns.GetArrayLength());
         Assert.Contains("Id", columns.EnumerateArray().Select(c => c.GetString()));
         Assert.Contains("Name", columns.EnumerateArray().Select(c => c.GetString()));
         Assert.Contains("Category", columns.EnumerateArray().Select(c => c.GetString()));
         Assert.Contains("Price", columns.EnumerateArray().Select(c => c.GetString()));
         Assert.Contains("Stock", columns.EnumerateArray().Select(c => c.GetString()));
+
+        // Verify actual product names appear in ordered rows (LQL order_by Name asc)
+        var firstRow = productRows[0];
+        var nameIdx = columns
+            .EnumerateArray()
+            .Select((c, i) => new { Name = c.GetString(), Index = i })
+            .First(c => c.Name == "Name")
+            .Index;
+        Assert.Equal("Alpha Widget", firstRow[nameIdx].GetString());
+
+        // Verify executedAt timestamp is present
+        Assert.True(result.TryGetProperty("executedAt", out var executedAt));
+        Assert.True(executedAt.GetString()?.Length > 0, "executedAt should be non-empty");
     }
 
     [Fact]
@@ -167,8 +189,25 @@ public sealed class ReportingApiTests
         );
 
         var hvColumns = highValue.GetProperty("columnNames");
+        Assert.Equal(4, hvColumns.GetArrayLength());
         Assert.Contains("Name", hvColumns.EnumerateArray().Select(c => c.GetString()));
+        Assert.Contains("Price", hvColumns.EnumerateArray().Select(c => c.GetString()));
+        Assert.Contains("Stock", hvColumns.EnumerateArray().Select(c => c.GetString()));
         Assert.Contains("InventoryValue", hvColumns.EnumerateArray().Select(c => c.GetString()));
+
+        // Verify all prices in result are > 30
+        var priceIdx = hvColumns
+            .EnumerateArray()
+            .Select((c, i) => new { Name = c.GetString(), Index = i })
+            .First(c => c.Name == "Price")
+            .Index;
+        foreach (var row in highValue.GetProperty("rows").EnumerateArray())
+        {
+            Assert.True(
+                row[priceIdx].GetDouble() > 30,
+                $"All high-value products should have price > 30, got {row[priceIdx]}"
+            );
+        }
     }
 
     [Fact]
@@ -196,8 +235,26 @@ public sealed class ReportingApiTests
         Assert.Equal(6, priceAnalysis.GetProperty("totalRows").GetInt32());
 
         var paColumns = priceAnalysis.GetProperty("columnNames");
+        Assert.Equal(4, paColumns.GetArrayLength());
+        Assert.Contains("Name", paColumns.EnumerateArray().Select(c => c.GetString()));
+        Assert.Contains("Price", paColumns.EnumerateArray().Select(c => c.GetString()));
         Assert.Contains("PriceTier", paColumns.EnumerateArray().Select(c => c.GetString()));
         Assert.Contains("InventoryValue", paColumns.EnumerateArray().Select(c => c.GetString()));
+
+        // Verify CASE expression produced valid tiers
+        var tierIdx = paColumns
+            .EnumerateArray()
+            .Select((c, i) => new { Name = c.GetString(), Index = i })
+            .First(c => c.Name == "PriceTier")
+            .Index;
+        var tiers = priceAnalysis
+            .GetProperty("rows")
+            .EnumerateArray()
+            .Select(r => r[tierIdx].GetString())
+            .ToArray();
+        Assert.Contains("Premium", tiers);
+        Assert.Contains("Standard", tiers);
+        Assert.Contains("Budget", tiers);
     }
 
     [Fact]
@@ -260,9 +317,26 @@ public sealed class ReportingApiTests
         Assert.Equal(3, categorySummary.GetProperty("totalRows").GetInt32());
 
         var columns = categorySummary.GetProperty("columnNames");
+        Assert.Equal(4, columns.GetArrayLength());
         Assert.Contains("Category", columns.EnumerateArray().Select(c => c.GetString()));
         Assert.Contains("ProductCount", columns.EnumerateArray().Select(c => c.GetString()));
         Assert.Contains("TotalStock", columns.EnumerateArray().Select(c => c.GetString()));
+        Assert.Contains("AvgPrice", columns.EnumerateArray().Select(c => c.GetString()));
+
+        // Verify actual categories present
+        var catIdx = columns
+            .EnumerateArray()
+            .Select((c, i) => new { Name = c.GetString(), Index = i })
+            .First(c => c.Name == "Category")
+            .Index;
+        var cats = categorySummary
+            .GetProperty("rows")
+            .EnumerateArray()
+            .Select(r => r[catIdx].GetString())
+            .ToArray();
+        Assert.Contains("Widgets", cats);
+        Assert.Contains("Gadgets", cats);
+        Assert.Contains("Doohickeys", cats);
     }
 
     [Fact]
@@ -289,10 +363,21 @@ public sealed class ReportingApiTests
 
         Assert.Equal(1, totals.GetProperty("totalRows").GetInt32());
 
-        // Verify the totals row contains aggregate values
+        // Verify column names
+        var totCols = totals.GetProperty("columnNames");
+        Assert.Equal(3, totCols.GetArrayLength());
+        Assert.Contains("TotalProducts", totCols.EnumerateArray().Select(c => c.GetString()));
+        Assert.Contains("TotalStock", totCols.EnumerateArray().Select(c => c.GetString()));
+        Assert.Contains("TotalValue", totCols.EnumerateArray().Select(c => c.GetString()));
+
+        // Verify the totals row contains correct aggregate values
         var row = totals.GetProperty("rows")[0];
         // 6 products total
         Assert.Equal(6, row[0].GetInt64());
+        // Total stock > 0
+        Assert.True(row[1].GetInt64() > 0, "TotalStock should be positive");
+        // Total value > 0
+        Assert.True(row[2].GetDouble() > 0, "TotalValue should be positive");
     }
 
     [Fact]

@@ -47,14 +47,24 @@ public sealed class ReportMetadataTests
         Assert.Equal("secure-report", metadata.Id);
         Assert.Equal("Secure Report", metadata.Title);
         Assert.Single(metadata.Parameters);
+        Assert.Equal("date", metadata.Parameters[0].Name);
+        Assert.Equal(ParameterType.Date, metadata.Parameters[0].Type);
+        Assert.Equal("Date", metadata.Parameters[0].Label);
+        Assert.True(metadata.Parameters[0].Required);
+        Assert.Null(metadata.Parameters[0].Default);
         Assert.Single(metadata.DataSourceIds);
         Assert.Equal("ds1", metadata.DataSourceIds[0]);
+        Assert.Null(metadata.CustomCss);
+        Assert.Equal(12, metadata.Layout.Columns);
+        Assert.Empty(metadata.Layout.Rows);
 
         // Metadata should NOT contain connection strings or queries
         var json = System.Text.Json.JsonSerializer.Serialize(metadata);
         Assert.DoesNotContain("secret-connection", json, StringComparison.Ordinal);
         Assert.DoesNotContain("sensitive_data", json, StringComparison.Ordinal);
         Assert.DoesNotContain("secret_table", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("connectionRef", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("query", json, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -103,7 +113,16 @@ public sealed class ReportMetadataTests
         Assert.Equal(12, metadata.Layout.Columns);
         Assert.Single(metadata.Layout.Rows);
         Assert.Single(metadata.Layout.Rows[0].Cells);
-        Assert.Equal(ComponentType.Metric, metadata.Layout.Rows[0].Cells[0].Component.Type);
+        var cell = metadata.Layout.Rows[0].Cells[0];
+        Assert.Equal(6, cell.ColSpan);
+        Assert.Null(cell.CssClass);
+        Assert.Equal(ComponentType.Metric, cell.Component.Type);
+        Assert.Equal("ds1", cell.Component.DataSource);
+        Assert.Equal("KPI", cell.Component.Title);
+        Assert.Equal("total", cell.Component.Value);
+        Assert.Equal("number", cell.Component.Format);
+        Assert.Null(cell.Component.CssClass);
+        Assert.Null(cell.Component.CssStyle);
     }
 
     [Fact]

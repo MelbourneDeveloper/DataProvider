@@ -79,7 +79,21 @@ public sealed class ReportConfigLoaderTests : IDisposable
         Assert.Single(report.DataSources);
         Assert.Equal("ds1", report.DataSources[0].Id);
         Assert.Equal(DataSourceType.Sql, report.DataSources[0].Type);
+        Assert.Equal("my-db", report.DataSources[0].ConnectionRef);
+        Assert.Equal("SELECT * FROM products", report.DataSources[0].Query);
+        Assert.Single(report.DataSources[0].Parameters);
+        Assert.Equal("startDate", report.DataSources[0].Parameters[0]);
+        Assert.True(report.Parameters[0].Required);
+        Assert.Null(report.Parameters[0].Default);
+        Assert.Equal("Start", report.Parameters[0].Label);
         Assert.Single(report.Layout.Rows);
+        Assert.Equal(12, report.Layout.Columns);
+        Assert.Single(report.Layout.Rows[0].Cells);
+        Assert.Equal(12, report.Layout.Rows[0].Cells[0].ColSpan);
+        Assert.Equal(ComponentType.Table, report.Layout.Rows[0].Cells[0].Component.Type);
+        Assert.Equal("ds1", report.Layout.Rows[0].Cells[0].Component.DataSource);
+        Assert.Equal("Products", report.Layout.Rows[0].Cells[0].Component.Title);
+        Assert.Null(report.CustomCss);
     }
 
     [Fact]
@@ -92,7 +106,13 @@ public sealed class ReportConfigLoaderTests : IDisposable
         var result = ReportConfigLoader.LoadFromJson(json: invalidJson, logger: _logger);
 
         // Assert
-        Assert.True(result is LoadError);
+        Assert.True(result is LoadError, $"Expected error but got {result.GetType()}");
+        var err = (LoadError)result;
+        Assert.NotNull(err.Value.Message);
+        Assert.True(
+            err.Value.Message.Length > 0,
+            "Error message should describe the parse failure"
+        );
     }
 
     [Fact]
@@ -118,9 +138,19 @@ public sealed class ReportConfigLoaderTests : IDisposable
         // Assert
         Assert.True(result is LoadOk);
         var report = ((LoadOk)result).Value;
+        Assert.Equal("multi-ds", report.Id);
+        Assert.Equal("Multi DS", report.Title);
+        Assert.Empty(report.Parameters);
         Assert.Equal(2, report.DataSources.Length);
+        Assert.Equal("sql-ds", report.DataSources[0].Id);
         Assert.Equal(DataSourceType.Sql, report.DataSources[0].Type);
+        Assert.Equal("db", report.DataSources[0].ConnectionRef);
+        Assert.Equal("SELECT 1", report.DataSources[0].Query);
+        Assert.Equal("lql-ds", report.DataSources[1].Id);
         Assert.Equal(DataSourceType.Lql, report.DataSources[1].Type);
+        Assert.Equal("products |> select(Name)", report.DataSources[1].Query);
+        Assert.Equal(12, report.Layout.Columns);
+        Assert.Empty(report.Layout.Rows);
     }
 
     [Fact]
@@ -175,14 +205,28 @@ public sealed class ReportConfigLoaderTests : IDisposable
         Assert.Single(report.Layout.Rows);
         Assert.Equal(2, report.Layout.Rows[0].Cells.Length);
 
-        var metric = report.Layout.Rows[0].Cells[0].Component;
+        var metricCell = report.Layout.Rows[0].Cells[0];
+        Assert.Equal(4, metricCell.ColSpan);
+        var metric = metricCell.Component;
         Assert.Equal(ComponentType.Metric, metric.Type);
+        Assert.Equal("ds1", metric.DataSource);
+        Assert.Equal("Total", metric.Title);
         Assert.Equal("count", metric.Value);
+        Assert.Equal("number", metric.Format);
+        Assert.Null(metric.CssClass);
+        Assert.Null(metric.CssStyle);
 
-        var chart = report.Layout.Rows[0].Cells[1].Component;
+        var chartCell = report.Layout.Rows[0].Cells[1];
+        Assert.Equal(8, chartCell.ColSpan);
+        var chart = chartCell.Component;
         Assert.Equal(ComponentType.Chart, chart.Type);
         Assert.Equal(ChartType.Bar, chart.ChartType);
+        Assert.Equal("ds1", chart.DataSource);
+        Assert.Equal("Chart", chart.Title);
         Assert.Equal("category", chart.XAxis?.Field);
+        Assert.Null(chart.XAxis?.Label);
+        Assert.Equal("count", chart.YAxis?.Field);
+        Assert.Equal("Count", chart.YAxis?.Label);
     }
 
     [Fact]
@@ -273,7 +317,10 @@ public sealed class ReportConfigLoaderTests : IDisposable
         );
 
         // Assert
-        Assert.True(result is LoadError);
+        Assert.True(result is LoadError, $"Expected error but got {result.GetType()}");
+        var err = (LoadError)result;
+        Assert.NotNull(err.Value.Message);
+        Assert.True(err.Value.Message.Length > 0, "Error message should describe file not found");
     }
 
     public void Dispose()
