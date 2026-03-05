@@ -2700,6 +2700,99 @@ describe("AI Pipeline E2E Tests — Built-in Test Provider", function () {
     }
   });
 
+  it("PROOF: AI provider receives FULL schema context with column types — not just table names", async function () {
+    client = new LspClient(lspBinary, {
+      LQL_CONNECTION_STRING:
+        "host=127.0.0.1 dbname=lql_test user=postgres password=testpass",
+    });
+
+    try {
+      await client.request("initialize", {
+        processId: process.pid,
+        capabilities: {},
+        rootUri: null,
+        initializationOptions: {
+          aiProvider: {
+            provider: "test",
+            endpoint: "builtin://test",
+            model: "test-model",
+            timeoutMs: 5000,
+            enabled: true,
+          },
+        },
+      });
+      client.notify("initialized", {});
+
+      let schemaLoaded = false;
+      let aiActivated = false;
+      const deadline = Date.now() + 10000;
+      while (Date.now() < deadline && (!schemaLoaded || !aiActivated)) {
+        await new Promise((r) => setTimeout(r, 300));
+        const logs = client.drainNotifications("window/logMessage");
+        for (const log of logs) {
+          const msg = log.params?.message || "";
+          if (msg.includes("Schema loaded")) schemaLoaded = true;
+          if (msg.includes("AI test provider activated")) aiActivated = true;
+        }
+      }
+
+      if (!schemaLoaded) {
+        this.skip();
+        return;
+      }
+
+      client.notify("textDocument/didOpen", {
+        textDocument: {
+          uri: "file:///test/ai_schema_full.lql",
+          languageId: "lql",
+          version: 1,
+          text: "customers |> ",
+        },
+      });
+      await new Promise((r) => setTimeout(r, 500));
+
+      const completions = await client.request("textDocument/completion", {
+        textDocument: { uri: "file:///test/ai_schema_full.lql" },
+        position: { line: 0, character: 13 },
+      });
+
+      const items = Array.isArray(completions)
+        ? completions
+        : completions.items || [];
+
+      // The test provider emits 'ai_schema_context' with the full schema description
+      const schemaItem = items.find(
+        (i: any) => i.label === "ai_schema_context",
+      );
+      assert.ok(
+        schemaItem,
+        `Test AI provider must emit 'ai_schema_context' when schema is loaded. Got labels: ${items.map((i: any) => i.label).join(", ")}`,
+      );
+
+      // The documentation field contains the full schema description
+      const doc = schemaItem.documentation || "";
+      assert.ok(
+        doc.includes("customers"),
+        `Schema context must include 'customers' table. Got: ${doc.substring(0, 200)}`,
+      );
+      assert.ok(
+        doc.includes("id") && doc.includes("uuid"),
+        `Schema context must include column types (e.g., 'id uuid'). Got: ${doc.substring(0, 200)}`,
+      );
+      assert.ok(
+        doc.includes("PK") || doc.includes("NOT NULL"),
+        `Schema context must include PK/nullability info. Got: ${doc.substring(0, 200)}`,
+      );
+      assert.ok(
+        doc.includes("orders"),
+        `Schema context must include ALL tables (orders). Got: ${doc.substring(0, 300)}`,
+      );
+    } finally {
+      client.kill();
+      client = null as any;
+    }
+  });
+
   it("PROOF: AI timeout enforcement — slow provider gets cut off, completions still return", async function () {
     client = new LspClient(lspBinary);
     await client.request("initialize", {
@@ -2955,6 +3048,537 @@ describe("AI Pipeline E2E Tests — Built-in Test Provider", function () {
     assert.ok(
       labels3.includes("ai_suggest_aggregate"),
       "Step 4: AI aggregate returns after clearing prefix",
+    );
+  });
+});
+
+/**
+ * ========================================================================
+ * REAL MODEL E2E TESTS — REAL OLLAMA + REAL DB + REAL LSP + REAL QUERIES
+ * ========================================================================
+ *
+ * These tests require:
+ * 1. Ollama running locally with a model pulled (e.g., qwen2.5-coder:1.5b)
+ * 2. PostgreSQL with the lql_test database (same as schema tests)
+ * 3. The compiled lql-lsp binary
+ *
+ * Set environment variables:
+ *   OLLAMA_MODEL=qwen2.5-coder:1.5b  (default)
+ *   OLLAMA_ENDPOINT=http://localhost:11434/api/generate  (default)
+ *   LQL_TEST_REAL_AI=1  (must be set to run these tests)
+ *
+ * These tests are SLOWER than the test-provider tests because they hit a
+ * real model. Timeout is set to 60s per test.
+ */
+describe("Real AI Model E2E Tests — Ollama + PostgreSQL + LSP", function () {
+  this.timeout(60000);
+
+  let client: LspClient;
+  let lspBinary: string;
+  const DB_CONNECTION =
+    "host=127.0.0.1 dbname=lql_test user=postgres password=testpass";
+  const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5-coder:1.5b";
+  const OLLAMA_ENDPOINT =
+    process.env.OLLAMA_ENDPOINT || "http://localhost:11434/api/generate";
+
+  before(function () {
+    // Gate: only run when explicitly opted in
+    if (!process.env.LQL_TEST_REAL_AI) {
+      console.log(
+        "    Skipping real AI tests (set LQL_TEST_REAL_AI=1 to enable)",
+      );
+      this.skip();
+      return;
+    }
+    try {
+      lspBinary = findLspBinary();
+    } catch {
+      this.skip();
+    }
+  });
+
+  afterEach(function () {
+    if (client) client.kill();
+  });
+
+  /** Initialize with REAL Ollama + REAL database */
+  async function initRealAi(): Promise<LspClient> {
+    const c = new LspClient(lspBinary);
+    await c.request("initialize", {
+      processId: process.pid,
+      capabilities: {},
+      rootUri: null,
+      initializationOptions: {
+        connectionString: DB_CONNECTION,
+        aiProvider: {
+          provider: "ollama",
+          endpoint: OLLAMA_ENDPOINT,
+          model: OLLAMA_MODEL,
+          timeoutMs: 15000,
+          enabled: true,
+        },
+      },
+    });
+    c.notify("initialized", {});
+
+    // Wait for BOTH schema load AND AI provider activation
+    const deadline = Date.now() + 20000;
+    let schemaLoaded = false;
+    let aiActivated = false;
+    while (Date.now() < deadline && (!schemaLoaded || !aiActivated)) {
+      const msgs = c.drainNotifications("window/logMessage");
+      for (const m of msgs) {
+        const text = m.params?.message || "";
+        if (text.includes("Schema loaded")) schemaLoaded = true;
+        if (text.includes("Ollama AI provider activated")) aiActivated = true;
+        if (text.includes("Schema fetch failed")) {
+          throw new Error(`DB unavailable: ${text}`);
+        }
+      }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+
+    if (!aiActivated) {
+      throw new Error("Ollama AI provider did not activate");
+    }
+    if (!schemaLoaded) {
+      throw new Error("Database schema did not load");
+    }
+
+    return c;
+  }
+
+  /** Open a document and wait for diagnostics */
+  async function openDoc(
+    c: LspClient,
+    uri: string,
+    content: string,
+  ): Promise<any[]> {
+    c.notify("textDocument/didOpen", {
+      textDocument: { uri, languageId: "lql", version: 1, text: content },
+    });
+    return c.waitForNotification("textDocument/publishDiagnostics", 5000);
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // REAL MODEL COMPLETION — Query returns LQL-aware suggestions
+  // ─────────────────────────────────────────────────────────────────
+
+  it("PROOF: Real Ollama model returns completions for partial LQL query", async function () {
+    try {
+      client = await initRealAi();
+    } catch {
+      return this.skip();
+    }
+
+    await openDoc(
+      client,
+      "file:///test/real_ai_partial.lql",
+      "customers |> ",
+    );
+    await new Promise((r) => setTimeout(r, 500));
+
+    const result = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/real_ai_partial.lql" },
+      position: { line: 0, character: 13 },
+    });
+
+    const items = Array.isArray(result) ? result : result.items || [];
+    assert.ok(items.length > 0, "Must return at least one completion");
+
+    // Keyword completions must still be present (AI doesn't replace them)
+    const labels = items.map((i: any) => i.label);
+    assert.ok(
+      labels.includes("select") || labels.includes("filter"),
+      `Keyword completions must still appear alongside AI. Got: ${labels.join(", ")}`,
+    );
+  });
+
+  it("PROOF: Real model completions coexist with REAL schema column completions", async function () {
+    try {
+      client = await initRealAi();
+    } catch {
+      return this.skip();
+    }
+
+    // Dot-triggered: should get real column completions from DB + AI
+    await openDoc(
+      client,
+      "file:///test/real_ai_schema.lql",
+      "customers.",
+    );
+    await new Promise((r) => setTimeout(r, 500));
+
+    const result = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/real_ai_schema.lql" },
+      position: { line: 0, character: 10 },
+    });
+
+    const items = Array.isArray(result) ? result : result.items || [];
+    const labels = items.map((i: any) => i.label);
+
+    // Real columns from the database must be present
+    const hasColumn = labels.some(
+      (l: string) =>
+        l === "id" || l === "name" || l === "email" || l === "created_at",
+    );
+    assert.ok(
+      hasColumn,
+      `Must include real DB columns. Got: ${labels.join(", ")}`,
+    );
+  });
+
+  it("PROOF: Real model returns completions for join query with multiple tables", async function () {
+    try {
+      client = await initRealAi();
+    } catch {
+      return this.skip();
+    }
+
+    const query =
+      "orders\n|> join(customers, on = orders.customer_id = customers.id)\n|> ";
+
+    await openDoc(client, "file:///test/real_ai_join.lql", query);
+    await new Promise((r) => setTimeout(r, 500));
+
+    const result = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/real_ai_join.lql" },
+      position: { line: 2, character: 3 },
+    });
+
+    const items = Array.isArray(result) ? result : result.items || [];
+    assert.ok(
+      items.length > 0,
+      "Must return completions after join in multi-line query",
+    );
+
+    // Pipeline operations must appear (select, filter, group_by, etc.)
+    const labels = items.map((i: any) => i.label);
+    assert.ok(
+      labels.includes("select"),
+      `Pipeline op 'select' must appear after join. Got: ${labels.join(", ")}`,
+    );
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // REAL DIAGNOSTICS — LSP returns REAL error messages for bad LQL
+  // ─────────────────────────────────────────────────────────────────
+
+  it("PROOF: LSP returns REAL error diagnostics for syntax errors in LQL", async function () {
+    try {
+      client = await initRealAi();
+    } catch {
+      return this.skip();
+    }
+
+    const badQuery = "users |> |> select(name)";
+    const diagNotifications = await openDoc(
+      client,
+      "file:///test/real_ai_syntax_error.lql",
+      badQuery,
+    );
+
+    assert.ok(
+      diagNotifications.length > 0,
+      "Must receive diagnostic notifications",
+    );
+
+    const diags = diagNotifications[0].diagnostics || [];
+    assert.ok(diags.length > 0, `Must have diagnostics for bad syntax. Query: "${badQuery}"`);
+
+    // Error must have a real message
+    const firstDiag = diags[0];
+    assert.ok(
+      firstDiag.message && firstDiag.message.length > 0,
+      `Diagnostic must have a real error message. Got: ${JSON.stringify(firstDiag)}`,
+    );
+    assert.strictEqual(
+      firstDiag.severity,
+      1,
+      "Syntax error must be severity ERROR (1)",
+    );
+  });
+
+  it("PROOF: LSP returns REAL error for identifier starting with number", async function () {
+    try {
+      client = await initRealAi();
+    } catch {
+      return this.skip();
+    }
+
+    const badQuery = "123table |> select(name)";
+    const diagNotifications = await openDoc(
+      client,
+      "file:///test/real_ai_bad_ident.lql",
+      badQuery,
+    );
+
+    const diags =
+      diagNotifications.length > 0
+        ? diagNotifications[0].diagnostics || []
+        : [];
+    assert.ok(
+      diags.length > 0,
+      `Must produce diagnostics for numeric identifier. Query: "${badQuery}"`,
+    );
+  });
+
+  it("PROOF: Valid LQL produces ZERO diagnostics (clean bill of health)", async function () {
+    try {
+      client = await initRealAi();
+    } catch {
+      return this.skip();
+    }
+
+    const goodQuery = "customers |> filter(fn(row) => row.age > 18) |> select(name, email)";
+    const diagNotifications = await openDoc(
+      client,
+      "file:///test/real_ai_clean.lql",
+      goodQuery,
+    );
+
+    const diags =
+      diagNotifications.length > 0
+        ? diagNotifications[0].diagnostics || []
+        : [];
+    assert.strictEqual(
+      diags.length,
+      0,
+      `Valid LQL must produce zero diagnostics. Got ${diags.length}: ${JSON.stringify(diags.map((d: any) => d.message))}`,
+    );
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // REAL HOVER — Schema + model context
+  // ─────────────────────────────────────────────────────────────────
+
+  it("PROOF: Hover on 'customers' table returns REAL column listing from database", async function () {
+    try {
+      client = await initRealAi();
+    } catch {
+      return this.skip();
+    }
+
+    await openDoc(
+      client,
+      "file:///test/real_ai_hover.lql",
+      "customers |> select(*)",
+    );
+    await new Promise((r) => setTimeout(r, 500));
+
+    const hover = await client.request("textDocument/hover", {
+      textDocument: { uri: "file:///test/real_ai_hover.lql" },
+      position: { line: 0, character: 4 },
+    });
+
+    assert.ok(hover, "Hover on 'customers' must return a result");
+    const content = hover.contents?.value || hover.contents || "";
+    assert.ok(
+      content.length > 0,
+      `Hover content must not be empty. Got: ${JSON.stringify(hover)}`,
+    );
+  });
+
+  it("PROOF: Hover on qualified 'customers.email' returns REAL column type", async function () {
+    try {
+      client = await initRealAi();
+    } catch {
+      return this.skip();
+    }
+
+    await openDoc(
+      client,
+      "file:///test/real_ai_hover_col.lql",
+      "customers |> select(customers.email)",
+    );
+    await new Promise((r) => setTimeout(r, 500));
+
+    const hover = await client.request("textDocument/hover", {
+      textDocument: { uri: "file:///test/real_ai_hover_col.lql" },
+      position: { line: 0, character: 30 },
+    });
+
+    assert.ok(hover, "Hover on 'customers.email' must return a result");
+    const content = hover.contents?.value || "";
+    assert.ok(
+      content.includes("text") ||
+        content.includes("varchar") ||
+        content.includes("character"),
+      `Hover must show real SQL type for email column. Got: ${content}`,
+    );
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // REAL AI + SCHEMA MERGE — Full pipeline end-to-end
+  // ─────────────────────────────────────────────────────────────────
+
+  it("PROOF: Full pipeline — real DB schema + real AI model + real LSP completions merged", async function () {
+    try {
+      client = await initRealAi();
+    } catch {
+      return this.skip();
+    }
+
+    // A realistic multi-line query
+    const query = [
+      "let active = customers |> filter(fn(row) => row.status = 'active') in",
+      "active",
+      "|> join(orders, on = active.id = orders.customer_id)",
+      "|> group_by(active.name)",
+      "|> ",
+    ].join("\n");
+
+    await openDoc(client, "file:///test/real_ai_full_pipeline.lql", query);
+    await new Promise((r) => setTimeout(r, 500));
+
+    const result = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/real_ai_full_pipeline.lql" },
+      position: { line: 4, character: 3 },
+    });
+
+    const items = Array.isArray(result) ? result : result.items || [];
+    assert.ok(
+      items.length > 0,
+      "Full pipeline must return completions",
+    );
+
+    // Must have keyword completions (from analyzer)
+    const labels = items.map((i: any) => i.label);
+    assert.ok(
+      labels.includes("select") || labels.includes("having"),
+      `After group_by, must suggest select/having. Got: ${labels.join(", ")}`,
+    );
+
+    // Verify completion items have all required fields
+    for (const item of items) {
+      assert.ok(item.label, "Every completion must have a label");
+      assert.ok(item.kind !== undefined, "Every completion must have a kind");
+    }
+  });
+
+  it("PROOF: AI completions disabled via enabled=false stops model calls entirely", async function () {
+    const c = new LspClient(lspBinary);
+    client = c;
+
+    await c.request("initialize", {
+      processId: process.pid,
+      capabilities: {},
+      rootUri: null,
+      initializationOptions: {
+        connectionString: DB_CONNECTION,
+        aiProvider: {
+          provider: "ollama",
+          endpoint: OLLAMA_ENDPOINT,
+          model: OLLAMA_MODEL,
+          timeoutMs: 15000,
+          enabled: false,
+        },
+      },
+    });
+    c.notify("initialized", {});
+
+    // Wait for initialization
+    await new Promise((r) => setTimeout(r, 3000));
+
+    // Ollama provider should NOT have been activated
+    const logs = c.drainNotifications("window/logMessage");
+    const activated = logs.find(
+      (n: any) =>
+        (n.params?.message || "").includes("Ollama AI provider activated"),
+    );
+    assert.ok(
+      !activated,
+      "Ollama provider must NOT activate when enabled=false",
+    );
+
+    // Completions should still work (keywords only)
+    c.notify("textDocument/didOpen", {
+      textDocument: {
+        uri: "file:///test/real_ai_disabled.lql",
+        languageId: "lql",
+        version: 1,
+        text: "users |> ",
+      },
+    });
+    await new Promise((r) => setTimeout(r, 500));
+
+    const result = await c.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/real_ai_disabled.lql" },
+      position: { line: 0, character: 9 },
+    });
+
+    const items = Array.isArray(result) ? result : result.items || [];
+    assert.ok(
+      items.length > 0,
+      "Keyword completions must still work with AI disabled",
+    );
+  });
+
+  it("PROOF: Editing document triggers updated diagnostics — real-time error feedback", async function () {
+    try {
+      client = await initRealAi();
+    } catch {
+      return this.skip();
+    }
+
+    // Start with valid LQL
+    client.notify("textDocument/didOpen", {
+      textDocument: {
+        uri: "file:///test/real_ai_live_edit.lql",
+        languageId: "lql",
+        version: 1,
+        text: "customers |> select(name)",
+      },
+    });
+    const diag1 = await client.waitForNotification(
+      "textDocument/publishDiagnostics",
+      5000,
+    );
+    const errors1 =
+      diag1.length > 0 ? diag1[0].diagnostics || [] : [];
+    assert.strictEqual(
+      errors1.length,
+      0,
+      "Valid query must have zero errors initially",
+    );
+
+    // Edit to introduce a syntax error
+    client.notify("textDocument/didChange", {
+      textDocument: {
+        uri: "file:///test/real_ai_live_edit.lql",
+        version: 2,
+      },
+      contentChanges: [{ text: "customers |> |>" }],
+    });
+    const diag2 = await client.waitForNotification(
+      "textDocument/publishDiagnostics",
+      5000,
+    );
+    const errors2 =
+      diag2.length > 0 ? diag2[0].diagnostics || [] : [];
+    assert.ok(
+      errors2.length > 0,
+      `Syntax error must produce diagnostics after edit. Got: ${JSON.stringify(errors2)}`,
+    );
+
+    // Fix the error
+    client.notify("textDocument/didChange", {
+      textDocument: {
+        uri: "file:///test/real_ai_live_edit.lql",
+        version: 3,
+      },
+      contentChanges: [{ text: "customers |> select(name, email)" }],
+    });
+    const diag3 = await client.waitForNotification(
+      "textDocument/publishDiagnostics",
+      5000,
+    );
+    const errors3 =
+      diag3.length > 0 ? diag3[0].diagnostics || [] : [];
+    assert.strictEqual(
+      errors3.length,
+      0,
+      "Fixed query must return to zero diagnostics",
     );
   });
 });

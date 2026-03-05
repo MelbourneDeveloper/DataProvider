@@ -331,6 +331,20 @@ impl LanguageServer for LqlBackend {
                             )
                             .await;
                     }
+                    "ollama" => {
+                        let lql_ref = include_str!("../../lql-reference.md").to_string();
+                        self.set_ai_provider(Arc::new(ai::OllamaProvider::new(config, lql_ref)))
+                            .await;
+                        self.client
+                            .log_message(
+                                MessageType::INFO,
+                                format!(
+                                    "Ollama AI provider activated (model: {}, endpoint: {})",
+                                    config.model, config.endpoint
+                                ),
+                            )
+                            .await;
+                    }
                     _ => {
                         self.client
                             .log_message(
@@ -454,6 +468,25 @@ impl LanguageServer for LqlBackend {
             let enabled = ai_config.as_ref().map(|c| c.enabled).unwrap_or(true);
 
             if enabled {
+                // Build compact schema description for AI context
+                let (available_tables, schema_description) = match schema.as_ref() {
+                    Some(s) => {
+                        let names: Vec<String> = s.table_names().iter().map(|n| n.to_string()).collect();
+                        let desc = names.iter().map(|name| {
+                            let cols = s.get_columns(name);
+                            let col_strs: Vec<String> = cols.iter().map(|c| {
+                                let mut s = format!("{} {}", c.name, c.sql_type);
+                                if c.is_primary_key { s.push_str(" PK"); }
+                                if !c.is_nullable { s.push_str(" NOT NULL"); }
+                                s
+                            }).collect();
+                            format!("{}({})", name, col_strs.join(", "))
+                        }).collect::<Vec<_>>().join("\n");
+                        (names, desc)
+                    }
+                    None => (Vec::new(), String::new()),
+                };
+
                 let ai_ctx = AiCompletionContext {
                     document_text: source.clone(),
                     line: position.line,
@@ -461,10 +494,8 @@ impl LanguageServer for LqlBackend {
                     line_prefix: ctx.line_prefix.clone(),
                     word_prefix: ctx.word_prefix.clone(),
                     file_uri: uri.to_string(),
-                    available_tables: schema
-                        .as_ref()
-                        .map(|s| s.table_names().iter().map(|n| n.to_string()).collect())
-                        .unwrap_or_default(),
+                    available_tables,
+                    schema_description,
                 };
 
                 match tokio::time::timeout(
