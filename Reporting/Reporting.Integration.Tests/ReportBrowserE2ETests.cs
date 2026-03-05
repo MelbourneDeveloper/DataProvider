@@ -349,6 +349,148 @@ public sealed class ReportBrowserE2ETests
     }
 
     /// <summary>
+    /// Verify that report-level customCss is injected as a style tag in the DOM.
+    /// The e2e report defines custom classes (metric-highlight, chart-dark-theme, etc.)
+    /// and these must be present in an injected style element.
+    /// </summary>
+    [Fact]
+    public async Task Report_CustomCss_InjectsStyleTag()
+    {
+        var page = await _fixture.CreateReportPageAsync(reportId: "e2e-products");
+
+        await page.WaitForSelectorAsync(
+            ".report-container",
+            new PageWaitForSelectorOptions { Timeout = 15000 }
+        );
+
+        // Verify the injected <style> tag contains our custom CSS classes
+        var styleContent = await page.EvaluateAsync<string>(
+            "() => { const s = document.querySelector('.report-container style'); return s ? s.innerHTML : ''; }"
+        );
+
+        Assert.Contains("metric-highlight", styleContent, StringComparison.Ordinal);
+        Assert.Contains("chart-dark-theme", styleContent, StringComparison.Ordinal);
+        Assert.Contains("table-striped-accent", styleContent, StringComparison.Ordinal);
+        Assert.Contains("text-banner", styleContent, StringComparison.Ordinal);
+        Assert.Contains("table-compact", styleContent, StringComparison.Ordinal);
+        Assert.Contains("metric-currency", styleContent, StringComparison.Ordinal);
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// Verify that component-level cssClass is applied to rendered DOM elements.
+    /// Metrics should have metric-highlight/metric-currency classes,
+    /// charts should have chart-dark-theme, tables should have table-striped-accent/table-compact,
+    /// and the text caption should have text-banner.
+    /// </summary>
+    [Fact]
+    public async Task Report_CustomCssClass_AppliedToComponents()
+    {
+        var page = await _fixture.CreateReportPageAsync(reportId: "e2e-products");
+
+        await page.WaitForSelectorAsync(
+            ".report-metric",
+            new PageWaitForSelectorOptions { Timeout = 15000 }
+        );
+
+        // Metric components with custom cssClass
+        var highlightMetrics = await page.QuerySelectorAllAsync(".report-metric.metric-highlight");
+        Assert.True(
+            highlightMetrics.Count >= 2,
+            $"Expected at least 2 metric-highlight metrics, got {highlightMetrics.Count}"
+        );
+
+        var currencyMetric = await page.QuerySelectorAllAsync(".report-metric.metric-currency");
+        Assert.True(
+            currencyMetric.Count >= 1,
+            $"Expected at least 1 metric-currency metric, got {currencyMetric.Count}"
+        );
+
+        // Chart components with custom cssClass
+        var darkCharts = await page.QuerySelectorAllAsync(".report-chart.chart-dark-theme");
+        Assert.True(
+            darkCharts.Count >= 2,
+            $"Expected at least 2 chart-dark-theme charts, got {darkCharts.Count}"
+        );
+
+        // Table components with custom cssClass
+        var accentTables = await page.QuerySelectorAllAsync(
+            ".report-table-container.table-striped-accent"
+        );
+        Assert.True(
+            accentTables.Count >= 1,
+            $"Expected at least 1 table-striped-accent table, got {accentTables.Count}"
+        );
+
+        var compactTables = await page.QuerySelectorAllAsync(
+            ".report-table-container.table-compact"
+        );
+        Assert.True(
+            compactTables.Count >= 1,
+            $"Expected at least 1 table-compact table, got {compactTables.Count}"
+        );
+
+        // Text component with custom cssClass
+        var bannerTexts = await page.QuerySelectorAllAsync(".report-text-caption.text-banner");
+        Assert.True(
+            bannerTexts.Count >= 1,
+            $"Expected at least 1 text-banner caption, got {bannerTexts.Count}"
+        );
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// Verify that component-level cssStyle (inline styles) is applied to rendered elements.
+    /// The Total Value metric has cssStyle: fontWeight=bold, and a chart has borderTop.
+    /// </summary>
+    [Fact]
+    public async Task Report_CustomCssStyle_AppliedAsInlineStyle()
+    {
+        var page = await _fixture.CreateReportPageAsync(reportId: "e2e-products");
+
+        await page.WaitForSelectorAsync(
+            ".report-metric.metric-currency",
+            new PageWaitForSelectorOptions { Timeout = 15000 }
+        );
+
+        // The currency metric should have inline font-weight: bold
+        var fontWeight = await page.EvaluateAsync<string>(
+            "() => { const el = document.querySelector('.report-metric.metric-currency'); return el ? getComputedStyle(el).fontWeight : ''; }"
+        );
+        Assert.True(
+            fontWeight == "bold" || fontWeight == "700",
+            $"Expected font-weight bold/700 on currency metric, got '{fontWeight}'"
+        );
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
+    /// Verify that cell-level cssClass is applied to the grid cell wrapper.
+    /// The stock distribution chart cell has cssClass: custom-cell-padded.
+    /// </summary>
+    [Fact]
+    public async Task Report_CellCssClass_AppliedToGridCell()
+    {
+        var page = await _fixture.CreateReportPageAsync(reportId: "e2e-products");
+
+        await page.WaitForSelectorAsync(
+            ".report-cell.custom-cell-padded",
+            new PageWaitForSelectorOptions { Timeout = 15000 }
+        );
+
+        var paddedCells = await page.QuerySelectorAllAsync(".report-cell.custom-cell-padded");
+        Assert.True(
+            paddedCells.Count >= 1,
+            $"Expected at least 1 custom-cell-padded cell, got {paddedCells.Count}"
+        );
+
+        await page.CloseAsync();
+    }
+
+    /// <summary>
     /// Verify that the browser console has no uncaught JavaScript errors
     /// during report rendering. Catches transpilation issues in H5 output.
     /// </summary>

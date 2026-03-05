@@ -10,7 +10,8 @@ public sealed record ReportMetadata(
     string Title,
     ImmutableArray<ReportParameter> Parameters,
     ImmutableArray<string> DataSourceIds,
-    LayoutDefinition Layout
+    LayoutDefinition Layout,
+    string? CustomCss = null
 );
 
 /// <summary>
@@ -29,6 +30,7 @@ public static class ReportMetadataMapper
             Title: report.Title,
             Parameters: report.Parameters,
             DataSourceIds: [.. report.DataSources.Select(ds => ds.Id)],
-            Layout: report.Layout
+            Layout: report.Layout,
+            CustomCss: report.CustomCss
         );
 }

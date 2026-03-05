@@ -16,7 +16,9 @@ namespace Reporting.React.Components
             string title,
             object columnDefs,
             object dataSourceResult,
-            int pageSize
+            int pageSize,
+            string cssClass = null,
+            object cssStyle = null
         )
         {
             var columns = Script.Write<object[]>("columnDefs") ?? new object[0];
@@ -59,8 +61,12 @@ namespace Reporting.React.Components
                 dataRows[r] = Tr(className: "report-table-row", children: cells);
             }
 
+            var containerClassName =
+                cssClass != null ? "report-table-container " + cssClass : "report-table-container";
+
             return Div(
-                className: "report-table-container",
+                className: containerClassName,
+                style: cssStyle,
                 children: new[]
                 {
                     H(3, className: "report-component-title", children: new[] { Text(title) }),

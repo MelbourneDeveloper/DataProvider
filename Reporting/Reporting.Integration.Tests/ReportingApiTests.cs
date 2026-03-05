@@ -74,6 +74,13 @@ public sealed class ReportingApiTests
         Assert.DoesNotContain("connectionRef", json, StringComparison.Ordinal);
         Assert.DoesNotContain("Data Source", json, StringComparison.Ordinal);
         Assert.DoesNotContain("reporting-db", json, StringComparison.Ordinal);
+
+        // Verify customCss is passed through to metadata
+        Assert.True(report.TryGetProperty("customCss", out var customCss));
+        var cssText = customCss.GetString() ?? "";
+        Assert.Contains("metric-highlight", cssText, StringComparison.Ordinal);
+        Assert.Contains("chart-dark-theme", cssText, StringComparison.Ordinal);
+        Assert.Contains("text-banner", cssText, StringComparison.Ordinal);
     }
 
     [Fact]

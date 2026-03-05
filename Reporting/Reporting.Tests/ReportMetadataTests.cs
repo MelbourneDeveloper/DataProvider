@@ -105,4 +105,85 @@ public sealed class ReportMetadataTests
         Assert.Single(metadata.Layout.Rows[0].Cells);
         Assert.Equal(ComponentType.Metric, metadata.Layout.Rows[0].Cells[0].Component.Type);
     }
+
+    [Fact]
+    public void ToMetadata_PreservesCustomCss()
+    {
+        // Arrange
+        var report = new ReportDefinition(
+            Id: "css-report",
+            Title: "Styled",
+            Parameters: [],
+            DataSources: [],
+            Layout: new LayoutDefinition(Columns: 12, Rows: []),
+            CustomCss: ".highlight { background: red; } .dark { color: white; }"
+        );
+
+        // Act
+        var metadata = ReportMetadataMapper.ToMetadata(report);
+
+        // Assert
+        Assert.Equal(".highlight { background: red; } .dark { color: white; }", metadata.CustomCss);
+    }
+
+    [Fact]
+    public void ToMetadata_PreservesCssClassAndCssStyle()
+    {
+        // Arrange
+        var cssStyle = System
+            .Collections.Immutable.ImmutableDictionary<string, string>.Empty.Add(
+                "fontWeight",
+                "bold"
+            )
+            .Add("color", "#ff0000");
+
+        var report = new ReportDefinition(
+            Id: "css-component-report",
+            Title: "Component CSS",
+            Parameters: [],
+            DataSources: [],
+            Layout: new LayoutDefinition(
+                Columns: 12,
+                Rows:
+                [
+                    new LayoutRow(
+                        Cells:
+                        [
+                            new LayoutCell(
+                                ColSpan: 6,
+                                Component: new ComponentDefinition(
+                                    Type: ComponentType.Metric,
+                                    DataSource: "ds1",
+                                    Title: "Styled Metric",
+                                    Value: "total",
+                                    Format: "number",
+                                    ChartType: null,
+                                    XAxis: null,
+                                    YAxis: null,
+                                    Columns: null,
+                                    PageSize: null,
+                                    Content: null,
+                                    Style: null,
+                                    CssClass: "my-highlight",
+                                    CssStyle: cssStyle
+                                ),
+                                CssClass: "custom-cell"
+                            ),
+                        ]
+                    ),
+                ]
+            )
+        );
+
+        // Act
+        var metadata = ReportMetadataMapper.ToMetadata(report);
+
+        // Assert
+        var cell = metadata.Layout.Rows[0].Cells[0];
+        Assert.Equal("custom-cell", cell.CssClass);
+        Assert.Equal("my-highlight", cell.Component.CssClass);
+        Assert.NotNull(cell.Component.CssStyle);
+        Assert.Equal("bold", cell.Component.CssStyle!["fontWeight"]);
+        Assert.Equal("#ff0000", cell.Component.CssStyle!["color"]);
+    }
 }

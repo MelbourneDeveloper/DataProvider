@@ -34,7 +34,9 @@ namespace Reporting.React.Components
             string title,
             object xAxisDef,
             object yAxisDef,
-            object dataSourceResult
+            object dataSourceResult,
+            string cssClass = null,
+            object cssStyle = null
         )
         {
             var xField = Script.Get<string>(xAxisDef, "field");
@@ -46,10 +48,13 @@ namespace Reporting.React.Components
             var xIndex = FindColumnIndex(columnNames, xField);
             var yIndex = FindColumnIndex(columnNames, yField);
 
+            var chartClassName = cssClass != null ? "report-chart " + cssClass : "report-chart";
+
             if (xIndex < 0 || yIndex < 0 || rows.Length == 0)
             {
                 return Div(
-                    className: "report-chart",
+                    className: chartClassName,
+                    style: cssStyle,
                     children: new[]
                     {
                         H(3, className: "report-component-title", children: new[] { Text(title) }),
@@ -166,7 +171,8 @@ namespace Reporting.React.Components
             Array.Copy(barElements, finalElements, elementIndex);
 
             return Div(
-                className: "report-chart",
+                className: chartClassName,
+                style: cssStyle,
                 children: new[]
                 {
                     H(3, className: "report-component-title", children: new[] { Text(title) }),

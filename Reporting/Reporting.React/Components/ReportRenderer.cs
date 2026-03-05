@@ -16,6 +16,7 @@ namespace Reporting.React.Components
         {
             var title = Script.Get<string>(reportDef, "title") ?? "Report";
             var layout = Script.Get<object>(reportDef, "layout");
+            var customCss = Script.Get<string>(reportDef, "customCss");
             var dataSources = Script.Get<object>(executionResult, "dataSources");
 
             if (layout == null)
@@ -27,17 +28,35 @@ namespace Reporting.React.Components
             }
 
             var rows = Script.Get<object[]>(layout, "rows") ?? new object[0];
-            var renderedRows = new ReactElement[rows.Length + 1];
+            var hasCustomCss = customCss != null && customCss.Length > 0;
+            var renderedRows = new ReactElement[rows.Length + 1 + (hasCustomCss ? 1 : 0)];
+            var index = 0;
+
+            // Inject custom CSS as a <style> tag
+            if (hasCustomCss)
+            {
+                renderedRows[index++] = InjectStyleTag(customCss);
+            }
 
             // Report title
-            renderedRows[0] = H(1, className: "report-title", children: new[] { Text(title) });
+            renderedRows[index++] = H(
+                1,
+                className: "report-title",
+                children: new[] { Text(title) }
+            );
 
             for (var r = 0; r < rows.Length; r++)
             {
-                renderedRows[r + 1] = RenderRow(rows[r], dataSources);
+                renderedRows[index++] = RenderRow(rows[r], dataSources);
             }
 
             return Div(className: "report-container", children: renderedRows);
+        }
+
+        private static ReactElement InjectStyleTag(string css)
+        {
+            var props = new { dangerouslySetInnerHTML = new { __html = css } };
+            return Script.Call<ReactElement>("React.createElement", "style", props);
         }
 
         private static ReactElement RenderRow(object row, object dataSources)
@@ -57,18 +76,19 @@ namespace Reporting.React.Components
         {
             var colSpan = Script.Get<int>(cell, "colSpan");
             var component = Script.Get<object>(cell, "component");
+            var cellCssClass = Script.Get<string>(cell, "cssClass");
+
+            var baseClass = "report-cell report-cell-" + colSpan;
+            var cellClassName = cellCssClass != null ? baseClass + " " + cellCssClass : baseClass;
 
             if (component == null)
             {
-                return Div(className: "report-cell report-cell-" + colSpan);
+                return Div(className: cellClassName);
             }
 
             var rendered = RenderComponent(component, dataSources);
 
-            return Div(
-                className: "report-cell report-cell-" + colSpan,
-                children: new[] { rendered }
-            );
+            return Div(className: cellClassName, children: new[] { rendered });
         }
 
         private static ReactElement RenderComponent(object component, object dataSources)
@@ -76,6 +96,8 @@ namespace Reporting.React.Components
             var type = Script.Get<string>(component, "type");
             var dsId = Script.Get<string>(component, "dataSource");
             var title = Script.Get<string>(component, "title") ?? "";
+            var cssClass = Script.Get<string>(component, "cssClass");
+            var cssStyle = Script.Get<object>(component, "cssStyle");
 
             // Resolve the data source result if specified
             object dsResult = null;
@@ -92,7 +114,9 @@ namespace Reporting.React.Components
                     title: title,
                     valueField: valueField,
                     format: format,
-                    dataSourceResult: dsResult
+                    dataSourceResult: dsResult,
+                    cssClass: cssClass,
+                    cssStyle: cssStyle
                 );
             }
 
@@ -108,7 +132,9 @@ namespace Reporting.React.Components
                         title: title,
                         xAxisDef: xAxis,
                         yAxisDef: yAxis,
-                        dataSourceResult: dsResult
+                        dataSourceResult: dsResult,
+                        cssClass: cssClass,
+                        cssStyle: cssStyle
                     );
                 }
 
@@ -117,7 +143,9 @@ namespace Reporting.React.Components
                     title: title,
                     xAxisDef: xAxis,
                     yAxisDef: yAxis,
-                    dataSourceResult: dsResult
+                    dataSourceResult: dsResult,
+                    cssClass: cssClass,
+                    cssStyle: cssStyle
                 );
             }
 
@@ -129,7 +157,9 @@ namespace Reporting.React.Components
                     title: title,
                     columnDefs: columns,
                     dataSourceResult: dsResult,
-                    pageSize: pageSize > 0 ? pageSize : 50
+                    pageSize: pageSize > 0 ? pageSize : 50,
+                    cssClass: cssClass,
+                    cssStyle: cssStyle
                 );
             }
 
@@ -137,7 +167,12 @@ namespace Reporting.React.Components
             {
                 var content = Script.Get<string>(component, "content") ?? "";
                 var style = Script.Get<string>(component, "style") ?? "body";
-                return TextComponent.Render(content: content, style: style);
+                return TextComponent.Render(
+                    content: content,
+                    style: style,
+                    cssClass: cssClass,
+                    cssStyle: cssStyle
+                );
             }
 
             return Div(

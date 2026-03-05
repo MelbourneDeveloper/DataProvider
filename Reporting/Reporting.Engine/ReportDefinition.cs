@@ -11,7 +11,8 @@ public sealed record ReportDefinition(
     string Title,
     ImmutableArray<ReportParameter> Parameters,
     ImmutableArray<DataSourceDefinition> DataSources,
-    LayoutDefinition Layout
+    LayoutDefinition Layout,
+    string? CustomCss = null
 );
 
 /// <summary>

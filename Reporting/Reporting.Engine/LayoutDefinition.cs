@@ -16,7 +16,11 @@ public sealed record LayoutRow(ImmutableArray<LayoutCell> Cells);
 /// <summary>
 /// A cell in the report grid containing a component.
 /// </summary>
-public sealed record LayoutCell(int ColSpan, ComponentDefinition Component);
+public sealed record LayoutCell(
+    int ColSpan,
+    ComponentDefinition Component,
+    string? CssClass = null
+);
 
 /// <summary>
 /// A visual component that renders data.
@@ -33,7 +37,9 @@ public sealed record ComponentDefinition(
     ImmutableArray<ColumnDefinition>? Columns,
     int? PageSize,
     string? Content,
-    string? Style
+    string? Style,
+    string? CssClass = null,
+    ImmutableDictionary<string, string>? CssStyle = null
 );
 
 /// <summary>

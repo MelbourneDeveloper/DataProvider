@@ -16,13 +16,17 @@ namespace Reporting.React.Components
             string title,
             string valueField,
             string format,
-            object dataSourceResult
+            object dataSourceResult,
+            string cssClass = null,
+            object cssStyle = null
         )
         {
             var displayValue = ExtractMetricValue(dataSourceResult, valueField, format);
+            var className = cssClass != null ? "report-metric " + cssClass : "report-metric";
 
             return Div(
-                className: "report-metric",
+                className: className,
+                style: cssStyle,
                 children: new[]
                 {
                     Div(className: "report-metric-value", children: new[] { Text(displayValue) }),

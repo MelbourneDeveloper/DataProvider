@@ -186,6 +186,84 @@ public sealed class ReportConfigLoaderTests : IDisposable
     }
 
     [Fact]
+    public void LoadFromJson_WithCustomCssAndCssClass_ParsesCorrectly()
+    {
+        // Arrange
+        var json = """
+            {
+                "id": "styled-report",
+                "title": "Styled Report",
+                "parameters": [],
+                "customCss": ".my-highlight { background: red; } .dark-chart { background: #1a2332; }",
+                "dataSources": [],
+                "layout": {
+                    "columns": 12,
+                    "rows": [
+                        {
+                            "cells": [
+                                {
+                                    "colSpan": 6,
+                                    "cssClass": "custom-cell",
+                                    "component": {
+                                        "type": "Metric",
+                                        "dataSource": "ds1",
+                                        "title": "Styled Metric",
+                                        "value": "total",
+                                        "format": "number",
+                                        "cssClass": "my-highlight",
+                                        "cssStyle": { "fontWeight": "bold", "color": "#ff0000" }
+                                    }
+                                },
+                                {
+                                    "colSpan": 6,
+                                    "component": {
+                                        "type": "Chart",
+                                        "chartType": "Bar",
+                                        "dataSource": "ds1",
+                                        "title": "Dark Chart",
+                                        "xAxis": { "field": "x" },
+                                        "yAxis": { "field": "y" },
+                                        "cssClass": "dark-chart"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+            """;
+
+        // Act
+        var result = ReportConfigLoader.LoadFromJson(json: json, logger: _logger);
+
+        // Assert
+        Assert.True(result is LoadOk);
+        var report = ((LoadOk)result).Value;
+
+        // Report-level customCss
+        Assert.Equal(
+            ".my-highlight { background: red; } .dark-chart { background: #1a2332; }",
+            report.CustomCss
+        );
+
+        // Cell-level cssClass
+        Assert.Equal("custom-cell", report.Layout.Rows[0].Cells[0].CssClass);
+        Assert.Null(report.Layout.Rows[0].Cells[1].CssClass);
+
+        // Component-level cssClass
+        var metric = report.Layout.Rows[0].Cells[0].Component;
+        Assert.Equal("my-highlight", metric.CssClass);
+        Assert.NotNull(metric.CssStyle);
+        Assert.Equal("bold", metric.CssStyle!["fontWeight"]);
+        Assert.Equal("#ff0000", metric.CssStyle!["color"]);
+
+        // Component cssClass without cssStyle
+        var chart = report.Layout.Rows[0].Cells[1].Component;
+        Assert.Equal("dark-chart", chart.CssClass);
+        Assert.Null(chart.CssStyle);
+    }
+
+    [Fact]
     public void LoadFromFile_WithNonexistentFile_ReturnsError()
     {
         // Act
