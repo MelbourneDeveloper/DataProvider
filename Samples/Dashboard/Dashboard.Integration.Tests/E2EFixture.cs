@@ -111,9 +111,9 @@ public sealed class E2EFixture : IAsyncLifetime
         await KillProcessOnPortAsync(5002);
         await Task.Delay(2000);
 
-        // Start PostgreSQL container for all APIs
+        // Start PostgreSQL container for all APIs (use pgvector for ICD-10 support)
         _postgresContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:16-alpine")
+            .WithImage("pgvector/pgvector:pg16")
             .WithDatabase("e2e_shared")
             .WithUsername("test")
             .WithPassword("test")
@@ -126,6 +126,7 @@ public sealed class E2EFixture : IAsyncLifetime
         var clinicalConnStr = await CreateDatabaseAsync(baseConnStr, "clinical_e2e");
         var schedulingConnStr = await CreateDatabaseAsync(baseConnStr, "scheduling_e2e");
         var gatekeeperConnStr = await CreateDatabaseAsync(baseConnStr, "gatekeeper_e2e");
+        var icd10ConnStr = await CreateDatabaseAsync(baseConnStr, "icd10_e2e");
 
         Console.WriteLine("[E2E] PostgreSQL container started");
 
@@ -189,7 +190,7 @@ public sealed class E2EFixture : IAsyncLifetime
             new Dictionary<string, string> { ["ConnectionStrings__Postgres"] = gatekeeperConnStr }
         );
 
-        // Start ICD-10 API (uses SQLite, no separate database needed)
+        // Start ICD-10 API (requires PostgreSQL with pgvector)
         var icd10Dll = Path.Combine(
             icd10ProjectDir,
             "bin",
@@ -202,7 +203,8 @@ public sealed class E2EFixture : IAsyncLifetime
             _icd10Process = StartApiFromDll(
                 icd10Dll,
                 icd10ProjectDir,
-                Icd10Url
+                Icd10Url,
+                new Dictionary<string, string> { ["ConnectionStrings__Postgres"] = icd10ConnStr }
             );
             Console.WriteLine($"[E2E] ICD-10 API starting on {Icd10Url}");
         }
