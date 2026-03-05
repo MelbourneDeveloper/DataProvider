@@ -134,3 +134,76 @@ pub fn ai_completion(
         sort_priority: 6, // After all schema/keyword completions
     }
 }
+
+/// Built-in test AI provider that returns deterministic completions.
+/// Activated when `aiProvider.provider` is `"test"` in initializationOptions.
+/// This proves the full AI pipeline works end-to-end without an external service.
+pub struct TestAiProvider;
+
+#[tower_lsp::async_trait]
+impl AiCompletionProvider for TestAiProvider {
+    async fn complete(&self, context: &AiCompletionContext) -> Vec<CompletionItem> {
+        let mut items = vec![
+            ai_completion(
+                "ai_suggest_filter".to_string(),
+                "AI Suggestion".to_string(),
+                format!(
+                    "AI-generated filter suggestion based on context at line {}, col {}",
+                    context.line, context.column
+                ),
+                Some("filter(x => x.${1:column} == ${2:value})".to_string()),
+            ),
+            ai_completion(
+                "ai_suggest_join".to_string(),
+                "AI Suggestion".to_string(),
+                "AI-generated join suggestion".to_string(),
+                Some("join(${1:table}, on: x => x.${2:fk} == y.${3:pk})".to_string()),
+            ),
+            ai_completion(
+                "ai_suggest_aggregate".to_string(),
+                "AI Suggestion".to_string(),
+                "AI-generated aggregation pattern".to_string(),
+                Some("group_by(x => x.${1:key}) |> select(g => { key: g.key, total: sum(g.${2:value}) })".to_string()),
+            ),
+        ];
+
+        // Context-aware: if tables are available, suggest table-specific completions
+        for table in &context.available_tables {
+            items.push(ai_completion(
+                format!("ai_query_{table}"),
+                format!("AI: Query {table}"),
+                format!("AI-generated query pattern for table '{table}'"),
+                Some(format!("{table} |> filter(x => x.${{1:column}} == ${{2:value}}) |> select(x => x)")),
+            ));
+        }
+
+        // Prefix filtering: only return items matching the word prefix
+        if !context.word_prefix.is_empty() {
+            let prefix = context.word_prefix.to_lowercase();
+            items.retain(|item| item.label.to_lowercase().starts_with(&prefix));
+        }
+
+        items
+    }
+}
+
+/// Built-in slow AI provider for testing timeout enforcement.
+/// Activated when `aiProvider.provider` is `"test_slow"` in initializationOptions.
+/// Sleeps for the configured duration to prove timeouts work.
+pub struct SlowAiProvider {
+    /// How long to sleep before returning results (milliseconds).
+    pub delay_ms: u64,
+}
+
+#[tower_lsp::async_trait]
+impl AiCompletionProvider for SlowAiProvider {
+    async fn complete(&self, _context: &AiCompletionContext) -> Vec<CompletionItem> {
+        tokio::time::sleep(std::time::Duration::from_millis(self.delay_ms)).await;
+        vec![ai_completion(
+            "ai_slow_result".to_string(),
+            "Slow AI Result".to_string(),
+            "This should never appear if timeout works".to_string(),
+            None,
+        )]
+    }
+}

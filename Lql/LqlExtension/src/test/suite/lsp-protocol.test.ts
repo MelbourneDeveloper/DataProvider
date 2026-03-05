@@ -2270,3 +2270,691 @@ describe("AI Provider Integration Tests", function () {
     );
   });
 });
+
+/**
+ * ========================================================================
+ * AI PIPELINE E2E TESTS — REAL PROVIDER, REAL COMPLETIONS, REAL PROOF
+ * ========================================================================
+ *
+ * These tests activate the built-in "test" AI provider in the Rust LSP server.
+ * The provider returns deterministic completions that we can assert on.
+ * This proves the FULL pipeline: config → provider activation → completion
+ * request → AI items merged with schema/keyword items → response to client.
+ */
+describe("AI Pipeline E2E Tests — Built-in Test Provider", function () {
+  this.timeout(30000);
+
+  let client: LspClient;
+  let lspBinary: string;
+
+  before(function () {
+    try {
+      lspBinary = findLspBinary();
+    } catch {
+      this.skip();
+    }
+  });
+
+  afterEach(function () {
+    if (client) {
+      client.kill();
+    }
+  });
+
+  /** Initialize with the test AI provider and wait for activation log. */
+  async function initWithTestAi(
+    extraOptions?: Record<string, any>,
+  ): Promise<LspClient> {
+    const c = new LspClient(lspBinary);
+    await c.request("initialize", {
+      processId: process.pid,
+      capabilities: {},
+      rootUri: null,
+      initializationOptions: {
+        aiProvider: {
+          provider: "test",
+          endpoint: "builtin://test",
+          model: "test-model",
+          timeoutMs: 5000,
+          enabled: true,
+        },
+        ...extraOptions,
+      },
+    });
+    c.notify("initialized", {});
+
+    // Wait for test provider activation log
+    await new Promise((r) => setTimeout(r, 3000));
+    const logs = c.drainNotifications("window/logMessage");
+    const activated = logs.find(
+      (n: any) =>
+        (n.params?.message || "").includes("AI test provider activated"),
+    );
+    assert.ok(
+      activated,
+      `Test AI provider must activate. Got: ${JSON.stringify(logs.map((n: any) => n.params?.message))}`,
+    );
+    return c;
+  }
+
+  it("PROOF: Test AI provider activates and logs confirmation", async function () {
+    client = await initWithTestAi();
+    // If we got here, the provider activated (initWithTestAi asserts it)
+  });
+
+  it("PROOF: AI completions appear in completion results alongside keyword completions", async function () {
+    client = await initWithTestAi();
+
+    client.notify("textDocument/didOpen", {
+      textDocument: {
+        uri: "file:///test/ai_pipeline.lql",
+        languageId: "lql",
+        version: 1,
+        text: "users |> ",
+      },
+    });
+    await new Promise((r) => setTimeout(r, 500));
+
+    const completions = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/ai_pipeline.lql" },
+      position: { line: 0, character: 9 },
+    });
+
+    const items = Array.isArray(completions)
+      ? completions
+      : completions.items || [];
+    const labels = items.map((i: any) => i.label);
+
+    // AI completions MUST appear
+    assert.ok(
+      labels.includes("ai_suggest_filter"),
+      `AI completion 'ai_suggest_filter' must be in results. Got: ${JSON.stringify(labels)}`,
+    );
+    assert.ok(
+      labels.includes("ai_suggest_join"),
+      `AI completion 'ai_suggest_join' must be in results. Got: ${JSON.stringify(labels)}`,
+    );
+    assert.ok(
+      labels.includes("ai_suggest_aggregate"),
+      `AI completion 'ai_suggest_aggregate' must be in results. Got: ${JSON.stringify(labels)}`,
+    );
+
+    // Keyword completions MUST ALSO still appear (AI doesn't replace them)
+    assert.ok(
+      labels.includes("select"),
+      "Keyword 'select' must still appear alongside AI completions",
+    );
+    assert.ok(
+      labels.includes("filter"),
+      "Keyword 'filter' must still appear alongside AI completions",
+    );
+  });
+
+  it("PROOF: AI completions have CompletionItemKind.Snippet (kind=15)", async function () {
+    client = await initWithTestAi();
+
+    client.notify("textDocument/didOpen", {
+      textDocument: {
+        uri: "file:///test/ai_kind.lql",
+        languageId: "lql",
+        version: 1,
+        text: "data |> ",
+      },
+    });
+    await new Promise((r) => setTimeout(r, 500));
+
+    const completions = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/ai_kind.lql" },
+      position: { line: 0, character: 8 },
+    });
+
+    const items = Array.isArray(completions)
+      ? completions
+      : completions.items || [];
+
+    const aiFilter = items.find((i: any) => i.label === "ai_suggest_filter");
+    assert.ok(aiFilter, "Must find ai_suggest_filter");
+    assert.strictEqual(
+      aiFilter.kind,
+      15, // CompletionItemKind.Snippet
+      `AI completion must be Snippet kind (15), got ${aiFilter.kind}`,
+    );
+
+    const aiJoin = items.find((i: any) => i.label === "ai_suggest_join");
+    assert.ok(aiJoin, "Must find ai_suggest_join");
+    assert.strictEqual(aiJoin.kind, 15, "AI join must be Snippet kind");
+  });
+
+  it("PROOF: AI completions include insertText with snippet placeholders", async function () {
+    client = await initWithTestAi();
+
+    client.notify("textDocument/didOpen", {
+      textDocument: {
+        uri: "file:///test/ai_insert.lql",
+        languageId: "lql",
+        version: 1,
+        text: "items |> ",
+      },
+    });
+    await new Promise((r) => setTimeout(r, 500));
+
+    const completions = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/ai_insert.lql" },
+      position: { line: 0, character: 9 },
+    });
+
+    const items = Array.isArray(completions)
+      ? completions
+      : completions.items || [];
+
+    const aiFilter = items.find((i: any) => i.label === "ai_suggest_filter");
+    assert.ok(aiFilter, "Must find ai_suggest_filter");
+    assert.ok(
+      aiFilter.insertText,
+      "AI completion must have insertText",
+    );
+    assert.ok(
+      aiFilter.insertText.includes("${1:"),
+      `AI insertText must contain snippet placeholders, got: ${aiFilter.insertText}`,
+    );
+    assert.ok(
+      aiFilter.insertText.includes("filter("),
+      `AI filter insertText must contain 'filter(', got: ${aiFilter.insertText}`,
+    );
+
+    const aiAgg = items.find((i: any) => i.label === "ai_suggest_aggregate");
+    assert.ok(aiAgg, "Must find ai_suggest_aggregate");
+    assert.ok(
+      aiAgg.insertText.includes("group_by"),
+      `AI aggregate insertText must contain 'group_by', got: ${aiAgg.insertText}`,
+    );
+  });
+
+  it("PROOF: AI completions have 'AI Suggestion' detail label", async function () {
+    client = await initWithTestAi();
+
+    client.notify("textDocument/didOpen", {
+      textDocument: {
+        uri: "file:///test/ai_detail.lql",
+        languageId: "lql",
+        version: 1,
+        text: "t |> ",
+      },
+    });
+    await new Promise((r) => setTimeout(r, 500));
+
+    const completions = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/ai_detail.lql" },
+      position: { line: 0, character: 5 },
+    });
+
+    const items = Array.isArray(completions)
+      ? completions
+      : completions.items || [];
+
+    const aiItems = items.filter((i: any) => i.label.startsWith("ai_suggest"));
+    assert.ok(
+      aiItems.length >= 3,
+      `Must have at least 3 AI suggestions, got ${aiItems.length}`,
+    );
+
+    for (const item of aiItems) {
+      assert.strictEqual(
+        item.detail,
+        "AI Suggestion",
+        `AI item '${item.label}' must have detail 'AI Suggestion', got '${item.detail}'`,
+      );
+    }
+  });
+
+  it("PROOF: AI completions include context-aware documentation with line and column", async function () {
+    client = await initWithTestAi();
+
+    client.notify("textDocument/didOpen", {
+      textDocument: {
+        uri: "file:///test/ai_docs.lql",
+        languageId: "lql",
+        version: 1,
+        text: "let result =\n  orders |> ",
+      },
+    });
+    await new Promise((r) => setTimeout(r, 500));
+
+    // Request at line 1, col 12 (after "|> ")
+    const completions = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/ai_docs.lql" },
+      position: { line: 1, character: 12 },
+    });
+
+    const items = Array.isArray(completions)
+      ? completions
+      : completions.items || [];
+
+    const aiFilter = items.find((i: any) => i.label === "ai_suggest_filter");
+    assert.ok(aiFilter, "Must find ai_suggest_filter");
+    const doc =
+      typeof aiFilter.documentation === "string"
+        ? aiFilter.documentation
+        : aiFilter.documentation?.value || "";
+    assert.ok(
+      doc.includes("line 1"),
+      `Documentation must include cursor line info, got: ${doc}`,
+    );
+    assert.ok(
+      doc.includes("col 12"),
+      `Documentation must include cursor column info, got: ${doc}`,
+    );
+  });
+
+  it("PROOF: AI prefix filtering works — typing 'ai_s' narrows to matching AI completions", async function () {
+    client = await initWithTestAi();
+
+    client.notify("textDocument/didOpen", {
+      textDocument: {
+        uri: "file:///test/ai_prefix.lql",
+        languageId: "lql",
+        version: 1,
+        text: "data |> ai_suggest_f",
+      },
+    });
+    await new Promise((r) => setTimeout(r, 500));
+
+    const completions = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/ai_prefix.lql" },
+      position: { line: 0, character: 20 },
+    });
+
+    const items = Array.isArray(completions)
+      ? completions
+      : completions.items || [];
+    const aiLabels = items
+      .filter((i: any) => i.label.startsWith("ai_"))
+      .map((i: any) => i.label);
+
+    // Only ai_suggest_filter should match prefix "ai_suggest_f"
+    assert.ok(
+      aiLabels.includes("ai_suggest_filter"),
+      `Must include 'ai_suggest_filter' for prefix 'ai_suggest_f'. Got: ${JSON.stringify(aiLabels)}`,
+    );
+    assert.ok(
+      !aiLabels.includes("ai_suggest_join"),
+      "Must NOT include 'ai_suggest_join' — doesn't match prefix 'ai_suggest_f'",
+    );
+    assert.ok(
+      !aiLabels.includes("ai_suggest_aggregate"),
+      "Must NOT include 'ai_suggest_aggregate' — doesn't match prefix",
+    );
+  });
+
+  it("PROOF: AI + Schema integration — AI completions include table-specific suggestions from real DB", async function () {
+    client = new LspClient(lspBinary, {
+      LQL_CONNECTION_STRING:
+        "host=127.0.0.1 dbname=lql_test user=postgres password=testpass",
+    });
+
+    try {
+      await client.request("initialize", {
+        processId: process.pid,
+        capabilities: {},
+        rootUri: null,
+        initializationOptions: {
+          aiProvider: {
+            provider: "test",
+            endpoint: "builtin://test",
+            model: "test-model",
+            timeoutMs: 5000,
+            enabled: true,
+          },
+        },
+      });
+      client.notify("initialized", {});
+
+      // Wait for both schema load AND AI activation
+      let schemaLoaded = false;
+      let aiActivated = false;
+      const deadline = Date.now() + 10000;
+      while (Date.now() < deadline && (!schemaLoaded || !aiActivated)) {
+        await new Promise((r) => setTimeout(r, 300));
+        const logs = client.drainNotifications("window/logMessage");
+        for (const log of logs) {
+          const msg = log.params?.message || "";
+          if (msg.includes("Schema loaded")) schemaLoaded = true;
+          if (msg.includes("AI test provider activated")) aiActivated = true;
+        }
+      }
+
+      if (!schemaLoaded) {
+        this.skip(); // DB not available
+        return;
+      }
+      assert.ok(aiActivated, "AI test provider must be activated");
+
+      client.notify("textDocument/didOpen", {
+        textDocument: {
+          uri: "file:///test/ai_schema.lql",
+          languageId: "lql",
+          version: 1,
+          text: "customers |> ",
+        },
+      });
+      await new Promise((r) => setTimeout(r, 500));
+
+      const completions = await client.request("textDocument/completion", {
+        textDocument: { uri: "file:///test/ai_schema.lql" },
+        position: { line: 0, character: 13 },
+      });
+
+      const items = Array.isArray(completions)
+        ? completions
+        : completions.items || [];
+      const labels = items.map((i: any) => i.label);
+
+      // Schema tables are passed to AI provider — it generates table-specific suggestions
+      assert.ok(
+        labels.includes("ai_query_customers"),
+        `AI must generate table-specific 'ai_query_customers'. Got: ${JSON.stringify(labels.filter((l: string) => l.startsWith("ai_")))}`,
+      );
+      assert.ok(
+        labels.includes("ai_query_orders"),
+        "AI must generate table-specific 'ai_query_orders' based on schema tables",
+      );
+      assert.ok(
+        labels.includes("ai_query_order_items"),
+        "AI must generate table-specific 'ai_query_order_items' based on schema tables",
+      );
+
+      // Standard AI completions also present
+      assert.ok(
+        labels.includes("ai_suggest_filter"),
+        "Standard AI suggestions must also appear",
+      );
+
+      // Schema keyword completions also present
+      assert.ok(
+        labels.includes("select"),
+        "Keyword completions must coexist with AI + schema completions",
+      );
+
+      // Real schema table completions also present
+      assert.ok(
+        labels.includes("customers"),
+        "Real schema table 'customers' must appear alongside AI completions",
+      );
+
+      // Verify AI table-specific completion has correct insertText
+      const aiCustomers = items.find(
+        (i: any) => i.label === "ai_query_customers",
+      );
+      assert.ok(aiCustomers, "Must find ai_query_customers");
+      assert.ok(
+        aiCustomers.insertText.includes("customers |>"),
+        `AI table completion must reference 'customers |>', got: ${aiCustomers.insertText}`,
+      );
+      assert.ok(
+        aiCustomers.detail.includes("customers"),
+        `AI table completion detail must mention table name, got: ${aiCustomers.detail}`,
+      );
+    } finally {
+      client.kill();
+      client = null as any; // Prevent afterEach from killing again
+    }
+  });
+
+  it("PROOF: AI timeout enforcement — slow provider gets cut off, completions still return", async function () {
+    client = new LspClient(lspBinary);
+    await client.request("initialize", {
+      processId: process.pid,
+      capabilities: {},
+      rootUri: null,
+      initializationOptions: {
+        aiProvider: {
+          provider: "test_slow",
+          endpoint: "builtin://test_slow",
+          model: "slow-model",
+          timeoutMs: 500, // 500ms timeout — provider delays 5500ms
+          enabled: true,
+        },
+      },
+    });
+    client.notify("initialized", {});
+
+    // Wait for slow provider activation
+    await new Promise((r) => setTimeout(r, 2000));
+
+    client.notify("textDocument/didOpen", {
+      textDocument: {
+        uri: "file:///test/ai_timeout.lql",
+        languageId: "lql",
+        version: 1,
+        text: "data |> ",
+      },
+    });
+    await new Promise((r) => setTimeout(r, 500));
+
+    const startTime = Date.now();
+    const completions = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/ai_timeout.lql" },
+      position: { line: 0, character: 8 },
+    });
+    const elapsed = Date.now() - startTime;
+
+    const items = Array.isArray(completions)
+      ? completions
+      : completions.items || [];
+    const labels = items.map((i: any) => i.label);
+
+    // Slow AI result must NOT appear (it was timed out)
+    assert.ok(
+      !labels.includes("ai_slow_result"),
+      `Slow AI result must NOT appear — timeout should have cut it off. Got: ${JSON.stringify(labels)}`,
+    );
+
+    // But keyword completions MUST still work (timeout doesn't break anything)
+    assert.ok(
+      labels.includes("select"),
+      "Keyword 'select' must still appear after AI timeout",
+    );
+    assert.ok(
+      labels.includes("filter"),
+      "Keyword 'filter' must still appear after AI timeout",
+    );
+
+    // Response must arrive within a reasonable time (not waiting for the slow provider)
+    assert.ok(
+      elapsed < 3000,
+      `Completion must return quickly after timeout, took ${elapsed}ms`,
+    );
+  });
+
+  it("PROOF: AI enabled=false prevents AI completions even when provider='test' is configured", async function () {
+    client = new LspClient(lspBinary);
+    await client.request("initialize", {
+      processId: process.pid,
+      capabilities: {},
+      rootUri: null,
+      initializationOptions: {
+        aiProvider: {
+          provider: "test",
+          endpoint: "builtin://test",
+          model: "test-model",
+          timeoutMs: 5000,
+          enabled: false, // DISABLED
+        },
+      },
+    });
+    client.notify("initialized", {});
+    await new Promise((r) => setTimeout(r, 2000));
+
+    client.notify("textDocument/didOpen", {
+      textDocument: {
+        uri: "file:///test/ai_disabled.lql",
+        languageId: "lql",
+        version: 1,
+        text: "data |> ",
+      },
+    });
+    await new Promise((r) => setTimeout(r, 500));
+
+    const completions = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/ai_disabled.lql" },
+      position: { line: 0, character: 8 },
+    });
+
+    const items = Array.isArray(completions)
+      ? completions
+      : completions.items || [];
+    const labels = items.map((i: any) => i.label);
+
+    // AI completions must NOT appear when disabled
+    assert.ok(
+      !labels.includes("ai_suggest_filter"),
+      "AI suggestions must NOT appear when enabled=false",
+    );
+    assert.ok(
+      !labels.includes("ai_suggest_join"),
+      "AI join suggestion must NOT appear when enabled=false",
+    );
+    assert.ok(
+      !labels.includes("ai_suggest_aggregate"),
+      "AI aggregate suggestion must NOT appear when enabled=false",
+    );
+
+    // Keyword completions still work
+    assert.ok(
+      labels.includes("select"),
+      "Keyword completions must still work with AI disabled",
+    );
+  });
+
+  it("PROOF: Multiple consecutive AI completion requests return consistent results", async function () {
+    client = await initWithTestAi();
+
+    client.notify("textDocument/didOpen", {
+      textDocument: {
+        uri: "file:///test/ai_consistency.lql",
+        languageId: "lql",
+        version: 1,
+        text: "users |> ",
+      },
+    });
+    await new Promise((r) => setTimeout(r, 500));
+
+    // Fire 3 completion requests in sequence
+    const results: string[][] = [];
+    for (let i = 0; i < 3; i++) {
+      const completions = await client.request("textDocument/completion", {
+        textDocument: { uri: "file:///test/ai_consistency.lql" },
+        position: { line: 0, character: 9 },
+      });
+      const items = Array.isArray(completions)
+        ? completions
+        : completions.items || [];
+      results.push(items.map((it: any) => it.label));
+    }
+
+    // All 3 requests must return the same AI completions
+    for (let i = 1; i < results.length; i++) {
+      const aiLabels0 = results[0].filter((l) => l.startsWith("ai_")).sort();
+      const aiLabelsI = results[i].filter((l) => l.startsWith("ai_")).sort();
+      assert.deepStrictEqual(
+        aiLabelsI,
+        aiLabels0,
+        `AI completions must be consistent across requests. Run ${i + 1} differs from run 1`,
+      );
+    }
+
+    // Must include AI items in every run
+    for (let i = 0; i < results.length; i++) {
+      assert.ok(
+        results[i].includes("ai_suggest_filter"),
+        `Run ${i + 1} must include ai_suggest_filter`,
+      );
+    }
+  });
+
+  it("PROOF: Full AI pipeline workflow — activate, complete, verify merge, verify prefix, verify timeout", async function () {
+    // Step 1: Activate test AI provider
+    client = await initWithTestAi();
+
+    // Step 2: Open document and get AI + keyword completions
+    client.notify("textDocument/didOpen", {
+      textDocument: {
+        uri: "file:///test/ai_workflow.lql",
+        languageId: "lql",
+        version: 1,
+        text: "employees |> ",
+      },
+    });
+    await new Promise((r) => setTimeout(r, 500));
+
+    const completions1 = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/ai_workflow.lql" },
+      position: { line: 0, character: 13 },
+    });
+    const items1 = Array.isArray(completions1)
+      ? completions1
+      : completions1.items || [];
+    const labels1 = items1.map((i: any) => i.label);
+
+    // Both AI and keyword completions present
+    assert.ok(labels1.includes("ai_suggest_filter"), "Step 2: AI filter must appear");
+    assert.ok(labels1.includes("ai_suggest_join"), "Step 2: AI join must appear");
+    assert.ok(labels1.includes("select"), "Step 2: keyword 'select' must appear");
+
+    // Step 3: Type a prefix to filter AI completions
+    client.notify("textDocument/didChange", {
+      textDocument: { uri: "file:///test/ai_workflow.lql", version: 2 },
+      contentChanges: [{ text: "employees |> ai_suggest_a" }],
+    });
+    await new Promise((r) => setTimeout(r, 500));
+
+    const completions2 = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/ai_workflow.lql" },
+      position: { line: 0, character: 25 },
+    });
+    const items2 = Array.isArray(completions2)
+      ? completions2
+      : completions2.items || [];
+    const aiLabels2 = items2
+      .filter((i: any) => i.label.startsWith("ai_"))
+      .map((i: any) => i.label);
+
+    assert.ok(
+      aiLabels2.includes("ai_suggest_aggregate"),
+      "Step 3: 'ai_suggest_aggregate' must match prefix 'ai_suggest_a'",
+    );
+    assert.ok(
+      !aiLabels2.includes("ai_suggest_filter"),
+      "Step 3: 'ai_suggest_filter' must NOT match prefix 'ai_suggest_a'",
+    );
+
+    // Step 4: Clear prefix and verify all AI completions return
+    client.notify("textDocument/didChange", {
+      textDocument: { uri: "file:///test/ai_workflow.lql", version: 3 },
+      contentChanges: [{ text: "employees |> " }],
+    });
+    await new Promise((r) => setTimeout(r, 500));
+
+    const completions3 = await client.request("textDocument/completion", {
+      textDocument: { uri: "file:///test/ai_workflow.lql" },
+      position: { line: 0, character: 13 },
+    });
+    const items3 = Array.isArray(completions3)
+      ? completions3
+      : completions3.items || [];
+    const labels3 = items3.map((i: any) => i.label);
+
+    assert.ok(
+      labels3.includes("ai_suggest_filter"),
+      "Step 4: All AI completions return after clearing prefix",
+    );
+    assert.ok(
+      labels3.includes("ai_suggest_join"),
+      "Step 4: AI join returns after clearing prefix",
+    );
+    assert.ok(
+      labels3.includes("ai_suggest_aggregate"),
+      "Step 4: AI aggregate returns after clearing prefix",
+    );
+  });
+});

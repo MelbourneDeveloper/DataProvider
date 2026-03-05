@@ -302,19 +302,47 @@ impl LanguageServer for LqlBackend {
             .log_message(MessageType::INFO, "LQL Language Server initialized")
             .await;
 
-        // Log AI provider config (before DB check, which may return early)
+        // Set up AI provider (before DB check, which may return early)
         let ai_config = self.ai_config.lock().unwrap().clone();
         if let Some(ref config) = ai_config {
             if config.enabled {
-                self.client
-                    .log_message(
-                        MessageType::INFO,
-                        format!(
-                            "AI completion provider configured: {} (model: {}, endpoint: {})",
-                            config.provider, config.model, config.endpoint
-                        ),
-                    )
-                    .await;
+                // Activate built-in test providers or log external config
+                match config.provider.as_str() {
+                    "test" => {
+                        self.set_ai_provider(Arc::new(ai::TestAiProvider)).await;
+                        self.client
+                            .log_message(
+                                MessageType::INFO,
+                                "AI test provider activated — returns deterministic completions",
+                            )
+                            .await;
+                    }
+                    "test_slow" => {
+                        let delay = config.timeout_ms.saturating_add(5000);
+                        self.set_ai_provider(Arc::new(ai::SlowAiProvider { delay_ms: delay }))
+                            .await;
+                        self.client
+                            .log_message(
+                                MessageType::INFO,
+                                format!(
+                                    "AI slow test provider activated — {}ms delay (timeout: {}ms)",
+                                    delay, config.timeout_ms
+                                ),
+                            )
+                            .await;
+                    }
+                    _ => {
+                        self.client
+                            .log_message(
+                                MessageType::INFO,
+                                format!(
+                                    "AI completion provider configured: {} (model: {}, endpoint: {})",
+                                    config.provider, config.model, config.endpoint
+                                ),
+                            )
+                            .await;
+                    }
+                }
             }
         }
 
