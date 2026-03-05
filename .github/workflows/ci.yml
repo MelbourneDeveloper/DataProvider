@@ -643,7 +643,7 @@ jobs:
         with:
           context: .
           file: Samples/docker/Dockerfile.app
-          push: false
+          load: true
           tags: dataprovider-app:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -653,7 +653,7 @@ jobs:
         with:
           context: .
           file: Samples/docker/Dockerfile.dashboard
-          push: false
+          load: true
           tags: dataprovider-dashboard:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -668,6 +668,20 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, changes]
     if: needs.changes.outputs.dashboard == 'true'
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: changeme
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
