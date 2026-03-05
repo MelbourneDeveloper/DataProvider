@@ -148,7 +148,7 @@ public sealed class E2EFixture : IAsyncLifetime
             clinicalProjectDir,
             "bin",
             configuration,
-            "net9.0",
+            "net10.0",
             "Clinical.Api.dll"
         );
         _clinicalProcess = StartApiFromDll(
@@ -162,7 +162,7 @@ public sealed class E2EFixture : IAsyncLifetime
             schedulingProjectDir,
             "bin",
             configuration,
-            "net9.0",
+            "net10.0",
             "Scheduling.Api.dll"
         );
         _schedulingProcess = StartApiFromDll(
@@ -176,7 +176,7 @@ public sealed class E2EFixture : IAsyncLifetime
             gatekeeperProjectDir,
             "bin",
             configuration,
-            "net9.0",
+            "net10.0",
             "Gatekeeper.Api.dll"
         );
         _gatekeeperProcess = StartApiFromDll(
@@ -197,7 +197,7 @@ public sealed class E2EFixture : IAsyncLifetime
             clinicalSyncDir,
             "bin",
             configuration,
-            "net9.0",
+            "net10.0",
             "Clinical.Sync.dll"
         );
         if (File.Exists(clinicalSyncDll))
@@ -224,7 +224,7 @@ public sealed class E2EFixture : IAsyncLifetime
             schedulingSyncDir,
             "bin",
             configuration,
-            "net9.0",
+            "net10.0",
             "Scheduling.Sync.dll"
         );
         if (File.Exists(schedulingSyncDll))
