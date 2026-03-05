@@ -106,7 +106,62 @@ When no database is available, the LSP still provides full keyword, function, an
 
 ## AI Completion Provider
 
-The LSP has a pluggable AI completion integration. It does **not** ship with or call any specific AI model. Instead, it defines a trait that external code implements:
+The LSP has a pluggable AI completion integration with a **built-in Ollama provider** for local models and a trait for custom providers.
+
+### Built-in: Ollama Provider
+
+The LSP ships with a real Ollama-backed AI provider. Set `provider: "ollama"` and it calls your local Ollama instance with full context:
+
+- **LQL language reference** — compiled into the binary, sent as system context
+- **Full database schema** — table names, column names, types, PK/nullability constraints
+- **Current file content** — the full document being edited
+- **Cursor context** — line, column, prefix being typed
+
+```json
+{
+  "initializationOptions": {
+    "connectionString": "host=localhost dbname=mydb user=postgres password=secret",
+    "aiProvider": {
+      "provider": "ollama",
+      "endpoint": "http://localhost:11434/api/generate",
+      "model": "qwen2.5-coder:1.5b",
+      "timeoutMs": 3000,
+      "enabled": true
+    }
+  }
+}
+```
+
+#### Quick Setup
+
+```bash
+cd Lql/lql-lsp-rust
+./setup-ai.sh                      # Default: qwen2.5-coder:1.5b
+./setup-ai.sh codellama:7b         # Or pick your model
+./setup-ai.sh deepseek-coder:1.3b  # Lightweight alternative
+```
+
+The setup script: installs Ollama, pulls the model, smoke-tests it, builds the LSP, prints VS Code config.
+
+#### Schema Context Sent to Model
+
+The AI receives the full schema in compact form:
+
+```
+customers(id uuid PK NOT NULL, name text NOT NULL, email text NOT NULL, created_at timestamp NOT NULL)
+orders(id uuid PK NOT NULL, customer_id uuid NOT NULL, total numeric NOT NULL, status text)
+order_items(id uuid PK NOT NULL, order_id uuid NOT NULL, product_id uuid NOT NULL, quantity integer NOT NULL)
+```
+
+This means the model can suggest completions that reference real column names and types.
+
+#### On/Off Toggle
+
+Set `"enabled": false` to disable AI completions entirely. The LSP still provides full schema + keyword completions.
+
+### Custom Provider Trait
+
+For providers beyond Ollama, implement the trait:
 
 ```rust
 #[tower_lsp::async_trait]
@@ -159,17 +214,27 @@ The `AiCompletionContext` includes:
 - `word_prefix` — the word currently being typed
 - `file_uri` — URI of the file
 - `available_tables` — table names from the database schema (if loaded)
+- `schema_description` — full schema with column types, PK, nullability (e.g., `customers(id uuid PK NOT NULL, name text NOT NULL)`)
+
+### LQL Reference Doc
+
+The file `crates/lql-reference.md` is compiled into the binary via `include_str!` and sent as system context to the Ollama provider. It contains the complete LQL grammar, all operations, functions, operators, and annotated examples — optimized for tight LLM context windows.
 
 ### Built-in Test Providers
 
 For E2E testing, the LSP includes two built-in providers:
 
-- `provider: "test"` — Returns deterministic AI completions (`ai_suggest_filter`, `ai_suggest_join`, `ai_suggest_aggregate`) plus table-specific suggestions based on `available_tables`
+- `provider: "test"` — Returns deterministic AI completions (`ai_suggest_filter`, `ai_suggest_join`, `ai_suggest_aggregate`) plus table-specific suggestions based on `available_tables`. Also emits `ai_schema_context` with the full schema description to prove schema flows through
 - `provider: "test_slow"` — Sleeps longer than the configured timeout to prove timeout enforcement works
 
-### What "Model" Does It Use?
+### Recommended Models
 
-**None.** The LSP itself is model-agnostic. The `model` field in `AiConfig` is passed through to your `AiCompletionProvider` implementation — you decide what to call. The trait is the contract; the LSP handles merging, timeout, and priority. You bring the model.
+| Model | Size | Speed | Quality | Use Case |
+|-------|------|-------|---------|----------|
+| `qwen2.5-coder:1.5b` | 1.5B | Fast | Good | Default — best speed/quality tradeoff |
+| `deepseek-coder:1.3b` | 1.3B | Fast | Good | Alternative lightweight model |
+| `codellama:7b` | 7B | Medium | Better | When you have GPU and want higher quality |
+| `qwen2.5-coder:7b` | 7B | Medium | Better | Larger Qwen for better understanding |
 
 ## Building
 
@@ -191,7 +256,7 @@ npx tsc --project tsconfig.json
 
 ## Testing
 
-63 E2E tests verify the LSP via real stdio JSON-RPC protocol — zero mocks.
+76+ E2E tests verify the LSP via real stdio JSON-RPC protocol — zero mocks.
 
 ```bash
 cd Lql/LqlExtension
@@ -206,7 +271,8 @@ npx mocha --timeout 30000 out/test/suite/lsp-protocol.test.js
 | Core LSP | 37 | Completions, hover, diagnostics, symbols, formatting, shutdown |
 | Schema-Aware | 10 | Real PostgreSQL: table/column completions, qualified hover, graceful degradation |
 | AI Config | 4 | Config parsing, enabled/disabled logging, coexistence with keywords |
-| AI Pipeline | 12 | Full pipeline: provider activation, AI items in results, snippet kinds, prefix filtering, timeout enforcement, schema+AI merge, consistency |
+| AI Pipeline | 13 | Full pipeline: provider activation, AI items in results, snippet kinds, prefix filtering, timeout enforcement, schema+AI merge, schema context proof, consistency |
+| **Real AI Model** | **12** | **Real Ollama + real PostgreSQL + real LSP: completions, schema-aware AI, join queries, syntax errors, valid queries, hover, full pipeline merge, on/off toggle, live editing** |
 
 ### Running Schema Tests
 
@@ -219,6 +285,34 @@ pg_ctlcluster 16 main start
 # Tests auto-detect via LQL_CONNECTION_STRING or DATABASE_URL
 # The test suite passes connection strings via initializationOptions
 ```
+
+### Running Real AI Model Tests
+
+These tests require Ollama running with a model pulled:
+
+```bash
+# Set up Ollama (one time)
+cd Lql/lql-lsp-rust
+./setup-ai.sh
+
+# Run real AI tests
+cd Lql/LqlExtension
+LQL_TEST_REAL_AI=1 npx mocha --timeout 60000 out/test/suite/lsp-protocol.test.js
+
+# Or with a specific model
+LQL_TEST_REAL_AI=1 OLLAMA_MODEL=codellama:7b npx mocha --timeout 60000 out/test/suite/lsp-protocol.test.js
+```
+
+The real AI tests prove:
+- Real Ollama model returns LQL-aware completions
+- Schema columns + AI suggestions coexist in results
+- Multi-line join queries get real completions
+- Syntax errors produce REAL error diagnostics with line/column
+- Valid LQL produces zero diagnostics
+- Hover on tables/columns returns real DB types
+- Full pipeline: real DB schema + real AI model + real LSP merged
+- `enabled: false` completely disables model calls
+- Live editing triggers updated diagnostics in real time
 
 ## Completion Priority Tiers
 
