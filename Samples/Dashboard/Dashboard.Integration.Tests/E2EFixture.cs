@@ -34,6 +34,7 @@ public sealed class E2EFixture : IAsyncLifetime
     private Process? _clinicalProcess;
     private Process? _schedulingProcess;
     private Process? _gatekeeperProcess;
+    private Process? _icd10Process;
     private Process? _clinicalSyncProcess;
     private Process? _schedulingSyncProcess;
     private IHost? _dashboardHost;
@@ -136,6 +137,7 @@ public sealed class E2EFixture : IAsyncLifetime
         var clinicalProjectDir = Path.Combine(samplesDir, "Clinical", "Clinical.Api");
         var schedulingProjectDir = Path.Combine(samplesDir, "Scheduling", "Scheduling.Api");
         var gatekeeperProjectDir = Path.Combine(rootDir, "Gatekeeper", "Gatekeeper.Api");
+        var icd10ProjectDir = Path.Combine(samplesDir, "ICD10", "ICD10.Api");
         var configuration = ResolveBuildConfiguration(testAssemblyDir);
 
         Console.WriteLine($"[E2E] Test assembly dir: {testAssemblyDir}");
@@ -143,6 +145,7 @@ public sealed class E2EFixture : IAsyncLifetime
         Console.WriteLine($"[E2E] Samples dir: {samplesDir}");
         Console.WriteLine($"[E2E] Clinical dir: {clinicalProjectDir}");
         Console.WriteLine($"[E2E] Gatekeeper dir: {gatekeeperProjectDir}");
+        Console.WriteLine($"[E2E] ICD-10 dir: {icd10ProjectDir}");
 
         var clinicalDll = Path.Combine(
             clinicalProjectDir,
@@ -186,11 +189,37 @@ public sealed class E2EFixture : IAsyncLifetime
             new Dictionary<string, string> { ["ConnectionStrings__Postgres"] = gatekeeperConnStr }
         );
 
+        // Start ICD-10 API (uses SQLite, no separate database needed)
+        var icd10Dll = Path.Combine(
+            icd10ProjectDir,
+            "bin",
+            configuration,
+            "net10.0",
+            "ICD10.Api.dll"
+        );
+        if (File.Exists(icd10Dll))
+        {
+            _icd10Process = StartApiFromDll(
+                icd10Dll,
+                icd10ProjectDir,
+                Icd10Url
+            );
+            Console.WriteLine($"[E2E] ICD-10 API starting on {Icd10Url}");
+        }
+        else
+        {
+            Console.WriteLine($"[E2E] ICD-10 API DLL missing: {icd10Dll}");
+        }
+
         await Task.Delay(2000);
 
         await WaitForApiAsync(ClinicalUrl, "/fhir/Patient/");
         await WaitForApiAsync(SchedulingUrl, "/Practitioner");
         await WaitForGatekeeperApiAsync();
+        if (_icd10Process is not null)
+        {
+            await WaitForApiAsync(Icd10Url, "/api/icd10/chapters");
+        }
 
         var clinicalSyncDir = Path.Combine(samplesDir, "Clinical", "Clinical.Sync");
         var clinicalSyncDll = Path.Combine(
@@ -298,9 +327,12 @@ public sealed class E2EFixture : IAsyncLifetime
         StopProcess(_schedulingProcess);
         StopProcess(_gatekeeperProcess);
 
+        StopProcess(_icd10Process);
+
         await KillProcessOnPortAsync(5080);
         await KillProcessOnPortAsync(5001);
         await KillProcessOnPortAsync(5002);
+        await KillProcessOnPortAsync(5090);
 
         if (_postgresContainer is not null)
             await _postgresContainer.DisposeAsync();

@@ -719,6 +719,9 @@ jobs:
           dotnet build Samples/Clinical/Clinical.Sync -c Release
           dotnet build Samples/Scheduling/Scheduling.Sync -c Release
 
+      - name: Build ICD-10 API (required for ICD-10 E2E tests)
+        run: dotnet build Samples/ICD10/ICD10.Api/ICD10.Api.csproj -c Release
+
       - name: Build Integration Tests (includes wwwroot copy)
         run: dotnet build Samples/Dashboard/Dashboard.Integration.Tests -c Release
 
