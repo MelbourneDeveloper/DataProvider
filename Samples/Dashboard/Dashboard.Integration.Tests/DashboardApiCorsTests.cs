@@ -16,7 +16,7 @@ public sealed class ClinicalApiTestFactory : WebApplicationFactory<Clinical.Api.
 
     private static readonly string BaseConnectionString =
         Environment.GetEnvironmentVariable("TEST_POSTGRES_CONNECTION")
-        ?? "Host=localhost;Database=postgres;Username=postgres;Password=changeme";
+        ?? "Host=localhost;Database=postgres;Username=postgres;Password=changeme;Timeout=5;Command Timeout=5";
 
     public ClinicalApiTestFactory()
     {
@@ -79,7 +79,7 @@ public sealed class SchedulingApiTestFactory : WebApplicationFactory<Scheduling.
 
     private static readonly string BaseConnectionString =
         Environment.GetEnvironmentVariable("TEST_POSTGRES_CONNECTION")
-        ?? "Host=localhost;Database=postgres;Username=postgres;Password=changeme";
+        ?? "Host=localhost;Database=postgres;Username=postgres;Password=changeme;Timeout=5;Command Timeout=5";
 
     public SchedulingApiTestFactory()
     {

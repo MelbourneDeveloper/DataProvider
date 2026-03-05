@@ -478,8 +478,11 @@ public sealed class E2EFixture : IAsyncLifetime
 
     private static async Task WaitForApiAsync(string baseUrl, string healthEndpoint)
     {
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
-        for (var i = 0; i < 120; i++)
+        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+        var maxRetries = 30; // Reduced from 120 to 30 (15 seconds max instead of 60)
+        var lastException = (Exception?)null;
+        
+        for (var i = 0; i < maxRetries; i++)
         {
             try
             {
@@ -490,18 +493,42 @@ public sealed class E2EFixture : IAsyncLifetime
                     || response.StatusCode == HttpStatusCode.Unauthorized
                     || response.StatusCode == HttpStatusCode.Forbidden
                 )
+                {
+                    Console.WriteLine($"[E2E] API at {baseUrl} started successfully after {i} attempts");
                     return;
+                }
+                
+                // If we get a non-success status code, log it but continue retrying
+                Console.WriteLine($"[E2E] API at {baseUrl} returned {response.StatusCode} on attempt {i + 1}");
             }
-            catch { }
-            await Task.Delay(500);
+            catch (Exception ex)
+            {
+                lastException = ex;
+                Console.WriteLine($"[E2E] API at {baseUrl} connection failed on attempt {i + 1}: {ex.Message}");
+                
+                // If it's a connection refused error early on, fail faster
+                if (ex.Message.Contains("Connection refused") && i >= 5)
+                {
+                    throw new TimeoutException($"API at {baseUrl} failed to start after {i + 1} attempts: {ex.Message}", ex);
+                }
+            }
+            
+            if (i < maxRetries - 1)
+            {
+                await Task.Delay(500);
+            }
         }
-        throw new TimeoutException($"API at {baseUrl} did not start");
+        
+        throw new TimeoutException($"API at {baseUrl} did not start after {maxRetries} attempts. Last error: {lastException?.Message}");
     }
 
     private static async Task WaitForGatekeeperApiAsync()
     {
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
-        for (var i = 0; i < 120; i++)
+        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+        var maxRetries = 30; // Reduced from 120 to 30 (15 seconds max instead of 60)
+        var lastException = (Exception?)null;
+        
+        for (var i = 0; i < maxRetries; i++)
         {
             try
             {
@@ -510,12 +537,32 @@ public sealed class E2EFixture : IAsyncLifetime
                     new StringContent("{}", Encoding.UTF8, "application/json")
                 );
                 if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"[E2E] Gatekeeper API started successfully after {i} attempts");
                     return;
+                }
+                
+                Console.WriteLine($"[E2E] Gatekeeper API returned {response.StatusCode} on attempt {i + 1}");
             }
-            catch { }
-            await Task.Delay(500);
+            catch (Exception ex)
+            {
+                lastException = ex;
+                Console.WriteLine($"[E2E] Gatekeeper API connection failed on attempt {i + 1}: {ex.Message}");
+                
+                // If it's a connection refused error early on, fail faster
+                if (ex.Message.Contains("Connection refused") && i >= 5)
+                {
+                    throw new TimeoutException($"Gatekeeper API failed to start after {i + 1} attempts: {ex.Message}", ex);
+                }
+            }
+            
+            if (i < maxRetries - 1)
+            {
+                await Task.Delay(500);
+            }
         }
-        throw new TimeoutException($"Gatekeeper API did not start");
+        
+        throw new TimeoutException($"Gatekeeper API did not start after {maxRetries} attempts. Last error: {lastException?.Message}");
     }
 
     /// <summary>
@@ -524,19 +571,37 @@ public sealed class E2EFixture : IAsyncLifetime
     /// </summary>
     private static async Task WaitForServiceReachableAsync(string baseUrl, string endpoint)
     {
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
-        for (var i = 0; i < 60; i++)
+        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+        var maxRetries = 30; // Reduced from 60 to 30 (15 seconds max instead of 30)
+        var lastException = (Exception?)null;
+        
+        for (var i = 0; i < maxRetries; i++)
         {
             try
             {
                 _ = await client.GetAsync($"{baseUrl}{endpoint}");
-                Console.WriteLine($"[E2E] Service reachable: {baseUrl}");
+                Console.WriteLine($"[E2E] Service reachable: {baseUrl} after {i} attempts");
                 return;
             }
-            catch { }
-            await Task.Delay(500);
+            catch (Exception ex)
+            {
+                lastException = ex;
+                Console.WriteLine($"[E2E] Service at {baseUrl} connection failed on attempt {i + 1}: {ex.Message}");
+                
+                // If it's a connection refused error early on, fail faster
+                if (ex.Message.Contains("Connection refused") && i >= 5)
+                {
+                    throw new TimeoutException($"Service at {baseUrl} failed to respond after {i + 1} attempts: {ex.Message}", ex);
+                }
+            }
+            
+            if (i < maxRetries - 1)
+            {
+                await Task.Delay(500);
+            }
         }
-        throw new TimeoutException($"Service at {baseUrl} is not reachable");
+        
+        throw new TimeoutException($"Service at {baseUrl} is not reachable after {maxRetries} attempts. Last error: {lastException?.Message}");
     }
 
     /// <summary>
