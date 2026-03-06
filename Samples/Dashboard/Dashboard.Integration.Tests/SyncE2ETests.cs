@@ -412,12 +412,8 @@ public sealed class SyncE2ETests
     public async Task SyncDashboard_SearchFilter_FiltersCorrectly()
     {
         using var client = E2EFixture.CreateAuthenticatedClient();
-        var page = await _fixture.CreateAuthenticatedPageAsync(
-            navigateTo: $"{E2EFixture.DashboardUrl}#sync"
-        );
-        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
-        // Create a patient with a known unique identifier
+        // Create a patient BEFORE loading the sync page so data is fresh
         var uniqueId = $"SearchTest{DateTime.UtcNow.Ticks % 1000000}";
         var patientRequest = new
         {
@@ -438,6 +434,12 @@ public sealed class SyncE2ETests
         var patientJson = await createResponse.Content.ReadAsStringAsync();
         var patientDoc = System.Text.Json.JsonDocument.Parse(patientJson);
         var patientId = patientDoc.RootElement.GetProperty("Id").GetString();
+
+        // Navigate to sync page AFTER patient exists in sync log
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#sync"
+        );
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync($"{E2EFixture.DashboardUrl}#sync");
         await page.WaitForSelectorAsync(

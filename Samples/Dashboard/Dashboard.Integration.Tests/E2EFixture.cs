@@ -1062,22 +1062,13 @@ public sealed class E2EFixture : IAsyncLifetime
             return;
         }
 
-        // Step 1: Run migration to create schema (use pre-built DLL, not dotnet run)
+        // Step 1: Run migration to create schema
         Console.WriteLine("[E2E] Running ICD-10 schema migration...");
-        var configuration = ResolveBuildConfiguration(
-            Path.GetDirectoryName(typeof(E2EFixture).Assembly.Location)!
-        );
-        var migrationDll = Path.Combine(
-            migrationCliDir,
-            "bin",
-            configuration,
-            "net10.0",
-            "Migration.Cli.dll"
-        );
         var migrationResult = await RunProcessAsync(
             "dotnet",
-            $"exec \"{migrationDll}\" --schema \"{schemaPath}\" --output \"{connectionString}\" --provider postgres",
-            rootDir
+            $"run --project \"{migrationCliDir}\" -- --schema \"{schemaPath}\" --output \"{connectionString}\" --provider postgres",
+            rootDir,
+            timeoutMs: 600_000
         );
 
         if (migrationResult != 0)
