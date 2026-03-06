@@ -131,6 +131,7 @@ public sealed class SchedulingApiTestFactory : WebApplicationFactory<Scheduling.
 /// These tests simulate browser requests with CORS headers to ensure the APIs
 /// are properly configured for cross-origin requests from the Dashboard.
 /// </summary>
+[Collection("E2E Tests")]
 public sealed class DashboardApiCorsTests : IAsyncLifetime
 {
     private readonly ClinicalApiTestFactory _clinicalFactory;

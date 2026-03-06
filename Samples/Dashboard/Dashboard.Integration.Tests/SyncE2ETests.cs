@@ -219,15 +219,16 @@ public sealed class SyncE2ETests
             new PageWaitForSelectorOptions { Timeout = 15000 }
         );
 
-        // Wait for sync records to actually load (not just the page)
+        await Task.Delay(1000); // Allow data to load
+
+        // Wait for sync records to appear in the table
         await page.WaitForFunctionAsync(
             @"() => {
-                const badge = document.querySelector('.badge');
-                return badge && badge.textContent && !badge.textContent.includes('0 records');
+                const rows = document.querySelectorAll('[data-testid=""sync-records-table""] tbody tr');
+                return rows.length > 0;
             }",
-            new PageWaitForFunctionOptions { Timeout = 15000 }
+            new PageWaitForFunctionOptions { Timeout = 20000 }
         );
-        await Task.Delay(500); // Allow React to stabilize
 
         // Log initial state before filtering
         var initialRows = await page.QuerySelectorAllAsync(

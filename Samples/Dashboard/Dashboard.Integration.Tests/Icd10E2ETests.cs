@@ -223,7 +223,7 @@ public sealed class Icd10E2ETests
         await page.ClickAsync("text=Code Lookup");
         await Task.Delay(500);
 
-        await page.FillAsync("input[placeholder*='Enter ICD-10 code']", "E11.9");
+        await page.FillAsync("input[placeholder*='Enter exact ICD-10 code']", "E11.9");
         await page.ClickAsync("button:has-text('Search')");
 
         await page.WaitForSelectorAsync(
@@ -253,7 +253,7 @@ public sealed class Icd10E2ETests
         await page.ClickAsync("text=Code Lookup");
         await Task.Delay(500);
 
-        await page.FillAsync("input[placeholder*='Enter ICD-10 code']", "I10");
+        await page.FillAsync("input[placeholder*='Enter exact ICD-10 code']", "I10");
         await page.ClickAsync("button:has-text('Search')");
 
         await page.WaitForSelectorAsync(
@@ -282,7 +282,7 @@ public sealed class Icd10E2ETests
         await page.ClickAsync("text=Code Lookup");
         await Task.Delay(500);
 
-        await page.FillAsync("input[placeholder*='Enter ICD-10 code']", "R07.9");
+        await page.FillAsync("input[placeholder*='Enter exact ICD-10 code']", "R07.9");
         await page.ClickAsync("button:has-text('Search')");
 
         await page.WaitForSelectorAsync(
@@ -312,7 +312,7 @@ public sealed class Icd10E2ETests
         await page.ClickAsync("text=Code Lookup");
         await Task.Delay(500);
 
-        await page.FillAsync("input[placeholder*='Enter ICD-10 code']", "E11");
+        await page.FillAsync("input[placeholder*='Enter exact ICD-10 code']", "E11");
         await page.ClickAsync("button:has-text('Search')");
 
         await page.WaitForSelectorAsync(
@@ -435,7 +435,7 @@ public sealed class Icd10E2ETests
         await Task.Delay(500);
 
         // G43.909 has a long description
-        await page.FillAsync("input[placeholder*='Enter ICD-10 code']", "G43.909");
+        await page.FillAsync("input[placeholder*='Enter exact ICD-10 code']", "G43.909");
         await page.ClickAsync("button:has-text('Search')");
 
         await page.WaitForSelectorAsync(
@@ -522,7 +522,7 @@ public sealed class Icd10E2ETests
         await page.ClickAsync("text=Code Lookup");
         await Task.Delay(500);
 
-        await page.FillAsync("input[placeholder*='Enter ICD-10 code']", "ZZZ99.99");
+        await page.FillAsync("input[placeholder*='Enter exact ICD-10 code']", "ZZZ99.99");
         await page.ClickAsync("button:has-text('Search')");
 
         await page.WaitForSelectorAsync(
