@@ -106,6 +106,12 @@ namespace Dashboard.Components
                         },
                         new NavItem
                         {
+                            Id = "clinical-coding",
+                            Label = "Clinical Coding",
+                            Icon = Icons.Code,
+                        },
+                        new NavItem
+                        {
                             Id = "encounters",
                             Label = "Encounters",
                             Icon = Icons.Clipboard,

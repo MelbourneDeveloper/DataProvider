@@ -1,0 +1,4 @@
+icd10_code
+|> filter(fn(row) => row.icd10_code.CategoryId = @categoryId)
+|> select(icd10_code.Id, icd10_code.CategoryId, icd10_code.Code, icd10_code.ShortDescription, icd10_code.LongDescription, icd10_code.InclusionTerms, icd10_code.ExclusionTerms, icd10_code.CodeAlso, icd10_code.CodeFirst, icd10_code.Synonyms, icd10_code.Billable, icd10_code.EffectiveFrom, icd10_code.EffectiveTo, icd10_code.Edition, icd10_code.LastUpdated, icd10_code.VersionId)
+|> order_by(icd10_code.Code)

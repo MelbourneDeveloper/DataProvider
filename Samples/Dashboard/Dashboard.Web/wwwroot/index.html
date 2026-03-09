@@ -138,35 +138,11 @@
       const CLINICAL_API = window.dashboardConfig?.CLINICAL_API_URL || 'http://localhost:5080';
       const SCHEDULING_API = window.dashboardConfig?.SCHEDULING_API_URL || 'http://localhost:5001';
       const GATEKEEPER_API = window.dashboardConfig?.GATEKEEPER_API_URL || 'http://localhost:5002';
+      const ICD10_API = window.dashboardConfig?.ICD10_API_URL || 'http://localhost:5090';
 
       // Auth token storage
       const AUTH_TOKEN_KEY = 'gatekeeper_token';
       const AUTH_USER_KEY = 'gatekeeper_user';
-
-      // Check if testMode is enabled via URL param
-      const urlParams = new URLSearchParams(window.location.search);
-      const isTestModeInit = urlParams.get('testMode') === 'true' || window.dashboardConfig?.testMode === true;
-      const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-      // Dev token (all-zeros key, expires 2035) with clinician and scheduler roles
-      const DEV_DASHBOARD_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYXNoYm9hcmQtdXNlciIsImp0aSI6IjE1MTMwYTg0LTY4NTktNGNmMy05MjA3LTMyMGJhYWRiNzhjNSIsInJvbGVzIjpbImNsaW5pY2lhbiIsInNjaGVkdWxlciJdLCJleHAiOjIwODE5MjIxMDQsImlhdCI6MTc2NjM4OTMwNH0.mk66XyKaLWukzZOmGNwss74lSlXobt6Em0NoEbXRdKU';
-
-      // Set dev token and user ONLY in test mode (testMode=true URL param)
-      // For localhost dev without testMode, user must log in (or use existing token)
-      // This allows login page tests to work properly
-      if (isTestModeInit) {
-        const devToken = window.dashboardConfig?.DEV_TOKEN || DEV_DASHBOARD_TOKEN;
-        localStorage.setItem(AUTH_TOKEN_KEY, devToken);
-        // Only set default test user if no user already in localStorage
-        if (!localStorage.getItem(AUTH_USER_KEY)) {
-          localStorage.setItem(AUTH_USER_KEY, JSON.stringify({
-            userId: 'test', displayName: 'Test User', email: 'test@example.com'
-          }));
-        }
-        console.log('[Dashboard] Test mode: auth state initialized');
-      } else {
-        console.log('[Dashboard] Normal mode: using existing auth state');
-      }
 
       const getAuthToken = () => localStorage.getItem(AUTH_TOKEN_KEY);
       const setAuthToken = (token) => localStorage.setItem(AUTH_TOKEN_KEY, token);
@@ -339,6 +315,22 @@
           React.createElement('path', { d: 'M23 4v6h-6' }),
           React.createElement('path', { d: 'M1 20v-6h6' }),
           React.createElement('path', { d: 'M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15' })
+        ),
+        Code: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+          React.createElement('path', { d: 'M4 19.5A2.5 2.5 0 016.5 17H20M4 4.5A2.5 2.5 0 016.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15z' }),
+          React.createElement('path', { d: 'M8 7h8M8 11h8M8 15h5' })
+        ),
+        Sparkles: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+          React.createElement('path', { d: 'M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z' }),
+          React.createElement('path', { d: 'M19 13l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z' })
+        ),
+        Copy: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+          React.createElement('rect', { x: 9, y: 9, width: 13, height: 13, rx: 2, ry: 2 }),
+          React.createElement('path', { d: 'M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1' })
+        ),
+        Eye: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
+          React.createElement('path', { d: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z' }),
+          React.createElement('circle', { cx: 12, cy: 12, r: 3 })
         ),
         Filter: () => React.createElement('svg', { className: 'icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
           React.createElement('polygon', { points: '22,3 2,3 10,12.46 10,19 14,21 14,12.46 22,3' })
@@ -1960,6 +1952,350 @@
         );
       };
 
+      // Clinical Coding Page - ICD-10 code lookup and search
+      const ClinicalCodingPage = () => {
+        const [searchQuery, setSearchQuery] = React.useState('');
+        const [searchMode, setSearchMode] = React.useState('semantic'); // keyword, semantic, lookup
+        const [results, setResults] = React.useState([]);
+        const [selectedCode, setSelectedCode] = React.useState(null);
+        const [loading, setLoading] = React.useState(false);
+        const [error, setError] = React.useState(null);
+        const [includeAchi, setIncludeAchi] = React.useState(false);
+        const [copiedCode, setCopiedCode] = React.useState(null);
+
+        const executeSearch = async () => {
+          if (!searchQuery.trim()) return;
+          setLoading(true);
+          setError(null);
+          setSelectedCode(null);
+          try {
+            let response;
+            if (searchMode === 'lookup') {
+              response = await fetch(`${ICD10_API}/api/icd10/codes/${encodeURIComponent(searchQuery)}`);
+              if (response.ok) {
+                const code = await response.json();
+                setSelectedCode(code);
+              } else {
+                // Exact code not found — try prefix/keyword search as fallback
+                const searchResponse = await fetch(`${ICD10_API}/api/icd10/codes?q=${encodeURIComponent(searchQuery)}&limit=50`);
+                if (searchResponse.ok) {
+                  const data = await searchResponse.json();
+                  if (data.length > 0) {
+                    setResults(data);
+                  } else {
+                    setError('No codes found');
+                  }
+                } else {
+                  setError('No codes found');
+                }
+              }
+            } else if (searchMode === 'semantic') {
+              response = await fetch(`${ICD10_API}/api/search`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Query: searchQuery, Limit: 20, IncludeAchi: includeAchi })
+              });
+              if (response.ok) {
+                const data = await response.json();
+                setResults(data.Results || []);
+              } else {
+                throw new Error('Search failed');
+              }
+            } else {
+              response = await fetch(`${ICD10_API}/api/icd10/codes?q=${encodeURIComponent(searchQuery)}&limit=50`);
+              if (response.ok) {
+                const data = await response.json();
+                setResults(data);
+              } else {
+                throw new Error('Search failed');
+              }
+            }
+          } catch (err) {
+            setError(err.message + ` - Make sure ICD-10 API is running at ${ICD10_API}`);
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        const handleKeyDown = (e) => {
+          if (e.key === 'Enter') executeSearch();
+        };
+
+        const copyCode = (code) => {
+          navigator.clipboard.writeText(code);
+          setCopiedCode(code);
+          setTimeout(() => setCopiedCode(null), 2000);
+        };
+
+        const lookupCode = async (code) => {
+          setSearchQuery(code);
+          setSearchMode('lookup');
+          setLoading(true);
+          try {
+            const response = await fetch(`${ICD10_API}/api/icd10/codes/${encodeURIComponent(code)}`);
+            if (response.ok) {
+              const data = await response.json();
+              setSelectedCode(data);
+            }
+          } catch (err) {
+            setError(err.message);
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        const getPlaceholder = () => {
+          if (searchMode === 'keyword') return 'Search by code, description, or keywords (e.g., "diabetes", "fracture")';
+          if (searchMode === 'semantic') return 'Describe symptoms in natural language (e.g., "chest pain with shortness of breath")';
+          return 'Enter exact ICD-10 code (e.g., "E11.9", "J18.9")';
+        };
+
+        return React.createElement('div', { className: 'page clinical-coding-page' },
+          // Header
+          React.createElement('div', { className: 'page-header' },
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
+              React.createElement('div', {
+                style: { background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', borderRadius: '12px', padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }
+              }, React.createElement(Icons.Code)),
+              React.createElement('div', null,
+                React.createElement('h2', { className: 'page-title' }, 'Clinical Coding'),
+                React.createElement('p', { className: 'page-description' }, 'Search ICD-10-AM diagnosis codes and ACHI procedure codes')
+              )
+            )
+          ),
+          // Search Section
+          React.createElement('div', { className: 'card mb-6', style: { padding: '24px' } },
+            // Search Mode Tabs
+            React.createElement('div', { style: { display: 'flex', gap: '8px', marginBottom: '16px' } },
+              React.createElement('span', {
+                className: `btn ${searchMode === 'keyword' ? 'btn-primary' : 'btn-secondary'}`,
+                role: 'button',
+                onClick: () => { setSearchMode('keyword'); setResults([]); setSelectedCode(null); }
+              }, React.createElement(Icons.Search), ' Keyword Search'),
+              React.createElement('span', {
+                className: `btn ${searchMode === 'semantic' ? 'btn-primary' : 'btn-secondary'}`,
+                role: 'button',
+                onClick: () => { setSearchMode('semantic'); setResults([]); setSelectedCode(null); }
+              }, React.createElement(Icons.Sparkles), ' AI Search'),
+              React.createElement('span', {
+                className: `btn ${searchMode === 'lookup' ? 'btn-primary' : 'btn-secondary'}`,
+                role: 'button',
+                onClick: () => { setSearchMode('lookup'); setResults([]); setSelectedCode(null); }
+              }, React.createElement(Icons.Eye), ' Code Lookup')
+            ),
+            // Search Input
+            React.createElement('div', { style: { display: 'flex', gap: '16px' } },
+              React.createElement('div', { style: { flex: 1, position: 'relative' } },
+                React.createElement('span', { style: { position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' } },
+                  React.createElement(Icons.Search)
+                ),
+                React.createElement('input', {
+                  className: 'input',
+                  style: { paddingLeft: '48px', fontSize: '16px', height: '48px' },
+                  type: 'text',
+                  placeholder: getPlaceholder(),
+                  value: searchQuery,
+                  onChange: (e) => setSearchQuery(e.target.value),
+                  onKeyDown: handleKeyDown
+                })
+              ),
+              React.createElement('button', {
+                className: 'btn btn-primary',
+                style: { height: '48px', paddingLeft: '24px', paddingRight: '24px' },
+                onClick: executeSearch,
+                disabled: loading
+              }, loading ? React.createElement(Icons.RefreshCw) : React.createElement(Icons.Search), loading ? ' Searching...' : ' Search')
+            ),
+            // Semantic search options
+            searchMode === 'semantic' && React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '16px', marginTop: '16px' } },
+              React.createElement('label', { style: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' } },
+                React.createElement('input', {
+                  type: 'checkbox',
+                  checked: includeAchi,
+                  onChange: (e) => setIncludeAchi(e.target.checked),
+                  style: { width: '18px', height: '18px' }
+                }),
+                'Include ACHI procedure codes'
+              ),
+              React.createElement('span', { style: { fontSize: '14px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '4px' } },
+                React.createElement(Icons.Sparkles), ' Powered by medical AI embeddings'
+              )
+            )
+          ),
+          // Error
+          error && React.createElement('div', { className: 'card mb-6', style: { borderLeft: '4px solid var(--error)', padding: '16px' } },
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
+              React.createElement(Icons.XCircle),
+              React.createElement('div', null,
+                React.createElement('h4', { style: { fontWeight: '600', marginBottom: '4px' } }, 'Search Error'),
+                React.createElement('p', { style: { fontSize: '14px', color: '#6b7280' } }, error)
+              )
+            )
+          ),
+          // Loading
+          loading && React.createElement('div', { className: 'card', style: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px' } },
+            React.createElement('div', { style: { width: '48px', height: '48px', border: '4px solid #e5e7eb', borderTop: '4px solid #3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' } })
+          ),
+          // Selected Code Detail
+          selectedCode && !loading && React.createElement('div', null,
+            React.createElement('button', { className: 'btn btn-ghost mb-4', onClick: () => setSelectedCode(null) },
+              React.createElement(Icons.ChevronLeft), ' Back to results'
+            ),
+            React.createElement('div', { className: 'card', style: { padding: '32px' } },
+              React.createElement('div', { style: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' } },
+                React.createElement('div', null,
+                  React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' } },
+                    React.createElement('span', { style: { background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', color: 'white', padding: '8px 20px', borderRadius: '8px', fontWeight: '700', fontSize: '20px' } }, selectedCode.Code),
+                    selectedCode.Billable
+                      ? React.createElement('span', { className: 'badge badge-success' }, React.createElement(Icons.CheckCircle), ' Billable')
+                      : React.createElement('span', { className: 'badge badge-gray' }, 'Non-billable')
+                  ),
+                  React.createElement('h2', { style: { fontSize: '20px', fontWeight: '600', marginTop: '16px' } }, selectedCode.ShortDescription)
+                ),
+                React.createElement('button', { className: 'btn btn-primary', onClick: () => copyCode(selectedCode.Code) },
+                  copiedCode === selectedCode.Code ? React.createElement(Icons.CheckCircle) : React.createElement(Icons.Copy),
+                  copiedCode === selectedCode.Code ? ' Copied!' : ' Copy Code'
+                )
+              ),
+              React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px', padding: '16px', background: '#f9fafb', borderRadius: '8px' } },
+                React.createElement('div', null,
+                  React.createElement('span', { style: { fontSize: '12px', color: '#6b7280', textTransform: 'uppercase' } }, 'Chapter'),
+                  React.createElement('p', { style: { fontWeight: '500' } }, `${selectedCode.ChapterNumber} - ${selectedCode.ChapterTitle || ''}`)
+                ),
+                React.createElement('div', null,
+                  React.createElement('span', { style: { fontSize: '12px', color: '#6b7280', textTransform: 'uppercase' } }, 'Block'),
+                  React.createElement('p', { style: { fontWeight: '500' } }, selectedCode.BlockCode || '-')
+                ),
+                React.createElement('div', null,
+                  React.createElement('span', { style: { fontSize: '12px', color: '#6b7280', textTransform: 'uppercase' } }, 'Category'),
+                  React.createElement('p', { style: { fontWeight: '500' } }, selectedCode.CategoryCode || '-')
+                )
+              ),
+              selectedCode.LongDescription && React.createElement('div', { style: { marginBottom: '16px' } },
+                React.createElement('h4', { style: { fontWeight: '600', color: '#374151', marginBottom: '8px' } }, 'Full Description'),
+                React.createElement('div', { style: { padding: '16px', background: '#f9fafb', borderRadius: '8px', borderLeft: '4px solid #3b82f6' } },
+                  React.createElement('p', { style: { color: '#374151', whiteSpace: 'pre-wrap' } }, selectedCode.LongDescription)
+                )
+              ),
+              selectedCode.InclusionTerms && React.createElement('div', { style: { marginBottom: '16px' } },
+                React.createElement('h4', { style: { fontWeight: '600', color: '#374151', marginBottom: '8px' } }, 'Inclusion Terms'),
+                React.createElement('div', { style: { padding: '16px', background: '#f9fafb', borderRadius: '8px', borderLeft: '4px solid #22c55e' } },
+                  React.createElement('p', { style: { color: '#374151', whiteSpace: 'pre-wrap' } }, selectedCode.InclusionTerms)
+                )
+              ),
+              selectedCode.ExclusionTerms && React.createElement('div', { style: { marginBottom: '16px' } },
+                React.createElement('h4', { style: { fontWeight: '600', color: '#374151', marginBottom: '8px' } }, 'Exclusion Terms'),
+                React.createElement('div', { style: { padding: '16px', background: '#f9fafb', borderRadius: '8px', borderLeft: '4px solid #ef4444' } },
+                  React.createElement('p', { style: { color: '#374151', whiteSpace: 'pre-wrap' } }, selectedCode.ExclusionTerms)
+                )
+              )
+            )
+          ),
+          // Results Grid
+          !selectedCode && !loading && results.length > 0 && React.createElement('div', null,
+            React.createElement('div', { style: { marginBottom: '16px', fontSize: '14px', color: '#6b7280' } },
+              searchMode === 'semantic'
+                ? React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, React.createElement(Icons.Sparkles), `${results.length} AI-matched results`)
+                : `${results.length} results found`
+            ),
+            React.createElement('div', { className: 'table-container' },
+              React.createElement('table', { className: 'table' },
+                React.createElement('thead', null,
+                  React.createElement('tr', null,
+                    React.createElement('th', null, 'Code'),
+                    searchMode === 'semantic' && React.createElement('th', null, 'Type'),
+                    React.createElement('th', null, 'Description'),
+                    !searchMode.includes('semantic') && React.createElement('th', null, 'Chapter'),
+                    !searchMode.includes('semantic') && React.createElement('th', null, 'Category'),
+                    !searchMode.includes('semantic') && React.createElement('th', null, 'Status'),
+                    searchMode === 'semantic' && React.createElement('th', null, 'Confidence')
+                  )
+                ),
+                React.createElement('tbody', null,
+                  results.map((result, idx) => {
+                    const code = searchMode === 'semantic' ? result.Code : result.Code;
+                    const description = searchMode === 'semantic' ? result.Description : result.ShortDescription;
+                    const confidence = searchMode === 'semantic' ? result.Confidence : null;
+                    const codeType = searchMode === 'semantic' ? result.CodeType : 'ICD10AM';
+                    const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
+                    const confidenceColor = confidencePercent >= 80 ? '#22c55e' : confidencePercent >= 60 ? '#f59e0b' : '#ef4444';
+
+                    return React.createElement('tr', {
+                      key: idx,
+                      className: 'search-result-row',
+                      style: { cursor: 'pointer' },
+                      onClick: () => lookupCode(code)
+                    },
+                      React.createElement('td', null,
+                        React.createElement('span', {
+                          className: 'badge badge-primary',
+                          style: {
+                            background: codeType === 'ACHI' ? 'linear-gradient(135deg, #14b8a6, #0d9488)' : 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                            color: 'white', fontWeight: '600'
+                          }
+                        }, code)
+                      ),
+                      searchMode === 'semantic' && React.createElement('td', null,
+                        React.createElement('span', { className: codeType === 'ACHI' ? 'badge badge-teal' : 'badge badge-violet' }, codeType || 'ICD10AM')
+                      ),
+                      React.createElement('td', { className: 'result-description-cell' },
+                        React.createElement('span', null, description),
+                        React.createElement('div', { className: 'result-tooltip' },
+                          React.createElement('h4', { style: { fontWeight: '600', marginBottom: '8px' } }, `${code} - ${description}`),
+                          React.createElement('p', { style: { fontSize: '14px', color: '#6b7280', marginBottom: '8px' } }, result.LongDescription || description),
+                          searchMode === 'semantic' && React.createElement('div', { style: { fontSize: '12px', color: '#9ca3af' } },
+                            React.createElement('span', { style: { fontWeight: '600' } }, 'Code Type: '), codeType || 'ICD10AM'
+                          ),
+                          searchMode === 'semantic' && confidence && React.createElement('div', { style: { fontSize: '12px', marginTop: '4px' } },
+                            React.createElement('span', { style: { fontWeight: '600' } }, 'AI Confidence: '),
+                            React.createElement('span', { style: { color: confidenceColor } }, `${confidencePercent}%`)
+                          )
+                        )
+                      ),
+                      !searchMode.includes('semantic') && React.createElement('td', { style: { fontSize: '14px', color: '#6b7280' } }, result.ChapterNumber ? `Ch. ${result.ChapterNumber}` : '-'),
+                      !searchMode.includes('semantic') && React.createElement('td', { style: { fontSize: '14px', color: '#6b7280' } }, result.CategoryCode || '-'),
+                      !searchMode.includes('semantic') && React.createElement('td', null,
+                        result.Billable
+                          ? React.createElement('span', { className: 'badge badge-success' }, 'Billable')
+                          : React.createElement('span', { className: 'badge badge-gray' }, 'Non-billable')
+                      ),
+                      searchMode === 'semantic' && confidence && React.createElement('td', null,
+                        React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+                          React.createElement('div', { style: { width: '60px', height: '8px', background: '#e5e7eb', borderRadius: '4px', overflow: 'hidden' } },
+                            React.createElement('div', { style: { width: `${confidencePercent}%`, height: '100%', background: confidenceColor } })
+                          ),
+                          React.createElement('span', {
+                            className: `badge ${confidencePercent >= 80 ? 'badge-success' : confidencePercent >= 60 ? 'badge-warning' : 'badge-error'}`
+                          }, `${confidencePercent}%`)
+                        )
+                      )
+                    );
+                  })
+                )
+              )
+            )
+          ),
+          // Empty State
+          !selectedCode && !loading && !error && results.length === 0 && React.createElement('div', { className: 'card' },
+            React.createElement('div', { className: 'empty-state' },
+              React.createElement('div', { style: { background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', borderRadius: '16px', padding: '20px', marginBottom: '16px' } },
+                React.createElement(Icons.Code, { style: { color: 'white', width: '48px', height: '48px' } })
+              ),
+              React.createElement('h4', { className: 'empty-state-title' },
+                searchMode === 'semantic' ? 'AI-Powered Code Search' : searchMode === 'lookup' ? 'Direct Code Lookup' : 'ICD-10-AM Code Search'
+              ),
+              React.createElement('p', { className: 'empty-state-description' },
+                searchMode === 'semantic'
+                  ? 'Describe symptoms in natural language and let AI find the right codes.'
+                  : searchMode === 'lookup'
+                    ? 'Enter an exact ICD-10 or ACHI code to view its full details.'
+                    : 'Search diagnosis codes by keyword, description, or code fragment.'
+              )
+            )
+          )
+        );
+      };
+
       // Sync Dashboard Page - requires sync:admin permission
       const SyncPage = () => {
         const [serviceFilter, setServiceFilter] = React.useState('all');
@@ -1981,8 +2317,8 @@
               const [clinicalStatus, schedulingStatus, clinicalRecords, schedulingRecords] = await Promise.all([
                 fetchApi(`${CLINICAL_API}/sync/status`).catch(() => ({ status: 'error', service: 'Clinical.Api', pendingCount: 0, failedCount: 0, lastSyncTime: null })),
                 fetchApi(`${SCHEDULING_API}/sync/status`).catch(() => ({ status: 'error', service: 'Scheduling.Api', pendingCount: 0, failedCount: 0, lastSyncTime: null })),
-                fetchApi(`${CLINICAL_API}/sync/records`).catch(() => ({ records: [], total: 0 })),
-                fetchApi(`${SCHEDULING_API}/sync/records`).catch(() => ({ records: [], total: 0 }))
+                fetchApi(`${CLINICAL_API}/sync/records?pageSize=1000`).catch(() => ({ records: [], total: 0 })),
+                fetchApi(`${SCHEDULING_API}/sync/records?pageSize=1000`).catch(() => ({ records: [], total: 0 }))
               ]);
 
               setSyncServices([
@@ -2252,6 +2588,10 @@
           e.preventDefault();
           setLoading(true); setError(null); setSuccess(null);
           try {
+            // Check for WebAuthn support and secure context
+            if (!navigator.credentials || !navigator.credentials.create) {
+              throw new Error('WebAuthn not available. Use localhost:5173 instead of [::]:5173, or use HTTPS.');
+            }
             const beginRes = await fetch(`${GATEKEEPER_API}/auth/register/begin`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ Email: email, DisplayName: displayName })
@@ -2276,14 +2616,21 @@
               body: JSON.stringify({ ChallengeId: beginData.ChallengeId, OptionsJson: beginData.OptionsJson, AttestationResponse: attestation })
             });
             if (!completeRes.ok) throw new Error((await completeRes.json()).Error || 'Registration failed');
-            setSuccess('Registration successful! You can now login.'); setMode('login');
+            const result = await completeRes.json();
+            setAuthToken(result.Token);
+            setAuthUser({ userId: result.UserId, displayName: result.DisplayName, email: result.Email });
+            onLogin({ userId: result.UserId, displayName: result.DisplayName, email: result.Email });
           } catch (err) { setError(err.message); } finally { setLoading(false); }
         };
 
         const handleLogin = async (e) => {
           e.preventDefault();
-          setLoading(true); setError(null);
+          setLoading(true); setError(null); setSuccess(null);
           try {
+            // Check for WebAuthn support and secure context
+            if (!navigator.credentials || !navigator.credentials.get) {
+              throw new Error('WebAuthn not available. Use localhost:5173 instead of [::]:5173, or use HTTPS.');
+            }
             // Use discoverable credentials - no email needed!
             // The browser will prompt user to select from stored passkeys
             const beginRes = await fetch(`${GATEKEEPER_API}/auth/login/begin`, {
@@ -2359,6 +2706,7 @@
           { title: 'Overview', items: [{ id: 'dashboard', label: 'Dashboard', icon: Icons.Home }] },
           { title: 'Clinical', items: [
             { id: 'patients', label: 'Patients', icon: Icons.Users },
+            { id: 'clinical-coding', label: 'Clinical Coding', icon: Icons.Code },
             { id: 'encounters', label: 'Encounters', icon: Icons.Clipboard },
             { id: 'conditions', label: 'Conditions', icon: Icons.Activity }
           ]},
@@ -3007,7 +3355,7 @@
 
       // Main App Component
       const App = () => {
-        // Auth state - read from localStorage (testMode sets these values on page load)
+        // Auth state - read from localStorage (set by login or test setup)
         const [isAuthenticated, setIsAuthenticated] = React.useState(() => !!getAuthToken());
         const [currentUser, setCurrentUser] = React.useState(() => getAuthUser());
 
@@ -3232,6 +3580,7 @@
               onEditAppointment: handleEditAppointment
             });
             case 'calendar': return React.createElement(CalendarPage, { onEditAppointment: handleEditAppointment });
+            case 'clinical-coding': return React.createElement(ClinicalCodingPage);
             case 'encounters': return React.createElement(PlaceholderPage, { title: 'Encounters', description: 'Manage patient encounters and visits' });
             case 'conditions': return React.createElement(PlaceholderPage, { title: 'Conditions', description: 'View and manage patient conditions' });
             case 'sync': return React.createElement(SyncPage);

@@ -4,13 +4,13 @@ namespace Gatekeeper.Api.Tests;
 /// Integration tests for Gatekeeper authentication endpoints.
 /// Tests WebAuthn/FIDO2 passkey registration and login flows.
 /// </summary>
-public sealed class AuthenticationTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class AuthenticationTests : IClassFixture<GatekeeperTestFixture>
 {
     private readonly HttpClient _client;
 
-    public AuthenticationTests(WebApplicationFactory<Program> factory)
+    public AuthenticationTests(GatekeeperTestFixture fixture)
     {
-        _client = factory.CreateClient();
+        _client = fixture.CreateClient();
     }
 
     [Fact]

@@ -6,8 +6,8 @@ global using System.Text.Json;
 global using Fido2NetLib;
 global using Fido2NetLib.Objects;
 global using Generated;
-global using Microsoft.Data.Sqlite;
 global using Microsoft.Extensions.Logging;
+global using Npgsql;
 global using Outcome;
 global using Selecta;
 global using CheckResourceGrantOk = Outcome.Result<
@@ -15,10 +15,6 @@ global using CheckResourceGrantOk = Outcome.Result<
     Selecta.SqlError
 >.Ok<System.Collections.Immutable.ImmutableList<Generated.CheckResourceGrant>, Selecta.SqlError>;
 // Insert result type alias
-global using CountSystemRolesOk = Outcome.Result<
-    System.Collections.Immutable.ImmutableList<Generated.CountSystemRoles>,
-    Selecta.SqlError
->.Ok<System.Collections.Immutable.ImmutableList<Generated.CountSystemRoles>, Selecta.SqlError>;
 global using GetChallengeByIdOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.GetChallengeById>,
     Selecta.SqlError

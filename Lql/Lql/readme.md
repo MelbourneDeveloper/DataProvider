@@ -51,6 +51,21 @@ limit(n)
 * Target SQL dialect chosen at transpilation (`postgres`, `mysql`, `sqlserver`, etc.)
 * Defaults to PostgreSQL if not specified.
 
+### Identifier Casing
+
+All identifiers (table names, column names) are **case-insensitive** and transpile to **lowercase** in generated SQL. This is a fundamental design rule that ensures LQL works identically across all database platforms.
+
+- LQL source may use any casing: `fhir_Patient.GivenName`, `fhir_patient.givenname`, `FHIR_PATIENT.GIVENNAME` are all equivalent
+- Transpiled SQL always emits unquoted lowercase identifiers
+- DDL generators (Migration tool) always create lowercase identifiers
+- **Never quote identifiers** in generated SQL — quoting preserves case and breaks cross-platform compatibility
+- Column names in YAML schemas may use PascalCase for readability; DDL generators lowercase them automatically
+
+This guarantees portability:
+- PostgreSQL: unquoted identifiers fold to lowercase
+- SQLite: identifiers are case-insensitive
+- SQL Server: identifiers are case-insensitive (default collation)
+
 ### Validation Rules
 
 #### Identifier Validation

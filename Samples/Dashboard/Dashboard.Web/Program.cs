@@ -21,6 +21,10 @@ namespace Dashboard
 
             ApiClient.Configure(clinicalUrl, schedulingUrl);
 
+            // Configure ICD-10 API endpoint
+            var icd10Url = GetConfigValue("ICD10_API_URL", "http://localhost:5090");
+            ApiClient.ConfigureIcd10(icd10Url);
+
             // Set authentication token - single token with both clinician and scheduler roles
             // Token is inlined to avoid H5 static initialization timing issues
             // All-zeros signing key, expires 2035
@@ -34,6 +38,7 @@ namespace Dashboard
             Log("Healthcare Dashboard starting...");
             Log("Clinical API: " + clinicalUrl);
             Log("Scheduling API: " + schedulingUrl);
+            Log("ICD-10 API: " + icd10Url);
 
             // Hide loading screen
             HideLoadingScreen();

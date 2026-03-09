@@ -131,6 +131,8 @@ namespace Dashboard
                 return "Dashboard";
             if (view == "patients")
                 return "Patients";
+            if (view == "clinical-coding")
+                return "Clinical Coding";
             if (view == "encounters")
                 return "Encounters";
             if (view == "conditions")
@@ -199,6 +201,8 @@ namespace Dashboard
 
             if (view == "dashboard")
                 return DashboardPage.Render();
+            if (view == "clinical-coding")
+                return ClinicalCodingPage.Render();
             if (view == "patients")
             {
                 return PatientsPage.Render(patientId =>

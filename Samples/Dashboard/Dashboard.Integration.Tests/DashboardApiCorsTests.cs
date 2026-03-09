@@ -2,23 +2,41 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
+using Npgsql;
 
 namespace Dashboard.Integration.Tests;
 
 /// <summary>
-/// WebApplicationFactory for Clinical.Api that configures a temp database.
+/// WebApplicationFactory for Clinical.Api that creates an isolated PostgreSQL test database.
 /// </summary>
 public sealed class ClinicalApiTestFactory : WebApplicationFactory<Clinical.Api.Program>
 {
-    private readonly string _dbPath = Path.Combine(
-        Path.GetTempPath(),
-        $"clinical_cors_test_{Guid.NewGuid()}.db"
-    );
+    private readonly string _dbName = $"test_dashboard_clinical_{Guid.NewGuid():N}";
+    private readonly string _connectionString;
+
+    private static readonly string BaseConnectionString =
+        Environment.GetEnvironmentVariable("TEST_POSTGRES_CONNECTION")
+        ?? "Host=localhost;Database=postgres;Username=postgres;Password=changeme;Timeout=5;Command Timeout=5";
+
+    public ClinicalApiTestFactory()
+    {
+        using (var adminConn = new NpgsqlConnection(BaseConnectionString))
+        {
+            adminConn.Open();
+            using var createCmd = adminConn.CreateCommand();
+            createCmd.CommandText = $"CREATE DATABASE {_dbName}";
+            createCmd.ExecuteNonQuery();
+        }
+
+        _connectionString = BaseConnectionString.Replace(
+            "Database=postgres",
+            $"Database={_dbName}"
+        );
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        // Set DbPath for the temp database
-        builder.UseSetting("DbPath", _dbPath);
+        builder.UseSetting("ConnectionStrings:Postgres", _connectionString);
 
         var clinicalApiAssembly = typeof(Clinical.Api.Program).Assembly;
         var contentRoot = Path.GetDirectoryName(clinicalApiAssembly.Location)!;
@@ -28,11 +46,21 @@ public sealed class ClinicalApiTestFactory : WebApplicationFactory<Clinical.Api.
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (disposing && File.Exists(_dbPath))
+        if (disposing)
         {
             try
             {
-                File.Delete(_dbPath);
+                using var adminConn = new NpgsqlConnection(BaseConnectionString);
+                adminConn.Open();
+
+                using var terminateCmd = adminConn.CreateCommand();
+                terminateCmd.CommandText =
+                    $"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{_dbName}'";
+                terminateCmd.ExecuteNonQuery();
+
+                using var dropCmd = adminConn.CreateCommand();
+                dropCmd.CommandText = $"DROP DATABASE IF EXISTS {_dbName}";
+                dropCmd.ExecuteNonQuery();
             }
             catch
             { /* ignore */
@@ -42,33 +70,54 @@ public sealed class ClinicalApiTestFactory : WebApplicationFactory<Clinical.Api.
 }
 
 /// <summary>
-/// WebApplicationFactory for Scheduling.Api that configures a temp database.
+/// WebApplicationFactory for Scheduling.Api that creates an isolated PostgreSQL test database.
 /// </summary>
 public sealed class SchedulingApiTestFactory : WebApplicationFactory<Scheduling.Api.Program>
 {
-    private readonly string _dbPath = Path.Combine(
-        Path.GetTempPath(),
-        $"scheduling_cors_test_{Guid.NewGuid()}.db"
-    );
+    private readonly string _dbName = $"test_dashboard_scheduling_{Guid.NewGuid():N}";
+    private readonly string _connectionString;
 
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    private static readonly string BaseConnectionString =
+        Environment.GetEnvironmentVariable("TEST_POSTGRES_CONNECTION")
+        ?? "Host=localhost;Database=postgres;Username=postgres;Password=changeme;Timeout=5;Command Timeout=5";
+
+    public SchedulingApiTestFactory()
     {
-        // Set DbPath for the temp database
-        builder.UseSetting("DbPath", _dbPath);
+        using (var adminConn = new NpgsqlConnection(BaseConnectionString))
+        {
+            adminConn.Open();
+            using var createCmd = adminConn.CreateCommand();
+            createCmd.CommandText = $"CREATE DATABASE {_dbName}";
+            createCmd.ExecuteNonQuery();
+        }
 
-        var schedulingApiAssembly = typeof(Scheduling.Api.Program).Assembly;
-        var contentRoot = Path.GetDirectoryName(schedulingApiAssembly.Location)!;
-        builder.UseContentRoot(contentRoot);
+        _connectionString = BaseConnectionString.Replace(
+            "Database=postgres",
+            $"Database={_dbName}"
+        );
     }
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder) =>
+        builder.UseSetting("ConnectionStrings:Postgres", _connectionString);
 
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (disposing && File.Exists(_dbPath))
+        if (disposing)
         {
             try
             {
-                File.Delete(_dbPath);
+                using var adminConn = new NpgsqlConnection(BaseConnectionString);
+                adminConn.Open();
+
+                using var terminateCmd = adminConn.CreateCommand();
+                terminateCmd.CommandText =
+                    $"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{_dbName}'";
+                terminateCmd.ExecuteNonQuery();
+
+                using var dropCmd = adminConn.CreateCommand();
+                dropCmd.CommandText = $"DROP DATABASE IF EXISTS {_dbName}";
+                dropCmd.ExecuteNonQuery();
             }
             catch
             { /* ignore */
@@ -82,6 +131,7 @@ public sealed class SchedulingApiTestFactory : WebApplicationFactory<Scheduling.
 /// These tests simulate browser requests with CORS headers to ensure the APIs
 /// are properly configured for cross-origin requests from the Dashboard.
 /// </summary>
+[Collection("E2E Tests")]
 public sealed class DashboardApiCorsTests : IAsyncLifetime
 {
     private readonly ClinicalApiTestFactory _clinicalFactory;

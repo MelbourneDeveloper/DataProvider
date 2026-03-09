@@ -1,0 +1,13 @@
+# Dashboard - serves pre-built H5 static files
+# NOTE: H5 transpiler doesn't work in Docker Linux
+# Build Dashboard locally first: dotnet publish -c Release
+FROM nginx:alpine
+
+# Copy pre-built wwwroot from local build
+COPY Samples/docker/dashboard-build/wwwroot /usr/share/nginx/html
+COPY Samples/docker/nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost/health || exit 1

@@ -3,11 +3,18 @@
 using System.Text;
 using Gatekeeper.Api;
 using Microsoft.AspNetCore.Http.Json;
+using InitError = Outcome.Result<bool, string>.Error<bool, string>;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// File logging
-var logPath = Path.Combine(AppContext.BaseDirectory, "gatekeeper.log");
+// File logging - use LOG_PATH env var or default to /tmp in containers
+var logPath =
+    Environment.GetEnvironmentVariable("LOG_PATH")
+    ?? (
+        Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true"
+            ? "/tmp/gatekeeper.log"
+            : Path.Combine(AppContext.BaseDirectory, "gatekeeper.log")
+    );
 builder.Logging.AddFileLogging(logPath);
 
 builder.Services.Configure<JsonOptions>(options =>
@@ -33,15 +40,9 @@ builder.Services.AddFido2(options =>
     options.TimestampDriftTolerance = 300000;
 });
 
-var dbPath =
-    builder.Configuration["DbPath"] ?? Path.Combine(AppContext.BaseDirectory, "gatekeeper.db");
-var connectionString = new SqliteConnectionStringBuilder
-{
-    DataSource = dbPath,
-    ForeignKeys = true,
-    Pooling = false, // Disable pooling for test isolation
-    Cache = SqliteCacheMode.Shared, // Use shared cache for better cross-connection visibility
-}.ToString();
+var connectionString =
+    builder.Configuration.GetConnectionString("Postgres")
+    ?? throw new InvalidOperationException("PostgreSQL connection string 'Postgres' is required");
 
 builder.Services.AddSingleton(new DbConfig(connectionString));
 
@@ -53,19 +54,20 @@ builder.Services.AddSingleton(new JwtConfig(signingKey, TimeSpan.FromHours(24)))
 
 var app = builder.Build();
 
-using (var conn = new SqliteConnection(connectionString))
+using (var conn = new NpgsqlConnection(connectionString))
 {
     conn.Open();
-    DatabaseSetup.Initialize(conn, app.Logger);
+    if (DatabaseSetup.Initialize(conn, app.Logger) is InitError initErr)
+        Environment.FailFast(initErr.Value);
 }
 
 app.UseCors("Dashboard");
 
 static string Now() => DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
 
-static SqliteConnection OpenConnection(DbConfig db)
+static NpgsqlConnection OpenConnection(DbConfig db)
 {
-    var conn = new SqliteConnection(db.ConnectionString);
+    var conn = new NpgsqlConnection(db.ConnectionString);
     conn.Open();
     return conn;
 }
@@ -96,7 +98,7 @@ authGroup.MapPost(
                         request.Email,
                         now,
                         null,
-                        1,
+                        true,
                         null
                     )
                     .ConfigureAwait(false);
@@ -108,9 +110,7 @@ authGroup.MapPost(
             var excludeCredentials = existingCredentials switch
             {
                 GetUserCredentialsOk ok => ok
-                    .Value.Select(c => new PublicKeyCredentialDescriptor(
-                        Convert.FromBase64String(c.id)
-                    ))
+                    .Value.Select(c => new PublicKeyCredentialDescriptor(Base64Url.Decode(c.id)))
                     .ToList(),
                 GetUserCredentialsError _ => [],
             };
@@ -278,8 +278,8 @@ authGroup.MapPost(
                     now,
                     null,
                     request.DeviceName,
-                    cred.IsBackupEligible ? 1 : 0,
-                    cred.IsBackedUp ? 1 : 0
+                    cred.IsBackupEligible,
+                    cred.IsBackedUp
                 )
                 .ConfigureAwait(false);
 
@@ -363,11 +363,12 @@ authGroup.MapPost(
 
             var storedChallenge = challengeOk.Value[0];
 
-            // Get credential from database - Id is already base64url encoded
             var credentialId = request.AssertionResponse.Id;
+            logger.LogInformation("Login attempt - credential ID: {CredentialId}", credentialId);
             var credResult = await conn.GetCredentialByIdAsync(credentialId).ConfigureAwait(false);
             if (credResult is not GetCredentialByIdOk { Value.Count: > 0 } credOk)
             {
+                logger.LogWarning("Credential not found for ID: {CredentialId}", credentialId);
                 return Results.BadRequest(new { Error = "Credential not found" });
             }
 

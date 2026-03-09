@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -10,32 +11,19 @@ internal static class Program
     {
         var builder = Host.CreateApplicationBuilder(args);
 
-        // Support environment variable override for testing
-        // Default path navigates from bin/Debug/net9.0 up to Clinical.Api/bin/Debug/net9.0
-        var clinicalDbPath =
-            Environment.GetEnvironmentVariable("CLINICAL_DB_PATH")
-            ?? Path.Combine(
-                AppContext.BaseDirectory,
-                "..",
-                "..",
-                "..",
-                "..",
-                "Clinical.Api",
-                "bin",
-                "Debug",
-                "net9.0",
-                "clinical.db"
-            );
+        var connectionString =
+            Environment.GetEnvironmentVariable("CLINICAL_CONNECTION_STRING")
+            ?? builder.Configuration.GetConnectionString("Postgres")
+            ?? throw new InvalidOperationException("PostgreSQL connection string required");
         var schedulingApiUrl =
             Environment.GetEnvironmentVariable("SCHEDULING_API_URL") ?? "http://localhost:5001";
 
-        Console.WriteLine($"[Clinical.Sync] Using database: {clinicalDbPath}");
         Console.WriteLine($"[Clinical.Sync] Scheduling API URL: {schedulingApiUrl}");
 
-        builder.Services.AddSingleton<Func<SqliteConnection>>(_ =>
+        builder.Services.AddSingleton<Func<NpgsqlConnection>>(_ =>
             () =>
             {
-                var conn = new SqliteConnection($"Data Source={clinicalDbPath}");
+                var conn = new NpgsqlConnection(connectionString);
                 conn.Open();
                 return conn;
             }
@@ -44,7 +32,7 @@ internal static class Program
         builder.Services.AddHostedService(sp =>
         {
             var logger = sp.GetRequiredService<ILogger<SyncWorker>>();
-            var getConn = sp.GetRequiredService<Func<SqliteConnection>>();
+            var getConn = sp.GetRequiredService<Func<NpgsqlConnection>>();
             return new SyncWorker(logger, getConn, schedulingApiUrl);
         });
 

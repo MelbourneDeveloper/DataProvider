@@ -61,7 +61,11 @@ namespace Dashboard.React
             Action<object> clickHandler = null;
             if (onClick != null)
             {
-                clickHandler = _ => onClick();
+                clickHandler = e =>
+                {
+                    Script.Write("e.stopPropagation()");
+                    onClick();
+                };
             }
             var props = new
             {
@@ -82,6 +86,7 @@ namespace Dashboard.React
             string value = null,
             string placeholder = null,
             Action<string> onChange = null,
+            Action<string> onKeyDown = null,
             bool disabled = false
         )
         {
@@ -91,6 +96,11 @@ namespace Dashboard.React
                 changeHandler = e =>
                     onChange(Script.Get<string>(Script.Get<object>(e, "target"), "value"));
             }
+            Action<object> keyDownHandler = null;
+            if (onKeyDown != null)
+            {
+                keyDownHandler = e => onKeyDown(Script.Get<string>(e, "key"));
+            }
             var props = new
             {
                 className = className,
@@ -98,6 +108,7 @@ namespace Dashboard.React
                 value = value,
                 placeholder = placeholder,
                 onChange = changeHandler,
+                onKeyDown = keyDownHandler,
                 disabled = disabled,
             };
             return Script.Call<ReactElement>("React.createElement", "input", props);

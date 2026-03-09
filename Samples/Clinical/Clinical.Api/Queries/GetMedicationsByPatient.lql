@@ -1,0 +1,6 @@
+-- Get medication requests for a patient
+-- Parameters: @patientId
+fhir_MedicationRequest
+|> filter(fn(row) => row.fhir_MedicationRequest.PatientId = @patientId)
+|> select(fhir_MedicationRequest.Id, fhir_MedicationRequest.Status, fhir_MedicationRequest.Intent, fhir_MedicationRequest.PatientId, fhir_MedicationRequest.PractitionerId, fhir_MedicationRequest.EncounterId, fhir_MedicationRequest.MedicationCode, fhir_MedicationRequest.MedicationDisplay, fhir_MedicationRequest.DosageInstruction, fhir_MedicationRequest.Quantity, fhir_MedicationRequest.Unit, fhir_MedicationRequest.Refills, fhir_MedicationRequest.AuthoredOn, fhir_MedicationRequest.LastUpdated, fhir_MedicationRequest.VersionId)
+|> order_by(fhir_MedicationRequest.AuthoredOn desc)

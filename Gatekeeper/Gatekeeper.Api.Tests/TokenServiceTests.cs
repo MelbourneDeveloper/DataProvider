@@ -1,7 +1,7 @@
 using System.Globalization;
-using Microsoft.Data.Sqlite;
 using Migration;
-using Migration.SQLite;
+using Migration.Postgres;
+using Npgsql;
 
 namespace Gatekeeper.Api.Tests;
 
@@ -302,7 +302,7 @@ public sealed class TokenServiceTests
             userCmd.Transaction = tx;
             userCmd.CommandText =
                 @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
-                                    VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
+                                    VALUES (@id, @name, @email, @now, NULL, true, NULL)";
             userCmd.Parameters.AddWithValue("@id", "user-revoked");
             userCmd.Parameters.AddWithValue("@name", "Revoked User");
             userCmd.Parameters.AddWithValue("@email", DBNull.Value);
@@ -313,7 +313,7 @@ public sealed class TokenServiceTests
             sessionCmd.Transaction = tx;
             sessionCmd.CommandText =
                 @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
-                                       VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 1)";
+                                       VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, true)";
             sessionCmd.Parameters.AddWithValue("@id", jti);
             sessionCmd.Parameters.AddWithValue("@user_id", "user-revoked");
             sessionCmd.Parameters.AddWithValue("@created", now);
@@ -371,7 +371,7 @@ public sealed class TokenServiceTests
             userCmd.Transaction = tx;
             userCmd.CommandText =
                 @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
-                                    VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
+                                    VALUES (@id, @name, @email, @now, NULL, true, NULL)";
             userCmd.Parameters.AddWithValue("@id", "user-revoked2");
             userCmd.Parameters.AddWithValue("@name", "Revoked User 2");
             userCmd.Parameters.AddWithValue("@email", DBNull.Value);
@@ -382,7 +382,7 @@ public sealed class TokenServiceTests
             sessionCmd.Transaction = tx;
             sessionCmd.CommandText =
                 @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
-                                       VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 1)";
+                                       VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, true)";
             sessionCmd.Parameters.AddWithValue("@id", jti);
             sessionCmd.Parameters.AddWithValue("@user_id", "user-revoked2");
             sessionCmd.Parameters.AddWithValue("@created", now);
@@ -426,7 +426,7 @@ public sealed class TokenServiceTests
             userCmd.Transaction = tx;
             userCmd.CommandText =
                 @"INSERT INTO gk_user (id, display_name, email, created_at, last_login_at, is_active, metadata)
-                                    VALUES (@id, @name, @email, @now, NULL, 1, NULL)";
+                                    VALUES (@id, @name, @email, @now, NULL, true, NULL)";
             userCmd.Parameters.AddWithValue("@id", userId);
             userCmd.Parameters.AddWithValue("@name", "Test User");
             userCmd.Parameters.AddWithValue("@email", DBNull.Value);
@@ -437,7 +437,7 @@ public sealed class TokenServiceTests
             sessionCmd.Transaction = tx;
             sessionCmd.CommandText =
                 @"INSERT INTO gk_session (id, user_id, credential_id, created_at, expires_at, last_activity_at, ip_address, user_agent, is_revoked)
-                                       VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, 0)";
+                                       VALUES (@id, @user_id, NULL, @created, @expires, @activity, NULL, NULL, false)";
             sessionCmd.Parameters.AddWithValue("@id", jti);
             sessionCmd.Parameters.AddWithValue("@user_id", userId);
             sessionCmd.Parameters.AddWithValue("@created", now);
@@ -454,13 +454,13 @@ public sealed class TokenServiceTests
             var revokedResult = await conn.GetSessionRevokedAsync(jti);
             var isRevoked = revokedResult switch
             {
-                GetSessionRevokedOk ok => ok.Value.FirstOrDefault()?.is_revoked ?? -1L,
+                GetSessionRevokedOk ok => ok.Value.FirstOrDefault()?.is_revoked ?? false,
                 GetSessionRevokedError err => throw new InvalidOperationException(
                     $"GetSessionRevoked failed: {err.Value.Message}, {err.Value.InnerException?.Message}"
                 ),
             };
 
-            Assert.Equal(1L, isRevoked);
+            Assert.True(isRevoked);
         }
         finally
         {
@@ -508,10 +508,30 @@ public sealed class TokenServiceTests
         Assert.Null(token);
     }
 
-    private static (SqliteConnection Connection, string DbPath) CreateTestDb()
+    private static (NpgsqlConnection Connection, string DbName) CreateTestDb()
     {
-        var dbPath = Path.Combine(Path.GetTempPath(), $"tokenservice_{Guid.NewGuid():N}.db");
-        var conn = new SqliteConnection($"Data Source={dbPath}");
+        // Connect to PostgreSQL server - use environment variable or default to localhost
+        var baseConnectionString =
+            Environment.GetEnvironmentVariable("TEST_POSTGRES_CONNECTION")
+            ?? "Host=localhost;Database=postgres;Username=postgres;Password=changeme";
+
+        var dbName = $"test_tokenservice_{Guid.NewGuid():N}";
+
+        // Create test database
+        using (var adminConn = new NpgsqlConnection(baseConnectionString))
+        {
+            adminConn.Open();
+            using var createCmd = adminConn.CreateCommand();
+            createCmd.CommandText = $"CREATE DATABASE {dbName}";
+            createCmd.ExecuteNonQuery();
+        }
+
+        // Connect to the new test database
+        var testConnectionString = baseConnectionString.Replace(
+            "Database=postgres",
+            $"Database={dbName}"
+        );
+        var conn = new NpgsqlConnection(testConnectionString);
         conn.Open();
 
         // Use the YAML schema to create only the needed tables
@@ -522,7 +542,7 @@ public sealed class TokenServiceTests
 
         foreach (var table in schema.Tables.Where(t => neededTables.Contains(t.Name)))
         {
-            var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
+            var ddl = PostgresDdlGenerator.Generate(new CreateTableOperation(table));
             foreach (
                 var statement in ddl.Split(
                     ';',
@@ -540,23 +560,31 @@ public sealed class TokenServiceTests
             }
         }
 
-        return (conn, dbPath);
+        return (conn, dbName);
     }
 
-    private static void CleanupTestDb(SqliteConnection connection, string dbPath)
+    private static void CleanupTestDb(NpgsqlConnection connection, string dbName)
     {
+        var baseConnectionString =
+            Environment.GetEnvironmentVariable("TEST_POSTGRES_CONNECTION")
+            ?? "Host=localhost;Database=postgres;Username=postgres;Password=changeme";
+
         connection.Close();
         connection.Dispose();
-        if (File.Exists(dbPath))
-        {
-            try
-            {
-                File.Delete(dbPath);
-            }
-            catch
-            { /* File may be locked */
-            }
-        }
+
+        // Drop the test database
+        using var adminConn = new NpgsqlConnection(baseConnectionString);
+        adminConn.Open();
+
+        // Terminate any existing connections to the database
+        using var terminateCmd = adminConn.CreateCommand();
+        terminateCmd.CommandText =
+            $"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{dbName}'";
+        terminateCmd.ExecuteNonQuery();
+
+        using var dropCmd = adminConn.CreateCommand();
+        dropCmd.CommandText = $"DROP DATABASE IF EXISTS {dbName}";
+        dropCmd.ExecuteNonQuery();
     }
 
     private static string Base64UrlDecode(string input)

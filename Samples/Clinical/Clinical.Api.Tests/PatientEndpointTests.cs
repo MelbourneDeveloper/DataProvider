@@ -31,8 +31,12 @@ public sealed class PatientEndpointTests : IClassFixture<ClinicalApiFactory>
     public async Task GetPatients_ReturnsOk()
     {
         var response = await _client.GetAsync("/fhir/Patient/");
+        var body = await response.Content.ReadAsStringAsync();
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(
+            response.IsSuccessStatusCode,
+            $"Expected OK but got {response.StatusCode}: {body}"
+        );
     }
 
     [Fact]

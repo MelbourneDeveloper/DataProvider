@@ -30,7 +30,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     {
         // Start PostgreSQL container
         _postgresContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:16")
+            .WithImage("postgres:16-alpine")
             .WithDatabase("mappingdb")
             .WithUsername("test")
             .WithPassword("test")

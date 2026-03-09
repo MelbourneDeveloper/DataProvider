@@ -4,4 +4,4 @@ SELECT c.id, c.user_id, c.public_key, c.sign_count, c.aaguid, c.credential_type,
        u.display_name, u.email
 FROM gk_credential c
 JOIN gk_user u ON c.user_id = u.id
-WHERE c.id = @id AND u.is_active = 1;
+WHERE c.id = @id AND u.is_active = true;

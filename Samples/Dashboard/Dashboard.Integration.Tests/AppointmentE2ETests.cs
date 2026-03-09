@@ -23,8 +23,7 @@ public sealed class AppointmentE2ETests
     [Fact]
     public async Task Dashboard_DisplaysAppointmentData_FromSchedulingApi()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
-        await page.GotoAsync(E2EFixture.DashboardUrl);
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -47,10 +46,8 @@ public sealed class AppointmentE2ETests
     [Fact]
     public async Task AddAppointmentButton_OpensModal_AndCreatesAppointment()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -88,9 +85,7 @@ public sealed class AppointmentE2ETests
     [Fact]
     public async Task ViewScheduleButton_NavigatesToAppointments()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -140,10 +135,8 @@ public sealed class AppointmentE2ETests
         Assert.True(appointmentIdMatch.Success);
         var appointmentId = appointmentIdMatch.Groups[1].Value;
 
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }

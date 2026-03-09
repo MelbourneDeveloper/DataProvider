@@ -75,7 +75,7 @@ public static class TokenService
     /// Validates a JWT token.
     /// </summary>
     public static async Task<object> ValidateTokenAsync(
-        SqliteConnection conn,
+        NpgsqlConnection conn,
         string token,
         byte[] signingKey,
         bool checkRevocation,
@@ -151,15 +151,15 @@ public static class TokenService
     /// <summary>
     /// Revokes a token by JTI using DataProvider generated method.
     /// </summary>
-    public static async Task RevokeTokenAsync(SqliteConnection conn, string jti) =>
+    public static async Task RevokeTokenAsync(NpgsqlConnection conn, string jti) =>
         _ = await conn.RevokeSessionAsync(jti).ConfigureAwait(false);
 
-    private static async Task<bool> IsTokenRevokedAsync(SqliteConnection conn, string jti)
+    private static async Task<bool> IsTokenRevokedAsync(NpgsqlConnection conn, string jti)
     {
         var result = await conn.GetSessionRevokedAsync(jti).ConfigureAwait(false);
         return result switch
         {
-            GetSessionRevokedOk ok => ok.Value.FirstOrDefault()?.is_revoked == 1,
+            GetSessionRevokedOk ok => ok.Value.FirstOrDefault()?.is_revoked == true,
             GetSessionRevokedError => false,
         };
     }

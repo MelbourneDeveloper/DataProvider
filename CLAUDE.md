@@ -1,10 +1,11 @@
 # CLAUDE.md
 
-## Multi-Agent (Too Many Cooks)
-- Keep your key! Don't lose it!
-- Check messages, lock files before editing, unlock after
-- Don't edit locked files; telegraph intent via plans/messages
-- Coordinator: delegate. Worker: ask for tasks. Update plans constantly.
+## Too Many Cooks
+- Register on TMC immediately
+- Don't edit files that are locked; lock files when editing
+- COMMUNICATE REGULARLY AND COORDINATE WITH OTHERS THROUGH MESSAGES
+
+⛔️ DO NOT RUN DOCKER/GIT COMMANDS!!!
 
 ## Coding Rules
 
@@ -42,11 +43,20 @@ public abstract partial record Result<TSuccess, TFailure> { private Result() { }
 - **No placeholders** - If incomplete, leave LOUD compilation error with TODO
 - **Never use Fluent Assertions**
 
+## LQL 
+- LQL is database platform INDEPENDENT. It MUST work exactly the same on whatever platform it is transpiled to. Failure for this to happen must be logged as a GitHub issue
+
 ## CSS
 - **MINIMAL CSS** - Do not duplicate CSS clases
+- **Aggressively merge duplicate CSS** - consistency is key
 - **Name classes after component, NOT section** - Sections should not have their own CSS classes
 
 ## Testing
+- NEVER remove assertions
+- FAILING TEST = ✅ OK . TEST THAT DOESN'T ENFORCE BEHAVIOR = ⛔️ ILLEGAL
+- No try/catch in tests
+- Timeout = ⛔️ FAILURE
+- Bug fix process: write test that fails because of bug -> verify test fails because of bug -> fix bug -> verify that test passes
 - E2E with zero mocking
 - 100% coverage, Stryker score 70%+
 - Medical data: [FHIR spec](https://build.fhir.org/resourcelist.html)

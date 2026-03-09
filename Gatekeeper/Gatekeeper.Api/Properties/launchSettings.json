@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "Gatekeeper.Api": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5002",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnectionStrings__Postgres": "Host=localhost;Database=gatekeeper;Username=gatekeeper;Password=changeme"
+      }
+    }
+  }
+}

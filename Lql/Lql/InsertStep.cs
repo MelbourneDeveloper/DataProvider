@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+using System.Collections.Immutable;
 
 namespace Lql;
 
@@ -15,7 +15,7 @@ public sealed class InsertStep : StepBase
     /// <summary>
     /// Gets the column names for the insert.
     /// </summary>
-    public Collection<string> Columns { get; }
+    public ImmutableArray<string> Columns { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InsertStep"/> class.
@@ -25,6 +25,6 @@ public sealed class InsertStep : StepBase
     public InsertStep(string table, IEnumerable<string> columns)
     {
         Table = table;
-        Columns = new Collection<string>([.. columns]);
+        Columns = [.. columns];
     }
 }

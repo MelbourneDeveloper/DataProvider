@@ -21,7 +21,6 @@
 
 namespace Lql.Parsing {
 
-
 using Antlr4.Runtime.Misc;
 using IErrorNode = Antlr4.Runtime.Tree.IErrorNode;
 using ITerminalNode = Antlr4.Runtime.Tree.ITerminalNode;
@@ -36,7 +35,7 @@ using ParserRuleContext = Antlr4.Runtime.ParserRuleContext;
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.13.1")]
 [System.Diagnostics.DebuggerNonUserCode]
 [System.CLSCompliant(false)]
-internal partial class LqlBaseListener : ILqlListener {
+public partial class LqlBaseListener : ILqlListener {
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="LqlParser.program"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -411,4 +410,4 @@ internal partial class LqlBaseListener : ILqlListener {
 	/// <remarks>The default implementation does nothing.</remarks>
 	public virtual void VisitErrorNode([NotNull] IErrorNode node) { }
 }
-}
+} // namespace Lql.Parsing

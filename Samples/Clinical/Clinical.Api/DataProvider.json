@@ -2,27 +2,27 @@
     "queries": [
         {
             "name": "GetPatients",
-            "sqlFile": "Queries/GetPatients.sql"
+            "sqlFile": "Queries/GetPatients.generated.sql"
         },
         {
             "name": "GetPatientById",
-            "sqlFile": "Queries/GetPatientById.sql"
+            "sqlFile": "Queries/GetPatientById.generated.sql"
         },
         {
             "name": "SearchPatients",
-            "sqlFile": "Queries/SearchPatients.sql"
+            "sqlFile": "Queries/SearchPatients.generated.sql"
         },
         {
             "name": "GetEncountersByPatient",
-            "sqlFile": "Queries/GetEncountersByPatient.sql"
+            "sqlFile": "Queries/GetEncountersByPatient.generated.sql"
         },
         {
             "name": "GetConditionsByPatient",
-            "sqlFile": "Queries/GetConditionsByPatient.sql"
+            "sqlFile": "Queries/GetConditionsByPatient.generated.sql"
         },
         {
             "name": "GetMedicationsByPatient",
-            "sqlFile": "Queries/GetMedicationsByPatient.sql"
+            "sqlFile": "Queries/GetMedicationsByPatient.generated.sql"
         }
     ],
     "tables": [

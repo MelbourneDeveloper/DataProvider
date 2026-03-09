@@ -1,8 +1,270 @@
 {
     "version": "2.0.0",
     "tasks": [
+        // ═══════════════════════════════════════════════════════════════
+        // .NET BUILD
+        // ═══════════════════════════════════════════════════════════════
         {
-            "label": "kill-lql-website-port",
+            "label": "Build: Solution",
+            "command": "dotnet",
+            "type": "process",
+            "args": ["build", "${workspaceFolder}/DataProvider.sln", "/property:GenerateFullPaths=true", "/consoleloggerparameters:NoSummary;ForceNoAlign"],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Build: Publish Solution",
+            "command": "dotnet",
+            "type": "process",
+            "args": ["publish", "${workspaceFolder}/DataProvider.sln", "/property:GenerateFullPaths=true", "/consoleloggerparameters:NoSummary;ForceNoAlign"],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Build: Watch",
+            "command": "dotnet",
+            "type": "process",
+            "args": ["watch", "run", "--project", "${workspaceFolder}/DataProvider.sln"],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Format: CSharpier",
+            "type": "shell",
+            "command": "dotnet csharpier .",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+
+        // ═══════════════════════════════════════════════════════════════
+        // SAMPLES / DASHBOARD
+        // ═══════════════════════════════════════════════════════════════
+        {
+            "label": "Samples: Start All (Fresh)",
+            "type": "shell",
+            "command": "./start.sh --fresh",
+            "options": {
+                "cwd": "${workspaceFolder}/Samples"
+            },
+            "problemMatcher": [],
+            "detail": "Kill all, clear DBs, start Clinical, Scheduling, Gatekeeper, ICD-10, Sync, Dashboard"
+        },
+        {
+            "label": "Samples: Start All (Continue)",
+            "type": "shell",
+            "command": "./start.sh",
+            "options": {
+                "cwd": "${workspaceFolder}/Samples"
+            },
+            "problemMatcher": [],
+            "detail": "Start all services without clearing databases"
+        },
+
+        // ═══════════════════════════════════════════════════════════════
+        // ICD-10-CM MICROSERVICE
+        // ═══════════════════════════════════════════════════════════════
+        {
+            "label": "ICD-10: Run API",
+            "type": "shell",
+            "command": "./run.sh",
+            "options": {
+                "cwd": "${workspaceFolder}/Samples/ICD10CM/scripts"
+            },
+            "problemMatcher": [],
+            "detail": "Start ICD-10-CM API on port 5558"
+        },
+        {
+            "label": "ICD-10: Start Embedding Service",
+            "type": "shell",
+            "command": "./start.sh",
+            "options": {
+                "cwd": "${workspaceFolder}/Samples/ICD10CM/scripts/Dependencies"
+            },
+            "problemMatcher": [],
+            "detail": "Docker: MedEmbed service for RAG search"
+        },
+        {
+            "label": "ICD-10: Stop Embedding Service",
+            "type": "shell",
+            "command": "./stop.sh",
+            "options": {
+                "cwd": "${workspaceFolder}/Samples/ICD10CM/scripts/Dependencies"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ICD-10: Import Database (full)",
+            "type": "shell",
+            "command": "./import.sh",
+            "options": {
+                "cwd": "${workspaceFolder}/Samples/ICD10CM/scripts/CreateDb"
+            },
+            "problemMatcher": [],
+            "detail": "Migrate schema, import codes, generate embeddings (30-60 min)"
+        },
+        {
+            "label": "ICD-10: Run CLI",
+            "type": "shell",
+            "command": "dotnet run -- http://localhost:5558",
+            "options": {
+                "cwd": "${workspaceFolder}/Samples/ICD10CM/ICD10AM.Cli",
+                "env": {
+                    "EMBEDDING_URL": "http://localhost:8000"
+                }
+            },
+            "problemMatcher": [],
+            "detail": "Interactive CLI for ICD-10 code lookup"
+        },
+        {
+            "label": "ICD-10: Run Tests",
+            "type": "shell",
+            "command": "dotnet test",
+            "options": {
+                "cwd": "${workspaceFolder}/Samples/ICD10CM/ICD10AM.Api.Tests"
+            },
+            "problemMatcher": "$msCompile"
+        },
+
+        // ═══════════════════════════════════════════════════════════════
+        // LQL EXTENSION
+        // ═══════════════════════════════════════════════════════════════
+        {
+            "label": "LQL Extension: Compile",
+            "type": "shell",
+            "command": "npm run compile",
+            "options": {
+                "cwd": "${workspaceFolder}/Lql/LqlExtension"
+            },
+            "problemMatcher": "$tsc"
+        },
+        {
+            "label": "LQL Extension: Watch",
+            "type": "shell",
+            "command": "npm run watch",
+            "options": {
+                "cwd": "${workspaceFolder}/Lql/LqlExtension"
+            },
+            "isBackground": true,
+            "problemMatcher": "$tsc-watch"
+        },
+        {
+            "label": "LQL Extension: Package VSIX",
+            "type": "shell",
+            "command": "npm run package",
+            "options": {
+                "cwd": "${workspaceFolder}/Lql/LqlExtension"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "LQL Extension: Lint",
+            "type": "shell",
+            "command": "npm run lint",
+            "options": {
+                "cwd": "${workspaceFolder}/Lql/LqlExtension"
+            },
+            "problemMatcher": "$eslint-stylish"
+        },
+        {
+            "label": "LQL Extension: Install Dependencies",
+            "type": "shell",
+            "command": "npm install",
+            "options": {
+                "cwd": "${workspaceFolder}/Lql/LqlExtension"
+            },
+            "problemMatcher": []
+        },
+
+        // ═══════════════════════════════════════════════════════════════
+        // WEBSITE / DOCS
+        // ═══════════════════════════════════════════════════════════════
+        {
+            "label": "Website: Dev Server",
+            "type": "shell",
+            "command": "npm run dev",
+            "options": {
+                "cwd": "${workspaceFolder}/Website"
+            },
+            "problemMatcher": [],
+            "detail": "11ty dev server with live reload"
+        },
+        {
+            "label": "Website: Build",
+            "type": "shell",
+            "command": "npm run build",
+            "options": {
+                "cwd": "${workspaceFolder}/Website"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Website: Generate API Docs",
+            "type": "shell",
+            "command": "npm run generate-api",
+            "options": {
+                "cwd": "${workspaceFolder}/Website"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Website: Install Dependencies",
+            "type": "shell",
+            "command": "npm install",
+            "options": {
+                "cwd": "${workspaceFolder}/Website"
+            },
+            "problemMatcher": []
+        },
+
+        // ═══════════════════════════════════════════════════════════════
+        // TESTING
+        // ═══════════════════════════════════════════════════════════════
+        {
+            "label": "Test: All",
+            "type": "shell",
+            "command": "dotnet test ${workspaceFolder}/DataProvider.sln",
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Test: DataProvider",
+            "type": "shell",
+            "command": "dotnet test",
+            "options": {
+                "cwd": "${workspaceFolder}/DataProvider/DataProvider.Tests"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Test: LQL",
+            "type": "shell",
+            "command": "dotnet test",
+            "options": {
+                "cwd": "${workspaceFolder}/Lql/Lql.Tests"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Test: Migration",
+            "type": "shell",
+            "command": "dotnet test",
+            "options": {
+                "cwd": "${workspaceFolder}/Migration/Migration.Tests"
+            },
+            "problemMatcher": "$msCompile"
+        },
+
+        // ═══════════════════════════════════════════════════════════════
+        // UTILITIES
+        // ═══════════════════════════════════════════════════════════════
+        {
+            "label": "Util: Kill Port 5290 (LQL Website)",
             "type": "shell",
             "command": "lsof -ti:5290 | xargs kill -9 2>/dev/null || true",
             "presentation": {
@@ -12,40 +274,11 @@
             "problemMatcher": []
         },
         {
-            "label": "build",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "build",
-                "${workspaceFolder}/DataProvider.sln",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary;ForceNoAlign"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "publish",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "publish",
-                "${workspaceFolder}/DataProvider.sln",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary;ForceNoAlign"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "watch",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "watch",
-                "run",
-                "--project",
-                "${workspaceFolder}/DataProvider.sln"
-            ],
-            "problemMatcher": "$msCompile"
+            "label": "Util: Kill All Sample Ports",
+            "type": "shell",
+            "command": "lsof -ti:5080,5001,5002,5090,5173 | xargs kill -9 2>/dev/null || true",
+            "problemMatcher": [],
+            "detail": "Kill ports: 5080, 5001, 5002, 5090, 5173"
         }
     ]
 }

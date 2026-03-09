@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+using System.Collections.Immutable;
 
 namespace Lql;
 
@@ -10,7 +10,7 @@ public sealed class GroupByStep : StepBase
     /// <summary>
     /// Gets the columns to group by.
     /// </summary>
-    public Collection<string> Columns { get; }
+    public ImmutableArray<string> Columns { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GroupByStep"/> class.
@@ -18,6 +18,6 @@ public sealed class GroupByStep : StepBase
     /// <param name="columns">The columns to group by.</param>
     public GroupByStep(IEnumerable<string> columns)
     {
-        Columns = new Collection<string>([.. columns]);
+        Columns = [.. columns];
     }
 }

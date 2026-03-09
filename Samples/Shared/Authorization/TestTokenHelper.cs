@@ -46,7 +46,7 @@ public static class TestTokenHelper
         var headerBase64 = Base64UrlEncode(Encoding.UTF8.GetBytes(headerJson));
         var payloadBase64 = Base64UrlEncode(Encoding.UTF8.GetBytes(payloadJson));
 
-        var signature = ComputeSignature(headerBase64, payloadBase64, TestSigningKey.ToArray());
+        var signature = ComputeSignature(headerBase64, payloadBase64, [.. TestSigningKey]);
 
         return $"{headerBase64}.{payloadBase64}.{signature}";
     }
@@ -81,7 +81,7 @@ public static class TestTokenHelper
     /// <param name="userId">The user ID.</param>
     /// <returns>A JWT token with no roles.</returns>
     public static string GenerateNoRoleToken(string userId = "test-user") =>
-        GenerateToken(userId, ImmutableArray<string>.Empty);
+        GenerateToken(userId, []);
 
     /// <summary>
     /// Generates an expired token for testing expiration handling.

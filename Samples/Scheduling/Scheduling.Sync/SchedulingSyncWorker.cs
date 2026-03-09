@@ -16,7 +16,7 @@ internal sealed class SchedulingSyncWorker : BackgroundService
 #pragma warning restore CA1812
 {
     private readonly ILogger<SchedulingSyncWorker> _logger;
-    private readonly Func<SqliteConnection> _getConnection;
+    private readonly Func<NpgsqlConnection> _getConnection;
     private readonly string _clinicalEndpoint;
     private readonly int _pollIntervalSeconds;
 
@@ -25,7 +25,7 @@ internal sealed class SchedulingSyncWorker : BackgroundService
     /// </summary>
     public SchedulingSyncWorker(
         ILogger<SchedulingSyncWorker> logger,
-        Func<SqliteConnection> getConnection,
+        Func<NpgsqlConnection> getConnection,
         string clinicalEndpoint
     )
     {
@@ -195,11 +195,11 @@ internal sealed class SchedulingSyncWorker : BackgroundService
     /// Maps: fhir_Patient -> sync_ScheduledPatient
     /// Transforms: DisplayName = concat(GivenName, ' ', FamilyName)
     /// </summary>
-    private void ApplyMappedChange(SqliteConnection connection, SyncChange change)
+    private void ApplyMappedChange(NpgsqlConnection connection, SyncChange change)
     {
         try
         {
-            if (change.TableName != "fhir_Patient")
+            if (change.TableName != "fhir_patient")
             {
                 return; // Only sync patient data
             }
@@ -214,12 +214,12 @@ internal sealed class SchedulingSyncWorker : BackgroundService
                 return;
             }
 
-            // Apply column mapping
-            var patientId = data.TryGetValue("Id", out var id) ? id.GetString() : null;
-            var givenName = data.TryGetValue("GivenName", out var gn) ? gn.GetString() : "";
-            var familyName = data.TryGetValue("FamilyName", out var fn) ? fn.GetString() : "";
-            var phone = data.TryGetValue("Phone", out var p) ? p.GetString() : null;
-            var email = data.TryGetValue("Email", out var e) ? e.GetString() : null;
+            // Apply column mapping (keys are lowercase - PostgreSQL folds identifiers)
+            var patientId = data.TryGetValue("id", out var id) ? id.GetString() : null;
+            var givenName = data.TryGetValue("givenname", out var gn) ? gn.GetString() : "";
+            var familyName = data.TryGetValue("familyname", out var fn) ? fn.GetString() : "";
+            var phone = data.TryGetValue("phone", out var p) ? p.GetString() : null;
+            var email = data.TryGetValue("email", out var e) ? e.GetString() : null;
 
             if (patientId is null)
             {
@@ -245,12 +245,12 @@ internal sealed class SchedulingSyncWorker : BackgroundService
                 using var cmd = connection.CreateCommand();
                 cmd.CommandText = """
                     INSERT INTO sync_ScheduledPatient (PatientId, DisplayName, ContactPhone, ContactEmail, SyncedAt)
-                    VALUES (@id, @name, @phone, @email, datetime('now'))
+                    VALUES (@id, @name, @phone, @email, NOW())
                     ON CONFLICT (PatientId) DO UPDATE SET
                         DisplayName = excluded.DisplayName,
                         ContactPhone = excluded.ContactPhone,
                         ContactEmail = excluded.ContactEmail,
-                        SyncedAt = datetime('now')
+                        SyncedAt = NOW()
                     """;
 
                 cmd.Parameters.AddWithValue("@id", patientId);
@@ -272,7 +272,7 @@ internal sealed class SchedulingSyncWorker : BackgroundService
         }
     }
 
-    private static long GetLastSyncVersion(SqliteConnection connection)
+    private static long GetLastSyncVersion(NpgsqlConnection connection)
     {
         // Ensure _sync_state table exists
         using var createCmd = connection.CreateCommand();
@@ -291,7 +291,7 @@ internal sealed class SchedulingSyncWorker : BackgroundService
         return result is string str && long.TryParse(str, out var version) ? version : 0;
     }
 
-    private static void UpdateLastSyncVersion(SqliteConnection connection, long version)
+    private static void UpdateLastSyncVersion(NpgsqlConnection connection, long version)
     {
         using var cmd = connection.CreateCommand();
         cmd.CommandText = """

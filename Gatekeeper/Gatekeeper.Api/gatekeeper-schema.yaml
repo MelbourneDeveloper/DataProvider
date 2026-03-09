@@ -14,7 +14,7 @@ tables:
     type: Text
   - name: is_active
     type: Boolean
-    defaultValue: 1
+    defaultValue: "true"
   - name: metadata
     type: Json
   indexes:
@@ -91,7 +91,7 @@ tables:
     type: Text
   - name: is_revoked
     type: Boolean
-    defaultValue: 0
+    defaultValue: "false"
   indexes:
   - name: idx_session_user
     columns:
@@ -145,7 +145,7 @@ tables:
     type: Text
   - name: is_system
     type: Boolean
-    defaultValue: 0
+    defaultValue: "false"
   - name: created_at
     type: Text
   - name: parent_role_id
@@ -383,7 +383,7 @@ tables:
     defaultValue: 0
   - name: is_active
     type: Boolean
-    defaultValue: 1
+    defaultValue: "true"
   - name: created_at
     type: Text
   indexes:

@@ -1,5 +1,8 @@
 using Migration;
-using Migration.SQLite;
+using Migration.Postgres;
+using InitError = Outcome.Result<bool, string>.Error<bool, string>;
+using InitOk = Outcome.Result<bool, string>.Ok<bool, string>;
+using InitResult = Outcome.Result<bool, string>;
 
 namespace Scheduling.Api;
 
@@ -14,21 +17,18 @@ internal static class DatabaseSetup
     /// Creates the database schema and sync infrastructure using Migration.
     /// Tables conform to FHIR R4 resources.
     /// </summary>
-    public static void Initialize(SqliteConnection connection, ILogger logger)
+    public static InitResult Initialize(NpgsqlConnection connection, ILogger logger)
     {
         // Create sync infrastructure
-        var schemaResult = SyncSchema.CreateSchema(connection);
+        var schemaResult = PostgresSyncSchema.CreateSchema(connection);
         if (schemaResult is BoolSyncError err)
         {
-            logger.Log(
-                LogLevel.Error,
-                "Failed to create sync schema: {Error}",
-                SyncHelpers.ToMessage(err.Value)
-            );
-            return;
+            var msg = SyncHelpers.ToMessage(err.Value);
+            logger.Log(LogLevel.Error, "Failed to create sync schema: {Error}", msg);
+            return new InitError($"Failed to create sync schema: {msg}");
         }
 
-        _ = SyncSchema.SetOriginId(connection, Guid.NewGuid().ToString());
+        _ = PostgresSyncSchema.SetOriginId(connection, Guid.NewGuid().ToString());
 
         // Use Migration tool to create schema from YAML (source of truth)
         try
@@ -38,7 +38,7 @@ internal static class DatabaseSetup
 
             foreach (var table in schema.Tables)
             {
-                var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(table));
+                var ddl = PostgresDdlGenerator.Generate(new CreateTableOperation(table));
                 using var cmd = connection.CreateCommand();
                 cmd.CommandText = ddl;
                 cmd.ExecuteNonQuery();
@@ -50,18 +50,19 @@ internal static class DatabaseSetup
         catch (Exception ex)
         {
             logger.Log(LogLevel.Error, ex, "Failed to create Scheduling database schema");
-            return;
+            return new InitError($"Failed to create Scheduling database schema: {ex.Message}");
         }
 
         // Create sync triggers for FHIR resources
-        _ = TriggerGenerator.CreateTriggers(connection, "fhir_Practitioner", logger);
-        _ = TriggerGenerator.CreateTriggers(connection, "fhir_Appointment", logger);
-        _ = TriggerGenerator.CreateTriggers(connection, "fhir_Schedule", logger);
-        _ = TriggerGenerator.CreateTriggers(connection, "fhir_Slot", logger);
+        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_practitioner", logger);
+        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_appointment", logger);
+        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_schedule", logger);
+        _ = PostgresTriggerGenerator.CreateTriggers(connection, "fhir_slot", logger);
 
         logger.Log(
             LogLevel.Information,
             "Scheduling.Api database initialized with FHIR tables and sync triggers"
         );
+        return new InitOk(true);
     }
 }

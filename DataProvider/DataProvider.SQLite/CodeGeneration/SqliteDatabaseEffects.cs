@@ -70,6 +70,18 @@ internal sealed class SqliteDatabaseEffects : IDatabaseEffects
                 var dataTypeName = reader.GetDataTypeName(i);
 
                 var csharpType = MapSqliteTypeToCSharpType(fieldType);
+                var isNullable =
+                    !fieldType.IsValueType || Nullable.GetUnderlyingType(fieldType) != null;
+
+                // BOOLEAN columns in SQLite have NUMERIC affinity; reader.GetFieldType
+                // returns string, so override based on declared type name
+                if (
+                    dataTypeName.Contains("BOOL", StringComparison.OrdinalIgnoreCase)
+                    && csharpType == "string"
+                )
+                {
+                    csharpType = isNullable ? "bool?" : "bool";
+                }
 
                 columns.Add(
                     new DatabaseColumn
@@ -77,8 +89,7 @@ internal sealed class SqliteDatabaseEffects : IDatabaseEffects
                         Name = columnName,
                         SqlType = dataTypeName,
                         CSharpType = csharpType,
-                        IsNullable =
-                            !fieldType.IsValueType || Nullable.GetUnderlyingType(fieldType) != null,
+                        IsNullable = isNullable,
                         IsPrimaryKey = false, // Cannot determine from query result
                         IsIdentity = false, // Cannot determine from query result
                         IsComputed = false, // Cannot determine from query result
@@ -155,6 +166,8 @@ internal sealed class SqliteDatabaseEffects : IDatabaseEffects
         return lowerName switch
         {
             var name when name.Contains("id", StringComparison.Ordinal) => 1,
+            var name when name.Contains("limit", StringComparison.Ordinal) => 100,
+            var name when name.Contains("offset", StringComparison.Ordinal) => 0,
             var name when name.Contains("count", StringComparison.Ordinal) => 1,
             var name when name.Contains("quantity", StringComparison.Ordinal) => 1,
             var name when name.Contains("amount", StringComparison.Ordinal) => 1.0m,

@@ -1,0 +1,6 @@
+-- Get patients with optional FHIR search parameters
+-- Parameters: @active, @familyName, @givenName, @gender
+fhir_Patient
+|> filter(fn(p) => (@active is null or p.fhir_Patient.Active = @active) and (@familyName is null or p.fhir_Patient.FamilyName like '%' || @familyName || '%') and (@givenName is null or p.fhir_Patient.GivenName like '%' || @givenName || '%') and (@gender is null or p.fhir_Patient.Gender = @gender))
+|> select(fhir_Patient.Id, fhir_Patient.Active, fhir_Patient.GivenName, fhir_Patient.FamilyName, fhir_Patient.BirthDate, fhir_Patient.Gender, fhir_Patient.Phone, fhir_Patient.Email, fhir_Patient.AddressLine, fhir_Patient.City, fhir_Patient.State, fhir_Patient.PostalCode, fhir_Patient.Country, fhir_Patient.LastUpdated, fhir_Patient.VersionId)
+|> order_by(fhir_Patient.FamilyName, fhir_Patient.GivenName)

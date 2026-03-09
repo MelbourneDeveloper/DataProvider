@@ -37,21 +37,29 @@ internal static class Program
         {
             IsRequired = true,
         };
+        var connectionTypeOpt = new Option<string>(
+            "--connection-type",
+            getDefaultValue: () => "SqliteConnection",
+            description: "Database connection type for generated code (e.g., SqliteConnection, NpgsqlConnection)"
+        );
         var root = new RootCommand("DataProvider.SQLite codegen CLI")
         {
             projectDir,
             config,
             outDir,
+            connectionTypeOpt,
         };
         root.SetHandler(
-            async (DirectoryInfo proj, FileInfo cfg, DirectoryInfo output) =>
+            async (DirectoryInfo proj, FileInfo cfg, DirectoryInfo output, string connType) =>
             {
-                var exit = await RunAsync(proj, cfg, output).ConfigureAwait(false);
+                var exit = await RunAsync(proj, cfg, output, connectionType: connType)
+                    .ConfigureAwait(false);
                 Environment.Exit(exit);
             },
             projectDir,
             config,
-            outDir
+            outDir,
+            connectionTypeOpt
         );
 
         return await root.InvokeAsync(args).ConfigureAwait(false);
@@ -60,7 +68,8 @@ internal static class Program
     private static async Task<int> RunAsync(
         DirectoryInfo projectDir,
         FileInfo configFile,
-        DirectoryInfo outDir
+        DirectoryInfo outDir,
+        string connectionType = "SqliteConnection"
     )
     {
         try
@@ -159,6 +168,23 @@ internal static class Program
 
             var parser = new SqliteAntlrParser();
 
+            // Build custom config when targeting a non-SQLite connection type
+            CodeGenerationConfig? codeGenConfig = null;
+            if (!string.Equals(connectionType, "SqliteConnection", StringComparison.Ordinal))
+            {
+                var tableOpGen = new DefaultTableOperationGenerator(connectionType);
+                codeGenConfig = new CodeGenerationConfig(
+                    SqliteCodeGenerator.GetColumnMetadataFromSqlAsync,
+                    tableOpGen
+                )
+                {
+                    ConnectionType = connectionType,
+                    TargetNamespace = "Generated",
+                    GenerateSourceFile = (ns, model, dataAccess) =>
+                        GenerateSourceFileForConnectionType(ns, model, dataAccess, connectionType),
+                };
+            }
+
             var hadErrors = false;
 
             foreach (var sqlPath in sqlFiles)
@@ -185,7 +211,14 @@ internal static class Program
                         // Skip schema files; they're only for DB initialization
                         continue;
                     }
-                    var parseResult = parser.ParseSql(sql);
+                    // Pre-process SQL for SQLite compatibility: ILIKE is Postgres-only,
+                    // replace with LIKE for parsing/metadata (original SQL kept for generated code)
+                    var sqliteSql = sql.Replace(
+                        " ILIKE ",
+                        " LIKE ",
+                        StringComparison.OrdinalIgnoreCase
+                    );
+                    var parseResult = parser.ParseSql(sqliteSql);
                     if (
                         parseResult
                         is Result<SelectStatement, string>.Error<
@@ -206,7 +239,7 @@ internal static class Program
                     var colsResult = await SqliteCodeGenerator
                         .GetColumnMetadataFromSqlAsync(
                             absoluteConnectionString,
-                            sql,
+                            sqliteSql,
                             stmt.Parameters
                         )
                         .ConfigureAwait(false);
@@ -253,7 +286,8 @@ internal static class Program
                         absoluteConnectionString,
                         cols.Value,
                         hasCustomImplementation: false,
-                        grouping
+                        grouping,
+                        codeGenConfig
                     );
                     if (gen is Result<string, SqlError>.Ok<string, SqlError> success)
                     {
@@ -379,7 +413,7 @@ internal static class Program
 
                         // Generate table operations
                         var tableOperationGenerator = new DefaultTableOperationGenerator(
-                            "SqliteConnection"
+                            connectionType
                         );
                         var operationsResult = tableOperationGenerator.GenerateTableOperations(
                             table,
@@ -426,6 +460,59 @@ internal static class Program
             Console.WriteLine($"❌ Unexpected error: {ex}");
             return 1;
         }
+    }
+
+    /// <summary>
+    /// Generates a source file with the correct using statement for the specified connection type.
+    /// </summary>
+    private static Result<string, SqlError> GenerateSourceFileForConnectionType(
+        string namespaceName,
+        string modelCode,
+        string dataAccessCode,
+        string connectionType
+    )
+    {
+        if (string.IsNullOrWhiteSpace(namespaceName))
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("namespaceName cannot be null or empty")
+            );
+
+        if (string.IsNullOrWhiteSpace(modelCode) && string.IsNullOrWhiteSpace(dataAccessCode))
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("At least one of modelCode or dataAccessCode must be provided")
+            );
+
+        var connectionNamespace = connectionType switch
+        {
+            "NpgsqlConnection" => "Npgsql",
+            "SqlConnection" => "Microsoft.Data.SqlClient",
+            _ => "Microsoft.Data.Sqlite",
+        };
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("using System;");
+        sb.AppendLine("using System.Collections.Generic;");
+        sb.AppendLine("using System.Collections.Immutable;");
+        sb.AppendLine("using System.Threading.Tasks;");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"using {connectionNamespace};");
+        sb.AppendLine("using Outcome;");
+        sb.AppendLine("using Selecta;");
+        sb.AppendLine();
+        sb.AppendLine(CultureInfo.InvariantCulture, $"namespace {namespaceName};");
+        sb.AppendLine();
+
+        if (!string.IsNullOrWhiteSpace(dataAccessCode))
+        {
+            sb.Append(dataAccessCode);
+            sb.AppendLine();
+        }
+
+        if (!string.IsNullOrWhiteSpace(modelCode))
+        {
+            sb.Append(modelCode);
+        }
+
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
 
     private static string EscapeForPreprocessor(string message)

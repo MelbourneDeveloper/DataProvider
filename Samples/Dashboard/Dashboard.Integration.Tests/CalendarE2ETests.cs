@@ -22,14 +22,29 @@ public sealed class CalendarE2ETests
     [Fact]
     public async Task CalendarPage_DisplaysAppointmentsInCalendarGrid()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
-        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#calendar"
+        );
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER {msg.Type}] {msg.Text}");
+        page.PageError += (_, err) => Console.WriteLine($"[PAGE ERROR] {err}");
 
-        await page.GotoAsync($"{E2EFixture.DashboardUrl}#calendar");
+        // Debug: Check auth state
+        var hasToken = await page.EvaluateAsync<bool>(
+            "() => !!localStorage.getItem('gatekeeper_token')"
+        );
+        var hasUser = await page.EvaluateAsync<bool>(
+            "() => !!localStorage.getItem('gatekeeper_user')"
+        );
+        var currentUrl = page.Url;
+        Console.WriteLine(
+            $"[DEBUG] Auth state - hasToken: {hasToken}, hasUser: {hasUser}, URL: {currentUrl}"
+        );
+
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
         );
+
         await page.WaitForSelectorAsync(
             ".calendar-grid-container",
             new PageWaitForSelectorOptions { Timeout = 10000 }
@@ -83,10 +98,8 @@ public sealed class CalendarE2ETests
         );
         createResponse.EnsureSuccessStatusCode();
 
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -158,10 +171,8 @@ public sealed class CalendarE2ETests
         );
         createResponse.EnsureSuccessStatusCode();
 
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -206,10 +217,8 @@ public sealed class CalendarE2ETests
     [Fact]
     public async Task CalendarPage_NavigationButtons_ChangeMonth()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
+        var page = await _fixture.CreateAuthenticatedPageAsync();
         page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
-
-        await page.GotoAsync(E2EFixture.DashboardUrl);
         await page.WaitForSelectorAsync(
             ".sidebar",
             new PageWaitForSelectorOptions { Timeout = 20000 }
@@ -252,10 +261,19 @@ public sealed class CalendarE2ETests
     [Fact]
     public async Task CalendarPage_DeepLinkingWorks()
     {
-        var page = await _fixture.Browser!.NewPageAsync();
-        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#calendar"
+        );
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER {msg.Type}] {msg.Text}");
+        page.PageError += (_, err) => Console.WriteLine($"[PAGE ERROR] {err}");
 
-        await page.GotoAsync($"{E2EFixture.DashboardUrl}#calendar");
+        // Debug: Check auth state and hash
+        var hasToken = await page.EvaluateAsync<bool>(
+            "() => !!localStorage.getItem('gatekeeper_token')"
+        );
+        var currentHash = await page.EvaluateAsync<string>("() => window.location.hash");
+        Console.WriteLine($"[DEBUG] hasToken: {hasToken}, hash: {currentHash}, URL: {page.Url}");
+
         await page.WaitForSelectorAsync(
             ".calendar-grid",
             new PageWaitForSelectorOptions { Timeout = 20000 }

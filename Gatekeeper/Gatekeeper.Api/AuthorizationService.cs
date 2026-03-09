@@ -11,7 +11,7 @@ public static class AuthorizationService
     /// Checks if a user has a specific permission, optionally scoped to a resource.
     /// </summary>
     public static async Task<(bool Allowed, string Reason)> CheckPermissionAsync(
-        SqliteConnection conn,
+        NpgsqlConnection conn,
         string userId,
         string permissionCode,
         string? resourceType,

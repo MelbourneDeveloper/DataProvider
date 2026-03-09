@@ -116,6 +116,7 @@ public class DefaultTableOperationGenerator : ITableOperationGenerator
         {
             "SqliteConnection" => "Microsoft.Data.Sqlite",
             "SqlConnection" => "Microsoft.Data.SqlClient",
+            "NpgsqlConnection" => "Npgsql",
             _ => "System.Data.Common",
         };
 }

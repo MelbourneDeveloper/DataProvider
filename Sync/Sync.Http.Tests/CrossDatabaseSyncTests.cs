@@ -17,7 +17,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         _postgresContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:16")
+            .WithImage("postgres:16-alpine")
             .WithDatabase("syncdb")
             .WithUsername("test")
             .WithPassword("test")
