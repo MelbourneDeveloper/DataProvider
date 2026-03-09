@@ -15,6 +15,7 @@ on:
       - '.config/dotnet-tools.json'
       - 'Samples/docker/**'
       - '**/Dockerfile*'
+      - 'Lql/lql-lsp-rust/**'
   pull_request:
     branches: [main]
     paths:
@@ -29,6 +30,7 @@ on:
       - '.config/dotnet-tools.json'
       - 'Samples/docker/**'
       - '**/Dockerfile*'
+      - 'Lql/lql-lsp-rust/**'
   workflow_dispatch:
 
 env:
@@ -51,6 +53,7 @@ jobs:
       dashboard: ${{ steps.filter.outputs.dashboard }}
       icd10: ${{ steps.filter.outputs.icd10 }}
       docker: ${{ steps.filter.outputs.docker }}
+      lql-rust: ${{ steps.filter.outputs.lql-rust }}
     steps:
       - uses: actions/checkout@v4
 
@@ -114,6 +117,8 @@ jobs:
               - 'Samples/Scheduling/**'
               - 'Samples/ICD10/**'
               - 'Gatekeeper/**'
+            lql-rust:
+              - 'Lql/lql-lsp-rust/**'
 
   build:
     name: Build
@@ -756,3 +761,57 @@ jobs:
         with:
           name: playwright-traces
           path: '**/playwright-traces/**'
+
+  # LQL LSP Rust tests + coverage (per-crate, 85% minimum)
+  lql-rust-tests:
+    name: LQL Rust Tests (${{ matrix.crate }})
+    runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.lql-rust == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        crate: [lql-parser, lql-analyzer, lql-lsp]
+    defaults:
+      run:
+        working-directory: Lql/lql-lsp-rust
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry + build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            Lql/lql-lsp-rust/target
+          key: ${{ runner.os }}-cargo-${{ matrix.crate }}-${{ hashFiles('Lql/lql-lsp-rust/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.crate }}-
+            ${{ runner.os }}-cargo-
+
+      - name: Run tests
+        run: cargo test --package ${{ matrix.crate }}
+
+      - name: Check formatting
+        run: cargo fmt --package ${{ matrix.crate }} -- --check
+
+      - name: Clippy
+        run: cargo clippy --package ${{ matrix.crate }} -- -D warnings
+
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin
+
+      - name: Coverage (85% minimum)
+        run: |
+          cargo tarpaulin \
+            --packages ${{ matrix.crate }} \
+            --skip-clean \
+            --timeout 120 \
+            --engine llvm \
+            --exclude-files "*/generated/*" \
+            --fail-under 85 \
+            --out stdout

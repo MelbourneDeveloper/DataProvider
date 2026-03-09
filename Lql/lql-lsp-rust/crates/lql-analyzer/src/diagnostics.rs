@@ -282,3 +282,321 @@ fn is_keyword(word: &str) -> bool {
             | "interval"
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn empty_scope() -> ScopeMap {
+        ScopeMap::new()
+    }
+
+    // ── analyze basics ──
+
+    #[test]
+    fn test_analyze_empty_source() {
+        let diags = analyze("", &empty_scope());
+        assert!(diags.is_empty());
+    }
+
+    #[test]
+    fn test_analyze_clean_pipeline() {
+        let diags = analyze("users |> select(users.id)", &empty_scope());
+        // select is known, no pipe spacing issues
+        assert!(diags.is_empty());
+    }
+
+    #[test]
+    fn test_analyze_skips_comments() {
+        let diags = analyze("-- this is a comment\n-- another", &empty_scope());
+        assert!(diags.is_empty());
+    }
+
+    #[test]
+    fn test_analyze_skips_empty_lines() {
+        let diags = analyze("\n\n\n", &empty_scope());
+        assert!(diags.is_empty());
+    }
+
+    // ── pipe spacing ──
+
+    #[test]
+    fn test_pipe_no_space_before() {
+        let diags = analyze("users|> select(users.id)", &empty_scope());
+        let pipe_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("preceded by"))
+            .collect();
+        assert_eq!(pipe_diags.len(), 1);
+        assert_eq!(pipe_diags[0].severity, DiagnosticSeverity::Warning);
+    }
+
+    #[test]
+    fn test_pipe_no_space_after() {
+        let diags = analyze("users |>select(users.id)", &empty_scope());
+        let pipe_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("followed by"))
+            .collect();
+        assert_eq!(pipe_diags.len(), 1);
+    }
+
+    #[test]
+    fn test_pipe_no_space_both_sides() {
+        let diags = analyze("users|>select(users.id)", &empty_scope());
+        let pipe_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Pipeline operator"))
+            .collect();
+        assert_eq!(pipe_diags.len(), 2);
+    }
+
+    #[test]
+    fn test_pipe_with_tab_is_ok() {
+        let diags = analyze("users\t|>\tselect(users.id)", &empty_scope());
+        let pipe_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Pipeline operator"))
+            .collect();
+        assert!(pipe_diags.is_empty());
+    }
+
+    #[test]
+    fn test_pipe_at_start_of_line() {
+        let diags = analyze("|> select(users.id)", &empty_scope());
+        let pipe_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("preceded by"))
+            .collect();
+        assert!(pipe_diags.is_empty());
+    }
+
+    #[test]
+    fn test_pipe_at_end_of_line() {
+        let diags = analyze("users |>", &empty_scope());
+        let pipe_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("followed by"))
+            .collect();
+        assert!(pipe_diags.is_empty());
+    }
+
+    #[test]
+    fn test_multiple_pipes_on_one_line() {
+        let diags = analyze("a |> filter(x) |> select(y)", &empty_scope());
+        let pipe_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Pipeline operator"))
+            .collect();
+        assert!(pipe_diags.is_empty());
+    }
+
+    // ── unknown functions ──
+
+    #[test]
+    fn test_unknown_function_detected() {
+        let diags = analyze("foobar(x)", &empty_scope());
+        let unk: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Unknown function"))
+            .collect();
+        assert_eq!(unk.len(), 1);
+        assert!(unk[0].message.contains("foobar"));
+        assert_eq!(unk[0].severity, DiagnosticSeverity::Info);
+    }
+
+    #[test]
+    fn test_known_functions_not_flagged() {
+        let known_fns = ["select", "filter", "count", "sum", "avg", "max", "min",
+            "join", "left_join", "group_by", "order_by", "having",
+            "limit", "offset", "union", "concat", "substring", "length",
+            "trim", "upper", "lower", "round", "abs", "coalesce",
+            "row_number", "rank", "dense_rank", "now", "today"];
+        for func in &known_fns {
+            let src = format!("{func}(x)");
+            let diags = analyze(&src, &empty_scope());
+            let unk: Vec<_> = diags
+                .iter()
+                .filter(|d| d.message.contains("Unknown function"))
+                .collect();
+            assert!(unk.is_empty(), "Function '{func}' should be known but was flagged");
+        }
+    }
+
+    #[test]
+    fn test_keywords_not_flagged_as_unknown() {
+        // Keywords followed by ( should not be flagged
+        let keywords = ["let", "fn", "case", "exists", "not", "is", "in"];
+        for kw in &keywords {
+            let src = format!("{kw}(x)");
+            let diags = analyze(&src, &empty_scope());
+            let unk: Vec<_> = diags
+                .iter()
+                .filter(|d| d.message.contains("Unknown function"))
+                .collect();
+            assert!(unk.is_empty(), "Keyword '{kw}' should not be flagged");
+        }
+    }
+
+    #[test]
+    fn test_scope_binding_not_flagged() {
+        let mut scope = ScopeMap::new();
+        scope.add_binding("my_func".to_string(), 0, 0);
+        let diags = analyze("my_func(x)", &scope);
+        let unk: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Unknown function"))
+            .collect();
+        assert!(unk.is_empty());
+    }
+
+    #[test]
+    fn test_word_not_followed_by_paren_not_flagged() {
+        let diags = analyze("foobar = 42", &empty_scope());
+        let unk: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Unknown function"))
+            .collect();
+        assert!(unk.is_empty());
+    }
+
+    #[test]
+    fn test_string_literal_skipped() {
+        let diags = analyze("filter('foobar(x)')", &empty_scope());
+        let unk: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("foobar"))
+            .collect();
+        assert!(unk.is_empty());
+    }
+
+    #[test]
+    fn test_unknown_function_position() {
+        let diags = analyze("  foobar(x)", &empty_scope());
+        let unk: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Unknown function"))
+            .collect();
+        assert_eq!(unk.len(), 1);
+        assert_eq!(unk[0].col, 2);
+        assert_eq!(unk[0].end_col, 8);
+    }
+
+    #[test]
+    fn test_fn_keyword_not_flagged() {
+        let diags = analyze("fn(row)", &empty_scope());
+        let unk: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Unknown function"))
+            .collect();
+        assert!(unk.is_empty());
+    }
+
+    #[test]
+    fn test_function_with_whitespace_before_paren() {
+        let diags = analyze("foobar  (x)", &empty_scope());
+        let unk: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Unknown function"))
+            .collect();
+        assert_eq!(unk.len(), 1);
+    }
+
+    // ── bracket checking ──
+
+    #[test]
+    fn test_balanced_brackets() {
+        let diags = analyze("select(count(x))", &empty_scope());
+        let bracket_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("parenthesis"))
+            .collect();
+        assert!(bracket_diags.is_empty());
+    }
+
+    #[test]
+    fn test_unclosed_bracket() {
+        let diags = analyze("select(x", &empty_scope());
+        let bracket_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("unclosed"))
+            .collect();
+        assert_eq!(bracket_diags.len(), 1);
+        assert_eq!(bracket_diags[0].severity, DiagnosticSeverity::Error);
+    }
+
+    #[test]
+    fn test_extra_closing_bracket() {
+        let diags = analyze("select(x))", &empty_scope());
+        let bracket_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Unmatched closing"))
+            .collect();
+        assert_eq!(bracket_diags.len(), 1);
+    }
+
+    #[test]
+    fn test_multiple_unclosed() {
+        let diags = analyze("a((b(c", &empty_scope());
+        let bracket_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("unclosed"))
+            .collect();
+        assert_eq!(bracket_diags.len(), 1);
+        assert!(bracket_diags[0].message.contains("3"));
+    }
+
+    #[test]
+    fn test_brackets_in_string_ignored() {
+        let diags = analyze("select('(')", &empty_scope());
+        let bracket_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("parenthesis") || d.message.contains("unclosed"))
+            .collect();
+        assert!(bracket_diags.is_empty());
+    }
+
+    #[test]
+    fn test_brackets_after_comment_ignored() {
+        let diags = analyze("-- select((((", &empty_scope());
+        assert!(diags.is_empty());
+    }
+
+    #[test]
+    fn test_multiline_balanced() {
+        let source = "select(\n  x,\n  y\n)";
+        let diags = analyze(source, &empty_scope());
+        let bracket_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("parenthesis") || d.message.contains("unclosed"))
+            .collect();
+        assert!(bracket_diags.is_empty());
+    }
+
+    // ── combined analysis ──
+
+    #[test]
+    fn test_multiple_diagnostics() {
+        let source = "users|>foobar(x";
+        let diags = analyze(source, &empty_scope());
+        assert!(diags.len() >= 2); // pipe spacing + unknown function or unclosed bracket
+    }
+
+    #[test]
+    fn test_diagnostic_line_numbers() {
+        let source = "ok line\nusers|>select(x)";
+        let diags = analyze(source, &empty_scope());
+        let pipe_diag = diags.iter().find(|d| d.message.contains("preceded by")).unwrap();
+        assert_eq!(pipe_diag.line, 1);
+    }
+
+    #[test]
+    fn test_case_insensitive_known_functions() {
+        let diags = analyze("SELECT(x)", &empty_scope());
+        let unk: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Unknown function"))
+            .collect();
+        assert!(unk.is_empty());
+    }
+}

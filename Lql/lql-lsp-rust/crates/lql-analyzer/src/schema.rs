@@ -124,3 +124,187 @@ impl ColumnInfo {
         desc
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_col(name: &str, sql_type: &str, nullable: bool, pk: bool) -> ColumnInfo {
+        ColumnInfo {
+            name: name.to_string(),
+            sql_type: sql_type.to_string(),
+            is_nullable: nullable,
+            is_primary_key: pk,
+        }
+    }
+
+    fn make_table(name: &str, schema: &str, cols: Vec<ColumnInfo>) -> TableInfo {
+        TableInfo {
+            name: name.to_string(),
+            schema: schema.to_string(),
+            columns: cols,
+        }
+    }
+
+    fn sample_schema() -> SchemaCache {
+        SchemaCache::from_tables(vec![
+            make_table(
+                "users",
+                "public",
+                vec![
+                    make_col("id", "uuid", false, true),
+                    make_col("name", "text", false, false),
+                    make_col("email", "text", true, false),
+                ],
+            ),
+            make_table(
+                "orders",
+                "public",
+                vec![
+                    make_col("id", "uuid", false, true),
+                    make_col("user_id", "uuid", false, false),
+                    make_col("total", "numeric", true, false),
+                ],
+            ),
+        ])
+    }
+
+    #[test]
+    fn test_default_is_empty() {
+        let cache = SchemaCache::default();
+        assert!(cache.is_empty());
+        assert_eq!(cache.table_count(), 0);
+        assert!(cache.table_names().is_empty());
+        assert!(cache.age().is_none());
+    }
+
+    #[test]
+    fn test_from_tables() {
+        let cache = sample_schema();
+        assert!(!cache.is_empty());
+        assert_eq!(cache.table_count(), 2);
+    }
+
+    #[test]
+    fn test_table_names() {
+        let cache = sample_schema();
+        let names = cache.table_names();
+        assert_eq!(names.len(), 2);
+        assert!(names.contains(&"users"));
+        assert!(names.contains(&"orders"));
+    }
+
+    #[test]
+    fn test_get_table_case_insensitive() {
+        let cache = sample_schema();
+        assert!(cache.get_table("users").is_some());
+        assert!(cache.get_table("Users").is_some());
+        assert!(cache.get_table("USERS").is_some());
+        assert!(cache.get_table("nonexistent").is_none());
+    }
+
+    #[test]
+    fn test_get_columns() {
+        let cache = sample_schema();
+        let cols = cache.get_columns("users");
+        assert_eq!(cols.len(), 3);
+        let names: Vec<&str> = cols.iter().map(|c| c.name.as_str()).collect();
+        assert!(names.contains(&"id"));
+        assert!(names.contains(&"name"));
+        assert!(names.contains(&"email"));
+    }
+
+    #[test]
+    fn test_get_columns_nonexistent_table() {
+        let cache = sample_schema();
+        let cols = cache.get_columns("nonexistent");
+        assert!(cols.is_empty());
+    }
+
+    #[test]
+    fn test_age_is_some_after_creation() {
+        let cache = sample_schema();
+        assert!(cache.age().is_some());
+    }
+
+    #[test]
+    fn test_is_stale_default_always_stale() {
+        let cache = SchemaCache::default();
+        assert!(cache.is_stale(std::time::Duration::from_secs(3600)));
+    }
+
+    #[test]
+    fn test_is_stale_freshly_created() {
+        let cache = sample_schema();
+        assert!(!cache.is_stale(std::time::Duration::from_secs(3600)));
+    }
+
+    #[test]
+    fn test_table_get_column_case_insensitive() {
+        let table = make_table(
+            "users",
+            "public",
+            vec![make_col("Id", "uuid", false, true)],
+        );
+        assert!(table.get_column("id").is_some());
+        assert!(table.get_column("ID").is_some());
+        assert!(table.get_column("Id").is_some());
+        assert!(table.get_column("nonexistent").is_none());
+    }
+
+    #[test]
+    fn test_primary_key_columns() {
+        let table = make_table(
+            "users",
+            "public",
+            vec![
+                make_col("id", "uuid", false, true),
+                make_col("name", "text", false, false),
+            ],
+        );
+        let pks = table.primary_key_columns();
+        assert_eq!(pks.len(), 1);
+        assert_eq!(pks[0].name, "id");
+    }
+
+    #[test]
+    fn test_primary_key_columns_none() {
+        let table = make_table(
+            "log",
+            "public",
+            vec![make_col("message", "text", true, false)],
+        );
+        assert!(table.primary_key_columns().is_empty());
+    }
+
+    #[test]
+    fn test_type_description_pk_not_null() {
+        let col = make_col("id", "uuid", false, true);
+        assert_eq!(col.type_description(), "uuid (PK) NOT NULL");
+    }
+
+    #[test]
+    fn test_type_description_nullable() {
+        let col = make_col("email", "text", true, false);
+        assert_eq!(col.type_description(), "text");
+    }
+
+    #[test]
+    fn test_type_description_not_null_no_pk() {
+        let col = make_col("name", "text", false, false);
+        assert_eq!(col.type_description(), "text NOT NULL");
+    }
+
+    #[test]
+    fn test_type_description_pk_nullable() {
+        let col = make_col("id", "uuid", true, true);
+        assert_eq!(col.type_description(), "uuid (PK)");
+    }
+
+    #[test]
+    fn test_clone_schema_cache() {
+        let cache = sample_schema();
+        let cloned = cache.clone();
+        assert_eq!(cloned.table_count(), cache.table_count());
+    }
+}

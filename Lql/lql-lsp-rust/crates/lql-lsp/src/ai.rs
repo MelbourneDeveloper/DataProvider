@@ -349,3 +349,302 @@ impl AiCompletionProvider for SlowAiProvider {
         )]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── AiConfig::from_json ────────────────────────────────────────────
+    #[test]
+    fn parse_full_config() {
+        let json: serde_json::Value = serde_json::json!({
+            "provider": "ollama",
+            "endpoint": "http://localhost:11434/api/generate",
+            "model": "qwen2.5-coder:1.5b",
+            "apiKey": "sk-test",
+            "timeoutMs": 3000,
+            "enabled": true
+        });
+        let config = AiConfig::from_json(&json).unwrap();
+        assert_eq!(config.provider, "ollama");
+        assert_eq!(config.endpoint, "http://localhost:11434/api/generate");
+        assert_eq!(config.model, "qwen2.5-coder:1.5b");
+        assert_eq!(config.api_key, Some("sk-test".to_string()));
+        assert_eq!(config.timeout_ms, 3000);
+        assert!(config.enabled);
+    }
+
+    #[test]
+    fn parse_minimal_config() {
+        let json: serde_json::Value = serde_json::json!({
+            "provider": "test",
+            "endpoint": "http://localhost"
+        });
+        let config = AiConfig::from_json(&json).unwrap();
+        assert_eq!(config.provider, "test");
+        assert_eq!(config.model, "default");
+        assert_eq!(config.api_key, None);
+        assert_eq!(config.timeout_ms, 2000);
+        assert!(config.enabled);
+    }
+
+    #[test]
+    fn parse_disabled_config() {
+        let json: serde_json::Value = serde_json::json!({
+            "provider": "ollama",
+            "endpoint": "http://localhost",
+            "enabled": false
+        });
+        let config = AiConfig::from_json(&json).unwrap();
+        assert!(!config.enabled);
+    }
+
+    #[test]
+    fn parse_missing_provider_returns_none() {
+        let json: serde_json::Value = serde_json::json!({
+            "endpoint": "http://localhost"
+        });
+        assert!(AiConfig::from_json(&json).is_none());
+    }
+
+    #[test]
+    fn parse_missing_endpoint_returns_none() {
+        let json: serde_json::Value = serde_json::json!({
+            "provider": "test"
+        });
+        assert!(AiConfig::from_json(&json).is_none());
+    }
+
+    #[test]
+    fn parse_not_an_object_returns_none() {
+        let json: serde_json::Value = serde_json::json!("a string");
+        assert!(AiConfig::from_json(&json).is_none());
+    }
+
+    #[test]
+    fn parse_null_returns_none() {
+        let json: serde_json::Value = serde_json::Value::Null;
+        assert!(AiConfig::from_json(&json).is_none());
+    }
+
+    // ── ai_completion ──────────────────────────────────────────────────
+    #[test]
+    fn ai_completion_creates_item() {
+        let item = ai_completion(
+            "test".to_string(),
+            "detail".to_string(),
+            "doc".to_string(),
+            Some("insert".to_string()),
+        );
+        assert_eq!(item.label, "test");
+        assert_eq!(item.kind, CompletionKind::Snippet);
+        assert_eq!(item.detail, "detail");
+        assert_eq!(item.documentation, "doc");
+        assert_eq!(item.insert_text, Some("insert".to_string()));
+        assert_eq!(item.sort_priority, 6);
+    }
+
+    #[test]
+    fn ai_completion_without_insert_text() {
+        let item = ai_completion("x".into(), "d".into(), "doc".into(), None);
+        assert!(item.insert_text.is_none());
+    }
+
+    // ── OllamaProvider::build_prompt ───────────────────────────────────
+    #[test]
+    fn build_prompt_without_schema() {
+        let ctx = AiCompletionContext {
+            document_text: "users |> select(users.id)".to_string(),
+            line: 0,
+            column: 25,
+            line_prefix: "users |> select(users.id)".to_string(),
+            word_prefix: "".to_string(),
+            file_uri: "file:///test.lql".to_string(),
+            available_tables: vec![],
+            schema_description: String::new(),
+        };
+        let prompt = OllamaProvider::build_prompt(&ctx);
+        assert!(prompt.contains("line 1"));
+        assert!(prompt.contains("column 26"));
+        assert!(prompt.contains("users |> select(users.id)"));
+        assert!(!prompt.contains("Database schema"));
+    }
+
+    #[test]
+    fn build_prompt_with_schema() {
+        let ctx = AiCompletionContext {
+            document_text: "users |>".to_string(),
+            line: 0,
+            column: 8,
+            line_prefix: "users |>".to_string(),
+            word_prefix: "".to_string(),
+            file_uri: "file:///test.lql".to_string(),
+            available_tables: vec!["users".to_string()],
+            schema_description: "users(id uuid PK NOT NULL, name text)".to_string(),
+        };
+        let prompt = OllamaProvider::build_prompt(&ctx);
+        assert!(prompt.contains("Database schema"));
+        assert!(prompt.contains("users(id uuid PK NOT NULL"));
+    }
+
+    // ── OllamaProvider::parse_response ─────────────────────────────────
+    #[test]
+    fn parse_valid_json_array() {
+        let response = r#"[{"label": "select", "insertText": "select($0)", "detail": "Select columns"}]"#;
+        let items = OllamaProvider::parse_response(response);
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].label, "select");
+        assert_eq!(items[0].insert_text, Some("select($0)".to_string()));
+        assert_eq!(items[0].detail, "Select columns");
+    }
+
+    #[test]
+    fn parse_json_with_markdown_fences() {
+        let response = "```json\n[{\"label\": \"filter\", \"insertText\": \"filter($0)\"}]\n```";
+        let items = OllamaProvider::parse_response(response);
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].label, "filter");
+    }
+
+    #[test]
+    fn parse_json_with_plain_fences() {
+        let response = "```\n[{\"label\": \"join\"}]\n```";
+        let items = OllamaProvider::parse_response(response);
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].label, "join");
+    }
+
+    #[test]
+    fn parse_empty_array() {
+        let items = OllamaProvider::parse_response("[]");
+        assert!(items.is_empty());
+    }
+
+    #[test]
+    fn parse_invalid_json() {
+        let items = OllamaProvider::parse_response("not json at all");
+        assert!(items.is_empty());
+    }
+
+    #[test]
+    fn parse_missing_label_skipped() {
+        let response = r#"[{"insertText": "foo"}, {"label": "valid"}]"#;
+        let items = OllamaProvider::parse_response(response);
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].label, "valid");
+    }
+
+    #[test]
+    fn parse_missing_detail_defaults() {
+        let response = r#"[{"label": "test"}]"#;
+        let items = OllamaProvider::parse_response(response);
+        assert_eq!(items[0].detail, "AI suggestion");
+    }
+
+    #[test]
+    fn parse_multiple_items() {
+        let response = r#"[
+            {"label": "a", "insertText": "a()"},
+            {"label": "b", "insertText": "b()"},
+            {"label": "c", "detail": "third"}
+        ]"#;
+        let items = OllamaProvider::parse_response(response);
+        assert_eq!(items.len(), 3);
+        assert_eq!(items[2].detail, "third");
+    }
+
+    // ── TestAiProvider ─────────────────────────────────────────────────
+    #[tokio::test]
+    async fn test_provider_returns_items() {
+        let provider = TestAiProvider;
+        let ctx = AiCompletionContext {
+            document_text: "users |>".to_string(),
+            line: 0,
+            column: 8,
+            line_prefix: "users |>".to_string(),
+            word_prefix: "".to_string(),
+            file_uri: "file:///test.lql".to_string(),
+            available_tables: vec![],
+            schema_description: String::new(),
+        };
+        let items = provider.complete(&ctx).await;
+        assert!(items.len() >= 3);
+        assert!(items.iter().any(|i| i.label == "ai_suggest_filter"));
+        assert!(items.iter().any(|i| i.label == "ai_suggest_join"));
+        assert!(items.iter().any(|i| i.label == "ai_suggest_aggregate"));
+    }
+
+    #[tokio::test]
+    async fn test_provider_with_tables() {
+        let provider = TestAiProvider;
+        let ctx = AiCompletionContext {
+            document_text: "".to_string(),
+            line: 0,
+            column: 0,
+            line_prefix: "".to_string(),
+            word_prefix: "".to_string(),
+            file_uri: "file:///test.lql".to_string(),
+            available_tables: vec!["users".to_string(), "orders".to_string()],
+            schema_description: String::new(),
+        };
+        let items = provider.complete(&ctx).await;
+        assert!(items.iter().any(|i| i.label == "ai_query_users"));
+        assert!(items.iter().any(|i| i.label == "ai_query_orders"));
+    }
+
+    #[tokio::test]
+    async fn test_provider_with_schema_description() {
+        let provider = TestAiProvider;
+        let ctx = AiCompletionContext {
+            document_text: "".to_string(),
+            line: 0,
+            column: 0,
+            line_prefix: "".to_string(),
+            word_prefix: "".to_string(),
+            file_uri: "file:///test.lql".to_string(),
+            available_tables: vec![],
+            schema_description: "users(id uuid PK)".to_string(),
+        };
+        let items = provider.complete(&ctx).await;
+        assert!(items.iter().any(|i| i.label == "ai_schema_context"));
+    }
+
+    #[tokio::test]
+    async fn test_provider_with_prefix_filter() {
+        let provider = TestAiProvider;
+        let ctx = AiCompletionContext {
+            document_text: "".to_string(),
+            line: 0,
+            column: 0,
+            line_prefix: "ai_s".to_string(),
+            word_prefix: "ai_s".to_string(),
+            file_uri: "file:///test.lql".to_string(),
+            available_tables: vec![],
+            schema_description: String::new(),
+        };
+        let items = provider.complete(&ctx).await;
+        for item in &items {
+            assert!(item.label.starts_with("ai_s"), "unexpected: {}", item.label);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_provider_items_are_snippet_kind() {
+        let provider = TestAiProvider;
+        let ctx = AiCompletionContext {
+            document_text: "".to_string(),
+            line: 0,
+            column: 0,
+            line_prefix: "".to_string(),
+            word_prefix: "".to_string(),
+            file_uri: "".to_string(),
+            available_tables: vec![],
+            schema_description: String::new(),
+        };
+        let items = provider.complete(&ctx).await;
+        for item in &items {
+            assert_eq!(item.kind, CompletionKind::Snippet);
+            assert_eq!(item.sort_priority, 6);
+        }
+    }
+}

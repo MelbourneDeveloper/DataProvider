@@ -307,3 +307,166 @@ const HOVER_DATABASE: &[(&str, &str, &str, Option<&str>)] = &[
         Some("count(distinct column)"),
     ),
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::schema::{ColumnInfo, SchemaCache, TableInfo};
+
+    fn make_col(name: &str, sql_type: &str, nullable: bool, pk: bool) -> ColumnInfo {
+        ColumnInfo {
+            name: name.to_string(),
+            sql_type: sql_type.to_string(),
+            is_nullable: nullable,
+            is_primary_key: pk,
+        }
+    }
+
+    fn sample_schema() -> SchemaCache {
+        SchemaCache::from_tables(vec![TableInfo {
+            name: "users".to_string(),
+            schema: "public".to_string(),
+            columns: vec![
+                make_col("id", "uuid", false, true),
+                make_col("name", "text", false, false),
+                make_col("email", "text", true, false),
+            ],
+        }])
+    }
+
+    // ── get_hover (keyword only) ──
+
+    #[test]
+    fn test_hover_select() {
+        let info = get_hover("select").unwrap();
+        assert!(info.title.contains("select"));
+        assert!(info.signature.is_some());
+    }
+
+    #[test]
+    fn test_hover_case_insensitive() {
+        let info = get_hover("SELECT").unwrap();
+        assert!(info.title.contains("select"));
+    }
+
+    #[test]
+    fn test_hover_filter() {
+        let info = get_hover("filter").unwrap();
+        assert!(info.title.contains("filter"));
+        assert!(info.detail.contains("lambda"));
+    }
+
+    #[test]
+    fn test_hover_unknown_word() {
+        assert!(get_hover("zzz_not_a_keyword").is_none());
+    }
+
+    #[test]
+    fn test_hover_all_entries_have_title() {
+        let keywords = [
+            "select", "filter", "join", "left_join", "group_by", "order_by",
+            "having", "limit", "offset", "union", "insert", "count", "sum",
+            "avg", "max", "min", "concat", "substring", "length", "trim",
+            "upper", "lower", "round", "abs", "coalesce", "row_number",
+            "rank", "dense_rank", "let", "fn", "case", "exists", "distinct",
+        ];
+        for kw in &keywords {
+            let info = get_hover(kw);
+            assert!(info.is_some(), "No hover for '{kw}'");
+        }
+    }
+
+    // ── get_hover_with_schema ──
+
+    #[test]
+    fn test_hover_qualified_column() {
+        let schema = sample_schema();
+        let info = get_hover_with_schema(
+            "id",
+            Some(("users", "id")),
+            Some(&schema),
+        )
+        .unwrap();
+        assert!(info.title.contains("users.id"));
+        assert!(info.detail.contains("uuid"));
+        assert!(info.signature.is_some());
+    }
+
+    #[test]
+    fn test_hover_qualified_column_not_found() {
+        let schema = sample_schema();
+        let info = get_hover_with_schema(
+            "nonexistent",
+            Some(("users", "nonexistent")),
+            Some(&schema),
+        )
+        .unwrap();
+        assert!(info.title.contains("not found"));
+        assert!(info.detail.contains("Available columns"));
+    }
+
+    #[test]
+    fn test_hover_table_name() {
+        let schema = sample_schema();
+        let info = get_hover_with_schema("users", None, Some(&schema)).unwrap();
+        assert!(info.title.contains("users"));
+        assert!(info.title.contains("Table"));
+        assert!(info.detail.contains("id"));
+        assert!(info.signature.is_some());
+    }
+
+    #[test]
+    fn test_hover_fallback_to_keyword() {
+        let schema = sample_schema();
+        let info = get_hover_with_schema("select", None, Some(&schema)).unwrap();
+        assert!(info.title.contains("select"));
+    }
+
+    #[test]
+    fn test_hover_no_schema_keyword() {
+        let info = get_hover_with_schema("filter", None, None).unwrap();
+        assert!(info.title.contains("filter"));
+    }
+
+    #[test]
+    fn test_hover_no_schema_unknown() {
+        assert!(get_hover_with_schema("zzz", None, None).is_none());
+    }
+
+    #[test]
+    fn test_hover_qualified_table_not_in_schema() {
+        let schema = sample_schema();
+        // Table "orders" doesn't exist in schema, should fall back
+        let info = get_hover_with_schema(
+            "id",
+            Some(("orders", "id")),
+            Some(&schema),
+        );
+        // Falls back to keyword lookup for "id" which is not a keyword
+        assert!(info.is_none());
+    }
+
+    #[test]
+    fn test_hover_column_shows_nullable_info() {
+        let schema = sample_schema();
+        let info = get_hover_with_schema(
+            "email",
+            Some(("users", "email")),
+            Some(&schema),
+        )
+        .unwrap();
+        assert!(info.detail.contains("Nullable: yes"));
+    }
+
+    #[test]
+    fn test_hover_column_shows_pk_info() {
+        let schema = sample_schema();
+        let info = get_hover_with_schema(
+            "id",
+            Some(("users", "id")),
+            Some(&schema),
+        )
+        .unwrap();
+        assert!(info.detail.contains("Primary Key: yes"));
+    }
+}

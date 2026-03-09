@@ -355,3 +355,335 @@ fn lambda_completions(prefix: &str) -> Vec<CompletionItem> {
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::schema::{ColumnInfo, SchemaCache, TableInfo};
+
+    fn empty_ctx() -> CompletionContext {
+        CompletionContext {
+            line_prefix: String::new(),
+            in_arg_list: false,
+            after_pipe: false,
+            in_lambda: false,
+            word_prefix: String::new(),
+            table_qualifier: None,
+        }
+    }
+
+    fn make_col(name: &str, sql_type: &str, nullable: bool, pk: bool) -> ColumnInfo {
+        ColumnInfo {
+            name: name.to_string(),
+            sql_type: sql_type.to_string(),
+            is_nullable: nullable,
+            is_primary_key: pk,
+        }
+    }
+
+    fn sample_schema() -> SchemaCache {
+        SchemaCache::from_tables(vec![
+            TableInfo {
+                name: "users".to_string(),
+                schema: "public".to_string(),
+                columns: vec![
+                    make_col("id", "uuid", false, true),
+                    make_col("name", "text", false, false),
+                    make_col("email", "text", true, false),
+                ],
+            },
+            TableInfo {
+                name: "orders".to_string(),
+                schema: "public".to_string(),
+                columns: vec![
+                    make_col("id", "uuid", false, true),
+                    make_col("user_id", "uuid", false, false),
+                    make_col("total", "numeric", true, false),
+                ],
+            },
+        ])
+    }
+
+    // ── basic completions (no prefix) ──
+
+    #[test]
+    fn test_empty_context_returns_keywords_and_functions() {
+        let scope = ScopeMap::new();
+        let items = get_completions(&empty_ctx(), &scope, None);
+        assert!(!items.is_empty());
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"let"));
+        assert!(labels.contains(&"count"));
+        assert!(labels.contains(&"concat"));
+    }
+
+    #[test]
+    fn test_after_pipe_includes_pipeline_ops() {
+        let mut ctx = empty_ctx();
+        ctx.after_pipe = true;
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, None);
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"select"));
+        assert!(labels.contains(&"filter"));
+        assert!(labels.contains(&"join"));
+        assert!(labels.contains(&"left_join"));
+        assert!(labels.contains(&"group_by"));
+        assert!(labels.contains(&"order_by"));
+        assert!(labels.contains(&"having"));
+        assert!(labels.contains(&"limit"));
+        assert!(labels.contains(&"offset"));
+        assert!(labels.contains(&"union"));
+        assert!(labels.contains(&"insert"));
+    }
+
+    #[test]
+    fn test_in_lambda_includes_logical_ops() {
+        let mut ctx = empty_ctx();
+        ctx.in_lambda = true;
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, None);
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"and"));
+        assert!(labels.contains(&"or"));
+        assert!(labels.contains(&"not"));
+        assert!(labels.contains(&"is"));
+        assert!(labels.contains(&"in"));
+        assert!(labels.contains(&"like"));
+        assert!(labels.contains(&"exists"));
+    }
+
+    #[test]
+    fn test_not_in_lambda_excludes_logical_ops() {
+        let ctx = empty_ctx();
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, None);
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(!labels.contains(&"and"));
+        assert!(!labels.contains(&"or"));
+    }
+
+    // ── prefix filtering ──
+
+    #[test]
+    fn test_prefix_filters_items() {
+        let mut ctx = empty_ctx();
+        ctx.word_prefix = "sel".to_string();
+        ctx.after_pipe = true;
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, None);
+        for item in &items {
+            assert!(
+                item.label.to_lowercase().starts_with("sel")
+                    || item.label.starts_with("sel"),
+                "Item '{}' doesn't match prefix 'sel'",
+                item.label
+            );
+        }
+    }
+
+    #[test]
+    fn test_prefix_no_match_returns_empty_or_fewer() {
+        let mut ctx = empty_ctx();
+        ctx.word_prefix = "zzz_no_match".to_string();
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, None);
+        assert!(items.is_empty());
+    }
+
+    // ── schema-based completions ──
+
+    #[test]
+    fn test_table_qualifier_returns_columns() {
+        let mut ctx = empty_ctx();
+        ctx.table_qualifier = Some("users".to_string());
+        let schema = sample_schema();
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, Some(&schema));
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"id"));
+        assert!(labels.contains(&"name"));
+        assert!(labels.contains(&"email"));
+        // Should ONLY return columns when qualifier matches
+        assert!(!labels.contains(&"select"));
+    }
+
+    #[test]
+    fn test_table_qualifier_with_prefix() {
+        let mut ctx = empty_ctx();
+        ctx.table_qualifier = Some("users".to_string());
+        ctx.word_prefix = "na".to_string();
+        let schema = sample_schema();
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, Some(&schema));
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].label, "name");
+        assert_eq!(items[0].kind, CompletionKind::Column);
+    }
+
+    #[test]
+    fn test_table_qualifier_unknown_table() {
+        let mut ctx = empty_ctx();
+        ctx.table_qualifier = Some("nonexistent".to_string());
+        let schema = sample_schema();
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, Some(&schema));
+        // No columns, falls through to other completions
+        assert!(!items.is_empty());
+        let kinds: Vec<CompletionKind> = items.iter().map(|i| i.kind).collect();
+        assert!(!kinds.contains(&CompletionKind::Column));
+    }
+
+    #[test]
+    fn test_schema_table_completions() {
+        let ctx = empty_ctx();
+        let schema = sample_schema();
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, Some(&schema));
+        let table_items: Vec<_> = items.iter().filter(|i| i.kind == CompletionKind::Table).collect();
+        assert!(table_items.len() >= 2);
+        let labels: Vec<&str> = table_items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"users"));
+        assert!(labels.contains(&"orders"));
+    }
+
+    #[test]
+    fn test_schema_table_completion_shows_column_count() {
+        let ctx = empty_ctx();
+        let schema = sample_schema();
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, Some(&schema));
+        let users_item = items.iter().find(|i| i.label == "users").unwrap();
+        assert!(users_item.detail.contains("3 columns"));
+    }
+
+    // ── scope-based completions ──
+
+    #[test]
+    fn test_scope_binding_completion() {
+        let ctx = empty_ctx();
+        let mut scope = ScopeMap::new();
+        scope.add_binding("my_query".to_string(), 0, 0);
+        let items = get_completions(&ctx, &scope, None);
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"my_query"));
+    }
+
+    #[test]
+    fn test_scope_table_completion() {
+        let ctx = empty_ctx();
+        let mut scope = ScopeMap::new();
+        scope.add_table("my_table".to_string());
+        let items = get_completions(&ctx, &scope, None);
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"my_table"));
+    }
+
+    #[test]
+    fn test_scope_table_skipped_if_in_schema() {
+        let ctx = empty_ctx();
+        let schema = sample_schema();
+        let mut scope = ScopeMap::new();
+        scope.add_table("users".to_string());
+        let items = get_completions(&ctx, &scope, Some(&schema));
+        let user_items: Vec<_> = items.iter().filter(|i| i.label == "users").collect();
+        // Only one "users" entry (from schema), not duplicated by scope
+        assert_eq!(user_items.len(), 1);
+    }
+
+    // ── sort order ──
+
+    #[test]
+    fn test_completions_sorted_by_priority() {
+        let mut ctx = empty_ctx();
+        ctx.after_pipe = true;
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, None);
+        for window in items.windows(2) {
+            assert!(
+                window[0].sort_priority <= window[1].sort_priority
+                    || (window[0].sort_priority == window[1].sort_priority
+                        && window[0].label <= window[1].label),
+                "Items not sorted: {} (pri {}) before {} (pri {})",
+                window[0].label,
+                window[0].sort_priority,
+                window[1].label,
+                window[1].sort_priority,
+            );
+        }
+    }
+
+    // ── deduplication ──
+
+    #[test]
+    fn test_deduplication() {
+        let mut ctx = empty_ctx();
+        ctx.after_pipe = true;
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, None);
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        let unique: std::collections::HashSet<&&str> = labels.iter().collect();
+        assert_eq!(labels.len(), unique.len(), "Duplicate completions found");
+    }
+
+    // ── pipeline completions have snippets ──
+
+    #[test]
+    fn test_pipeline_completions_have_insert_text() {
+        let mut ctx = empty_ctx();
+        ctx.after_pipe = true;
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, None);
+        let select_item = items.iter().find(|i| i.label == "select").unwrap();
+        assert!(select_item.insert_text.is_some());
+        assert!(select_item.insert_text.as_ref().unwrap().contains("$0"));
+    }
+
+    // ── aggregate completions ──
+
+    #[test]
+    fn test_aggregate_completions() {
+        let mut ctx = empty_ctx();
+        ctx.word_prefix = "co".to_string();
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, None);
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"count"));
+        assert!(labels.contains(&"coalesce"));
+        assert!(labels.contains(&"concat"));
+    }
+
+    // ── many columns ──
+
+    #[test]
+    fn test_table_with_many_columns_truncated_docs() {
+        let cols: Vec<ColumnInfo> = (0..10)
+            .map(|i| make_col(&format!("col_{i}"), "text", true, false))
+            .collect();
+        let schema = SchemaCache::from_tables(vec![TableInfo {
+            name: "big_table".to_string(),
+            schema: "public".to_string(),
+            columns: cols,
+        }]);
+        let ctx = empty_ctx();
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, Some(&schema));
+        let table_item = items.iter().find(|i| i.label == "big_table").unwrap();
+        assert!(table_item.documentation.contains("10 total"));
+    }
+
+    // ── column completion kind ──
+
+    #[test]
+    fn test_column_completion_kind_and_priority() {
+        let mut ctx = empty_ctx();
+        ctx.table_qualifier = Some("users".to_string());
+        let schema = sample_schema();
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, Some(&schema));
+        for item in &items {
+            assert_eq!(item.kind, CompletionKind::Column);
+            assert_eq!(item.sort_priority, 0);
+        }
+    }
+}

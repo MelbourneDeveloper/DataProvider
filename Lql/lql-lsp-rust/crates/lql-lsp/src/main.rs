@@ -719,3 +719,311 @@ async fn main() {
     let (service, socket) = LspService::new(LqlBackend::new);
     Server::new(stdin, stdout, socket).serve(service).await;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── format_lql ──
+
+    #[test]
+    fn test_format_empty() {
+        assert_eq!(format_lql(""), "");
+    }
+
+    #[test]
+    fn test_format_single_line() {
+        let result = format_lql("users");
+        assert_eq!(result, "users\n");
+    }
+
+    #[test]
+    fn test_format_preserves_empty_lines() {
+        let result = format_lql("a\n\nb");
+        assert_eq!(result, "a\n\nb\n");
+    }
+
+    #[test]
+    fn test_format_indents_pipe() {
+        let result = format_lql("users\n|> select(users.id)");
+        assert!(result.contains("    |> select"));
+    }
+
+    #[test]
+    fn test_format_indents_after_open_paren() {
+        let result = format_lql("select(\nusers.id\n)");
+        assert!(result.contains("    users.id"));
+    }
+
+    #[test]
+    fn test_format_dedents_on_close_paren() {
+        let result = format_lql("select(\nusers.id\n)");
+        let lines: Vec<&str> = result.lines().collect();
+        let close_line = lines.iter().find(|l| l.trim() == ")").unwrap();
+        assert_eq!(*close_line, ")");
+    }
+
+    #[test]
+    fn test_format_comment_line_not_indented_after() {
+        let result = format_lql("-- comment(\nfoo");
+        // Comment ends with ( but should NOT increase indent
+        let lines: Vec<&str> = result.lines().collect();
+        assert_eq!(lines[1], "foo");
+    }
+
+    #[test]
+    fn test_format_trims_leading_whitespace() {
+        let result = format_lql("   users   ");
+        assert_eq!(result, "users\n");
+    }
+
+    #[test]
+    fn test_format_complex_pipeline() {
+        let source = "users\n|> filter(fn(r) => r.age > 18)\n|> select(\nusers.id,\nusers.name\n)\n|> limit(10)";
+        let result = format_lql(source);
+        assert!(result.contains("    |> filter"));
+        assert!(result.contains("        users.id"));
+    }
+
+    #[test]
+    fn test_format_no_change_returns_same() {
+        let source = "users\n";
+        let formatted = format_lql(source);
+        assert_eq!(formatted, source);
+    }
+
+    // ── is_keyword_name ──
+
+    #[test]
+    fn test_is_keyword_name_true() {
+        let keywords = [
+            "let", "fn", "as", "asc", "desc", "and", "or", "not", "distinct",
+            "exists", "null", "is", "in", "case", "when", "then", "else", "end",
+            "with", "over", "partition", "order", "by", "on", "like", "from",
+            "interval", "select", "filter", "join", "group_by", "order_by",
+            "having", "limit", "offset", "union", "insert",
+        ];
+        for kw in &keywords {
+            assert!(is_keyword_name(kw), "'{kw}' should be keyword");
+        }
+    }
+
+    #[test]
+    fn test_is_keyword_name_false() {
+        assert!(!is_keyword_name("users"));
+        assert!(!is_keyword_name("foobar"));
+        assert!(!is_keyword_name(""));
+    }
+
+    // ── build_scope ──
+
+    #[test]
+    fn test_build_scope_let_bindings() {
+        let scope = LqlBackend::build_scope("let x = users |> select(users.id)");
+        assert!(scope.has_binding("x"));
+    }
+
+    #[test]
+    fn test_build_scope_multiple_lets() {
+        let source = "let a = users\nlet b = orders";
+        let scope = LqlBackend::build_scope(source);
+        assert!(scope.has_binding("a"));
+        assert!(scope.has_binding("b"));
+    }
+
+    #[test]
+    fn test_build_scope_tables_detected() {
+        let scope = LqlBackend::build_scope("users |> select(users.id)");
+        let tables = scope.table_names();
+        assert!(tables.contains(&"users"));
+    }
+
+    #[test]
+    fn test_build_scope_table_with_dot() {
+        let scope = LqlBackend::build_scope("users.id");
+        let tables = scope.table_names();
+        assert!(tables.contains(&"users"));
+    }
+
+    #[test]
+    fn test_build_scope_keywords_not_tables() {
+        let scope = LqlBackend::build_scope("select |> filter");
+        let tables = scope.table_names();
+        assert!(!tables.contains(&"select"));
+        assert!(!tables.contains(&"filter"));
+    }
+
+    #[test]
+    fn test_build_scope_empty_let_name_ignored() {
+        let scope = LqlBackend::build_scope("let = bad");
+        assert!(scope.binding_names().is_empty());
+    }
+
+    #[test]
+    fn test_build_scope_empty_source() {
+        let scope = LqlBackend::build_scope("");
+        assert!(scope.binding_names().is_empty());
+        assert!(scope.table_names().is_empty());
+    }
+
+    // ── collect_diagnostics ──
+
+    #[test]
+    fn test_collect_diagnostics_clean() {
+        let diags = LqlBackend::collect_diagnostics("users |> select(users.id)");
+        assert!(diags.is_empty());
+    }
+
+    #[test]
+    fn test_collect_diagnostics_parse_error() {
+        let diags = LqlBackend::collect_diagnostics("users |> select(");
+        assert!(!diags.is_empty());
+        let has_error = diags
+            .iter()
+            .any(|d| d.severity == Some(tower_lsp::lsp_types::DiagnosticSeverity::ERROR));
+        assert!(has_error);
+    }
+
+    #[test]
+    fn test_collect_diagnostics_semantic() {
+        let diags = LqlBackend::collect_diagnostics("users|>select(users.id)");
+        let has_warning = diags
+            .iter()
+            .any(|d| d.severity == Some(tower_lsp::lsp_types::DiagnosticSeverity::WARNING));
+        assert!(has_warning);
+    }
+
+    #[test]
+    fn test_collect_diagnostics_source_is_lql() {
+        let diags = LqlBackend::collect_diagnostics("users |> select(");
+        for d in &diags {
+            assert_eq!(d.source.as_deref(), Some("lql"));
+        }
+    }
+
+    // ── get_qualified_at_position ──
+
+    #[test]
+    fn test_qualified_simple_word() {
+        let (word, qualified) =
+            LqlBackend::get_qualified_at_position("select", Position::new(0, 3));
+        assert_eq!(word, Some("select".to_string()));
+        assert!(qualified.is_none());
+    }
+
+    #[test]
+    fn test_qualified_table_dot_column() {
+        let (word, qualified) =
+            LqlBackend::get_qualified_at_position("users.name", Position::new(0, 7));
+        assert_eq!(word, Some("name".to_string()));
+        let (table, col) = qualified.unwrap();
+        assert_eq!(table, "users");
+        assert_eq!(col, "name");
+    }
+
+    #[test]
+    fn test_qualified_past_end_of_line() {
+        let (word, qualified) =
+            LqlBackend::get_qualified_at_position("abc", Position::new(0, 100));
+        assert!(word.is_none());
+        assert!(qualified.is_none());
+    }
+
+    #[test]
+    fn test_qualified_empty_source() {
+        let (word, qualified) =
+            LqlBackend::get_qualified_at_position("", Position::new(0, 0));
+        assert!(word.is_none());
+        assert!(qualified.is_none());
+    }
+
+    #[test]
+    fn test_qualified_line_out_of_range() {
+        let (word, qualified) =
+            LqlBackend::get_qualified_at_position("abc", Position::new(5, 0));
+        assert!(word.is_none());
+        assert!(qualified.is_none());
+    }
+
+    #[test]
+    fn test_qualified_at_start_of_word() {
+        let (word, _) =
+            LqlBackend::get_qualified_at_position("users", Position::new(0, 0));
+        assert_eq!(word, Some("users".to_string()));
+    }
+
+    #[test]
+    fn test_qualified_between_words() {
+        let (word, _) =
+            LqlBackend::get_qualified_at_position("a b", Position::new(0, 1));
+        // Position 1 is space, no word
+        assert!(word.is_none());
+    }
+
+    #[test]
+    fn test_qualified_multiline() {
+        let source = "line1\nusers.email";
+        let (word, qualified) =
+            LqlBackend::get_qualified_at_position(source, Position::new(1, 7));
+        assert_eq!(word, Some("email".to_string()));
+        assert!(qualified.is_some());
+    }
+
+    // ── compute_completion_context ──
+
+    #[test]
+    fn test_completion_context_after_pipe() {
+        let ctx = LqlBackend::compute_completion_context("users |> ", Position::new(0, 9));
+        assert!(ctx.after_pipe);
+    }
+
+    #[test]
+    fn test_completion_context_word_prefix() {
+        let ctx = LqlBackend::compute_completion_context("users |> sel", Position::new(0, 12));
+        assert_eq!(ctx.word_prefix, "sel");
+    }
+
+    #[test]
+    fn test_completion_context_table_qualifier() {
+        let ctx =
+            LqlBackend::compute_completion_context("users.na", Position::new(0, 8));
+        assert_eq!(ctx.table_qualifier, Some("users".to_string()));
+        assert_eq!(ctx.word_prefix, "na");
+    }
+
+    #[test]
+    fn test_completion_context_in_arg_list() {
+        let ctx =
+            LqlBackend::compute_completion_context("select(users.id, ", Position::new(0, 17));
+        assert!(ctx.in_arg_list);
+    }
+
+    #[test]
+    fn test_completion_context_in_lambda() {
+        let source = "filter(fn(r) => r.users.";
+        let ctx = LqlBackend::compute_completion_context(source, Position::new(0, 24));
+        assert!(ctx.in_lambda);
+    }
+
+    #[test]
+    fn test_completion_context_empty_prefix() {
+        let ctx = LqlBackend::compute_completion_context("", Position::new(0, 0));
+        assert_eq!(ctx.word_prefix, "");
+        assert!(!ctx.after_pipe);
+        assert!(!ctx.in_arg_list);
+    }
+
+    #[test]
+    fn test_completion_context_no_qualifier_without_dot() {
+        let ctx =
+            LqlBackend::compute_completion_context("sel", Position::new(0, 3));
+        assert!(ctx.table_qualifier.is_none());
+    }
+
+    #[test]
+    fn test_completion_context_line_prefix() {
+        let ctx =
+            LqlBackend::compute_completion_context("abc def", Position::new(0, 5));
+        assert_eq!(ctx.line_prefix, "abc d");
+    }
+}

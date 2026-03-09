@@ -55,3 +55,79 @@ impl ScopeMap {
         self.bindings.get(name)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_scope_is_empty() {
+        let scope = ScopeMap::new();
+        assert!(scope.binding_names().is_empty());
+        assert!(scope.table_names().is_empty());
+    }
+
+    #[test]
+    fn test_add_and_retrieve_binding() {
+        let mut scope = ScopeMap::new();
+        scope.add_binding("x".to_string(), 1, 4);
+        assert!(scope.has_binding("x"));
+        assert!(!scope.has_binding("y"));
+        let info = scope.get_binding("x").unwrap();
+        assert_eq!(info.name, "x");
+        assert_eq!(info.line, 1);
+        assert_eq!(info.col, 4);
+    }
+
+    #[test]
+    fn test_binding_names() {
+        let mut scope = ScopeMap::new();
+        scope.add_binding("alpha".to_string(), 0, 0);
+        scope.add_binding("beta".to_string(), 1, 0);
+        let names = scope.binding_names();
+        assert_eq!(names.len(), 2);
+        assert!(names.contains(&"alpha"));
+        assert!(names.contains(&"beta"));
+    }
+
+    #[test]
+    fn test_add_table() {
+        let mut scope = ScopeMap::new();
+        scope.add_table("users".to_string());
+        scope.add_table("orders".to_string());
+        let tables = scope.table_names();
+        assert_eq!(tables.len(), 2);
+        assert!(tables.contains(&"users"));
+        assert!(tables.contains(&"orders"));
+    }
+
+    #[test]
+    fn test_add_duplicate_table_ignored() {
+        let mut scope = ScopeMap::new();
+        scope.add_table("users".to_string());
+        scope.add_table("users".to_string());
+        assert_eq!(scope.table_names().len(), 1);
+    }
+
+    #[test]
+    fn test_get_binding_not_found() {
+        let scope = ScopeMap::new();
+        assert!(scope.get_binding("nonexistent").is_none());
+    }
+
+    #[test]
+    fn test_binding_overwrites_previous() {
+        let mut scope = ScopeMap::new();
+        scope.add_binding("x".to_string(), 1, 0);
+        scope.add_binding("x".to_string(), 5, 0);
+        let info = scope.get_binding("x").unwrap();
+        assert_eq!(info.line, 5);
+    }
+
+    #[test]
+    fn test_default_trait() {
+        let scope = ScopeMap::default();
+        assert!(scope.binding_names().is_empty());
+        assert!(scope.table_names().is_empty());
+    }
+}

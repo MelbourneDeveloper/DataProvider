@@ -217,6 +217,272 @@ all_users |> insert(report_table)"#;
     }
 
     #[test]
+    fn test_parse_left_join() {
+        let result = parse_lql(
+            "users |> left_join(orders, on = users.id = orders.user_id) |> select(users.name)",
+        );
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_right_join() {
+        let result = parse_lql(
+            "users |> right_join(orders, on = users.id = orders.user_id) |> select(orders.total)",
+        );
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_cross_join() {
+        let result = parse_lql("users |> cross_join(roles) |> select(users.name, roles.name)");
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_limit_offset() {
+        let result = parse_lql("users |> limit(10) |> offset(20)");
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_order_by_asc_desc() {
+        let result = parse_lql("users |> order_by(users.name asc, users.age desc)");
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_multiple_let_bindings() {
+        let source = r#"let a = users |> select(users.id)
+let b = orders |> select(orders.total)
+a |> join(b, on = a.id = b.user_id)"#;
+        let result = parse_lql(source);
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_nested_filter() {
+        let result = parse_lql(
+            "users |> filter(fn(row) => row.users.age > 18 and row.users.active = true)",
+        );
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_or_condition() {
+        let result = parse_lql(
+            "users |> filter(fn(row) => row.users.role = 'admin' or row.users.role = 'super')",
+        );
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_not_condition_errors() {
+        // Grammar doesn't support standalone `not` prefix — verify error recovery
+        let result =
+            parse_lql("users |> filter(fn(row) => not row.users.deleted)");
+        assert!(!result.errors.is_empty());
+    }
+
+    #[test]
+    fn test_parse_string_literal() {
+        let result =
+            parse_lql("users |> filter(fn(row) => row.users.name = 'O\\'Brien')");
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_numeric_literal() {
+        let result = parse_lql("orders |> filter(fn(row) => row.orders.total > 99.95)");
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_null_check() {
+        let result =
+            parse_lql("users |> filter(fn(row) => row.users.email is not null)");
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_is_null() {
+        let result = parse_lql("users |> filter(fn(row) => row.users.phone is null)");
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_in_expression() {
+        let result = parse_lql(
+            "users |> filter(fn(row) => row.users.status in ('active', 'pending'))",
+        );
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_like_expression() {
+        let result =
+            parse_lql("users |> filter(fn(row) => row.users.name like '%john%')");
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_between_not_supported() {
+        // BETWEEN is not in the grammar — verify graceful error
+        let result = parse_lql(
+            "orders |> filter(fn(row) => row.orders.total between 100 and 500)",
+        );
+        assert!(!result.errors.is_empty());
+    }
+
+    #[test]
+    fn test_parse_count_star() {
+        let result = parse_lql(
+            "users |> group_by(users.role) |> select(users.role, count(*) as cnt)",
+        );
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_distinct() {
+        let result = parse_lql(
+            "users |> select(count(distinct users.email) as unique_emails)",
+        );
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_arithmetic() {
+        let result = parse_lql(
+            "orders |> select(orders.price * orders.quantity as total)",
+        );
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_subtraction() {
+        let result = parse_lql(
+            "orders |> select(orders.price - orders.discount as net_price)",
+        );
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_insert() {
+        let result = parse_lql("users |> select(users.id, users.name) |> insert(archive_table)");
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_union_all() {
+        let source = r#"let a = users |> select(users.id, users.name)
+let b = archived |> select(archived.id, archived.name)
+a |> union_all(b)"#;
+        let result = parse_lql(source);
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_coalesce_not_in_grammar() {
+        // coalesce() not recognized as a grammar-level function — verify error recovery
+        let result = parse_lql(
+            "users |> select(coalesce(users.nickname, users.name) as display_name)",
+        );
+        assert!(!result.errors.is_empty());
+    }
+
+    #[test]
+    fn test_parse_nested_function_calls() {
+        let result = parse_lql(
+            "users |> select(upper(trim(users.name)) as clean_name)",
+        );
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_case_with_null() {
+        let source = r#"users |> select(
+    case
+        when users.email is null then 'No email'
+        else users.email
+    end as email_display
+)"#;
+        let result = parse_lql(source);
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_multiple_aggregates() {
+        let source = r#"orders
+|> group_by(orders.category)
+|> select(
+    orders.category,
+    count(*) as total,
+    sum(orders.amount) as sum_amount,
+    avg(orders.amount) as avg_amount,
+    min(orders.amount) as min_amount,
+    max(orders.amount) as max_amount
+)"#;
+        let result = parse_lql(source);
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_chained_pipeline() {
+        let result = parse_lql(
+            "users |> filter(fn(r) => r.users.active = true) |> order_by(users.name asc) |> limit(50) |> offset(100)",
+        );
+        assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
+    }
+
+    #[test]
+    fn test_parse_empty_string_produces_tree() {
+        let result = parse_lql("");
+        // Empty input should still produce a tree (possibly empty program)
+        let _tree = result.tree;
+    }
+
+    // ── error recovery tests ───────────────────────────────────────────
+    #[test]
+    fn test_error_recovery_missing_closing_paren() {
+        let result = parse_lql("users |> select(users.id, users.name");
+        assert!(!result.errors.is_empty());
+    }
+
+    #[test]
+    fn test_error_recovery_missing_pipe_arg() {
+        let result = parse_lql("users |>");
+        assert!(!result.errors.is_empty());
+    }
+
+    #[test]
+    fn test_error_recovery_double_pipe() {
+        let result = parse_lql("users |> |> select(users.id)");
+        assert!(!result.errors.is_empty());
+    }
+
+    #[test]
+    fn test_error_recovery_invalid_syntax() {
+        // Lexer token recognition errors don't surface through our error collector,
+        // but parser-level errors do. Test with syntactically invalid structure.
+        let result = parse_lql("users |> select(,,,)");
+        assert!(!result.errors.is_empty());
+    }
+
+    #[test]
+    fn test_error_recovery_unclosed_string() {
+        let result = parse_lql("users |> filter(fn(r) => r.users.name = 'hello)");
+        assert!(!result.errors.is_empty());
+    }
+
+    #[test]
+    fn test_error_has_message_and_span() {
+        let result = parse_lql("users |> select(");
+        assert!(!result.errors.is_empty());
+        let err = &result.errors[0];
+        assert!(!err.message.is_empty());
+        assert_eq!(err.severity, error::Severity::Error);
+    }
+
+    #[test]
     fn test_parse_window_multiarg() {
         let source = r#"orders
 |> select(
