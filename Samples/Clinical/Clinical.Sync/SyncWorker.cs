@@ -177,7 +177,7 @@ internal sealed class SyncWorker : BackgroundService
         try
         {
             var practitionerChanges = changes
-                .Where(c => c.TableName == "fhir_Practitioner")
+                .Where(c => c.TableName == "fhir_practitioner")
                 .ToList();
 
             foreach (var change in practitionerChanges)
@@ -215,9 +215,9 @@ internal sealed class SyncWorker : BackgroundService
         SyncChange change
     )
     {
-        // Extract the ID from PkValue which is JSON like {"Id":"uuid-here"}
+        // Extract the ID from PkValue which is JSON like {"id":"uuid-here"}
         var pkData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(change.PkValue);
-        var rowId = pkData?.GetValueOrDefault("Id").GetString() ?? change.PkValue;
+        var rowId = pkData?.GetValueOrDefault("id").GetString() ?? change.PkValue;
 
         if (change.Operation == SyncChange.Delete)
         {
@@ -255,19 +255,19 @@ internal sealed class SyncWorker : BackgroundService
 
         upsertCmd.Parameters.AddWithValue(
             "@providerId",
-            data.GetValueOrDefault("Id").GetString() ?? string.Empty
+            data.GetValueOrDefault("id").GetString() ?? string.Empty
         );
         upsertCmd.Parameters.AddWithValue(
             "@firstName",
-            data.GetValueOrDefault("NameGiven").GetString() ?? string.Empty
+            data.GetValueOrDefault("namegiven").GetString() ?? string.Empty
         );
         upsertCmd.Parameters.AddWithValue(
             "@lastName",
-            data.GetValueOrDefault("NameFamily").GetString() ?? string.Empty
+            data.GetValueOrDefault("namefamily").GetString() ?? string.Empty
         );
         upsertCmd.Parameters.AddWithValue(
             "@specialty",
-            data.GetValueOrDefault("Specialty").GetString() ?? string.Empty
+            data.GetValueOrDefault("specialty").GetString() ?? string.Empty
         );
         upsertCmd.Parameters.AddWithValue("@syncedAt", DateTime.UtcNow.ToString("o"));
 
@@ -275,7 +275,7 @@ internal sealed class SyncWorker : BackgroundService
         _logger.Log(
             LogLevel.Debug,
             "Upserted provider {ProviderId}",
-            data.GetValueOrDefault("Id").GetString()
+            data.GetValueOrDefault("id").GetString()
         );
     }
 

@@ -32,7 +32,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '9.0.x'
+  DOTNET_VERSION: '10.0.x'
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
@@ -643,7 +643,7 @@ jobs:
         with:
           context: .
           file: Samples/docker/Dockerfile.app
-          push: false
+          load: true
           tags: dataprovider-app:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -653,7 +653,7 @@ jobs:
         with:
           context: .
           file: Samples/docker/Dockerfile.dashboard
-          push: false
+          load: true
           tags: dataprovider-dashboard:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -668,6 +668,20 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, changes]
     if: needs.changes.outputs.dashboard == 'true'
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: changeme
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -705,6 +719,12 @@ jobs:
           dotnet build Samples/Clinical/Clinical.Sync -c Release
           dotnet build Samples/Scheduling/Scheduling.Sync -c Release
 
+      - name: Build ICD-10 API (required for ICD-10 E2E tests)
+        run: dotnet build Samples/ICD10/ICD10.Api/ICD10.Api.csproj -c Release
+
+      - name: Build Migration CLI (required for ICD-10 schema setup)
+        run: dotnet build Migration/Migration.Cli -c Release
+
       - name: Build Integration Tests (includes wwwroot copy)
         run: dotnet build Samples/Dashboard/Dashboard.Integration.Tests -c Release
 
@@ -717,8 +737,8 @@ jobs:
           ls -la Samples/Dashboard/Dashboard.Web/wwwroot/js/ || echo "Dashboard.Web js folder not found"
           ls -la Samples/Dashboard/Dashboard.Web/wwwroot/js/vendor/ || echo "Dashboard.Web vendor folder not found"
           echo "=== Integration Tests wwwroot (output) ==="
-          ls -la Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net9.0/wwwroot/js/ || echo "Integration Tests js folder not found"
-          ls -la Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net9.0/wwwroot/js/vendor/ || echo "Integration Tests vendor folder not found"
+          ls -la Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net10.0/wwwroot/js/ || echo "Integration Tests js folder not found"
+          ls -la Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net10.0/wwwroot/js/vendor/ || echo "Integration Tests vendor folder not found"
 
       - name: Test
         run: dotnet test Samples/Dashboard/Dashboard.Integration.Tests -c Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"

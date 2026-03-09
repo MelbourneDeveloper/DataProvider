@@ -1,7 +1,7 @@
 # Single container for ALL .NET services + embedding service
 # Runs: Gatekeeper API, Clinical API, Scheduling API, ICD10 API, Clinical Sync, Scheduling Sync, Embedding Service
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY . .
@@ -14,7 +14,7 @@ RUN dotnet publish Samples/Clinical/Clinical.Sync -c Release -o /app/clinical-sy
 RUN dotnet publish Samples/Scheduling/Scheduling.Sync -c Release -o /app/scheduling-sync
 
 # Runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 
 # Install Python for embedding service and ICD-10 import
 RUN apt-get update && apt-get install -y \

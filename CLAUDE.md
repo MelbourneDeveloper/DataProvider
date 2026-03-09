@@ -5,7 +5,7 @@
 - Don't edit files that are locked; lock files when editing
 - COMMUNICATE REGULARLY AND COORDINATE WITH OTHERS THROUGH MESSAGES
 
-⛔️ DO NOT RUN DOCKER COMMANDS!!!
+⛔️ DO NOT RUN DOCKER/GIT COMMANDS!!!
 
 ## Coding Rules
 

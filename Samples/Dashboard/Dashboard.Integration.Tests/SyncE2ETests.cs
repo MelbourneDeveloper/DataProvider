@@ -219,15 +219,16 @@ public sealed class SyncE2ETests
             new PageWaitForSelectorOptions { Timeout = 15000 }
         );
 
-        // Wait for sync records to actually load (not just the page)
+        await Task.Delay(1000); // Allow data to load
+
+        // Wait for sync records to appear in the table
         await page.WaitForFunctionAsync(
             @"() => {
-                const badge = document.querySelector('.badge');
-                return badge && badge.textContent && !badge.textContent.includes('0 records');
+                const rows = document.querySelectorAll('[data-testid=""sync-records-table""] tbody tr');
+                return rows.length > 0;
             }",
-            new PageWaitForFunctionOptions { Timeout = 15000 }
+            new PageWaitForFunctionOptions { Timeout = 20000 }
         );
-        await Task.Delay(500); // Allow React to stabilize
 
         // Log initial state before filtering
         var initialRows = await page.QuerySelectorAllAsync(
@@ -411,12 +412,8 @@ public sealed class SyncE2ETests
     public async Task SyncDashboard_SearchFilter_FiltersCorrectly()
     {
         using var client = E2EFixture.CreateAuthenticatedClient();
-        var page = await _fixture.CreateAuthenticatedPageAsync(
-            navigateTo: $"{E2EFixture.DashboardUrl}#sync"
-        );
-        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
-        // Create a patient with a known unique identifier
+        // Create a patient BEFORE loading the sync page so data is fresh
         var uniqueId = $"SearchTest{DateTime.UtcNow.Ticks % 1000000}";
         var patientRequest = new
         {
@@ -437,6 +434,12 @@ public sealed class SyncE2ETests
         var patientJson = await createResponse.Content.ReadAsStringAsync();
         var patientDoc = System.Text.Json.JsonDocument.Parse(patientJson);
         var patientId = patientDoc.RootElement.GetProperty("Id").GetString();
+
+        // Navigate to sync page AFTER patient exists in sync log
+        var page = await _fixture.CreateAuthenticatedPageAsync(
+            navigateTo: $"{E2EFixture.DashboardUrl}#sync"
+        );
+        page.Console += (_, msg) => Console.WriteLine($"[BROWSER] {msg.Text}");
 
         await page.GotoAsync($"{E2EFixture.DashboardUrl}#sync");
         await page.WaitForSelectorAsync(

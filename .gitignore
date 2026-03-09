@@ -422,5 +422,3 @@ Samples/ICD10CM/.venv
 .too_many_cooks/
 
 .commandtree/
-
-*.vsix

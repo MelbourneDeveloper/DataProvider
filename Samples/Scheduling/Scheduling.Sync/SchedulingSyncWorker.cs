@@ -199,7 +199,7 @@ internal sealed class SchedulingSyncWorker : BackgroundService
     {
         try
         {
-            if (change.TableName != "fhir_Patient")
+            if (change.TableName != "fhir_patient")
             {
                 return; // Only sync patient data
             }
@@ -214,12 +214,12 @@ internal sealed class SchedulingSyncWorker : BackgroundService
                 return;
             }
 
-            // Apply column mapping
-            var patientId = data.TryGetValue("Id", out var id) ? id.GetString() : null;
-            var givenName = data.TryGetValue("GivenName", out var gn) ? gn.GetString() : "";
-            var familyName = data.TryGetValue("FamilyName", out var fn) ? fn.GetString() : "";
-            var phone = data.TryGetValue("Phone", out var p) ? p.GetString() : null;
-            var email = data.TryGetValue("Email", out var e) ? e.GetString() : null;
+            // Apply column mapping (keys are lowercase - PostgreSQL folds identifiers)
+            var patientId = data.TryGetValue("id", out var id) ? id.GetString() : null;
+            var givenName = data.TryGetValue("givenname", out var gn) ? gn.GetString() : "";
+            var familyName = data.TryGetValue("familyname", out var fn) ? fn.GetString() : "";
+            var phone = data.TryGetValue("phone", out var p) ? p.GetString() : null;
+            var email = data.TryGetValue("email", out var e) ? e.GetString() : null;
 
             if (patientId is null)
             {
