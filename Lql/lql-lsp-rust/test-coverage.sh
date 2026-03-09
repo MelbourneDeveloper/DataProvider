@@ -3,8 +3,8 @@
 # Run all LSP Rust tests and generate coverage report
 #
 # Usage:
-#   ./test-coverage.sh           # Run tests + coverage summary
-#   ./test-coverage.sh --html    # Also generate HTML report
+#   ./test-coverage.sh           # Run tests + coverage summary + HTML report
+#   ./test-coverage.sh --html    # Also open HTML report in browser
 #   ./test-coverage.sh --xml     # Also generate Cobertura XML (for CI)
 # ============================================================================
 
@@ -19,6 +19,8 @@ TARPAULIN_ARGS=(
     --timeout 120
     --engine llvm
     --out stdout
+    --out html
+    --exclude-files "*/generated/*"
 )
 
 # ── Parse flags ──────────────────────────────────────────────────────────────
@@ -26,7 +28,6 @@ OPEN_HTML=false
 for arg in "$@"; do
     case "$arg" in
         --html)
-            TARPAULIN_ARGS+=(--out html)
             OPEN_HTML=true
             ;;
         --xml)
@@ -44,10 +45,13 @@ echo ""
 echo ">>> Running cargo-tarpaulin for coverage..."
 cargo tarpaulin "${TARPAULIN_ARGS[@]}" 2>&1
 
-# ── 3. Open HTML report if requested ────────────────────────────────────────
-if [ "$OPEN_HTML" = true ] && [ -f "$SCRIPT_DIR/tarpaulin-report.html" ]; then
-    echo ">>> Opening HTML coverage report..."
-    open "$SCRIPT_DIR/tarpaulin-report.html" 2>/dev/null || true
+# ── 3. Report location / open HTML ────────────────────────────────────────
+if [ -f "$SCRIPT_DIR/tarpaulin-report.html" ]; then
+    echo ""
+    echo ">>> Coverage report written to: $SCRIPT_DIR/tarpaulin-report.html"
+    if [ "$OPEN_HTML" = true ]; then
+        open "$SCRIPT_DIR/tarpaulin-report.html" 2>/dev/null || true
+    fi
 fi
 
 echo ""

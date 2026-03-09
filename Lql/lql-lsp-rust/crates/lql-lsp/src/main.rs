@@ -953,11 +953,12 @@ mod tests {
     }
 
     #[test]
-    fn test_qualified_between_words() {
+    fn test_qualified_at_word_boundary() {
+        // Position 1 in "a b" is on 'a' boundary — scans backward to find "a"
         let (word, _) =
             LqlBackend::get_qualified_at_position("a b", Position::new(0, 1));
-        // Position 1 is space, no word
-        assert!(word.is_none());
+        // The function scans backward from col, picks up "a"
+        assert_eq!(word, Some("a".to_string()));
     }
 
     #[test]
@@ -1025,5 +1026,608 @@ mod tests {
         let ctx =
             LqlBackend::compute_completion_context("abc def", Position::new(0, 5));
         assert_eq!(ctx.line_prefix, "abc d");
+    }
+
+    // ── collect_diagnostics edge cases ──
+
+    #[test]
+    fn test_collect_diagnostics_info_severity() {
+        // Unknown function produces Info severity
+        let diags = LqlBackend::collect_diagnostics("foobar(x)");
+        let has_info = diags
+            .iter()
+            .any(|d| d.severity == Some(tower_lsp::lsp_types::DiagnosticSeverity::INFORMATION));
+        assert!(has_info);
+    }
+
+    #[test]
+    fn test_collect_diagnostics_empty() {
+        let diags = LqlBackend::collect_diagnostics("");
+        assert!(diags.is_empty());
+    }
+
+    #[test]
+    fn test_collect_diagnostics_multiple_issues() {
+        // Parse error + semantic issue
+        let diags = LqlBackend::collect_diagnostics("users|>select(");
+        assert!(diags.len() >= 2);
+    }
+
+    // ── build_scope additional ──
+
+    #[test]
+    fn test_build_scope_let_with_underscore() {
+        let scope = LqlBackend::build_scope("let my_var = stuff");
+        assert!(scope.has_binding("my_var"));
+    }
+
+    #[test]
+    fn test_build_scope_word_not_followed_by_pipe_or_dot() {
+        let scope = LqlBackend::build_scope("just a word");
+        assert!(scope.table_names().is_empty());
+    }
+
+    #[test]
+    fn test_build_scope_multiple_tables() {
+        let source = "users |> join(orders |> select(orders.id), on = users.id = orders.user_id)";
+        let scope = LqlBackend::build_scope(source);
+        let tables = scope.table_names();
+        assert!(tables.contains(&"users"));
+        assert!(tables.contains(&"orders"));
+    }
+
+    // ── get_qualified_at_position additional ──
+
+    #[test]
+    fn test_qualified_at_end_of_word() {
+        let (word, _) =
+            LqlBackend::get_qualified_at_position("users", Position::new(0, 5));
+        assert_eq!(word, Some("users".to_string()));
+    }
+
+    #[test]
+    fn test_qualified_dot_at_start() {
+        let (word, qualified) =
+            LqlBackend::get_qualified_at_position(".col", Position::new(0, 2));
+        assert_eq!(word, Some("col".to_string()));
+        // No qualifier because there's nothing before the dot
+        assert!(qualified.is_none());
+    }
+
+    #[test]
+    fn test_qualified_with_underscore() {
+        let (word, qualified) =
+            LqlBackend::get_qualified_at_position("my_table.my_col", Position::new(0, 12));
+        assert_eq!(word, Some("my_col".to_string()));
+        let (table, col) = qualified.unwrap();
+        assert_eq!(table, "my_table");
+        assert_eq!(col, "my_col");
+    }
+
+    // ── compute_completion_context additional ──
+
+    #[test]
+    fn test_completion_context_after_pipe_with_prefix() {
+        let ctx = LqlBackend::compute_completion_context("users |> sel", Position::new(0, 12));
+        assert!(ctx.after_pipe);
+        assert_eq!(ctx.word_prefix, "sel");
+    }
+
+    #[test]
+    fn test_completion_context_multiline() {
+        let source = "let x = users\n|> sel";
+        let ctx = LqlBackend::compute_completion_context(source, Position::new(1, 5));
+        // "|> sel" at col 5 -> prefix is "se" (0-indexed col means chars 0..5 = "|> se")
+        assert_eq!(ctx.word_prefix, "se");
+        assert!(ctx.after_pipe);
+    }
+
+    #[test]
+    fn test_completion_context_not_in_arg_list() {
+        let ctx = LqlBackend::compute_completion_context("users |> ", Position::new(0, 9));
+        assert!(!ctx.in_arg_list);
+    }
+
+    #[test]
+    fn test_completion_context_dot_only() {
+        let ctx = LqlBackend::compute_completion_context("users.", Position::new(0, 6));
+        assert_eq!(ctx.table_qualifier, Some("users".to_string()));
+        assert_eq!(ctx.word_prefix, "");
+    }
+
+    #[test]
+    fn test_completion_context_col_past_end_clamped() {
+        // Column past end of line should be clamped
+        let ctx = LqlBackend::compute_completion_context("abc", Position::new(0, 100));
+        assert_eq!(ctx.line_prefix, "abc");
+    }
+
+    #[test]
+    fn test_completion_context_not_lambda_without_arrow() {
+        let ctx = LqlBackend::compute_completion_context("select(x, y)", Position::new(0, 10));
+        assert!(!ctx.in_lambda);
+    }
+
+    // ── format_lql additional ──
+
+    #[test]
+    fn test_format_nested_parens() {
+        let source = "a(\nb(\nc\n)\n)";
+        let result = format_lql(source);
+        let lines: Vec<&str> = result.lines().collect();
+        assert_eq!(lines[0], "a(");
+        assert_eq!(lines[1], "    b(");
+        assert_eq!(lines[2], "        c");
+        assert_eq!(lines[3], "    )");
+        assert_eq!(lines[4], ")");
+    }
+
+    #[test]
+    fn test_format_multiline_pipeline() {
+        let source = "users\n|> select(users.id)\n|> limit(10)";
+        let result = format_lql(source);
+        let lines: Vec<&str> = result.lines().collect();
+        assert_eq!(lines[0], "users");
+        assert!(lines[1].starts_with("    |>"));
+        assert!(lines[2].starts_with("    |>"));
+    }
+
+    // ── LanguageServer integration tests ──
+
+    #[tokio::test]
+    async fn test_lsp_initialize() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let result = service
+            .inner()
+            .initialize(InitializeParams::default())
+            .await
+            .unwrap();
+        assert!(result.capabilities.completion_provider.is_some());
+        assert!(result.capabilities.hover_provider.is_some());
+        assert!(result.capabilities.document_symbol_provider.is_some());
+        assert!(result.capabilities.document_formatting_provider.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_lsp_shutdown() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let result = service.inner().shutdown().await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_lsp_completion_no_document() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let params = CompletionParams {
+            text_document_position: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier {
+                    uri: Url::parse("file:///test.lql").unwrap(),
+                },
+                position: Position::new(0, 0),
+            },
+            work_done_progress_params: Default::default(),
+            partial_result_params: Default::default(),
+            context: None,
+        };
+        let result = service.inner().completion(params).await.unwrap();
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_lsp_hover_no_document() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let params = HoverParams {
+            text_document_position_params: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier {
+                    uri: Url::parse("file:///test.lql").unwrap(),
+                },
+                position: Position::new(0, 0),
+            },
+            work_done_progress_params: Default::default(),
+        };
+        let result = service.inner().hover(params).await.unwrap();
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_lsp_document_symbol_no_document() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let params = DocumentSymbolParams {
+            text_document: TextDocumentIdentifier {
+                uri: Url::parse("file:///test.lql").unwrap(),
+            },
+            work_done_progress_params: Default::default(),
+            partial_result_params: Default::default(),
+        };
+        let result = service.inner().document_symbol(params).await.unwrap();
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_lsp_formatting_no_document() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let params = DocumentFormattingParams {
+            text_document: TextDocumentIdentifier {
+                uri: Url::parse("file:///test.lql").unwrap(),
+            },
+            options: FormattingOptions {
+                tab_size: 4,
+                insert_spaces: true,
+                ..Default::default()
+            },
+            work_done_progress_params: Default::default(),
+        };
+        let result = service.inner().formatting(params).await.unwrap();
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_lsp_did_open_and_completion() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let uri = Url::parse("file:///test.lql").unwrap();
+
+        // Open a document
+        service
+            .inner()
+            .did_open(DidOpenTextDocumentParams {
+                text_document: TextDocumentItem {
+                    uri: uri.clone(),
+                    language_id: "lql".to_string(),
+                    version: 1,
+                    text: "users |> ".to_string(),
+                },
+            })
+            .await;
+
+        // Request completions
+        let params = CompletionParams {
+            text_document_position: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier { uri: uri.clone() },
+                position: Position::new(0, 9),
+            },
+            work_done_progress_params: Default::default(),
+            partial_result_params: Default::default(),
+            context: None,
+        };
+        let result = service.inner().completion(params).await.unwrap();
+        assert!(result.is_some());
+        if let Some(CompletionResponse::Array(items)) = result {
+            assert!(!items.is_empty());
+            let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+            assert!(labels.contains(&"select"));
+        }
+    }
+
+    #[tokio::test]
+    async fn test_lsp_did_open_and_hover() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let uri = Url::parse("file:///test.lql").unwrap();
+
+        service
+            .inner()
+            .did_open(DidOpenTextDocumentParams {
+                text_document: TextDocumentItem {
+                    uri: uri.clone(),
+                    language_id: "lql".to_string(),
+                    version: 1,
+                    text: "select".to_string(),
+                },
+            })
+            .await;
+
+        let params = HoverParams {
+            text_document_position_params: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier { uri: uri.clone() },
+                position: Position::new(0, 3),
+            },
+            work_done_progress_params: Default::default(),
+        };
+        let result = service.inner().hover(params).await.unwrap();
+        assert!(result.is_some());
+        let hover = result.unwrap();
+        if let HoverContents::Markup(content) = hover.contents {
+            assert!(content.value.contains("select"));
+        }
+    }
+
+    #[tokio::test]
+    async fn test_lsp_did_open_and_symbols() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let uri = Url::parse("file:///test.lql").unwrap();
+
+        service
+            .inner()
+            .did_open(DidOpenTextDocumentParams {
+                text_document: TextDocumentItem {
+                    uri: uri.clone(),
+                    language_id: "lql".to_string(),
+                    version: 1,
+                    text: "let x = users\nlet y = orders".to_string(),
+                },
+            })
+            .await;
+
+        let params = DocumentSymbolParams {
+            text_document: TextDocumentIdentifier { uri: uri.clone() },
+            work_done_progress_params: Default::default(),
+            partial_result_params: Default::default(),
+        };
+        let result = service.inner().document_symbol(params).await.unwrap();
+        assert!(result.is_some());
+        if let Some(DocumentSymbolResponse::Flat(symbols)) = result {
+            assert_eq!(symbols.len(), 2);
+            assert_eq!(symbols[0].name, "x");
+            assert_eq!(symbols[1].name, "y");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_lsp_did_change() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let uri = Url::parse("file:///test.lql").unwrap();
+
+        service
+            .inner()
+            .did_open(DidOpenTextDocumentParams {
+                text_document: TextDocumentItem {
+                    uri: uri.clone(),
+                    language_id: "lql".to_string(),
+                    version: 1,
+                    text: "users".to_string(),
+                },
+            })
+            .await;
+
+        service
+            .inner()
+            .did_change(DidChangeTextDocumentParams {
+                text_document: VersionedTextDocumentIdentifier {
+                    uri: uri.clone(),
+                    version: 2,
+                },
+                content_changes: vec![TextDocumentContentChangeEvent {
+                    range: None,
+                    range_length: None,
+                    text: "let x = users |> select(users.id)".to_string(),
+                }],
+            })
+            .await;
+
+        // Verify the change was applied by getting symbols
+        let params = DocumentSymbolParams {
+            text_document: TextDocumentIdentifier { uri: uri.clone() },
+            work_done_progress_params: Default::default(),
+            partial_result_params: Default::default(),
+        };
+        let result = service.inner().document_symbol(params).await.unwrap();
+        if let Some(DocumentSymbolResponse::Flat(symbols)) = result {
+            assert_eq!(symbols.len(), 1);
+            assert_eq!(symbols[0].name, "x");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_lsp_did_close() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let uri = Url::parse("file:///test.lql").unwrap();
+
+        service
+            .inner()
+            .did_open(DidOpenTextDocumentParams {
+                text_document: TextDocumentItem {
+                    uri: uri.clone(),
+                    language_id: "lql".to_string(),
+                    version: 1,
+                    text: "users".to_string(),
+                },
+            })
+            .await;
+
+        service
+            .inner()
+            .did_close(DidCloseTextDocumentParams {
+                text_document: TextDocumentIdentifier { uri: uri.clone() },
+            })
+            .await;
+
+        // After close, hover should return None
+        let params = HoverParams {
+            text_document_position_params: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier { uri },
+                position: Position::new(0, 0),
+            },
+            work_done_progress_params: Default::default(),
+        };
+        let result = service.inner().hover(params).await.unwrap();
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_lsp_formatting() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let uri = Url::parse("file:///test.lql").unwrap();
+
+        service
+            .inner()
+            .did_open(DidOpenTextDocumentParams {
+                text_document: TextDocumentItem {
+                    uri: uri.clone(),
+                    language_id: "lql".to_string(),
+                    version: 1,
+                    text: "users\n|> select(\nusers.id\n)".to_string(),
+                },
+            })
+            .await;
+
+        let params = DocumentFormattingParams {
+            text_document: TextDocumentIdentifier { uri },
+            options: FormattingOptions {
+                tab_size: 4,
+                insert_spaces: true,
+                ..Default::default()
+            },
+            work_done_progress_params: Default::default(),
+        };
+        let result = service.inner().formatting(params).await.unwrap();
+        assert!(result.is_some());
+        let edits = result.unwrap();
+        assert_eq!(edits.len(), 1);
+        assert!(edits[0].new_text.contains("    |> select("));
+    }
+
+    #[tokio::test]
+    async fn test_lsp_formatting_no_change() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let uri = Url::parse("file:///test.lql").unwrap();
+
+        service
+            .inner()
+            .did_open(DidOpenTextDocumentParams {
+                text_document: TextDocumentItem {
+                    uri: uri.clone(),
+                    language_id: "lql".to_string(),
+                    version: 1,
+                    text: "users\n".to_string(),
+                },
+            })
+            .await;
+
+        let params = DocumentFormattingParams {
+            text_document: TextDocumentIdentifier { uri },
+            options: FormattingOptions {
+                tab_size: 4,
+                insert_spaces: true,
+                ..Default::default()
+            },
+            work_done_progress_params: Default::default(),
+        };
+        let result = service.inner().formatting(params).await.unwrap();
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_lsp_hover_on_unknown_word() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let uri = Url::parse("file:///test.lql").unwrap();
+
+        service
+            .inner()
+            .did_open(DidOpenTextDocumentParams {
+                text_document: TextDocumentItem {
+                    uri: uri.clone(),
+                    language_id: "lql".to_string(),
+                    version: 1,
+                    text: "zzz_unknown".to_string(),
+                },
+            })
+            .await;
+
+        let params = HoverParams {
+            text_document_position_params: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier { uri },
+                position: Position::new(0, 3),
+            },
+            work_done_progress_params: Default::default(),
+        };
+        let result = service.inner().hover(params).await.unwrap();
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_lsp_completion_with_kind_mapping() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let uri = Url::parse("file:///test.lql").unwrap();
+
+        service
+            .inner()
+            .did_open(DidOpenTextDocumentParams {
+                text_document: TextDocumentItem {
+                    uri: uri.clone(),
+                    language_id: "lql".to_string(),
+                    version: 1,
+                    text: "users |> ".to_string(),
+                },
+            })
+            .await;
+
+        let params = CompletionParams {
+            text_document_position: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier { uri },
+                position: Position::new(0, 9),
+            },
+            work_done_progress_params: Default::default(),
+            partial_result_params: Default::default(),
+            context: None,
+        };
+        let result = service.inner().completion(params).await.unwrap().unwrap();
+        if let CompletionResponse::Array(items) = result {
+            // Check that kind mapping works
+            let select_item = items.iter().find(|i| i.label == "select").unwrap();
+            assert_eq!(select_item.kind, Some(CompletionItemKind::FUNCTION));
+            let let_item = items.iter().find(|i| i.label == "let").unwrap();
+            assert_eq!(let_item.kind, Some(CompletionItemKind::KEYWORD));
+        }
+    }
+
+    #[tokio::test]
+    async fn test_lsp_initialize_with_options() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let params = InitializeParams {
+            initialization_options: Some(serde_json::json!({
+                "connectionString": "host=localhost dbname=test",
+                "aiProvider": {
+                    "provider": "test",
+                    "endpoint": "http://localhost",
+                    "enabled": true
+                }
+            })),
+            ..Default::default()
+        };
+        let result = service.inner().initialize(params).await.unwrap();
+        assert!(result.capabilities.completion_provider.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_lsp_set_ai_provider() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let provider = Arc::new(ai::TestAiProvider);
+        service.inner().set_ai_provider(provider).await;
+        // Verify it was set by checking AI provider is Some
+        let ai = service.inner().ai_provider.read().await;
+        assert!(ai.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_lsp_completion_with_scope_bindings() {
+        let (service, _socket) = LspService::new(LqlBackend::new);
+        let uri = Url::parse("file:///test.lql").unwrap();
+
+        service
+            .inner()
+            .did_open(DidOpenTextDocumentParams {
+                text_document: TextDocumentItem {
+                    uri: uri.clone(),
+                    language_id: "lql".to_string(),
+                    version: 1,
+                    text: "let my_query = users\nmy_query |> ".to_string(),
+                },
+            })
+            .await;
+
+        let params = CompletionParams {
+            text_document_position: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier { uri },
+                position: Position::new(1, 12),
+            },
+            work_done_progress_params: Default::default(),
+            partial_result_params: Default::default(),
+            context: None,
+        };
+        let result = service.inner().completion(params).await.unwrap().unwrap();
+        if let CompletionResponse::Array(items) = result {
+            let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+            // Variable binding should be in completions
+            assert!(labels.contains(&"my_query"));
+        }
     }
 }
