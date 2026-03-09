@@ -7,6 +7,6 @@
 #![allow(clippy::all)]
 
 pub mod lqllexer;
-pub mod lqlparser;
 pub mod lqllistener;
+pub mod lqlparser;
 pub mod lqlvisitor;

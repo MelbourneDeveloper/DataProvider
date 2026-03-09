@@ -35,12 +35,7 @@ pub fn get_hover_with_schema(
         if let Some(table) = schema.get_table(table_name) {
             if let Some(col) = table.get_column(col_name) {
                 return Some(HoverInfo {
-                    title: format!(
-                        "{}.{} — {}",
-                        table.name,
-                        col.name,
-                        col.type_description()
-                    ),
+                    title: format!("{}.{} — {}", table.name, col.name, col.type_description()),
                     detail: format!(
                         "Column `{}` on table `{}`\n\nType: `{}`\nNullable: {}\nPrimary Key: {}",
                         col.name,
@@ -58,8 +53,7 @@ pub fn get_hover_with_schema(
                 });
             }
             // Table exists but column doesn't — show available columns
-            let available: Vec<&str> =
-                table.columns.iter().map(|c| c.name.as_str()).collect();
+            let available: Vec<&str> = table.columns.iter().map(|c| c.name.as_str()).collect();
             return Some(HoverInfo {
                 title: format!("{}.{} — Column not found", table.name, col_name),
                 detail: format!(

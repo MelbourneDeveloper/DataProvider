@@ -113,9 +113,7 @@ pub fn get_completions(
                     label: table_name.to_string(),
                     kind: CompletionKind::Table,
                     detail: format!("table ({} columns)", table.columns.len()),
-                    documentation: format!(
-                        "Table: {table_name}\nColumns: {col_list}"
-                    ),
+                    documentation: format!("Table: {table_name}\nColumns: {col_list}"),
                     insert_text: None,
                     sort_priority: 4,
                 });
@@ -159,24 +157,83 @@ pub fn get_completions(
     items.retain(|item| seen.insert(item.label.clone()));
 
     // Sort: by priority (lower first), then alphabetically
-    items.sort_by(|a, b| a.sort_priority.cmp(&b.sort_priority).then(a.label.cmp(&b.label)));
+    items.sort_by(|a, b| {
+        a.sort_priority
+            .cmp(&b.sort_priority)
+            .then(a.label.cmp(&b.label))
+    });
 
     items
 }
 
 fn pipeline_completions(prefix: &str) -> Vec<CompletionItem> {
     let ops = vec![
-        ("select", "Project columns", "Projects specified columns from the input data", "select($0)"),
-        ("filter", "Filter rows", "Filters rows based on a lambda predicate", "filter(fn(row) => $0)"),
-        ("join", "Join tables", "Joins with another table on a condition", "join($1, on = $0)"),
-        ("left_join", "Left join tables", "Left joins with another table", "left_join($1, on = $0)"),
-        ("group_by", "Group rows", "Groups rows by specified columns", "group_by($0)"),
-        ("order_by", "Order results", "Orders rows by specified columns", "order_by($0)"),
-        ("having", "Filter groups", "Filters groups based on aggregate conditions", "having(fn(group) => $0)"),
-        ("limit", "Limit results", "Limits the number of returned rows", "limit($0)"),
-        ("offset", "Skip rows", "Skips the first n rows", "offset($0)"),
-        ("union", "Union queries", "Combines results of two queries", "union($0)"),
-        ("insert", "Insert into table", "Inserts results into a target table", "insert($0)"),
+        (
+            "select",
+            "Project columns",
+            "Projects specified columns from the input data",
+            "select($0)",
+        ),
+        (
+            "filter",
+            "Filter rows",
+            "Filters rows based on a lambda predicate",
+            "filter(fn(row) => $0)",
+        ),
+        (
+            "join",
+            "Join tables",
+            "Joins with another table on a condition",
+            "join($1, on = $0)",
+        ),
+        (
+            "left_join",
+            "Left join tables",
+            "Left joins with another table",
+            "left_join($1, on = $0)",
+        ),
+        (
+            "group_by",
+            "Group rows",
+            "Groups rows by specified columns",
+            "group_by($0)",
+        ),
+        (
+            "order_by",
+            "Order results",
+            "Orders rows by specified columns",
+            "order_by($0)",
+        ),
+        (
+            "having",
+            "Filter groups",
+            "Filters groups based on aggregate conditions",
+            "having(fn(group) => $0)",
+        ),
+        (
+            "limit",
+            "Limit results",
+            "Limits the number of returned rows",
+            "limit($0)",
+        ),
+        (
+            "offset",
+            "Skip rows",
+            "Skips the first n rows",
+            "offset($0)",
+        ),
+        (
+            "union",
+            "Union queries",
+            "Combines results of two queries",
+            "union($0)",
+        ),
+        (
+            "insert",
+            "Insert into table",
+            "Inserts results into a target table",
+            "insert($0)",
+        ),
     ];
 
     ops.into_iter()
@@ -220,7 +277,11 @@ fn aggregate_completions(prefix: &str) -> Vec<CompletionItem> {
 fn string_function_completions(prefix: &str) -> Vec<CompletionItem> {
     let fns = vec![
         ("concat", "Concatenate strings", "concat(str1, str2, ...)"),
-        ("substring", "Extract substring", "substring(string, start, length)"),
+        (
+            "substring",
+            "Extract substring",
+            "substring(string, start, length)",
+        ),
         ("length", "String length", "length(string)"),
         ("trim", "Trim whitespace", "trim(string)"),
         ("upper", "Uppercase", "upper(string)"),
@@ -245,7 +306,11 @@ fn string_function_completions(prefix: &str) -> Vec<CompletionItem> {
 
 fn keyword_completions(prefix: &str) -> Vec<CompletionItem> {
     let kws = vec![
-        ("let", "Variable binding", "Binds a pipeline result to a name"),
+        (
+            "let",
+            "Variable binding",
+            "Binds a pipeline result to a name",
+        ),
         ("fn", "Lambda function", "fn(params) => expression"),
         ("case", "Case expression", "case when ... then ... end"),
         ("as", "Column alias", "expression as alias_name"),

@@ -11,11 +11,7 @@ pub fn discover_connection_string() -> Option<String> {
     std::env::var("LQL_CONNECTION_STRING")
         .ok()
         .filter(|s| !s.is_empty())
-        .or_else(|| {
-            std::env::var("DATABASE_URL")
-                .ok()
-                .filter(|s| !s.is_empty())
-        })
+        .or_else(|| std::env::var("DATABASE_URL").ok().filter(|s| !s.is_empty()))
 }
 
 /// Convert Npgsql-style connection string to libpq key=value format.
@@ -81,7 +77,9 @@ pub async fn fetch_schema(connection_string: &str) -> std::result::Result<Schema
         let _ = connection.await;
     });
 
-    let col_rows = tokio::time::timeout(QUERY_TIMEOUT, client.query(
+    let col_rows = tokio::time::timeout(
+        QUERY_TIMEOUT,
+        client.query(
             "SELECT c.table_schema, c.table_name, c.column_name, c.data_type, \
                     c.is_nullable, \
                     CASE WHEN pk.column_name IS NOT NULL THEN 'YES' ELSE 'NO' END as is_pk \
@@ -99,10 +97,11 @@ pub async fn fetch_schema(connection_string: &str) -> std::result::Result<Schema
              WHERE c.table_schema NOT IN ('pg_catalog', 'information_schema') \
              ORDER BY c.table_schema, c.table_name, c.ordinal_position",
             &[],
-        ))
-        .await
-        .map_err(|_| format!("Schema query timed out after {}s", QUERY_TIMEOUT.as_secs()))?
-        .map_err(|e| format!("Failed to query columns: {e}"))?;
+        ),
+    )
+    .await
+    .map_err(|_| format!("Schema query timed out after {}s", QUERY_TIMEOUT.as_secs()))?
+    .map_err(|e| format!("Failed to query columns: {e}"))?;
 
     let mut tables_map: HashMap<(String, String), Vec<ColumnInfo>> = HashMap::new();
     for row in &col_rows {

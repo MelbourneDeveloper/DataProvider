@@ -6,247 +6,383 @@
 #![allow(unused_imports)]
 #![allow(unused_mut)]
 #![allow(unused_braces)]
-use antlr_rust::PredictionContextCache;
-use antlr_rust::parser::{Parser, BaseParser, ParserRecog, ParserNodeType};
-use antlr_rust::token_stream::TokenStream;
-use antlr_rust::TokenSource;
-use antlr_rust::parser_atn_simulator::ParserATNSimulator;
-use antlr_rust::errors::*;
-use antlr_rust::rule_context::{BaseRuleContext, CustomRuleContext, RuleContext};
-use antlr_rust::recognizer::{Recognizer,Actions};
-use antlr_rust::atn_deserializer::ATNDeserializer;
-use antlr_rust::dfa::DFA;
-use antlr_rust::atn::{ATN, INVALID_ALT};
-use antlr_rust::error_strategy::{ErrorStrategy, DefaultErrorStrategy};
-use antlr_rust::parser_rule_context::{BaseParserRuleContext, ParserRuleContext,cast,cast_mut};
-use antlr_rust::tree::*;
-use antlr_rust::token::{TOKEN_EOF,OwningToken,Token};
-use antlr_rust::int_stream::EOF;
-use antlr_rust::vocabulary::{Vocabulary,VocabularyImpl};
-use antlr_rust::token_factory::{CommonTokenFactory,TokenFactory, TokenAware};
 use super::lqllistener::*;
 use super::lqlvisitor::*;
+use antlr_rust::atn::{ATN, INVALID_ALT};
+use antlr_rust::atn_deserializer::ATNDeserializer;
+use antlr_rust::dfa::DFA;
+use antlr_rust::error_strategy::{DefaultErrorStrategy, ErrorStrategy};
+use antlr_rust::errors::*;
+use antlr_rust::int_stream::EOF;
+use antlr_rust::parser::{BaseParser, Parser, ParserNodeType, ParserRecog};
+use antlr_rust::parser_atn_simulator::ParserATNSimulator;
+use antlr_rust::parser_rule_context::{cast, cast_mut, BaseParserRuleContext, ParserRuleContext};
+use antlr_rust::recognizer::{Actions, Recognizer};
+use antlr_rust::rule_context::{BaseRuleContext, CustomRuleContext, RuleContext};
+use antlr_rust::token::{OwningToken, Token, TOKEN_EOF};
+use antlr_rust::token_factory::{CommonTokenFactory, TokenAware, TokenFactory};
+use antlr_rust::token_stream::TokenStream;
+use antlr_rust::tree::*;
+use antlr_rust::vocabulary::{Vocabulary, VocabularyImpl};
+use antlr_rust::PredictionContextCache;
+use antlr_rust::TokenSource;
 
 use antlr_rust::lazy_static;
-use antlr_rust::{TidAble,TidExt};
+use antlr_rust::{TidAble, TidExt};
 
-use std::marker::PhantomData;
-use std::sync::Arc;
-use std::rc::Rc;
-use std::convert::TryFrom;
+use std::any::{Any, TypeId};
+use std::borrow::{Borrow, BorrowMut};
 use std::cell::RefCell;
-use std::ops::{DerefMut, Deref};
-use std::borrow::{Borrow,BorrowMut};
-use std::any::{Any,TypeId};
+use std::convert::TryFrom;
+use std::marker::PhantomData;
+use std::ops::{Deref, DerefMut};
+use std::rc::Rc;
+use std::sync::Arc;
 
-		pub const T__0:isize=1; 
-		pub const T__1:isize=2; 
-		pub const T__2:isize=3; 
-		pub const T__3:isize=4; 
-		pub const T__4:isize=5; 
-		pub const T__5:isize=6; 
-		pub const T__6:isize=7; 
-		pub const T__7:isize=8; 
-		pub const T__8:isize=9; 
-		pub const T__9:isize=10; 
-		pub const T__10:isize=11; 
-		pub const T__11:isize=12; 
-		pub const T__12:isize=13; 
-		pub const T__13:isize=14; 
-		pub const T__14:isize=15; 
-		pub const T__15:isize=16; 
-		pub const T__16:isize=17; 
-		pub const T__17:isize=18; 
-		pub const T__18:isize=19; 
-		pub const T__19:isize=20; 
-		pub const ASC:isize=21; 
-		pub const DESC:isize=22; 
-		pub const AND:isize=23; 
-		pub const OR:isize=24; 
-		pub const DISTINCT:isize=25; 
-		pub const EXISTS:isize=26; 
-		pub const NULL:isize=27; 
-		pub const IS:isize=28; 
-		pub const NOT:isize=29; 
-		pub const IN:isize=30; 
-		pub const AS:isize=31; 
-		pub const CASE:isize=32; 
-		pub const WHEN:isize=33; 
-		pub const THEN:isize=34; 
-		pub const ELSE:isize=35; 
-		pub const END:isize=36; 
-		pub const WITH:isize=37; 
-		pub const OVER:isize=38; 
-		pub const PARTITION:isize=39; 
-		pub const ORDER:isize=40; 
-		pub const BY:isize=41; 
-		pub const COALESCE:isize=42; 
-		pub const EXTRACT:isize=43; 
-		pub const FROM:isize=44; 
-		pub const INTERVAL:isize=45; 
-		pub const CURRENT_DATE:isize=46; 
-		pub const DATE_TRUNC:isize=47; 
-		pub const ON:isize=48; 
-		pub const LIKE:isize=49; 
-		pub const PARAMETER:isize=50; 
-		pub const IDENT:isize=51; 
-		pub const INT:isize=52; 
-		pub const DECIMAL:isize=53; 
-		pub const STRING:isize=54; 
-		pub const COMMENT:isize=55; 
-		pub const WS:isize=56; 
-		pub const ASTERISK:isize=57;
-	pub const RULE_program:usize = 0; 
-	pub const RULE_statement:usize = 1; 
-	pub const RULE_letStmt:usize = 2; 
-	pub const RULE_pipeExpr:usize = 3; 
-	pub const RULE_expr:usize = 4; 
-	pub const RULE_windowSpec:usize = 5; 
-	pub const RULE_partitionClause:usize = 6; 
-	pub const RULE_orderClause:usize = 7; 
-	pub const RULE_orderByArgList:usize = 8; 
-	pub const RULE_orderByArg:usize = 9; 
-	pub const RULE_lambdaExpr:usize = 10; 
-	pub const RULE_qualifiedIdent:usize = 11; 
-	pub const RULE_argList:usize = 12; 
-	pub const RULE_arg:usize = 13; 
-	pub const RULE_columnAlias:usize = 14; 
-	pub const RULE_arithmeticExpr:usize = 15; 
-	pub const RULE_arithmeticTerm:usize = 16; 
-	pub const RULE_arithmeticFactor:usize = 17; 
-	pub const RULE_functionCall:usize = 18; 
-	pub const RULE_namedArg:usize = 19; 
-	pub const RULE_logicalExpr:usize = 20; 
-	pub const RULE_andExpr:usize = 21; 
-	pub const RULE_atomicExpr:usize = 22; 
-	pub const RULE_comparison:usize = 23; 
-	pub const RULE_existsExpr:usize = 24; 
-	pub const RULE_nullCheckExpr:usize = 25; 
-	pub const RULE_inExpr:usize = 26; 
-	pub const RULE_caseExpr:usize = 27; 
-	pub const RULE_whenClause:usize = 28; 
-	pub const RULE_caseResult:usize = 29; 
-	pub const RULE_orderDirection:usize = 30; 
-	pub const RULE_comparisonOp:usize = 31;
-	pub const ruleNames: [&'static str; 32] =  [
-		"program", "statement", "letStmt", "pipeExpr", "expr", "windowSpec", "partitionClause", 
-		"orderClause", "orderByArgList", "orderByArg", "lambdaExpr", "qualifiedIdent", 
-		"argList", "arg", "columnAlias", "arithmeticExpr", "arithmeticTerm", "arithmeticFactor", 
-		"functionCall", "namedArg", "logicalExpr", "andExpr", "atomicExpr", "comparison", 
-		"existsExpr", "nullCheckExpr", "inExpr", "caseExpr", "whenClause", "caseResult", 
-		"orderDirection", "comparisonOp"
-	];
+pub const T__0: isize = 1;
+pub const T__1: isize = 2;
+pub const T__2: isize = 3;
+pub const T__3: isize = 4;
+pub const T__4: isize = 5;
+pub const T__5: isize = 6;
+pub const T__6: isize = 7;
+pub const T__7: isize = 8;
+pub const T__8: isize = 9;
+pub const T__9: isize = 10;
+pub const T__10: isize = 11;
+pub const T__11: isize = 12;
+pub const T__12: isize = 13;
+pub const T__13: isize = 14;
+pub const T__14: isize = 15;
+pub const T__15: isize = 16;
+pub const T__16: isize = 17;
+pub const T__17: isize = 18;
+pub const T__18: isize = 19;
+pub const T__19: isize = 20;
+pub const ASC: isize = 21;
+pub const DESC: isize = 22;
+pub const AND: isize = 23;
+pub const OR: isize = 24;
+pub const DISTINCT: isize = 25;
+pub const EXISTS: isize = 26;
+pub const NULL: isize = 27;
+pub const IS: isize = 28;
+pub const NOT: isize = 29;
+pub const IN: isize = 30;
+pub const AS: isize = 31;
+pub const CASE: isize = 32;
+pub const WHEN: isize = 33;
+pub const THEN: isize = 34;
+pub const ELSE: isize = 35;
+pub const END: isize = 36;
+pub const WITH: isize = 37;
+pub const OVER: isize = 38;
+pub const PARTITION: isize = 39;
+pub const ORDER: isize = 40;
+pub const BY: isize = 41;
+pub const COALESCE: isize = 42;
+pub const EXTRACT: isize = 43;
+pub const FROM: isize = 44;
+pub const INTERVAL: isize = 45;
+pub const CURRENT_DATE: isize = 46;
+pub const DATE_TRUNC: isize = 47;
+pub const ON: isize = 48;
+pub const LIKE: isize = 49;
+pub const PARAMETER: isize = 50;
+pub const IDENT: isize = 51;
+pub const INT: isize = 52;
+pub const DECIMAL: isize = 53;
+pub const STRING: isize = 54;
+pub const COMMENT: isize = 55;
+pub const WS: isize = 56;
+pub const ASTERISK: isize = 57;
+pub const RULE_program: usize = 0;
+pub const RULE_statement: usize = 1;
+pub const RULE_letStmt: usize = 2;
+pub const RULE_pipeExpr: usize = 3;
+pub const RULE_expr: usize = 4;
+pub const RULE_windowSpec: usize = 5;
+pub const RULE_partitionClause: usize = 6;
+pub const RULE_orderClause: usize = 7;
+pub const RULE_orderByArgList: usize = 8;
+pub const RULE_orderByArg: usize = 9;
+pub const RULE_lambdaExpr: usize = 10;
+pub const RULE_qualifiedIdent: usize = 11;
+pub const RULE_argList: usize = 12;
+pub const RULE_arg: usize = 13;
+pub const RULE_columnAlias: usize = 14;
+pub const RULE_arithmeticExpr: usize = 15;
+pub const RULE_arithmeticTerm: usize = 16;
+pub const RULE_arithmeticFactor: usize = 17;
+pub const RULE_functionCall: usize = 18;
+pub const RULE_namedArg: usize = 19;
+pub const RULE_logicalExpr: usize = 20;
+pub const RULE_andExpr: usize = 21;
+pub const RULE_atomicExpr: usize = 22;
+pub const RULE_comparison: usize = 23;
+pub const RULE_existsExpr: usize = 24;
+pub const RULE_nullCheckExpr: usize = 25;
+pub const RULE_inExpr: usize = 26;
+pub const RULE_caseExpr: usize = 27;
+pub const RULE_whenClause: usize = 28;
+pub const RULE_caseResult: usize = 29;
+pub const RULE_orderDirection: usize = 30;
+pub const RULE_comparisonOp: usize = 31;
+pub const ruleNames: [&'static str; 32] = [
+    "program",
+    "statement",
+    "letStmt",
+    "pipeExpr",
+    "expr",
+    "windowSpec",
+    "partitionClause",
+    "orderClause",
+    "orderByArgList",
+    "orderByArg",
+    "lambdaExpr",
+    "qualifiedIdent",
+    "argList",
+    "arg",
+    "columnAlias",
+    "arithmeticExpr",
+    "arithmeticTerm",
+    "arithmeticFactor",
+    "functionCall",
+    "namedArg",
+    "logicalExpr",
+    "andExpr",
+    "atomicExpr",
+    "comparison",
+    "existsExpr",
+    "nullCheckExpr",
+    "inExpr",
+    "caseExpr",
+    "whenClause",
+    "caseResult",
+    "orderDirection",
+    "comparisonOp",
+];
 
+pub const _LITERAL_NAMES: [Option<&'static str>; 58] = [
+    None,
+    Some("'let'"),
+    Some("'='"),
+    Some("'|>'"),
+    Some("'('"),
+    Some("')'"),
+    Some("','"),
+    Some("'fn'"),
+    Some("'=>'"),
+    Some("'.'"),
+    Some("'+'"),
+    Some("'-'"),
+    Some("'||'"),
+    Some("'/'"),
+    Some("'%'"),
+    Some("'!='"),
+    Some("'<>'"),
+    Some("'<'"),
+    Some("'>'"),
+    Some("'<='"),
+    Some("'>='"),
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    Some("'*'"),
+];
+pub const _SYMBOLIC_NAMES: [Option<&'static str>; 58] = [
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    Some("ASC"),
+    Some("DESC"),
+    Some("AND"),
+    Some("OR"),
+    Some("DISTINCT"),
+    Some("EXISTS"),
+    Some("NULL"),
+    Some("IS"),
+    Some("NOT"),
+    Some("IN"),
+    Some("AS"),
+    Some("CASE"),
+    Some("WHEN"),
+    Some("THEN"),
+    Some("ELSE"),
+    Some("END"),
+    Some("WITH"),
+    Some("OVER"),
+    Some("PARTITION"),
+    Some("ORDER"),
+    Some("BY"),
+    Some("COALESCE"),
+    Some("EXTRACT"),
+    Some("FROM"),
+    Some("INTERVAL"),
+    Some("CURRENT_DATE"),
+    Some("DATE_TRUNC"),
+    Some("ON"),
+    Some("LIKE"),
+    Some("PARAMETER"),
+    Some("IDENT"),
+    Some("INT"),
+    Some("DECIMAL"),
+    Some("STRING"),
+    Some("COMMENT"),
+    Some("WS"),
+    Some("ASTERISK"),
+];
+lazy_static! {
+    static ref _shared_context_cache: Arc<PredictionContextCache> =
+        Arc::new(PredictionContextCache::new());
+    static ref VOCABULARY: Box<dyn Vocabulary> = Box::new(VocabularyImpl::new(
+        _LITERAL_NAMES.iter(),
+        _SYMBOLIC_NAMES.iter(),
+        None
+    ));
+}
 
-	pub const _LITERAL_NAMES: [Option<&'static str>;58] = [
-		None, Some("'let'"), Some("'='"), Some("'|>'"), Some("'('"), Some("')'"), 
-		Some("','"), Some("'fn'"), Some("'=>'"), Some("'.'"), Some("'+'"), Some("'-'"), 
-		Some("'||'"), Some("'/'"), Some("'%'"), Some("'!='"), Some("'<>'"), Some("'<'"), 
-		Some("'>'"), Some("'<='"), Some("'>='"), None, None, None, None, None, 
-		None, None, None, None, None, None, None, None, None, None, None, None, 
-		None, None, None, None, None, None, None, None, None, None, None, None, 
-		None, None, None, None, None, None, None, Some("'*'")
-	];
-	pub const _SYMBOLIC_NAMES: [Option<&'static str>;58]  = [
-		None, None, None, None, None, None, None, None, None, None, None, None, 
-		None, None, None, None, None, None, None, None, None, Some("ASC"), Some("DESC"), 
-		Some("AND"), Some("OR"), Some("DISTINCT"), Some("EXISTS"), Some("NULL"), 
-		Some("IS"), Some("NOT"), Some("IN"), Some("AS"), Some("CASE"), Some("WHEN"), 
-		Some("THEN"), Some("ELSE"), Some("END"), Some("WITH"), Some("OVER"), Some("PARTITION"), 
-		Some("ORDER"), Some("BY"), Some("COALESCE"), Some("EXTRACT"), Some("FROM"), 
-		Some("INTERVAL"), Some("CURRENT_DATE"), Some("DATE_TRUNC"), Some("ON"), 
-		Some("LIKE"), Some("PARAMETER"), Some("IDENT"), Some("INT"), Some("DECIMAL"), 
-		Some("STRING"), Some("COMMENT"), Some("WS"), Some("ASTERISK")
-	];
-	lazy_static!{
-	    static ref _shared_context_cache: Arc<PredictionContextCache> = Arc::new(PredictionContextCache::new());
-		static ref VOCABULARY: Box<dyn Vocabulary> = Box::new(VocabularyImpl::new(_LITERAL_NAMES.iter(), _SYMBOLIC_NAMES.iter(), None));
-	}
-
-
-type BaseParserType<'input, I> =
-	BaseParser<'input,LqlParserExt<'input>, I, LqlParserContextType , dyn LqlListener<'input> + 'input >;
+type BaseParserType<'input, I> = BaseParser<
+    'input,
+    LqlParserExt<'input>,
+    I,
+    LqlParserContextType,
+    dyn LqlListener<'input> + 'input,
+>;
 
 type TokenType<'input> = <LocalTokenFactory<'input> as TokenFactory<'input>>::Tok;
 pub type LocalTokenFactory<'input> = CommonTokenFactory;
 
-pub type LqlTreeWalker<'input,'a> =
-	ParseTreeWalker<'input, 'a, LqlParserContextType , dyn LqlListener<'input> + 'a>;
+pub type LqlTreeWalker<'input, 'a> =
+    ParseTreeWalker<'input, 'a, LqlParserContextType, dyn LqlListener<'input> + 'a>;
 
 /// Parser for Lql grammar
-pub struct LqlParser<'input,I,H>
+pub struct LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	base:BaseParserType<'input,I>,
-	interpreter:Arc<ParserATNSimulator>,
-	_shared_context_cache: Box<PredictionContextCache>,
+    base: BaseParserType<'input, I>,
+    interpreter: Arc<ParserATNSimulator>,
+    _shared_context_cache: Box<PredictionContextCache>,
     pub err_handler: H,
 }
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn get_serialized_atn() -> &'static str { _serializedATN }
+    pub fn get_serialized_atn() -> &'static str {
+        _serializedATN
+    }
 
     pub fn set_error_strategy(&mut self, strategy: H) {
         self.err_handler = strategy
     }
 
     pub fn with_strategy(input: I, strategy: H) -> Self {
-		antlr_rust::recognizer::check_version("0","3");
-		let interpreter = Arc::new(ParserATNSimulator::new(
-			_ATN.clone(),
-			_decision_to_DFA.clone(),
-			_shared_context_cache.clone(),
-		));
-		Self {
-			base: BaseParser::new_base_parser(
-				input,
-				Arc::clone(&interpreter),
-				LqlParserExt{
-					_pd: Default::default(),
-				}
-			),
-			interpreter,
+        antlr_rust::recognizer::check_version("0", "3");
+        let interpreter = Arc::new(ParserATNSimulator::new(
+            _ATN.clone(),
+            _decision_to_DFA.clone(),
+            _shared_context_cache.clone(),
+        ));
+        Self {
+            base: BaseParser::new_base_parser(
+                input,
+                Arc::clone(&interpreter),
+                LqlParserExt {
+                    _pd: Default::default(),
+                },
+            ),
+            interpreter,
             _shared_context_cache: Box::new(PredictionContextCache::new()),
             err_handler: strategy,
         }
     }
-
 }
 
-type DynStrategy<'input,I> = Box<dyn ErrorStrategy<'input,BaseParserType<'input,I>> + 'input>;
+type DynStrategy<'input, I> = Box<dyn ErrorStrategy<'input, BaseParserType<'input, I>> + 'input>;
 
-impl<'input, I> LqlParser<'input, I, DynStrategy<'input,I>>
+impl<'input, I> LqlParser<'input, I, DynStrategy<'input, I>>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
 {
-    pub fn with_dyn_strategy(input: I) -> Self{
-    	Self::with_strategy(input,Box::new(DefaultErrorStrategy::new()))
+    pub fn with_dyn_strategy(input: I) -> Self {
+        Self::with_strategy(input, Box::new(DefaultErrorStrategy::new()))
     }
 }
 
-impl<'input, I> LqlParser<'input, I, DefaultErrorStrategy<'input,LqlParserContextType>>
+impl<'input, I> LqlParser<'input, I, DefaultErrorStrategy<'input, LqlParserContextType>>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
 {
-    pub fn new(input: I) -> Self{
-    	Self::with_strategy(input,DefaultErrorStrategy::new())
+    pub fn new(input: I) -> Self {
+        Self::with_strategy(input, DefaultErrorStrategy::new())
     }
 }
 
 /// Trait for monomorphized trait object that corresponds to the nodes of parse tree generated for LqlParser
 pub trait LqlParserContext<'input>:
-	for<'x> Listenable<dyn LqlListener<'input> + 'x > + 
-	for<'x> Visitable<dyn LqlVisitor<'input> + 'x > + 
-	ParserRuleContext<'input, TF=LocalTokenFactory<'input>, Ctx=LqlParserContextType>
-{}
+    for<'x> Listenable<dyn LqlListener<'input> + 'x>
+    + for<'x> Visitable<dyn LqlVisitor<'input> + 'x>
+    + ParserRuleContext<'input, TF = LocalTokenFactory<'input>, Ctx = LqlParserContextType>
+{
+}
 
-antlr_rust::coerce_from!{ 'input : LqlParserContext<'input> }
+antlr_rust::coerce_from! { 'input : LqlParserContext<'input> }
 
 impl<'input, 'x, T> VisitableDyn<T> for dyn LqlParserContext<'input> + 'input
 where
@@ -257,27 +393,27 @@ where
     }
 }
 
-impl<'input> LqlParserContext<'input> for TerminalNode<'input,LqlParserContextType> {}
-impl<'input> LqlParserContext<'input> for ErrorNode<'input,LqlParserContextType> {}
+impl<'input> LqlParserContext<'input> for TerminalNode<'input, LqlParserContextType> {}
+impl<'input> LqlParserContext<'input> for ErrorNode<'input, LqlParserContextType> {}
 
 antlr_rust::tid! { impl<'input> TidAble<'input> for dyn LqlParserContext<'input> + 'input }
 
 antlr_rust::tid! { impl<'input> TidAble<'input> for dyn LqlListener<'input> + 'input }
 
 pub struct LqlParserContextType;
-antlr_rust::tid!{LqlParserContextType}
+antlr_rust::tid! {LqlParserContextType}
 
-impl<'input> ParserNodeType<'input> for LqlParserContextType{
-	type TF = LocalTokenFactory<'input>;
-	type Type = dyn LqlParserContext<'input> + 'input;
+impl<'input> ParserNodeType<'input> for LqlParserContextType {
+    type TF = LocalTokenFactory<'input>;
+    type Type = dyn LqlParserContext<'input> + 'input;
 }
 
 impl<'input, I, H> Deref for LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-    type Target = BaseParserType<'input,I>;
+    type Target = BaseParserType<'input, I>;
 
     fn deref(&self) -> &Self::Target {
         &self.base
@@ -286,5077 +422,5489 @@ where
 
 impl<'input, I, H> DerefMut for LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.base
     }
 }
 
-pub struct LqlParserExt<'input>{
-	_pd: PhantomData<&'input str>,
+pub struct LqlParserExt<'input> {
+    _pd: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserExt<'input>{
-}
+impl<'input> LqlParserExt<'input> {}
 antlr_rust::tid! { LqlParserExt<'a> }
 
-impl<'input> TokenAware<'input> for LqlParserExt<'input>{
-	type TF = LocalTokenFactory<'input>;
+impl<'input> TokenAware<'input> for LqlParserExt<'input> {
+    type TF = LocalTokenFactory<'input>;
 }
 
-impl<'input,I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>> ParserRecog<'input, BaseParserType<'input,I>> for LqlParserExt<'input>{}
+impl<'input, I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>>
+    ParserRecog<'input, BaseParserType<'input, I>> for LqlParserExt<'input>
+{
+}
 
-impl<'input,I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>> Actions<'input, BaseParserType<'input,I>> for LqlParserExt<'input>{
-	fn get_grammar_file_name(&self) -> & str{ "Lql.g4"}
+impl<'input, I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>>
+    Actions<'input, BaseParserType<'input, I>> for LqlParserExt<'input>
+{
+    fn get_grammar_file_name(&self) -> &str {
+        "Lql.g4"
+    }
 
-   	fn get_rule_names(&self) -> &[& str] {&ruleNames}
+    fn get_rule_names(&self) -> &[&str] {
+        &ruleNames
+    }
 
-   	fn get_vocabulary(&self) -> &dyn Vocabulary { &**VOCABULARY }
+    fn get_vocabulary(&self) -> &dyn Vocabulary {
+        &**VOCABULARY
+    }
 }
 //------------------- program ----------------
 pub type ProgramContextAll<'input> = ProgramContext<'input>;
 
-
-pub type ProgramContext<'input> = BaseParserRuleContext<'input,ProgramContextExt<'input>>;
+pub type ProgramContext<'input> = BaseParserRuleContext<'input, ProgramContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct ProgramContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct ProgramContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for ProgramContext<'input>{}
+impl<'input> LqlParserContext<'input> for ProgramContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for ProgramContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_program(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_program(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for ProgramContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_program(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_program(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for ProgramContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_program(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for ProgramContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_program(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for ProgramContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_program }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_program }
+impl<'input> CustomRuleContext<'input> for ProgramContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_program
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_program }
 }
-antlr_rust::tid!{ProgramContextExt<'a>}
+antlr_rust::tid! {ProgramContextExt<'a>}
 
-impl<'input> ProgramContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<ProgramContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,ProgramContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait ProgramContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<ProgramContextExt<'input>>{
-
-/// Retrieves first TerminalNode corresponding to token EOF
-/// Returns `None` if there is no child corresponding to token EOF
-fn EOF(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(EOF, 0)
-}
-fn statement_all(&self) ->  Vec<Rc<StatementContextAll<'input>>> where Self:Sized{
-	self.children_of_type()
-}
-fn statement(&self, i: usize) -> Option<Rc<StatementContextAll<'input>>> where Self:Sized{
-	self.child_of_type(i)
+impl<'input> ProgramContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<ProgramContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            ProgramContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait ProgramContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<ProgramContextExt<'input>>
+{
+    /// Retrieves first TerminalNode corresponding to token EOF
+    /// Returns `None` if there is no child corresponding to token EOF
+    fn EOF(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(EOF, 0)
+    }
+    fn statement_all(&self) -> Vec<Rc<StatementContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    fn statement(&self, i: usize) -> Option<Rc<StatementContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(i)
+    }
 }
 
-impl<'input> ProgramContextAttrs<'input> for ProgramContext<'input>{}
+impl<'input> ProgramContextAttrs<'input> for ProgramContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn program(&mut self,)
-	-> Result<Rc<ProgramContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = ProgramContextExt::new(_parentctx.clone(), recog.base.get_state());
+    pub fn program(&mut self) -> Result<Rc<ProgramContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = ProgramContextExt::new(_parentctx.clone(), recog.base.get_state());
         recog.base.enter_rule(_localctx.clone(), 0, RULE_program);
         let mut _localctx: Rc<ProgramContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(67);
+                recog.err_handler.sync(&mut recog.base)?;
+                _la = recog.base.input.la(1);
+                while (((_la) & !0x3f) == 0
+                    && ((1usize << _la) & ((1usize << T__0) | (1usize << T__3) | (1usize << T__6)))
+                        != 0)
+                    || (((_la - 32) & !0x3f) == 0
+                        && ((1usize << (_la - 32))
+                            & ((1usize << (CASE - 32))
+                                | (1usize << (PARAMETER - 32))
+                                | (1usize << (IDENT - 32))
+                                | (1usize << (INT - 32))
+                                | (1usize << (DECIMAL - 32))
+                                | (1usize << (STRING - 32))
+                                | (1usize << (ASTERISK - 32))))
+                            != 0)
+                {
+                    {
+                        {
+                            /*InvokeRule statement*/
+                            recog.base.set_state(64);
+                            recog.statement()?;
+                        }
+                    }
+                    recog.base.set_state(69);
+                    recog.err_handler.sync(&mut recog.base)?;
+                    _la = recog.base.input.la(1);
+                }
+                recog.base.set_state(70);
+                recog.base.match_token(EOF, &mut recog.err_handler)?;
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(67);
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			while (((_la) & !0x3f) == 0 && ((1usize << _la) & ((1usize << T__0) | (1usize << T__3) | (1usize << T__6))) != 0) || ((((_la - 32)) & !0x3f) == 0 && ((1usize << (_la - 32)) & ((1usize << (CASE - 32)) | (1usize << (PARAMETER - 32)) | (1usize << (IDENT - 32)) | (1usize << (INT - 32)) | (1usize << (DECIMAL - 32)) | (1usize << (STRING - 32)) | (1usize << (ASTERISK - 32)))) != 0) {
-				{
-				{
-				/*InvokeRule statement*/
-				recog.base.set_state(64);
-				recog.statement()?;
-
-				}
-				}
-				recog.base.set_state(69);
-				recog.err_handler.sync(&mut recog.base)?;
-				_la = recog.base.input.la(1);
-			}
-			recog.base.set_state(70);
-			recog.base.match_token(EOF,&mut recog.err_handler)?;
-
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- statement ----------------
 pub type StatementContextAll<'input> = StatementContext<'input>;
 
-
-pub type StatementContext<'input> = BaseParserRuleContext<'input,StatementContextExt<'input>>;
+pub type StatementContext<'input> = BaseParserRuleContext<'input, StatementContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct StatementContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct StatementContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for StatementContext<'input>{}
+impl<'input> LqlParserContext<'input> for StatementContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for StatementContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_statement(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_statement(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for StatementContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_statement(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_statement(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for StatementContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_statement(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for StatementContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_statement(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for StatementContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_statement }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_statement }
+impl<'input> CustomRuleContext<'input> for StatementContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_statement
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_statement }
 }
-antlr_rust::tid!{StatementContextExt<'a>}
+antlr_rust::tid! {StatementContextExt<'a>}
 
-impl<'input> StatementContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<StatementContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,StatementContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait StatementContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<StatementContextExt<'input>>{
-
-fn letStmt(&self) -> Option<Rc<LetStmtContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn pipeExpr(&self) -> Option<Rc<PipeExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> StatementContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<StatementContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            StatementContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait StatementContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<StatementContextExt<'input>>
+{
+    fn letStmt(&self) -> Option<Rc<LetStmtContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn pipeExpr(&self) -> Option<Rc<PipeExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> StatementContextAttrs<'input> for StatementContext<'input>{}
+impl<'input> StatementContextAttrs<'input> for StatementContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn statement(&mut self,)
-	-> Result<Rc<StatementContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = StatementContextExt::new(_parentctx.clone(), recog.base.get_state());
+    pub fn statement(&mut self) -> Result<Rc<StatementContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = StatementContextExt::new(_parentctx.clone(), recog.base.get_state());
         recog.base.enter_rule(_localctx.clone(), 2, RULE_statement);
         let mut _localctx: Rc<StatementContextAll> = _localctx;
-		let result: Result<(), ANTLRError> = (|| {
+        let result: Result<(), ANTLRError> = (|| {
+            recog.base.set_state(74);
+            recog.err_handler.sync(&mut recog.base)?;
+            match recog.base.input.la(1) {
+                T__0 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 1);
+                    recog.base.enter_outer_alt(None, 1);
+                    {
+                        /*InvokeRule letStmt*/
+                        recog.base.set_state(72);
+                        recog.letStmt()?;
+                    }
+                }
 
-			recog.base.set_state(74);
-			recog.err_handler.sync(&mut recog.base)?;
-			match recog.base.input.la(1) {
-			 T__0 
-				=> {
-					//recog.base.enter_outer_alt(_localctx.clone(), 1);
-					recog.base.enter_outer_alt(None, 1);
-					{
-					/*InvokeRule letStmt*/
-					recog.base.set_state(72);
-					recog.letStmt()?;
+                T__3 | T__6 | CASE | PARAMETER | IDENT | INT | DECIMAL | STRING | ASTERISK => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 2);
+                    recog.base.enter_outer_alt(None, 2);
+                    {
+                        /*InvokeRule pipeExpr*/
+                        recog.base.set_state(73);
+                        recog.pipeExpr()?;
+                    }
+                }
 
-					}
-				}
+                _ => Err(ANTLRError::NoAltError(NoViableAltError::new(
+                    &mut recog.base,
+                )))?,
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-			 T__3 | T__6 | CASE | PARAMETER | IDENT | INT | DECIMAL | STRING | ASTERISK 
-				=> {
-					//recog.base.enter_outer_alt(_localctx.clone(), 2);
-					recog.base.enter_outer_alt(None, 2);
-					{
-					/*InvokeRule pipeExpr*/
-					recog.base.set_state(73);
-					recog.pipeExpr()?;
-
-					}
-				}
-
-				_ => Err(ANTLRError::NoAltError(NoViableAltError::new(&mut recog.base)))?
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- letStmt ----------------
 pub type LetStmtContextAll<'input> = LetStmtContext<'input>;
 
-
-pub type LetStmtContext<'input> = BaseParserRuleContext<'input,LetStmtContextExt<'input>>;
+pub type LetStmtContext<'input> = BaseParserRuleContext<'input, LetStmtContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct LetStmtContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct LetStmtContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for LetStmtContext<'input>{}
+impl<'input> LqlParserContext<'input> for LetStmtContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for LetStmtContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_letStmt(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_letStmt(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for LetStmtContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_letStmt(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_letStmt(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for LetStmtContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_letStmt(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for LetStmtContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_letStmt(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for LetStmtContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_letStmt }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_letStmt }
+impl<'input> CustomRuleContext<'input> for LetStmtContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_letStmt
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_letStmt }
 }
-antlr_rust::tid!{LetStmtContextExt<'a>}
+antlr_rust::tid! {LetStmtContextExt<'a>}
 
-impl<'input> LetStmtContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<LetStmtContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,LetStmtContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait LetStmtContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<LetStmtContextExt<'input>>{
-
-/// Retrieves first TerminalNode corresponding to token IDENT
-/// Returns `None` if there is no child corresponding to token IDENT
-fn IDENT(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(IDENT, 0)
-}
-fn pipeExpr(&self) -> Option<Rc<PipeExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> LetStmtContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<LetStmtContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            LetStmtContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait LetStmtContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<LetStmtContextExt<'input>>
+{
+    /// Retrieves first TerminalNode corresponding to token IDENT
+    /// Returns `None` if there is no child corresponding to token IDENT
+    fn IDENT(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IDENT, 0)
+    }
+    fn pipeExpr(&self) -> Option<Rc<PipeExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> LetStmtContextAttrs<'input> for LetStmtContext<'input>{}
+impl<'input> LetStmtContextAttrs<'input> for LetStmtContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn letStmt(&mut self,)
-	-> Result<Rc<LetStmtContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = LetStmtContextExt::new(_parentctx.clone(), recog.base.get_state());
+    pub fn letStmt(&mut self) -> Result<Rc<LetStmtContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = LetStmtContextExt::new(_parentctx.clone(), recog.base.get_state());
         recog.base.enter_rule(_localctx.clone(), 4, RULE_letStmt);
         let mut _localctx: Rc<LetStmtContextAll> = _localctx;
-		let result: Result<(), ANTLRError> = (|| {
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(76);
+                recog.base.match_token(T__0, &mut recog.err_handler)?;
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(76);
-			recog.base.match_token(T__0,&mut recog.err_handler)?;
+                recog.base.set_state(77);
+                recog.base.match_token(IDENT, &mut recog.err_handler)?;
 
-			recog.base.set_state(77);
-			recog.base.match_token(IDENT,&mut recog.err_handler)?;
+                recog.base.set_state(78);
+                recog.base.match_token(T__1, &mut recog.err_handler)?;
 
-			recog.base.set_state(78);
-			recog.base.match_token(T__1,&mut recog.err_handler)?;
+                /*InvokeRule pipeExpr*/
+                recog.base.set_state(79);
+                recog.pipeExpr()?;
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-			/*InvokeRule pipeExpr*/
-			recog.base.set_state(79);
-			recog.pipeExpr()?;
-
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- pipeExpr ----------------
 pub type PipeExprContextAll<'input> = PipeExprContext<'input>;
 
-
-pub type PipeExprContext<'input> = BaseParserRuleContext<'input,PipeExprContextExt<'input>>;
+pub type PipeExprContext<'input> = BaseParserRuleContext<'input, PipeExprContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct PipeExprContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct PipeExprContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for PipeExprContext<'input>{}
+impl<'input> LqlParserContext<'input> for PipeExprContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for PipeExprContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_pipeExpr(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_pipeExpr(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for PipeExprContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_pipeExpr(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_pipeExpr(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for PipeExprContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_pipeExpr(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for PipeExprContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_pipeExpr(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for PipeExprContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_pipeExpr }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_pipeExpr }
+impl<'input> CustomRuleContext<'input> for PipeExprContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_pipeExpr
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_pipeExpr }
 }
-antlr_rust::tid!{PipeExprContextExt<'a>}
+antlr_rust::tid! {PipeExprContextExt<'a>}
 
-impl<'input> PipeExprContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<PipeExprContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,PipeExprContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait PipeExprContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<PipeExprContextExt<'input>>{
-
-fn expr_all(&self) ->  Vec<Rc<ExprContextAll<'input>>> where Self:Sized{
-	self.children_of_type()
-}
-fn expr(&self, i: usize) -> Option<Rc<ExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(i)
+impl<'input> PipeExprContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<PipeExprContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            PipeExprContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait PipeExprContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<PipeExprContextExt<'input>>
+{
+    fn expr_all(&self) -> Vec<Rc<ExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    fn expr(&self, i: usize) -> Option<Rc<ExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(i)
+    }
 }
 
-impl<'input> PipeExprContextAttrs<'input> for PipeExprContext<'input>{}
+impl<'input> PipeExprContextAttrs<'input> for PipeExprContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn pipeExpr(&mut self,)
-	-> Result<Rc<PipeExprContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = PipeExprContextExt::new(_parentctx.clone(), recog.base.get_state());
+    pub fn pipeExpr(&mut self) -> Result<Rc<PipeExprContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = PipeExprContextExt::new(_parentctx.clone(), recog.base.get_state());
         recog.base.enter_rule(_localctx.clone(), 6, RULE_pipeExpr);
         let mut _localctx: Rc<PipeExprContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                /*InvokeRule expr*/
+                recog.base.set_state(81);
+                recog.expr()?;
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			/*InvokeRule expr*/
-			recog.base.set_state(81);
-			recog.expr()?;
+                recog.base.set_state(86);
+                recog.err_handler.sync(&mut recog.base)?;
+                _la = recog.base.input.la(1);
+                while _la == T__2 {
+                    {
+                        {
+                            recog.base.set_state(82);
+                            recog.base.match_token(T__2, &mut recog.err_handler)?;
 
-			recog.base.set_state(86);
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			while _la==T__2 {
-				{
-				{
-				recog.base.set_state(82);
-				recog.base.match_token(T__2,&mut recog.err_handler)?;
+                            /*InvokeRule expr*/
+                            recog.base.set_state(83);
+                            recog.expr()?;
+                        }
+                    }
+                    recog.base.set_state(88);
+                    recog.err_handler.sync(&mut recog.base)?;
+                    _la = recog.base.input.la(1);
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-				/*InvokeRule expr*/
-				recog.base.set_state(83);
-				recog.expr()?;
-
-				}
-				}
-				recog.base.set_state(88);
-				recog.err_handler.sync(&mut recog.base)?;
-				_la = recog.base.input.la(1);
-			}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- expr ----------------
 pub type ExprContextAll<'input> = ExprContext<'input>;
 
-
-pub type ExprContext<'input> = BaseParserRuleContext<'input,ExprContextExt<'input>>;
+pub type ExprContext<'input> = BaseParserRuleContext<'input, ExprContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct ExprContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct ExprContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for ExprContext<'input>{}
+impl<'input> LqlParserContext<'input> for ExprContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for ExprContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_expr(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_expr(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for ExprContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_expr(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for ExprContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_expr(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_expr(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for ExprContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_expr }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_expr }
-}
-antlr_rust::tid!{ExprContextExt<'a>}
-
-impl<'input> ExprContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<ExprContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,ExprContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for ExprContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_expr(self);
+    }
 }
 
-pub trait ExprContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<ExprContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for ExprContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_expr
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_expr }
+}
+antlr_rust::tid! {ExprContextExt<'a>}
 
-/// Retrieves first TerminalNode corresponding to token IDENT
-/// Returns `None` if there is no child corresponding to token IDENT
-fn IDENT(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(IDENT, 0)
-}
-/// Retrieves first TerminalNode corresponding to token OVER
-/// Returns `None` if there is no child corresponding to token OVER
-fn OVER(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(OVER, 0)
-}
-fn windowSpec(&self) -> Option<Rc<WindowSpecContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn argList(&self) -> Option<Rc<ArgListContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn pipeExpr(&self) -> Option<Rc<PipeExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn qualifiedIdent(&self) -> Option<Rc<QualifiedIdentContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn lambdaExpr(&self) -> Option<Rc<LambdaExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn caseExpr(&self) -> Option<Rc<CaseExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-/// Retrieves first TerminalNode corresponding to token INT
-/// Returns `None` if there is no child corresponding to token INT
-fn INT(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(INT, 0)
-}
-/// Retrieves first TerminalNode corresponding to token DECIMAL
-/// Returns `None` if there is no child corresponding to token DECIMAL
-fn DECIMAL(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(DECIMAL, 0)
-}
-/// Retrieves first TerminalNode corresponding to token ASTERISK
-/// Returns `None` if there is no child corresponding to token ASTERISK
-fn ASTERISK(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(ASTERISK, 0)
-}
-/// Retrieves first TerminalNode corresponding to token STRING
-/// Returns `None` if there is no child corresponding to token STRING
-fn STRING(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(STRING, 0)
-}
-/// Retrieves first TerminalNode corresponding to token PARAMETER
-/// Returns `None` if there is no child corresponding to token PARAMETER
-fn PARAMETER(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(PARAMETER, 0)
+impl<'input> ExprContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<ExprContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            ExprContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait ExprContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<ExprContextExt<'input>>
+{
+    /// Retrieves first TerminalNode corresponding to token IDENT
+    /// Returns `None` if there is no child corresponding to token IDENT
+    fn IDENT(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IDENT, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token OVER
+    /// Returns `None` if there is no child corresponding to token OVER
+    fn OVER(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(OVER, 0)
+    }
+    fn windowSpec(&self) -> Option<Rc<WindowSpecContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn argList(&self) -> Option<Rc<ArgListContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn pipeExpr(&self) -> Option<Rc<PipeExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn qualifiedIdent(&self) -> Option<Rc<QualifiedIdentContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn lambdaExpr(&self) -> Option<Rc<LambdaExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn caseExpr(&self) -> Option<Rc<CaseExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    /// Retrieves first TerminalNode corresponding to token INT
+    /// Returns `None` if there is no child corresponding to token INT
+    fn INT(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(INT, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token DECIMAL
+    /// Returns `None` if there is no child corresponding to token DECIMAL
+    fn DECIMAL(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(DECIMAL, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token ASTERISK
+    /// Returns `None` if there is no child corresponding to token ASTERISK
+    fn ASTERISK(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(ASTERISK, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token STRING
+    /// Returns `None` if there is no child corresponding to token STRING
+    fn STRING(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(STRING, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token PARAMETER
+    /// Returns `None` if there is no child corresponding to token PARAMETER
+    fn PARAMETER(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(PARAMETER, 0)
+    }
 }
 
-impl<'input> ExprContextAttrs<'input> for ExprContext<'input>{}
+impl<'input> ExprContextAttrs<'input> for ExprContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn expr(&mut self,)
-	-> Result<Rc<ExprContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = ExprContextExt::new(_parentctx.clone(), recog.base.get_state());
+    pub fn expr(&mut self) -> Result<Rc<ExprContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = ExprContextExt::new(_parentctx.clone(), recog.base.get_state());
         recog.base.enter_rule(_localctx.clone(), 8, RULE_expr);
         let mut _localctx: Rc<ExprContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            recog.base.set_state(119);
+            recog.err_handler.sync(&mut recog.base)?;
+            match recog.interpreter.adaptive_predict(5, &mut recog.base)? {
+                1 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 1);
+                    recog.base.enter_outer_alt(None, 1);
+                    {
+                        recog.base.set_state(89);
+                        recog.base.match_token(IDENT, &mut recog.err_handler)?;
 
-			recog.base.set_state(119);
-			recog.err_handler.sync(&mut recog.base)?;
-			match  recog.interpreter.adaptive_predict(5,&mut recog.base)? {
-				1 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 1);
-					recog.base.enter_outer_alt(None, 1);
-					{
-					recog.base.set_state(89);
-					recog.base.match_token(IDENT,&mut recog.err_handler)?;
+                        recog.base.set_state(90);
+                        recog.base.match_token(T__3, &mut recog.err_handler)?;
 
-					recog.base.set_state(90);
-					recog.base.match_token(T__3,&mut recog.err_handler)?;
+                        recog.base.set_state(92);
+                        recog.err_handler.sync(&mut recog.base)?;
+                        _la = recog.base.input.la(1);
+                        if (((_la) & !0x3f) == 0
+                            && ((1usize << _la)
+                                & ((1usize << T__3) | (1usize << T__6) | (1usize << EXISTS)))
+                                != 0)
+                            || (((_la - 32) & !0x3f) == 0
+                                && ((1usize << (_la - 32))
+                                    & ((1usize << (CASE - 32))
+                                        | (1usize << (ON - 32))
+                                        | (1usize << (PARAMETER - 32))
+                                        | (1usize << (IDENT - 32))
+                                        | (1usize << (INT - 32))
+                                        | (1usize << (DECIMAL - 32))
+                                        | (1usize << (STRING - 32))
+                                        | (1usize << (ASTERISK - 32))))
+                                    != 0)
+                        {
+                            {
+                                /*InvokeRule argList*/
+                                recog.base.set_state(91);
+                                recog.argList()?;
+                            }
+                        }
 
-					recog.base.set_state(92);
-					recog.err_handler.sync(&mut recog.base)?;
-					_la = recog.base.input.la(1);
-					if (((_la) & !0x3f) == 0 && ((1usize << _la) & ((1usize << T__3) | (1usize << T__6) | (1usize << EXISTS))) != 0) || ((((_la - 32)) & !0x3f) == 0 && ((1usize << (_la - 32)) & ((1usize << (CASE - 32)) | (1usize << (ON - 32)) | (1usize << (PARAMETER - 32)) | (1usize << (IDENT - 32)) | (1usize << (INT - 32)) | (1usize << (DECIMAL - 32)) | (1usize << (STRING - 32)) | (1usize << (ASTERISK - 32)))) != 0) {
-						{
-						/*InvokeRule argList*/
-						recog.base.set_state(91);
-						recog.argList()?;
+                        recog.base.set_state(94);
+                        recog.base.match_token(T__4, &mut recog.err_handler)?;
 
-						}
-					}
+                        recog.base.set_state(95);
+                        recog.base.match_token(OVER, &mut recog.err_handler)?;
 
-					recog.base.set_state(94);
-					recog.base.match_token(T__4,&mut recog.err_handler)?;
+                        recog.base.set_state(96);
+                        recog.base.match_token(T__3, &mut recog.err_handler)?;
 
-					recog.base.set_state(95);
-					recog.base.match_token(OVER,&mut recog.err_handler)?;
+                        /*InvokeRule windowSpec*/
+                        recog.base.set_state(97);
+                        recog.windowSpec()?;
 
-					recog.base.set_state(96);
-					recog.base.match_token(T__3,&mut recog.err_handler)?;
+                        recog.base.set_state(98);
+                        recog.base.match_token(T__4, &mut recog.err_handler)?;
+                    }
+                }
+                2 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 2);
+                    recog.base.enter_outer_alt(None, 2);
+                    {
+                        recog.base.set_state(100);
+                        recog.base.match_token(IDENT, &mut recog.err_handler)?;
 
-					/*InvokeRule windowSpec*/
-					recog.base.set_state(97);
-					recog.windowSpec()?;
+                        recog.base.set_state(101);
+                        recog.base.match_token(T__3, &mut recog.err_handler)?;
 
-					recog.base.set_state(98);
-					recog.base.match_token(T__4,&mut recog.err_handler)?;
+                        recog.base.set_state(103);
+                        recog.err_handler.sync(&mut recog.base)?;
+                        _la = recog.base.input.la(1);
+                        if (((_la) & !0x3f) == 0
+                            && ((1usize << _la)
+                                & ((1usize << T__3) | (1usize << T__6) | (1usize << EXISTS)))
+                                != 0)
+                            || (((_la - 32) & !0x3f) == 0
+                                && ((1usize << (_la - 32))
+                                    & ((1usize << (CASE - 32))
+                                        | (1usize << (ON - 32))
+                                        | (1usize << (PARAMETER - 32))
+                                        | (1usize << (IDENT - 32))
+                                        | (1usize << (INT - 32))
+                                        | (1usize << (DECIMAL - 32))
+                                        | (1usize << (STRING - 32))
+                                        | (1usize << (ASTERISK - 32))))
+                                    != 0)
+                        {
+                            {
+                                /*InvokeRule argList*/
+                                recog.base.set_state(102);
+                                recog.argList()?;
+                            }
+                        }
 
-					}
-				}
-			,
-				2 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 2);
-					recog.base.enter_outer_alt(None, 2);
-					{
-					recog.base.set_state(100);
-					recog.base.match_token(IDENT,&mut recog.err_handler)?;
+                        recog.base.set_state(105);
+                        recog.base.match_token(T__4, &mut recog.err_handler)?;
+                    }
+                }
+                3 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 3);
+                    recog.base.enter_outer_alt(None, 3);
+                    {
+                        recog.base.set_state(106);
+                        recog.base.match_token(IDENT, &mut recog.err_handler)?;
+                    }
+                }
+                4 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 4);
+                    recog.base.enter_outer_alt(None, 4);
+                    {
+                        recog.base.set_state(107);
+                        recog.base.match_token(T__3, &mut recog.err_handler)?;
 
-					recog.base.set_state(101);
-					recog.base.match_token(T__3,&mut recog.err_handler)?;
+                        /*InvokeRule pipeExpr*/
+                        recog.base.set_state(108);
+                        recog.pipeExpr()?;
 
-					recog.base.set_state(103);
-					recog.err_handler.sync(&mut recog.base)?;
-					_la = recog.base.input.la(1);
-					if (((_la) & !0x3f) == 0 && ((1usize << _la) & ((1usize << T__3) | (1usize << T__6) | (1usize << EXISTS))) != 0) || ((((_la - 32)) & !0x3f) == 0 && ((1usize << (_la - 32)) & ((1usize << (CASE - 32)) | (1usize << (ON - 32)) | (1usize << (PARAMETER - 32)) | (1usize << (IDENT - 32)) | (1usize << (INT - 32)) | (1usize << (DECIMAL - 32)) | (1usize << (STRING - 32)) | (1usize << (ASTERISK - 32)))) != 0) {
-						{
-						/*InvokeRule argList*/
-						recog.base.set_state(102);
-						recog.argList()?;
+                        recog.base.set_state(109);
+                        recog.base.match_token(T__4, &mut recog.err_handler)?;
+                    }
+                }
+                5 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 5);
+                    recog.base.enter_outer_alt(None, 5);
+                    {
+                        /*InvokeRule qualifiedIdent*/
+                        recog.base.set_state(111);
+                        recog.qualifiedIdent()?;
+                    }
+                }
+                6 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 6);
+                    recog.base.enter_outer_alt(None, 6);
+                    {
+                        /*InvokeRule lambdaExpr*/
+                        recog.base.set_state(112);
+                        recog.lambdaExpr()?;
+                    }
+                }
+                7 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 7);
+                    recog.base.enter_outer_alt(None, 7);
+                    {
+                        /*InvokeRule caseExpr*/
+                        recog.base.set_state(113);
+                        recog.caseExpr()?;
+                    }
+                }
+                8 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 8);
+                    recog.base.enter_outer_alt(None, 8);
+                    {
+                        recog.base.set_state(114);
+                        recog.base.match_token(INT, &mut recog.err_handler)?;
+                    }
+                }
+                9 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 9);
+                    recog.base.enter_outer_alt(None, 9);
+                    {
+                        recog.base.set_state(115);
+                        recog.base.match_token(DECIMAL, &mut recog.err_handler)?;
+                    }
+                }
+                10 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 10);
+                    recog.base.enter_outer_alt(None, 10);
+                    {
+                        recog.base.set_state(116);
+                        recog.base.match_token(ASTERISK, &mut recog.err_handler)?;
+                    }
+                }
+                11 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 11);
+                    recog.base.enter_outer_alt(None, 11);
+                    {
+                        recog.base.set_state(117);
+                        recog.base.match_token(STRING, &mut recog.err_handler)?;
+                    }
+                }
+                12 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 12);
+                    recog.base.enter_outer_alt(None, 12);
+                    {
+                        recog.base.set_state(118);
+                        recog.base.match_token(PARAMETER, &mut recog.err_handler)?;
+                    }
+                }
 
-						}
-					}
+                _ => {}
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-					recog.base.set_state(105);
-					recog.base.match_token(T__4,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				3 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 3);
-					recog.base.enter_outer_alt(None, 3);
-					{
-					recog.base.set_state(106);
-					recog.base.match_token(IDENT,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				4 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 4);
-					recog.base.enter_outer_alt(None, 4);
-					{
-					recog.base.set_state(107);
-					recog.base.match_token(T__3,&mut recog.err_handler)?;
-
-					/*InvokeRule pipeExpr*/
-					recog.base.set_state(108);
-					recog.pipeExpr()?;
-
-					recog.base.set_state(109);
-					recog.base.match_token(T__4,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				5 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 5);
-					recog.base.enter_outer_alt(None, 5);
-					{
-					/*InvokeRule qualifiedIdent*/
-					recog.base.set_state(111);
-					recog.qualifiedIdent()?;
-
-					}
-				}
-			,
-				6 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 6);
-					recog.base.enter_outer_alt(None, 6);
-					{
-					/*InvokeRule lambdaExpr*/
-					recog.base.set_state(112);
-					recog.lambdaExpr()?;
-
-					}
-				}
-			,
-				7 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 7);
-					recog.base.enter_outer_alt(None, 7);
-					{
-					/*InvokeRule caseExpr*/
-					recog.base.set_state(113);
-					recog.caseExpr()?;
-
-					}
-				}
-			,
-				8 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 8);
-					recog.base.enter_outer_alt(None, 8);
-					{
-					recog.base.set_state(114);
-					recog.base.match_token(INT,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				9 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 9);
-					recog.base.enter_outer_alt(None, 9);
-					{
-					recog.base.set_state(115);
-					recog.base.match_token(DECIMAL,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				10 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 10);
-					recog.base.enter_outer_alt(None, 10);
-					{
-					recog.base.set_state(116);
-					recog.base.match_token(ASTERISK,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				11 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 11);
-					recog.base.enter_outer_alt(None, 11);
-					{
-					recog.base.set_state(117);
-					recog.base.match_token(STRING,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				12 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 12);
-					recog.base.enter_outer_alt(None, 12);
-					{
-					recog.base.set_state(118);
-					recog.base.match_token(PARAMETER,&mut recog.err_handler)?;
-
-					}
-				}
-
-				_ => {}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- windowSpec ----------------
 pub type WindowSpecContextAll<'input> = WindowSpecContext<'input>;
 
-
-pub type WindowSpecContext<'input> = BaseParserRuleContext<'input,WindowSpecContextExt<'input>>;
+pub type WindowSpecContext<'input> = BaseParserRuleContext<'input, WindowSpecContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct WindowSpecContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct WindowSpecContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for WindowSpecContext<'input>{}
+impl<'input> LqlParserContext<'input> for WindowSpecContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for WindowSpecContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_windowSpec(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_windowSpec(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for WindowSpecContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_windowSpec(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_windowSpec(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for WindowSpecContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_windowSpec(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for WindowSpecContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_windowSpec(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for WindowSpecContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_windowSpec }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_windowSpec }
+impl<'input> CustomRuleContext<'input> for WindowSpecContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_windowSpec
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_windowSpec }
 }
-antlr_rust::tid!{WindowSpecContextExt<'a>}
+antlr_rust::tid! {WindowSpecContextExt<'a>}
 
-impl<'input> WindowSpecContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<WindowSpecContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,WindowSpecContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait WindowSpecContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<WindowSpecContextExt<'input>>{
-
-fn partitionClause(&self) -> Option<Rc<PartitionClauseContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn orderClause(&self) -> Option<Rc<OrderClauseContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> WindowSpecContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<WindowSpecContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            WindowSpecContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait WindowSpecContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<WindowSpecContextExt<'input>>
+{
+    fn partitionClause(&self) -> Option<Rc<PartitionClauseContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn orderClause(&self) -> Option<Rc<OrderClauseContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> WindowSpecContextAttrs<'input> for WindowSpecContext<'input>{}
+impl<'input> WindowSpecContextAttrs<'input> for WindowSpecContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn windowSpec(&mut self,)
-	-> Result<Rc<WindowSpecContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = WindowSpecContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 10, RULE_windowSpec);
+    pub fn windowSpec(&mut self) -> Result<Rc<WindowSpecContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = WindowSpecContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 10, RULE_windowSpec);
         let mut _localctx: Rc<WindowSpecContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(122);
+                recog.err_handler.sync(&mut recog.base)?;
+                _la = recog.base.input.la(1);
+                if _la == PARTITION {
+                    {
+                        /*InvokeRule partitionClause*/
+                        recog.base.set_state(121);
+                        recog.partitionClause()?;
+                    }
+                }
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(122);
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			if _la==PARTITION {
-				{
-				/*InvokeRule partitionClause*/
-				recog.base.set_state(121);
-				recog.partitionClause()?;
+                recog.base.set_state(125);
+                recog.err_handler.sync(&mut recog.base)?;
+                _la = recog.base.input.la(1);
+                if _la == ORDER {
+                    {
+                        /*InvokeRule orderClause*/
+                        recog.base.set_state(124);
+                        recog.orderClause()?;
+                    }
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-				}
-			}
-
-			recog.base.set_state(125);
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			if _la==ORDER {
-				{
-				/*InvokeRule orderClause*/
-				recog.base.set_state(124);
-				recog.orderClause()?;
-
-				}
-			}
-
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- partitionClause ----------------
 pub type PartitionClauseContextAll<'input> = PartitionClauseContext<'input>;
 
-
-pub type PartitionClauseContext<'input> = BaseParserRuleContext<'input,PartitionClauseContextExt<'input>>;
+pub type PartitionClauseContext<'input> =
+    BaseParserRuleContext<'input, PartitionClauseContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct PartitionClauseContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct PartitionClauseContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for PartitionClauseContext<'input>{}
+impl<'input> LqlParserContext<'input> for PartitionClauseContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for PartitionClauseContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_partitionClause(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_partitionClause(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for PartitionClauseContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_partitionClause(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_partitionClause(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for PartitionClauseContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_partitionClause(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for PartitionClauseContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_partitionClause(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for PartitionClauseContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_partitionClause }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_partitionClause }
+impl<'input> CustomRuleContext<'input> for PartitionClauseContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_partitionClause
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_partitionClause }
 }
-antlr_rust::tid!{PartitionClauseContextExt<'a>}
+antlr_rust::tid! {PartitionClauseContextExt<'a>}
 
-impl<'input> PartitionClauseContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<PartitionClauseContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,PartitionClauseContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait PartitionClauseContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<PartitionClauseContextExt<'input>>{
-
-/// Retrieves first TerminalNode corresponding to token PARTITION
-/// Returns `None` if there is no child corresponding to token PARTITION
-fn PARTITION(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(PARTITION, 0)
-}
-/// Retrieves first TerminalNode corresponding to token BY
-/// Returns `None` if there is no child corresponding to token BY
-fn BY(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(BY, 0)
-}
-fn argList(&self) -> Option<Rc<ArgListContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> PartitionClauseContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<PartitionClauseContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            PartitionClauseContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait PartitionClauseContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<PartitionClauseContextExt<'input>>
+{
+    /// Retrieves first TerminalNode corresponding to token PARTITION
+    /// Returns `None` if there is no child corresponding to token PARTITION
+    fn PARTITION(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(PARTITION, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token BY
+    /// Returns `None` if there is no child corresponding to token BY
+    fn BY(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(BY, 0)
+    }
+    fn argList(&self) -> Option<Rc<ArgListContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> PartitionClauseContextAttrs<'input> for PartitionClauseContext<'input>{}
+impl<'input> PartitionClauseContextAttrs<'input> for PartitionClauseContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn partitionClause(&mut self,)
-	-> Result<Rc<PartitionClauseContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = PartitionClauseContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 12, RULE_partitionClause);
+    pub fn partitionClause(&mut self) -> Result<Rc<PartitionClauseContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx =
+            PartitionClauseContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 12, RULE_partitionClause);
         let mut _localctx: Rc<PartitionClauseContextAll> = _localctx;
-		let result: Result<(), ANTLRError> = (|| {
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(127);
+                recog.base.match_token(PARTITION, &mut recog.err_handler)?;
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(127);
-			recog.base.match_token(PARTITION,&mut recog.err_handler)?;
+                recog.base.set_state(128);
+                recog.base.match_token(BY, &mut recog.err_handler)?;
 
-			recog.base.set_state(128);
-			recog.base.match_token(BY,&mut recog.err_handler)?;
+                /*InvokeRule argList*/
+                recog.base.set_state(129);
+                recog.argList()?;
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-			/*InvokeRule argList*/
-			recog.base.set_state(129);
-			recog.argList()?;
-
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- orderClause ----------------
 pub type OrderClauseContextAll<'input> = OrderClauseContext<'input>;
 
-
-pub type OrderClauseContext<'input> = BaseParserRuleContext<'input,OrderClauseContextExt<'input>>;
+pub type OrderClauseContext<'input> = BaseParserRuleContext<'input, OrderClauseContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct OrderClauseContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct OrderClauseContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for OrderClauseContext<'input>{}
+impl<'input> LqlParserContext<'input> for OrderClauseContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for OrderClauseContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_orderClause(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_orderClause(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for OrderClauseContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_orderClause(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_orderClause(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for OrderClauseContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_orderClause(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for OrderClauseContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_orderClause(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for OrderClauseContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_orderClause }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_orderClause }
+impl<'input> CustomRuleContext<'input> for OrderClauseContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_orderClause
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_orderClause }
 }
-antlr_rust::tid!{OrderClauseContextExt<'a>}
+antlr_rust::tid! {OrderClauseContextExt<'a>}
 
-impl<'input> OrderClauseContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<OrderClauseContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,OrderClauseContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait OrderClauseContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<OrderClauseContextExt<'input>>{
-
-/// Retrieves first TerminalNode corresponding to token ORDER
-/// Returns `None` if there is no child corresponding to token ORDER
-fn ORDER(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(ORDER, 0)
-}
-/// Retrieves first TerminalNode corresponding to token BY
-/// Returns `None` if there is no child corresponding to token BY
-fn BY(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(BY, 0)
-}
-fn orderByArgList(&self) -> Option<Rc<OrderByArgListContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> OrderClauseContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<OrderClauseContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            OrderClauseContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait OrderClauseContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<OrderClauseContextExt<'input>>
+{
+    /// Retrieves first TerminalNode corresponding to token ORDER
+    /// Returns `None` if there is no child corresponding to token ORDER
+    fn ORDER(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(ORDER, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token BY
+    /// Returns `None` if there is no child corresponding to token BY
+    fn BY(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(BY, 0)
+    }
+    fn orderByArgList(&self) -> Option<Rc<OrderByArgListContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> OrderClauseContextAttrs<'input> for OrderClauseContext<'input>{}
+impl<'input> OrderClauseContextAttrs<'input> for OrderClauseContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn orderClause(&mut self,)
-	-> Result<Rc<OrderClauseContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = OrderClauseContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 14, RULE_orderClause);
+    pub fn orderClause(&mut self) -> Result<Rc<OrderClauseContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = OrderClauseContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 14, RULE_orderClause);
         let mut _localctx: Rc<OrderClauseContextAll> = _localctx;
-		let result: Result<(), ANTLRError> = (|| {
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(131);
+                recog.base.match_token(ORDER, &mut recog.err_handler)?;
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(131);
-			recog.base.match_token(ORDER,&mut recog.err_handler)?;
+                recog.base.set_state(132);
+                recog.base.match_token(BY, &mut recog.err_handler)?;
 
-			recog.base.set_state(132);
-			recog.base.match_token(BY,&mut recog.err_handler)?;
+                /*InvokeRule orderByArgList*/
+                recog.base.set_state(133);
+                recog.orderByArgList()?;
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-			/*InvokeRule orderByArgList*/
-			recog.base.set_state(133);
-			recog.orderByArgList()?;
-
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- orderByArgList ----------------
 pub type OrderByArgListContextAll<'input> = OrderByArgListContext<'input>;
 
-
-pub type OrderByArgListContext<'input> = BaseParserRuleContext<'input,OrderByArgListContextExt<'input>>;
+pub type OrderByArgListContext<'input> =
+    BaseParserRuleContext<'input, OrderByArgListContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct OrderByArgListContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct OrderByArgListContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for OrderByArgListContext<'input>{}
+impl<'input> LqlParserContext<'input> for OrderByArgListContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for OrderByArgListContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_orderByArgList(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_orderByArgList(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for OrderByArgListContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_orderByArgList(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_orderByArgList(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for OrderByArgListContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_orderByArgList(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for OrderByArgListContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_orderByArgList(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for OrderByArgListContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_orderByArgList }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_orderByArgList }
+impl<'input> CustomRuleContext<'input> for OrderByArgListContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_orderByArgList
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_orderByArgList }
 }
-antlr_rust::tid!{OrderByArgListContextExt<'a>}
+antlr_rust::tid! {OrderByArgListContextExt<'a>}
 
-impl<'input> OrderByArgListContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<OrderByArgListContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,OrderByArgListContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait OrderByArgListContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<OrderByArgListContextExt<'input>>{
-
-fn orderByArg_all(&self) ->  Vec<Rc<OrderByArgContextAll<'input>>> where Self:Sized{
-	self.children_of_type()
-}
-fn orderByArg(&self, i: usize) -> Option<Rc<OrderByArgContextAll<'input>>> where Self:Sized{
-	self.child_of_type(i)
+impl<'input> OrderByArgListContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<OrderByArgListContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            OrderByArgListContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait OrderByArgListContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<OrderByArgListContextExt<'input>>
+{
+    fn orderByArg_all(&self) -> Vec<Rc<OrderByArgContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    fn orderByArg(&self, i: usize) -> Option<Rc<OrderByArgContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(i)
+    }
 }
 
-impl<'input> OrderByArgListContextAttrs<'input> for OrderByArgListContext<'input>{}
+impl<'input> OrderByArgListContextAttrs<'input> for OrderByArgListContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn orderByArgList(&mut self,)
-	-> Result<Rc<OrderByArgListContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = OrderByArgListContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 16, RULE_orderByArgList);
+    pub fn orderByArgList(&mut self) -> Result<Rc<OrderByArgListContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx =
+            OrderByArgListContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 16, RULE_orderByArgList);
         let mut _localctx: Rc<OrderByArgListContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                /*InvokeRule orderByArg*/
+                recog.base.set_state(135);
+                recog.orderByArg()?;
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			/*InvokeRule orderByArg*/
-			recog.base.set_state(135);
-			recog.orderByArg()?;
+                recog.base.set_state(140);
+                recog.err_handler.sync(&mut recog.base)?;
+                _la = recog.base.input.la(1);
+                while _la == T__5 {
+                    {
+                        {
+                            recog.base.set_state(136);
+                            recog.base.match_token(T__5, &mut recog.err_handler)?;
 
-			recog.base.set_state(140);
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			while _la==T__5 {
-				{
-				{
-				recog.base.set_state(136);
-				recog.base.match_token(T__5,&mut recog.err_handler)?;
+                            /*InvokeRule orderByArg*/
+                            recog.base.set_state(137);
+                            recog.orderByArg()?;
+                        }
+                    }
+                    recog.base.set_state(142);
+                    recog.err_handler.sync(&mut recog.base)?;
+                    _la = recog.base.input.la(1);
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-				/*InvokeRule orderByArg*/
-				recog.base.set_state(137);
-				recog.orderByArg()?;
-
-				}
-				}
-				recog.base.set_state(142);
-				recog.err_handler.sync(&mut recog.base)?;
-				_la = recog.base.input.la(1);
-			}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- orderByArg ----------------
 pub type OrderByArgContextAll<'input> = OrderByArgContext<'input>;
 
-
-pub type OrderByArgContext<'input> = BaseParserRuleContext<'input,OrderByArgContextExt<'input>>;
+pub type OrderByArgContext<'input> = BaseParserRuleContext<'input, OrderByArgContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct OrderByArgContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct OrderByArgContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for OrderByArgContext<'input>{}
+impl<'input> LqlParserContext<'input> for OrderByArgContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for OrderByArgContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_orderByArg(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_orderByArg(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for OrderByArgContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_orderByArg(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for OrderByArgContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_orderByArg(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_orderByArg(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for OrderByArgContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_orderByArg }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_orderByArg }
-}
-antlr_rust::tid!{OrderByArgContextExt<'a>}
-
-impl<'input> OrderByArgContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<OrderByArgContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,OrderByArgContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for OrderByArgContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_orderByArg(self);
+    }
 }
 
-pub trait OrderByArgContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<OrderByArgContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for OrderByArgContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_orderByArg
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_orderByArg }
+}
+antlr_rust::tid! {OrderByArgContextExt<'a>}
 
-fn arithmeticExpr(&self) -> Option<Rc<ArithmeticExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn functionCall(&self) -> Option<Rc<FunctionCallContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn qualifiedIdent(&self) -> Option<Rc<QualifiedIdentContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-/// Retrieves first TerminalNode corresponding to token IDENT
-/// Returns `None` if there is no child corresponding to token IDENT
-fn IDENT(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(IDENT, 0)
-}
-fn orderDirection(&self) -> Option<Rc<OrderDirectionContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> OrderByArgContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<OrderByArgContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            OrderByArgContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait OrderByArgContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<OrderByArgContextExt<'input>>
+{
+    fn arithmeticExpr(&self) -> Option<Rc<ArithmeticExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn functionCall(&self) -> Option<Rc<FunctionCallContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn qualifiedIdent(&self) -> Option<Rc<QualifiedIdentContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    /// Retrieves first TerminalNode corresponding to token IDENT
+    /// Returns `None` if there is no child corresponding to token IDENT
+    fn IDENT(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IDENT, 0)
+    }
+    fn orderDirection(&self) -> Option<Rc<OrderDirectionContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> OrderByArgContextAttrs<'input> for OrderByArgContext<'input>{}
+impl<'input> OrderByArgContextAttrs<'input> for OrderByArgContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn orderByArg(&mut self,)
-	-> Result<Rc<OrderByArgContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = OrderByArgContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 18, RULE_orderByArg);
+    pub fn orderByArg(&mut self) -> Result<Rc<OrderByArgContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = OrderByArgContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 18, RULE_orderByArg);
         let mut _localctx: Rc<OrderByArgContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(147);
+                recog.err_handler.sync(&mut recog.base)?;
+                match recog.interpreter.adaptive_predict(9, &mut recog.base)? {
+                    1 => {
+                        {
+                            /*InvokeRule arithmeticExpr*/
+                            recog.base.set_state(143);
+                            recog.arithmeticExpr()?;
+                        }
+                    }
+                    2 => {
+                        {
+                            /*InvokeRule functionCall*/
+                            recog.base.set_state(144);
+                            recog.functionCall()?;
+                        }
+                    }
+                    3 => {
+                        {
+                            /*InvokeRule qualifiedIdent*/
+                            recog.base.set_state(145);
+                            recog.qualifiedIdent()?;
+                        }
+                    }
+                    4 => {
+                        recog.base.set_state(146);
+                        recog.base.match_token(IDENT, &mut recog.err_handler)?;
+                    }
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(147);
-			recog.err_handler.sync(&mut recog.base)?;
-			match  recog.interpreter.adaptive_predict(9,&mut recog.base)? {
-				1 =>{
-					{
-					/*InvokeRule arithmeticExpr*/
-					recog.base.set_state(143);
-					recog.arithmeticExpr()?;
+                    _ => {}
+                }
+                recog.base.set_state(150);
+                recog.err_handler.sync(&mut recog.base)?;
+                _la = recog.base.input.la(1);
+                if _la == ASC || _la == DESC {
+                    {
+                        /*InvokeRule orderDirection*/
+                        recog.base.set_state(149);
+                        recog.orderDirection()?;
+                    }
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-					}
-				}
-			,
-				2 =>{
-					{
-					/*InvokeRule functionCall*/
-					recog.base.set_state(144);
-					recog.functionCall()?;
-
-					}
-				}
-			,
-				3 =>{
-					{
-					/*InvokeRule qualifiedIdent*/
-					recog.base.set_state(145);
-					recog.qualifiedIdent()?;
-
-					}
-				}
-			,
-				4 =>{
-					{
-					recog.base.set_state(146);
-					recog.base.match_token(IDENT,&mut recog.err_handler)?;
-
-					}
-				}
-
-				_ => {}
-			}
-			recog.base.set_state(150);
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			if _la==ASC || _la==DESC {
-				{
-				/*InvokeRule orderDirection*/
-				recog.base.set_state(149);
-				recog.orderDirection()?;
-
-				}
-			}
-
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- lambdaExpr ----------------
 pub type LambdaExprContextAll<'input> = LambdaExprContext<'input>;
 
-
-pub type LambdaExprContext<'input> = BaseParserRuleContext<'input,LambdaExprContextExt<'input>>;
+pub type LambdaExprContext<'input> = BaseParserRuleContext<'input, LambdaExprContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct LambdaExprContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct LambdaExprContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for LambdaExprContext<'input>{}
+impl<'input> LqlParserContext<'input> for LambdaExprContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for LambdaExprContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_lambdaExpr(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_lambdaExpr(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for LambdaExprContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_lambdaExpr(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_lambdaExpr(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for LambdaExprContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_lambdaExpr(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for LambdaExprContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_lambdaExpr(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for LambdaExprContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_lambdaExpr }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_lambdaExpr }
+impl<'input> CustomRuleContext<'input> for LambdaExprContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_lambdaExpr
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_lambdaExpr }
 }
-antlr_rust::tid!{LambdaExprContextExt<'a>}
+antlr_rust::tid! {LambdaExprContextExt<'a>}
 
-impl<'input> LambdaExprContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<LambdaExprContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,LambdaExprContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait LambdaExprContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<LambdaExprContextExt<'input>>{
-
-/// Retrieves all `TerminalNode`s corresponding to token IDENT in current rule
-fn IDENT_all(&self) -> Vec<Rc<TerminalNode<'input,LqlParserContextType>>>  where Self:Sized{
-	self.children_of_type()
-}
-/// Retrieves 'i's TerminalNode corresponding to token IDENT, starting from 0.
-/// Returns `None` if number of children corresponding to token IDENT is less or equal than `i`.
-fn IDENT(&self, i: usize) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(IDENT, i)
-}
-fn logicalExpr(&self) -> Option<Rc<LogicalExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> LambdaExprContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<LambdaExprContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            LambdaExprContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait LambdaExprContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<LambdaExprContextExt<'input>>
+{
+    /// Retrieves all `TerminalNode`s corresponding to token IDENT in current rule
+    fn IDENT_all(&self) -> Vec<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    /// Retrieves 'i's TerminalNode corresponding to token IDENT, starting from 0.
+    /// Returns `None` if number of children corresponding to token IDENT is less or equal than `i`.
+    fn IDENT(&self, i: usize) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IDENT, i)
+    }
+    fn logicalExpr(&self) -> Option<Rc<LogicalExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> LambdaExprContextAttrs<'input> for LambdaExprContext<'input>{}
+impl<'input> LambdaExprContextAttrs<'input> for LambdaExprContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn lambdaExpr(&mut self,)
-	-> Result<Rc<LambdaExprContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = LambdaExprContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 20, RULE_lambdaExpr);
+    pub fn lambdaExpr(&mut self) -> Result<Rc<LambdaExprContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = LambdaExprContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 20, RULE_lambdaExpr);
         let mut _localctx: Rc<LambdaExprContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(152);
+                recog.base.match_token(T__6, &mut recog.err_handler)?;
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(152);
-			recog.base.match_token(T__6,&mut recog.err_handler)?;
+                recog.base.set_state(153);
+                recog.base.match_token(T__3, &mut recog.err_handler)?;
 
-			recog.base.set_state(153);
-			recog.base.match_token(T__3,&mut recog.err_handler)?;
+                recog.base.set_state(154);
+                recog.base.match_token(IDENT, &mut recog.err_handler)?;
 
-			recog.base.set_state(154);
-			recog.base.match_token(IDENT,&mut recog.err_handler)?;
+                recog.base.set_state(159);
+                recog.err_handler.sync(&mut recog.base)?;
+                _la = recog.base.input.la(1);
+                while _la == T__5 {
+                    {
+                        {
+                            recog.base.set_state(155);
+                            recog.base.match_token(T__5, &mut recog.err_handler)?;
 
-			recog.base.set_state(159);
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			while _la==T__5 {
-				{
-				{
-				recog.base.set_state(155);
-				recog.base.match_token(T__5,&mut recog.err_handler)?;
+                            recog.base.set_state(156);
+                            recog.base.match_token(IDENT, &mut recog.err_handler)?;
+                        }
+                    }
+                    recog.base.set_state(161);
+                    recog.err_handler.sync(&mut recog.base)?;
+                    _la = recog.base.input.la(1);
+                }
+                recog.base.set_state(162);
+                recog.base.match_token(T__4, &mut recog.err_handler)?;
 
-				recog.base.set_state(156);
-				recog.base.match_token(IDENT,&mut recog.err_handler)?;
+                recog.base.set_state(163);
+                recog.base.match_token(T__7, &mut recog.err_handler)?;
 
-				}
-				}
-				recog.base.set_state(161);
-				recog.err_handler.sync(&mut recog.base)?;
-				_la = recog.base.input.la(1);
-			}
-			recog.base.set_state(162);
-			recog.base.match_token(T__4,&mut recog.err_handler)?;
+                /*InvokeRule logicalExpr*/
+                recog.base.set_state(164);
+                recog.logicalExpr()?;
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-			recog.base.set_state(163);
-			recog.base.match_token(T__7,&mut recog.err_handler)?;
-
-			/*InvokeRule logicalExpr*/
-			recog.base.set_state(164);
-			recog.logicalExpr()?;
-
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- qualifiedIdent ----------------
 pub type QualifiedIdentContextAll<'input> = QualifiedIdentContext<'input>;
 
-
-pub type QualifiedIdentContext<'input> = BaseParserRuleContext<'input,QualifiedIdentContextExt<'input>>;
+pub type QualifiedIdentContext<'input> =
+    BaseParserRuleContext<'input, QualifiedIdentContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct QualifiedIdentContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct QualifiedIdentContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for QualifiedIdentContext<'input>{}
+impl<'input> LqlParserContext<'input> for QualifiedIdentContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for QualifiedIdentContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_qualifiedIdent(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_qualifiedIdent(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for QualifiedIdentContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_qualifiedIdent(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_qualifiedIdent(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for QualifiedIdentContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_qualifiedIdent(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for QualifiedIdentContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_qualifiedIdent(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for QualifiedIdentContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_qualifiedIdent }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_qualifiedIdent }
+impl<'input> CustomRuleContext<'input> for QualifiedIdentContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_qualifiedIdent
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_qualifiedIdent }
 }
-antlr_rust::tid!{QualifiedIdentContextExt<'a>}
+antlr_rust::tid! {QualifiedIdentContextExt<'a>}
 
-impl<'input> QualifiedIdentContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<QualifiedIdentContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,QualifiedIdentContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait QualifiedIdentContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<QualifiedIdentContextExt<'input>>{
-
-/// Retrieves all `TerminalNode`s corresponding to token IDENT in current rule
-fn IDENT_all(&self) -> Vec<Rc<TerminalNode<'input,LqlParserContextType>>>  where Self:Sized{
-	self.children_of_type()
-}
-/// Retrieves 'i's TerminalNode corresponding to token IDENT, starting from 0.
-/// Returns `None` if number of children corresponding to token IDENT is less or equal than `i`.
-fn IDENT(&self, i: usize) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(IDENT, i)
+impl<'input> QualifiedIdentContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<QualifiedIdentContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            QualifiedIdentContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait QualifiedIdentContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<QualifiedIdentContextExt<'input>>
+{
+    /// Retrieves all `TerminalNode`s corresponding to token IDENT in current rule
+    fn IDENT_all(&self) -> Vec<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    /// Retrieves 'i's TerminalNode corresponding to token IDENT, starting from 0.
+    /// Returns `None` if number of children corresponding to token IDENT is less or equal than `i`.
+    fn IDENT(&self, i: usize) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IDENT, i)
+    }
 }
 
-impl<'input> QualifiedIdentContextAttrs<'input> for QualifiedIdentContext<'input>{}
+impl<'input> QualifiedIdentContextAttrs<'input> for QualifiedIdentContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn qualifiedIdent(&mut self,)
-	-> Result<Rc<QualifiedIdentContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = QualifiedIdentContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 22, RULE_qualifiedIdent);
+    pub fn qualifiedIdent(&mut self) -> Result<Rc<QualifiedIdentContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx =
+            QualifiedIdentContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 22, RULE_qualifiedIdent);
         let mut _localctx: Rc<QualifiedIdentContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(166);
+                recog.base.match_token(IDENT, &mut recog.err_handler)?;
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(166);
-			recog.base.match_token(IDENT,&mut recog.err_handler)?;
+                recog.base.set_state(169);
+                recog.err_handler.sync(&mut recog.base)?;
+                _la = recog.base.input.la(1);
+                loop {
+                    {
+                        {
+                            recog.base.set_state(167);
+                            recog.base.match_token(T__8, &mut recog.err_handler)?;
 
-			recog.base.set_state(169); 
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			loop {
-				{
-				{
-				recog.base.set_state(167);
-				recog.base.match_token(T__8,&mut recog.err_handler)?;
+                            recog.base.set_state(168);
+                            recog.base.match_token(IDENT, &mut recog.err_handler)?;
+                        }
+                    }
+                    recog.base.set_state(171);
+                    recog.err_handler.sync(&mut recog.base)?;
+                    _la = recog.base.input.la(1);
+                    if !(_la == T__8) {
+                        break;
+                    }
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-				recog.base.set_state(168);
-				recog.base.match_token(IDENT,&mut recog.err_handler)?;
-
-				}
-				}
-				recog.base.set_state(171); 
-				recog.err_handler.sync(&mut recog.base)?;
-				_la = recog.base.input.la(1);
-				if !(_la==T__8) {break}
-			}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- argList ----------------
 pub type ArgListContextAll<'input> = ArgListContext<'input>;
 
-
-pub type ArgListContext<'input> = BaseParserRuleContext<'input,ArgListContextExt<'input>>;
+pub type ArgListContext<'input> = BaseParserRuleContext<'input, ArgListContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct ArgListContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct ArgListContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for ArgListContext<'input>{}
+impl<'input> LqlParserContext<'input> for ArgListContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for ArgListContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_argList(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_argList(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for ArgListContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_argList(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_argList(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for ArgListContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_argList(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for ArgListContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_argList(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for ArgListContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_argList }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_argList }
+impl<'input> CustomRuleContext<'input> for ArgListContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_argList
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_argList }
 }
-antlr_rust::tid!{ArgListContextExt<'a>}
+antlr_rust::tid! {ArgListContextExt<'a>}
 
-impl<'input> ArgListContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<ArgListContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,ArgListContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait ArgListContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<ArgListContextExt<'input>>{
-
-fn arg_all(&self) ->  Vec<Rc<ArgContextAll<'input>>> where Self:Sized{
-	self.children_of_type()
-}
-fn arg(&self, i: usize) -> Option<Rc<ArgContextAll<'input>>> where Self:Sized{
-	self.child_of_type(i)
+impl<'input> ArgListContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<ArgListContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            ArgListContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait ArgListContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<ArgListContextExt<'input>>
+{
+    fn arg_all(&self) -> Vec<Rc<ArgContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    fn arg(&self, i: usize) -> Option<Rc<ArgContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(i)
+    }
 }
 
-impl<'input> ArgListContextAttrs<'input> for ArgListContext<'input>{}
+impl<'input> ArgListContextAttrs<'input> for ArgListContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn argList(&mut self,)
-	-> Result<Rc<ArgListContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = ArgListContextExt::new(_parentctx.clone(), recog.base.get_state());
+    pub fn argList(&mut self) -> Result<Rc<ArgListContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = ArgListContextExt::new(_parentctx.clone(), recog.base.get_state());
         recog.base.enter_rule(_localctx.clone(), 24, RULE_argList);
         let mut _localctx: Rc<ArgListContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                /*InvokeRule arg*/
+                recog.base.set_state(173);
+                recog.arg()?;
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			/*InvokeRule arg*/
-			recog.base.set_state(173);
-			recog.arg()?;
+                recog.base.set_state(178);
+                recog.err_handler.sync(&mut recog.base)?;
+                _la = recog.base.input.la(1);
+                while _la == T__5 {
+                    {
+                        {
+                            recog.base.set_state(174);
+                            recog.base.match_token(T__5, &mut recog.err_handler)?;
 
-			recog.base.set_state(178);
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			while _la==T__5 {
-				{
-				{
-				recog.base.set_state(174);
-				recog.base.match_token(T__5,&mut recog.err_handler)?;
+                            /*InvokeRule arg*/
+                            recog.base.set_state(175);
+                            recog.arg()?;
+                        }
+                    }
+                    recog.base.set_state(180);
+                    recog.err_handler.sync(&mut recog.base)?;
+                    _la = recog.base.input.la(1);
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-				/*InvokeRule arg*/
-				recog.base.set_state(175);
-				recog.arg()?;
-
-				}
-				}
-				recog.base.set_state(180);
-				recog.err_handler.sync(&mut recog.base)?;
-				_la = recog.base.input.la(1);
-			}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- arg ----------------
 pub type ArgContextAll<'input> = ArgContext<'input>;
 
-
-pub type ArgContext<'input> = BaseParserRuleContext<'input,ArgContextExt<'input>>;
+pub type ArgContext<'input> = BaseParserRuleContext<'input, ArgContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct ArgContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct ArgContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for ArgContext<'input>{}
+impl<'input> LqlParserContext<'input> for ArgContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for ArgContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_arg(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_arg(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for ArgContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_arg(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for ArgContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_arg(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_arg(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for ArgContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_arg }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_arg }
-}
-antlr_rust::tid!{ArgContextExt<'a>}
-
-impl<'input> ArgContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<ArgContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,ArgContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for ArgContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_arg(self);
+    }
 }
 
-pub trait ArgContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<ArgContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for ArgContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_arg
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_arg }
+}
+antlr_rust::tid! {ArgContextExt<'a>}
 
-fn columnAlias(&self) -> Option<Rc<ColumnAliasContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn arithmeticExpr(&self) -> Option<Rc<ArithmeticExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn functionCall(&self) -> Option<Rc<FunctionCallContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn caseExpr(&self) -> Option<Rc<CaseExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn expr(&self) -> Option<Rc<ExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn namedArg(&self) -> Option<Rc<NamedArgContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn comparison(&self) -> Option<Rc<ComparisonContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn pipeExpr(&self) -> Option<Rc<PipeExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn lambdaExpr(&self) -> Option<Rc<LambdaExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> ArgContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<ArgContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            ArgContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait ArgContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<ArgContextExt<'input>>
+{
+    fn columnAlias(&self) -> Option<Rc<ColumnAliasContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn arithmeticExpr(&self) -> Option<Rc<ArithmeticExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn functionCall(&self) -> Option<Rc<FunctionCallContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn caseExpr(&self) -> Option<Rc<CaseExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn expr(&self) -> Option<Rc<ExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn namedArg(&self) -> Option<Rc<NamedArgContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn comparison(&self) -> Option<Rc<ComparisonContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn pipeExpr(&self) -> Option<Rc<PipeExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn lambdaExpr(&self) -> Option<Rc<LambdaExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> ArgContextAttrs<'input> for ArgContext<'input>{}
+impl<'input> ArgContextAttrs<'input> for ArgContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn arg(&mut self,)
-	-> Result<Rc<ArgContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = ArgContextExt::new(_parentctx.clone(), recog.base.get_state());
+    pub fn arg(&mut self) -> Result<Rc<ArgContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = ArgContextExt::new(_parentctx.clone(), recog.base.get_state());
         recog.base.enter_rule(_localctx.clone(), 26, RULE_arg);
         let mut _localctx: Rc<ArgContextAll> = _localctx;
-		let result: Result<(), ANTLRError> = (|| {
+        let result: Result<(), ANTLRError> = (|| {
+            recog.base.set_state(194);
+            recog.err_handler.sync(&mut recog.base)?;
+            match recog.interpreter.adaptive_predict(14, &mut recog.base)? {
+                1 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 1);
+                    recog.base.enter_outer_alt(None, 1);
+                    {
+                        /*InvokeRule columnAlias*/
+                        recog.base.set_state(181);
+                        recog.columnAlias()?;
+                    }
+                }
+                2 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 2);
+                    recog.base.enter_outer_alt(None, 2);
+                    {
+                        /*InvokeRule arithmeticExpr*/
+                        recog.base.set_state(182);
+                        recog.arithmeticExpr()?;
+                    }
+                }
+                3 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 3);
+                    recog.base.enter_outer_alt(None, 3);
+                    {
+                        /*InvokeRule functionCall*/
+                        recog.base.set_state(183);
+                        recog.functionCall()?;
+                    }
+                }
+                4 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 4);
+                    recog.base.enter_outer_alt(None, 4);
+                    {
+                        /*InvokeRule caseExpr*/
+                        recog.base.set_state(184);
+                        recog.caseExpr()?;
+                    }
+                }
+                5 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 5);
+                    recog.base.enter_outer_alt(None, 5);
+                    {
+                        /*InvokeRule expr*/
+                        recog.base.set_state(185);
+                        recog.expr()?;
+                    }
+                }
+                6 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 6);
+                    recog.base.enter_outer_alt(None, 6);
+                    {
+                        /*InvokeRule namedArg*/
+                        recog.base.set_state(186);
+                        recog.namedArg()?;
+                    }
+                }
+                7 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 7);
+                    recog.base.enter_outer_alt(None, 7);
+                    {
+                        /*InvokeRule comparison*/
+                        recog.base.set_state(187);
+                        recog.comparison()?;
+                    }
+                }
+                8 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 8);
+                    recog.base.enter_outer_alt(None, 8);
+                    {
+                        /*InvokeRule pipeExpr*/
+                        recog.base.set_state(188);
+                        recog.pipeExpr()?;
+                    }
+                }
+                9 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 9);
+                    recog.base.enter_outer_alt(None, 9);
+                    {
+                        /*InvokeRule lambdaExpr*/
+                        recog.base.set_state(189);
+                        recog.lambdaExpr()?;
+                    }
+                }
+                10 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 10);
+                    recog.base.enter_outer_alt(None, 10);
+                    {
+                        recog.base.set_state(190);
+                        recog.base.match_token(T__3, &mut recog.err_handler)?;
 
-			recog.base.set_state(194);
-			recog.err_handler.sync(&mut recog.base)?;
-			match  recog.interpreter.adaptive_predict(14,&mut recog.base)? {
-				1 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 1);
-					recog.base.enter_outer_alt(None, 1);
-					{
-					/*InvokeRule columnAlias*/
-					recog.base.set_state(181);
-					recog.columnAlias()?;
+                        /*InvokeRule pipeExpr*/
+                        recog.base.set_state(191);
+                        recog.pipeExpr()?;
 
-					}
-				}
-			,
-				2 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 2);
-					recog.base.enter_outer_alt(None, 2);
-					{
-					/*InvokeRule arithmeticExpr*/
-					recog.base.set_state(182);
-					recog.arithmeticExpr()?;
+                        recog.base.set_state(192);
+                        recog.base.match_token(T__4, &mut recog.err_handler)?;
+                    }
+                }
 
-					}
-				}
-			,
-				3 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 3);
-					recog.base.enter_outer_alt(None, 3);
-					{
-					/*InvokeRule functionCall*/
-					recog.base.set_state(183);
-					recog.functionCall()?;
+                _ => {}
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-					}
-				}
-			,
-				4 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 4);
-					recog.base.enter_outer_alt(None, 4);
-					{
-					/*InvokeRule caseExpr*/
-					recog.base.set_state(184);
-					recog.caseExpr()?;
-
-					}
-				}
-			,
-				5 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 5);
-					recog.base.enter_outer_alt(None, 5);
-					{
-					/*InvokeRule expr*/
-					recog.base.set_state(185);
-					recog.expr()?;
-
-					}
-				}
-			,
-				6 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 6);
-					recog.base.enter_outer_alt(None, 6);
-					{
-					/*InvokeRule namedArg*/
-					recog.base.set_state(186);
-					recog.namedArg()?;
-
-					}
-				}
-			,
-				7 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 7);
-					recog.base.enter_outer_alt(None, 7);
-					{
-					/*InvokeRule comparison*/
-					recog.base.set_state(187);
-					recog.comparison()?;
-
-					}
-				}
-			,
-				8 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 8);
-					recog.base.enter_outer_alt(None, 8);
-					{
-					/*InvokeRule pipeExpr*/
-					recog.base.set_state(188);
-					recog.pipeExpr()?;
-
-					}
-				}
-			,
-				9 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 9);
-					recog.base.enter_outer_alt(None, 9);
-					{
-					/*InvokeRule lambdaExpr*/
-					recog.base.set_state(189);
-					recog.lambdaExpr()?;
-
-					}
-				}
-			,
-				10 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 10);
-					recog.base.enter_outer_alt(None, 10);
-					{
-					recog.base.set_state(190);
-					recog.base.match_token(T__3,&mut recog.err_handler)?;
-
-					/*InvokeRule pipeExpr*/
-					recog.base.set_state(191);
-					recog.pipeExpr()?;
-
-					recog.base.set_state(192);
-					recog.base.match_token(T__4,&mut recog.err_handler)?;
-
-					}
-				}
-
-				_ => {}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- columnAlias ----------------
 pub type ColumnAliasContextAll<'input> = ColumnAliasContext<'input>;
 
-
-pub type ColumnAliasContext<'input> = BaseParserRuleContext<'input,ColumnAliasContextExt<'input>>;
+pub type ColumnAliasContext<'input> = BaseParserRuleContext<'input, ColumnAliasContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct ColumnAliasContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct ColumnAliasContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for ColumnAliasContext<'input>{}
+impl<'input> LqlParserContext<'input> for ColumnAliasContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for ColumnAliasContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_columnAlias(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_columnAlias(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for ColumnAliasContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_columnAlias(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for ColumnAliasContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_columnAlias(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_columnAlias(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for ColumnAliasContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_columnAlias }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_columnAlias }
-}
-antlr_rust::tid!{ColumnAliasContextExt<'a>}
-
-impl<'input> ColumnAliasContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<ColumnAliasContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,ColumnAliasContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for ColumnAliasContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_columnAlias(self);
+    }
 }
 
-pub trait ColumnAliasContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<ColumnAliasContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for ColumnAliasContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_columnAlias
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_columnAlias }
+}
+antlr_rust::tid! {ColumnAliasContextExt<'a>}
 
-fn arithmeticExpr(&self) -> Option<Rc<ArithmeticExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn functionCall(&self) -> Option<Rc<FunctionCallContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn qualifiedIdent(&self) -> Option<Rc<QualifiedIdentContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-/// Retrieves all `TerminalNode`s corresponding to token IDENT in current rule
-fn IDENT_all(&self) -> Vec<Rc<TerminalNode<'input,LqlParserContextType>>>  where Self:Sized{
-	self.children_of_type()
-}
-/// Retrieves 'i's TerminalNode corresponding to token IDENT, starting from 0.
-/// Returns `None` if number of children corresponding to token IDENT is less or equal than `i`.
-fn IDENT(&self, i: usize) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(IDENT, i)
-}
-/// Retrieves first TerminalNode corresponding to token AS
-/// Returns `None` if there is no child corresponding to token AS
-fn AS(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(AS, 0)
+impl<'input> ColumnAliasContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<ColumnAliasContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            ColumnAliasContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait ColumnAliasContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<ColumnAliasContextExt<'input>>
+{
+    fn arithmeticExpr(&self) -> Option<Rc<ArithmeticExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn functionCall(&self) -> Option<Rc<FunctionCallContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn qualifiedIdent(&self) -> Option<Rc<QualifiedIdentContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    /// Retrieves all `TerminalNode`s corresponding to token IDENT in current rule
+    fn IDENT_all(&self) -> Vec<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    /// Retrieves 'i's TerminalNode corresponding to token IDENT, starting from 0.
+    /// Returns `None` if number of children corresponding to token IDENT is less or equal than `i`.
+    fn IDENT(&self, i: usize) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IDENT, i)
+    }
+    /// Retrieves first TerminalNode corresponding to token AS
+    /// Returns `None` if there is no child corresponding to token AS
+    fn AS(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(AS, 0)
+    }
 }
 
-impl<'input> ColumnAliasContextAttrs<'input> for ColumnAliasContext<'input>{}
+impl<'input> ColumnAliasContextAttrs<'input> for ColumnAliasContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn columnAlias(&mut self,)
-	-> Result<Rc<ColumnAliasContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = ColumnAliasContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 28, RULE_columnAlias);
+    pub fn columnAlias(&mut self) -> Result<Rc<ColumnAliasContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = ColumnAliasContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 28, RULE_columnAlias);
         let mut _localctx: Rc<ColumnAliasContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(200);
+                recog.err_handler.sync(&mut recog.base)?;
+                match recog.interpreter.adaptive_predict(15, &mut recog.base)? {
+                    1 => {
+                        {
+                            /*InvokeRule arithmeticExpr*/
+                            recog.base.set_state(196);
+                            recog.arithmeticExpr()?;
+                        }
+                    }
+                    2 => {
+                        {
+                            /*InvokeRule functionCall*/
+                            recog.base.set_state(197);
+                            recog.functionCall()?;
+                        }
+                    }
+                    3 => {
+                        {
+                            /*InvokeRule qualifiedIdent*/
+                            recog.base.set_state(198);
+                            recog.qualifiedIdent()?;
+                        }
+                    }
+                    4 => {
+                        recog.base.set_state(199);
+                        recog.base.match_token(IDENT, &mut recog.err_handler)?;
+                    }
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(200);
-			recog.err_handler.sync(&mut recog.base)?;
-			match  recog.interpreter.adaptive_predict(15,&mut recog.base)? {
-				1 =>{
-					{
-					/*InvokeRule arithmeticExpr*/
-					recog.base.set_state(196);
-					recog.arithmeticExpr()?;
+                    _ => {}
+                }
+                recog.base.set_state(204);
+                recog.err_handler.sync(&mut recog.base)?;
+                _la = recog.base.input.la(1);
+                if _la == AS {
+                    {
+                        recog.base.set_state(202);
+                        recog.base.match_token(AS, &mut recog.err_handler)?;
 
-					}
-				}
-			,
-				2 =>{
-					{
-					/*InvokeRule functionCall*/
-					recog.base.set_state(197);
-					recog.functionCall()?;
+                        recog.base.set_state(203);
+                        recog.base.match_token(IDENT, &mut recog.err_handler)?;
+                    }
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-					}
-				}
-			,
-				3 =>{
-					{
-					/*InvokeRule qualifiedIdent*/
-					recog.base.set_state(198);
-					recog.qualifiedIdent()?;
-
-					}
-				}
-			,
-				4 =>{
-					{
-					recog.base.set_state(199);
-					recog.base.match_token(IDENT,&mut recog.err_handler)?;
-
-					}
-				}
-
-				_ => {}
-			}
-			recog.base.set_state(204);
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			if _la==AS {
-				{
-				recog.base.set_state(202);
-				recog.base.match_token(AS,&mut recog.err_handler)?;
-
-				recog.base.set_state(203);
-				recog.base.match_token(IDENT,&mut recog.err_handler)?;
-
-				}
-			}
-
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- arithmeticExpr ----------------
 pub type ArithmeticExprContextAll<'input> = ArithmeticExprContext<'input>;
 
-
-pub type ArithmeticExprContext<'input> = BaseParserRuleContext<'input,ArithmeticExprContextExt<'input>>;
+pub type ArithmeticExprContext<'input> =
+    BaseParserRuleContext<'input, ArithmeticExprContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct ArithmeticExprContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct ArithmeticExprContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for ArithmeticExprContext<'input>{}
+impl<'input> LqlParserContext<'input> for ArithmeticExprContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for ArithmeticExprContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_arithmeticExpr(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_arithmeticExpr(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for ArithmeticExprContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_arithmeticExpr(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_arithmeticExpr(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for ArithmeticExprContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_arithmeticExpr(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for ArithmeticExprContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_arithmeticExpr(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for ArithmeticExprContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_arithmeticExpr }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_arithmeticExpr }
+impl<'input> CustomRuleContext<'input> for ArithmeticExprContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_arithmeticExpr
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_arithmeticExpr }
 }
-antlr_rust::tid!{ArithmeticExprContextExt<'a>}
+antlr_rust::tid! {ArithmeticExprContextExt<'a>}
 
-impl<'input> ArithmeticExprContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<ArithmeticExprContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,ArithmeticExprContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait ArithmeticExprContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<ArithmeticExprContextExt<'input>>{
-
-fn arithmeticTerm_all(&self) ->  Vec<Rc<ArithmeticTermContextAll<'input>>> where Self:Sized{
-	self.children_of_type()
-}
-fn arithmeticTerm(&self, i: usize) -> Option<Rc<ArithmeticTermContextAll<'input>>> where Self:Sized{
-	self.child_of_type(i)
+impl<'input> ArithmeticExprContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<ArithmeticExprContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            ArithmeticExprContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait ArithmeticExprContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<ArithmeticExprContextExt<'input>>
+{
+    fn arithmeticTerm_all(&self) -> Vec<Rc<ArithmeticTermContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    fn arithmeticTerm(&self, i: usize) -> Option<Rc<ArithmeticTermContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(i)
+    }
 }
 
-impl<'input> ArithmeticExprContextAttrs<'input> for ArithmeticExprContext<'input>{}
+impl<'input> ArithmeticExprContextAttrs<'input> for ArithmeticExprContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn arithmeticExpr(&mut self,)
-	-> Result<Rc<ArithmeticExprContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = ArithmeticExprContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 30, RULE_arithmeticExpr);
+    pub fn arithmeticExpr(&mut self) -> Result<Rc<ArithmeticExprContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx =
+            ArithmeticExprContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 30, RULE_arithmeticExpr);
         let mut _localctx: Rc<ArithmeticExprContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                /*InvokeRule arithmeticTerm*/
+                recog.base.set_state(206);
+                recog.arithmeticTerm()?;
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			/*InvokeRule arithmeticTerm*/
-			recog.base.set_state(206);
-			recog.arithmeticTerm()?;
+                recog.base.set_state(211);
+                recog.err_handler.sync(&mut recog.base)?;
+                _la = recog.base.input.la(1);
+                while ((_la) & !0x3f) == 0
+                    && ((1usize << _la)
+                        & ((1usize << T__9) | (1usize << T__10) | (1usize << T__11)))
+                        != 0
+                {
+                    {
+                        {
+                            recog.base.set_state(207);
+                            _la = recog.base.input.la(1);
+                            if {
+                                !(((_la) & !0x3f) == 0
+                                    && ((1usize << _la)
+                                        & ((1usize << T__9)
+                                            | (1usize << T__10)
+                                            | (1usize << T__11)))
+                                        != 0)
+                            } {
+                                recog.err_handler.recover_inline(&mut recog.base)?;
+                            } else {
+                                if recog.base.input.la(1) == TOKEN_EOF {
+                                    recog.base.matched_eof = true
+                                };
+                                recog.err_handler.report_match(&mut recog.base);
+                                recog.base.consume(&mut recog.err_handler);
+                            }
+                            /*InvokeRule arithmeticTerm*/
+                            recog.base.set_state(208);
+                            recog.arithmeticTerm()?;
+                        }
+                    }
+                    recog.base.set_state(213);
+                    recog.err_handler.sync(&mut recog.base)?;
+                    _la = recog.base.input.la(1);
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-			recog.base.set_state(211);
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			while (((_la) & !0x3f) == 0 && ((1usize << _la) & ((1usize << T__9) | (1usize << T__10) | (1usize << T__11))) != 0) {
-				{
-				{
-				recog.base.set_state(207);
-				_la = recog.base.input.la(1);
-				if { !((((_la) & !0x3f) == 0 && ((1usize << _la) & ((1usize << T__9) | (1usize << T__10) | (1usize << T__11))) != 0)) } {
-					recog.err_handler.recover_inline(&mut recog.base)?;
-
-				}
-				else {
-					if  recog.base.input.la(1)==TOKEN_EOF { recog.base.matched_eof = true };
-					recog.err_handler.report_match(&mut recog.base);
-					recog.base.consume(&mut recog.err_handler);
-				}
-				/*InvokeRule arithmeticTerm*/
-				recog.base.set_state(208);
-				recog.arithmeticTerm()?;
-
-				}
-				}
-				recog.base.set_state(213);
-				recog.err_handler.sync(&mut recog.base)?;
-				_la = recog.base.input.la(1);
-			}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- arithmeticTerm ----------------
 pub type ArithmeticTermContextAll<'input> = ArithmeticTermContext<'input>;
 
-
-pub type ArithmeticTermContext<'input> = BaseParserRuleContext<'input,ArithmeticTermContextExt<'input>>;
+pub type ArithmeticTermContext<'input> =
+    BaseParserRuleContext<'input, ArithmeticTermContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct ArithmeticTermContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct ArithmeticTermContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for ArithmeticTermContext<'input>{}
+impl<'input> LqlParserContext<'input> for ArithmeticTermContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for ArithmeticTermContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_arithmeticTerm(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_arithmeticTerm(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for ArithmeticTermContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_arithmeticTerm(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for ArithmeticTermContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_arithmeticTerm(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_arithmeticTerm(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for ArithmeticTermContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_arithmeticTerm }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_arithmeticTerm }
-}
-antlr_rust::tid!{ArithmeticTermContextExt<'a>}
-
-impl<'input> ArithmeticTermContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<ArithmeticTermContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,ArithmeticTermContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for ArithmeticTermContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_arithmeticTerm(self);
+    }
 }
 
-pub trait ArithmeticTermContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<ArithmeticTermContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for ArithmeticTermContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_arithmeticTerm
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_arithmeticTerm }
+}
+antlr_rust::tid! {ArithmeticTermContextExt<'a>}
 
-fn arithmeticFactor_all(&self) ->  Vec<Rc<ArithmeticFactorContextAll<'input>>> where Self:Sized{
-	self.children_of_type()
-}
-fn arithmeticFactor(&self, i: usize) -> Option<Rc<ArithmeticFactorContextAll<'input>>> where Self:Sized{
-	self.child_of_type(i)
-}
-/// Retrieves all `TerminalNode`s corresponding to token ASTERISK in current rule
-fn ASTERISK_all(&self) -> Vec<Rc<TerminalNode<'input,LqlParserContextType>>>  where Self:Sized{
-	self.children_of_type()
-}
-/// Retrieves 'i's TerminalNode corresponding to token ASTERISK, starting from 0.
-/// Returns `None` if number of children corresponding to token ASTERISK is less or equal than `i`.
-fn ASTERISK(&self, i: usize) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(ASTERISK, i)
+impl<'input> ArithmeticTermContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<ArithmeticTermContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            ArithmeticTermContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait ArithmeticTermContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<ArithmeticTermContextExt<'input>>
+{
+    fn arithmeticFactor_all(&self) -> Vec<Rc<ArithmeticFactorContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    fn arithmeticFactor(&self, i: usize) -> Option<Rc<ArithmeticFactorContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(i)
+    }
+    /// Retrieves all `TerminalNode`s corresponding to token ASTERISK in current rule
+    fn ASTERISK_all(&self) -> Vec<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    /// Retrieves 'i's TerminalNode corresponding to token ASTERISK, starting from 0.
+    /// Returns `None` if number of children corresponding to token ASTERISK is less or equal than `i`.
+    fn ASTERISK(&self, i: usize) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(ASTERISK, i)
+    }
 }
 
-impl<'input> ArithmeticTermContextAttrs<'input> for ArithmeticTermContext<'input>{}
+impl<'input> ArithmeticTermContextAttrs<'input> for ArithmeticTermContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn arithmeticTerm(&mut self,)
-	-> Result<Rc<ArithmeticTermContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = ArithmeticTermContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 32, RULE_arithmeticTerm);
+    pub fn arithmeticTerm(&mut self) -> Result<Rc<ArithmeticTermContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx =
+            ArithmeticTermContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 32, RULE_arithmeticTerm);
         let mut _localctx: Rc<ArithmeticTermContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            let mut _alt: isize;
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                /*InvokeRule arithmeticFactor*/
+                recog.base.set_state(214);
+                recog.arithmeticFactor()?;
 
-			let mut _alt: isize;
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			/*InvokeRule arithmeticFactor*/
-			recog.base.set_state(214);
-			recog.arithmeticFactor()?;
+                recog.base.set_state(219);
+                recog.err_handler.sync(&mut recog.base)?;
+                _alt = recog.interpreter.adaptive_predict(18, &mut recog.base)?;
+                while { _alt != 2 && _alt != INVALID_ALT } {
+                    if _alt == 1 {
+                        {
+                            {
+                                recog.base.set_state(215);
+                                _la = recog.base.input.la(1);
+                                if { !(_la == T__12 || _la == T__13 || _la == ASTERISK) } {
+                                    recog.err_handler.recover_inline(&mut recog.base)?;
+                                } else {
+                                    if recog.base.input.la(1) == TOKEN_EOF {
+                                        recog.base.matched_eof = true
+                                    };
+                                    recog.err_handler.report_match(&mut recog.base);
+                                    recog.base.consume(&mut recog.err_handler);
+                                }
+                                /*InvokeRule arithmeticFactor*/
+                                recog.base.set_state(216);
+                                recog.arithmeticFactor()?;
+                            }
+                        }
+                    }
+                    recog.base.set_state(221);
+                    recog.err_handler.sync(&mut recog.base)?;
+                    _alt = recog.interpreter.adaptive_predict(18, &mut recog.base)?;
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-			recog.base.set_state(219);
-			recog.err_handler.sync(&mut recog.base)?;
-			_alt = recog.interpreter.adaptive_predict(18,&mut recog.base)?;
-			while { _alt!=2 && _alt!=INVALID_ALT } {
-				if _alt==1 {
-					{
-					{
-					recog.base.set_state(215);
-					_la = recog.base.input.la(1);
-					if { !(_la==T__12 || _la==T__13 || _la==ASTERISK) } {
-						recog.err_handler.recover_inline(&mut recog.base)?;
-
-					}
-					else {
-						if  recog.base.input.la(1)==TOKEN_EOF { recog.base.matched_eof = true };
-						recog.err_handler.report_match(&mut recog.base);
-						recog.base.consume(&mut recog.err_handler);
-					}
-					/*InvokeRule arithmeticFactor*/
-					recog.base.set_state(216);
-					recog.arithmeticFactor()?;
-
-					}
-					} 
-				}
-				recog.base.set_state(221);
-				recog.err_handler.sync(&mut recog.base)?;
-				_alt = recog.interpreter.adaptive_predict(18,&mut recog.base)?;
-			}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- arithmeticFactor ----------------
 pub type ArithmeticFactorContextAll<'input> = ArithmeticFactorContext<'input>;
 
-
-pub type ArithmeticFactorContext<'input> = BaseParserRuleContext<'input,ArithmeticFactorContextExt<'input>>;
+pub type ArithmeticFactorContext<'input> =
+    BaseParserRuleContext<'input, ArithmeticFactorContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct ArithmeticFactorContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct ArithmeticFactorContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for ArithmeticFactorContext<'input>{}
+impl<'input> LqlParserContext<'input> for ArithmeticFactorContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for ArithmeticFactorContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_arithmeticFactor(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_arithmeticFactor(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for ArithmeticFactorContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_arithmeticFactor(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for ArithmeticFactorContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_arithmeticFactor(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_arithmeticFactor(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for ArithmeticFactorContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_arithmeticFactor }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_arithmeticFactor }
-}
-antlr_rust::tid!{ArithmeticFactorContextExt<'a>}
-
-impl<'input> ArithmeticFactorContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<ArithmeticFactorContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,ArithmeticFactorContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for ArithmeticFactorContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_arithmeticFactor(self);
+    }
 }
 
-pub trait ArithmeticFactorContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<ArithmeticFactorContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for ArithmeticFactorContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_arithmeticFactor
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_arithmeticFactor }
+}
+antlr_rust::tid! {ArithmeticFactorContextExt<'a>}
 
-fn qualifiedIdent(&self) -> Option<Rc<QualifiedIdentContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-/// Retrieves first TerminalNode corresponding to token IDENT
-/// Returns `None` if there is no child corresponding to token IDENT
-fn IDENT(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(IDENT, 0)
-}
-/// Retrieves first TerminalNode corresponding to token INT
-/// Returns `None` if there is no child corresponding to token INT
-fn INT(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(INT, 0)
-}
-/// Retrieves first TerminalNode corresponding to token DECIMAL
-/// Returns `None` if there is no child corresponding to token DECIMAL
-fn DECIMAL(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(DECIMAL, 0)
-}
-/// Retrieves first TerminalNode corresponding to token STRING
-/// Returns `None` if there is no child corresponding to token STRING
-fn STRING(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(STRING, 0)
-}
-fn functionCall(&self) -> Option<Rc<FunctionCallContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn caseExpr(&self) -> Option<Rc<CaseExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-/// Retrieves first TerminalNode corresponding to token PARAMETER
-/// Returns `None` if there is no child corresponding to token PARAMETER
-fn PARAMETER(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(PARAMETER, 0)
-}
-fn arithmeticExpr(&self) -> Option<Rc<ArithmeticExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> ArithmeticFactorContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<ArithmeticFactorContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            ArithmeticFactorContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait ArithmeticFactorContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<ArithmeticFactorContextExt<'input>>
+{
+    fn qualifiedIdent(&self) -> Option<Rc<QualifiedIdentContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    /// Retrieves first TerminalNode corresponding to token IDENT
+    /// Returns `None` if there is no child corresponding to token IDENT
+    fn IDENT(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IDENT, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token INT
+    /// Returns `None` if there is no child corresponding to token INT
+    fn INT(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(INT, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token DECIMAL
+    /// Returns `None` if there is no child corresponding to token DECIMAL
+    fn DECIMAL(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(DECIMAL, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token STRING
+    /// Returns `None` if there is no child corresponding to token STRING
+    fn STRING(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(STRING, 0)
+    }
+    fn functionCall(&self) -> Option<Rc<FunctionCallContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn caseExpr(&self) -> Option<Rc<CaseExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    /// Retrieves first TerminalNode corresponding to token PARAMETER
+    /// Returns `None` if there is no child corresponding to token PARAMETER
+    fn PARAMETER(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(PARAMETER, 0)
+    }
+    fn arithmeticExpr(&self) -> Option<Rc<ArithmeticExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> ArithmeticFactorContextAttrs<'input> for ArithmeticFactorContext<'input>{}
+impl<'input> ArithmeticFactorContextAttrs<'input> for ArithmeticFactorContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn arithmeticFactor(&mut self,)
-	-> Result<Rc<ArithmeticFactorContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = ArithmeticFactorContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 34, RULE_arithmeticFactor);
+    pub fn arithmeticFactor(
+        &mut self,
+    ) -> Result<Rc<ArithmeticFactorContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx =
+            ArithmeticFactorContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 34, RULE_arithmeticFactor);
         let mut _localctx: Rc<ArithmeticFactorContextAll> = _localctx;
-		let result: Result<(), ANTLRError> = (|| {
+        let result: Result<(), ANTLRError> = (|| {
+            recog.base.set_state(234);
+            recog.err_handler.sync(&mut recog.base)?;
+            match recog.interpreter.adaptive_predict(19, &mut recog.base)? {
+                1 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 1);
+                    recog.base.enter_outer_alt(None, 1);
+                    {
+                        /*InvokeRule qualifiedIdent*/
+                        recog.base.set_state(222);
+                        recog.qualifiedIdent()?;
+                    }
+                }
+                2 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 2);
+                    recog.base.enter_outer_alt(None, 2);
+                    {
+                        recog.base.set_state(223);
+                        recog.base.match_token(IDENT, &mut recog.err_handler)?;
+                    }
+                }
+                3 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 3);
+                    recog.base.enter_outer_alt(None, 3);
+                    {
+                        recog.base.set_state(224);
+                        recog.base.match_token(INT, &mut recog.err_handler)?;
+                    }
+                }
+                4 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 4);
+                    recog.base.enter_outer_alt(None, 4);
+                    {
+                        recog.base.set_state(225);
+                        recog.base.match_token(DECIMAL, &mut recog.err_handler)?;
+                    }
+                }
+                5 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 5);
+                    recog.base.enter_outer_alt(None, 5);
+                    {
+                        recog.base.set_state(226);
+                        recog.base.match_token(STRING, &mut recog.err_handler)?;
+                    }
+                }
+                6 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 6);
+                    recog.base.enter_outer_alt(None, 6);
+                    {
+                        /*InvokeRule functionCall*/
+                        recog.base.set_state(227);
+                        recog.functionCall()?;
+                    }
+                }
+                7 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 7);
+                    recog.base.enter_outer_alt(None, 7);
+                    {
+                        /*InvokeRule caseExpr*/
+                        recog.base.set_state(228);
+                        recog.caseExpr()?;
+                    }
+                }
+                8 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 8);
+                    recog.base.enter_outer_alt(None, 8);
+                    {
+                        recog.base.set_state(229);
+                        recog.base.match_token(PARAMETER, &mut recog.err_handler)?;
+                    }
+                }
+                9 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 9);
+                    recog.base.enter_outer_alt(None, 9);
+                    {
+                        recog.base.set_state(230);
+                        recog.base.match_token(T__3, &mut recog.err_handler)?;
 
-			recog.base.set_state(234);
-			recog.err_handler.sync(&mut recog.base)?;
-			match  recog.interpreter.adaptive_predict(19,&mut recog.base)? {
-				1 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 1);
-					recog.base.enter_outer_alt(None, 1);
-					{
-					/*InvokeRule qualifiedIdent*/
-					recog.base.set_state(222);
-					recog.qualifiedIdent()?;
+                        /*InvokeRule arithmeticExpr*/
+                        recog.base.set_state(231);
+                        recog.arithmeticExpr()?;
 
-					}
-				}
-			,
-				2 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 2);
-					recog.base.enter_outer_alt(None, 2);
-					{
-					recog.base.set_state(223);
-					recog.base.match_token(IDENT,&mut recog.err_handler)?;
+                        recog.base.set_state(232);
+                        recog.base.match_token(T__4, &mut recog.err_handler)?;
+                    }
+                }
 
-					}
-				}
-			,
-				3 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 3);
-					recog.base.enter_outer_alt(None, 3);
-					{
-					recog.base.set_state(224);
-					recog.base.match_token(INT,&mut recog.err_handler)?;
+                _ => {}
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-					}
-				}
-			,
-				4 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 4);
-					recog.base.enter_outer_alt(None, 4);
-					{
-					recog.base.set_state(225);
-					recog.base.match_token(DECIMAL,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				5 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 5);
-					recog.base.enter_outer_alt(None, 5);
-					{
-					recog.base.set_state(226);
-					recog.base.match_token(STRING,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				6 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 6);
-					recog.base.enter_outer_alt(None, 6);
-					{
-					/*InvokeRule functionCall*/
-					recog.base.set_state(227);
-					recog.functionCall()?;
-
-					}
-				}
-			,
-				7 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 7);
-					recog.base.enter_outer_alt(None, 7);
-					{
-					/*InvokeRule caseExpr*/
-					recog.base.set_state(228);
-					recog.caseExpr()?;
-
-					}
-				}
-			,
-				8 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 8);
-					recog.base.enter_outer_alt(None, 8);
-					{
-					recog.base.set_state(229);
-					recog.base.match_token(PARAMETER,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				9 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 9);
-					recog.base.enter_outer_alt(None, 9);
-					{
-					recog.base.set_state(230);
-					recog.base.match_token(T__3,&mut recog.err_handler)?;
-
-					/*InvokeRule arithmeticExpr*/
-					recog.base.set_state(231);
-					recog.arithmeticExpr()?;
-
-					recog.base.set_state(232);
-					recog.base.match_token(T__4,&mut recog.err_handler)?;
-
-					}
-				}
-
-				_ => {}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- functionCall ----------------
 pub type FunctionCallContextAll<'input> = FunctionCallContext<'input>;
 
-
-pub type FunctionCallContext<'input> = BaseParserRuleContext<'input,FunctionCallContextExt<'input>>;
+pub type FunctionCallContext<'input> =
+    BaseParserRuleContext<'input, FunctionCallContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct FunctionCallContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct FunctionCallContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for FunctionCallContext<'input>{}
+impl<'input> LqlParserContext<'input> for FunctionCallContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for FunctionCallContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_functionCall(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_functionCall(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for FunctionCallContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_functionCall(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for FunctionCallContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_functionCall(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_functionCall(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for FunctionCallContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_functionCall }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_functionCall }
-}
-antlr_rust::tid!{FunctionCallContextExt<'a>}
-
-impl<'input> FunctionCallContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<FunctionCallContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,FunctionCallContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for FunctionCallContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_functionCall(self);
+    }
 }
 
-pub trait FunctionCallContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<FunctionCallContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for FunctionCallContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_functionCall
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_functionCall }
+}
+antlr_rust::tid! {FunctionCallContextExt<'a>}
 
-/// Retrieves first TerminalNode corresponding to token IDENT
-/// Returns `None` if there is no child corresponding to token IDENT
-fn IDENT(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(IDENT, 0)
-}
-fn argList(&self) -> Option<Rc<ArgListContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-/// Retrieves first TerminalNode corresponding to token OVER
-/// Returns `None` if there is no child corresponding to token OVER
-fn OVER(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(OVER, 0)
-}
-fn windowSpec(&self) -> Option<Rc<WindowSpecContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-/// Retrieves first TerminalNode corresponding to token DISTINCT
-/// Returns `None` if there is no child corresponding to token DISTINCT
-fn DISTINCT(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(DISTINCT, 0)
-}
-
+impl<'input> FunctionCallContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<FunctionCallContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            FunctionCallContextExt { ph: PhantomData },
+        ))
+    }
 }
 
-impl<'input> FunctionCallContextAttrs<'input> for FunctionCallContext<'input>{}
+pub trait FunctionCallContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<FunctionCallContextExt<'input>>
+{
+    /// Retrieves first TerminalNode corresponding to token IDENT
+    /// Returns `None` if there is no child corresponding to token IDENT
+    fn IDENT(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IDENT, 0)
+    }
+    fn argList(&self) -> Option<Rc<ArgListContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    /// Retrieves first TerminalNode corresponding to token OVER
+    /// Returns `None` if there is no child corresponding to token OVER
+    fn OVER(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(OVER, 0)
+    }
+    fn windowSpec(&self) -> Option<Rc<WindowSpecContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    /// Retrieves first TerminalNode corresponding to token DISTINCT
+    /// Returns `None` if there is no child corresponding to token DISTINCT
+    fn DISTINCT(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(DISTINCT, 0)
+    }
+}
+
+impl<'input> FunctionCallContextAttrs<'input> for FunctionCallContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn functionCall(&mut self,)
-	-> Result<Rc<FunctionCallContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = FunctionCallContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 36, RULE_functionCall);
+    pub fn functionCall(&mut self) -> Result<Rc<FunctionCallContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = FunctionCallContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 36, RULE_functionCall);
         let mut _localctx: Rc<FunctionCallContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(236);
+                recog.base.match_token(IDENT, &mut recog.err_handler)?;
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(236);
-			recog.base.match_token(IDENT,&mut recog.err_handler)?;
+                recog.base.set_state(237);
+                recog.base.match_token(T__3, &mut recog.err_handler)?;
 
-			recog.base.set_state(237);
-			recog.base.match_token(T__3,&mut recog.err_handler)?;
+                recog.base.set_state(242);
+                recog.err_handler.sync(&mut recog.base)?;
+                _la = recog.base.input.la(1);
+                if (((_la) & !0x3f) == 0
+                    && ((1usize << _la)
+                        & ((1usize << T__3)
+                            | (1usize << T__6)
+                            | (1usize << DISTINCT)
+                            | (1usize << EXISTS)))
+                        != 0)
+                    || (((_la - 32) & !0x3f) == 0
+                        && ((1usize << (_la - 32))
+                            & ((1usize << (CASE - 32))
+                                | (1usize << (ON - 32))
+                                | (1usize << (PARAMETER - 32))
+                                | (1usize << (IDENT - 32))
+                                | (1usize << (INT - 32))
+                                | (1usize << (DECIMAL - 32))
+                                | (1usize << (STRING - 32))
+                                | (1usize << (ASTERISK - 32))))
+                            != 0)
+                {
+                    {
+                        recog.base.set_state(239);
+                        recog.err_handler.sync(&mut recog.base)?;
+                        _la = recog.base.input.la(1);
+                        if _la == DISTINCT {
+                            {
+                                recog.base.set_state(238);
+                                recog.base.match_token(DISTINCT, &mut recog.err_handler)?;
+                            }
+                        }
 
-			recog.base.set_state(242);
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			if (((_la) & !0x3f) == 0 && ((1usize << _la) & ((1usize << T__3) | (1usize << T__6) | (1usize << DISTINCT) | (1usize << EXISTS))) != 0) || ((((_la - 32)) & !0x3f) == 0 && ((1usize << (_la - 32)) & ((1usize << (CASE - 32)) | (1usize << (ON - 32)) | (1usize << (PARAMETER - 32)) | (1usize << (IDENT - 32)) | (1usize << (INT - 32)) | (1usize << (DECIMAL - 32)) | (1usize << (STRING - 32)) | (1usize << (ASTERISK - 32)))) != 0) {
-				{
-				recog.base.set_state(239);
-				recog.err_handler.sync(&mut recog.base)?;
-				_la = recog.base.input.la(1);
-				if _la==DISTINCT {
-					{
-					recog.base.set_state(238);
-					recog.base.match_token(DISTINCT,&mut recog.err_handler)?;
+                        /*InvokeRule argList*/
+                        recog.base.set_state(241);
+                        recog.argList()?;
+                    }
+                }
 
-					}
-				}
+                recog.base.set_state(244);
+                recog.base.match_token(T__4, &mut recog.err_handler)?;
 
-				/*InvokeRule argList*/
-				recog.base.set_state(241);
-				recog.argList()?;
+                recog.base.set_state(250);
+                recog.err_handler.sync(&mut recog.base)?;
+                _la = recog.base.input.la(1);
+                if _la == OVER {
+                    {
+                        recog.base.set_state(245);
+                        recog.base.match_token(OVER, &mut recog.err_handler)?;
 
-				}
-			}
+                        recog.base.set_state(246);
+                        recog.base.match_token(T__3, &mut recog.err_handler)?;
 
-			recog.base.set_state(244);
-			recog.base.match_token(T__4,&mut recog.err_handler)?;
+                        /*InvokeRule windowSpec*/
+                        recog.base.set_state(247);
+                        recog.windowSpec()?;
 
-			recog.base.set_state(250);
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			if _la==OVER {
-				{
-				recog.base.set_state(245);
-				recog.base.match_token(OVER,&mut recog.err_handler)?;
+                        recog.base.set_state(248);
+                        recog.base.match_token(T__4, &mut recog.err_handler)?;
+                    }
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-				recog.base.set_state(246);
-				recog.base.match_token(T__3,&mut recog.err_handler)?;
-
-				/*InvokeRule windowSpec*/
-				recog.base.set_state(247);
-				recog.windowSpec()?;
-
-				recog.base.set_state(248);
-				recog.base.match_token(T__4,&mut recog.err_handler)?;
-
-				}
-			}
-
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- namedArg ----------------
 pub type NamedArgContextAll<'input> = NamedArgContext<'input>;
 
-
-pub type NamedArgContext<'input> = BaseParserRuleContext<'input,NamedArgContextExt<'input>>;
+pub type NamedArgContext<'input> = BaseParserRuleContext<'input, NamedArgContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct NamedArgContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct NamedArgContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for NamedArgContext<'input>{}
+impl<'input> LqlParserContext<'input> for NamedArgContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for NamedArgContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_namedArg(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_namedArg(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for NamedArgContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_namedArg(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for NamedArgContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_namedArg(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_namedArg(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for NamedArgContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_namedArg }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_namedArg }
-}
-antlr_rust::tid!{NamedArgContextExt<'a>}
-
-impl<'input> NamedArgContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<NamedArgContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,NamedArgContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for NamedArgContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_namedArg(self);
+    }
 }
 
-pub trait NamedArgContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<NamedArgContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for NamedArgContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_namedArg
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_namedArg }
+}
+antlr_rust::tid! {NamedArgContextExt<'a>}
 
-/// Retrieves first TerminalNode corresponding to token IDENT
-/// Returns `None` if there is no child corresponding to token IDENT
-fn IDENT(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(IDENT, 0)
-}
-/// Retrieves first TerminalNode corresponding to token ON
-/// Returns `None` if there is no child corresponding to token ON
-fn ON(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(ON, 0)
-}
-fn comparison(&self) -> Option<Rc<ComparisonContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn logicalExpr(&self) -> Option<Rc<LogicalExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> NamedArgContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<NamedArgContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            NamedArgContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait NamedArgContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<NamedArgContextExt<'input>>
+{
+    /// Retrieves first TerminalNode corresponding to token IDENT
+    /// Returns `None` if there is no child corresponding to token IDENT
+    fn IDENT(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IDENT, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token ON
+    /// Returns `None` if there is no child corresponding to token ON
+    fn ON(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(ON, 0)
+    }
+    fn comparison(&self) -> Option<Rc<ComparisonContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn logicalExpr(&self) -> Option<Rc<LogicalExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> NamedArgContextAttrs<'input> for NamedArgContext<'input>{}
+impl<'input> NamedArgContextAttrs<'input> for NamedArgContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn namedArg(&mut self,)
-	-> Result<Rc<NamedArgContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = NamedArgContextExt::new(_parentctx.clone(), recog.base.get_state());
+    pub fn namedArg(&mut self) -> Result<Rc<NamedArgContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = NamedArgContextExt::new(_parentctx.clone(), recog.base.get_state());
         recog.base.enter_rule(_localctx.clone(), 38, RULE_namedArg);
         let mut _localctx: Rc<NamedArgContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(252);
+                _la = recog.base.input.la(1);
+                if { !(_la == ON || _la == IDENT) } {
+                    recog.err_handler.recover_inline(&mut recog.base)?;
+                } else {
+                    if recog.base.input.la(1) == TOKEN_EOF {
+                        recog.base.matched_eof = true
+                    };
+                    recog.err_handler.report_match(&mut recog.base);
+                    recog.base.consume(&mut recog.err_handler);
+                }
+                recog.base.set_state(253);
+                recog.base.match_token(T__1, &mut recog.err_handler)?;
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(252);
-			_la = recog.base.input.la(1);
-			if { !(_la==ON || _la==IDENT) } {
-				recog.err_handler.recover_inline(&mut recog.base)?;
+                recog.base.set_state(256);
+                recog.err_handler.sync(&mut recog.base)?;
+                match recog.interpreter.adaptive_predict(23, &mut recog.base)? {
+                    1 => {
+                        {
+                            /*InvokeRule comparison*/
+                            recog.base.set_state(254);
+                            recog.comparison()?;
+                        }
+                    }
+                    2 => {
+                        {
+                            /*InvokeRule logicalExpr*/
+                            recog.base.set_state(255);
+                            recog.logicalExpr()?;
+                        }
+                    }
 
-			}
-			else {
-				if  recog.base.input.la(1)==TOKEN_EOF { recog.base.matched_eof = true };
-				recog.err_handler.report_match(&mut recog.base);
-				recog.base.consume(&mut recog.err_handler);
-			}
-			recog.base.set_state(253);
-			recog.base.match_token(T__1,&mut recog.err_handler)?;
+                    _ => {}
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-			recog.base.set_state(256);
-			recog.err_handler.sync(&mut recog.base)?;
-			match  recog.interpreter.adaptive_predict(23,&mut recog.base)? {
-				1 =>{
-					{
-					/*InvokeRule comparison*/
-					recog.base.set_state(254);
-					recog.comparison()?;
-
-					}
-				}
-			,
-				2 =>{
-					{
-					/*InvokeRule logicalExpr*/
-					recog.base.set_state(255);
-					recog.logicalExpr()?;
-
-					}
-				}
-
-				_ => {}
-			}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- logicalExpr ----------------
 pub type LogicalExprContextAll<'input> = LogicalExprContext<'input>;
 
-
-pub type LogicalExprContext<'input> = BaseParserRuleContext<'input,LogicalExprContextExt<'input>>;
+pub type LogicalExprContext<'input> = BaseParserRuleContext<'input, LogicalExprContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct LogicalExprContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct LogicalExprContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for LogicalExprContext<'input>{}
+impl<'input> LqlParserContext<'input> for LogicalExprContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for LogicalExprContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_logicalExpr(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_logicalExpr(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for LogicalExprContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_logicalExpr(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for LogicalExprContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_logicalExpr(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_logicalExpr(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for LogicalExprContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_logicalExpr }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_logicalExpr }
-}
-antlr_rust::tid!{LogicalExprContextExt<'a>}
-
-impl<'input> LogicalExprContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<LogicalExprContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,LogicalExprContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for LogicalExprContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_logicalExpr(self);
+    }
 }
 
-pub trait LogicalExprContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<LogicalExprContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for LogicalExprContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_logicalExpr
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_logicalExpr }
+}
+antlr_rust::tid! {LogicalExprContextExt<'a>}
 
-fn andExpr_all(&self) ->  Vec<Rc<AndExprContextAll<'input>>> where Self:Sized{
-	self.children_of_type()
-}
-fn andExpr(&self, i: usize) -> Option<Rc<AndExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(i)
-}
-/// Retrieves all `TerminalNode`s corresponding to token OR in current rule
-fn OR_all(&self) -> Vec<Rc<TerminalNode<'input,LqlParserContextType>>>  where Self:Sized{
-	self.children_of_type()
-}
-/// Retrieves 'i's TerminalNode corresponding to token OR, starting from 0.
-/// Returns `None` if number of children corresponding to token OR is less or equal than `i`.
-fn OR(&self, i: usize) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(OR, i)
+impl<'input> LogicalExprContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<LogicalExprContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            LogicalExprContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait LogicalExprContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<LogicalExprContextExt<'input>>
+{
+    fn andExpr_all(&self) -> Vec<Rc<AndExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    fn andExpr(&self, i: usize) -> Option<Rc<AndExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(i)
+    }
+    /// Retrieves all `TerminalNode`s corresponding to token OR in current rule
+    fn OR_all(&self) -> Vec<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    /// Retrieves 'i's TerminalNode corresponding to token OR, starting from 0.
+    /// Returns `None` if number of children corresponding to token OR is less or equal than `i`.
+    fn OR(&self, i: usize) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(OR, i)
+    }
 }
 
-impl<'input> LogicalExprContextAttrs<'input> for LogicalExprContext<'input>{}
+impl<'input> LogicalExprContextAttrs<'input> for LogicalExprContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn logicalExpr(&mut self,)
-	-> Result<Rc<LogicalExprContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = LogicalExprContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 40, RULE_logicalExpr);
+    pub fn logicalExpr(&mut self) -> Result<Rc<LogicalExprContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = LogicalExprContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 40, RULE_logicalExpr);
         let mut _localctx: Rc<LogicalExprContextAll> = _localctx;
-		let result: Result<(), ANTLRError> = (|| {
+        let result: Result<(), ANTLRError> = (|| {
+            let mut _alt: isize;
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                /*InvokeRule andExpr*/
+                recog.base.set_state(258);
+                recog.andExpr()?;
 
-			let mut _alt: isize;
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			/*InvokeRule andExpr*/
-			recog.base.set_state(258);
-			recog.andExpr()?;
+                recog.base.set_state(263);
+                recog.err_handler.sync(&mut recog.base)?;
+                _alt = recog.interpreter.adaptive_predict(24, &mut recog.base)?;
+                while { _alt != 2 && _alt != INVALID_ALT } {
+                    if _alt == 1 {
+                        {
+                            {
+                                recog.base.set_state(259);
+                                recog.base.match_token(OR, &mut recog.err_handler)?;
 
-			recog.base.set_state(263);
-			recog.err_handler.sync(&mut recog.base)?;
-			_alt = recog.interpreter.adaptive_predict(24,&mut recog.base)?;
-			while { _alt!=2 && _alt!=INVALID_ALT } {
-				if _alt==1 {
-					{
-					{
-					recog.base.set_state(259);
-					recog.base.match_token(OR,&mut recog.err_handler)?;
+                                /*InvokeRule andExpr*/
+                                recog.base.set_state(260);
+                                recog.andExpr()?;
+                            }
+                        }
+                    }
+                    recog.base.set_state(265);
+                    recog.err_handler.sync(&mut recog.base)?;
+                    _alt = recog.interpreter.adaptive_predict(24, &mut recog.base)?;
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-					/*InvokeRule andExpr*/
-					recog.base.set_state(260);
-					recog.andExpr()?;
-
-					}
-					} 
-				}
-				recog.base.set_state(265);
-				recog.err_handler.sync(&mut recog.base)?;
-				_alt = recog.interpreter.adaptive_predict(24,&mut recog.base)?;
-			}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- andExpr ----------------
 pub type AndExprContextAll<'input> = AndExprContext<'input>;
 
-
-pub type AndExprContext<'input> = BaseParserRuleContext<'input,AndExprContextExt<'input>>;
+pub type AndExprContext<'input> = BaseParserRuleContext<'input, AndExprContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct AndExprContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct AndExprContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for AndExprContext<'input>{}
+impl<'input> LqlParserContext<'input> for AndExprContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for AndExprContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_andExpr(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_andExpr(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for AndExprContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_andExpr(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for AndExprContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_andExpr(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_andExpr(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for AndExprContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_andExpr }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_andExpr }
-}
-antlr_rust::tid!{AndExprContextExt<'a>}
-
-impl<'input> AndExprContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<AndExprContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,AndExprContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for AndExprContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_andExpr(self);
+    }
 }
 
-pub trait AndExprContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<AndExprContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for AndExprContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_andExpr
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_andExpr }
+}
+antlr_rust::tid! {AndExprContextExt<'a>}
 
-fn atomicExpr_all(&self) ->  Vec<Rc<AtomicExprContextAll<'input>>> where Self:Sized{
-	self.children_of_type()
-}
-fn atomicExpr(&self, i: usize) -> Option<Rc<AtomicExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(i)
-}
-/// Retrieves all `TerminalNode`s corresponding to token AND in current rule
-fn AND_all(&self) -> Vec<Rc<TerminalNode<'input,LqlParserContextType>>>  where Self:Sized{
-	self.children_of_type()
-}
-/// Retrieves 'i's TerminalNode corresponding to token AND, starting from 0.
-/// Returns `None` if number of children corresponding to token AND is less or equal than `i`.
-fn AND(&self, i: usize) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(AND, i)
+impl<'input> AndExprContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<AndExprContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            AndExprContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait AndExprContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<AndExprContextExt<'input>>
+{
+    fn atomicExpr_all(&self) -> Vec<Rc<AtomicExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    fn atomicExpr(&self, i: usize) -> Option<Rc<AtomicExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(i)
+    }
+    /// Retrieves all `TerminalNode`s corresponding to token AND in current rule
+    fn AND_all(&self) -> Vec<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    /// Retrieves 'i's TerminalNode corresponding to token AND, starting from 0.
+    /// Returns `None` if number of children corresponding to token AND is less or equal than `i`.
+    fn AND(&self, i: usize) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(AND, i)
+    }
 }
 
-impl<'input> AndExprContextAttrs<'input> for AndExprContext<'input>{}
+impl<'input> AndExprContextAttrs<'input> for AndExprContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn andExpr(&mut self,)
-	-> Result<Rc<AndExprContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = AndExprContextExt::new(_parentctx.clone(), recog.base.get_state());
+    pub fn andExpr(&mut self) -> Result<Rc<AndExprContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = AndExprContextExt::new(_parentctx.clone(), recog.base.get_state());
         recog.base.enter_rule(_localctx.clone(), 42, RULE_andExpr);
         let mut _localctx: Rc<AndExprContextAll> = _localctx;
-		let result: Result<(), ANTLRError> = (|| {
+        let result: Result<(), ANTLRError> = (|| {
+            let mut _alt: isize;
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                /*InvokeRule atomicExpr*/
+                recog.base.set_state(266);
+                recog.atomicExpr()?;
 
-			let mut _alt: isize;
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			/*InvokeRule atomicExpr*/
-			recog.base.set_state(266);
-			recog.atomicExpr()?;
+                recog.base.set_state(271);
+                recog.err_handler.sync(&mut recog.base)?;
+                _alt = recog.interpreter.adaptive_predict(25, &mut recog.base)?;
+                while { _alt != 2 && _alt != INVALID_ALT } {
+                    if _alt == 1 {
+                        {
+                            {
+                                recog.base.set_state(267);
+                                recog.base.match_token(AND, &mut recog.err_handler)?;
 
-			recog.base.set_state(271);
-			recog.err_handler.sync(&mut recog.base)?;
-			_alt = recog.interpreter.adaptive_predict(25,&mut recog.base)?;
-			while { _alt!=2 && _alt!=INVALID_ALT } {
-				if _alt==1 {
-					{
-					{
-					recog.base.set_state(267);
-					recog.base.match_token(AND,&mut recog.err_handler)?;
+                                /*InvokeRule atomicExpr*/
+                                recog.base.set_state(268);
+                                recog.atomicExpr()?;
+                            }
+                        }
+                    }
+                    recog.base.set_state(273);
+                    recog.err_handler.sync(&mut recog.base)?;
+                    _alt = recog.interpreter.adaptive_predict(25, &mut recog.base)?;
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-					/*InvokeRule atomicExpr*/
-					recog.base.set_state(268);
-					recog.atomicExpr()?;
-
-					}
-					} 
-				}
-				recog.base.set_state(273);
-				recog.err_handler.sync(&mut recog.base)?;
-				_alt = recog.interpreter.adaptive_predict(25,&mut recog.base)?;
-			}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- atomicExpr ----------------
 pub type AtomicExprContextAll<'input> = AtomicExprContext<'input>;
 
-
-pub type AtomicExprContext<'input> = BaseParserRuleContext<'input,AtomicExprContextExt<'input>>;
+pub type AtomicExprContext<'input> = BaseParserRuleContext<'input, AtomicExprContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct AtomicExprContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct AtomicExprContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for AtomicExprContext<'input>{}
+impl<'input> LqlParserContext<'input> for AtomicExprContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for AtomicExprContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_atomicExpr(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_atomicExpr(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for AtomicExprContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_atomicExpr(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_atomicExpr(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for AtomicExprContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_atomicExpr(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for AtomicExprContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_atomicExpr(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for AtomicExprContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_atomicExpr }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_atomicExpr }
+impl<'input> CustomRuleContext<'input> for AtomicExprContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_atomicExpr
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_atomicExpr }
 }
-antlr_rust::tid!{AtomicExprContextExt<'a>}
+antlr_rust::tid! {AtomicExprContextExt<'a>}
 
-impl<'input> AtomicExprContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<AtomicExprContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,AtomicExprContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait AtomicExprContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<AtomicExprContextExt<'input>>{
-
-fn comparison(&self) -> Option<Rc<ComparisonContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn logicalExpr(&self) -> Option<Rc<LogicalExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> AtomicExprContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<AtomicExprContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            AtomicExprContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait AtomicExprContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<AtomicExprContextExt<'input>>
+{
+    fn comparison(&self) -> Option<Rc<ComparisonContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn logicalExpr(&self) -> Option<Rc<LogicalExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> AtomicExprContextAttrs<'input> for AtomicExprContext<'input>{}
+impl<'input> AtomicExprContextAttrs<'input> for AtomicExprContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn atomicExpr(&mut self,)
-	-> Result<Rc<AtomicExprContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = AtomicExprContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 44, RULE_atomicExpr);
+    pub fn atomicExpr(&mut self) -> Result<Rc<AtomicExprContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = AtomicExprContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 44, RULE_atomicExpr);
         let mut _localctx: Rc<AtomicExprContextAll> = _localctx;
-		let result: Result<(), ANTLRError> = (|| {
+        let result: Result<(), ANTLRError> = (|| {
+            recog.base.set_state(279);
+            recog.err_handler.sync(&mut recog.base)?;
+            match recog.interpreter.adaptive_predict(26, &mut recog.base)? {
+                1 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 1);
+                    recog.base.enter_outer_alt(None, 1);
+                    {
+                        /*InvokeRule comparison*/
+                        recog.base.set_state(274);
+                        recog.comparison()?;
+                    }
+                }
+                2 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 2);
+                    recog.base.enter_outer_alt(None, 2);
+                    {
+                        recog.base.set_state(275);
+                        recog.base.match_token(T__3, &mut recog.err_handler)?;
 
-			recog.base.set_state(279);
-			recog.err_handler.sync(&mut recog.base)?;
-			match  recog.interpreter.adaptive_predict(26,&mut recog.base)? {
-				1 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 1);
-					recog.base.enter_outer_alt(None, 1);
-					{
-					/*InvokeRule comparison*/
-					recog.base.set_state(274);
-					recog.comparison()?;
+                        /*InvokeRule logicalExpr*/
+                        recog.base.set_state(276);
+                        recog.logicalExpr()?;
 
-					}
-				}
-			,
-				2 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 2);
-					recog.base.enter_outer_alt(None, 2);
-					{
-					recog.base.set_state(275);
-					recog.base.match_token(T__3,&mut recog.err_handler)?;
+                        recog.base.set_state(277);
+                        recog.base.match_token(T__4, &mut recog.err_handler)?;
+                    }
+                }
 
-					/*InvokeRule logicalExpr*/
-					recog.base.set_state(276);
-					recog.logicalExpr()?;
+                _ => {}
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-					recog.base.set_state(277);
-					recog.base.match_token(T__4,&mut recog.err_handler)?;
-
-					}
-				}
-
-				_ => {}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- comparison ----------------
 pub type ComparisonContextAll<'input> = ComparisonContext<'input>;
 
-
-pub type ComparisonContext<'input> = BaseParserRuleContext<'input,ComparisonContextExt<'input>>;
+pub type ComparisonContext<'input> = BaseParserRuleContext<'input, ComparisonContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct ComparisonContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct ComparisonContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for ComparisonContext<'input>{}
+impl<'input> LqlParserContext<'input> for ComparisonContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for ComparisonContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_comparison(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_comparison(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for ComparisonContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_comparison(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for ComparisonContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_comparison(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_comparison(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for ComparisonContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_comparison }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_comparison }
-}
-antlr_rust::tid!{ComparisonContextExt<'a>}
-
-impl<'input> ComparisonContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<ComparisonContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,ComparisonContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for ComparisonContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_comparison(self);
+    }
 }
 
-pub trait ComparisonContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<ComparisonContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for ComparisonContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_comparison
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_comparison }
+}
+antlr_rust::tid! {ComparisonContextExt<'a>}
 
-fn arithmeticExpr_all(&self) ->  Vec<Rc<ArithmeticExprContextAll<'input>>> where Self:Sized{
-	self.children_of_type()
-}
-fn arithmeticExpr(&self, i: usize) -> Option<Rc<ArithmeticExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(i)
-}
-fn comparisonOp(&self) -> Option<Rc<ComparisonOpContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn qualifiedIdent_all(&self) ->  Vec<Rc<QualifiedIdentContextAll<'input>>> where Self:Sized{
-	self.children_of_type()
-}
-fn qualifiedIdent(&self, i: usize) -> Option<Rc<QualifiedIdentContextAll<'input>>> where Self:Sized{
-	self.child_of_type(i)
-}
-/// Retrieves first TerminalNode corresponding to token STRING
-/// Returns `None` if there is no child corresponding to token STRING
-fn STRING(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(STRING, 0)
-}
-/// Retrieves all `TerminalNode`s corresponding to token IDENT in current rule
-fn IDENT_all(&self) -> Vec<Rc<TerminalNode<'input,LqlParserContextType>>>  where Self:Sized{
-	self.children_of_type()
-}
-/// Retrieves 'i's TerminalNode corresponding to token IDENT, starting from 0.
-/// Returns `None` if number of children corresponding to token IDENT is less or equal than `i`.
-fn IDENT(&self, i: usize) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(IDENT, i)
-}
-/// Retrieves first TerminalNode corresponding to token INT
-/// Returns `None` if there is no child corresponding to token INT
-fn INT(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(INT, 0)
-}
-/// Retrieves first TerminalNode corresponding to token DECIMAL
-/// Returns `None` if there is no child corresponding to token DECIMAL
-fn DECIMAL(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(DECIMAL, 0)
-}
-/// Retrieves all `TerminalNode`s corresponding to token PARAMETER in current rule
-fn PARAMETER_all(&self) -> Vec<Rc<TerminalNode<'input,LqlParserContextType>>>  where Self:Sized{
-	self.children_of_type()
-}
-/// Retrieves 'i's TerminalNode corresponding to token PARAMETER, starting from 0.
-/// Returns `None` if number of children corresponding to token PARAMETER is less or equal than `i`.
-fn PARAMETER(&self, i: usize) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(PARAMETER, i)
-}
-fn orderDirection(&self) -> Option<Rc<OrderDirectionContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn expr(&self) -> Option<Rc<ExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn existsExpr(&self) -> Option<Rc<ExistsExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn nullCheckExpr(&self) -> Option<Rc<NullCheckExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn inExpr(&self) -> Option<Rc<InExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> ComparisonContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<ComparisonContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            ComparisonContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait ComparisonContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<ComparisonContextExt<'input>>
+{
+    fn arithmeticExpr_all(&self) -> Vec<Rc<ArithmeticExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    fn arithmeticExpr(&self, i: usize) -> Option<Rc<ArithmeticExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(i)
+    }
+    fn comparisonOp(&self) -> Option<Rc<ComparisonOpContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn qualifiedIdent_all(&self) -> Vec<Rc<QualifiedIdentContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    fn qualifiedIdent(&self, i: usize) -> Option<Rc<QualifiedIdentContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(i)
+    }
+    /// Retrieves first TerminalNode corresponding to token STRING
+    /// Returns `None` if there is no child corresponding to token STRING
+    fn STRING(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(STRING, 0)
+    }
+    /// Retrieves all `TerminalNode`s corresponding to token IDENT in current rule
+    fn IDENT_all(&self) -> Vec<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    /// Retrieves 'i's TerminalNode corresponding to token IDENT, starting from 0.
+    /// Returns `None` if number of children corresponding to token IDENT is less or equal than `i`.
+    fn IDENT(&self, i: usize) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IDENT, i)
+    }
+    /// Retrieves first TerminalNode corresponding to token INT
+    /// Returns `None` if there is no child corresponding to token INT
+    fn INT(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(INT, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token DECIMAL
+    /// Returns `None` if there is no child corresponding to token DECIMAL
+    fn DECIMAL(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(DECIMAL, 0)
+    }
+    /// Retrieves all `TerminalNode`s corresponding to token PARAMETER in current rule
+    fn PARAMETER_all(&self) -> Vec<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    /// Retrieves 'i's TerminalNode corresponding to token PARAMETER, starting from 0.
+    /// Returns `None` if number of children corresponding to token PARAMETER is less or equal than `i`.
+    fn PARAMETER(&self, i: usize) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(PARAMETER, i)
+    }
+    fn orderDirection(&self) -> Option<Rc<OrderDirectionContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn expr(&self) -> Option<Rc<ExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn existsExpr(&self) -> Option<Rc<ExistsExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn nullCheckExpr(&self) -> Option<Rc<NullCheckExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn inExpr(&self) -> Option<Rc<InExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> ComparisonContextAttrs<'input> for ComparisonContext<'input>{}
+impl<'input> ComparisonContextAttrs<'input> for ComparisonContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn comparison(&mut self,)
-	-> Result<Rc<ComparisonContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = ComparisonContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 46, RULE_comparison);
+    pub fn comparison(&mut self) -> Result<Rc<ComparisonContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = ComparisonContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 46, RULE_comparison);
         let mut _localctx: Rc<ComparisonContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            recog.base.set_state(334);
+            recog.err_handler.sync(&mut recog.base)?;
+            match recog.interpreter.adaptive_predict(33, &mut recog.base)? {
+                1 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 1);
+                    recog.base.enter_outer_alt(None, 1);
+                    {
+                        /*InvokeRule arithmeticExpr*/
+                        recog.base.set_state(281);
+                        recog.arithmeticExpr()?;
 
-			recog.base.set_state(334);
-			recog.err_handler.sync(&mut recog.base)?;
-			match  recog.interpreter.adaptive_predict(33,&mut recog.base)? {
-				1 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 1);
-					recog.base.enter_outer_alt(None, 1);
-					{
-					/*InvokeRule arithmeticExpr*/
-					recog.base.set_state(281);
-					recog.arithmeticExpr()?;
+                        /*InvokeRule comparisonOp*/
+                        recog.base.set_state(282);
+                        recog.comparisonOp()?;
 
-					/*InvokeRule comparisonOp*/
-					recog.base.set_state(282);
-					recog.comparisonOp()?;
+                        /*InvokeRule arithmeticExpr*/
+                        recog.base.set_state(283);
+                        recog.arithmeticExpr()?;
+                    }
+                }
+                2 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 2);
+                    recog.base.enter_outer_alt(None, 2);
+                    {
+                        /*InvokeRule qualifiedIdent*/
+                        recog.base.set_state(285);
+                        recog.qualifiedIdent()?;
 
-					/*InvokeRule arithmeticExpr*/
-					recog.base.set_state(283);
-					recog.arithmeticExpr()?;
+                        /*InvokeRule comparisonOp*/
+                        recog.base.set_state(286);
+                        recog.comparisonOp()?;
 
-					}
-				}
-			,
-				2 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 2);
-					recog.base.enter_outer_alt(None, 2);
-					{
-					/*InvokeRule qualifiedIdent*/
-					recog.base.set_state(285);
-					recog.qualifiedIdent()?;
+                        recog.base.set_state(293);
+                        recog.err_handler.sync(&mut recog.base)?;
+                        match recog.interpreter.adaptive_predict(27, &mut recog.base)? {
+                            1 => {
+                                {
+                                    /*InvokeRule qualifiedIdent*/
+                                    recog.base.set_state(287);
+                                    recog.qualifiedIdent()?;
+                                }
+                            }
+                            2 => {
+                                recog.base.set_state(288);
+                                recog.base.match_token(STRING, &mut recog.err_handler)?;
+                            }
+                            3 => {
+                                recog.base.set_state(289);
+                                recog.base.match_token(IDENT, &mut recog.err_handler)?;
+                            }
+                            4 => {
+                                recog.base.set_state(290);
+                                recog.base.match_token(INT, &mut recog.err_handler)?;
+                            }
+                            5 => {
+                                recog.base.set_state(291);
+                                recog.base.match_token(DECIMAL, &mut recog.err_handler)?;
+                            }
+                            6 => {
+                                recog.base.set_state(292);
+                                recog.base.match_token(PARAMETER, &mut recog.err_handler)?;
+                            }
 
-					/*InvokeRule comparisonOp*/
-					recog.base.set_state(286);
-					recog.comparisonOp()?;
+                            _ => {}
+                        }
+                    }
+                }
+                3 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 3);
+                    recog.base.enter_outer_alt(None, 3);
+                    {
+                        recog.base.set_state(295);
+                        recog.base.match_token(IDENT, &mut recog.err_handler)?;
 
-					recog.base.set_state(293);
-					recog.err_handler.sync(&mut recog.base)?;
-					match  recog.interpreter.adaptive_predict(27,&mut recog.base)? {
-						1 =>{
-							{
-							/*InvokeRule qualifiedIdent*/
-							recog.base.set_state(287);
-							recog.qualifiedIdent()?;
+                        /*InvokeRule comparisonOp*/
+                        recog.base.set_state(296);
+                        recog.comparisonOp()?;
 
-							}
-						}
-					,
-						2 =>{
-							{
-							recog.base.set_state(288);
-							recog.base.match_token(STRING,&mut recog.err_handler)?;
+                        recog.base.set_state(303);
+                        recog.err_handler.sync(&mut recog.base)?;
+                        match recog.interpreter.adaptive_predict(28, &mut recog.base)? {
+                            1 => {
+                                {
+                                    /*InvokeRule qualifiedIdent*/
+                                    recog.base.set_state(297);
+                                    recog.qualifiedIdent()?;
+                                }
+                            }
+                            2 => {
+                                recog.base.set_state(298);
+                                recog.base.match_token(STRING, &mut recog.err_handler)?;
+                            }
+                            3 => {
+                                recog.base.set_state(299);
+                                recog.base.match_token(IDENT, &mut recog.err_handler)?;
+                            }
+                            4 => {
+                                recog.base.set_state(300);
+                                recog.base.match_token(INT, &mut recog.err_handler)?;
+                            }
+                            5 => {
+                                recog.base.set_state(301);
+                                recog.base.match_token(DECIMAL, &mut recog.err_handler)?;
+                            }
+                            6 => {
+                                recog.base.set_state(302);
+                                recog.base.match_token(PARAMETER, &mut recog.err_handler)?;
+                            }
 
-							}
-						}
-					,
-						3 =>{
-							{
-							recog.base.set_state(289);
-							recog.base.match_token(IDENT,&mut recog.err_handler)?;
+                            _ => {}
+                        }
+                    }
+                }
+                4 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 4);
+                    recog.base.enter_outer_alt(None, 4);
+                    {
+                        recog.base.set_state(305);
+                        recog.base.match_token(PARAMETER, &mut recog.err_handler)?;
 
-							}
-						}
-					,
-						4 =>{
-							{
-							recog.base.set_state(290);
-							recog.base.match_token(INT,&mut recog.err_handler)?;
+                        /*InvokeRule comparisonOp*/
+                        recog.base.set_state(306);
+                        recog.comparisonOp()?;
 
-							}
-						}
-					,
-						5 =>{
-							{
-							recog.base.set_state(291);
-							recog.base.match_token(DECIMAL,&mut recog.err_handler)?;
+                        recog.base.set_state(313);
+                        recog.err_handler.sync(&mut recog.base)?;
+                        match recog.interpreter.adaptive_predict(29, &mut recog.base)? {
+                            1 => {
+                                {
+                                    /*InvokeRule qualifiedIdent*/
+                                    recog.base.set_state(307);
+                                    recog.qualifiedIdent()?;
+                                }
+                            }
+                            2 => {
+                                recog.base.set_state(308);
+                                recog.base.match_token(STRING, &mut recog.err_handler)?;
+                            }
+                            3 => {
+                                recog.base.set_state(309);
+                                recog.base.match_token(IDENT, &mut recog.err_handler)?;
+                            }
+                            4 => {
+                                recog.base.set_state(310);
+                                recog.base.match_token(INT, &mut recog.err_handler)?;
+                            }
+                            5 => {
+                                recog.base.set_state(311);
+                                recog.base.match_token(DECIMAL, &mut recog.err_handler)?;
+                            }
+                            6 => {
+                                recog.base.set_state(312);
+                                recog.base.match_token(PARAMETER, &mut recog.err_handler)?;
+                            }
 
-							}
-						}
-					,
-						6 =>{
-							{
-							recog.base.set_state(292);
-							recog.base.match_token(PARAMETER,&mut recog.err_handler)?;
+                            _ => {}
+                        }
+                    }
+                }
+                5 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 5);
+                    recog.base.enter_outer_alt(None, 5);
+                    {
+                        /*InvokeRule qualifiedIdent*/
+                        recog.base.set_state(315);
+                        recog.qualifiedIdent()?;
 
-							}
-						}
+                        recog.base.set_state(317);
+                        recog.err_handler.sync(&mut recog.base)?;
+                        _la = recog.base.input.la(1);
+                        if _la == ASC || _la == DESC {
+                            {
+                                /*InvokeRule orderDirection*/
+                                recog.base.set_state(316);
+                                recog.orderDirection()?;
+                            }
+                        }
+                    }
+                }
+                6 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 6);
+                    recog.base.enter_outer_alt(None, 6);
+                    {
+                        recog.base.set_state(319);
+                        recog.base.match_token(IDENT, &mut recog.err_handler)?;
 
-						_ => {}
-					}
-					}
-				}
-			,
-				3 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 3);
-					recog.base.enter_outer_alt(None, 3);
-					{
-					recog.base.set_state(295);
-					recog.base.match_token(IDENT,&mut recog.err_handler)?;
+                        recog.base.set_state(321);
+                        recog.err_handler.sync(&mut recog.base)?;
+                        _la = recog.base.input.la(1);
+                        if _la == ASC || _la == DESC {
+                            {
+                                /*InvokeRule orderDirection*/
+                                recog.base.set_state(320);
+                                recog.orderDirection()?;
+                            }
+                        }
+                    }
+                }
+                7 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 7);
+                    recog.base.enter_outer_alt(None, 7);
+                    {
+                        recog.base.set_state(323);
+                        recog.base.match_token(PARAMETER, &mut recog.err_handler)?;
 
-					/*InvokeRule comparisonOp*/
-					recog.base.set_state(296);
-					recog.comparisonOp()?;
+                        recog.base.set_state(325);
+                        recog.err_handler.sync(&mut recog.base)?;
+                        _la = recog.base.input.la(1);
+                        if _la == ASC || _la == DESC {
+                            {
+                                /*InvokeRule orderDirection*/
+                                recog.base.set_state(324);
+                                recog.orderDirection()?;
+                            }
+                        }
+                    }
+                }
+                8 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 8);
+                    recog.base.enter_outer_alt(None, 8);
+                    {
+                        recog.base.set_state(327);
+                        recog.base.match_token(STRING, &mut recog.err_handler)?;
+                    }
+                }
+                9 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 9);
+                    recog.base.enter_outer_alt(None, 9);
+                    {
+                        recog.base.set_state(328);
+                        recog.base.match_token(INT, &mut recog.err_handler)?;
+                    }
+                }
+                10 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 10);
+                    recog.base.enter_outer_alt(None, 10);
+                    {
+                        recog.base.set_state(329);
+                        recog.base.match_token(DECIMAL, &mut recog.err_handler)?;
+                    }
+                }
+                11 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 11);
+                    recog.base.enter_outer_alt(None, 11);
+                    {
+                        /*InvokeRule expr*/
+                        recog.base.set_state(330);
+                        recog.expr()?;
+                    }
+                }
+                12 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 12);
+                    recog.base.enter_outer_alt(None, 12);
+                    {
+                        /*InvokeRule existsExpr*/
+                        recog.base.set_state(331);
+                        recog.existsExpr()?;
+                    }
+                }
+                13 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 13);
+                    recog.base.enter_outer_alt(None, 13);
+                    {
+                        /*InvokeRule nullCheckExpr*/
+                        recog.base.set_state(332);
+                        recog.nullCheckExpr()?;
+                    }
+                }
+                14 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 14);
+                    recog.base.enter_outer_alt(None, 14);
+                    {
+                        /*InvokeRule inExpr*/
+                        recog.base.set_state(333);
+                        recog.inExpr()?;
+                    }
+                }
 
-					recog.base.set_state(303);
-					recog.err_handler.sync(&mut recog.base)?;
-					match  recog.interpreter.adaptive_predict(28,&mut recog.base)? {
-						1 =>{
-							{
-							/*InvokeRule qualifiedIdent*/
-							recog.base.set_state(297);
-							recog.qualifiedIdent()?;
+                _ => {}
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-							}
-						}
-					,
-						2 =>{
-							{
-							recog.base.set_state(298);
-							recog.base.match_token(STRING,&mut recog.err_handler)?;
-
-							}
-						}
-					,
-						3 =>{
-							{
-							recog.base.set_state(299);
-							recog.base.match_token(IDENT,&mut recog.err_handler)?;
-
-							}
-						}
-					,
-						4 =>{
-							{
-							recog.base.set_state(300);
-							recog.base.match_token(INT,&mut recog.err_handler)?;
-
-							}
-						}
-					,
-						5 =>{
-							{
-							recog.base.set_state(301);
-							recog.base.match_token(DECIMAL,&mut recog.err_handler)?;
-
-							}
-						}
-					,
-						6 =>{
-							{
-							recog.base.set_state(302);
-							recog.base.match_token(PARAMETER,&mut recog.err_handler)?;
-
-							}
-						}
-
-						_ => {}
-					}
-					}
-				}
-			,
-				4 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 4);
-					recog.base.enter_outer_alt(None, 4);
-					{
-					recog.base.set_state(305);
-					recog.base.match_token(PARAMETER,&mut recog.err_handler)?;
-
-					/*InvokeRule comparisonOp*/
-					recog.base.set_state(306);
-					recog.comparisonOp()?;
-
-					recog.base.set_state(313);
-					recog.err_handler.sync(&mut recog.base)?;
-					match  recog.interpreter.adaptive_predict(29,&mut recog.base)? {
-						1 =>{
-							{
-							/*InvokeRule qualifiedIdent*/
-							recog.base.set_state(307);
-							recog.qualifiedIdent()?;
-
-							}
-						}
-					,
-						2 =>{
-							{
-							recog.base.set_state(308);
-							recog.base.match_token(STRING,&mut recog.err_handler)?;
-
-							}
-						}
-					,
-						3 =>{
-							{
-							recog.base.set_state(309);
-							recog.base.match_token(IDENT,&mut recog.err_handler)?;
-
-							}
-						}
-					,
-						4 =>{
-							{
-							recog.base.set_state(310);
-							recog.base.match_token(INT,&mut recog.err_handler)?;
-
-							}
-						}
-					,
-						5 =>{
-							{
-							recog.base.set_state(311);
-							recog.base.match_token(DECIMAL,&mut recog.err_handler)?;
-
-							}
-						}
-					,
-						6 =>{
-							{
-							recog.base.set_state(312);
-							recog.base.match_token(PARAMETER,&mut recog.err_handler)?;
-
-							}
-						}
-
-						_ => {}
-					}
-					}
-				}
-			,
-				5 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 5);
-					recog.base.enter_outer_alt(None, 5);
-					{
-					/*InvokeRule qualifiedIdent*/
-					recog.base.set_state(315);
-					recog.qualifiedIdent()?;
-
-					recog.base.set_state(317);
-					recog.err_handler.sync(&mut recog.base)?;
-					_la = recog.base.input.la(1);
-					if _la==ASC || _la==DESC {
-						{
-						/*InvokeRule orderDirection*/
-						recog.base.set_state(316);
-						recog.orderDirection()?;
-
-						}
-					}
-
-					}
-				}
-			,
-				6 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 6);
-					recog.base.enter_outer_alt(None, 6);
-					{
-					recog.base.set_state(319);
-					recog.base.match_token(IDENT,&mut recog.err_handler)?;
-
-					recog.base.set_state(321);
-					recog.err_handler.sync(&mut recog.base)?;
-					_la = recog.base.input.la(1);
-					if _la==ASC || _la==DESC {
-						{
-						/*InvokeRule orderDirection*/
-						recog.base.set_state(320);
-						recog.orderDirection()?;
-
-						}
-					}
-
-					}
-				}
-			,
-				7 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 7);
-					recog.base.enter_outer_alt(None, 7);
-					{
-					recog.base.set_state(323);
-					recog.base.match_token(PARAMETER,&mut recog.err_handler)?;
-
-					recog.base.set_state(325);
-					recog.err_handler.sync(&mut recog.base)?;
-					_la = recog.base.input.la(1);
-					if _la==ASC || _la==DESC {
-						{
-						/*InvokeRule orderDirection*/
-						recog.base.set_state(324);
-						recog.orderDirection()?;
-
-						}
-					}
-
-					}
-				}
-			,
-				8 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 8);
-					recog.base.enter_outer_alt(None, 8);
-					{
-					recog.base.set_state(327);
-					recog.base.match_token(STRING,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				9 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 9);
-					recog.base.enter_outer_alt(None, 9);
-					{
-					recog.base.set_state(328);
-					recog.base.match_token(INT,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				10 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 10);
-					recog.base.enter_outer_alt(None, 10);
-					{
-					recog.base.set_state(329);
-					recog.base.match_token(DECIMAL,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				11 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 11);
-					recog.base.enter_outer_alt(None, 11);
-					{
-					/*InvokeRule expr*/
-					recog.base.set_state(330);
-					recog.expr()?;
-
-					}
-				}
-			,
-				12 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 12);
-					recog.base.enter_outer_alt(None, 12);
-					{
-					/*InvokeRule existsExpr*/
-					recog.base.set_state(331);
-					recog.existsExpr()?;
-
-					}
-				}
-			,
-				13 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 13);
-					recog.base.enter_outer_alt(None, 13);
-					{
-					/*InvokeRule nullCheckExpr*/
-					recog.base.set_state(332);
-					recog.nullCheckExpr()?;
-
-					}
-				}
-			,
-				14 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 14);
-					recog.base.enter_outer_alt(None, 14);
-					{
-					/*InvokeRule inExpr*/
-					recog.base.set_state(333);
-					recog.inExpr()?;
-
-					}
-				}
-
-				_ => {}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- existsExpr ----------------
 pub type ExistsExprContextAll<'input> = ExistsExprContext<'input>;
 
-
-pub type ExistsExprContext<'input> = BaseParserRuleContext<'input,ExistsExprContextExt<'input>>;
+pub type ExistsExprContext<'input> = BaseParserRuleContext<'input, ExistsExprContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct ExistsExprContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct ExistsExprContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for ExistsExprContext<'input>{}
+impl<'input> LqlParserContext<'input> for ExistsExprContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for ExistsExprContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_existsExpr(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_existsExpr(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for ExistsExprContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_existsExpr(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_existsExpr(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for ExistsExprContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_existsExpr(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for ExistsExprContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_existsExpr(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for ExistsExprContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_existsExpr }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_existsExpr }
+impl<'input> CustomRuleContext<'input> for ExistsExprContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_existsExpr
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_existsExpr }
 }
-antlr_rust::tid!{ExistsExprContextExt<'a>}
+antlr_rust::tid! {ExistsExprContextExt<'a>}
 
-impl<'input> ExistsExprContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<ExistsExprContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,ExistsExprContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait ExistsExprContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<ExistsExprContextExt<'input>>{
-
-/// Retrieves first TerminalNode corresponding to token EXISTS
-/// Returns `None` if there is no child corresponding to token EXISTS
-fn EXISTS(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(EXISTS, 0)
-}
-fn pipeExpr(&self) -> Option<Rc<PipeExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> ExistsExprContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<ExistsExprContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            ExistsExprContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait ExistsExprContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<ExistsExprContextExt<'input>>
+{
+    /// Retrieves first TerminalNode corresponding to token EXISTS
+    /// Returns `None` if there is no child corresponding to token EXISTS
+    fn EXISTS(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(EXISTS, 0)
+    }
+    fn pipeExpr(&self) -> Option<Rc<PipeExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> ExistsExprContextAttrs<'input> for ExistsExprContext<'input>{}
+impl<'input> ExistsExprContextAttrs<'input> for ExistsExprContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn existsExpr(&mut self,)
-	-> Result<Rc<ExistsExprContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = ExistsExprContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 48, RULE_existsExpr);
+    pub fn existsExpr(&mut self) -> Result<Rc<ExistsExprContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = ExistsExprContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 48, RULE_existsExpr);
         let mut _localctx: Rc<ExistsExprContextAll> = _localctx;
-		let result: Result<(), ANTLRError> = (|| {
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(336);
+                recog.base.match_token(EXISTS, &mut recog.err_handler)?;
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(336);
-			recog.base.match_token(EXISTS,&mut recog.err_handler)?;
+                recog.base.set_state(337);
+                recog.base.match_token(T__3, &mut recog.err_handler)?;
 
-			recog.base.set_state(337);
-			recog.base.match_token(T__3,&mut recog.err_handler)?;
+                /*InvokeRule pipeExpr*/
+                recog.base.set_state(338);
+                recog.pipeExpr()?;
 
-			/*InvokeRule pipeExpr*/
-			recog.base.set_state(338);
-			recog.pipeExpr()?;
+                recog.base.set_state(339);
+                recog.base.match_token(T__4, &mut recog.err_handler)?;
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-			recog.base.set_state(339);
-			recog.base.match_token(T__4,&mut recog.err_handler)?;
-
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- nullCheckExpr ----------------
 pub type NullCheckExprContextAll<'input> = NullCheckExprContext<'input>;
 
-
-pub type NullCheckExprContext<'input> = BaseParserRuleContext<'input,NullCheckExprContextExt<'input>>;
+pub type NullCheckExprContext<'input> =
+    BaseParserRuleContext<'input, NullCheckExprContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct NullCheckExprContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct NullCheckExprContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for NullCheckExprContext<'input>{}
+impl<'input> LqlParserContext<'input> for NullCheckExprContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for NullCheckExprContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_nullCheckExpr(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_nullCheckExpr(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for NullCheckExprContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_nullCheckExpr(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for NullCheckExprContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_nullCheckExpr(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_nullCheckExpr(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for NullCheckExprContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_nullCheckExpr }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_nullCheckExpr }
-}
-antlr_rust::tid!{NullCheckExprContextExt<'a>}
-
-impl<'input> NullCheckExprContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<NullCheckExprContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,NullCheckExprContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for NullCheckExprContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_nullCheckExpr(self);
+    }
 }
 
-pub trait NullCheckExprContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<NullCheckExprContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for NullCheckExprContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_nullCheckExpr
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_nullCheckExpr }
+}
+antlr_rust::tid! {NullCheckExprContextExt<'a>}
 
-fn qualifiedIdent(&self) -> Option<Rc<QualifiedIdentContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-/// Retrieves first TerminalNode corresponding to token IDENT
-/// Returns `None` if there is no child corresponding to token IDENT
-fn IDENT(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(IDENT, 0)
-}
-/// Retrieves first TerminalNode corresponding to token PARAMETER
-/// Returns `None` if there is no child corresponding to token PARAMETER
-fn PARAMETER(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(PARAMETER, 0)
-}
-/// Retrieves first TerminalNode corresponding to token IS
-/// Returns `None` if there is no child corresponding to token IS
-fn IS(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(IS, 0)
-}
-/// Retrieves first TerminalNode corresponding to token NULL
-/// Returns `None` if there is no child corresponding to token NULL
-fn NULL(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(NULL, 0)
-}
-/// Retrieves first TerminalNode corresponding to token NOT
-/// Returns `None` if there is no child corresponding to token NOT
-fn NOT(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(NOT, 0)
+impl<'input> NullCheckExprContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<NullCheckExprContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            NullCheckExprContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait NullCheckExprContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<NullCheckExprContextExt<'input>>
+{
+    fn qualifiedIdent(&self) -> Option<Rc<QualifiedIdentContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    /// Retrieves first TerminalNode corresponding to token IDENT
+    /// Returns `None` if there is no child corresponding to token IDENT
+    fn IDENT(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IDENT, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token PARAMETER
+    /// Returns `None` if there is no child corresponding to token PARAMETER
+    fn PARAMETER(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(PARAMETER, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token IS
+    /// Returns `None` if there is no child corresponding to token IS
+    fn IS(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IS, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token NULL
+    /// Returns `None` if there is no child corresponding to token NULL
+    fn NULL(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(NULL, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token NOT
+    /// Returns `None` if there is no child corresponding to token NOT
+    fn NOT(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(NOT, 0)
+    }
 }
 
-impl<'input> NullCheckExprContextAttrs<'input> for NullCheckExprContext<'input>{}
+impl<'input> NullCheckExprContextAttrs<'input> for NullCheckExprContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn nullCheckExpr(&mut self,)
-	-> Result<Rc<NullCheckExprContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = NullCheckExprContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 50, RULE_nullCheckExpr);
+    pub fn nullCheckExpr(&mut self) -> Result<Rc<NullCheckExprContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx =
+            NullCheckExprContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 50, RULE_nullCheckExpr);
         let mut _localctx: Rc<NullCheckExprContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(344);
+                recog.err_handler.sync(&mut recog.base)?;
+                match recog.interpreter.adaptive_predict(34, &mut recog.base)? {
+                    1 => {
+                        {
+                            /*InvokeRule qualifiedIdent*/
+                            recog.base.set_state(341);
+                            recog.qualifiedIdent()?;
+                        }
+                    }
+                    2 => {
+                        recog.base.set_state(342);
+                        recog.base.match_token(IDENT, &mut recog.err_handler)?;
+                    }
+                    3 => {
+                        recog.base.set_state(343);
+                        recog.base.match_token(PARAMETER, &mut recog.err_handler)?;
+                    }
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(344);
-			recog.err_handler.sync(&mut recog.base)?;
-			match  recog.interpreter.adaptive_predict(34,&mut recog.base)? {
-				1 =>{
-					{
-					/*InvokeRule qualifiedIdent*/
-					recog.base.set_state(341);
-					recog.qualifiedIdent()?;
+                    _ => {}
+                }
+                {
+                    recog.base.set_state(346);
+                    recog.base.match_token(IS, &mut recog.err_handler)?;
 
-					}
-				}
-			,
-				2 =>{
-					{
-					recog.base.set_state(342);
-					recog.base.match_token(IDENT,&mut recog.err_handler)?;
+                    recog.base.set_state(348);
+                    recog.err_handler.sync(&mut recog.base)?;
+                    _la = recog.base.input.la(1);
+                    if _la == NOT {
+                        {
+                            recog.base.set_state(347);
+                            recog.base.match_token(NOT, &mut recog.err_handler)?;
+                        }
+                    }
 
-					}
-				}
-			,
-				3 =>{
-					{
-					recog.base.set_state(343);
-					recog.base.match_token(PARAMETER,&mut recog.err_handler)?;
+                    recog.base.set_state(350);
+                    recog.base.match_token(NULL, &mut recog.err_handler)?;
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-					}
-				}
-
-				_ => {}
-			}
-			{
-			recog.base.set_state(346);
-			recog.base.match_token(IS,&mut recog.err_handler)?;
-
-			recog.base.set_state(348);
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			if _la==NOT {
-				{
-				recog.base.set_state(347);
-				recog.base.match_token(NOT,&mut recog.err_handler)?;
-
-				}
-			}
-
-			recog.base.set_state(350);
-			recog.base.match_token(NULL,&mut recog.err_handler)?;
-
-			}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- inExpr ----------------
 pub type InExprContextAll<'input> = InExprContext<'input>;
 
-
-pub type InExprContext<'input> = BaseParserRuleContext<'input,InExprContextExt<'input>>;
+pub type InExprContext<'input> = BaseParserRuleContext<'input, InExprContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct InExprContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct InExprContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for InExprContext<'input>{}
+impl<'input> LqlParserContext<'input> for InExprContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for InExprContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_inExpr(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_inExpr(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for InExprContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_inExpr(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for InExprContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_inExpr(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_inExpr(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for InExprContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_inExpr }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_inExpr }
-}
-antlr_rust::tid!{InExprContextExt<'a>}
-
-impl<'input> InExprContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<InExprContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,InExprContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for InExprContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_inExpr(self);
+    }
 }
 
-pub trait InExprContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<InExprContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for InExprContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_inExpr
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_inExpr }
+}
+antlr_rust::tid! {InExprContextExt<'a>}
 
-/// Retrieves first TerminalNode corresponding to token IN
-/// Returns `None` if there is no child corresponding to token IN
-fn IN(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(IN, 0)
-}
-fn qualifiedIdent(&self) -> Option<Rc<QualifiedIdentContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-/// Retrieves first TerminalNode corresponding to token IDENT
-/// Returns `None` if there is no child corresponding to token IDENT
-fn IDENT(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(IDENT, 0)
-}
-/// Retrieves first TerminalNode corresponding to token PARAMETER
-/// Returns `None` if there is no child corresponding to token PARAMETER
-fn PARAMETER(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(PARAMETER, 0)
-}
-fn pipeExpr(&self) -> Option<Rc<PipeExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn argList(&self) -> Option<Rc<ArgListContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> InExprContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<InExprContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            InExprContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait InExprContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<InExprContextExt<'input>>
+{
+    /// Retrieves first TerminalNode corresponding to token IN
+    /// Returns `None` if there is no child corresponding to token IN
+    fn IN(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IN, 0)
+    }
+    fn qualifiedIdent(&self) -> Option<Rc<QualifiedIdentContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    /// Retrieves first TerminalNode corresponding to token IDENT
+    /// Returns `None` if there is no child corresponding to token IDENT
+    fn IDENT(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IDENT, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token PARAMETER
+    /// Returns `None` if there is no child corresponding to token PARAMETER
+    fn PARAMETER(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(PARAMETER, 0)
+    }
+    fn pipeExpr(&self) -> Option<Rc<PipeExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn argList(&self) -> Option<Rc<ArgListContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> InExprContextAttrs<'input> for InExprContext<'input>{}
+impl<'input> InExprContextAttrs<'input> for InExprContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn inExpr(&mut self,)
-	-> Result<Rc<InExprContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = InExprContextExt::new(_parentctx.clone(), recog.base.get_state());
+    pub fn inExpr(&mut self) -> Result<Rc<InExprContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = InExprContextExt::new(_parentctx.clone(), recog.base.get_state());
         recog.base.enter_rule(_localctx.clone(), 52, RULE_inExpr);
         let mut _localctx: Rc<InExprContextAll> = _localctx;
-		let result: Result<(), ANTLRError> = (|| {
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(355);
+                recog.err_handler.sync(&mut recog.base)?;
+                match recog.interpreter.adaptive_predict(36, &mut recog.base)? {
+                    1 => {
+                        {
+                            /*InvokeRule qualifiedIdent*/
+                            recog.base.set_state(352);
+                            recog.qualifiedIdent()?;
+                        }
+                    }
+                    2 => {
+                        recog.base.set_state(353);
+                        recog.base.match_token(IDENT, &mut recog.err_handler)?;
+                    }
+                    3 => {
+                        recog.base.set_state(354);
+                        recog.base.match_token(PARAMETER, &mut recog.err_handler)?;
+                    }
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(355);
-			recog.err_handler.sync(&mut recog.base)?;
-			match  recog.interpreter.adaptive_predict(36,&mut recog.base)? {
-				1 =>{
-					{
-					/*InvokeRule qualifiedIdent*/
-					recog.base.set_state(352);
-					recog.qualifiedIdent()?;
+                    _ => {}
+                }
+                recog.base.set_state(357);
+                recog.base.match_token(IN, &mut recog.err_handler)?;
 
-					}
-				}
-			,
-				2 =>{
-					{
-					recog.base.set_state(353);
-					recog.base.match_token(IDENT,&mut recog.err_handler)?;
+                recog.base.set_state(358);
+                recog.base.match_token(T__3, &mut recog.err_handler)?;
 
-					}
-				}
-			,
-				3 =>{
-					{
-					recog.base.set_state(354);
-					recog.base.match_token(PARAMETER,&mut recog.err_handler)?;
+                recog.base.set_state(361);
+                recog.err_handler.sync(&mut recog.base)?;
+                match recog.interpreter.adaptive_predict(37, &mut recog.base)? {
+                    1 => {
+                        {
+                            /*InvokeRule pipeExpr*/
+                            recog.base.set_state(359);
+                            recog.pipeExpr()?;
+                        }
+                    }
+                    2 => {
+                        {
+                            /*InvokeRule argList*/
+                            recog.base.set_state(360);
+                            recog.argList()?;
+                        }
+                    }
 
-					}
-				}
+                    _ => {}
+                }
+                recog.base.set_state(363);
+                recog.base.match_token(T__4, &mut recog.err_handler)?;
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-				_ => {}
-			}
-			recog.base.set_state(357);
-			recog.base.match_token(IN,&mut recog.err_handler)?;
-
-			recog.base.set_state(358);
-			recog.base.match_token(T__3,&mut recog.err_handler)?;
-
-			recog.base.set_state(361);
-			recog.err_handler.sync(&mut recog.base)?;
-			match  recog.interpreter.adaptive_predict(37,&mut recog.base)? {
-				1 =>{
-					{
-					/*InvokeRule pipeExpr*/
-					recog.base.set_state(359);
-					recog.pipeExpr()?;
-
-					}
-				}
-			,
-				2 =>{
-					{
-					/*InvokeRule argList*/
-					recog.base.set_state(360);
-					recog.argList()?;
-
-					}
-				}
-
-				_ => {}
-			}
-			recog.base.set_state(363);
-			recog.base.match_token(T__4,&mut recog.err_handler)?;
-
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- caseExpr ----------------
 pub type CaseExprContextAll<'input> = CaseExprContext<'input>;
 
-
-pub type CaseExprContext<'input> = BaseParserRuleContext<'input,CaseExprContextExt<'input>>;
+pub type CaseExprContext<'input> = BaseParserRuleContext<'input, CaseExprContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct CaseExprContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct CaseExprContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for CaseExprContext<'input>{}
+impl<'input> LqlParserContext<'input> for CaseExprContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for CaseExprContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_caseExpr(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_caseExpr(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for CaseExprContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_caseExpr(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for CaseExprContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_caseExpr(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_caseExpr(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for CaseExprContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_caseExpr }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_caseExpr }
-}
-antlr_rust::tid!{CaseExprContextExt<'a>}
-
-impl<'input> CaseExprContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<CaseExprContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,CaseExprContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for CaseExprContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_caseExpr(self);
+    }
 }
 
-pub trait CaseExprContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<CaseExprContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for CaseExprContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_caseExpr
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_caseExpr }
+}
+antlr_rust::tid! {CaseExprContextExt<'a>}
 
-/// Retrieves first TerminalNode corresponding to token CASE
-/// Returns `None` if there is no child corresponding to token CASE
-fn CASE(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(CASE, 0)
-}
-/// Retrieves first TerminalNode corresponding to token END
-/// Returns `None` if there is no child corresponding to token END
-fn END(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(END, 0)
-}
-fn whenClause_all(&self) ->  Vec<Rc<WhenClauseContextAll<'input>>> where Self:Sized{
-	self.children_of_type()
-}
-fn whenClause(&self, i: usize) -> Option<Rc<WhenClauseContextAll<'input>>> where Self:Sized{
-	self.child_of_type(i)
-}
-/// Retrieves first TerminalNode corresponding to token ELSE
-/// Returns `None` if there is no child corresponding to token ELSE
-fn ELSE(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(ELSE, 0)
-}
-fn caseResult(&self) -> Option<Rc<CaseResultContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> CaseExprContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<CaseExprContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            CaseExprContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait CaseExprContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<CaseExprContextExt<'input>>
+{
+    /// Retrieves first TerminalNode corresponding to token CASE
+    /// Returns `None` if there is no child corresponding to token CASE
+    fn CASE(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(CASE, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token END
+    /// Returns `None` if there is no child corresponding to token END
+    fn END(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(END, 0)
+    }
+    fn whenClause_all(&self) -> Vec<Rc<WhenClauseContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.children_of_type()
+    }
+    fn whenClause(&self, i: usize) -> Option<Rc<WhenClauseContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(i)
+    }
+    /// Retrieves first TerminalNode corresponding to token ELSE
+    /// Returns `None` if there is no child corresponding to token ELSE
+    fn ELSE(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(ELSE, 0)
+    }
+    fn caseResult(&self) -> Option<Rc<CaseResultContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> CaseExprContextAttrs<'input> for CaseExprContext<'input>{}
+impl<'input> CaseExprContextAttrs<'input> for CaseExprContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn caseExpr(&mut self,)
-	-> Result<Rc<CaseExprContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = CaseExprContextExt::new(_parentctx.clone(), recog.base.get_state());
+    pub fn caseExpr(&mut self) -> Result<Rc<CaseExprContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = CaseExprContextExt::new(_parentctx.clone(), recog.base.get_state());
         recog.base.enter_rule(_localctx.clone(), 54, RULE_caseExpr);
         let mut _localctx: Rc<CaseExprContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(365);
+                recog.base.match_token(CASE, &mut recog.err_handler)?;
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(365);
-			recog.base.match_token(CASE,&mut recog.err_handler)?;
+                recog.base.set_state(367);
+                recog.err_handler.sync(&mut recog.base)?;
+                _la = recog.base.input.la(1);
+                loop {
+                    {
+                        {
+                            /*InvokeRule whenClause*/
+                            recog.base.set_state(366);
+                            recog.whenClause()?;
+                        }
+                    }
+                    recog.base.set_state(369);
+                    recog.err_handler.sync(&mut recog.base)?;
+                    _la = recog.base.input.la(1);
+                    if !(_la == WHEN) {
+                        break;
+                    }
+                }
+                recog.base.set_state(373);
+                recog.err_handler.sync(&mut recog.base)?;
+                _la = recog.base.input.la(1);
+                if _la == ELSE {
+                    {
+                        recog.base.set_state(371);
+                        recog.base.match_token(ELSE, &mut recog.err_handler)?;
 
-			recog.base.set_state(367); 
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			loop {
-				{
-				{
-				/*InvokeRule whenClause*/
-				recog.base.set_state(366);
-				recog.whenClause()?;
+                        /*InvokeRule caseResult*/
+                        recog.base.set_state(372);
+                        recog.caseResult()?;
+                    }
+                }
 
-				}
-				}
-				recog.base.set_state(369); 
-				recog.err_handler.sync(&mut recog.base)?;
-				_la = recog.base.input.la(1);
-				if !(_la==WHEN) {break}
-			}
-			recog.base.set_state(373);
-			recog.err_handler.sync(&mut recog.base)?;
-			_la = recog.base.input.la(1);
-			if _la==ELSE {
-				{
-				recog.base.set_state(371);
-				recog.base.match_token(ELSE,&mut recog.err_handler)?;
+                recog.base.set_state(375);
+                recog.base.match_token(END, &mut recog.err_handler)?;
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-				/*InvokeRule caseResult*/
-				recog.base.set_state(372);
-				recog.caseResult()?;
-
-				}
-			}
-
-			recog.base.set_state(375);
-			recog.base.match_token(END,&mut recog.err_handler)?;
-
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- whenClause ----------------
 pub type WhenClauseContextAll<'input> = WhenClauseContext<'input>;
 
-
-pub type WhenClauseContext<'input> = BaseParserRuleContext<'input,WhenClauseContextExt<'input>>;
+pub type WhenClauseContext<'input> = BaseParserRuleContext<'input, WhenClauseContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct WhenClauseContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct WhenClauseContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for WhenClauseContext<'input>{}
+impl<'input> LqlParserContext<'input> for WhenClauseContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for WhenClauseContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_whenClause(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_whenClause(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for WhenClauseContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_whenClause(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for WhenClauseContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_whenClause(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_whenClause(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for WhenClauseContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_whenClause }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_whenClause }
-}
-antlr_rust::tid!{WhenClauseContextExt<'a>}
-
-impl<'input> WhenClauseContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<WhenClauseContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,WhenClauseContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for WhenClauseContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_whenClause(self);
+    }
 }
 
-pub trait WhenClauseContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<WhenClauseContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for WhenClauseContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_whenClause
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_whenClause }
+}
+antlr_rust::tid! {WhenClauseContextExt<'a>}
 
-/// Retrieves first TerminalNode corresponding to token WHEN
-/// Returns `None` if there is no child corresponding to token WHEN
-fn WHEN(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(WHEN, 0)
-}
-fn comparison(&self) -> Option<Rc<ComparisonContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-/// Retrieves first TerminalNode corresponding to token THEN
-/// Returns `None` if there is no child corresponding to token THEN
-fn THEN(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(THEN, 0)
-}
-fn caseResult(&self) -> Option<Rc<CaseResultContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
+impl<'input> WhenClauseContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<WhenClauseContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            WhenClauseContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait WhenClauseContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<WhenClauseContextExt<'input>>
+{
+    /// Retrieves first TerminalNode corresponding to token WHEN
+    /// Returns `None` if there is no child corresponding to token WHEN
+    fn WHEN(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(WHEN, 0)
+    }
+    fn comparison(&self) -> Option<Rc<ComparisonContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    /// Retrieves first TerminalNode corresponding to token THEN
+    /// Returns `None` if there is no child corresponding to token THEN
+    fn THEN(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(THEN, 0)
+    }
+    fn caseResult(&self) -> Option<Rc<CaseResultContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
 }
 
-impl<'input> WhenClauseContextAttrs<'input> for WhenClauseContext<'input>{}
+impl<'input> WhenClauseContextAttrs<'input> for WhenClauseContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn whenClause(&mut self,)
-	-> Result<Rc<WhenClauseContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = WhenClauseContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 56, RULE_whenClause);
+    pub fn whenClause(&mut self) -> Result<Rc<WhenClauseContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = WhenClauseContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 56, RULE_whenClause);
         let mut _localctx: Rc<WhenClauseContextAll> = _localctx;
-		let result: Result<(), ANTLRError> = (|| {
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(377);
+                recog.base.match_token(WHEN, &mut recog.err_handler)?;
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(377);
-			recog.base.match_token(WHEN,&mut recog.err_handler)?;
+                /*InvokeRule comparison*/
+                recog.base.set_state(378);
+                recog.comparison()?;
 
-			/*InvokeRule comparison*/
-			recog.base.set_state(378);
-			recog.comparison()?;
+                recog.base.set_state(379);
+                recog.base.match_token(THEN, &mut recog.err_handler)?;
 
-			recog.base.set_state(379);
-			recog.base.match_token(THEN,&mut recog.err_handler)?;
+                /*InvokeRule caseResult*/
+                recog.base.set_state(380);
+                recog.caseResult()?;
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-			/*InvokeRule caseResult*/
-			recog.base.set_state(380);
-			recog.caseResult()?;
-
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- caseResult ----------------
 pub type CaseResultContextAll<'input> = CaseResultContext<'input>;
 
-
-pub type CaseResultContext<'input> = BaseParserRuleContext<'input,CaseResultContextExt<'input>>;
+pub type CaseResultContext<'input> = BaseParserRuleContext<'input, CaseResultContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct CaseResultContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct CaseResultContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for CaseResultContext<'input>{}
+impl<'input> LqlParserContext<'input> for CaseResultContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for CaseResultContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_caseResult(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_caseResult(self);
-			listener.exit_every_rule(self);
-		}
-}
-
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for CaseResultContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_caseResult(self);
-	}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for CaseResultContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_caseResult(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_caseResult(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for CaseResultContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_caseResult }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_caseResult }
-}
-antlr_rust::tid!{CaseResultContextExt<'a>}
-
-impl<'input> CaseResultContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<CaseResultContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,CaseResultContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for CaseResultContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_caseResult(self);
+    }
 }
 
-pub trait CaseResultContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<CaseResultContextExt<'input>>{
+impl<'input> CustomRuleContext<'input> for CaseResultContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_caseResult
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_caseResult }
+}
+antlr_rust::tid! {CaseResultContextExt<'a>}
 
-fn arithmeticExpr(&self) -> Option<Rc<ArithmeticExprContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn comparison(&self) -> Option<Rc<ComparisonContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-fn qualifiedIdent(&self) -> Option<Rc<QualifiedIdentContextAll<'input>>> where Self:Sized{
-	self.child_of_type(0)
-}
-/// Retrieves first TerminalNode corresponding to token IDENT
-/// Returns `None` if there is no child corresponding to token IDENT
-fn IDENT(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(IDENT, 0)
-}
-/// Retrieves first TerminalNode corresponding to token INT
-/// Returns `None` if there is no child corresponding to token INT
-fn INT(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(INT, 0)
-}
-/// Retrieves first TerminalNode corresponding to token DECIMAL
-/// Returns `None` if there is no child corresponding to token DECIMAL
-fn DECIMAL(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(DECIMAL, 0)
-}
-/// Retrieves first TerminalNode corresponding to token STRING
-/// Returns `None` if there is no child corresponding to token STRING
-fn STRING(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(STRING, 0)
-}
-/// Retrieves first TerminalNode corresponding to token PARAMETER
-/// Returns `None` if there is no child corresponding to token PARAMETER
-fn PARAMETER(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(PARAMETER, 0)
+impl<'input> CaseResultContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<CaseResultContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            CaseResultContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait CaseResultContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<CaseResultContextExt<'input>>
+{
+    fn arithmeticExpr(&self) -> Option<Rc<ArithmeticExprContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn comparison(&self) -> Option<Rc<ComparisonContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    fn qualifiedIdent(&self) -> Option<Rc<QualifiedIdentContextAll<'input>>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+    /// Retrieves first TerminalNode corresponding to token IDENT
+    /// Returns `None` if there is no child corresponding to token IDENT
+    fn IDENT(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IDENT, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token INT
+    /// Returns `None` if there is no child corresponding to token INT
+    fn INT(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(INT, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token DECIMAL
+    /// Returns `None` if there is no child corresponding to token DECIMAL
+    fn DECIMAL(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(DECIMAL, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token STRING
+    /// Returns `None` if there is no child corresponding to token STRING
+    fn STRING(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(STRING, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token PARAMETER
+    /// Returns `None` if there is no child corresponding to token PARAMETER
+    fn PARAMETER(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(PARAMETER, 0)
+    }
 }
 
-impl<'input> CaseResultContextAttrs<'input> for CaseResultContext<'input>{}
+impl<'input> CaseResultContextAttrs<'input> for CaseResultContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn caseResult(&mut self,)
-	-> Result<Rc<CaseResultContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = CaseResultContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 58, RULE_caseResult);
+    pub fn caseResult(&mut self) -> Result<Rc<CaseResultContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = CaseResultContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 58, RULE_caseResult);
         let mut _localctx: Rc<CaseResultContextAll> = _localctx;
-		let result: Result<(), ANTLRError> = (|| {
+        let result: Result<(), ANTLRError> = (|| {
+            recog.base.set_state(390);
+            recog.err_handler.sync(&mut recog.base)?;
+            match recog.interpreter.adaptive_predict(40, &mut recog.base)? {
+                1 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 1);
+                    recog.base.enter_outer_alt(None, 1);
+                    {
+                        /*InvokeRule arithmeticExpr*/
+                        recog.base.set_state(382);
+                        recog.arithmeticExpr()?;
+                    }
+                }
+                2 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 2);
+                    recog.base.enter_outer_alt(None, 2);
+                    {
+                        /*InvokeRule comparison*/
+                        recog.base.set_state(383);
+                        recog.comparison()?;
+                    }
+                }
+                3 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 3);
+                    recog.base.enter_outer_alt(None, 3);
+                    {
+                        /*InvokeRule qualifiedIdent*/
+                        recog.base.set_state(384);
+                        recog.qualifiedIdent()?;
+                    }
+                }
+                4 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 4);
+                    recog.base.enter_outer_alt(None, 4);
+                    {
+                        recog.base.set_state(385);
+                        recog.base.match_token(IDENT, &mut recog.err_handler)?;
+                    }
+                }
+                5 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 5);
+                    recog.base.enter_outer_alt(None, 5);
+                    {
+                        recog.base.set_state(386);
+                        recog.base.match_token(INT, &mut recog.err_handler)?;
+                    }
+                }
+                6 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 6);
+                    recog.base.enter_outer_alt(None, 6);
+                    {
+                        recog.base.set_state(387);
+                        recog.base.match_token(DECIMAL, &mut recog.err_handler)?;
+                    }
+                }
+                7 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 7);
+                    recog.base.enter_outer_alt(None, 7);
+                    {
+                        recog.base.set_state(388);
+                        recog.base.match_token(STRING, &mut recog.err_handler)?;
+                    }
+                }
+                8 => {
+                    //recog.base.enter_outer_alt(_localctx.clone(), 8);
+                    recog.base.enter_outer_alt(None, 8);
+                    {
+                        recog.base.set_state(389);
+                        recog.base.match_token(PARAMETER, &mut recog.err_handler)?;
+                    }
+                }
 
-			recog.base.set_state(390);
-			recog.err_handler.sync(&mut recog.base)?;
-			match  recog.interpreter.adaptive_predict(40,&mut recog.base)? {
-				1 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 1);
-					recog.base.enter_outer_alt(None, 1);
-					{
-					/*InvokeRule arithmeticExpr*/
-					recog.base.set_state(382);
-					recog.arithmeticExpr()?;
+                _ => {}
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-					}
-				}
-			,
-				2 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 2);
-					recog.base.enter_outer_alt(None, 2);
-					{
-					/*InvokeRule comparison*/
-					recog.base.set_state(383);
-					recog.comparison()?;
-
-					}
-				}
-			,
-				3 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 3);
-					recog.base.enter_outer_alt(None, 3);
-					{
-					/*InvokeRule qualifiedIdent*/
-					recog.base.set_state(384);
-					recog.qualifiedIdent()?;
-
-					}
-				}
-			,
-				4 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 4);
-					recog.base.enter_outer_alt(None, 4);
-					{
-					recog.base.set_state(385);
-					recog.base.match_token(IDENT,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				5 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 5);
-					recog.base.enter_outer_alt(None, 5);
-					{
-					recog.base.set_state(386);
-					recog.base.match_token(INT,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				6 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 6);
-					recog.base.enter_outer_alt(None, 6);
-					{
-					recog.base.set_state(387);
-					recog.base.match_token(DECIMAL,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				7 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 7);
-					recog.base.enter_outer_alt(None, 7);
-					{
-					recog.base.set_state(388);
-					recog.base.match_token(STRING,&mut recog.err_handler)?;
-
-					}
-				}
-			,
-				8 =>{
-					//recog.base.enter_outer_alt(_localctx.clone(), 8);
-					recog.base.enter_outer_alt(None, 8);
-					{
-					recog.base.set_state(389);
-					recog.base.match_token(PARAMETER,&mut recog.err_handler)?;
-
-					}
-				}
-
-				_ => {}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- orderDirection ----------------
 pub type OrderDirectionContextAll<'input> = OrderDirectionContext<'input>;
 
-
-pub type OrderDirectionContext<'input> = BaseParserRuleContext<'input,OrderDirectionContextExt<'input>>;
+pub type OrderDirectionContext<'input> =
+    BaseParserRuleContext<'input, OrderDirectionContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct OrderDirectionContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct OrderDirectionContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for OrderDirectionContext<'input>{}
+impl<'input> LqlParserContext<'input> for OrderDirectionContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for OrderDirectionContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_orderDirection(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_orderDirection(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for OrderDirectionContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_orderDirection(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_orderDirection(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for OrderDirectionContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_orderDirection(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for OrderDirectionContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_orderDirection(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for OrderDirectionContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_orderDirection }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_orderDirection }
+impl<'input> CustomRuleContext<'input> for OrderDirectionContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_orderDirection
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_orderDirection }
 }
-antlr_rust::tid!{OrderDirectionContextExt<'a>}
+antlr_rust::tid! {OrderDirectionContextExt<'a>}
 
-impl<'input> OrderDirectionContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<OrderDirectionContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,OrderDirectionContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait OrderDirectionContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<OrderDirectionContextExt<'input>>{
-
-/// Retrieves first TerminalNode corresponding to token ASC
-/// Returns `None` if there is no child corresponding to token ASC
-fn ASC(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(ASC, 0)
-}
-/// Retrieves first TerminalNode corresponding to token DESC
-/// Returns `None` if there is no child corresponding to token DESC
-fn DESC(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(DESC, 0)
+impl<'input> OrderDirectionContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<OrderDirectionContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            OrderDirectionContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait OrderDirectionContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<OrderDirectionContextExt<'input>>
+{
+    /// Retrieves first TerminalNode corresponding to token ASC
+    /// Returns `None` if there is no child corresponding to token ASC
+    fn ASC(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(ASC, 0)
+    }
+    /// Retrieves first TerminalNode corresponding to token DESC
+    /// Returns `None` if there is no child corresponding to token DESC
+    fn DESC(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(DESC, 0)
+    }
 }
 
-impl<'input> OrderDirectionContextAttrs<'input> for OrderDirectionContext<'input>{}
+impl<'input> OrderDirectionContextAttrs<'input> for OrderDirectionContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn orderDirection(&mut self,)
-	-> Result<Rc<OrderDirectionContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = OrderDirectionContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 60, RULE_orderDirection);
+    pub fn orderDirection(&mut self) -> Result<Rc<OrderDirectionContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx =
+            OrderDirectionContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 60, RULE_orderDirection);
         let mut _localctx: Rc<OrderDirectionContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(392);
+                _la = recog.base.input.la(1);
+                if { !(_la == ASC || _la == DESC) } {
+                    recog.err_handler.recover_inline(&mut recog.base)?;
+                } else {
+                    if recog.base.input.la(1) == TOKEN_EOF {
+                        recog.base.matched_eof = true
+                    };
+                    recog.err_handler.report_match(&mut recog.base);
+                    recog.base.consume(&mut recog.err_handler);
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(392);
-			_la = recog.base.input.la(1);
-			if { !(_la==ASC || _la==DESC) } {
-				recog.err_handler.recover_inline(&mut recog.base)?;
-
-			}
-			else {
-				if  recog.base.input.la(1)==TOKEN_EOF { recog.base.matched_eof = true };
-				recog.err_handler.report_match(&mut recog.base);
-				recog.base.consume(&mut recog.err_handler);
-			}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 //------------------- comparisonOp ----------------
 pub type ComparisonOpContextAll<'input> = ComparisonOpContext<'input>;
 
-
-pub type ComparisonOpContext<'input> = BaseParserRuleContext<'input,ComparisonOpContextExt<'input>>;
+pub type ComparisonOpContext<'input> =
+    BaseParserRuleContext<'input, ComparisonOpContextExt<'input>>;
 
 #[derive(Clone)]
-pub struct ComparisonOpContextExt<'input>{
-ph:PhantomData<&'input str>
+pub struct ComparisonOpContextExt<'input> {
+    ph: PhantomData<&'input str>,
 }
 
-impl<'input> LqlParserContext<'input> for ComparisonOpContext<'input>{}
+impl<'input> LqlParserContext<'input> for ComparisonOpContext<'input> {}
 
-impl<'input,'a> Listenable<dyn LqlListener<'input> + 'a> for ComparisonOpContext<'input>{
-		fn enter(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.enter_every_rule(self);
-			listener.enter_comparisonOp(self);
-		}
-		fn exit(&self,listener: &mut (dyn LqlListener<'input> + 'a)) {
-			listener.exit_comparisonOp(self);
-			listener.exit_every_rule(self);
-		}
+impl<'input, 'a> Listenable<dyn LqlListener<'input> + 'a> for ComparisonOpContext<'input> {
+    fn enter(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.enter_every_rule(self);
+        listener.enter_comparisonOp(self);
+    }
+    fn exit(&self, listener: &mut (dyn LqlListener<'input> + 'a)) {
+        listener.exit_comparisonOp(self);
+        listener.exit_every_rule(self);
+    }
 }
 
-impl<'input,'a> Visitable<dyn LqlVisitor<'input> + 'a> for ComparisonOpContext<'input>{
-	fn accept(&self,visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
-		visitor.visit_comparisonOp(self);
-	}
+impl<'input, 'a> Visitable<dyn LqlVisitor<'input> + 'a> for ComparisonOpContext<'input> {
+    fn accept(&self, visitor: &mut (dyn LqlVisitor<'input> + 'a)) {
+        visitor.visit_comparisonOp(self);
+    }
 }
 
-impl<'input> CustomRuleContext<'input> for ComparisonOpContextExt<'input>{
-	type TF = LocalTokenFactory<'input>;
-	type Ctx = LqlParserContextType;
-	fn get_rule_index(&self) -> usize { RULE_comparisonOp }
-	//fn type_rule_index() -> usize where Self: Sized { RULE_comparisonOp }
+impl<'input> CustomRuleContext<'input> for ComparisonOpContextExt<'input> {
+    type TF = LocalTokenFactory<'input>;
+    type Ctx = LqlParserContextType;
+    fn get_rule_index(&self) -> usize {
+        RULE_comparisonOp
+    }
+    //fn type_rule_index() -> usize where Self: Sized { RULE_comparisonOp }
 }
-antlr_rust::tid!{ComparisonOpContextExt<'a>}
+antlr_rust::tid! {ComparisonOpContextExt<'a>}
 
-impl<'input> ComparisonOpContextExt<'input>{
-	fn new(parent: Option<Rc<dyn LqlParserContext<'input> + 'input > >, invoking_state: isize) -> Rc<ComparisonOpContextAll<'input>> {
-		Rc::new(
-			BaseParserRuleContext::new_parser_ctx(parent, invoking_state,ComparisonOpContextExt{
-				ph:PhantomData
-			}),
-		)
-	}
-}
-
-pub trait ComparisonOpContextAttrs<'input>: LqlParserContext<'input> + BorrowMut<ComparisonOpContextExt<'input>>{
-
-/// Retrieves first TerminalNode corresponding to token LIKE
-/// Returns `None` if there is no child corresponding to token LIKE
-fn LIKE(&self) -> Option<Rc<TerminalNode<'input,LqlParserContextType>>> where Self:Sized{
-	self.get_token(LIKE, 0)
+impl<'input> ComparisonOpContextExt<'input> {
+    fn new(
+        parent: Option<Rc<dyn LqlParserContext<'input> + 'input>>,
+        invoking_state: isize,
+    ) -> Rc<ComparisonOpContextAll<'input>> {
+        Rc::new(BaseParserRuleContext::new_parser_ctx(
+            parent,
+            invoking_state,
+            ComparisonOpContextExt { ph: PhantomData },
+        ))
+    }
 }
 
+pub trait ComparisonOpContextAttrs<'input>:
+    LqlParserContext<'input> + BorrowMut<ComparisonOpContextExt<'input>>
+{
+    /// Retrieves first TerminalNode corresponding to token LIKE
+    /// Returns `None` if there is no child corresponding to token LIKE
+    fn LIKE(&self) -> Option<Rc<TerminalNode<'input, LqlParserContextType>>>
+    where
+        Self: Sized,
+    {
+        self.get_token(LIKE, 0)
+    }
 }
 
-impl<'input> ComparisonOpContextAttrs<'input> for ComparisonOpContext<'input>{}
+impl<'input> ComparisonOpContextAttrs<'input> for ComparisonOpContext<'input> {}
 
 impl<'input, I, H> LqlParser<'input, I, H>
 where
-    I: TokenStream<'input, TF = LocalTokenFactory<'input> > + TidAble<'input>,
-    H: ErrorStrategy<'input,BaseParserType<'input,I>>
+    I: TokenStream<'input, TF = LocalTokenFactory<'input>> + TidAble<'input>,
+    H: ErrorStrategy<'input, BaseParserType<'input, I>>,
 {
-	pub fn comparisonOp(&mut self,)
-	-> Result<Rc<ComparisonOpContextAll<'input>>,ANTLRError> {
-		let mut recog = self;
-		let _parentctx = recog.ctx.take();
-		let mut _localctx = ComparisonOpContextExt::new(_parentctx.clone(), recog.base.get_state());
-        recog.base.enter_rule(_localctx.clone(), 62, RULE_comparisonOp);
+    pub fn comparisonOp(&mut self) -> Result<Rc<ComparisonOpContextAll<'input>>, ANTLRError> {
+        let mut recog = self;
+        let _parentctx = recog.ctx.take();
+        let mut _localctx = ComparisonOpContextExt::new(_parentctx.clone(), recog.base.get_state());
+        recog
+            .base
+            .enter_rule(_localctx.clone(), 62, RULE_comparisonOp);
         let mut _localctx: Rc<ComparisonOpContextAll> = _localctx;
-		let mut _la: isize = -1;
-		let result: Result<(), ANTLRError> = (|| {
+        let mut _la: isize = -1;
+        let result: Result<(), ANTLRError> = (|| {
+            //recog.base.enter_outer_alt(_localctx.clone(), 1);
+            recog.base.enter_outer_alt(None, 1);
+            {
+                recog.base.set_state(394);
+                _la = recog.base.input.la(1);
+                if {
+                    !((((_la) & !0x3f) == 0
+                        && ((1usize << _la)
+                            & ((1usize << T__1)
+                                | (1usize << T__14)
+                                | (1usize << T__15)
+                                | (1usize << T__16)
+                                | (1usize << T__17)
+                                | (1usize << T__18)
+                                | (1usize << T__19)))
+                            != 0)
+                        || _la == LIKE)
+                } {
+                    recog.err_handler.recover_inline(&mut recog.base)?;
+                } else {
+                    if recog.base.input.la(1) == TOKEN_EOF {
+                        recog.base.matched_eof = true
+                    };
+                    recog.err_handler.report_match(&mut recog.base);
+                    recog.base.consume(&mut recog.err_handler);
+                }
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(_) => {}
+            Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
+            Err(ref re) => {
+                //_localctx.exception = re;
+                recog.err_handler.report_error(&mut recog.base, re);
+                recog.err_handler.recover(&mut recog.base, re)?;
+            }
+        }
+        recog.base.exit_rule();
 
-			//recog.base.enter_outer_alt(_localctx.clone(), 1);
-			recog.base.enter_outer_alt(None, 1);
-			{
-			recog.base.set_state(394);
-			_la = recog.base.input.la(1);
-			if { !((((_la) & !0x3f) == 0 && ((1usize << _la) & ((1usize << T__1) | (1usize << T__14) | (1usize << T__15) | (1usize << T__16) | (1usize << T__17) | (1usize << T__18) | (1usize << T__19))) != 0) || _la==LIKE) } {
-				recog.err_handler.recover_inline(&mut recog.base)?;
-
-			}
-			else {
-				if  recog.base.input.la(1)==TOKEN_EOF { recog.base.matched_eof = true };
-				recog.err_handler.report_match(&mut recog.base);
-				recog.base.consume(&mut recog.err_handler);
-			}
-			}
-			Ok(())
-		})();
-		match result {
-		Ok(_)=>{},
-        Err(e @ ANTLRError::FallThrough(_)) => return Err(e),
-		Err(ref re) => {
-				//_localctx.exception = re;
-				recog.err_handler.report_error(&mut recog.base, re);
-				recog.err_handler.recover(&mut recog.base, re)?;
-			}
-		}
-		recog.base.exit_rule();
-
-		Ok(_localctx)
-	}
+        Ok(_localctx)
+    }
 }
 
 lazy_static! {
@@ -5366,20 +5914,14 @@ lazy_static! {
         let mut dfa = Vec::new();
         let size = _ATN.decision_to_state.len();
         for i in 0..size {
-            dfa.push(DFA::new(
-                _ATN.clone(),
-                _ATN.get_decision_state(i),
-                i as isize,
-            ).into())
+            dfa.push(DFA::new(_ATN.clone(), _ATN.get_decision_state(i), i as isize).into())
         }
         Arc::new(dfa)
     };
 }
 
-
-
-const _serializedATN:&'static str =
-	"\x03\u{608b}\u{a72a}\u{8133}\u{b9ed}\u{417c}\u{3be7}\u{7786}\u{5964}\x03\
+const _serializedATN: &'static str =
+    "\x03\u{608b}\u{a72a}\u{8133}\u{b9ed}\u{417c}\u{3be7}\u{7786}\u{5964}\x03\
 	\x3b\u{18f}\x04\x02\x09\x02\x04\x03\x09\x03\x04\x04\x09\x04\x04\x05\x09\
 	\x05\x04\x06\x09\x06\x04\x07\x09\x07\x04\x08\x09\x08\x04\x09\x09\x09\x04\
 	\x0a\x09\x0a\x04\x0b\x09\x0b\x04\x0c\x09\x0c\x04\x0d\x09\x0d\x04\x0e\x09\
@@ -5615,4 +6157,3 @@ const _serializedATN:&'static str =
 	\u{ad}\u{b4}\u{c4}\u{ca}\u{ce}\u{d5}\u{dd}\u{ec}\u{f1}\u{f4}\u{fc}\u{102}\
 	\u{109}\u{111}\u{119}\u{127}\u{131}\u{13b}\u{13f}\u{143}\u{147}\u{150}\u{15a}\
 	\u{15e}\u{165}\u{16b}\u{173}\u{177}\u{188}";
-

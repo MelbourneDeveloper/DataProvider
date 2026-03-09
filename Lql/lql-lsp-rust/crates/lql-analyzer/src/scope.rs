@@ -24,10 +24,8 @@ impl ScopeMap {
 
     /// Register a let binding.
     pub fn add_binding(&mut self, name: String, line: u32, col: u32) {
-        self.bindings.insert(
-            name.clone(),
-            BindingInfo { name, line, col },
-        );
+        self.bindings
+            .insert(name.clone(), BindingInfo { name, line, col });
     }
 
     /// Register a table reference.

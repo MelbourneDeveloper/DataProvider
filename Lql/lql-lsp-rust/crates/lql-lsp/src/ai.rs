@@ -113,10 +113,7 @@ impl AiConfig {
                 .get("timeoutMs")
                 .and_then(|v| v.as_u64())
                 .unwrap_or(2000),
-            enabled: obj
-                .get("enabled")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(true),
+            enabled: obj.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true),
         })
     }
 }
@@ -172,10 +169,7 @@ impl OllamaProvider {
         let schema_section = if context.schema_description.is_empty() {
             String::new()
         } else {
-            format!(
-                "\nDatabase schema:\n{}\n",
-                context.schema_description
-            )
+            format!("\nDatabase schema:\n{}\n", context.schema_description)
         };
 
         format!(
@@ -216,7 +210,10 @@ impl OllamaProvider {
             .iter()
             .filter_map(|item| {
                 let label = item.get("label")?.as_str()?.to_string();
-                let insert_text = item.get("insertText").and_then(|v| v.as_str()).map(String::from);
+                let insert_text = item
+                    .get("insertText")
+                    .and_then(|v| v.as_str())
+                    .map(String::from);
                 let detail = item
                     .get("detail")
                     .and_then(|v| v.as_str())
@@ -306,7 +303,9 @@ impl AiCompletionProvider for TestAiProvider {
                 format!("ai_query_{table}"),
                 format!("AI: Query {table}"),
                 format!("AI-generated query pattern for table '{table}'"),
-                Some(format!("{table} |> filter(x => x.${{1:column}} == ${{2:value}}) |> select(x => x)")),
+                Some(format!(
+                    "{table} |> filter(x => x.${{1:column}} == ${{2:value}}) |> select(x => x)"
+                )),
             ));
         }
 

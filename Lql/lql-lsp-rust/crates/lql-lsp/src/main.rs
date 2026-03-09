@@ -60,8 +60,7 @@ impl LqlBackend {
             while i < bytes.len() {
                 if bytes[i].is_ascii_alphabetic() || bytes[i] == b'_' {
                     let start = i;
-                    while i < bytes.len()
-                        && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_')
+                    while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_')
                     {
                         i += 1;
                     }
@@ -148,9 +147,7 @@ impl LqlBackend {
         let bytes = line.as_bytes();
         let mut start = col;
         let mut end = col;
-        while start > 0
-            && (bytes[start - 1].is_ascii_alphanumeric() || bytes[start - 1] == b'_')
-        {
+        while start > 0 && (bytes[start - 1].is_ascii_alphanumeric() || bytes[start - 1] == b'_') {
             start -= 1;
         }
         while end < bytes.len() && (bytes[end].is_ascii_alphanumeric() || bytes[end] == b'_') {
@@ -180,10 +177,7 @@ impl LqlBackend {
     }
 
     fn compute_completion_context(source: &str, position: Position) -> CompletionContext {
-        let line = source
-            .lines()
-            .nth(position.line as usize)
-            .unwrap_or("");
+        let line = source.lines().nth(position.line as usize).unwrap_or("");
         let col = (position.character as usize).min(line.len());
         let line_prefix = &line[..col];
 
@@ -226,7 +220,11 @@ impl LqlBackend {
                 .chars()
                 .rev()
                 .collect();
-            if q.is_empty() { None } else { Some(q) }
+            if q.is_empty() {
+                None
+            } else {
+                Some(q)
+            }
         } else {
             None
         };
@@ -245,13 +243,43 @@ impl LqlBackend {
 fn is_keyword_name(word: &str) -> bool {
     matches!(
         word,
-        "let" | "fn" | "as" | "asc" | "desc" | "and" | "or" | "not"
-            | "distinct" | "exists" | "null" | "is" | "in"
-            | "case" | "when" | "then" | "else" | "end"
-            | "with" | "over" | "partition" | "order" | "by"
-            | "on" | "like" | "from" | "interval"
-            | "select" | "filter" | "join" | "group_by" | "order_by"
-            | "having" | "limit" | "offset" | "union" | "insert"
+        "let"
+            | "fn"
+            | "as"
+            | "asc"
+            | "desc"
+            | "and"
+            | "or"
+            | "not"
+            | "distinct"
+            | "exists"
+            | "null"
+            | "is"
+            | "in"
+            | "case"
+            | "when"
+            | "then"
+            | "else"
+            | "end"
+            | "with"
+            | "over"
+            | "partition"
+            | "order"
+            | "by"
+            | "on"
+            | "like"
+            | "from"
+            | "interval"
+            | "select"
+            | "filter"
+            | "join"
+            | "group_by"
+            | "order_by"
+            | "having"
+            | "limit"
+            | "offset"
+            | "union"
+            | "insert"
     )
 }
 
@@ -391,18 +419,12 @@ impl LanguageServer for LqlBackend {
                 let count = cache.table_count();
                 *self.schema.write().await = Some(cache);
                 self.client
-                    .log_message(
-                        MessageType::INFO,
-                        format!("Schema loaded: {count} tables"),
-                    )
+                    .log_message(MessageType::INFO, format!("Schema loaded: {count} tables"))
                     .await;
             }
             Err(e) => {
                 self.client
-                    .log_message(
-                        MessageType::WARNING,
-                        format!("Schema fetch failed: {e}"),
-                    )
+                    .log_message(MessageType::WARNING, format!("Schema fetch failed: {e}"))
                     .await;
             }
         }
@@ -471,17 +493,29 @@ impl LanguageServer for LqlBackend {
                 // Build compact schema description for AI context
                 let (available_tables, schema_description) = match schema.as_ref() {
                     Some(s) => {
-                        let names: Vec<String> = s.table_names().iter().map(|n| n.to_string()).collect();
-                        let desc = names.iter().map(|name| {
-                            let cols = s.get_columns(name);
-                            let col_strs: Vec<String> = cols.iter().map(|c| {
-                                let mut s = format!("{} {}", c.name, c.sql_type);
-                                if c.is_primary_key { s.push_str(" PK"); }
-                                if !c.is_nullable { s.push_str(" NOT NULL"); }
-                                s
-                            }).collect();
-                            format!("{}({})", name, col_strs.join(", "))
-                        }).collect::<Vec<_>>().join("\n");
+                        let names: Vec<String> =
+                            s.table_names().iter().map(|n| n.to_string()).collect();
+                        let desc = names
+                            .iter()
+                            .map(|name| {
+                                let cols = s.get_columns(name);
+                                let col_strs: Vec<String> = cols
+                                    .iter()
+                                    .map(|c| {
+                                        let mut s = format!("{} {}", c.name, c.sql_type);
+                                        if c.is_primary_key {
+                                            s.push_str(" PK");
+                                        }
+                                        if !c.is_nullable {
+                                            s.push_str(" NOT NULL");
+                                        }
+                                        s
+                                    })
+                                    .collect();
+                                format!("{}({})", name, col_strs.join(", "))
+                            })
+                            .collect::<Vec<_>>()
+                            .join("\n");
                         (names, desc)
                     }
                     None => (Vec::new(), String::new()),
@@ -620,10 +654,7 @@ impl LanguageServer for LqlBackend {
         Ok(Some(DocumentSymbolResponse::Flat(lsp_symbols)))
     }
 
-    async fn formatting(
-        &self,
-        params: DocumentFormattingParams,
-    ) -> Result<Option<Vec<TextEdit>>> {
+    async fn formatting(&self, params: DocumentFormattingParams) -> Result<Option<Vec<TextEdit>>> {
         let uri = &params.text_document.uri;
 
         let source = {

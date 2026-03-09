@@ -21,16 +21,64 @@ pub struct Diagnostic {
 
 /// Known pipeline functions.
 const KNOWN_FUNCTIONS: &[&str] = &[
-    "select", "filter", "join", "left_join", "right_join", "cross_join",
-    "group_by", "order_by", "having", "limit", "offset",
-    "union", "union_all", "insert", "update", "delete",
-    "count", "sum", "avg", "min", "max", "first", "last",
-    "concat", "substring", "length", "trim", "upper", "lower", "replace",
-    "round", "floor", "ceil", "abs", "sqrt", "power", "mod",
-    "now", "today", "year", "month", "day", "hour", "minute", "second",
-    "coalesce", "nullif", "isnull", "isnotnull",
-    "row_number", "rank", "dense_rank", "ntile", "lag", "lead",
-    "extract", "date_trunc", "current_date",
+    "select",
+    "filter",
+    "join",
+    "left_join",
+    "right_join",
+    "cross_join",
+    "group_by",
+    "order_by",
+    "having",
+    "limit",
+    "offset",
+    "union",
+    "union_all",
+    "insert",
+    "update",
+    "delete",
+    "count",
+    "sum",
+    "avg",
+    "min",
+    "max",
+    "first",
+    "last",
+    "concat",
+    "substring",
+    "length",
+    "trim",
+    "upper",
+    "lower",
+    "replace",
+    "round",
+    "floor",
+    "ceil",
+    "abs",
+    "sqrt",
+    "power",
+    "mod",
+    "now",
+    "today",
+    "year",
+    "month",
+    "day",
+    "hour",
+    "minute",
+    "second",
+    "coalesce",
+    "nullif",
+    "isnull",
+    "isnotnull",
+    "row_number",
+    "rank",
+    "dense_rank",
+    "ntile",
+    "lag",
+    "lead",
+    "extract",
+    "date_trunc",
+    "current_date",
 ];
 
 /// Run semantic analysis on LQL source text and return diagnostics.
@@ -152,10 +200,8 @@ fn check_unknown_functions(
 fn check_unmatched_brackets_document(source: &str, diagnostics: &mut Vec<Diagnostic>) {
     let mut depth: i32 = 0;
     let mut in_string = false;
-    let mut in_comment = false;
-
     for (line_num, line) in source.lines().enumerate() {
-        in_comment = false;
+        let mut in_comment = false;
         for (col, ch) in line.chars().enumerate() {
             if in_comment {
                 break;
@@ -212,10 +258,32 @@ fn check_unmatched_brackets_document(source: &str, diagnostics: &mut Vec<Diagnos
 fn is_keyword(word: &str) -> bool {
     matches!(
         word,
-        "let" | "fn" | "as" | "asc" | "desc" | "and" | "or" | "not"
-            | "distinct" | "exists" | "null" | "is" | "in"
-            | "case" | "when" | "then" | "else" | "end"
-            | "with" | "over" | "partition" | "order" | "by"
-            | "on" | "like" | "from" | "interval"
+        "let"
+            | "fn"
+            | "as"
+            | "asc"
+            | "desc"
+            | "and"
+            | "or"
+            | "not"
+            | "distinct"
+            | "exists"
+            | "null"
+            | "is"
+            | "in"
+            | "case"
+            | "when"
+            | "then"
+            | "else"
+            | "end"
+            | "with"
+            | "over"
+            | "partition"
+            | "order"
+            | "by"
+            | "on"
+            | "like"
+            | "from"
+            | "interval"
     )
 }

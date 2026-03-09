@@ -1,13 +1,13 @@
 #![allow(dead_code)]
 #![allow(nonstandard_style)]
 
+pub mod error;
 pub mod generated;
 pub mod span;
-pub mod error;
 
 pub use generated::lqllexer::LqlLexer;
-pub use generated::lqlparser::*;
 pub use generated::lqllistener::LqlListener;
+pub use generated::lqlparser::*;
 pub use generated::lqlvisitor::LqlVisitor;
 
 use antlr_rust::common_token_stream::CommonTokenStream;
@@ -38,7 +38,9 @@ pub fn parse_lql(source: &str) -> LqlParseResult<'_> {
     parser.remove_error_listeners();
     parser.add_error_listener(error_collector_ref);
 
-    let tree = parser.program().expect("ANTLR parser should always produce a tree");
+    let tree = parser
+        .program()
+        .expect("ANTLR parser should always produce a tree");
 
     LqlParseResult {
         tree,
@@ -70,7 +72,9 @@ impl<'input, T: Recognizer<'input>> ErrorListener<'input, T> for ErrorCollector 
     fn syntax_error(
         &self,
         _recognizer: &T,
-        _offending_symbol: Option<&<T::TF as antlr_rust::token_factory::TokenFactory<'input>>::Inner>,
+        _offending_symbol: Option<
+            &<T::TF as antlr_rust::token_factory::TokenFactory<'input>>::Inner,
+        >,
         line: isize,
         column: isize,
         msg: &str,
@@ -116,9 +120,8 @@ mod tests {
 
     #[test]
     fn test_parse_filter() {
-        let result = parse_lql(
-            "users |> filter(fn(row) => row.users.age > 18) |> select(users.name)",
-        );
+        let result =
+            parse_lql("users |> filter(fn(row) => row.users.age > 18) |> select(users.name)");
         assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
     }
 

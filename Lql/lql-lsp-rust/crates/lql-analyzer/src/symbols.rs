@@ -45,7 +45,10 @@ pub fn extract_symbols(source: &str) -> Vec<DocumentSymbol> {
 
 fn extract_let_name(trimmed: &str) -> Option<String> {
     let rest = trimmed.strip_prefix("let ")?;
-    let name: String = rest.chars().take_while(|c| c.is_alphanumeric() || *c == '_').collect();
+    let name: String = rest
+        .chars()
+        .take_while(|c| c.is_alphanumeric() || *c == '_')
+        .collect();
     if name.is_empty() {
         None
     } else {
