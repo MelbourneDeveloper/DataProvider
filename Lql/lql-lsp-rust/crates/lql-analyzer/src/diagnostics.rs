@@ -201,13 +201,8 @@ fn check_unmatched_brackets_document(source: &str, diagnostics: &mut Vec<Diagnos
     let mut depth: i32 = 0;
     let mut in_string = false;
     for (line_num, line) in source.lines().enumerate() {
-        let mut in_comment = false;
         for (col, ch) in line.chars().enumerate() {
-            if in_comment {
-                break;
-            }
             if ch == '-' && col + 1 < line.len() && line.as_bytes().get(col + 1) == Some(&b'-') {
-                in_comment = true;
                 break;
             }
             if ch == '\'' && !in_string {
