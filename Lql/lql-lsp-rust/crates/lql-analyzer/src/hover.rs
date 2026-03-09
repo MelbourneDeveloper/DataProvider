@@ -364,11 +364,39 @@ mod tests {
     #[test]
     fn test_hover_all_entries_have_title() {
         let keywords = [
-            "select", "filter", "join", "left_join", "group_by", "order_by",
-            "having", "limit", "offset", "union", "insert", "count", "sum",
-            "avg", "max", "min", "concat", "substring", "length", "trim",
-            "upper", "lower", "round", "abs", "coalesce", "row_number",
-            "rank", "dense_rank", "let", "fn", "case", "exists", "distinct",
+            "select",
+            "filter",
+            "join",
+            "left_join",
+            "group_by",
+            "order_by",
+            "having",
+            "limit",
+            "offset",
+            "union",
+            "insert",
+            "count",
+            "sum",
+            "avg",
+            "max",
+            "min",
+            "concat",
+            "substring",
+            "length",
+            "trim",
+            "upper",
+            "lower",
+            "round",
+            "abs",
+            "coalesce",
+            "row_number",
+            "rank",
+            "dense_rank",
+            "let",
+            "fn",
+            "case",
+            "exists",
+            "distinct",
         ];
         for kw in &keywords {
             let info = get_hover(kw);
@@ -381,12 +409,7 @@ mod tests {
     #[test]
     fn test_hover_qualified_column() {
         let schema = sample_schema();
-        let info = get_hover_with_schema(
-            "id",
-            Some(("users", "id")),
-            Some(&schema),
-        )
-        .unwrap();
+        let info = get_hover_with_schema("id", Some(("users", "id")), Some(&schema)).unwrap();
         assert!(info.title.contains("users.id"));
         assert!(info.detail.contains("uuid"));
         assert!(info.signature.is_some());
@@ -395,12 +418,9 @@ mod tests {
     #[test]
     fn test_hover_qualified_column_not_found() {
         let schema = sample_schema();
-        let info = get_hover_with_schema(
-            "nonexistent",
-            Some(("users", "nonexistent")),
-            Some(&schema),
-        )
-        .unwrap();
+        let info =
+            get_hover_with_schema("nonexistent", Some(("users", "nonexistent")), Some(&schema))
+                .unwrap();
         assert!(info.title.contains("not found"));
         assert!(info.detail.contains("Available columns"));
     }
@@ -437,11 +457,7 @@ mod tests {
     fn test_hover_qualified_table_not_in_schema() {
         let schema = sample_schema();
         // Table "orders" doesn't exist in schema, should fall back
-        let info = get_hover_with_schema(
-            "id",
-            Some(("orders", "id")),
-            Some(&schema),
-        );
+        let info = get_hover_with_schema("id", Some(("orders", "id")), Some(&schema));
         // Falls back to keyword lookup for "id" which is not a keyword
         assert!(info.is_none());
     }
@@ -449,24 +465,14 @@ mod tests {
     #[test]
     fn test_hover_column_shows_nullable_info() {
         let schema = sample_schema();
-        let info = get_hover_with_schema(
-            "email",
-            Some(("users", "email")),
-            Some(&schema),
-        )
-        .unwrap();
+        let info = get_hover_with_schema("email", Some(("users", "email")), Some(&schema)).unwrap();
         assert!(info.detail.contains("Nullable: yes"));
     }
 
     #[test]
     fn test_hover_column_shows_pk_info() {
         let schema = sample_schema();
-        let info = get_hover_with_schema(
-            "id",
-            Some(("users", "id")),
-            Some(&schema),
-        )
-        .unwrap();
+        let info = get_hover_with_schema("id", Some(("users", "id")), Some(&schema)).unwrap();
         assert!(info.detail.contains("Primary Key: yes"));
     }
 }

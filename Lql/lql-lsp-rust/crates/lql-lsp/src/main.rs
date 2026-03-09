@@ -46,8 +46,8 @@ impl LqlBackend {
         let mut scope = ScopeMap::new();
         for line in source.lines() {
             let trimmed = line.trim();
-            if trimmed.starts_with("let ") {
-                let name: String = trimmed[4..]
+            if let Some(rest) = trimmed.strip_prefix("let ") {
+                let name: String = rest
                     .chars()
                     .take_while(|c| c.is_alphanumeric() || *c == '_')
                     .collect();
@@ -211,8 +211,8 @@ impl LqlBackend {
 
         // Detect table qualifier: "Table." or "Table.prefix"
         let before_word = &line_prefix[..line_prefix.len() - word_prefix.len()];
-        let table_qualifier = if before_word.ends_with('.') {
-            let q: String = before_word[..before_word.len() - 1]
+        let table_qualifier = if let Some(without_dot) = before_word.strip_suffix('.') {
+            let q: String = without_dot
                 .chars()
                 .rev()
                 .take_while(|c| c.is_alphanumeric() || *c == '_')
@@ -446,7 +446,7 @@ impl LanguageServer for LqlBackend {
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
         let uri = params.text_document.uri.clone();
-        if let Some(change) = params.content_changes.into_iter().last() {
+        if let Some(change) = params.content_changes.into_iter().next_back() {
             let text = change.text.clone();
             self.documents
                 .lock()
@@ -797,11 +797,43 @@ mod tests {
     #[test]
     fn test_is_keyword_name_true() {
         let keywords = [
-            "let", "fn", "as", "asc", "desc", "and", "or", "not", "distinct",
-            "exists", "null", "is", "in", "case", "when", "then", "else", "end",
-            "with", "over", "partition", "order", "by", "on", "like", "from",
-            "interval", "select", "filter", "join", "group_by", "order_by",
-            "having", "limit", "offset", "union", "insert",
+            "let",
+            "fn",
+            "as",
+            "asc",
+            "desc",
+            "and",
+            "or",
+            "not",
+            "distinct",
+            "exists",
+            "null",
+            "is",
+            "in",
+            "case",
+            "when",
+            "then",
+            "else",
+            "end",
+            "with",
+            "over",
+            "partition",
+            "order",
+            "by",
+            "on",
+            "like",
+            "from",
+            "interval",
+            "select",
+            "filter",
+            "join",
+            "group_by",
+            "order_by",
+            "having",
+            "limit",
+            "offset",
+            "union",
+            "insert",
         ];
         for kw in &keywords {
             assert!(is_keyword_name(kw), "'{kw}' should be keyword");
@@ -923,40 +955,35 @@ mod tests {
 
     #[test]
     fn test_qualified_past_end_of_line() {
-        let (word, qualified) =
-            LqlBackend::get_qualified_at_position("abc", Position::new(0, 100));
+        let (word, qualified) = LqlBackend::get_qualified_at_position("abc", Position::new(0, 100));
         assert!(word.is_none());
         assert!(qualified.is_none());
     }
 
     #[test]
     fn test_qualified_empty_source() {
-        let (word, qualified) =
-            LqlBackend::get_qualified_at_position("", Position::new(0, 0));
+        let (word, qualified) = LqlBackend::get_qualified_at_position("", Position::new(0, 0));
         assert!(word.is_none());
         assert!(qualified.is_none());
     }
 
     #[test]
     fn test_qualified_line_out_of_range() {
-        let (word, qualified) =
-            LqlBackend::get_qualified_at_position("abc", Position::new(5, 0));
+        let (word, qualified) = LqlBackend::get_qualified_at_position("abc", Position::new(5, 0));
         assert!(word.is_none());
         assert!(qualified.is_none());
     }
 
     #[test]
     fn test_qualified_at_start_of_word() {
-        let (word, _) =
-            LqlBackend::get_qualified_at_position("users", Position::new(0, 0));
+        let (word, _) = LqlBackend::get_qualified_at_position("users", Position::new(0, 0));
         assert_eq!(word, Some("users".to_string()));
     }
 
     #[test]
     fn test_qualified_at_word_boundary() {
         // Position 1 in "a b" is on 'a' boundary — scans backward to find "a"
-        let (word, _) =
-            LqlBackend::get_qualified_at_position("a b", Position::new(0, 1));
+        let (word, _) = LqlBackend::get_qualified_at_position("a b", Position::new(0, 1));
         // The function scans backward from col, picks up "a"
         assert_eq!(word, Some("a".to_string()));
     }
@@ -964,8 +991,7 @@ mod tests {
     #[test]
     fn test_qualified_multiline() {
         let source = "line1\nusers.email";
-        let (word, qualified) =
-            LqlBackend::get_qualified_at_position(source, Position::new(1, 7));
+        let (word, qualified) = LqlBackend::get_qualified_at_position(source, Position::new(1, 7));
         assert_eq!(word, Some("email".to_string()));
         assert!(qualified.is_some());
     }
@@ -986,16 +1012,14 @@ mod tests {
 
     #[test]
     fn test_completion_context_table_qualifier() {
-        let ctx =
-            LqlBackend::compute_completion_context("users.na", Position::new(0, 8));
+        let ctx = LqlBackend::compute_completion_context("users.na", Position::new(0, 8));
         assert_eq!(ctx.table_qualifier, Some("users".to_string()));
         assert_eq!(ctx.word_prefix, "na");
     }
 
     #[test]
     fn test_completion_context_in_arg_list() {
-        let ctx =
-            LqlBackend::compute_completion_context("select(users.id, ", Position::new(0, 17));
+        let ctx = LqlBackend::compute_completion_context("select(users.id, ", Position::new(0, 17));
         assert!(ctx.in_arg_list);
     }
 
@@ -1016,15 +1040,13 @@ mod tests {
 
     #[test]
     fn test_completion_context_no_qualifier_without_dot() {
-        let ctx =
-            LqlBackend::compute_completion_context("sel", Position::new(0, 3));
+        let ctx = LqlBackend::compute_completion_context("sel", Position::new(0, 3));
         assert!(ctx.table_qualifier.is_none());
     }
 
     #[test]
     fn test_completion_context_line_prefix() {
-        let ctx =
-            LqlBackend::compute_completion_context("abc def", Position::new(0, 5));
+        let ctx = LqlBackend::compute_completion_context("abc def", Position::new(0, 5));
         assert_eq!(ctx.line_prefix, "abc d");
     }
 
@@ -1080,15 +1102,13 @@ mod tests {
 
     #[test]
     fn test_qualified_at_end_of_word() {
-        let (word, _) =
-            LqlBackend::get_qualified_at_position("users", Position::new(0, 5));
+        let (word, _) = LqlBackend::get_qualified_at_position("users", Position::new(0, 5));
         assert_eq!(word, Some("users".to_string()));
     }
 
     #[test]
     fn test_qualified_dot_at_start() {
-        let (word, qualified) =
-            LqlBackend::get_qualified_at_position(".col", Position::new(0, 2));
+        let (word, qualified) = LqlBackend::get_qualified_at_position(".col", Position::new(0, 2));
         assert_eq!(word, Some("col".to_string()));
         // No qualifier because there's nothing before the dot
         assert!(qualified.is_none());

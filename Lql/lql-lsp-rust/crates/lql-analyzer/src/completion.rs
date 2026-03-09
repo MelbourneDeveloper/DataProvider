@@ -138,7 +138,7 @@ pub fn get_completions(
     for name in scope.table_names() {
         if name.to_ascii_lowercase().starts_with(&prefix) {
             // Skip if already provided by schema
-            if schema.map_or(false, |s| s.get_table(name).is_some()) {
+            if schema.is_some_and(|s| s.get_table(name).is_some()) {
                 continue;
             }
             items.push(CompletionItem {
@@ -474,8 +474,7 @@ mod tests {
         let items = get_completions(&ctx, &scope, None);
         for item in &items {
             assert!(
-                item.label.to_lowercase().starts_with("sel")
-                    || item.label.starts_with("sel"),
+                item.label.to_lowercase().starts_with("sel") || item.label.starts_with("sel"),
                 "Item '{}' doesn't match prefix 'sel'",
                 item.label
             );
@@ -540,7 +539,10 @@ mod tests {
         let schema = sample_schema();
         let scope = ScopeMap::new();
         let items = get_completions(&ctx, &scope, Some(&schema));
-        let table_items: Vec<_> = items.iter().filter(|i| i.kind == CompletionKind::Table).collect();
+        let table_items: Vec<_> = items
+            .iter()
+            .filter(|i| i.kind == CompletionKind::Table)
+            .collect();
         assert!(table_items.len() >= 2);
         let labels: Vec<&str> = table_items.iter().map(|i| i.label.as_str()).collect();
         assert!(labels.contains(&"users"));

@@ -270,7 +270,10 @@ fn test_did_open_publishes_diagnostics_parse_error() {
 
     let notif = client.read_notification("textDocument/publishDiagnostics");
     let diags = notif["params"]["diagnostics"].as_array().unwrap();
-    assert!(!diags.is_empty(), "unclosed paren should produce diagnostics");
+    assert!(
+        !diags.is_empty(),
+        "unclosed paren should produce diagnostics"
+    );
     // At least one error-level diagnostic
     let has_error = diags.iter().any(|d| d["severity"] == 1);
     assert!(has_error, "should contain an error-level diagnostic");
@@ -286,12 +289,10 @@ fn test_did_change_updates_diagnostics() {
     // Open with error
     client.open_document(DOC_URI, "users |> select(");
     let notif = client.read_notification("textDocument/publishDiagnostics");
-    assert!(
-        !notif["params"]["diagnostics"]
-            .as_array()
-            .unwrap()
-            .is_empty()
-    );
+    assert!(!notif["params"]["diagnostics"]
+        .as_array()
+        .unwrap()
+        .is_empty());
 
     // Fix the error
     client.change_document(DOC_URI, 2, "users |> select(users.id)");
@@ -364,7 +365,10 @@ fn test_completion_with_prefix_filters() {
     let resp = client.request_completion(DOC_URI, 0, 12);
     let items = resp["result"].as_array().unwrap();
     let labels: Vec<&str> = items.iter().map(|i| i["label"].as_str().unwrap()).collect();
-    assert!(labels.contains(&"select"), "should suggest select for 'sel'");
+    assert!(
+        labels.contains(&"select"),
+        "should suggest select for 'sel'"
+    );
     // Should not suggest things that don't match
     assert!(
         !labels.contains(&"filter"),
@@ -458,7 +462,10 @@ fn test_hover_on_non_keyword() {
 fn test_hover_multiline() {
     let mut client = LspClient::spawn();
     client.initialize();
-    client.open_document(DOC_URI, "users\n|> filter(fn(r) => r.id > 0)\n|> select(users.id)");
+    client.open_document(
+        DOC_URI,
+        "users\n|> filter(fn(r) => r.id > 0)\n|> select(users.id)",
+    );
     let _ = client.read_notification("textDocument/publishDiagnostics");
 
     // Hover over "filter" on line 1
@@ -480,7 +487,10 @@ fn test_document_symbols_let_bindings() {
     let symbols = resp["result"].as_array().unwrap();
     assert!(symbols.len() >= 2, "should find at least 2 let bindings");
 
-    let names: Vec<&str> = symbols.iter().map(|s| s["name"].as_str().unwrap()).collect();
+    let names: Vec<&str> = symbols
+        .iter()
+        .map(|s| s["name"].as_str().unwrap())
+        .collect();
     assert!(names.contains(&"x"), "should find symbol 'x'");
     assert!(names.contains(&"y"), "should find symbol 'y'");
 
@@ -622,14 +632,20 @@ fn test_completion_items_have_kind() {
 fn test_completion_scope_bindings() {
     let mut client = LspClient::spawn();
     client.initialize();
-    client.open_document(DOC_URI, "let active_users = users |> filter(fn(r) => r.active)\nactive_users |> ");
+    client.open_document(
+        DOC_URI,
+        "let active_users = users |> filter(fn(r) => r.active)\nactive_users |> ",
+    );
     let _ = client.read_notification("textDocument/publishDiagnostics");
 
     let resp = client.request_completion(DOC_URI, 1, 16);
     let items = resp["result"].as_array().unwrap();
     let labels: Vec<&str> = items.iter().map(|i| i["label"].as_str().unwrap()).collect();
     // Pipeline operations should be suggested
-    assert!(labels.contains(&"select"), "should suggest select after pipe");
+    assert!(
+        labels.contains(&"select"),
+        "should suggest select after pipe"
+    );
 
     client.shutdown();
 }
@@ -654,8 +670,7 @@ fn test_did_close_removes_document() {
     let result = &resp["result"];
     // Should be null or empty array (document no longer in cache)
     assert!(
-        result.is_null()
-            || result.as_array().is_some_and(|a| a.is_empty()),
+        result.is_null() || result.as_array().is_some_and(|a| a.is_empty()),
         "closed document should not produce completions"
     );
 
@@ -685,7 +700,8 @@ fn test_shutdown_and_exit() {
 fn test_completion_complex_pipeline() {
     let mut client = LspClient::spawn();
     client.initialize();
-    let source = "users\n|> filter(fn(r) => r.age > 18)\n|> select(\n    users.id,\n    users.name\n)\n|> ";
+    let source =
+        "users\n|> filter(fn(r) => r.age > 18)\n|> select(\n    users.id,\n    users.name\n)\n|> ";
     client.open_document(DOC_URI, source);
     let _ = client.read_notification("textDocument/publishDiagnostics");
 
@@ -728,7 +744,10 @@ fn test_hover_on_filter_keyword() {
 fn test_formatting_preserves_comments() {
     let mut client = LspClient::spawn();
     client.initialize();
-    client.open_document(DOC_URI, "-- Get all active users\nusers\n|> filter(fn(r) => r.active)");
+    client.open_document(
+        DOC_URI,
+        "-- Get all active users\nusers\n|> filter(fn(r) => r.active)",
+    );
     let _ = client.read_notification("textDocument/publishDiagnostics");
 
     let resp = client.request_formatting(DOC_URI);

@@ -241,11 +241,7 @@ mod tests {
 
     #[test]
     fn test_table_get_column_case_insensitive() {
-        let table = make_table(
-            "users",
-            "public",
-            vec![make_col("Id", "uuid", false, true)],
-        );
+        let table = make_table("users", "public", vec![make_col("Id", "uuid", false, true)]);
         assert!(table.get_column("id").is_some());
         assert!(table.get_column("ID").is_some());
         assert!(table.get_column("Id").is_some());

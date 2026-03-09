@@ -30,7 +30,10 @@ mod diagnostics_tests {
     #[test]
     fn correct_pipe_spacing_no_warning() {
         let diags = analyze("users |> select(users.id)", &empty_scope());
-        let pipe_diags: Vec<_> = diags.iter().filter(|d| d.message.contains("Pipeline")).collect();
+        let pipe_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Pipeline"))
+            .collect();
         assert!(pipe_diags.is_empty());
     }
 
@@ -61,42 +64,63 @@ mod diagnostics_tests {
     #[test]
     fn missing_space_both_sides() {
         let diags = analyze("users|>select(users.id)", &empty_scope());
-        let pipe_diags: Vec<_> = diags.iter().filter(|d| d.message.contains("Pipeline")).collect();
+        let pipe_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Pipeline"))
+            .collect();
         assert_eq!(pipe_diags.len(), 2);
     }
 
     #[test]
     fn tab_before_pipe_is_ok() {
         let diags = analyze("users\t|> select(users.id)", &empty_scope());
-        let pipe_diags: Vec<_> = diags.iter().filter(|d| d.message.contains("preceded")).collect();
+        let pipe_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("preceded"))
+            .collect();
         assert!(pipe_diags.is_empty());
     }
 
     #[test]
     fn tab_after_pipe_is_ok() {
         let diags = analyze("users |>\tselect(users.id)", &empty_scope());
-        let pipe_diags: Vec<_> = diags.iter().filter(|d| d.message.contains("followed")).collect();
+        let pipe_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("followed"))
+            .collect();
         assert!(pipe_diags.is_empty());
     }
 
     #[test]
     fn pipe_at_end_of_line_no_after_warning() {
         let diags = analyze("users |>", &empty_scope());
-        let after: Vec<_> = diags.iter().filter(|d| d.message.contains("followed")).collect();
+        let after: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("followed"))
+            .collect();
         assert!(after.is_empty());
     }
 
     #[test]
     fn pipe_at_start_of_line_no_before_warning() {
         let diags = analyze("|> select(users.id)", &empty_scope());
-        let before: Vec<_> = diags.iter().filter(|d| d.message.contains("preceded")).collect();
+        let before: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("preceded"))
+            .collect();
         assert!(before.is_empty());
     }
 
     #[test]
     fn multiple_pipes_on_one_line() {
-        let diags = analyze("a |> filter(fn(r) => r.a.x > 1) |> select(a.id)", &empty_scope());
-        let pipe_diags: Vec<_> = diags.iter().filter(|d| d.message.contains("Pipeline")).collect();
+        let diags = analyze(
+            "a |> filter(fn(r) => r.a.x > 1) |> select(a.id)",
+            &empty_scope(),
+        );
+        let pipe_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Pipeline"))
+            .collect();
         assert!(pipe_diags.is_empty());
     }
 
@@ -104,7 +128,10 @@ mod diagnostics_tests {
     fn multiline_pipe_spacing() {
         let source = "users\n|> filter(fn(r) => r.users.age > 18)\n|> select(users.name)";
         let diags = analyze(source, &empty_scope());
-        let pipe_diags: Vec<_> = diags.iter().filter(|d| d.message.contains("Pipeline")).collect();
+        let pipe_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Pipeline"))
+            .collect();
         assert!(pipe_diags.is_empty());
     }
 
@@ -112,14 +139,20 @@ mod diagnostics_tests {
     #[test]
     fn known_function_no_diagnostic() {
         let diags = analyze("users |> select(users.id)", &empty_scope());
-        let unknown: Vec<_> = diags.iter().filter(|d| d.message.contains("Unknown")).collect();
+        let unknown: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Unknown"))
+            .collect();
         assert!(unknown.is_empty());
     }
 
     #[test]
     fn unknown_function_reported() {
         let diags = analyze("users |> foobar(users.id)", &empty_scope());
-        let unknown: Vec<_> = diags.iter().filter(|d| d.message.contains("Unknown")).collect();
+        let unknown: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Unknown"))
+            .collect();
         assert_eq!(unknown.len(), 1);
         assert!(unknown[0].message.contains("foobar"));
         assert_eq!(unknown[0].severity, DiagnosticSeverity::Info);
@@ -130,7 +163,10 @@ mod diagnostics_tests {
         let mut scope = ScopeMap::new();
         scope.add_binding("my_func".to_string(), 0, 0);
         let diags = analyze("x |> my_func(x.id)", &scope);
-        let unknown: Vec<_> = diags.iter().filter(|d| d.message.contains("Unknown")).collect();
+        let unknown: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Unknown"))
+            .collect();
         assert!(unknown.is_empty());
     }
 
@@ -148,14 +184,63 @@ mod diagnostics_tests {
     #[test]
     fn all_known_functions_recognized() {
         let known = [
-            "select", "filter", "join", "left_join", "right_join", "cross_join",
-            "group_by", "order_by", "having", "limit", "offset", "union", "union_all",
-            "insert", "update", "delete", "count", "sum", "avg", "min", "max",
-            "first", "last", "concat", "substring", "length", "trim", "upper",
-            "lower", "replace", "round", "floor", "ceil", "abs", "sqrt", "power",
-            "mod", "now", "today", "year", "month", "day", "hour", "minute",
-            "second", "coalesce", "nullif", "isnull", "isnotnull", "row_number",
-            "rank", "dense_rank", "ntile", "lag", "lead", "extract", "date_trunc",
+            "select",
+            "filter",
+            "join",
+            "left_join",
+            "right_join",
+            "cross_join",
+            "group_by",
+            "order_by",
+            "having",
+            "limit",
+            "offset",
+            "union",
+            "union_all",
+            "insert",
+            "update",
+            "delete",
+            "count",
+            "sum",
+            "avg",
+            "min",
+            "max",
+            "first",
+            "last",
+            "concat",
+            "substring",
+            "length",
+            "trim",
+            "upper",
+            "lower",
+            "replace",
+            "round",
+            "floor",
+            "ceil",
+            "abs",
+            "sqrt",
+            "power",
+            "mod",
+            "now",
+            "today",
+            "year",
+            "month",
+            "day",
+            "hour",
+            "minute",
+            "second",
+            "coalesce",
+            "nullif",
+            "isnull",
+            "isnotnull",
+            "row_number",
+            "rank",
+            "dense_rank",
+            "ntile",
+            "lag",
+            "lead",
+            "extract",
+            "date_trunc",
             "current_date",
         ];
         for func in known {
@@ -176,14 +261,20 @@ mod diagnostics_tests {
     #[test]
     fn case_insensitive_function_check() {
         let diags = analyze("x |> SELECT(x.id)", &empty_scope());
-        let unknown: Vec<_> = diags.iter().filter(|d| d.message.contains("Unknown")).collect();
+        let unknown: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Unknown"))
+            .collect();
         assert!(unknown.is_empty());
     }
 
     #[test]
     fn string_literal_not_checked_for_functions() {
         // 'blah(' inside a string shouldn't trigger unknown function
-        let diags = analyze("users |> filter(fn(r) => r.users.name = 'blah(')", &empty_scope());
+        let diags = analyze(
+            "users |> filter(fn(r) => r.users.name = 'blah(')",
+            &empty_scope(),
+        );
         let unknown: Vec<_> = diags
             .iter()
             .filter(|d| d.message.contains("Unknown function: `blah`"))
@@ -193,24 +284,58 @@ mod diagnostics_tests {
 
     #[test]
     fn escaped_quote_in_string() {
-        let diags = analyze(r"users |> filter(fn(r) => r.users.name = 'it\'s(test')", &empty_scope());
-        let unknown: Vec<_> = diags.iter().filter(|d| d.message.contains("Unknown function: `s`")).collect();
+        let diags = analyze(
+            r"users |> filter(fn(r) => r.users.name = 'it\'s(test')",
+            &empty_scope(),
+        );
+        let unknown: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Unknown function: `s`"))
+            .collect();
         assert!(unknown.is_empty());
     }
 
     #[test]
     fn identifier_not_followed_by_paren_not_reported() {
         let diags = analyze("users |> select(users.foobar)", &empty_scope());
-        let unknown: Vec<_> = diags.iter().filter(|d| d.message.contains("Unknown")).collect();
+        let unknown: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("Unknown"))
+            .collect();
         assert!(unknown.is_empty());
     }
 
     #[test]
     fn keyword_identifiers_not_flagged() {
-        let keywords = ["let", "fn", "as", "asc", "desc", "and", "or", "not",
-            "distinct", "exists", "null", "is", "in", "case", "when", "then",
-            "else", "end", "with", "over", "partition", "order", "by", "on",
-            "like", "from", "interval"];
+        let keywords = [
+            "let",
+            "fn",
+            "as",
+            "asc",
+            "desc",
+            "and",
+            "or",
+            "not",
+            "distinct",
+            "exists",
+            "null",
+            "is",
+            "in",
+            "case",
+            "when",
+            "then",
+            "else",
+            "end",
+            "with",
+            "over",
+            "partition",
+            "order",
+            "by",
+            "on",
+            "like",
+            "from",
+            "interval",
+        ];
         for kw in keywords {
             let source = format!("x |> filter(fn(r) => {kw}(r.x.y))");
             let diags = analyze(&source, &empty_scope());
@@ -225,14 +350,20 @@ mod diagnostics_tests {
     #[test]
     fn function_with_whitespace_before_paren() {
         let diags = analyze("x |> foobar  (x.id)", &empty_scope());
-        let unknown: Vec<_> = diags.iter().filter(|d| d.message.contains("foobar")).collect();
+        let unknown: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("foobar"))
+            .collect();
         assert_eq!(unknown.len(), 1);
     }
 
     #[test]
     fn underscore_identifier_as_function() {
         let diags = analyze("x |> _my_func(x.id)", &empty_scope());
-        let unknown: Vec<_> = diags.iter().filter(|d| d.message.contains("_my_func")).collect();
+        let unknown: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("_my_func"))
+            .collect();
         assert_eq!(unknown.len(), 1);
     }
 
@@ -752,8 +883,17 @@ mod hover_tests {
     #[test]
     fn hover_all_pipeline_ops() {
         for word in &[
-            "select", "filter", "join", "left_join", "group_by", "order_by",
-            "having", "limit", "offset", "union", "insert",
+            "select",
+            "filter",
+            "join",
+            "left_join",
+            "group_by",
+            "order_by",
+            "having",
+            "limit",
+            "offset",
+            "union",
+            "insert",
         ] {
             assert!(
                 get_hover(word).is_some(),
@@ -773,8 +913,15 @@ mod hover_tests {
     #[test]
     fn hover_all_string_functions() {
         for word in &[
-            "concat", "substring", "length", "trim", "upper", "lower", "round",
-            "abs", "coalesce",
+            "concat",
+            "substring",
+            "length",
+            "trim",
+            "upper",
+            "lower",
+            "round",
+            "abs",
+            "coalesce",
         ] {
             assert!(get_hover(word).is_some(), "No hover for: {word}");
         }
@@ -809,8 +956,7 @@ mod hover_tests {
     #[test]
     fn hover_qualified_column() {
         let schema = test_schema();
-        let info =
-            get_hover_with_schema("id", Some(("users", "id")), Some(&schema)).unwrap();
+        let info = get_hover_with_schema("id", Some(("users", "id")), Some(&schema)).unwrap();
         assert!(info.title.contains("users.id"));
         assert!(info.title.contains("uuid"));
         assert!(info.detail.contains("Primary Key: yes"));
@@ -821,8 +967,7 @@ mod hover_tests {
     #[test]
     fn hover_qualified_nullable_column() {
         let schema = test_schema();
-        let info =
-            get_hover_with_schema("name", Some(("users", "name")), Some(&schema)).unwrap();
+        let info = get_hover_with_schema("name", Some(("users", "name")), Some(&schema)).unwrap();
         assert!(info.detail.contains("Nullable: yes"));
         assert!(info.detail.contains("Primary Key: no"));
     }
@@ -831,8 +976,7 @@ mod hover_tests {
     fn hover_qualified_unknown_column() {
         let schema = test_schema();
         let info =
-            get_hover_with_schema("missing", Some(("users", "missing")), Some(&schema))
-                .unwrap();
+            get_hover_with_schema("missing", Some(("users", "missing")), Some(&schema)).unwrap();
         assert!(info.title.contains("Column not found"));
         assert!(info.detail.contains("id"));
         assert!(info.detail.contains("name"));
@@ -866,8 +1010,7 @@ mod hover_tests {
     fn hover_qualified_unknown_table() {
         let schema = test_schema();
         // Unknown table with qualified lookup — falls through to keyword lookup
-        let info =
-            get_hover_with_schema("select", Some(("nonexistent", "col")), Some(&schema));
+        let info = get_hover_with_schema("select", Some(("nonexistent", "col")), Some(&schema));
         assert!(info.is_some()); // falls back to keyword "select"
     }
 }

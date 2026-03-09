@@ -490,7 +490,8 @@ mod tests {
     // ── OllamaProvider::parse_response ─────────────────────────────────
     #[test]
     fn parse_valid_json_array() {
-        let response = r#"[{"label": "select", "insertText": "select($0)", "detail": "Select columns"}]"#;
+        let response =
+            r#"[{"label": "select", "insertText": "select($0)", "detail": "Select columns"}]"#;
         let items = OllamaProvider::parse_response(response);
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].label, "select");

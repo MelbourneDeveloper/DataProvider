@@ -261,9 +261,8 @@ a |> join(b, on = a.id = b.user_id)"#;
 
     #[test]
     fn test_parse_nested_filter() {
-        let result = parse_lql(
-            "users |> filter(fn(row) => row.users.age > 18 and row.users.active = true)",
-        );
+        let result =
+            parse_lql("users |> filter(fn(row) => row.users.age > 18 and row.users.active = true)");
         assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
     }
 
@@ -278,15 +277,13 @@ a |> join(b, on = a.id = b.user_id)"#;
     #[test]
     fn test_parse_not_condition_errors() {
         // Grammar doesn't support standalone `not` prefix — verify error recovery
-        let result =
-            parse_lql("users |> filter(fn(row) => not row.users.deleted)");
+        let result = parse_lql("users |> filter(fn(row) => not row.users.deleted)");
         assert!(!result.errors.is_empty());
     }
 
     #[test]
     fn test_parse_string_literal() {
-        let result =
-            parse_lql("users |> filter(fn(row) => row.users.name = 'O\\'Brien')");
+        let result = parse_lql("users |> filter(fn(row) => row.users.name = 'O\\'Brien')");
         assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
     }
 
@@ -298,8 +295,7 @@ a |> join(b, on = a.id = b.user_id)"#;
 
     #[test]
     fn test_parse_null_check() {
-        let result =
-            parse_lql("users |> filter(fn(row) => row.users.email is not null)");
+        let result = parse_lql("users |> filter(fn(row) => row.users.email is not null)");
         assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
     }
 
@@ -311,57 +307,46 @@ a |> join(b, on = a.id = b.user_id)"#;
 
     #[test]
     fn test_parse_in_expression() {
-        let result = parse_lql(
-            "users |> filter(fn(row) => row.users.status in ('active', 'pending'))",
-        );
+        let result =
+            parse_lql("users |> filter(fn(row) => row.users.status in ('active', 'pending'))");
         assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
     }
 
     #[test]
     fn test_parse_like_expression() {
-        let result =
-            parse_lql("users |> filter(fn(row) => row.users.name like '%john%')");
+        let result = parse_lql("users |> filter(fn(row) => row.users.name like '%john%')");
         assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
     }
 
     #[test]
     fn test_parse_between_not_supported() {
         // BETWEEN is not in the grammar — verify graceful error
-        let result = parse_lql(
-            "orders |> filter(fn(row) => row.orders.total between 100 and 500)",
-        );
+        let result = parse_lql("orders |> filter(fn(row) => row.orders.total between 100 and 500)");
         assert!(!result.errors.is_empty());
     }
 
     #[test]
     fn test_parse_count_star() {
-        let result = parse_lql(
-            "users |> group_by(users.role) |> select(users.role, count(*) as cnt)",
-        );
+        let result =
+            parse_lql("users |> group_by(users.role) |> select(users.role, count(*) as cnt)");
         assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
     }
 
     #[test]
     fn test_parse_distinct() {
-        let result = parse_lql(
-            "users |> select(count(distinct users.email) as unique_emails)",
-        );
+        let result = parse_lql("users |> select(count(distinct users.email) as unique_emails)");
         assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
     }
 
     #[test]
     fn test_parse_arithmetic() {
-        let result = parse_lql(
-            "orders |> select(orders.price * orders.quantity as total)",
-        );
+        let result = parse_lql("orders |> select(orders.price * orders.quantity as total)");
         assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
     }
 
     #[test]
     fn test_parse_subtraction() {
-        let result = parse_lql(
-            "orders |> select(orders.price - orders.discount as net_price)",
-        );
+        let result = parse_lql("orders |> select(orders.price - orders.discount as net_price)");
         assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
     }
 
@@ -383,17 +368,14 @@ a |> union_all(b)"#;
     #[test]
     fn test_parse_coalesce_not_in_grammar() {
         // coalesce() not recognized as a grammar-level function — verify error recovery
-        let result = parse_lql(
-            "users |> select(coalesce(users.nickname, users.name) as display_name)",
-        );
+        let result =
+            parse_lql("users |> select(coalesce(users.nickname, users.name) as display_name)");
         assert!(!result.errors.is_empty());
     }
 
     #[test]
     fn test_parse_nested_function_calls() {
-        let result = parse_lql(
-            "users |> select(upper(trim(users.name)) as clean_name)",
-        );
+        let result = parse_lql("users |> select(upper(trim(users.name)) as clean_name)");
         assert!(result.errors.is_empty(), "errors: {:?}", result.errors);
     }
 

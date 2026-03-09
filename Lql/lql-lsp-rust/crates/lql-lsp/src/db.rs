@@ -155,9 +155,8 @@ mod tests {
 
     #[test]
     fn convert_npgsql_basic() {
-        let result = normalize_connection_string(
-            "Host=localhost;Database=mydb;Username=user;Password=pass",
-        );
+        let result =
+            normalize_connection_string("Host=localhost;Database=mydb;Username=user;Password=pass");
         assert!(result.contains("host=localhost"));
         assert!(result.contains("dbname=mydb"));
         assert!(result.contains("user=user"));
@@ -166,7 +165,8 @@ mod tests {
 
     #[test]
     fn convert_npgsql_with_port() {
-        let result = normalize_connection_string("Host=db;Port=5433;Database=test;Username=u;Password=p");
+        let result =
+            normalize_connection_string("Host=db;Port=5433;Database=test;Username=u;Password=p");
         assert!(result.contains("host=db"));
         assert!(result.contains("port=5433"));
         assert!(result.contains("dbname=test"));
@@ -174,7 +174,8 @@ mod tests {
 
     #[test]
     fn convert_npgsql_alternative_keys() {
-        let result = normalize_connection_string("Server=db;Initial Catalog=mydb;User Id=admin;Pwd=secret");
+        let result =
+            normalize_connection_string("Server=db;Initial Catalog=mydb;User Id=admin;Pwd=secret");
         assert!(result.contains("host=db"));
         assert!(result.contains("dbname=mydb"));
         assert!(result.contains("user=admin"));
@@ -183,20 +184,24 @@ mod tests {
 
     #[test]
     fn convert_npgsql_uid_key() {
-        let result = normalize_connection_string("Host=localhost;Database=test;Uid=user;Password=pass");
+        let result =
+            normalize_connection_string("Host=localhost;Database=test;Uid=user;Password=pass");
         assert!(result.contains("user=user"));
     }
 
     #[test]
     fn trailing_semicolon() {
-        let result = normalize_connection_string("Host=localhost;Database=test;Username=u;Password=p;");
+        let result =
+            normalize_connection_string("Host=localhost;Database=test;Username=u;Password=p;");
         assert!(result.contains("host=localhost"));
         assert!(result.contains("dbname=test"));
     }
 
     #[test]
     fn whitespace_in_params() {
-        let result = normalize_connection_string("Host = localhost ; Database = mydb ; Username = u ; Password = p");
+        let result = normalize_connection_string(
+            "Host = localhost ; Database = mydb ; Username = u ; Password = p",
+        );
         assert!(result.contains("host=localhost"));
         assert!(result.contains("dbname=mydb"));
     }
@@ -207,48 +212,48 @@ mod tests {
     }
 
     // ── discover_connection_string ─────────────────────────────────────
+    // All env-var tests combined into one to avoid parallel test races
+    // (env vars are process-global shared state).
     #[test]
-    fn discover_returns_none_when_unset() {
-        // Clear env vars to test the None path
+    fn discover_connection_string_all_cases() {
+        // 1) None when unset
         std::env::remove_var("LQL_CONNECTION_STRING");
         std::env::remove_var("DATABASE_URL");
         assert!(discover_connection_string().is_none());
-    }
 
-    #[test]
-    fn discover_from_lql_env() {
+        // 2) LQL_CONNECTION_STRING takes effect
         std::env::set_var("LQL_CONNECTION_STRING", "host=localhost dbname=test");
         std::env::remove_var("DATABASE_URL");
-        let result = discover_connection_string();
-        assert_eq!(result, Some("host=localhost dbname=test".to_string()));
-        std::env::remove_var("LQL_CONNECTION_STRING");
-    }
+        assert_eq!(
+            discover_connection_string(),
+            Some("host=localhost dbname=test".to_string())
+        );
 
-    #[test]
-    fn discover_from_database_url() {
+        // 3) Falls back to DATABASE_URL
         std::env::remove_var("LQL_CONNECTION_STRING");
         std::env::set_var("DATABASE_URL", "postgres://u:p@h/d");
-        let result = discover_connection_string();
-        assert_eq!(result, Some("postgres://u:p@h/d".to_string()));
-        std::env::remove_var("DATABASE_URL");
-    }
+        assert_eq!(
+            discover_connection_string(),
+            Some("postgres://u:p@h/d".to_string())
+        );
 
-    #[test]
-    fn discover_lql_takes_priority() {
+        // 4) LQL takes priority over DATABASE_URL
         std::env::set_var("LQL_CONNECTION_STRING", "host=primary");
         std::env::set_var("DATABASE_URL", "postgres://secondary");
-        let result = discover_connection_string();
-        assert_eq!(result, Some("host=primary".to_string()));
-        std::env::remove_var("LQL_CONNECTION_STRING");
-        std::env::remove_var("DATABASE_URL");
-    }
+        assert_eq!(
+            discover_connection_string(),
+            Some("host=primary".to_string())
+        );
 
-    #[test]
-    fn discover_empty_var_skipped() {
+        // 5) Empty LQL_CONNECTION_STRING is skipped
         std::env::set_var("LQL_CONNECTION_STRING", "");
         std::env::set_var("DATABASE_URL", "postgres://fallback");
-        let result = discover_connection_string();
-        assert_eq!(result, Some("postgres://fallback".to_string()));
+        assert_eq!(
+            discover_connection_string(),
+            Some("postgres://fallback".to_string())
+        );
+
+        // Cleanup
         std::env::remove_var("LQL_CONNECTION_STRING");
         std::env::remove_var("DATABASE_URL");
     }

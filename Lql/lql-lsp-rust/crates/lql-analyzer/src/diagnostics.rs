@@ -407,11 +407,37 @@ mod tests {
 
     #[test]
     fn test_known_functions_not_flagged() {
-        let known_fns = ["select", "filter", "count", "sum", "avg", "max", "min",
-            "join", "left_join", "group_by", "order_by", "having",
-            "limit", "offset", "union", "concat", "substring", "length",
-            "trim", "upper", "lower", "round", "abs", "coalesce",
-            "row_number", "rank", "dense_rank", "now", "today"];
+        let known_fns = [
+            "select",
+            "filter",
+            "count",
+            "sum",
+            "avg",
+            "max",
+            "min",
+            "join",
+            "left_join",
+            "group_by",
+            "order_by",
+            "having",
+            "limit",
+            "offset",
+            "union",
+            "concat",
+            "substring",
+            "length",
+            "trim",
+            "upper",
+            "lower",
+            "round",
+            "abs",
+            "coalesce",
+            "row_number",
+            "rank",
+            "dense_rank",
+            "now",
+            "today",
+        ];
         for func in &known_fns {
             let src = format!("{func}(x)");
             let diags = analyze(&src, &empty_scope());
@@ -419,7 +445,10 @@ mod tests {
                 .iter()
                 .filter(|d| d.message.contains("Unknown function"))
                 .collect();
-            assert!(unk.is_empty(), "Function '{func}' should be known but was flagged");
+            assert!(
+                unk.is_empty(),
+                "Function '{func}' should be known but was flagged"
+            );
         }
     }
 
@@ -586,7 +615,10 @@ mod tests {
     fn test_diagnostic_line_numbers() {
         let source = "ok line\nusers|>select(x)";
         let diags = analyze(source, &empty_scope());
-        let pipe_diag = diags.iter().find(|d| d.message.contains("preceded by")).unwrap();
+        let pipe_diag = diags
+            .iter()
+            .find(|d| d.message.contains("preceded by"))
+            .unwrap();
         assert_eq!(pipe_diag.line, 1);
     }
 

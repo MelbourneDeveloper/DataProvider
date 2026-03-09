@@ -16,6 +16,7 @@ on:
       - 'Samples/docker/**'
       - '**/Dockerfile*'
       - 'Lql/lql-lsp-rust/**'
+      - 'Lql/LqlExtension/**'
   pull_request:
     branches: [main]
     paths:
@@ -31,6 +32,7 @@ on:
       - 'Samples/docker/**'
       - '**/Dockerfile*'
       - 'Lql/lql-lsp-rust/**'
+      - 'Lql/LqlExtension/**'
   workflow_dispatch:
 
 env:
@@ -54,6 +56,7 @@ jobs:
       icd10: ${{ steps.filter.outputs.icd10 }}
       docker: ${{ steps.filter.outputs.docker }}
       lql-rust: ${{ steps.filter.outputs.lql-rust }}
+      lql-extension: ${{ steps.filter.outputs.lql-extension }}
     steps:
       - uses: actions/checkout@v4
 
@@ -119,6 +122,8 @@ jobs:
               - 'Gatekeeper/**'
             lql-rust:
               - 'Lql/lql-lsp-rust/**'
+            lql-extension:
+              - 'Lql/LqlExtension/**'
 
   build:
     name: Build
@@ -815,3 +820,32 @@ jobs:
             --exclude-files "*/generated/*" \
             --fail-under 85 \
             --out stdout
+
+  # LQL VS Code Extension CI (lint, compile, test, package)
+  lql-extension-ci:
+    name: LQL Extension CI
+    runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.lql-extension == 'true'
+    defaults:
+      run:
+        working-directory: Lql/LqlExtension
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Compile
+        run: npm run compile
+
+      - name: Package VSIX (dry run)
+        run: npx vsce package --no-git-tag-version --no-update-package-json
