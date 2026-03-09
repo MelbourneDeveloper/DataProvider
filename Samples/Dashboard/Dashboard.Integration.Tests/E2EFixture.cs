@@ -1064,12 +1064,40 @@ public sealed class E2EFixture : IAsyncLifetime
 
         // Step 1: Run migration to create schema
         Console.WriteLine("[E2E] Running ICD-10 schema migration...");
-        var migrationResult = await RunProcessAsync(
-            "dotnet",
-            $"run --project \"{migrationCliDir}\" -- --schema \"{schemaPath}\" --output \"{connectionString}\" --provider postgres",
-            rootDir,
-            timeoutMs: 600_000
+        var configuration = ResolveBuildConfiguration(
+            Path.GetDirectoryName(typeof(E2EFixture).Assembly.Location)!
         );
+        var migrationDll = Path.Combine(
+            migrationCliDir,
+            "bin",
+            configuration,
+            "net10.0",
+            "Migration.Cli.dll"
+        );
+
+        int migrationResult;
+        if (File.Exists(migrationDll))
+        {
+            Console.WriteLine($"[E2E] Using pre-built Migration.Cli: {migrationDll}");
+            migrationResult = await RunProcessAsync(
+                "dotnet",
+                $"exec \"{migrationDll}\" --schema \"{schemaPath}\" --output \"{connectionString}\" --provider postgres",
+                rootDir,
+                timeoutMs: 600_000
+            );
+        }
+        else
+        {
+            Console.WriteLine(
+                $"[E2E] Migration.Cli DLL not found at {migrationDll}, falling back to dotnet run"
+            );
+            migrationResult = await RunProcessAsync(
+                "dotnet",
+                $"run --project \"{migrationCliDir}\" -- --schema \"{schemaPath}\" --output \"{connectionString}\" --provider postgres",
+                rootDir,
+                timeoutMs: 600_000
+            );
+        }
 
         if (migrationResult != 0)
         {
