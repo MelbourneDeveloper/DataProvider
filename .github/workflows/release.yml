@@ -12,6 +12,7 @@ env:
 jobs:
   # ── Build LSP binaries for each platform ──────────────────────────────────
   build-lsp:
+    timeout-minutes: 10
     strategy:
       matrix:
         include:
@@ -57,6 +58,7 @@ jobs:
   # ── Build VSIX (no bundled binaries) ──────────────────────────────────────
   build-vsix:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -85,6 +87,7 @@ jobs:
   # ── Publish NuGet packages ────────────────────────────────────────────────
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:
@@ -146,6 +149,7 @@ jobs:
   release:
     needs: [publish, build-lsp, build-vsix]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:

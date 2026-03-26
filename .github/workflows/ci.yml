@@ -31,6 +31,10 @@ on:
       - 'Lql/LqlExtension/**'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   DOTNET_VERSION: '10.0.x'
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
@@ -41,6 +45,7 @@ jobs:
   changes:
     name: Detect Changes
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       dotnet: ${{ steps.filter.outputs.dotnet }}
       postgres: ${{ steps.filter.outputs.postgres }}
@@ -104,6 +109,7 @@ jobs:
   dotnet-tests:
     name: .NET Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [changes]
     if: needs.changes.outputs.dotnet == 'true'
     steps:
@@ -159,6 +165,7 @@ jobs:
   postgres-tests:
     name: Postgres Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [changes]
     if: needs.changes.outputs.postgres == 'true'
     services:
@@ -227,6 +234,8 @@ jobs:
   icd10-tests:
     name: ICD10 Tests
     runs-on: ubuntu-latest
+    # TIMEOUT EXCEPTION: ICD10 builds Docker image for embedding service + waits up to 90s for model load
+    timeout-minutes: 15
     needs: [changes]
     if: needs.changes.outputs.icd10 == 'true'
     services:
@@ -311,6 +320,8 @@ jobs:
   e2e-tests:
     name: Dashboard E2E Tests
     runs-on: ubuntu-latest
+    # TIMEOUT EXCEPTION: E2E tests build multiple .NET projects + install Playwright browsers
+    timeout-minutes: 15
     needs: [changes]
     if: needs.changes.outputs.dashboard == 'true'
     services:
@@ -386,6 +397,7 @@ jobs:
   lql-rust-tests:
     name: LQL Rust Tests (${{ matrix.crate }})
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [changes]
     if: needs.changes.outputs.lql-rust == 'true'
     strategy:
@@ -440,6 +452,7 @@ jobs:
   lql-extension-ci:
     name: LQL Extension CI
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [changes]
     if: needs.changes.outputs.lql-extension == 'true'
     defaults:

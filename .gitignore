@@ -1,4 +1,59 @@
 # ═══════════════════════════════════════════════════════════════════════════════
+# Universal (portfolio-wide)
+# ═══════════════════════════════════════════════════════════════════════════════
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+coordination/
+logs/
+nohup.out
+*.profraw
+*.profdata
+htmlcov/
+.coverage
+coverage.xml
+coverage.out
+coverage-summary.json
+mutants.out/
+.env
+.env.local
+.env.*.local
+*.local
+*.secret
+*.pem
+*.key
+!*.pub.key
+tmp/
+temp/
+scratch/
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Rust
+# ═══════════════════════════════════════════════════════════════════════════════
+/target/
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TypeScript/Node (additional)
+# ═══════════════════════════════════════════════════════════════════════════════
+dist/
+build/
+*.tgz
+.npm/
+.cache/
+.vscode-test/
+.vscode-test-web/
+.nyc_output/
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # .NET Build Output
 # ═══════════════════════════════════════════════════════════════════════════════
 bin/
