@@ -1,7 +1,7 @@
 ---
 layout: layouts/docs.njk
-title: Installation
-description: How to install DataProvider in your .NET project.
+title: Installation Guide
+description: Install DataProvider, LQL, Sync, Migrations, and Gatekeeper NuGet packages in your .NET project. Includes package references and configuration.
 ---
 
 ## NuGet Package

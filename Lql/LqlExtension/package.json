@@ -79,6 +79,32 @@
           "default": true,
           "description": "Enable/disable the LQL language server"
         },
+        "lql.languageServer.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to a local lql-lsp binary. When set, skips the GitHub download and uses this binary instead."
+        },
+        "lql.database.connectionString": {
+          "type": "string",
+          "default": "",
+          "description": "Database connection string. SQLite: path to .db/.sqlite file. PostgreSQL: libpq-style or Npgsql-style connection string."
+        },
+        "lql.ai.provider": {
+          "type": "string",
+          "enum": ["", "ollama", "test"],
+          "default": "",
+          "description": "AI completion provider. 'ollama' for local Ollama, 'test' for deterministic test completions."
+        },
+        "lql.ai.endpoint": {
+          "type": "string",
+          "default": "http://localhost:11434/api/generate",
+          "description": "AI provider API endpoint URL."
+        },
+        "lql.ai.model": {
+          "type": "string",
+          "default": "qwen2.5-coder:1.5b",
+          "description": "AI model identifier."
+        },
         "lql.languageServer.trace": {
           "type": "string",
           "enum": [
@@ -155,6 +181,7 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
     "test:lsp": "npm run compile && mocha ./out/test/suite/lsp-protocol.test.js --timeout 30000",
+    "test:vsix": "npm run compile && npm run package && mocha ./out/test/suite/vsix-packaging.test.js --ui tdd --timeout 30000",
     "package": "vsce package",
     "publish": "vsce publish"
   },

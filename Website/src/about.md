@@ -21,6 +21,16 @@ description: About the DataProvider project and team.
       <li><strong>Developer Experience</strong> - IntelliSense, refactoring, and clean APIs</li>
     </ul>
 
+    <h2>The Stack</h2>
+    <ul>
+      <li><strong><a href="/docs/dataprovider/">DataProvider</a></strong> - Source generator: SQL files become type-safe extension methods</li>
+      <li><strong><a href="/docs/lql/">LQL</a></strong> - Lambda Query Language: Write once, transpile to any SQL dialect. Includes a native Rust LSP with AI-powered completions and a VS Code extension</li>
+      <li><strong><a href="/docs/migrations/">Migrations</a></strong> - YAML schemas: Database-agnostic, version-controlled schema definitions</li>
+      <li><strong><a href="/docs/sync/">Sync</a></strong> - Offline-first: Bidirectional synchronization with conflict resolution</li>
+      <li><strong><a href="/docs/gatekeeper/">Gatekeeper</a></strong> - Auth: WebAuthn authentication and role-based access control</li>
+      <li><strong><a href="/docs/samples/">Healthcare Samples</a></strong> - FHIR-compliant microservices with ICD-10 RAG search, demonstrating the full stack</li>
+    </ul>
+
     <h2>Get Involved</h2>
     <p>DataProvider is open source. Contribute on <a href="https://github.com/MelbourneDeveloper/DataProvider">GitHub</a> or check out our <a href="/docs/getting-started/">documentation</a> to get started.</p>
   </div>

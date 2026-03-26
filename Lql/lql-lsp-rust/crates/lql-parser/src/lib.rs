@@ -4,6 +4,7 @@
 pub mod error;
 pub mod generated;
 pub mod span;
+pub mod tokens;
 
 pub use generated::lqllexer::LqlLexer;
 pub use generated::lqllistener::LqlListener;

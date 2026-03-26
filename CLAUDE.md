@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+The LQL parser is Antlr generated in Rust. We don't use manually generated parsers. Always upgrade to the latest version of Antlr to make sure the parser is correct.
+
 ## Too Many Cooks
 - Register on TMC immediately
 - Don't edit files that are locked; lock files when editing
@@ -60,6 +62,16 @@ public abstract partial record Result<TSuccess, TFailure> { private Result() { }
 - E2E with zero mocking
 - 100% coverage, Stryker score 70%+
 - Medical data: [FHIR spec](https://build.fhir.org/resourcelist.html)
+
+## Web
+
+- Minimise CSS classes. We want as few as possible
+- Optimise for AI and SEO. Must conform to these:
+
+https://developers.google.com/search/blog/2025/05/succeeding-in-ai-search
+
+https://developers.google.com/search/docs/fundamentals/seo-starter-guide
+
 
 ## Architecture
 

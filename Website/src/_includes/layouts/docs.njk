@@ -2,6 +2,26 @@
 layout: layouts/base.njk
 ---
 
+{% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "{{ title }}",
+  "description": "{{ description }}",
+  "url": "{{ site.url }}{{ page.url }}",
+  "publisher": {
+    "@type": "Organization",
+    "name": "{{ site.name }}"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{ site.url }}{{ page.url }}"
+  }
+}
+</script>
+{% endblock %}
+
 <div class="docs-layout">
   <aside class="sidebar" id="docs-sidebar">
     {% for section in navigation.docs %}

@@ -12,7 +12,6 @@ vsc-extension-quickstart.md
 **/*.ts
 !out/**/*.js
 !server/out/**/*.js
-node_modules/**
 server/node_modules/**
 **/.DS_Store
 **/*.log

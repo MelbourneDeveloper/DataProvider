@@ -11,4 +11,4 @@ sales_data
     abs(sum(sales_data.amount) - avg(sales_data.amount)) as deviation
 )
 |> group_by(sales_data.product_id)
-|> having(fn(group) => count(*) > 5 and sum(sales_data.amount) > 1000) 
+|> having(fn(group) => count(*) > 5 and abs(sales_data.amount) > 1000) 

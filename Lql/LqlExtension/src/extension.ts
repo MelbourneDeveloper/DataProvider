@@ -11,8 +11,13 @@ import {
 } from "vscode-languageclient/node";
 
 let client: LanguageClient | undefined;
+let outputChannel: vscode.OutputChannel;
 
 const GITHUB_REPO = "MelbourneDeveloper/DataProvider";
+
+function log(msg: string): void {
+  outputChannel.appendLine(`[LQL] ${msg}`);
+}
 
 /** Map platform/arch to the release asset name. */
 function getLspAssetName(): string | undefined {
@@ -74,10 +79,10 @@ function downloadFile(url: string, dest: string): Promise<void> {
 /** Download the LSP binary from the GitHub release matching the extension version. */
 async function downloadLspBinary(
   context: vscode.ExtensionContext,
-): Promise<string | undefined> {
+): Promise<string> {
   const assetName = getLspAssetName();
   if (!assetName) {
-    return undefined;
+    throw new Error(`Unsupported platform: ${process.platform} ${process.arch}`);
   }
 
   const binDir = path.join(context.globalStorageUri.fsPath, "bin");
@@ -112,75 +117,46 @@ async function downloadLspBinary(
   return binaryPath;
 }
 
-/** Find the LSP binary. Tries local dev paths, then downloads from GH release. */
-async function findServerBinary(
-  context: vscode.ExtensionContext,
-): Promise<string> {
-  // Local dev candidates (not bundled in VSIX, only for local development)
-  const candidates = [
-    path.join(context.extensionPath, "bin", "lql-lsp"),
-    path.join(
-      context.extensionPath,
-      "..",
-      "lql-lsp-rust",
-      "target",
-      "release",
-      "lql-lsp",
-    ),
-    path.join(
-      context.extensionPath,
-      "..",
-      "lql-lsp-rust",
-      "target",
-      "debug",
-      "lql-lsp",
-    ),
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      return candidate;
-    }
-  }
-
-  // Check previously downloaded binary
-  const binDir = path.join(context.globalStorageUri.fsPath, "bin");
-  const binaryName =
-    process.platform === "win32" ? "lql-lsp.exe" : "lql-lsp";
-  const cachedBinary = path.join(binDir, binaryName);
-  if (fs.existsSync(cachedBinary)) {
-    return cachedBinary;
-  }
-
-  // Download from GitHub release
-  const downloaded = await downloadLspBinary(context);
-  if (downloaded) {
-    return downloaded;
-  }
-
-  // Fallback to PATH
-  return "lql-lsp";
-}
-
 export async function activate(
   context: vscode.ExtensionContext,
 ): Promise<void> {
+  outputChannel = vscode.window.createOutputChannel("LQL Language Server");
+  log("Extension activating...");
+  log(`Platform: ${process.platform} ${process.arch}`);
+  log(`Global storage: ${context.globalStorageUri.fsPath}`);
+
   const config = vscode.workspace.getConfiguration("lql");
   const serverEnabled = config.get<boolean>("languageServer.enabled", true);
 
   if (!serverEnabled) {
+    log("Language server disabled in settings.");
     return;
   }
 
   let serverBinary: string;
-  try {
-    serverBinary = await findServerBinary(context);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    vscode.window.showErrorMessage(
-      `LQL: Failed to find or download language server: ${message}`,
-    );
-    return;
+  const customPath = config.get<string>("languageServer.path", "");
+  if (customPath) {
+    if (!fs.existsSync(customPath)) {
+      log(`ERROR: Custom LSP path does not exist: ${customPath}`);
+      vscode.window.showErrorMessage(
+        `LQL: Custom language server path not found: ${customPath}`,
+      );
+      return;
+    }
+    serverBinary = customPath;
+    log(`LSP binary (custom): ${serverBinary}`);
+  } else {
+    try {
+      serverBinary = await downloadLspBinary(context);
+      log(`LSP binary: ${serverBinary}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      log(`ERROR: ${message}`);
+      vscode.window.showErrorMessage(
+        `LQL: Failed to download language server: ${message}`,
+      );
+      return;
+    }
   }
 
   const serverOptions: ServerOptions = {
@@ -194,12 +170,34 @@ export async function activate(
     },
   };
 
+  // Build initializationOptions from VS Code settings
+  const connectionString = config.get<string>("database.connectionString", "");
+  const aiProvider = config.get<string>("ai.provider", "");
+  const aiEndpoint = config.get<string>("ai.endpoint", "http://localhost:11434/api/generate");
+  const aiModel = config.get<string>("ai.model", "qwen2.5-coder:1.5b");
+
+  const initOptions: Record<string, unknown> = {};
+  if (connectionString) {
+    initOptions.connectionString = connectionString;
+    log(`Database: ${connectionString}`);
+  }
+  if (aiProvider) {
+    initOptions.aiProvider = {
+      provider: aiProvider,
+      endpoint: aiEndpoint,
+      model: aiModel,
+      enabled: true,
+    };
+    log(`AI provider: ${aiProvider} (${aiModel})`);
+  }
+
   const clientOptions: LanguageClientOptions = {
     documentSelector: [{ scheme: "file", language: "lql" }],
     synchronize: {
       fileEvents: vscode.workspace.createFileSystemWatcher("**/*.lql"),
     },
-    outputChannelName: "LQL Language Server",
+    outputChannel,
+    initializationOptions: initOptions,
   };
 
   client = new LanguageClient(
@@ -237,7 +235,10 @@ export async function activate(
     }),
   );
 
+  log("Starting LSP client...");
   client.start();
+  log("LSP client started.");
+
   context.subscriptions.push({
     dispose: () => {
       if (client) {

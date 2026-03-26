@@ -5,3 +5,4 @@ edition.workspace = true
 
 [dependencies]
 lql-parser = { path = "../lql-parser" }
+antlr-rust = "0.3.0-beta"

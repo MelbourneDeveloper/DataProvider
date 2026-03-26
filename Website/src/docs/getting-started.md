@@ -1,7 +1,7 @@
 ---
 layout: layouts/docs.njk
-title: Getting Started
-description: Get started with DataProvider for .NET data access.
+title: Getting Started with DataProvider
+description: Set up DataProvider in your .NET project. Install the NuGet package, write SQL files, and generate type-safe extension methods in minutes.
 ---
 
 This guide walks you through setting up DataProvider and running your first query.

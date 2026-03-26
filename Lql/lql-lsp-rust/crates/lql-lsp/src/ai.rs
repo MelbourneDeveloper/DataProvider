@@ -554,6 +554,42 @@ mod tests {
         assert_eq!(items[2].detail, "third");
     }
 
+    // ── OllamaProvider::new ────────────────────────────────────────────
+    #[test]
+    fn ollama_provider_new_stores_fields() {
+        let config = AiConfig {
+            provider: "ollama".to_string(),
+            endpoint: "http://localhost:11434/api/generate".to_string(),
+            model: "qwen2.5-coder:1.5b".to_string(),
+            api_key: None,
+            timeout_ms: 2000,
+            enabled: true,
+        };
+        let provider = OllamaProvider::new(&config, "LQL reference text".to_string());
+        assert_eq!(provider.endpoint, "http://localhost:11434/api/generate");
+        assert_eq!(provider.model, "qwen2.5-coder:1.5b");
+        assert_eq!(provider.lql_reference, "LQL reference text");
+    }
+
+    // ── SlowAiProvider ──────────────────────────────────────────────────
+    #[tokio::test]
+    async fn slow_provider_returns_after_delay() {
+        let provider = SlowAiProvider { delay_ms: 10 };
+        let ctx = AiCompletionContext {
+            document_text: "".to_string(),
+            line: 0,
+            column: 0,
+            line_prefix: "".to_string(),
+            word_prefix: "".to_string(),
+            file_uri: "".to_string(),
+            available_tables: vec![],
+            schema_description: String::new(),
+        };
+        let items = provider.complete(&ctx).await;
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].label, "ai_slow_result");
+    }
+
     // ── TestAiProvider ─────────────────────────────────────────────────
     #[tokio::test]
     async fn test_provider_returns_items() {

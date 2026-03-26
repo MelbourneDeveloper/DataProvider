@@ -13,6 +13,7 @@ lql-analyzer = { path = "../lql-analyzer" }
 tower-lsp = "0.20"
 tokio = { version = "1", features = ["full"] }
 tokio-postgres = "0.7"
+rusqlite = { version = "0.31", features = ["bundled"] }
 serde_json = "1"
 serde = { version = "1", features = ["derive"] }
 tracing = "0.1"

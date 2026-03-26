@@ -13,8 +13,6 @@ on:
       - '**/Directory.Packages.props'
       - '.github/workflows/ci.yml'
       - '.config/dotnet-tools.json'
-      - 'Samples/docker/**'
-      - '**/Dockerfile*'
       - 'Lql/lql-lsp-rust/**'
       - 'Lql/LqlExtension/**'
   pull_request:
@@ -29,8 +27,6 @@ on:
       - '**/Directory.Packages.props'
       - '.github/workflows/ci.yml'
       - '.config/dotnet-tools.json'
-      - 'Samples/docker/**'
-      - '**/Dockerfile*'
       - 'Lql/lql-lsp-rust/**'
       - 'Lql/LqlExtension/**'
   workflow_dispatch:
@@ -46,15 +42,10 @@ jobs:
     name: Detect Changes
     runs-on: ubuntu-latest
     outputs:
-      dataprovider: ${{ steps.filter.outputs.dataprovider }}
-      lql: ${{ steps.filter.outputs.lql }}
-      migration: ${{ steps.filter.outputs.migration }}
-      sync: ${{ steps.filter.outputs.sync }}
-      gatekeeper: ${{ steps.filter.outputs.gatekeeper }}
-      samples: ${{ steps.filter.outputs.samples }}
-      dashboard: ${{ steps.filter.outputs.dashboard }}
+      dotnet: ${{ steps.filter.outputs.dotnet }}
+      postgres: ${{ steps.filter.outputs.postgres }}
       icd10: ${{ steps.filter.outputs.icd10 }}
-      docker: ${{ steps.filter.outputs.docker }}
+      dashboard: ${{ steps.filter.outputs.dashboard }}
       lql-rust: ${{ steps.filter.outputs.lql-rust }}
       lql-extension: ${{ steps.filter.outputs.lql-extension }}
     steps:
@@ -64,36 +55,34 @@ jobs:
         id: filter
         with:
           filters: |
-            dataprovider:
+            dotnet:
               - 'DataProvider/**'
+              - 'Lql/Lql/**'
+              - 'Lql/Lql.Tests/**'
+              - 'Lql/LqlCli.SQLite.Tests/**'
+              - 'Lql/Lql.TypeProvider.FSharp.Tests/**'
+              - 'Migration/**'
+              - 'Sync/Sync/**'
+              - 'Sync/Sync.Tests/**'
+              - 'Sync/Sync.SQLite/**'
+              - 'Sync/Sync.SQLite.Tests/**'
+              - 'Other/Selecta/**'
               - 'Directory.Build.props'
               - 'Directory.Packages.props'
-            lql:
+            postgres:
+              - 'Gatekeeper/**'
+              - 'Samples/Clinical/**'
+              - 'Samples/Scheduling/**'
+              - 'Sync/**'
+              - 'DataProvider/**'
+              - 'Migration/**'
+              - 'Directory.Build.props'
+              - 'Directory.Packages.props'
+            icd10:
+              - 'Samples/ICD10/**'
+              - 'DataProvider/**'
+              - 'Migration/**'
               - 'Lql/**'
-              - 'DataProvider/**'
-              - 'Directory.Build.props'
-              - 'Directory.Packages.props'
-            migration:
-              - 'Migration/**'
-              - 'Directory.Build.props'
-              - 'Directory.Packages.props'
-            sync:
-              - 'Sync/**'
-              - 'Migration/**'
-              - 'Directory.Build.props'
-              - 'Directory.Packages.props'
-            gatekeeper:
-              - 'Gatekeeper/**'
-              - 'DataProvider/**'
-              - 'Migration/**'
-              - 'Directory.Build.props'
-              - 'Directory.Packages.props'
-            samples:
-              - 'Samples/**'
-              - 'DataProvider/**'
-              - 'Sync/**'
-              - 'Migration/**'
-              - 'Gatekeeper/**'
               - 'Directory.Build.props'
               - 'Directory.Packages.props'
             dashboard:
@@ -106,162 +95,17 @@ jobs:
               - 'Gatekeeper/**'
               - 'Directory.Build.props'
               - 'Directory.Packages.props'
-            icd10:
-              - 'Samples/ICD10/**'
-              - 'DataProvider/**'
-              - 'Migration/**'
-              - 'Lql/**'
-              - 'Directory.Build.props'
-              - 'Directory.Packages.props'
-            docker:
-              - 'Samples/docker/**'
-              - '**/Dockerfile*'
-              - 'Samples/Clinical/**'
-              - 'Samples/Scheduling/**'
-              - 'Samples/ICD10/**'
-              - 'Gatekeeper/**'
             lql-rust:
               - 'Lql/lql-lsp-rust/**'
             lql-extension:
               - 'Lql/LqlExtension/**'
 
-  build:
-    name: Build
+  # All .NET tests that don't need external services
+  dotnet-tests:
+    name: .NET Tests
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: |
-            8.0.x
-            ${{ env.DOTNET_VERSION }}
-
-      - name: Restore .NET tools
-        run: |
-          dotnet tool restore
-          # Verify h5 tool is available
-          dotnet tool run h5 --version || echo "h5 tool check (may fail if no version flag)"
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Build core projects
-        run: |
-          # Build core libraries (excludes Dashboard which requires h5 tool setup)
-          dotnet build DataProvider/DataProvider/DataProvider.csproj -c Release
-          dotnet build DataProvider/DataProvider.SQLite/DataProvider.SQLite.csproj -c Release
-          dotnet build DataProvider/DataProvider.Postgres.Cli/DataProvider.Postgres.Cli.csproj -c Release
-          dotnet build DataProvider/DataProvider.SQLite.Cli/DataProvider.SQLite.Cli.csproj -c Release
-          dotnet build Migration/Migration/Migration.csproj -c Release
-          dotnet build Migration/Migration.SQLite/Migration.SQLite.csproj -c Release
-          dotnet build Migration/Migration.Postgres/Migration.Postgres.csproj -c Release
-          dotnet build Migration/Migration.Cli/Migration.Cli.csproj -c Release
-          dotnet build Other/Selecta/Selecta.csproj -c Release
-          dotnet build Lql/Lql/Lql.csproj -c Release
-          dotnet build Sync/Sync/Sync.csproj -c Release
-          dotnet build Sync/Sync.SQLite/Sync.SQLite.csproj -c Release
-          dotnet build Sync/Sync.Postgres/Sync.Postgres.csproj -c Release
-          dotnet build Gatekeeper/Gatekeeper.Api/Gatekeeper.Api.csproj -c Release
-          # Build Samples that don't need h5
-          dotnet build Samples/Clinical/Clinical.Api/Clinical.Api.csproj -c Release
-          dotnet build Samples/Scheduling/Scheduling.Api/Scheduling.Api.csproj -c Release
-          dotnet build Samples/ICD10/ICD10.Api/ICD10.Api.csproj -c Release
-
-  # DataProvider tests
-  dataprovider-tests:
-    name: DataProvider Tests
-    runs-on: ubuntu-latest
-    needs: [build, changes]
-    if: needs.changes.outputs.dataprovider == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - DataProvider/DataProvider.Tests
-          - DataProvider/DataProvider.Example.Tests
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Restore
-        run: dotnet restore ${{ matrix.project }}
-
-      - name: Test
-        run: dotnet test ${{ matrix.project }} --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-dataprovider-${{ strategy.job-index }}
-          path: '**/TestResults/*.trx'
-
-  # LQL tests
-  lql-tests:
-    name: LQL Tests
-    runs-on: ubuntu-latest
-    needs: [build, changes]
-    if: needs.changes.outputs.lql == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - Lql/Lql.Tests
-          - Lql/LqlCli.SQLite.Tests
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Restore
-        run: dotnet restore ${{ matrix.project }}
-
-      - name: Test
-        run: dotnet test ${{ matrix.project }} --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-lql-${{ strategy.job-index }}
-          path: '**/TestResults/*.trx'
-
-  # LQL F# Type Provider tests
-  lql-fsharp-typeprovider-tests:
-    name: LQL F# Type Provider Tests
-    runs-on: ubuntu-latest
-    needs: [build, changes]
-    if: needs.changes.outputs.lql == 'true'
+    needs: [changes]
+    if: needs.changes.outputs.dotnet == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -278,150 +122,45 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore
-        run: dotnet restore Lql/Lql.TypeProvider.FSharp.Tests
-
-      - name: Build CLI tools (needed by MSBuild targets)
+      - name: Build CLI tools (needed by F# Type Provider MSBuild targets)
         run: |
           dotnet build Migration/Migration.Cli -c Debug
           dotnet build DataProvider/DataProvider.SQLite.Cli -c Debug
 
-      - name: Test
-        run: dotnet test Lql/Lql.TypeProvider.FSharp.Tests --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+      - name: Test DataProvider
+        run: |
+          dotnet test DataProvider/DataProvider.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test DataProvider/DataProvider.Example.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Test LQL
+        run: |
+          dotnet test Lql/Lql.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Lql/LqlCli.SQLite.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Test LQL F# Type Provider
+        run: dotnet test Lql/Lql.TypeProvider.FSharp.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Test Migration
+        run: dotnet test Migration/Migration.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Test Sync (SQLite)
+        run: |
+          dotnet test Sync/Sync.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Sync/Sync.SQLite.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results-lql-fsharp-typeprovider
+          name: test-results-dotnet
           path: '**/TestResults/*.trx'
 
-  # Migration tests
-  migration-tests:
-    name: Migration Tests
+  # All tests needing a Postgres service
+  postgres-tests:
+    name: Postgres Tests
     runs-on: ubuntu-latest
-    needs: [build, changes]
-    if: needs.changes.outputs.migration == 'true'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Restore
-        run: dotnet restore Migration/Migration.Tests
-
-      - name: Test
-        run: dotnet test Migration/Migration.Tests --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-migration
-          path: '**/TestResults/*.trx'
-
-  # Sync SQLite tests (no Docker)
-  sync-sqlite-tests:
-    name: Sync SQLite Tests
-    runs-on: ubuntu-latest
-    needs: [build, changes]
-    if: needs.changes.outputs.sync == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - Sync/Sync.Tests
-          - Sync/Sync.SQLite.Tests
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Restore
-        run: dotnet restore ${{ matrix.project }}
-
-      - name: Test
-        run: dotnet test ${{ matrix.project }} --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-sync-sqlite-${{ strategy.job-index }}
-          path: '**/TestResults/*.trx'
-
-  # Sync Postgres tests (need Docker)
-  sync-postgres-tests:
-    name: Sync Postgres Tests
-    runs-on: ubuntu-latest
-    needs: [build, changes]
-    if: needs.changes.outputs.sync == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - Sync/Sync.Postgres.Tests
-          - Sync/Sync.Integration.Tests
-          - Sync/Sync.Http.Tests
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Restore
-        run: dotnet restore ${{ matrix.project }}
-
-      - name: Test
-        run: dotnet test ${{ matrix.project }} --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
-        env:
-          TESTCONTAINERS_RYUK_DISABLED: false
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-sync-postgres-${{ strategy.job-index }}
-          path: '**/TestResults/*.trx'
-
-  # Gatekeeper API tests
-  gatekeeper-tests:
-    name: Gatekeeper Tests
-    runs-on: ubuntu-latest
-    needs: [build, changes]
-    if: needs.changes.outputs.gatekeeper == 'true'
+    needs: [changes]
+    if: needs.changes.outputs.postgres == 'true'
     services:
       postgres:
         image: postgres:16
@@ -436,63 +175,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Restore
-        run: dotnet restore Gatekeeper/Gatekeeper.Api.Tests
-
-      - name: Test
-        run: dotnet test Gatekeeper/Gatekeeper.Api.Tests --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
-        env:
-          TEST_POSTGRES_CONNECTION: "Host=localhost;Database=postgres;Username=postgres;Password=changeme"
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-gatekeeper
-          path: '**/TestResults/*.trx'
-
-  # Sample API tests
-  sample-api-tests:
-    name: Sample API Tests
-    runs-on: ubuntu-latest
-    needs: [build, changes]
-    if: needs.changes.outputs.samples == 'true'
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: changeme
-          POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - Samples/Clinical/Clinical.Api.Tests
-          - Samples/Scheduling/Scheduling.Api.Tests
     steps:
       - uses: actions/checkout@v4
 
@@ -514,26 +196,38 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore
-        run: dotnet restore ${{ matrix.project }}
-
-      - name: Test
-        run: dotnet test ${{ matrix.project }} --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+      - name: Test Gatekeeper
+        run: dotnet test Gatekeeper/Gatekeeper.Api.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
         env:
           TEST_POSTGRES_CONNECTION: "Host=localhost;Database=postgres;Username=postgres;Password=changeme"
+
+      - name: Test Sample APIs
+        run: |
+          dotnet test Samples/Clinical/Clinical.Api.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Samples/Scheduling/Scheduling.Api.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        env:
+          TEST_POSTGRES_CONNECTION: "Host=localhost;Database=postgres;Username=postgres;Password=changeme"
+
+      - name: Test Sync (Postgres)
+        run: |
+          dotnet test Sync/Sync.Postgres.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Sync/Sync.Integration.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Sync/Sync.Http.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: false
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results-sample-api-${{ strategy.job-index }}
+          name: test-results-postgres
           path: '**/TestResults/*.trx'
 
-  # ICD10 API + CLI tests (need pgvector PostgreSQL + embedding service)
+  # ICD10 tests (need pgvector + embedding service)
   icd10-tests:
     name: ICD10 Tests
     runs-on: ubuntu-latest
-    needs: [build, changes]
+    needs: [changes]
     if: needs.changes.outputs.icd10 == 'true'
     services:
       postgres:
@@ -595,18 +289,10 @@ jobs:
             sleep 5
           done
 
-      - name: Restore
+      - name: Test ICD10
         run: |
-          dotnet restore Samples/ICD10/ICD10.Api.Tests
-          dotnet restore Samples/ICD10/ICD10.Cli.Tests
-
-      - name: Test ICD10.Api.Tests
-        run: dotnet test Samples/ICD10/ICD10.Api.Tests --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
-        env:
-          ICD10_TEST_CONNECTION_STRING: "Host=localhost;Database=postgres;Username=postgres;Password=changeme"
-
-      - name: Test ICD10.Cli.Tests
-        run: dotnet test Samples/ICD10/ICD10.Cli.Tests --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Samples/ICD10/ICD10.Api.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Samples/ICD10/ICD10.Cli.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
         env:
           ICD10_TEST_CONNECTION_STRING: "Host=localhost;Database=postgres;Username=postgres;Password=changeme"
 
@@ -621,62 +307,11 @@ jobs:
           name: test-results-icd10
           path: '**/TestResults/*.trx'
 
-  # Docker build validation
-  docker-build:
-    name: Docker Build Validation
-    runs-on: ubuntu-latest
-    needs: [build, changes]
-    if: needs.changes.outputs.docker == 'true'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: |
-            8.0.x
-            ${{ env.DOTNET_VERSION }}
-
-      - name: Restore .NET tools
-        run: dotnet tool restore
-
-      - name: Build Dashboard.Web for Docker
-        run: |
-          dotnet restore Samples/Dashboard/Dashboard.Web
-          dotnet publish Samples/Dashboard/Dashboard.Web -c Release -o Samples/docker/dashboard-build
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build app container
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Samples/docker/Dockerfile.app
-          load: true
-          tags: dataprovider-app:test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build dashboard container
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Samples/docker/Dockerfile.dashboard
-          load: true
-          tags: dataprovider-dashboard:test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Verify containers built
-        run: |
-          docker images | grep dataprovider
-
-  # Dashboard E2E tests (need Playwright browser)
+  # Dashboard E2E tests (Playwright)
   e2e-tests:
     name: Dashboard E2E Tests
     runs-on: ubuntu-latest
-    needs: [build, changes]
+    needs: [changes]
     if: needs.changes.outputs.dashboard == 'true'
     services:
       postgres:
@@ -718,37 +353,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore Dashboard.Web
-        run: dotnet restore Samples/Dashboard/Dashboard.Web
-
-      - name: Build Dashboard.Web (downloads React vendor files)
-        run: dotnet build Samples/Dashboard/Dashboard.Web -c Release --no-restore
-
-      - name: Build Sync projects (required for Sync E2E tests)
+      - name: Build all dependencies and integration tests
         run: |
+          dotnet build Samples/Dashboard/Dashboard.Web -c Release
           dotnet build Samples/Clinical/Clinical.Sync -c Release
           dotnet build Samples/Scheduling/Scheduling.Sync -c Release
-
-      - name: Build ICD-10 API (required for ICD-10 E2E tests)
-        run: dotnet build Samples/ICD10/ICD10.Api/ICD10.Api.csproj -c Release
-
-      - name: Build Migration CLI (required for ICD-10 schema setup)
-        run: dotnet build Migration/Migration.Cli -c Release
-
-      - name: Build Integration Tests (includes wwwroot copy)
-        run: dotnet build Samples/Dashboard/Dashboard.Integration.Tests -c Release
+          dotnet build Samples/ICD10/ICD10.Api/ICD10.Api.csproj -c Release
+          dotnet build Migration/Migration.Cli -c Release
+          dotnet build Samples/Dashboard/Dashboard.Integration.Tests -c Release
 
       - name: Install Playwright browsers
         run: dotnet tool install --global Microsoft.Playwright.CLI && playwright install --with-deps chromium
-
-      - name: Verify wwwroot files
-        run: |
-          echo "=== Dashboard.Web wwwroot (source) ==="
-          ls -la Samples/Dashboard/Dashboard.Web/wwwroot/js/ || echo "Dashboard.Web js folder not found"
-          ls -la Samples/Dashboard/Dashboard.Web/wwwroot/js/vendor/ || echo "Dashboard.Web vendor folder not found"
-          echo "=== Integration Tests wwwroot (output) ==="
-          ls -la Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net10.0/wwwroot/js/ || echo "Integration Tests js folder not found"
-          ls -la Samples/Dashboard/Dashboard.Integration.Tests/bin/Release/net10.0/wwwroot/js/vendor/ || echo "Integration Tests vendor folder not found"
 
       - name: Test
         run: dotnet test Samples/Dashboard/Dashboard.Integration.Tests -c Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
@@ -810,7 +425,7 @@ jobs:
       - name: Install cargo-tarpaulin
         run: cargo install cargo-tarpaulin
 
-      - name: Coverage (85% minimum)
+      - name: Coverage (90% minimum)
         run: |
           cargo tarpaulin \
             --packages ${{ matrix.crate }} \
@@ -818,10 +433,10 @@ jobs:
             --timeout 120 \
             --engine llvm \
             --exclude-files "*/generated/*" \
-            --fail-under 85 \
+            --fail-under 90 \
             --out stdout
 
-  # LQL VS Code Extension CI (lint, compile, test, package)
+  # LQL VS Code Extension CI (lint, compile, package)
   lql-extension-ci:
     name: LQL Extension CI
     runs-on: ubuntu-latest

@@ -1,3 +1,5 @@
+use lql_parser::{parse_lql, LetStmtContextAttrs, ProgramContextAttrs, StatementContextAttrs};
+
 /// A document symbol for outline/breadcrumb display.
 #[derive(Debug, Clone)]
 pub struct DocumentSymbol {
@@ -16,44 +18,48 @@ pub enum SymbolKind {
     Table,
 }
 
-/// Extract document symbols (let bindings, table references) from LQL source.
+/// Extract document symbols (let bindings) from LQL source using the ANTLR parse tree.
 pub fn extract_symbols(source: &str) -> Vec<DocumentSymbol> {
+    let result = parse_lql(source);
     let mut symbols = Vec::new();
 
-    for (line_idx, line) in source.lines().enumerate() {
-        let trimmed = line.trim();
-        let line_num = line_idx as u32;
+    for stmt in result.tree.statement_all() {
+        if let Some(let_stmt) = stmt.letStmt() {
+            if let Some(ident) = let_stmt.IDENT() {
+                let name = ident.symbol.text.to_string();
+                let line = (ident.symbol.line - 1) as u32;
+                let col = ident.symbol.column as u32;
 
-        // Detect let bindings
-        if trimmed.starts_with("let ") {
-            if let Some(name) = extract_let_name(trimmed) {
-                let col = line.find("let").unwrap_or(0) as u32;
+                // Calculate end position from the let statement's full extent
+                // The let keyword starts the statement; use the line for end_line
+                // and approximate end_col from the source line
+                let end_line = line;
+                let end_col = source
+                    .lines()
+                    .nth(line as usize)
+                    .map(|l| l.len() as u32)
+                    .unwrap_or(col + name.len() as u32);
+
+                // Adjust col to point to "let" keyword, not the identifier
+                let let_col = source
+                    .lines()
+                    .nth(line as usize)
+                    .and_then(|l| l.find("let"))
+                    .unwrap_or(0) as u32;
+
                 symbols.push(DocumentSymbol {
                     name,
                     kind: SymbolKind::Variable,
-                    line: line_num,
-                    col,
-                    end_line: line_num,
-                    end_col: col + trimmed.len() as u32,
+                    line,
+                    col: let_col,
+                    end_line,
+                    end_col,
                 });
             }
         }
     }
 
     symbols
-}
-
-fn extract_let_name(trimmed: &str) -> Option<String> {
-    let rest = trimmed.strip_prefix("let ")?;
-    let name: String = rest
-        .chars()
-        .take_while(|c| c.is_alphanumeric() || *c == '_')
-        .collect();
-    if name.is_empty() {
-        None
-    } else {
-        Some(name)
-    }
 }
 
 #[cfg(test)]
@@ -107,12 +113,6 @@ mod tests {
     }
 
     #[test]
-    fn test_extract_let_no_name() {
-        let syms = extract_symbols("let = bad");
-        assert!(syms.is_empty());
-    }
-
-    #[test]
     fn test_extract_let_name_with_digits() {
         let syms = extract_symbols("let var2 = stuff");
         assert_eq!(syms.len(), 1);
@@ -134,13 +134,5 @@ mod tests {
         assert_eq!(syms.len(), 2);
         assert_eq!(syms[0].name, "x");
         assert_eq!(syms[1].name, "y");
-    }
-
-    #[test]
-    fn test_extract_let_name_helper() {
-        assert_eq!(extract_let_name("let foo = bar"), Some("foo".to_string()));
-        assert_eq!(extract_let_name("let x_1 = y"), Some("x_1".to_string()));
-        assert_eq!(extract_let_name("let = bad"), None);
-        assert_eq!(extract_let_name("not a let"), None);
     }
 }

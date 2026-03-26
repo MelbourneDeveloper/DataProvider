@@ -9,7 +9,7 @@ pub use completion::{get_completions, CompletionContext, CompletionItem, Complet
 pub use diagnostics::{analyze, Diagnostic, DiagnosticSeverity};
 pub use hover::{get_hover, get_hover_with_schema, HoverInfo};
 pub use schema::{ColumnInfo, SchemaCache, TableInfo};
-pub use scope::ScopeMap;
+pub use scope::{build_scope, ScopeMap};
 pub use symbols::{extract_symbols, DocumentSymbol, SymbolKind};
 
 #[cfg(test)]

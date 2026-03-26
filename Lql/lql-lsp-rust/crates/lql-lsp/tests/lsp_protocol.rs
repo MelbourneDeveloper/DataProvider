@@ -820,6 +820,40 @@ fn test_initialize_with_ai_config() {
 }
 
 #[test]
+fn test_hover_on_space_returns_null() {
+    let mut client = LspClient::spawn();
+    client.initialize();
+    client.open_document(DOC_URI, "users |> select(users.id)");
+    let _ = client.read_notification("textDocument/publishDiagnostics");
+
+    // Hover on the space between "users" and "|>"
+    let resp = client.request_hover(DOC_URI, 0, 5);
+    let result = &resp["result"];
+    // Space is not on any word, so result should be null
+    assert!(
+        result.is_null(),
+        "hover on space should return null, got: {result}"
+    );
+
+    client.shutdown();
+}
+
+#[test]
+fn test_completion_after_dot_without_qualifier() {
+    let mut client = LspClient::spawn();
+    client.initialize();
+    // Just a dot — no table qualifier
+    client.open_document(DOC_URI, ".");
+    let _ = client.read_notification("textDocument/publishDiagnostics");
+
+    let resp = client.request_completion(DOC_URI, 0, 1);
+    // Should not error
+    assert!(resp.get("error").is_none());
+
+    client.shutdown();
+}
+
+#[test]
 fn test_document_symbols_positions() {
     let mut client = LspClient::spawn();
     client.initialize();
