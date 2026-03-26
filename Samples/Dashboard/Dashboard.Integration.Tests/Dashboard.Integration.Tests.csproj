@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Library</OutputType>
@@ -33,12 +32,15 @@
 
   <!-- Copy Dashboard.Web wwwroot for Playwright tests -->
   <ItemGroup>
-    <None Include="../Dashboard.Web/wwwroot/**/*" CopyToOutputDirectory="PreserveNewest" LinkBase="wwwroot" />
+    <None
+      Include="../Dashboard.Web/wwwroot/**/*"
+      CopyToOutputDirectory="PreserveNewest"
+      LinkBase="wwwroot"
+    />
   </ItemGroup>
 
   <!-- Ensure xunit.runner.json is copied to output directory -->
   <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
-
 </Project>

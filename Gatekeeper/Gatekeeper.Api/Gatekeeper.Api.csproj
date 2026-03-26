@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <NoWarn>CA1515;CA2100;RS1035;CA1508;CA2234;CA1819;CA2007;EPC12</NoWarn>
@@ -35,18 +34,33 @@
 
   <!-- Create database from YAML using Migration.Cli -->
   <Target Name="CreateDatabaseSchema" BeforeTargets="TranspileLqlAndGenerateDataProvider">
-    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)..\..\Migration\Migration.Cli\Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/gatekeeper-schema.yaml" --output "$(MSBuildProjectDirectory)/gatekeeper.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
+    <Exec
+      Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)..\..\Migration\Migration.Cli\Migration.Cli.csproj&quot; -- --schema &quot;$(MSBuildProjectDirectory)/gatekeeper-schema.yaml&quot; --output &quot;$(MSBuildProjectDirectory)/gatekeeper.db&quot; --provider sqlite"
+      WorkingDirectory="$(MSBuildProjectDirectory)"
+      StandardOutputImportance="High"
+      StandardErrorImportance="High"
+    />
   </Target>
 
   <!-- Pre-compile: generate C# from SQL using external CLI -->
-  <Target Name="TranspileLqlAndGenerateDataProvider" BeforeTargets="BeforeCompile;CoreCompile" Inputs="$(MSBuildProjectDirectory)/DataProvider.json;@(AdditionalFiles)" Outputs="$(MSBuildProjectDirectory)/Generated/.timestamp">
+  <Target
+    Name="TranspileLqlAndGenerateDataProvider"
+    BeforeTargets="BeforeCompile;CoreCompile"
+    Inputs="$(MSBuildProjectDirectory)/DataProvider.json;@(AdditionalFiles)"
+    Outputs="$(MSBuildProjectDirectory)/Generated/.timestamp"
+  >
     <RemoveDir Directories="$(MSBuildProjectDirectory)/Generated" />
     <MakeDir Directories="$(MSBuildProjectDirectory)/Generated" />
-    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj" -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(MSBuildProjectDirectory)/Generated" --connection-type NpgsqlConnection' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
+    <Exec
+      Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj&quot; -- --project-dir &quot;$(MSBuildProjectDirectory)&quot; --config &quot;$(MSBuildProjectDirectory)/DataProvider.json&quot; --out &quot;$(MSBuildProjectDirectory)/Generated&quot; --connection-type NpgsqlConnection"
+      WorkingDirectory="$(MSBuildProjectDirectory)"
+      StandardOutputImportance="High"
+      StandardErrorImportance="High"
+      IgnoreExitCode="true"
+    />
     <Touch Files="$(MSBuildProjectDirectory)/Generated/.timestamp" AlwaysCreate="true" />
     <ItemGroup>
       <Compile Include="$(MSBuildProjectDirectory)/Generated/**/*.g.cs" />
     </ItemGroup>
   </Target>
-
 </Project>

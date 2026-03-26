@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
     <!--
       This test project spins up a server using Sync.Http library for WebApplicationFactory testing.
@@ -35,5 +34,4 @@
     <ProjectReference Include="../Sync.Postgres/Sync.Postgres.csproj" />
     <ProjectReference Include="../Sync.Http/Sync.Http.csproj" />
   </ItemGroup>
-
 </Project>

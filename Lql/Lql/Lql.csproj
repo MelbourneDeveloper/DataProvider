@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <!-- CS3021: CLSCompliant not needed (generated ANTLR code) -->
@@ -14,5 +13,4 @@
   <ItemGroup>
     <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
   </ItemGroup>
-
 </Project>

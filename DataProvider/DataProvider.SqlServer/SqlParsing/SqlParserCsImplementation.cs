@@ -61,9 +61,19 @@ internal sealed class SqlParserCsImplementation : ISqlParser
         var statementString = statement.ToString();
 
         // Look for common parameter patterns: @param, :param, $param, ?
-        var words = statementString.Split(
-            [' ', '\t', '\n', '\r', '(', ')', ',', '=', '<', '>', '!']
-        );
+        var words = statementString.Split([
+            ' ',
+            '\t',
+            '\n',
+            '\r',
+            '(',
+            ')',
+            ',',
+            '=',
+            '<',
+            '>',
+            '!',
+        ]);
 
         foreach (var word in words)
         {

@@ -50,15 +50,15 @@ class LspClient {
   private processBuffer(): void {
     while (true) {
       const headerEnd = this.rawBuffer.indexOf("\r\n\r\n");
-      if (headerEnd === -1) break;
+      if (headerEnd === -1) {break;}
 
       const header = this.rawBuffer.subarray(0, headerEnd).toString("utf-8");
       const match = header.match(/Content-Length:\s*(\d+)/i);
-      if (!match) break;
+      if (!match) {break;}
 
       const contentLength = parseInt(match[1], 10);
       const bodyStart = headerEnd + 4;
-      if (this.rawBuffer.length < bodyStart + contentLength) break;
+      if (this.rawBuffer.length < bodyStart + contentLength) {break;}
 
       const body = this.rawBuffer
         .subarray(bodyStart, bodyStart + contentLength)
@@ -199,8 +199,8 @@ function readFixture(name: string): string {
     "fixtures",
     name,
   );
-  if (fs.existsSync(fixturePath)) return fs.readFileSync(fixturePath, "utf8");
-  if (fs.existsSync(altPath)) return fs.readFileSync(altPath, "utf8");
+  if (fs.existsSync(fixturePath)) {return fs.readFileSync(fixturePath, "utf8");}
+  if (fs.existsSync(altPath)) {return fs.readFileSync(altPath, "utf8");}
   throw new Error(`Fixture not found: ${name}`);
 }
 
@@ -1521,7 +1521,7 @@ describe("Schema-Aware LSP E2E Tests — Real PostgreSQL Database", function () 
   });
 
   afterEach(function () {
-    if (client) client.kill();
+    if (client) {client.kill();}
   });
 
   /** Initialize server and wait for schema to load from real database. */
@@ -1539,7 +1539,7 @@ describe("Schema-Aware LSP E2E Tests — Real PostgreSQL Database", function () 
       const msgs = client.drainNotifications("window/logMessage");
       for (const m of msgs) {
         const text = m.params?.message || "";
-        if (text.includes("Schema loaded")) return result;
+        if (text.includes("Schema loaded")) {return result;}
         if (text.includes("Schema fetch failed")) {
           throw new Error(`DB unavailable: ${text}`);
         }
@@ -2618,8 +2618,8 @@ describe("AI Pipeline E2E Tests — Built-in Test Provider", function () {
         const logs = client.drainNotifications("window/logMessage");
         for (const log of logs) {
           const msg = log.params?.message || "";
-          if (msg.includes("Schema loaded")) schemaLoaded = true;
-          if (msg.includes("AI test provider activated")) aiActivated = true;
+          if (msg.includes("Schema loaded")) {schemaLoaded = true;}
+          if (msg.includes("AI test provider activated")) {aiActivated = true;}
         }
       }
 
@@ -2731,8 +2731,8 @@ describe("AI Pipeline E2E Tests — Built-in Test Provider", function () {
         const logs = client.drainNotifications("window/logMessage");
         for (const log of logs) {
           const msg = log.params?.message || "";
-          if (msg.includes("Schema loaded")) schemaLoaded = true;
-          if (msg.includes("AI test provider activated")) aiActivated = true;
+          if (msg.includes("Schema loaded")) {schemaLoaded = true;}
+          if (msg.includes("AI test provider activated")) {aiActivated = true;}
         }
       }
 
@@ -3098,7 +3098,7 @@ describe("Real AI Model E2E Tests — Ollama + PostgreSQL + LSP", function () {
   });
 
   afterEach(function () {
-    if (client) client.kill();
+    if (client) {client.kill();}
   });
 
   /** Initialize with REAL Ollama + REAL database */
@@ -3129,8 +3129,8 @@ describe("Real AI Model E2E Tests — Ollama + PostgreSQL + LSP", function () {
       const msgs = c.drainNotifications("window/logMessage");
       for (const m of msgs) {
         const text = m.params?.message || "";
-        if (text.includes("Schema loaded")) schemaLoaded = true;
-        if (text.includes("Ollama AI provider activated")) aiActivated = true;
+        if (text.includes("Schema loaded")) {schemaLoaded = true;}
+        if (text.includes("Ollama AI provider activated")) {aiActivated = true;}
         if (text.includes("Schema fetch failed")) {
           throw new Error(`DB unavailable: ${text}`);
         }

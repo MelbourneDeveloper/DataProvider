@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Migration.Postgres</RootNamespace>
@@ -20,5 +19,4 @@
   <ItemGroup>
     <ProjectReference Include="../Migration/Migration.csproj" />
   </ItemGroup>
-
 </Project>

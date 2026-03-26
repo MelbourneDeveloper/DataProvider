@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Migration</RootNamespace>
@@ -13,5 +12,4 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
     <PackageReference Include="YamlDotNet" Version="16.2.1" />
   </ItemGroup>
-
 </Project>

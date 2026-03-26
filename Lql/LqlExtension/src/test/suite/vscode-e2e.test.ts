@@ -21,7 +21,7 @@ async function waitFor(
 ): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    if (await condition()) return;
+    if (await condition()) {return;}
     await new Promise((r) => setTimeout(r, intervalMs));
   }
   throw new Error(`Timeout after ${timeoutMs}ms waiting for condition`);
@@ -222,8 +222,8 @@ suite("VS Code Extension E2E Tests", function () {
 
     const hoverContent = hovers[0].contents
       .map((c) => {
-        if (typeof c === "string") return c;
-        if (c instanceof vscode.MarkdownString) return c.value;
+        if (typeof c === "string") {return c;}
+        if (c instanceof vscode.MarkdownString) {return c.value;}
         return (c as any).value || "";
       })
       .join(" ");

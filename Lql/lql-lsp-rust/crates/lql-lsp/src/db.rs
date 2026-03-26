@@ -76,8 +76,7 @@ pub fn fetch_sqlite_schema(db_path: &str) -> std::result::Result<SchemaCache, St
         .trim_start_matches("sqlite:")
         .trim_start_matches("file:");
 
-    let conn =
-        rusqlite::Connection::open(path).map_err(|e| format!("SQLite open failed: {e}"))?;
+    let conn = rusqlite::Connection::open(path).map_err(|e| format!("SQLite open failed: {e}"))?;
 
     let mut table_stmt = conn
         .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
@@ -134,7 +133,9 @@ pub async fn fetch_schema(connection_string: &str) -> std::result::Result<Schema
 }
 
 /// Fetch full database schema from PostgreSQL via information_schema.
-pub async fn fetch_postgres_schema(connection_string: &str) -> std::result::Result<SchemaCache, String> {
+pub async fn fetch_postgres_schema(
+    connection_string: &str,
+) -> std::result::Result<SchemaCache, String> {
     let conn_str = normalize_connection_string(connection_string);
 
     let (client, connection) = tokio::time::timeout(
@@ -374,9 +375,18 @@ mod tests {
 
         let users = schema.get_table("users").expect("users table missing");
         assert_eq!(users.columns.len(), 3);
-        assert!(users.columns.iter().any(|c| c.name == "id" && c.is_primary_key));
-        assert!(users.columns.iter().any(|c| c.name == "email" && c.is_nullable));
-        assert!(users.columns.iter().any(|c| c.name == "name" && !c.is_nullable));
+        assert!(users
+            .columns
+            .iter()
+            .any(|c| c.name == "id" && c.is_primary_key));
+        assert!(users
+            .columns
+            .iter()
+            .any(|c| c.name == "email" && c.is_nullable));
+        assert!(users
+            .columns
+            .iter()
+            .any(|c| c.name == "name" && !c.is_nullable));
 
         // Cleanup
         std::fs::remove_file(path).ok();

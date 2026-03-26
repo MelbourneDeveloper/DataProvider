@@ -1,27 +1,27 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <TargetFramework>net10.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
-        <EnableNETAnalyzers>false</EnableNETAnalyzers>
-        <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
-        <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
-        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-        <NoWarn>EPC12;CA2100</NoWarn>
-        <PackageId>DataProvider.Postgres.Cli</PackageId>
-        <PackAsTool>true</PackAsTool>
-        <ToolCommandName>dataprovider-postgres</ToolCommandName>
-        <Description>CLI tool for generating type-safe PostgreSQL data access code</Description>
-    </PropertyGroup>
-    <ItemGroup>
-        <ProjectReference Include="../DataProvider/DataProvider.csproj" />
-        <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
-    </ItemGroup>
-    <ItemGroup>
-        <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
-        <PackageReference Include="Npgsql" Version="9.0.2" />
-        <!-- Uses SqlParserCS 0.6.5 from Directory.Build.props -->
-    </ItemGroup>
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>EPC12;CA2100</NoWarn>
+    <PackageId>DataProvider.Postgres.Cli</PackageId>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>dataprovider-postgres</ToolCommandName>
+    <Description>CLI tool for generating type-safe PostgreSQL data access code</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DataProvider/DataProvider.csproj" />
+    <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="Npgsql" Version="9.0.2" />
+    <!-- Uses SqlParserCS 0.6.5 from Directory.Build.props -->
+  </ItemGroup>
 </Project>

@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <IsTestProject>true</IsTestProject>
@@ -25,5 +24,4 @@
   <ItemGroup>
     <ProjectReference Include="../Sync/Sync.csproj" />
   </ItemGroup>
-
 </Project>

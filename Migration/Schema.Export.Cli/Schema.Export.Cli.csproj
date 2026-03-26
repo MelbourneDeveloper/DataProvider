@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>Schema.Export.Cli</RootNamespace>
@@ -9,5 +8,4 @@
   <ItemGroup>
     <ProjectReference Include="../Migration/Migration.csproj" />
   </ItemGroup>
-
 </Project>

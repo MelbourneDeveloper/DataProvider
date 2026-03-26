@@ -11,5 +11,4 @@
   </PropertyGroup>
 
   <!-- Don't inherit any PackageReferences from parent -->
-
 </Project>

@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <!-- Package Information -->
     <PackageId>DataProvider</PackageId>
@@ -12,7 +11,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageReleaseNotes>Initial release of DataProvider source generator for compile-time safe database operations.</PackageReleaseNotes>
-    
+
     <!-- Source Generator Properties -->
     <IncludeBuildOutput>true</IncludeBuildOutput>
   </PropertyGroup>
@@ -22,7 +21,6 @@
   <ItemGroup>
     <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
   </ItemGroup>
-
 
   <!-- Disable problematic analyzer rules for generated code -->
   <PropertyGroup>
@@ -41,5 +39,4 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
-
 </Project>
