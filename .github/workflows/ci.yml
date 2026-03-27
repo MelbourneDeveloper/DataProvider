@@ -41,6 +41,58 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
+  # Lint + format check (runs on every PR/push, no path filter)
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.fsproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            Lql/lql-lsp-rust/target
+          key: ${{ runner.os }}-cargo-lint-${{ hashFiles('Lql/lql-lsp-rust/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-lint-
+            ${{ runner.os }}-cargo-
+
+      - name: Install Node dependencies (LQL Extension)
+        run: cd Lql/LqlExtension && npm install --no-audit --no-fund
+
+      - name: Format check
+        run: make fmt-check
+
+      - name: Lint
+        run: make lint
+
   # Detect which areas changed to conditionally run tests
   changes:
     name: Detect Changes
@@ -110,7 +162,7 @@ jobs:
     name: .NET Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [changes]
+    needs: [lint, changes]
     if: needs.changes.outputs.dotnet == 'true'
     steps:
       - uses: actions/checkout@v4
@@ -166,7 +218,7 @@ jobs:
     name: Postgres Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [changes]
+    needs: [lint, changes]
     if: needs.changes.outputs.postgres == 'true'
     services:
       postgres:
@@ -236,7 +288,7 @@ jobs:
     runs-on: ubuntu-latest
     # TIMEOUT EXCEPTION: ICD10 builds Docker image for embedding service + waits up to 90s for model load
     timeout-minutes: 15
-    needs: [changes]
+    needs: [lint, changes]
     if: needs.changes.outputs.icd10 == 'true'
     services:
       postgres:
@@ -322,7 +374,7 @@ jobs:
     runs-on: ubuntu-latest
     # TIMEOUT EXCEPTION: E2E tests build multiple .NET projects + install Playwright browsers
     timeout-minutes: 15
-    needs: [changes]
+    needs: [lint, changes]
     if: needs.changes.outputs.dashboard == 'true'
     services:
       postgres:
@@ -398,7 +450,7 @@ jobs:
     name: LQL Rust Tests (${{ matrix.crate }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [changes]
+    needs: [lint, changes]
     if: needs.changes.outputs.lql-rust == 'true'
     strategy:
       fail-fast: false
@@ -453,7 +505,7 @@ jobs:
     name: LQL Extension CI
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [changes]
+    needs: [lint, changes]
     if: needs.changes.outputs.lql-extension == 'true'
     defaults:
       run:

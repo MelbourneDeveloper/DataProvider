@@ -8,6 +8,9 @@
 # Detect OS for platform-specific commands
 OS := $(shell uname -s)
 
+# Coverage threshold (override in CI via env var or per-repo)
+COVERAGE_THRESHOLD ?= 90
+
 # =============================================================================
 # PRIMARY TARGETS (uniform interface — do not rename)
 # =============================================================================
