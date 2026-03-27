@@ -168,6 +168,7 @@ coverage-results/
 coverage*.json
 coverage*.xml
 coverage*.info
+lcov.info
 *.coverage
 *.coveragexml
 *.dotCover
@@ -401,6 +402,7 @@ __pycache__/
 *.tmp
 *.bak
 *.swp
+*.swo
 *~
 ~$*
 ClientBin/
