@@ -2,6 +2,7 @@
 #![allow(nonstandard_style)]
 
 pub mod error;
+#[cfg(not(tarpaulin_include))]
 pub mod generated;
 pub mod span;
 pub mod tokens;

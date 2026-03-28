@@ -498,7 +498,6 @@ jobs:
             --packages ${{ matrix.crate }} \
             --skip-clean \
             --timeout 120 \
-            --exclude-files "*/generated/*" \
             --fail-under 90 \
             --out stdout
 
