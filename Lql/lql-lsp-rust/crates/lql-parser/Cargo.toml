@@ -3,5 +3,8 @@ name = "lql-parser"
 version.workspace = true
 edition.workspace = true
 
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }
+
 [dependencies]
 antlr-rust = "0.3.0-beta"
