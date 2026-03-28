@@ -1,54 +1,35 @@
 ---
 name: submit-pr
-description: Submit a pull request following DataProvider project standards
+description: Creates a pull request with a well-structured description after verifying CI passes. Use when the user asks to submit, create, or open a pull request.
+disable-model-invocation: true
 ---
 
-# Submit Pull Request
+# Submit PR
 
-Create a pull request following project requirements.
+Create a pull request for the current branch with a well-structured description.
 
-## Get Context
+## Steps
 
-Get the diff between main and current branch:
+1. Run `make ci` — must pass completely before creating PR
+2. Determine the PR title from recent commits and changed files
+3. Read the PR template from `.github/PULL_REQUEST_TEMPLATE.md`
+4. Fill in:
+   - TLDR: one sentence
+   - What Was Added: new files, features, deps
+   - What Was Changed/Deleted: modified behaviour
+   - How Tests Prove It Works: specific test names or output
+   - Spec/Doc Changes: if any
+   - Breaking Changes: yes/no + description
+5. Use `gh pr create` with the filled template
 
-```bash
-git diff main...HEAD
-```
+## Rules
 
-DO NOT include commit messages or branch names in analysis.
+- Never create a PR if `make ci` fails
+- PR description must be specific ��� no vague placeholders
+- Link to the relevant GitHub issue if one exists
 
-Read the PR template:
+## Success criteria
 
-```bash
-cat .github/PULL_REQUEST_TEMPLATE.md
-```
-
-## Write PR Description
-
-The template has three sections (gh will auto-populate structure):
-
-### TLDR
-- Few lines maximum
-- Bullet points if many changes
-- For people who won't read details
-
-### Brief Details
-- Keep BRIEF
-- May reference code/files
-- What changed and why
-
-### How Do The Tests Prove This Works? (CRITICAL)
-- Point to specific test files/methods
-- Explain WHAT each test verifies
-- Show HOW tests prove correctness, not just "tests added"
-
-## Requirements
-
-- TIGHT - no fluff
-- ACCURATE - based on actual diff
-
-## Submit
-
-```bash
-gh pr create
-```
+- `make ci` passed
+- PR created with `gh pr create`
+- PR URL returned to user
