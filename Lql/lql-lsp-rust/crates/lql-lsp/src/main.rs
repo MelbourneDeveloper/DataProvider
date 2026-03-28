@@ -1515,4 +1515,359 @@ mod tests {
             assert!(labels.contains(&"my_query"));
         }
     }
+
+    // ── Parser token/span integration ─────────────────────────────────
+
+    #[test]
+    fn test_lex_tokens_pipeline() {
+        use lql_parser::tokens::{lex_tokens, token_types};
+        let tokens = lex_tokens("users |> select(users.id)");
+        assert!(!tokens.is_empty());
+        let pipes: Vec<_> = tokens
+            .iter()
+            .filter(|t| t.token_type == token_types::PIPE)
+            .collect();
+        assert_eq!(pipes.len(), 1);
+    }
+
+    #[test]
+    fn test_lex_tokens_multiline() {
+        use lql_parser::tokens::{lex_tokens, token_types};
+        let tokens = lex_tokens("users\n|> select(x)\n|> limit(10)");
+        let pipes: Vec<_> = tokens
+            .iter()
+            .filter(|t| t.token_type == token_types::PIPE)
+            .collect();
+        assert_eq!(pipes.len(), 2);
+        assert_eq!(pipes[0].line, 1);
+        assert_eq!(pipes[1].line, 2);
+    }
+
+    #[test]
+    fn test_lex_tokens_parens_and_idents() {
+        use lql_parser::tokens::{lex_tokens, token_types};
+        let tokens = lex_tokens("select(x, y)");
+        let opens: Vec<_> = tokens
+            .iter()
+            .filter(|t| t.token_type == token_types::OPEN_PAREN)
+            .collect();
+        assert_eq!(opens.len(), 1);
+        let closes: Vec<_> = tokens
+            .iter()
+            .filter(|t| t.token_type == token_types::CLOSE_PAREN)
+            .collect();
+        assert_eq!(closes.len(), 1);
+    }
+
+    #[test]
+    fn test_lex_tokens_empty() {
+        use lql_parser::tokens::lex_tokens;
+        let tokens = lex_tokens("");
+        assert!(tokens.is_empty());
+    }
+
+    #[test]
+    fn test_lex_pipe_positions() {
+        use lql_parser::tokens::lex_pipe_positions;
+        let positions = lex_pipe_positions("users |> select(x) |> limit(10)");
+        assert_eq!(positions.len(), 2);
+    }
+
+    #[test]
+    fn test_lex_pipe_positions_multiline() {
+        use lql_parser::tokens::lex_pipe_positions;
+        let positions = lex_pipe_positions("users\n|> a\n|> b");
+        assert_eq!(positions.len(), 2);
+        assert_eq!(positions[0].line, 1);
+        assert_eq!(positions[1].line, 2);
+    }
+
+    #[test]
+    fn test_get_token_structure_complex() {
+        use lql_parser::tokens::get_token_structure;
+        let source = "-- query\nusers\n|> select(\n  users.id\n)\n|> limit(10)";
+        let ts = get_token_structure(source);
+        assert_eq!(ts.comment_lines, vec![0]);
+        assert_eq!(ts.pipe_positions.len(), 2);
+        assert_eq!(ts.lines_ending_open_paren, vec![2]);
+        assert_eq!(ts.lines_starting_close_paren, vec![4]);
+    }
+
+    #[test]
+    fn test_get_token_structure_empty() {
+        use lql_parser::tokens::get_token_structure;
+        let ts = get_token_structure("");
+        assert!(ts.pipe_positions.is_empty());
+        assert!(ts.comment_lines.is_empty());
+    }
+
+    #[test]
+    fn test_get_token_structure_open_paren_with_comment() {
+        use lql_parser::tokens::get_token_structure;
+        let ts = get_token_structure("select( -- args follow\n  x\n)");
+        assert_eq!(ts.lines_ending_open_paren, vec![0]);
+        assert_eq!(ts.lines_starting_close_paren, vec![2]);
+    }
+
+    #[test]
+    fn test_span_operations() {
+        use lql_parser::span::Span;
+        let a = Span::new(5, 10);
+        let b = Span::new(2, 15);
+        let merged = a.merge(b);
+        assert_eq!(merged.start, 2);
+        assert_eq!(merged.end, 15);
+
+        let empty = Span::empty(42);
+        assert_eq!(empty.start, 42);
+        assert_eq!(empty.end, 42);
+    }
+
+    #[test]
+    fn test_span_line_col() {
+        use lql_parser::span::Span;
+        let src = "hello\nworld";
+        let span = Span::new(6, 11);
+        assert_eq!(span.start_line_col(src), (1, 0));
+        assert_eq!(span.end_line_col(src), (1, 5));
+    }
+
+    #[test]
+    fn test_parse_error_warning() {
+        use lql_parser::error::{ParseError, Severity};
+        use lql_parser::span::Span;
+        let err = ParseError::warning("test warning", Span::new(0, 5));
+        assert_eq!(err.severity, Severity::Warning);
+        assert_eq!(err.message, "test warning");
+    }
+
+    // ── Schema-aware analyzer integration ─────────────────────────────
+
+    #[test]
+    fn test_schema_cache_operations() {
+        use lql_analyzer::{ColumnInfo, SchemaCache, TableInfo};
+        let cache = SchemaCache::from_tables(vec![TableInfo {
+            name: "users".to_string(),
+            schema: "public".to_string(),
+            columns: vec![
+                ColumnInfo {
+                    name: "id".to_string(),
+                    sql_type: "uuid".to_string(),
+                    is_nullable: false,
+                    is_primary_key: true,
+                },
+                ColumnInfo {
+                    name: "name".to_string(),
+                    sql_type: "text".to_string(),
+                    is_nullable: true,
+                    is_primary_key: false,
+                },
+            ],
+        }]);
+        assert!(!cache.is_empty());
+        assert_eq!(cache.table_count(), 1);
+        let names = cache.table_names();
+        assert!(names.contains(&"users"));
+
+        let table = cache.get_table("users").unwrap();
+        assert_eq!(table.columns.len(), 2);
+        let col = table.get_column("id").unwrap();
+        assert!(col.is_primary_key);
+        let pks = table.primary_key_columns();
+        assert_eq!(pks.len(), 1);
+
+        let cols = cache.get_columns("users");
+        assert_eq!(cols.len(), 2);
+        let empty_cols = cache.get_columns("nonexistent");
+        assert!(empty_cols.is_empty());
+
+        assert!(cache.age().is_some());
+        assert!(!cache.is_stale(std::time::Duration::from_secs(3600)));
+
+        let default_cache = SchemaCache::default();
+        assert!(default_cache.is_empty());
+        assert!(default_cache.is_stale(std::time::Duration::from_secs(1)));
+        assert!(default_cache.age().is_none());
+    }
+
+    #[test]
+    fn test_column_type_description() {
+        use lql_analyzer::ColumnInfo;
+        let pk_col = ColumnInfo {
+            name: "id".to_string(),
+            sql_type: "uuid".to_string(),
+            is_nullable: false,
+            is_primary_key: true,
+        };
+        assert_eq!(pk_col.type_description(), "uuid (PK) NOT NULL");
+
+        let nullable_col = ColumnInfo {
+            name: "email".to_string(),
+            sql_type: "text".to_string(),
+            is_nullable: true,
+            is_primary_key: false,
+        };
+        assert_eq!(nullable_col.type_description(), "text");
+    }
+
+    #[test]
+    fn test_completions_with_schema_table_qualifier() {
+        use lql_analyzer::ScopeMap;
+        use lql_analyzer::{
+            get_completions, ColumnInfo, CompletionContext, CompletionKind, SchemaCache, TableInfo,
+        };
+        let schema = SchemaCache::from_tables(vec![TableInfo {
+            name: "users".to_string(),
+            schema: "public".to_string(),
+            columns: vec![
+                ColumnInfo {
+                    name: "id".to_string(),
+                    sql_type: "uuid".to_string(),
+                    is_nullable: false,
+                    is_primary_key: true,
+                },
+                ColumnInfo {
+                    name: "name".to_string(),
+                    sql_type: "text".to_string(),
+                    is_nullable: true,
+                    is_primary_key: false,
+                },
+            ],
+        }]);
+        let ctx = CompletionContext {
+            line_prefix: "users.".to_string(),
+            in_arg_list: false,
+            after_pipe: false,
+            in_lambda: false,
+            word_prefix: "".to_string(),
+            table_qualifier: Some("users".to_string()),
+        };
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, Some(&schema));
+        assert_eq!(items.len(), 2);
+        assert!(items.iter().all(|i| i.kind == CompletionKind::Column));
+    }
+
+    #[test]
+    fn test_completions_schema_table_suggestions() {
+        use lql_analyzer::ScopeMap;
+        use lql_analyzer::{
+            get_completions, ColumnInfo, CompletionContext, CompletionKind, SchemaCache, TableInfo,
+        };
+        let schema = SchemaCache::from_tables(vec![
+            TableInfo {
+                name: "users".to_string(),
+                schema: "public".to_string(),
+                columns: vec![ColumnInfo {
+                    name: "id".to_string(),
+                    sql_type: "uuid".to_string(),
+                    is_nullable: false,
+                    is_primary_key: true,
+                }],
+            },
+            TableInfo {
+                name: "orders".to_string(),
+                schema: "public".to_string(),
+                columns: vec![ColumnInfo {
+                    name: "id".to_string(),
+                    sql_type: "uuid".to_string(),
+                    is_nullable: false,
+                    is_primary_key: true,
+                }],
+            },
+        ]);
+        let ctx = CompletionContext {
+            line_prefix: "".to_string(),
+            in_arg_list: false,
+            after_pipe: false,
+            in_lambda: false,
+            word_prefix: "".to_string(),
+            table_qualifier: None,
+        };
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, Some(&schema));
+        let tables: Vec<_> = items
+            .iter()
+            .filter(|i| i.kind == CompletionKind::Table)
+            .collect();
+        assert!(tables.len() >= 2);
+    }
+
+    #[test]
+    fn test_hover_with_schema() {
+        use lql_analyzer::{get_hover_with_schema, ColumnInfo, SchemaCache, TableInfo};
+        let schema = SchemaCache::from_tables(vec![TableInfo {
+            name: "users".to_string(),
+            schema: "public".to_string(),
+            columns: vec![
+                ColumnInfo {
+                    name: "id".to_string(),
+                    sql_type: "uuid".to_string(),
+                    is_nullable: false,
+                    is_primary_key: true,
+                },
+                ColumnInfo {
+                    name: "name".to_string(),
+                    sql_type: "text".to_string(),
+                    is_nullable: true,
+                    is_primary_key: false,
+                },
+            ],
+        }]);
+
+        // Qualified column hover
+        let info = get_hover_with_schema("id", Some(("users", "id")), Some(&schema));
+        assert!(info.is_some());
+        let h = info.unwrap();
+        assert!(h.title.contains("users.id"));
+
+        // Table hover
+        let info = get_hover_with_schema("users", None, Some(&schema));
+        assert!(info.is_some());
+        let h = info.unwrap();
+        assert!(h.title.contains("Table"));
+
+        // Column not found
+        let info = get_hover_with_schema("missing", Some(("users", "missing")), Some(&schema));
+        assert!(info.is_some());
+        assert!(info.unwrap().title.contains("not found"));
+
+        // Keyword fallback
+        let info = get_hover_with_schema("select", None, Some(&schema));
+        assert!(info.is_some());
+    }
+
+    #[test]
+    fn test_many_columns_table_completion() {
+        use lql_analyzer::ScopeMap;
+        use lql_analyzer::{
+            get_completions, ColumnInfo, CompletionContext, SchemaCache, TableInfo,
+        };
+        // Table with > 6 columns to trigger truncation
+        let cols: Vec<ColumnInfo> = (0..10)
+            .map(|i| ColumnInfo {
+                name: format!("col_{i}"),
+                sql_type: "text".to_string(),
+                is_nullable: true,
+                is_primary_key: false,
+            })
+            .collect();
+        let schema = SchemaCache::from_tables(vec![TableInfo {
+            name: "big_table".to_string(),
+            schema: "public".to_string(),
+            columns: cols,
+        }]);
+        let ctx = CompletionContext {
+            line_prefix: "".to_string(),
+            in_arg_list: false,
+            after_pipe: false,
+            in_lambda: false,
+            word_prefix: "".to_string(),
+            table_qualifier: None,
+        };
+        let scope = ScopeMap::new();
+        let items = get_completions(&ctx, &scope, Some(&schema));
+        let table_item = items.iter().find(|i| i.label == "big_table").unwrap();
+        assert!(table_item.documentation.contains("10 total"));
+    }
 }

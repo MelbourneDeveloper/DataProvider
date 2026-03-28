@@ -408,4 +408,151 @@ mod tests {
         let calls = collect_function_calls("");
         assert!(calls.is_empty());
     }
+
+    // ── collect_tables_from_pipe / collect_tables_from_args (via build_scope) ──
+
+    #[test]
+    fn test_build_scope_join_does_not_panic() {
+        // join(orders, on = ...) — the grammar routes "orders" through
+        // columnAlias, not bare expr, so it may not be detected as a table.
+        // This test ensures the table-collection code runs without panic.
+        let scope = build_scope(
+            "users |> join(orders, on = users.id = orders.user_id) |> select(users.id)",
+        );
+        let tables = scope.table_names();
+        assert!(tables.contains(&"users"));
+    }
+
+    #[test]
+    fn test_build_scope_nested_pipe_in_union_arg() {
+        // Union with a nested pipe expression in its argument list.
+        // This exercises collect_tables_from_args -> pipeExpr branch.
+        let scope = build_scope("users |> union(orders |> select(orders.id))");
+        let tables = scope.table_names();
+        assert!(tables.contains(&"users"));
+        // orders may or may not be detected depending on grammar routing
+    }
+
+    #[test]
+    fn test_build_scope_let_with_select() {
+        let scope = build_scope("let result = users |> select(users.id, users.name)");
+        assert!(scope.has_binding("result"));
+        let tables = scope.table_names();
+        assert!(tables.contains(&"users"));
+    }
+
+    #[test]
+    fn test_build_scope_multiple_statements_with_tables() {
+        let scope = build_scope("let a = users |> select(users.id)\norders |> limit(10)");
+        assert!(scope.has_binding("a"));
+        let tables = scope.table_names();
+        assert!(tables.contains(&"users"));
+        assert!(tables.contains(&"orders"));
+    }
+
+    // ── collect_fn_calls_from_arg_list (via collect_function_calls) ──
+
+    #[test]
+    fn test_collect_fn_calls_with_aggregates_in_select() {
+        // select(count(*) as cnt) — exercises collect_fn_calls_from_arg_list
+        // The arg routes through columnAlias which wraps functionCall.
+        let calls =
+            collect_function_calls("users |> select(count(*) as cnt, sum(users.total) as total)");
+        let names: Vec<&str> = calls.iter().map(|c| c.name.as_str()).collect();
+        assert!(names.contains(&"select"));
+        // count/sum may route through columnAlias->arithmeticExpr->functionCall
+        // which the code may or may not traverse. Just ensure no panic.
+    }
+
+    #[test]
+    fn test_collect_fn_calls_in_let_statement() {
+        let calls = collect_function_calls(
+            "let result = users |> filter(fn(r) => r.users.age > 18) |> select(users.id)",
+        );
+        let names: Vec<&str> = calls.iter().map(|c| c.name.as_str()).collect();
+        assert!(names.contains(&"filter"));
+        assert!(names.contains(&"select"));
+    }
+
+    #[test]
+    fn test_collect_fn_calls_nested_pipe_in_union() {
+        // Union with a nested pipeline in the arg — exercises the
+        // arg.pipeExpr() branch in collect_fn_calls_from_arg_list.
+        let calls = collect_function_calls("users |> union(orders |> select(orders.id))");
+        let names: Vec<&str> = calls.iter().map(|c| c.name.as_str()).collect();
+        assert!(names.contains(&"union"));
+        assert!(names.contains(&"select"));
+    }
+
+    #[test]
+    fn test_collect_fn_calls_multiple_pipelines() {
+        let calls = collect_function_calls(
+            "let a = users |> select(users.id)\norders |> filter(fn(r) => r.orders.total > 100)",
+        );
+        let names: Vec<&str> = calls.iter().map(|c| c.name.as_str()).collect();
+        assert!(names.contains(&"select"));
+        assert!(names.contains(&"filter"));
+    }
+
+    #[test]
+    fn test_collect_fn_calls_positions_are_correct() {
+        let calls = collect_function_calls("users |> select(users.id)");
+        let select = calls.iter().find(|c| c.name == "select");
+        assert!(select.is_some());
+        let s = select.unwrap();
+        assert_eq!(s.line, 0);
+        assert_eq!(s.col, 9);
+        assert_eq!(s.end_col, 15);
+    }
+
+    #[test]
+    fn test_collect_fn_calls_chained_pipeline() {
+        let calls = collect_function_calls(
+            "users |> group_by(users.role) |> having(fn(g) => count(*) > 5) |> select(users.role)",
+        );
+        let names: Vec<&str> = calls.iter().map(|c| c.name.as_str()).collect();
+        assert!(names.contains(&"group_by"));
+        assert!(names.contains(&"having"));
+        assert!(names.contains(&"select"));
+    }
+
+    #[test]
+    fn test_collect_fn_calls_window_function() {
+        let calls = collect_function_calls(
+            "orders |> select(row_number() over (partition by orders.user_id order by orders.total desc))",
+        );
+        let names: Vec<&str> = calls.iter().map(|c| c.name.as_str()).collect();
+        assert!(names.contains(&"select"));
+    }
+
+    #[test]
+    fn test_build_scope_let_binding_position() {
+        let scope = build_scope("let abc = users |> select(users.id)");
+        let binding = scope.get_binding("abc");
+        assert!(binding.is_some());
+        let info = binding.unwrap();
+        assert_eq!(info.name, "abc");
+        assert_eq!(info.line, 0);
+        assert_eq!(info.col, 4);
+    }
+
+    #[test]
+    fn test_collect_fn_calls_join_with_subquery() {
+        // Join with nested pipeline — exercises collect_fn_calls_from_arg_list
+        // with pipeExpr inside the arg list.
+        let calls = collect_function_calls(
+            "users |> join(orders |> filter(fn(r) => r.orders.status = 'active'), on = users.id = orders.user_id)",
+        );
+        let names: Vec<&str> = calls.iter().map(|c| c.name.as_str()).collect();
+        assert!(names.contains(&"join"));
+    }
+
+    #[test]
+    fn test_collect_fn_calls_exists_subquery() {
+        let calls = collect_function_calls(
+            "users |> filter(fn(row) => exists(orders |> filter(fn(o) => o.orders.user_id = row.users.id)))",
+        );
+        let names: Vec<&str> = calls.iter().map(|c| c.name.as_str()).collect();
+        assert!(names.contains(&"filter"));
+    }
 }

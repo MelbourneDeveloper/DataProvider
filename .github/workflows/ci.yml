@@ -494,12 +494,22 @@ jobs:
 
       - name: Coverage (90% minimum)
         run: |
+          # Build exclude flags: always exclude generated code, plus sibling
+          # crate sources that the LLVM engine instruments but the package's
+          # own tests cannot cover.
+          EXCLUDE="--exclude-files */generated/*"
+          case "${{ matrix.crate }}" in
+            lql-parser)
+              EXCLUDE="$EXCLUDE --exclude-files */lql-analyzer/* --exclude-files */lql-lsp/*" ;;
+            lql-analyzer)
+              EXCLUDE="$EXCLUDE --exclude-files */lql-lsp/*" ;;
+          esac
           cargo tarpaulin \
             --packages ${{ matrix.crate }} \
             --skip-clean \
             --timeout 120 \
             --engine llvm \
-            --exclude-files "*/generated/*" \
+            $EXCLUDE \
             --fail-under 90 \
             --out stdout
 

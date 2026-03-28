@@ -1256,3 +1256,196 @@ mod symbol_tests {
         assert!(symbols.is_empty());
     }
 }
+
+/// Integration tests exercising lql-parser token and span utilities
+/// from the analyzer context, ensuring transitive coverage.
+#[cfg(test)]
+mod parser_integration_tests {
+    use lql_parser::error::ParseError;
+    use lql_parser::span::Span;
+    use lql_parser::tokens::{
+        get_pipe_token_positions, get_token_structure, lex_pipe_positions, lex_tokens, token_types,
+    };
+
+    // ── lex_tokens ────────────────────────────────────────────────────────
+    #[test]
+    fn lex_tokens_simple_pipeline() {
+        let tokens = lex_tokens("users |> select(users.id)");
+        assert!(!tokens.is_empty());
+        let idents: Vec<_> = tokens
+            .iter()
+            .filter(|t| t.token_type == token_types::IDENT)
+            .collect();
+        assert!(idents.len() >= 2);
+        assert_eq!(idents[0].text, "users");
+    }
+
+    #[test]
+    fn lex_tokens_finds_pipe_token() {
+        let tokens = lex_tokens("a |> b");
+        let pipes: Vec<_> = tokens
+            .iter()
+            .filter(|t| t.token_type == token_types::PIPE)
+            .collect();
+        assert_eq!(pipes.len(), 1);
+        assert_eq!(pipes[0].text, "|>");
+    }
+
+    #[test]
+    fn lex_tokens_empty_source() {
+        let tokens = lex_tokens("");
+        assert!(tokens.is_empty());
+    }
+
+    #[test]
+    fn lex_tokens_parens() {
+        let tokens = lex_tokens("select(x)");
+        let opens: Vec<_> = tokens
+            .iter()
+            .filter(|t| t.token_type == token_types::OPEN_PAREN)
+            .collect();
+        let closes: Vec<_> = tokens
+            .iter()
+            .filter(|t| t.token_type == token_types::CLOSE_PAREN)
+            .collect();
+        assert_eq!(opens.len(), 1);
+        assert_eq!(closes.len(), 1);
+    }
+
+    #[test]
+    fn lex_tokens_multiline() {
+        let tokens = lex_tokens("users\n|> select(x)");
+        let pipe = tokens.iter().find(|t| t.token_type == token_types::PIPE);
+        assert!(pipe.is_some());
+        assert_eq!(pipe.unwrap().line, 1);
+    }
+
+    #[test]
+    fn lex_tokens_complex_source() {
+        let source = "users\n|> filter(fn(r) => r.age > 18)\n|> select(users.id)";
+        let tokens = lex_tokens(source);
+        let pipes: Vec<_> = tokens
+            .iter()
+            .filter(|t| t.token_type == token_types::PIPE)
+            .collect();
+        assert_eq!(pipes.len(), 2);
+    }
+
+    // ── lex_pipe_positions ────────────────────────────────────────────────
+    #[test]
+    fn lex_pipe_positions_simple() {
+        let positions = lex_pipe_positions("users |> select(x)");
+        assert_eq!(positions.len(), 1);
+        assert_eq!(positions[0].line, 0);
+    }
+
+    #[test]
+    fn lex_pipe_positions_empty() {
+        let positions = lex_pipe_positions("users");
+        assert!(positions.is_empty());
+    }
+
+    #[test]
+    fn lex_pipe_positions_multiline() {
+        let positions = lex_pipe_positions("users\n|> a\n|> b");
+        assert_eq!(positions.len(), 2);
+    }
+
+    // ── get_token_structure ───────────────────────────────────────────────
+    #[test]
+    fn token_structure_empty() {
+        let ts = get_token_structure("");
+        assert!(ts.pipe_positions.is_empty());
+        assert!(ts.lines_ending_open_paren.is_empty());
+        assert!(ts.lines_starting_close_paren.is_empty());
+        assert!(ts.comment_lines.is_empty());
+    }
+
+    #[test]
+    fn token_structure_comment_detection() {
+        let ts = get_token_structure("-- comment\nusers\n-- another");
+        assert_eq!(ts.comment_lines, vec![0, 2]);
+    }
+
+    #[test]
+    fn token_structure_paren_tracking() {
+        let ts = get_token_structure("select(\n  x\n)");
+        assert_eq!(ts.lines_ending_open_paren, vec![0]);
+        assert_eq!(ts.lines_starting_close_paren, vec![2]);
+    }
+
+    #[test]
+    fn token_structure_pipes() {
+        let ts = get_token_structure("users |> select(x) |> limit(10)");
+        assert_eq!(ts.pipe_positions.len(), 2);
+    }
+
+    #[test]
+    fn token_structure_complex() {
+        let source = "-- query\nusers\n|> select(\n  users.id\n)\n|> limit(10)";
+        let ts = get_token_structure(source);
+        assert_eq!(ts.comment_lines, vec![0]);
+        assert_eq!(ts.pipe_positions.len(), 2);
+        assert_eq!(ts.lines_ending_open_paren, vec![2]);
+        assert_eq!(ts.lines_starting_close_paren, vec![4]);
+    }
+
+    #[test]
+    fn token_structure_open_paren_with_comment() {
+        let ts = get_token_structure("select( -- args follow");
+        assert_eq!(ts.lines_ending_open_paren, vec![0]);
+    }
+
+    // ── Span ──────────────────────────────────────────────────────────────
+    #[test]
+    fn span_new_and_empty() {
+        let s = Span::new(5, 10);
+        assert_eq!(s.start, 5);
+        assert_eq!(s.end, 10);
+
+        let e = Span::empty(42);
+        assert_eq!(e.start, 42);
+        assert_eq!(e.end, 42);
+    }
+
+    #[test]
+    fn span_merge() {
+        let a = Span::new(5, 10);
+        let b = Span::new(2, 15);
+        let merged = a.merge(b);
+        assert_eq!(merged.start, 2);
+        assert_eq!(merged.end, 15);
+    }
+
+    #[test]
+    fn span_line_col_methods() {
+        let src = "hello\nworld";
+        let s = Span::new(6, 11);
+        assert_eq!(s.start_line_col(src), (1, 0));
+        assert_eq!(s.end_line_col(src), (1, 5));
+    }
+
+    // ── ParseError ────────────────────────────────────────────────────────
+    #[test]
+    fn parse_error_warning_constructor() {
+        let err = ParseError::warning("test warning", Span::new(10, 20));
+        assert_eq!(err.message, "test warning");
+        assert_eq!(err.severity, lql_parser::error::Severity::Warning);
+    }
+
+    #[test]
+    fn parse_error_error_constructor() {
+        let err = ParseError::error("test error", Span::new(0, 5));
+        assert_eq!(err.message, "test error");
+        assert_eq!(err.severity, lql_parser::error::Severity::Error);
+    }
+
+    // ── get_pipe_token_positions ──────────────────────────────────────────
+    #[test]
+    fn pipe_positions_multiline() {
+        let positions = get_pipe_token_positions("users\n|> filter(x)\n|> select(y)");
+        assert_eq!(positions.len(), 2);
+        assert_eq!(positions[0].line, 1);
+        assert_eq!(positions[1].line, 2);
+    }
+}
