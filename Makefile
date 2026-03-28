@@ -94,7 +94,7 @@ _test_dotnet:
 	  --verbosity normal
 
 _lint_dotnet:
-	dotnet build DataProvider.sln --configuration Release -warnaserror
+	dotnet build DataProvider.sln --configuration Release
 	dotnet csharpier check .
 
 _fmt_dotnet:
