@@ -9,17 +9,18 @@ Prepare the current state for CI. Ensures the branch will pass CI before pushing
 
 ## Steps
 
-1. Run `make lint` — fix any issues before continuing
-2. Run `make test` — fix any failures before continuing
-3. Run `make coverage-check` — coverage must meet threshold
-4. Run `make build` — confirm build succeeds
-5. Report: all clear / what failed
+1. Read and analyze .github/workflows/ci.yml
+2. Generate a TODO list of the items you need to run in order to reproduce the ci workflow
+3. Work through the TODO list
+4. Fix issues as you see them.
+5. Repeat until the ci passes
 
 ## Rules
 
 - Do not push if any step fails
 - Fix issues found in each step before moving to the next
 - Never skip steps or suppress errors
+- Fix bugs; do not modify tests
 
 ## Success criteria
 

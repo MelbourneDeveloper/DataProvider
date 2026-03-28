@@ -95,13 +95,13 @@ _test_dotnet:
 
 _lint_dotnet:
 	dotnet build DataProvider.sln --configuration Release -warnaserror
-	dotnet csharpier . --check
+	dotnet csharpier check .
 
 _fmt_dotnet:
-	dotnet csharpier .
+	dotnet csharpier format .
 
 _fmt_check_dotnet:
-	dotnet csharpier . --check
+	dotnet csharpier check .
 
 _clean_dotnet:
 	find . -type d \( -name bin -o -name obj \) -not -path './Lql/lql-lsp-rust/*' | xargs rm -rf

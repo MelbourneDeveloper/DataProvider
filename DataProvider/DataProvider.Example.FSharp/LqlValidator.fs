@@ -30,12 +30,21 @@ type LqlQuery private() =
                 use cmd = new SqliteCommand(sql, conn)
                 use reader = cmd.ExecuteReader()
                 
+                let readColumnValue (reader: SqliteDataReader) (i: int) : obj =
+                    if reader.IsDBNull(i) then
+                        DBNull.Value :> obj
+                    else
+                        let raw: obj | null = reader.GetValue(i)
+                        match raw with
+                        | NonNull v -> v
+                        | _ -> DBNull.Value :> obj
+
                 let results = ResizeArray<Map<string, obj>>()
                 while reader.Read() do
-                    let row = 
+                    let row =
                         [| for i in 0 .. reader.FieldCount - 1 ->
                             let name = reader.GetName(i)
-                            let value = if reader.IsDBNull(i) then box DBNull.Value else reader.GetValue(i)
+                            let value = readColumnValue reader i
                             (name, value) |]
                         |> Map.ofArray
                     results.Add(row)
