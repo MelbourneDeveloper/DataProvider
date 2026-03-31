@@ -105,8 +105,11 @@ suite("VS Code Extension E2E Tests", function () {
     // The TextMate grammar should be loaded for .lql files
     const editor = vscode.window.activeTextEditor;
     assert.ok(editor, "Active editor must exist");
+    if (!editor) {
+      return;
+    }
     assert.strictEqual(
-      editor!.document.uri.fsPath,
+      editor.document.uri.fsPath,
       doc.uri.fsPath,
       "Active editor must show the fixture",
     );
@@ -118,7 +121,11 @@ suite("VS Code Extension E2E Tests", function () {
 
   test("Should provide IntelliSense completions after pipe", async function () {
     const doc = await openFixture("completion_test.lql");
-    const editor = vscode.window.activeTextEditor!;
+    const editor = vscode.window.activeTextEditor;
+    assert.ok(editor, "Active editor must exist");
+    if (!editor) {
+      return;
+    }
 
     // Position cursor after |>
     const pos = new vscode.Position(0, doc.getText().length);
@@ -224,7 +231,8 @@ suite("VS Code Extension E2E Tests", function () {
       .map((c) => {
         if (typeof c === "string") {return c;}
         if (c instanceof vscode.MarkdownString) {return c.value;}
-        return (c as any).value || "";
+        if (typeof c === "object" && "value" in c) {return c.value;}
+        return "";
       })
       .join(" ");
 
@@ -267,13 +275,12 @@ suite("VS Code Extension E2E Tests", function () {
 
     assert.ok(hovers && hovers.length > 0, "Must have hover for 'select'");
     const content = hovers[0].contents
-      .map((c) =>
-        typeof c === "string"
-          ? c
-          : c instanceof vscode.MarkdownString
-            ? c.value
-            : (c as any).value || "",
-      )
+      .map((c) => {
+        if (typeof c === "string") {return c;}
+        if (c instanceof vscode.MarkdownString) {return c.value;}
+        if (typeof c === "object" && "value" in c) {return c.value;}
+        return "";
+      })
       .join(" ");
     assert.ok(
       content.toLowerCase().includes("select"),
@@ -455,7 +462,6 @@ suite("VS Code Extension E2E Tests", function () {
 
   test("Language configuration should be properly loaded", async function () {
     const doc = await openFixture("simple_select.lql");
-    const editor = vscode.window.activeTextEditor!;
 
     // Verify the language is correctly identified
     assert.strictEqual(doc.languageId, "lql");

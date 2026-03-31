@@ -41,7 +41,8 @@ function getLspAssetName(): string | undefined {
 
 /** Get the extension version from package.json to find the matching GH release. */
 function getExtensionVersion(context: vscode.ExtensionContext): string {
-  return context.extension.packageJSON.version as string;
+  const pkg = context.extension.packageJSON as Record<string, unknown>;
+  return String(pkg.version);
 }
 
 /** Follow redirects and download a URL to a file path. */
@@ -49,17 +50,14 @@ function downloadFile(url: string, dest: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const get = url.startsWith("https") ? https.get : http.get;
     get(url, (response) => {
-      if (
-        response.statusCode &&
-        response.statusCode >= 300 &&
-        response.statusCode < 400 &&
-        response.headers.location
-      ) {
-        downloadFile(response.headers.location, dest).then(resolve, reject);
+      const statusCode = response.statusCode ?? 0;
+      const location = response.headers.location ?? "";
+      if (statusCode >= 300 && statusCode < 400 && location !== "") {
+        downloadFile(location, dest).then(resolve, reject);
         return;
       }
-      if (response.statusCode !== 200) {
-        reject(new Error(`Download failed: HTTP ${response.statusCode}`));
+      if (statusCode !== 200) {
+        reject(new Error(`Download failed: HTTP ${String(statusCode)}`));
         return;
       }
       const file = fs.createWriteStream(dest);
@@ -126,7 +124,7 @@ export async function activate(
   log(`Global storage: ${context.globalStorageUri.fsPath}`);
 
   const config = vscode.workspace.getConfiguration("lql");
-  const serverEnabled = config.get<boolean>("languageServer.enabled", true);
+  const serverEnabled = config.get("languageServer.enabled", true);
 
   if (!serverEnabled) {
     log("Language server disabled in settings.");
@@ -134,8 +132,8 @@ export async function activate(
   }
 
   let serverBinary: string;
-  const customPath = config.get<string>("languageServer.path", "");
-  if (customPath) {
+  const customPath = config.get("languageServer.path", "");
+  if (customPath !== "") {
     if (!fs.existsSync(customPath)) {
       log(`ERROR: Custom LSP path does not exist: ${customPath}`);
       vscode.window.showErrorMessage(
@@ -171,17 +169,17 @@ export async function activate(
   };
 
   // Build initializationOptions from VS Code settings
-  const connectionString = config.get<string>("database.connectionString", "");
-  const aiProvider = config.get<string>("ai.provider", "");
-  const aiEndpoint = config.get<string>("ai.endpoint", "http://localhost:11434/api/generate");
-  const aiModel = config.get<string>("ai.model", "qwen2.5-coder:1.5b");
+  const connectionString = config.get("database.connectionString", "");
+  const aiProvider = config.get("ai.provider", "");
+  const aiEndpoint = config.get("ai.endpoint", "http://localhost:11434/api/generate");
+  const aiModel = config.get("ai.model", "qwen2.5-coder:1.5b");
 
   const initOptions: Record<string, unknown> = {};
-  if (connectionString) {
+  if (connectionString !== "") {
     initOptions.connectionString = connectionString;
     log(`Database: ${connectionString}`);
   }
-  if (aiProvider) {
+  if (aiProvider !== "") {
     initOptions.aiProvider = {
       provider: aiProvider,
       endpoint: aiEndpoint,
@@ -210,17 +208,17 @@ export async function activate(
   context.subscriptions.push(
     vscode.commands.registerCommand("lql.formatDocument", async () => {
       const editor = vscode.window.activeTextEditor;
-      if (editor && editor.document.languageId === "lql") {
+      if (editor?.document.languageId === "lql") {
         await vscode.commands.executeCommand("editor.action.formatDocument");
       }
     }),
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("lql.validateDocument", async () => {
+    vscode.commands.registerCommand("lql.validateDocument", () => {
       const editor = vscode.window.activeTextEditor;
-      if (editor && editor.document.languageId === "lql") {
-        vscode.window.showInformationMessage(
+      if (editor?.document.languageId === "lql") {
+        void vscode.window.showInformationMessage(
           "LQL validation triggered — check the Problems panel for diagnostics.",
         );
       }
@@ -228,21 +226,21 @@ export async function activate(
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("lql.showCompiledSql", async () => {
-      vscode.window.showInformationMessage(
+    vscode.commands.registerCommand("lql.showCompiledSql", () => {
+      void vscode.window.showInformationMessage(
         "SQL compilation requires the LQL runtime. Use the CLI or Browser app.",
       );
     }),
   );
 
   log("Starting LSP client...");
-  client.start();
+  void client.start();
   log("LSP client started.");
 
   context.subscriptions.push({
     dispose: () => {
       if (client) {
-        client.stop();
+        void client.stop();
       }
     },
   });

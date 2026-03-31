@@ -11,10 +11,11 @@ async function main() {
       extensionTestsPath,
       launchArgs: ["--disable-extensions"],
     });
-  } catch (err) {
-    console.error("Failed to run tests:", err);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`Failed to run tests: ${message}\n`);
     process.exit(1);
   }
 }
 
-main();
+void main();

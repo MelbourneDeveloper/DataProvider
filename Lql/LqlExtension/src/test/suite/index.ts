@@ -1,12 +1,9 @@
 import * as path from "path";
+import Mocha from "mocha";
+import { glob } from "glob";
 
 export function run(): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const Mocha = require("mocha") as typeof import("mocha");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const glob = require("glob") as typeof import("glob");
-
-  const mocha = new (Mocha as any)({
+  const mocha = new Mocha({
     ui: "tdd",
     color: true,
     timeout: 60000,
@@ -15,14 +12,8 @@ export function run(): Promise<void> {
   const testsRoot = path.resolve(__dirname, ".");
 
   return new Promise<void>((resolve, reject) => {
-    (glob as any)(
-      "**/**.test.js",
-      { cwd: testsRoot },
-      (err: Error | null, files: string[]) => {
-        if (err) {
-          return reject(err);
-        }
-
+    glob("**/**.test.js", { cwd: testsRoot })
+      .then((files) => {
         files.forEach((f: string) =>
           mocha.addFile(path.resolve(testsRoot, f)),
         );
@@ -30,15 +21,17 @@ export function run(): Promise<void> {
         try {
           mocha.run((failures: number) => {
             if (failures > 0) {
-              reject(new Error(`${failures} tests failed.`));
+              reject(new Error(`${String(failures)} tests failed.`));
             } else {
               resolve();
             }
           });
-        } catch (runErr) {
-          reject(runErr);
+        } catch (runErr: unknown) {
+          reject(runErr instanceof Error ? runErr : new Error(String(runErr)));
         }
-      },
-    );
+      })
+      .catch((err: unknown) => {
+        reject(err instanceof Error ? err : new Error(String(err)));
+      });
   });
 }

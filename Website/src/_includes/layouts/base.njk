@@ -8,6 +8,7 @@
   <meta name="author" content="{{ site.author }}">
   <link rel="canonical" href="{{ site.url }}{{ page.url }}">
 
+  <meta property="og:locale" content="en_US">
   <meta property="og:type" content="{% if layout == 'layouts/post.njk' %}article{% else %}website{% endif %}">
   <meta property="og:url" content="{{ site.url }}{{ page.url }}">
   <meta property="og:title" content="{{ title | default(site.title) }}">
@@ -15,7 +16,8 @@
   <meta property="og:image" content="{{ site.url }}/assets/images/Logo.png">
   <meta property="og:site_name" content="{{ site.name }}">
 
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="{{ site.twitter }}">
   <meta name="twitter:title" content="{{ title | default(site.title) }}">
   <meta name="twitter:description" content="{{ description | default(site.description) }}">
   <meta name="twitter:image" content="{{ site.url }}/assets/images/Logo.png">
@@ -41,10 +43,14 @@
     "publisher": {
       "@type": "Organization",
       "name": "{{ site.name }}",
+      "url": "{{ site.url }}",
       "logo": {
         "@type": "ImageObject",
         "url": "{{ site.url }}/assets/images/Logo.png"
-      }
+      },
+      "sameAs": [
+        "{{ site.github }}"
+      ]
     }
   }
   </script>

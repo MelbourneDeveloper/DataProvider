@@ -72,11 +72,9 @@ For each command extracted from the CI workflow:
 
 If stuck on the same failure after 5 attempts, ask the user for help.
 
-## Step 4 — Report
+## Step 4 — Loop
 
-- List every step that was run and its result (pass/fail/fixed).
-- If any step could not be fixed, report what failed and why.
-- Confirm whether the branch is ready to push.
+- Go back to the first step and repeat until all steps pass locally. If `--failing`, you should see the exact same errors in your terminal that CI shows in the logs. Fix those errors until they are resolved.
 
 ## Step 5 — Commit/Push (only when `--failing`)
 
@@ -89,6 +87,7 @@ Once all CI steps pass locally:
 
 ## Rules
 
+- *You are not allowed to commi/push until all tests pass*. Do not waste GitHub action minutes! The local CI must prove that everything is working.
 - **Always read the CI workflow first.** Never assume what commands CI runs.
 - Do not push if any step fails (unless `--failing` and all steps now pass)
 - Fix issues found in each step before moving to the next

@@ -1,7 +1,7 @@
 ---
 layout: layouts/base.njk
-title: About DataProvider
-description: About the DataProvider project and team.
+title: "About DataProvider - .NET Database Access Toolkit"
+description: "DataProvider is an open-source .NET toolkit for type-safe database access with source-generated SQL, LQL query language, offline-first sync, and YAML migrations."
 ---
 
 <section style="padding: var(--space-12) 0;">
