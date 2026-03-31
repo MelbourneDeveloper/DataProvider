@@ -24,7 +24,7 @@ async function waitFor(
     if (await condition()) {return;}
     await new Promise((r) => setTimeout(r, intervalMs));
   }
-  throw new Error(`Timeout after ${timeoutMs}ms waiting for condition`);
+  throw new Error(`Timeout after ${String(timeoutMs)}ms waiting for condition`);
 }
 
 /** Get the path to a test fixture */
@@ -40,6 +40,16 @@ async function openFixture(name: string): Promise<vscode.TextDocument> {
   return doc;
 }
 
+/**
+ * Extract text content from a hover content element.
+ * Handles MarkdownString and plain string cases.
+ */
+function extractHoverText(c: unknown): string {
+  if (typeof c === "string") {return c;}
+  if (c instanceof vscode.MarkdownString) {return c.value;}
+  return "";
+}
+
 /** Wait for the LQL language server to be ready */
 async function waitForLanguageServer(): Promise<void> {
   // Give the LSP client time to start and connect
@@ -52,7 +62,7 @@ suite("VS Code Extension E2E Tests", function () {
   suiteSetup(async function () {
     // Ensure the LQL extension is activated
     const ext = vscode.extensions.getExtension("lql-team.lql-language-support");
-    if (ext && !ext.isActive) {
+    if (ext !== undefined && !ext.isActive) {
       await ext.activate();
     }
     await waitForLanguageServer();
@@ -104,9 +114,8 @@ suite("VS Code Extension E2E Tests", function () {
 
     // The TextMate grammar should be loaded for .lql files
     const editor = vscode.window.activeTextEditor;
-    assert.ok(editor, "Active editor must exist");
-    if (!editor) {
-      return;
+    if (editor === undefined) {
+      assert.fail("Active editor must exist");
     }
     assert.strictEqual(
       editor.document.uri.fsPath,
@@ -122,9 +131,8 @@ suite("VS Code Extension E2E Tests", function () {
   test("Should provide IntelliSense completions after pipe", async function () {
     const doc = await openFixture("completion_test.lql");
     const editor = vscode.window.activeTextEditor;
-    assert.ok(editor, "Active editor must exist");
-    if (!editor) {
-      return;
+    if (editor === undefined) {
+      assert.fail("Active editor must exist");
     }
 
     // Position cursor after |>
@@ -140,7 +148,7 @@ suite("VS Code Extension E2E Tests", function () {
       pos,
     );
 
-    assert.ok(completions, "Completions must not be null");
+    assert.notStrictEqual(completions, undefined, "Completions must not be null");
     assert.ok(completions.items.length > 0, "Must return completion items");
 
     const labels = completions.items.map((i) => i.label);
@@ -171,9 +179,9 @@ suite("VS Code Extension E2E Tests", function () {
       const label = typeof i.label === "string" ? i.label : i.label.label;
       return label === "select";
     });
-    if (selectCompletion) {
+    if (selectCompletion !== undefined) {
       assert.ok(
-        selectCompletion.detail || selectCompletion.documentation,
+        (selectCompletion.detail ?? "") !== "" || selectCompletion.documentation !== undefined,
         "select completion should have detail or documentation",
       );
     }
@@ -196,7 +204,7 @@ suite("VS Code Extension E2E Tests", function () {
       pos,
     );
 
-    assert.ok(completions, "Must return completions");
+    assert.notStrictEqual(completions, undefined, "Must return completions");
     const labels = completions.items.map((i) =>
       typeof i.label === "string" ? i.label : i.label.label,
     );
@@ -224,16 +232,11 @@ suite("VS Code Extension E2E Tests", function () {
       filterPos,
     );
 
-    assert.ok(hovers, "Hover result must not be null");
+    assert.notStrictEqual(hovers, undefined, "Hover result must not be null");
     assert.ok(hovers.length > 0, "Must return at least one hover");
 
     const hoverContent = hovers[0].contents
-      .map((c) => {
-        if (typeof c === "string") {return c;}
-        if (c instanceof vscode.MarkdownString) {return c.value;}
-        if (typeof c === "object" && "value" in c) {return c.value;}
-        return "";
-      })
+      .map(extractHoverText)
       .join(" ");
 
     assert.ok(
@@ -273,14 +276,10 @@ suite("VS Code Extension E2E Tests", function () {
       new vscode.Position(line, col + 2), // middle of 'select'
     );
 
-    assert.ok(hovers && hovers.length > 0, "Must have hover for 'select'");
+    assert.notStrictEqual(hovers, undefined, "Must have hover result for 'select'");
+    assert.ok(hovers.length > 0, "Must have hover for 'select'");
     const content = hovers[0].contents
-      .map((c) => {
-        if (typeof c === "string") {return c;}
-        if (c instanceof vscode.MarkdownString) {return c.value;}
-        if (typeof c === "object" && "value" in c) {return c.value;}
-        return "";
-      })
+      .map(extractHoverText)
       .join(" ");
     assert.ok(
       content.toLowerCase().includes("select"),
@@ -314,11 +313,12 @@ suite("VS Code Extension E2E Tests", function () {
 
     // Check diagnostic properties
     const diag = diagnostics[0];
-    assert.ok(diag.message, "Diagnostic must have a message");
+    assert.strictEqual(typeof diag.message, "string", "Diagnostic must have a message");
     assert.ok(diag.message.length > 0, "Message must not be empty");
-    assert.ok(diag.range, "Diagnostic must have a range");
-    assert.ok(
-      diag.severity !== undefined,
+    assert.notStrictEqual(diag.range, undefined, "Diagnostic must have a range");
+    assert.strictEqual(
+      typeof diag.severity,
+      "number",
       "Diagnostic must have a severity",
     );
   });
@@ -406,7 +406,7 @@ suite("VS Code Extension E2E Tests", function () {
       doc.uri,
     );
 
-    assert.ok(symbols, "Symbols result must not be null");
+    assert.notStrictEqual(symbols, undefined, "Symbols result must not be null");
     assert.ok(symbols.length >= 2, "Must find at least 2 symbols");
 
     const names = symbols.map((s) => s.name);
@@ -418,9 +418,9 @@ suite("VS Code Extension E2E Tests", function () {
 
     // Check symbol metadata
     for (const sym of symbols) {
-      assert.ok(sym.name, "Each symbol must have a name");
-      assert.ok(sym.kind !== undefined, "Each symbol must have a kind");
-      assert.ok(sym.location, "Each symbol must have a location");
+      assert.ok(sym.name.length > 0, "Each symbol must have a name");
+      assert.strictEqual(typeof sym.kind, "number", "Each symbol must have a kind");
+      assert.notStrictEqual(sym.location, undefined, "Each symbol must have a location");
     }
   });
 
@@ -444,10 +444,10 @@ suite("VS Code Extension E2E Tests", function () {
       { tabSize: 4, insertSpaces: true },
     );
 
-    if (edits && edits.length > 0) {
+    if (edits.length > 0) {
       // Formatting produced edits — verify they normalize whitespace
       const edit = edits[0];
-      assert.ok(edit.newText !== undefined, "Format edit must have new text");
+      assert.strictEqual(typeof edit.newText, "string", "Format edit must have new text");
       assert.ok(
         !edit.newText.startsWith("  "),
         "Formatted text should not start with excessive whitespace",
@@ -512,7 +512,7 @@ suite("VS Code Extension E2E Tests", function () {
       pos,
     );
 
-    assert.ok(completions, "Should offer completions after typing |>");
+    assert.notStrictEqual(completions, undefined, "Should offer completions after typing |>");
     if (completions.items.length > 0) {
       const labels = completions.items.map((i) =>
         typeof i.label === "string" ? i.label : i.label.label,

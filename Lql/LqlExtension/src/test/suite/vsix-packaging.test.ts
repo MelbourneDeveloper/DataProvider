@@ -11,7 +11,6 @@ import { execSync } from "child_process";
  */
 
 const EXT_DIR = path.resolve(__dirname, "..", "..", "..");
-const VSIX_GLOB = path.join(EXT_DIR, "*.vsix");
 
 function findVsix(): string {
   const files = fs

@@ -161,7 +161,9 @@ function extractCompletionItems(
     return result.filter(isCompletionItem);
   }
   if (isRecord(result) && Array.isArray(result["items"])) {
-    return (result as LspCompletionList).items.filter(isCompletionItem);
+    // Safe: we verified result has an array 'items' property above
+    const list = result as unknown as LspCompletionList;
+    return list.items.filter(isCompletionItem);
   }
   return [];
 }
@@ -463,28 +465,34 @@ describe("LSP Protocol E2E Tests", function () {
       undefined,
       "Must have trigger characters",
     );
+    if (triggerChars === undefined) {
+      assert.fail("Trigger characters must be defined");
+    }
     assert.strictEqual(
-      triggerChars?.includes("|"),
+      triggerChars.includes("|"),
       true,
       "Pipe should be a trigger character",
     );
     assert.strictEqual(
-      triggerChars?.includes("."),
+      triggerChars.includes("."),
       true,
       "Dot should be a trigger character",
     );
+    if (caps === undefined) {
+      assert.fail("Capabilities must be defined");
+    }
     assert.strictEqual(
-      caps?.hoverProvider,
+      caps.hoverProvider,
       true,
       "Must support hover (IntelliPrompt)",
     );
     assert.strictEqual(
-      caps?.documentSymbolProvider,
+      caps.documentSymbolProvider,
       true,
       "Must support document symbols",
     );
     assert.strictEqual(
-      caps?.documentFormattingProvider,
+      caps.documentFormattingProvider,
       true,
       "Must support document formatting",
     );
@@ -1203,9 +1211,10 @@ describe("LSP Protocol E2E Tests", function () {
     assert.ok(countHoverRaw !== null && countHoverRaw !== undefined, "Must get hover for 'count'");
     // Safe: LSP hover response always has this shape when non-null
     const countHover = countHoverRaw as LspHoverResult;
-    assert.ok(typeof countHover.contents !== "string" && countHover.contents.kind === "markdown", "Hover contents must be Markdown format");
+    assert.ok(typeof countHover.contents !== "string", "Count hover contents must not be a plain string");
+    assert.ok(countHover.contents?.kind === "markdown", "Hover contents must be Markdown format");
     assert.ok(
-      typeof countHover.contents !== "string" && countHover.contents.value.includes("count"),
+      countHover.contents.value?.includes("count") === true,
       "Count hover must describe count function",
     );
 
@@ -1217,7 +1226,8 @@ describe("LSP Protocol E2E Tests", function () {
     assert.ok(sumHoverRaw !== null && sumHoverRaw !== undefined, "Must get hover for 'sum'");
     // Safe: LSP hover response always has this shape when non-null
     const sumHover = sumHoverRaw as LspHoverResult;
-    assert.ok(typeof sumHover.contents !== "string" && sumHover.contents.kind === "markdown", "Sum hover must be Markdown");
+    assert.ok(typeof sumHover.contents !== "string", "Sum hover contents must not be a plain string");
+    assert.ok(sumHover.contents?.kind === "markdown", "Sum hover must be Markdown");
     assert.ok(
       extractHoverText(sumHover).toLowerCase().includes("sum"),
       "Sum hover must describe sum",
@@ -1365,8 +1375,10 @@ describe("LSP Protocol E2E Tests", function () {
     const error = diagsList.find((d) => d.severity === 1);
     assert.ok(error !== undefined, "Must report at least one error-level diagnostic");
     assert.ok(error.range !== undefined, "Error diagnostic must have a range");
+    assert.ok(error.range.start !== undefined, "Range must have start");
     assert.ok(error.range.start.line >= 0, "Range must have valid start line");
     assert.ok(error.range.start.character >= 0, "Range must have valid start character");
+    assert.ok(error.message !== undefined, "Error diagnostic must have a message");
     assert.ok(error.message.length > 0, "Error message must not be empty");
     assert.ok(error.source === "lql", "Error source must be 'lql'");
   });
@@ -1472,6 +1484,7 @@ let final_report = users_active
       assert.ok(sym.location !== undefined, "Symbol must have a location");
       assert.ok(sym.location.uri !== undefined, "Symbol location must have a URI");
       assert.ok(sym.location.range !== undefined, "Symbol location must have a range");
+      assert.ok(sym.location.range.start !== undefined, "Range must have start");
       assert.ok(
         sym.location.range.start.line >= 0,
         "Range start must have valid line",
@@ -1565,9 +1578,10 @@ let final_report = users_active
     assert.ok(hoverRaw !== null && hoverRaw !== undefined, "Must get hover info");
     // Safe: LSP hover response always has this shape when non-null
     const hover = hoverRaw as LspHoverResult;
-    assert.ok(typeof hover.contents !== "string" && hover.contents.kind === "markdown", "Hover must be Markdown");
+    assert.ok(typeof hover.contents !== "string", "Hover contents must not be a plain string");
+    assert.ok(hover.contents?.kind === "markdown", "Hover must be Markdown");
     assert.ok(
-      typeof hover.contents !== "string" && hover.contents.value.includes("filter"),
+      hover.contents.value?.includes("filter") === true,
       "Hover must describe filter",
     );
 

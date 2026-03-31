@@ -79,7 +79,7 @@ async function downloadLspBinary(
   context: vscode.ExtensionContext,
 ): Promise<string> {
   const assetName = getLspAssetName();
-  if (!assetName) {
+  if (assetName === undefined) {
     throw new Error(`Unsupported platform: ${process.platform} ${process.arch}`);
   }
 
@@ -124,7 +124,7 @@ export async function activate(
   log(`Global storage: ${context.globalStorageUri.fsPath}`);
 
   const config = vscode.workspace.getConfiguration("lql");
-  const serverEnabled = config.get("languageServer.enabled", true);
+  const serverEnabled = config.get<boolean>("languageServer.enabled") ?? true;
 
   if (!serverEnabled) {
     log("Language server disabled in settings.");
@@ -132,7 +132,7 @@ export async function activate(
   }
 
   let serverBinary: string;
-  const customPath = config.get("languageServer.path", "");
+  const customPath = config.get<string>("languageServer.path") ?? "";
   if (customPath !== "") {
     if (!fs.existsSync(customPath)) {
       log(`ERROR: Custom LSP path does not exist: ${customPath}`);
@@ -169,10 +169,10 @@ export async function activate(
   };
 
   // Build initializationOptions from VS Code settings
-  const connectionString = config.get("database.connectionString", "");
-  const aiProvider = config.get("ai.provider", "");
-  const aiEndpoint = config.get("ai.endpoint", "http://localhost:11434/api/generate");
-  const aiModel = config.get("ai.model", "qwen2.5-coder:1.5b");
+  const connectionString = config.get<string>("database.connectionString") ?? "";
+  const aiProvider = config.get<string>("ai.provider") ?? "";
+  const aiEndpoint = config.get<string>("ai.endpoint") ?? "http://localhost:11434/api/generate";
+  const aiModel = config.get<string>("ai.model") ?? "qwen2.5-coder:1.5b";
 
   const initOptions: Record<string, unknown> = {};
   if (connectionString !== "") {
