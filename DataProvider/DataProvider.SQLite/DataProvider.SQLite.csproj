@@ -25,7 +25,7 @@
     <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.3" />
   </ItemGroup>
   <!-- Copy dependencies to output directory for source generator -->
   <Target Name="CopyDependenciesToOutputDirectory" BeforeTargets="Build">
