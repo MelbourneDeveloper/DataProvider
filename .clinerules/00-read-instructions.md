@@ -1,3 +1,4 @@
+<!-- agent-pmo:d75d5c8 -->
 # Single Source of Truth
 
 @CLAUDE.md

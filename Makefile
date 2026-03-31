@@ -1,12 +1,27 @@
+# agent-pmo:d75d5c8
 # =============================================================================
 # Standard Makefile — DataProvider
+# Cross-platform: Linux, macOS, Windows (via GNU Make)
 # All targets are language-agnostic. Add language-specific helpers below.
 # =============================================================================
 
-.PHONY: build test lint fmt fmt-check clean check ci coverage coverage-check
+.PHONY: build test lint fmt fmt-check clean check ci coverage coverage-check setup
 
-# Detect OS for platform-specific commands
-OS := $(shell uname -s)
+# -----------------------------------------------------------------------------
+# OS Detection — portable commands for Linux, macOS, and Windows
+# On Windows, run via GNU Make with PowerShell (e.g., make from Git Bash or
+# choco install make). The $(OS) variable is set to "Windows_NT" automatically.
+# -----------------------------------------------------------------------------
+ifeq ($(OS),Windows_NT)
+  SHELL := powershell.exe
+  .SHELLFLAGS := -NoProfile -Command
+  RM = Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+  MKDIR = New-Item -ItemType Directory -Force
+  HOME ?= $(USERPROFILE)
+else
+  RM = rm -rf
+  MKDIR = mkdir -p
+endif
 
 # Coverage threshold (override in CI via env var or per-repo)
 COVERAGE_THRESHOLD ?= 90
@@ -61,6 +76,12 @@ coverage-check:
 	@echo "==> Checking coverage thresholds..."
 	$(MAKE) _coverage_check
 
+## setup: Post-create dev environment setup (used by devcontainer)
+setup:
+	@echo "==> Setting up development environment..."
+	$(MAKE) _setup
+	@echo "==> Setup complete. Run 'make ci' to validate."
+
 # =============================================================================
 # LANGUAGE-SPECIFIC IMPLEMENTATIONS
 # DataProvider is a multi-language repo: C#/.NET (primary), Rust, TypeScript
@@ -81,6 +102,8 @@ _clean: _clean_dotnet _clean_rust _clean_ts
 _coverage: _coverage_dotnet
 
 _coverage_check: _coverage_check_dotnet
+
+_setup: _setup_dotnet _setup_ts
 
 # --- C#/.NET ---
 _build_dotnet:
@@ -104,8 +127,13 @@ _fmt_check_dotnet:
 	dotnet csharpier check .
 
 _clean_dotnet:
+ifeq ($(OS),Windows_NT)
+	Get-ChildItem -Recurse -Directory -Include bin,obj -Exclude lql-lsp-rust | Remove-Item -Recurse -Force
+	$(RM) TestResults
+else
 	find . -type d \( -name bin -o -name obj \) -not -path './Lql/lql-lsp-rust/*' | xargs rm -rf
-	rm -rf TestResults
+	$(RM) TestResults
+endif
 
 _coverage_dotnet:
 	dotnet test DataProvider.sln --configuration Release \
@@ -115,7 +143,9 @@ _coverage_dotnet:
 	  --verbosity normal
 	reportgenerator -reports:"TestResults/**/coverage.cobertura.xml" \
 	  -targetdir:coverage/html -reporttypes:Html
-ifeq ($(OS),Darwin)
+ifeq ($(OS),Windows_NT)
+	Start-Process coverage/html/index.html
+else ifeq ($(shell uname -s),Darwin)
 	open coverage/html/index.html
 else
 	xdg-open coverage/html/index.html
@@ -137,6 +167,10 @@ _coverage_check_dotnet:
 	    exit 1; \
 	  fi; \
 	fi
+
+_setup_dotnet:
+	dotnet restore
+	dotnet tool restore
 
 # --- RUST (LQL LSP) ---
 _build_rust:
@@ -166,7 +200,10 @@ _lint_ts:
 	cd Lql/LqlExtension && npm run lint
 
 _clean_ts:
-	rm -rf Lql/LqlExtension/node_modules Lql/LqlExtension/out
+	$(RM) Lql/LqlExtension/node_modules Lql/LqlExtension/out
+
+_setup_ts:
+	cd Lql/LqlExtension && npm install --no-audit --no-fund
 
 # =============================================================================
 # HELP
@@ -183,3 +220,4 @@ help:
 	@echo "  ci             - lint + test + build (full CI)"
 	@echo "  coverage       - Generate and open coverage report"
 	@echo "  coverage-check - Assert coverage thresholds"
+	@echo "  setup          - Post-create dev environment setup"
