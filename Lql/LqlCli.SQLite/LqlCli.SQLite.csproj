@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <PublishAot>false</PublishAot>
@@ -16,5 +15,4 @@
   <ItemGroup>
     <ProjectReference Include="../Lql.SQLite/Lql.SQLite.csproj" />
   </ItemGroup>
-
 </Project>

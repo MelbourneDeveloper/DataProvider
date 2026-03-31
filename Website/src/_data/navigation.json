@@ -23,7 +23,8 @@
         { "text": "F# Type Provider", "url": "https://lql.dev#fsharp", "external": true },
         { "text": "Sync", "url": "/docs/sync/" },
         { "text": "Migrations", "url": "/docs/migrations/" },
-        { "text": "Gatekeeper", "url": "/docs/gatekeeper/" }
+        { "text": "Gatekeeper", "url": "/docs/gatekeeper/" },
+        { "text": "Healthcare Samples", "url": "/docs/samples/" }
       ]
     }
   ],
@@ -43,7 +44,8 @@
       "items": [
         { "text": "Getting Started", "url": "/docs/getting-started/" },
         { "text": "API Reference", "url": "/apidocs/" },
-        { "text": "LQL", "url": "/docs/lql/" }
+        { "text": "LQL", "url": "/docs/lql/" },
+        { "text": "Healthcare Samples", "url": "/docs/samples/" }
       ]
     },
     {

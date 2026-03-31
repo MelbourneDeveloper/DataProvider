@@ -2,7 +2,6 @@ namespace Selecta;
 
 // Algebraic data type. Closed Hierarchy.
 
-
 /// <summary>
 /// Represents a closed set of SQL comparison operators (ADT).
 /// </summary>

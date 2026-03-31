@@ -1,0 +1,22 @@
+{
+  "name": "DataProvider (C#/.NET)",
+  "image": "mcr.microsoft.com/devcontainers/dotnet:1-9.0",
+  "remoteUser": "vscode",
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+        "usernamehw.errorlens",
+        "csharpier.csharpier-vscode"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "[csharp]": {
+          "editor.defaultFormatter": "csharpier.csharpier-vscode"
+        }
+      }
+    }
+  }
+}

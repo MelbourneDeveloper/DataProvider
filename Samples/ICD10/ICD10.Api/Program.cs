@@ -369,40 +369,40 @@ app.MapPost(
             var achiCmd = conn.CreateCommand();
             await using (achiCmd.ConfigureAwait(false))
             {
-            achiCmd.CommandText = """
-            SELECT c."code", c."shortdescription", c."longdescription",
-                   1 - (e."embedding"::vector <=> @queryVector::vector) as similarity
-            FROM achi_code c
-            JOIN achi_code_embedding e ON c."id" = e."codeid"
-            ORDER BY e."embedding"::vector <=> @queryVector::vector
-            LIMIT @limit
-            """;
-            achiCmd.Parameters.AddWithValue("@queryVector", vectorString);
-            achiCmd.Parameters.AddWithValue("@limit", limit);
+                achiCmd.CommandText = """
+                SELECT c."code", c."shortdescription", c."longdescription",
+                       1 - (e."embedding"::vector <=> @queryVector::vector) as similarity
+                FROM achi_code c
+                JOIN achi_code_embedding e ON c."id" = e."codeid"
+                ORDER BY e."embedding"::vector <=> @queryVector::vector
+                LIMIT @limit
+                """;
+                achiCmd.Parameters.AddWithValue("@queryVector", vectorString);
+                achiCmd.Parameters.AddWithValue("@limit", limit);
 
-            var achiReader = await achiCmd.ExecuteReaderAsync().ConfigureAwait(false);
-            await using (achiReader.ConfigureAwait(false))
-            {
-                while (await achiReader.ReadAsync().ConfigureAwait(false))
+                var achiReader = await achiCmd.ExecuteReaderAsync().ConfigureAwait(false);
+                await using (achiReader.ConfigureAwait(false))
                 {
-                    achiResults.Add(
-                        new SearchResult(
-                            Code: achiReader.GetString(0),
-                            Description: achiReader.GetString(1),
-                            LongDescription: achiReader.GetString(2),
-                            Confidence: achiReader.GetDouble(3),
-                            CodeType: "ACHI",
-                            Chapter: "",
-                            ChapterTitle: "",
-                            Category: "",
-                            InclusionTerms: "",
-                            ExclusionTerms: "",
-                            CodeAlso: "",
-                            CodeFirst: ""
-                        )
-                    );
+                    while (await achiReader.ReadAsync().ConfigureAwait(false))
+                    {
+                        achiResults.Add(
+                            new SearchResult(
+                                Code: achiReader.GetString(0),
+                                Description: achiReader.GetString(1),
+                                LongDescription: achiReader.GetString(2),
+                                Confidence: achiReader.GetDouble(3),
+                                CodeType: "ACHI",
+                                Chapter: "",
+                                ChapterTitle: "",
+                                Category: "",
+                                InclusionTerms: "",
+                                ExclusionTerms: "",
+                                CodeAlso: "",
+                                CodeFirst: ""
+                            )
+                        );
+                    }
                 }
-            }
             } // achiCmd disposed here
         }
 

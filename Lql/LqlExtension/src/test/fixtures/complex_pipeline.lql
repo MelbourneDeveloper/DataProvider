@@ -1,0 +1,20 @@
+-- Complex pipeline with joins, aggregation, and window functions
+let completed_orders =
+    users
+    |> join(orders, on = users.id = orders.user_id)
+    |> filter(fn(row) => row.orders.status = 'completed')
+
+let summary =
+    completed_orders
+    |> group_by(orders.user_id)
+    |> select(
+        orders.user_id,
+        count(*) as order_count,
+        sum(orders.total) as total_spent,
+        avg(orders.total) as avg_order,
+        max(orders.total) as max_order
+    )
+    |> having(fn(g) => count(*) > 2)
+    |> order_by(total_spent desc)
+
+summary |> limit(10)

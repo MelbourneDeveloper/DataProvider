@@ -3,6 +3,7 @@ layout: layouts/blog.njk
 title: Connecting to SQL Server with DataProvider
 description: How to connect to SQL Server using the DataProvider toolkit.
 date: 2024-04-08
+dateModified: 2024-04-08
 author: DataProvider Team
 tags:
   - .NET

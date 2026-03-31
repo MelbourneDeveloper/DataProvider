@@ -19,7 +19,7 @@ public static class SyncSchemaDefinition
     /// Gets the initial sync state values to insert after schema creation.
     /// </summary>
     public static IReadOnlyList<(string Key, string Value)> InitialStateValues { get; } =
-        [("origin_id", ""), ("last_server_version", "0"), ("last_push_version", "0")];
+    [("origin_id", ""), ("last_server_version", "0"), ("last_push_version", "0")];
 
     private static SchemaDefinition BuildSchema() =>
         Schema

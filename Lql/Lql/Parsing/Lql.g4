@@ -41,7 +41,15 @@ partitionClause
     ;
 
 orderClause
-    : ORDER BY argList
+    : ORDER BY orderByArgList
+    ;
+
+orderByArgList
+    : orderByArg (',' orderByArg)*
+    ;
+
+orderByArg
+    : (arithmeticExpr | functionCall | qualifiedIdent | IDENT) orderDirection?
     ;
 
 lambdaExpr
@@ -94,7 +102,7 @@ arithmeticFactor
     ;
 
 functionCall
-    : IDENT '(' (DISTINCT? argList)? ')'
+    : IDENT '(' (DISTINCT? argList)? ')' (OVER '(' windowSpec ')')?
     ;
 
 namedArg

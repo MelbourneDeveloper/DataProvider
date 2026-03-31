@@ -160,8 +160,7 @@ public static class Program
 
             switch (arg)
             {
-                case "--assembly"
-                or "-a":
+                case "--assembly" or "-a":
                     if (i + 1 >= args.Length)
                     {
                         return new ParseResult.ParseError("--assembly requires a path argument");

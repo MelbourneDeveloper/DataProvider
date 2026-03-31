@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <IsTestProject>true</IsTestProject>
@@ -26,5 +25,4 @@
     <ProjectReference Include="..\Scheduling.Api\Scheduling.Api.csproj" />
     <ProjectReference Include="..\..\Shared\Authorization\Authorization.csproj" />
   </ItemGroup>
-
 </Project>

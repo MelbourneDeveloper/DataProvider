@@ -38,7 +38,8 @@ internal static class MappingConfigParser
                 dto.Mappings?.Select(m => ConvertMapping(m, logger))
                     .Where(m => m is not null)
                     .Cast<TableMapping>()
-                    .ToList() ?? [];
+                    .ToList()
+                ?? [];
 
             var unmappedBehavior = dto.UnmappedTableBehavior switch
             {
@@ -96,7 +97,8 @@ internal static class MappingConfigParser
             dto.ColumnMappings?.Select(ConvertColumnMapping)
                 .Where(c => c is not null)
                 .Cast<ColumnMapping>()
-                .ToList() ?? [];
+                .ToList()
+            ?? [];
 
         var excludedColumns = dto.ExcludedColumns ?? [];
 
@@ -184,7 +186,8 @@ internal static class MappingConfigParser
             dto.ColumnMappings?.Select(ConvertColumnMapping)
                 .Where(c => c is not null)
                 .Cast<ColumnMapping>()
-                .ToList() ?? [];
+                .ToList()
+            ?? [];
 
         return new TargetConfig(dto.Table, columns);
     }

@@ -15,6 +15,13 @@
         "h5"
       ],
       "rollForward": false
+    },
+    "csharpier": {
+      "version": "1.2.6",
+      "commands": [
+        "csharpier"
+      ],
+      "rollForward": false
     }
   }
 }

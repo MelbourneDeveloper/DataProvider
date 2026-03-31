@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Sync</RootNamespace>
@@ -19,5 +18,4 @@
     <ProjectReference Include="..\..\Lql\Lql\Lql.csproj" />
     <ProjectReference Include="..\..\Migration\Migration\Migration.csproj" />
   </ItemGroup>
-
 </Project>

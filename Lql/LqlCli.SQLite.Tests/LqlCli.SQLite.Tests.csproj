@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <IsTestProject>true</IsTestProject>
     <CodeAnalysisRuleSet>TestingRuleset.ruleset</CodeAnalysisRuleSet>
@@ -18,5 +17,4 @@
   <ItemGroup>
     <ProjectReference Include="../LqlCli.SQLite/LqlCli.SQLite.csproj" />
   </ItemGroup>
-
 </Project>

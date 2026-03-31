@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Library</OutputType>
@@ -21,6 +20,7 @@
     <PackageReference Include="Microsoft.Playwright" Version="1.50.0" />
     <PackageReference Include="Npgsql" Version="9.0.2" />
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.3.0" />
+    <PackageReference Include="Microsoft.Bcl.Memory" Version="10.0.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,12 +33,15 @@
 
   <!-- Copy Dashboard.Web wwwroot for Playwright tests -->
   <ItemGroup>
-    <None Include="../Dashboard.Web/wwwroot/**/*" CopyToOutputDirectory="PreserveNewest" LinkBase="wwwroot" />
+    <None
+      Include="../Dashboard.Web/wwwroot/**/*"
+      CopyToOutputDirectory="PreserveNewest"
+      LinkBase="wwwroot"
+    />
   </ItemGroup>
 
   <!-- Ensure xunit.runner.json is copied to output directory -->
   <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
-
 </Project>

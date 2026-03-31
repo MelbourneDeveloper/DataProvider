@@ -10,8 +10,84 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
+  # ── Build LSP binaries for each platform ──────────────────────────────────
+  build-lsp:
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: lql-lsp-linux-x64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact: lql-lsp-darwin-x64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact: lql-lsp-darwin-arm64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: lql-lsp-windows-x64.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build LSP binary
+        working-directory: Lql/lql-lsp-rust
+        run: cargo build --release --target ${{ matrix.target }} -p lql-lsp
+
+      - name: Rename binary (Unix)
+        if: runner.os != 'Windows'
+        run: cp Lql/lql-lsp-rust/target/${{ matrix.target }}/release/lql-lsp ${{ matrix.artifact }}
+
+      - name: Rename binary (Windows)
+        if: runner.os == 'Windows'
+        run: cp Lql/lql-lsp-rust/target/${{ matrix.target }}/release/lql-lsp.exe ${{ matrix.artifact }}
+
+      - name: Upload LSP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
+
+  # ── Build VSIX (no bundled binaries) ──────────────────────────────────────
+  build-vsix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build VSIX
+        working-directory: Lql/LqlExtension
+        run: |
+          npm install --no-audit --no-fund
+          npm run compile
+          npx vsce package --no-git-tag-version --no-update-package-json "${{ steps.version.outputs.VERSION }}"
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lql-vsix
+          path: Lql/LqlExtension/*.vsix
+
+  # ── Publish NuGet packages ────────────────────────────────────────────────
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:
@@ -63,10 +139,39 @@ jobs:
       - name: Push to NuGet
         run: dotnet nuget push "./nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
 
+      - name: Upload NuGet artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nupkgs
+          path: ./nupkgs/*.nupkg
+
+  # ── Create GitHub Release with all artifacts ──────────────────────────────
+  release:
+    needs: [publish, build-lsp, build-vsix]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect release assets
+        run: |
+          mkdir -p release-assets
+          cp artifacts/nupkgs/*.nupkg release-assets/
+          cp artifacts/lql-lsp-linux-x64/lql-lsp-linux-x64 release-assets/
+          cp artifacts/lql-lsp-darwin-x64/lql-lsp-darwin-x64 release-assets/
+          cp artifacts/lql-lsp-darwin-arm64/lql-lsp-darwin-arm64 release-assets/
+          cp artifacts/lql-lsp-windows-x64.exe/lql-lsp-windows-x64.exe release-assets/
+          cp artifacts/lql-vsix/*.vsix release-assets/
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ./nupkgs/*.nupkg
+          files: release-assets/*
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -6,7 +6,7 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <NoWarn>CA1591;CA1515;CA2007;CA1822;CA2100;CA1063;CA1816;CA1001;EPC12;CA1849;CS1591;RS1035</NoWarn>
+    <NoWarn>CA1591;CA1515;CA2007;CA1822;CA2100;CA1063;CA1816;CA1001;EPC12;CA1849;CS1591;RS1035;CA1501</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

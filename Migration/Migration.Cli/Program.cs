@@ -224,8 +224,7 @@ public static class Program
 
             switch (arg)
             {
-                case "--schema"
-                or "-s":
+                case "--schema" or "-s":
                     if (i + 1 >= args.Length)
                     {
                         return new ParseResult.Failure("--schema requires a path argument");

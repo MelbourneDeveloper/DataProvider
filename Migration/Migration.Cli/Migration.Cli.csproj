@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>Migration.Cli</RootNamespace>
@@ -20,5 +19,4 @@
     <ProjectReference Include="..\Migration.SQLite\Migration.SQLite.csproj" />
     <ProjectReference Include="..\Migration.Postgres\Migration.Postgres.csproj" />
   </ItemGroup>
-
 </Project>
