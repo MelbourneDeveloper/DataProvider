@@ -220,7 +220,7 @@ jobs:
   postgres-tests:
     name: Postgres Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     needs: [lint, changes]
     if: needs.changes.outputs.postgres == 'true'
     services:
@@ -237,18 +237,16 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+    env:
+      # Prevent MSBuild server deadlocks when custom targets invoke dotnet run
+      DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER: 1
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: |
-            8.0.x
-            ${{ env.DOTNET_VERSION }}
-
-      - name: Restore .NET tools
-        run: dotnet tool restore
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
@@ -257,6 +255,11 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
+
+      - name: Build CLI tools (needed by MSBuild code generation targets)
+        run: |
+          dotnet build Migration/Migration.Cli -c Debug
+          dotnet build DataProvider/DataProvider.SQLite.Cli -c Debug
 
       - name: Test Gatekeeper
         run: dotnet test Gatekeeper/Gatekeeper.Api.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
@@ -290,7 +293,7 @@ jobs:
     name: ICD10 Tests
     runs-on: ubuntu-latest
     # TIMEOUT EXCEPTION: ICD10 builds Docker image for embedding service + waits up to 90s for model load
-    timeout-minutes: 15
+    timeout-minutes: 20
     needs: [lint, changes]
     if: needs.changes.outputs.icd10 == 'true'
     services:
@@ -307,6 +310,9 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+    env:
+      # Prevent MSBuild server deadlocks when custom targets invoke dotnet run
+      DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER: 1
     steps:
       - uses: actions/checkout@v4
 
@@ -352,6 +358,12 @@ jobs:
             echo "Attempt $i/90 - waiting..."
             sleep 5
           done
+
+      - name: Build CLI tools (needed by MSBuild code generation targets)
+        run: |
+          dotnet build Migration/Migration.Cli -c Debug
+          dotnet build DataProvider/DataProvider.SQLite.Cli -c Debug
+          dotnet build Lql/LqlCli.SQLite -c Debug
 
       - name: Test ICD10
         run: |
