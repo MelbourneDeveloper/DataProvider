@@ -1,244 +1,337 @@
 # Lambda Query Language (LQL) VS Code Extension
 
-A comprehensive VS Code extension providing language support for Lambda Query Language (LQL) with syntax highlighting, IntelliSense, error checking, and more.
+A VS Code extension providing full language support for Lambda Query Language (LQL) — powered by a Rust LSP server with ANTLR-generated parser, real database schema IntelliSense, and optional AI-powered completions.
+
+## Architecture
+
+```
+VS Code Extension (TypeScript)
+    │
+    └── stdio JSON-RPC ──▶ lql-lsp (Rust binary)
+                                │
+                                ├── lql-parser (ANTLR4 grammar → Rust)
+                                ├── lql-analyzer (completions, hover, diagnostics, schema)
+                                └── tokio-postgres (live database schema introspection)
+```
+
+The LSP server is a native Rust binary communicating over stdio using the Language Server Protocol. The parser is generated from `Lql.g4` using ANTLR4 targeting Rust via the `antlr-rust` crate.
 
 ## Features
 
-### 🎨 Syntax Highlighting
-- Full syntax highlighting for LQL files (`.lql`)
-- Custom dark theme optimized for LQL
-- Color-coded keywords, operators, functions, and data types
+### IntelliSense — Schema-Aware Completions
 
-### 🧠 IntelliSense & Auto-completion
-- Smart auto-completion for LQL keywords and functions
-- Context-aware suggestions
-- Function signatures and documentation on hover
+Completions are context-aware and sourced from three layers:
 
-### 🔍 Error Detection & Validation
-- Real-time syntax error detection
-- Pipeline operator spacing validation
-- Bracket matching and validation
-- Unknown function detection
+| Layer | Priority | What it provides |
+|-------|----------|-----------------|
+| **Schema (database)** | Columns: 0, Tables: 4 | Real table and column names from your database |
+| **Language** | Pipeline: 1, Functions: 2, Keywords: 3 | `select`, `filter`, `join`, `count`, `sum`, etc. |
+| **AI (optional)** | 6 | Custom model-generated suggestions |
 
-### 📝 Code Formatting
-- Automatic code formatting with proper indentation
-- Pipeline operator alignment
-- Bracket and parentheses formatting
+Trigger characters: `.` `|` `>` `(` `space`
 
-### 🛠️ Additional Features
-- Code snippets for common LQL patterns
-- Command palette integration
-- SQL preview for compiled LQL code
-- Language server protocol (LSP) support
+### IntelliPrompt — Dot-Triggered Column Completions
 
-## Installation
+Type a table name followed by `.` and the LSP returns real columns from the database schema:
 
-### From VS Code Marketplace
-1. Open VS Code
-2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "Lambda Query Language"
-4. Click Install
+```
+customers.  →  id (uuid, PK, NOT NULL)
+               name (text, NOT NULL)
+               email (text, NOT NULL)
+               created_at (timestamp, NOT NULL)
+```
 
-### Manual Installation
-1. Clone this repository
-2. Run `npm install` in the extension directory
-3. Run `npm run compile` to build the extension
-4. Press F5 to launch a new VS Code window with the extension loaded
+Column completions include SQL type, nullability, and primary key indicators. Prefix filtering works — typing `customers.na` narrows to just `name`.
 
-## Usage
+### Hover
 
-### File Extensions
-The extension automatically activates for files with the following extensions:
-- `.lql` - Lambda Query Language files
-- `.lql` - Lambda Query Language files
+- **Pipeline operations**: Rich Markdown with signature, description, and example
+- **Aggregate/string/math functions**: Full documentation
+- **Table names**: All columns with types displayed
+- **Qualified names** (`Table.Column`): Column type, nullability, PK status from live schema
+- **Unknown columns**: Shows available columns on the table
 
-### Commands
-Access these commands via the Command Palette (Ctrl+Shift+P):
+### Diagnostics
 
-- **LQL: Format Document** - Format the current LQL document
-- **LQL: Validate Document** - Validate the current LQL document
-- **LQL: Show Compiled SQL** - Show the compiled SQL for the current LQL code
+- Real-time syntax error detection from ANTLR parse
+- Semantic analysis (unknown functions, pipeline validation)
+- Errors include line/column ranges for inline squiggles
 
-### Code Snippets
-Type these prefixes and press Tab to insert code snippets:
+### Document Symbols
 
-- `select` - Basic select statement
-- `selectf` - Select with filter
-- `join` - Join two tables
-- `groupby` - Group by with aggregation
-- `orderby` - Order by clause
-- `let` - Let binding
-- `insert` - Insert statement
-- `update` - Update statement
-- `union` - Union query
-- `case` - Case expression
-- `lambda` - Lambda function
+- Extracts `let` bindings as document symbols with correct source locations
 
-## Configuration
+### Formatting
 
-Configure the extension through VS Code settings:
+- Automatic indentation of pipeline operators
+- Bracket-aware indent/dedent
+
+## Database Connection
+
+The LSP connects to a real database to power schema-aware features. Connection is resolved in order:
+
+1. `initializationOptions.connectionString` (from VS Code settings)
+2. `LQL_CONNECTION_STRING` environment variable
+3. `DATABASE_URL` environment variable
+
+### Supported Connection String Formats
+
+**libpq** (native):
+```
+host=localhost dbname=mydb user=postgres password=secret
+```
+
+**Npgsql** (.NET style — auto-converted):
+```
+Host=localhost;Database=mydb;Username=postgres;Password=secret
+```
+
+**URI**:
+```
+postgres://postgres:secret@localhost/mydb
+```
+
+### Schema Introspection
+
+On startup, the LSP queries `information_schema.columns` joined with primary key constraints to discover:
+- All tables in the `public` schema
+- Column names, SQL types, nullability
+- Primary key membership
+
+Timeouts: 10s connection, 30s query. Schema is cached in memory using `Arc` for lock-free concurrent reads.
+
+### Graceful Degradation
+
+When no database is available, the LSP still provides full keyword, function, and pipeline completions. Schema-dependent features (table/column completions, qualified hover) are simply omitted.
+
+## AI Completion Provider
+
+The LSP has a pluggable AI completion integration with a **built-in Ollama provider** for local models and a trait for custom providers.
+
+### Built-in: Ollama Provider
+
+The LSP ships with a real Ollama-backed AI provider. Set `provider: "ollama"` and it calls your local Ollama instance with full context:
+
+- **LQL language reference** — compiled into the binary, sent as system context
+- **Full database schema** — table names, column names, types, PK/nullability constraints
+- **Current file content** — the full document being edited
+- **Cursor context** — line, column, prefix being typed
 
 ```json
 {
-    "lql.languageServer.enabled": true,
-    "lql.languageServer.trace": "off",
-    "lql.validation.enabled": true,
-    "lql.formatting.enabled": true
+  "initializationOptions": {
+    "connectionString": "host=localhost dbname=mydb user=postgres password=secret",
+    "aiProvider": {
+      "provider": "ollama",
+      "endpoint": "http://localhost:11434/api/generate",
+      "model": "qwen2.5-coder:1.5b",
+      "timeoutMs": 3000,
+      "enabled": true
+    }
+  }
 }
 ```
 
-### Settings
-
-- `lql.languageServer.enabled` - Enable/disable the LQL language server
-- `lql.languageServer.trace` - Set language server trace level (off, messages, verbose)
-- `lql.validation.enabled` - Enable/disable LQL validation
-- `lql.formatting.enabled` - Enable/disable LQL code formatting
-
-## Language Features
-
-### Supported LQL Syntax
-
-#### Query Operations
-- `select` - Project columns
-- `filter` - Filter rows
-- `join` - Join tables
-- `group_by` - Group rows
-- `order_by` - Order rows
-- `having` - Filter groups
-- `limit` - Limit results
-- `offset` - Skip rows
-- `union` - Union queries
-
-#### Aggregate Functions
-- `count` - Count rows
-- `sum` - Sum values
-- `avg` - Average values
-- `max` - Maximum value
-- `min` - Minimum value
-
-#### String Functions
-- `concat` - Concatenate strings
-- `substring` - Extract substring
-- `length` - String length
-- `trim` - Trim whitespace
-- `upper` - Convert to uppercase
-- `lower` - Convert to lowercase
-
-#### Math Functions
-- `round` - Round number
-- `floor` - Floor function
-- `ceil` - Ceiling function
-- `abs` - Absolute value
-- `sqrt` - Square root
-
-#### Pipeline Operator
-- `|>` - Pipeline data flow
-
-#### Lambda Functions
-- `fn param => expression` - Lambda function syntax
-- `let variable = value in expression` - Variable binding
-
-## Example LQL Code
-
-```lql
--- Simple select with filter
-users
-|> filter (age > 18)
-|> select name, email, age
-
--- Join with aggregation
-let adult_users = users |> filter (age >= 18) in
-orders
-|> join adult_users on orders.user_id = adult_users.id
-|> group_by adult_users.name
-|> select adult_users.name, count(*) as order_count, sum(orders.total) as total_spent
-|> order_by total_spent desc
-
--- Complex query with arithmetic
-products
-|> select 
-    name,
-    price,
-    price * 0.1 as tax,
-    price + (price * 0.1) as total_price
-|> filter (total_price > 100)
-|> order_by total_price desc
-```
-
-## Development
-
-### Building the Extension
+#### Quick Setup
 
 ```bash
-# Install dependencies
+cd Lql/lql-lsp-rust
+./setup-ai.sh                      # Default: qwen2.5-coder:1.5b
+./setup-ai.sh codellama:7b         # Or pick your model
+./setup-ai.sh deepseek-coder:1.3b  # Lightweight alternative
+```
+
+The setup script: installs Ollama, pulls the model, smoke-tests it, builds the LSP, prints VS Code config.
+
+#### Schema Context Sent to Model
+
+The AI receives the full schema in compact form:
+
+```
+customers(id uuid PK NOT NULL, name text NOT NULL, email text NOT NULL, created_at timestamp NOT NULL)
+orders(id uuid PK NOT NULL, customer_id uuid NOT NULL, total numeric NOT NULL, status text)
+order_items(id uuid PK NOT NULL, order_id uuid NOT NULL, product_id uuid NOT NULL, quantity integer NOT NULL)
+```
+
+This means the model can suggest completions that reference real column names and types.
+
+#### On/Off Toggle
+
+Set `"enabled": false` to disable AI completions entirely. The LSP still provides full schema + keyword completions.
+
+### Custom Provider Trait
+
+For providers beyond Ollama, implement the trait:
+
+```rust
+#[tower_lsp::async_trait]
+pub trait AiCompletionProvider: Send + Sync {
+    async fn complete(&self, context: &AiCompletionContext) -> Vec<CompletionItem>;
+}
+```
+
+### How It Works
+
+1. Configure via `initializationOptions.aiProvider`
+2. The LSP calls `provider.complete()` on every completion request
+3. AI results are **merged** with schema and keyword completions
+4. A timeout (default 2000ms) ensures slow AI never blocks the editor
+5. AI completions appear at priority 6 (after all schema/keyword items)
+
+### Configuration
+
+```json
+{
+  "initializationOptions": {
+    "connectionString": "host=localhost dbname=mydb user=postgres password=secret",
+    "aiProvider": {
+      "provider": "openai",
+      "endpoint": "https://api.openai.com/v1/completions",
+      "model": "gpt-4",
+      "apiKey": "sk-...",
+      "timeoutMs": 2000,
+      "enabled": true
+    }
+  }
+}
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `provider` | Yes | Provider identifier (`"openai"`, `"anthropic"`, `"ollama"`, `"custom"`, `"test"`) |
+| `endpoint` | Yes | API endpoint URL |
+| `model` | No | Model identifier (default: `"default"`) |
+| `apiKey` | No | API key for authentication |
+| `timeoutMs` | No | Max wait for AI response in ms (default: `2000`) |
+| `enabled` | No | Enable/disable AI completions (default: `true`) |
+
+### Context Passed to AI
+
+The `AiCompletionContext` includes:
+- `document_text` — full file content
+- `line`, `column` — cursor position
+- `line_prefix` — text before cursor on current line
+- `word_prefix` — the word currently being typed
+- `file_uri` — URI of the file
+- `available_tables` — table names from the database schema (if loaded)
+- `schema_description` — full schema with column types, PK, nullability (e.g., `customers(id uuid PK NOT NULL, name text NOT NULL)`)
+
+### LQL Reference Doc
+
+The file `crates/lql-reference.md` is compiled into the binary via `include_str!` and sent as system context to the Ollama provider. It contains the complete LQL grammar, all operations, functions, operators, and annotated examples — optimized for tight LLM context windows.
+
+### Built-in Test Providers
+
+For E2E testing, the LSP includes two built-in providers:
+
+- `provider: "test"` — Returns deterministic AI completions (`ai_suggest_filter`, `ai_suggest_join`, `ai_suggest_aggregate`) plus table-specific suggestions based on `available_tables`. Also emits `ai_schema_context` with the full schema description to prove schema flows through
+- `provider: "test_slow"` — Sleeps longer than the configured timeout to prove timeout enforcement works
+
+### Recommended Models
+
+| Model | Size | Speed | Quality | Use Case |
+|-------|------|-------|---------|----------|
+| `qwen2.5-coder:1.5b` | 1.5B | Fast | Good | Default — best speed/quality tradeoff |
+| `deepseek-coder:1.3b` | 1.3B | Fast | Good | Alternative lightweight model |
+| `codellama:7b` | 7B | Medium | Better | When you have GPU and want higher quality |
+| `qwen2.5-coder:7b` | 7B | Medium | Better | Larger Qwen for better understanding |
+
+## Building
+
+### Language Server (Rust)
+
+```bash
+cd Lql/lql-lsp-rust
+cargo build --release
+# Binary: target/release/lql-lsp
+```
+
+### VS Code Extension (TypeScript)
+
+```bash
+cd Lql/LqlExtension
 npm install
-
-# Compile TypeScript
-npm run compile
-
-# Watch for changes
-npm run watch
-
-# Package extension
-npm run package
+npx tsc --project tsconfig.json
 ```
 
-### Language Server
+## Testing
 
-The extension includes a Language Server Protocol (LSP) implementation:
+76+ E2E tests verify the LSP via real stdio JSON-RPC protocol — zero mocks.
 
 ```bash
-# Build the language server
-cd server
-npm install
-npm run compile
+cd Lql/LqlExtension
+npx tsc --project tsconfig.json
+npx mocha --timeout 30000 out/test/suite/lsp-protocol.test.js
 ```
 
-### Testing
+### Test Breakdown
+
+| Suite | Count | What it proves |
+|-------|-------|---------------|
+| Core LSP | 37 | Completions, hover, diagnostics, symbols, formatting, shutdown |
+| Schema-Aware | 10 | Real PostgreSQL: table/column completions, qualified hover, graceful degradation |
+| AI Config | 4 | Config parsing, enabled/disabled logging, coexistence with keywords |
+| AI Pipeline | 13 | Full pipeline: provider activation, AI items in results, snippet kinds, prefix filtering, timeout enforcement, schema+AI merge, schema context proof, consistency |
+| **Real AI Model** | **12** | **Real Ollama + real PostgreSQL + real LSP: completions, schema-aware AI, join queries, syntax errors, valid queries, hover, full pipeline merge, on/off toggle, live editing** |
+
+### Running Schema Tests
+
+Schema tests require a local PostgreSQL instance with the `lql_test` database:
 
 ```bash
-# Run tests
-npm test
+# Start PostgreSQL
+pg_ctlcluster 16 main start
 
-# Run linting
-npm run lint
+# Tests auto-detect via LQL_CONNECTION_STRING or DATABASE_URL
+# The test suite passes connection strings via initializationOptions
 ```
 
-## Contributing
+### Running Real AI Model Tests
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+These tests require Ollama running with a model pulled:
 
-## F# Type Provider
+```bash
+# Set up Ollama (one time)
+cd Lql/lql-lsp-rust
+./setup-ai.sh
 
-For F# projects, LQL also offers compile-time validation through a type provider. Invalid LQL queries cause compilation errors rather than runtime failures.
+# Run real AI tests
+cd Lql/LqlExtension
+LQL_TEST_REAL_AI=1 npx mocha --timeout 60000 out/test/suite/lsp-protocol.test.js
 
-```fsharp
-open Lql
-
-// Validated at compile time
-type GetUsers = LqlCommand<"Users |> select(Users.Id, Users.Name)">
-type FilteredUsers = LqlCommand<"Users |> filter(fn(row) => row.Users.Age > 18) |> select(*)">
-
-// Access generated SQL
-let sql = GetUsers.Sql  // SQL string generated at compile time
+# Or with a specific model
+LQL_TEST_REAL_AI=1 OLLAMA_MODEL=codellama:7b npx mocha --timeout 60000 out/test/suite/lsp-protocol.test.js
 ```
 
-Install the type provider:
+The real AI tests prove:
+- Real Ollama model returns LQL-aware completions
+- Schema columns + AI suggestions coexist in results
+- Multi-line join queries get real completions
+- Syntax errors produce REAL error diagnostics with line/column
+- Valid LQL produces zero diagnostics
+- Hover on tables/columns returns real DB types
+- Full pipeline: real DB schema + real AI model + real LSP merged
+- `enabled: false` completely disables model calls
+- Live editing triggers updated diagnostics in real time
 
-```xml
-<PackageReference Include="Lql.TypeProvider.FSharp" Version="*" />
-```
+## Completion Priority Tiers
 
-See the [LQL documentation](../README.md) for full type provider details.
+| Priority | Kind | Source |
+|----------|------|--------|
+| 0 | Column | Database schema |
+| 1 | Pipeline | `select`, `filter`, `join`, etc. |
+| 2 | Function | `count`, `sum`, `avg`, `concat`, etc. |
+| 3 | Keyword | `let`, `fn`, `as`, `distinct`, etc. |
+| 4 | Table | Database schema |
+| 5 | Variable | `let` bindings from scope |
+| 6 | AI Snippet | AI provider suggestions |
+
+Completions are deduplicated by label and sorted by priority, then alphabetically within each tier.
+
+## File Extensions
+
+- `.lql` — Lambda Query Language files
 
 ## License
 
 MIT License - see LICENSE file for details.
-
-## Support
-
-For issues and feature requests, please visit our [GitHub repository](https://github.com/your-org/lambda-query-language).

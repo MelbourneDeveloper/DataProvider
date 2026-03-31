@@ -3,6 +3,7 @@ layout: layouts/blog.njk
 title: "LQL: How Lambda Query Language Simplifies .NET Development"
 description: A deep dive into LQL and its benefits for .NET data access, including the new F# Type Provider.
 date: 2024-04-14
+dateModified: 2024-04-14
 author: DataProvider Team
 tags:
   - .NET
@@ -72,4 +73,4 @@ Install it with:
 
 ## Getting Started
 
-Try LQL in our [interactive playground](/lql/) or check out the [documentation](/docs/lql/).
+Check out the [LQL documentation](/docs/lql/) to get started.

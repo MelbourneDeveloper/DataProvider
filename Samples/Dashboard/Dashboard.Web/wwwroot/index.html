@@ -1975,9 +1975,19 @@
               if (response.ok) {
                 const code = await response.json();
                 setSelectedCode(code);
-                setResults([]);
               } else {
-                throw new Error('Code not found');
+                // Exact code not found — try prefix/keyword search as fallback
+                const searchResponse = await fetch(`${ICD10_API}/api/icd10/codes?q=${encodeURIComponent(searchQuery)}&limit=50`);
+                if (searchResponse.ok) {
+                  const data = await searchResponse.json();
+                  if (data.length > 0) {
+                    setResults(data);
+                  } else {
+                    setError('No codes found');
+                  }
+                } else {
+                  setError('No codes found');
+                }
               }
             } else if (searchMode === 'semantic') {
               response = await fetch(`${ICD10_API}/api/search`, {
@@ -2026,7 +2036,6 @@
             if (response.ok) {
               const data = await response.json();
               setSelectedCode(data);
-              setResults([]);
             }
           } catch (err) {
             setError(err.message);
@@ -2058,16 +2067,19 @@
           React.createElement('div', { className: 'card mb-6', style: { padding: '24px' } },
             // Search Mode Tabs
             React.createElement('div', { style: { display: 'flex', gap: '8px', marginBottom: '16px' } },
-              React.createElement('button', {
+              React.createElement('span', {
                 className: `btn ${searchMode === 'keyword' ? 'btn-primary' : 'btn-secondary'}`,
+                role: 'button',
                 onClick: () => { setSearchMode('keyword'); setResults([]); setSelectedCode(null); }
               }, React.createElement(Icons.Search), ' Keyword Search'),
-              React.createElement('button', {
+              React.createElement('span', {
                 className: `btn ${searchMode === 'semantic' ? 'btn-primary' : 'btn-secondary'}`,
+                role: 'button',
                 onClick: () => { setSearchMode('semantic'); setResults([]); setSelectedCode(null); }
               }, React.createElement(Icons.Sparkles), ' AI Search'),
-              React.createElement('button', {
+              React.createElement('span', {
                 className: `btn ${searchMode === 'lookup' ? 'btn-primary' : 'btn-secondary'}`,
+                role: 'button',
                 onClick: () => { setSearchMode('lookup'); setResults([]); setSelectedCode(null); }
               }, React.createElement(Icons.Eye), ' Code Lookup')
             ),
@@ -2305,8 +2317,8 @@
               const [clinicalStatus, schedulingStatus, clinicalRecords, schedulingRecords] = await Promise.all([
                 fetchApi(`${CLINICAL_API}/sync/status`).catch(() => ({ status: 'error', service: 'Clinical.Api', pendingCount: 0, failedCount: 0, lastSyncTime: null })),
                 fetchApi(`${SCHEDULING_API}/sync/status`).catch(() => ({ status: 'error', service: 'Scheduling.Api', pendingCount: 0, failedCount: 0, lastSyncTime: null })),
-                fetchApi(`${CLINICAL_API}/sync/records`).catch(() => ({ records: [], total: 0 })),
-                fetchApi(`${SCHEDULING_API}/sync/records`).catch(() => ({ records: [], total: 0 }))
+                fetchApi(`${CLINICAL_API}/sync/records?pageSize=1000`).catch(() => ({ records: [], total: 0 })),
+                fetchApi(`${SCHEDULING_API}/sync/records?pageSize=1000`).catch(() => ({ records: [], total: 0 }))
               ]);
 
               setSyncServices([

@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <NoWarn>CA1591;CA1515;CA2007;CA1822;CA2100;CA1063;CA1816;CA1001;EPC12;CA1849;CS1591;RS1035</NoWarn>
+    <NoWarn>CA1591;CA1515;CA2007;CA1822;CA2100;CA1063;CA1816;CA1001;EPC12;CA1849;CS1591;RS1035;CA1501</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,7 +29,7 @@
     </PackageReference>
     <PackageReference Include="AvaloniaEdit.TextMate" Version="11.3.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.3" />
     <PackageReference Include="CsvHelper" Version="33.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="TextMateSharp.Grammars" Version="1.0.70" />

@@ -10,9 +10,16 @@
       "rollForward": false
     },
     "h5-compiler": {
-      "version": "24.11.53871",
+      "version": "26.3.64893",
       "commands": [
         "h5"
+      ],
+      "rollForward": false
+    },
+    "csharpier": {
+      "version": "1.2.6",
+      "commands": [
+        "csharpier"
       ],
       "rollForward": false
     }

@@ -4,5 +4,10 @@
     "dotnet.backgroundAnalysis.compilerDiagnosticsScope": "fullSolution",
     "code-runner.clearPreviousOutput": true,
     "code-runner.saveFileBeforeRun": true,
-    "code-runner.runInTerminal": true
+    "code-runner.runInTerminal": true,
+    "lql.database.connectionString": "/Users/christianfindlay/Documents/Code/DataProvider/Lql/lql-lsp-rust/test-schema.db",
+    "lql.ai.provider": "ollama",
+    "lql.ai.model": "qwen2.5-coder:1.5b",
+    "lql.ai.endpoint": "http://localhost:11434/api/generate",
+    "lql.languageServer.path": "/Users/christianfindlay/Documents/Code/DataProvider/Lql/lql-lsp-rust/target/release/lql-lsp"
 }

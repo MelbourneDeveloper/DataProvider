@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <NoWarn>CA1515;CA2100;RS1035;CA1508;CA2234</NoWarn>
@@ -39,23 +38,45 @@
 
   <!-- Create database from YAML using Migration.Cli -->
   <Target Name="CreateDatabaseSchema" BeforeTargets="TranspileLqlAndGenerateDataProvider">
-    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)..\..\..\Migration\Migration.Cli\Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/icd10-schema.yaml" --output "$(MSBuildProjectDirectory)/icd10.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
+    <Exec
+      Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)..\..\..\Migration\Migration.Cli\Migration.Cli.csproj&quot; -- --schema &quot;$(MSBuildProjectDirectory)/icd10-schema.yaml&quot; --output &quot;$(MSBuildProjectDirectory)/icd10.db&quot; --provider sqlite"
+      WorkingDirectory="$(MSBuildProjectDirectory)"
+      StandardOutputImportance="High"
+      StandardErrorImportance="High"
+    />
   </Target>
 
   <!-- Pre-compile: transpile LQL to SQL, then generate C# from SQL using external CLI -->
-  <Target Name="TranspileLqlAndGenerateDataProvider" BeforeTargets="BeforeCompile;CoreCompile" Inputs="$(MSBuildProjectDirectory)/DataProvider.json;@(AdditionalFiles);@(LqlFiles)" Outputs="$(MSBuildProjectDirectory)/Generated/.timestamp">
+  <Target
+    Name="TranspileLqlAndGenerateDataProvider"
+    BeforeTargets="BeforeCompile;CoreCompile"
+    Inputs="$(MSBuildProjectDirectory)/DataProvider.json;@(AdditionalFiles);@(LqlFiles)"
+    Outputs="$(MSBuildProjectDirectory)/Generated/.timestamp"
+  >
     <RemoveDir Directories="$(MSBuildProjectDirectory)/Generated" />
     <MakeDir Directories="$(MSBuildProjectDirectory)/Generated" />
     <ItemGroup>
       <LqlFiles Include="$(MSBuildProjectDirectory)/**/*.lql" />
     </ItemGroup>
     <Message Importance="High" Text="Transpiling LQL files (@(LqlFiles))" />
-    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)..\..\..\Lql\LqlCli.SQLite\LqlCli.SQLite.csproj" -- --input &quot;%(LqlFiles.Identity)&quot; --output &quot;%(LqlFiles.RootDir)%(LqlFiles.Directory)%(LqlFiles.Filename).generated.sql&quot;' Condition="'$(EnableLqlTranspile)' == 'true' and @(LqlFiles) != ''" WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' ContinueOnError="WarnAndContinue" />
-    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)..\..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj" -- --project-dir "$(MSBuildProjectDirectory)" --config "$(MSBuildProjectDirectory)/DataProvider.json" --out "$(MSBuildProjectDirectory)/Generated" --connection-type NpgsqlConnection' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' IgnoreExitCode='true' />
+    <Exec
+      Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)..\..\..\Lql\LqlCli.SQLite\LqlCli.SQLite.csproj&quot; -- --input &quot;%(LqlFiles.Identity)&quot; --output &quot;%(LqlFiles.RootDir)%(LqlFiles.Directory)%(LqlFiles.Filename).generated.sql&quot;"
+      Condition="'$(EnableLqlTranspile)' == 'true' and @(LqlFiles) != ''"
+      WorkingDirectory="$(MSBuildProjectDirectory)"
+      StandardOutputImportance="High"
+      StandardErrorImportance="High"
+      ContinueOnError="WarnAndContinue"
+    />
+    <Exec
+      Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)..\..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj&quot; -- --project-dir &quot;$(MSBuildProjectDirectory)&quot; --config &quot;$(MSBuildProjectDirectory)/DataProvider.json&quot; --out &quot;$(MSBuildProjectDirectory)/Generated&quot; --connection-type NpgsqlConnection"
+      WorkingDirectory="$(MSBuildProjectDirectory)"
+      StandardOutputImportance="High"
+      StandardErrorImportance="High"
+      IgnoreExitCode="true"
+    />
     <Touch Files="$(MSBuildProjectDirectory)/Generated/.timestamp" AlwaysCreate="true" />
     <ItemGroup>
       <Compile Include="$(MSBuildProjectDirectory)/Generated/**/*.g.cs" />
     </ItemGroup>
   </Target>
-
 </Project>

@@ -74,9 +74,9 @@ internal static class MappingEngine
         {
             return config.UnmappedTableBehavior switch
             {
-                UnmappedTableBehavior.Passthrough => new MappingSuccess(
-                    [CreateIdentityMappedEntry(entry)]
-                ),
+                UnmappedTableBehavior.Passthrough => new MappingSuccess([
+                    CreateIdentityMappedEntry(entry),
+                ]),
                 _ => new MappingSkipped($"No mapping for table {entry.TableName}"),
             };
         }
@@ -123,9 +123,9 @@ internal static class MappingEngine
             var targetPk = MapPrimaryKey(entry.PkValue, mapping.PkMapping);
             var mappedPayload = MapPayload(entry.Payload, mapping, logger);
 
-            return new MappingSuccess(
-                [new MappedEntry(targetTable, targetPk, mappedPayload, mapping.Id)]
-            );
+            return new MappingSuccess([
+                new MappedEntry(targetTable, targetPk, mappedPayload, mapping.Id),
+            ]);
         }
         catch (JsonException ex)
         {

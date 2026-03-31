@@ -10,4 +10,4 @@ SELECT
     ABS(SUM(sales_data.amount) - AVG(sales_data.amount)) AS deviation
 FROM sales_data
 GROUP BY sales_data.product_id
-HAVING COUNT(*) > 5 AND SUM(sales_data.amount) > 1000
+HAVING COUNT(*) > 5 AND ABS(sales_data.amount) > 1000
