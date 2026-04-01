@@ -842,27 +842,6 @@ public sealed class E2EFixture : IAsyncLifetime
     }
 
     /// <summary>
-    /// Waits for a service to be reachable (any HTTP response).
-    /// Used in local mode where services may be running but have DB issues.
-    /// </summary>
-    private static async Task WaitForServiceReachableAsync(string baseUrl, string endpoint)
-    {
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
-        for (var i = 0; i < 60; i++)
-        {
-            try
-            {
-                _ = await client.GetAsync($"{baseUrl}{endpoint}");
-                Console.WriteLine($"[E2E] Service reachable: {baseUrl}");
-                return;
-            }
-            catch { }
-            await Task.Delay(500);
-        }
-        throw new TimeoutException($"Service at {baseUrl} is not reachable");
-    }
-
-    /// <summary>
     /// Creates an authenticated HTTP client with test JWT token.
     /// </summary>
     public static HttpClient CreateAuthenticatedClient()

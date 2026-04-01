@@ -484,10 +484,8 @@ app.Run();
 // HELPER METHODS
 // ============================================================================
 
-/// <summary>
-/// Enriches a code record with derived hierarchy info when DB values are null.
-/// Uses Icd10Chapters to derive chapter/category from code prefix.
-/// </summary>
+// Enriches a code record with derived hierarchy info when DB values are null.
+// Uses Icd10Chapters to derive chapter/category from code prefix.
 static GetCodeByCode EnrichCodeWithDerivedHierarchy(GetCodeByCode code)
 {
     var (chapterNum, chapterTitle) = string.IsNullOrEmpty(code.ChapterNumber)
@@ -548,9 +546,7 @@ static object ToFhirProcedure(GetAchiCodeByCode code) =>
         Property = new[] { new { Code = "block", ValueString = code.BlockNumber } },
     };
 
-/// <summary>
-/// Enriches search result with derived hierarchy when DB values are null.
-/// </summary>
+// Enriches search result with derived hierarchy when DB values are null.
 static object EnrichSearchResult(SearchIcd10Codes code)
 {
     var codeValue = code.Code ?? "";

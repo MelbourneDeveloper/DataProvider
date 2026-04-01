@@ -121,6 +121,7 @@ public static class ReportEngine
             DataSourceType.Api => new DsError(
                 SqlError.Create("API data sources are not yet supported")
             ),
+            _ => new DsError(SqlError.Create($"Unknown data source type: {dataSource.Type}")),
         };
     }
 

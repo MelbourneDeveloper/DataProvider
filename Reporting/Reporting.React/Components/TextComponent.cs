@@ -18,12 +18,19 @@ namespace Reporting.React.Components
             object cssStyle = null
         )
         {
-            var baseClassName = style switch
+            string baseClassName;
+            switch (style)
             {
-                "heading" => "report-text-heading",
-                "caption" => "report-text-caption",
-                _ => "report-text-body",
-            };
+                case "heading":
+                    baseClassName = "report-text-heading";
+                    break;
+                case "caption":
+                    baseClassName = "report-text-caption";
+                    break;
+                default:
+                    baseClassName = "report-text-body";
+                    break;
+            }
             var className = cssClass != null ? baseClassName + " " + cssClass : baseClassName;
 
             return Div(

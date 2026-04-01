@@ -1,4 +1,4 @@
-<Project Sdk="h5.Target/24.11.53863">
+<Project Sdk="h5.Target/25.11.62725">
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>netstandard2.1</TargetFramework>
