@@ -1,5 +1,5 @@
 open Microsoft.Data.Sqlite
-open Nimblesite.Lql.Core
+open Lql
 
 // ✅ VALID LQL using TRUE type provider with static parameter
 type ValidQuery = LqlCommand<"Customer |> select(*)">

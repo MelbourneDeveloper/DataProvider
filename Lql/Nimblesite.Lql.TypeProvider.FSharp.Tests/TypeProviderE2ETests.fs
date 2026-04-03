@@ -4,7 +4,7 @@ open System
 open System.IO
 open Microsoft.Data.Sqlite
 open Xunit
-open Nimblesite.Lql.Core
+open Lql
 open Nimblesite.Lql.Core.TypeProvider
 open Nimblesite.Lql.TypeProvider.FSharp.Tests.Data
 

@@ -36,7 +36,7 @@
   <!-- Create database from YAML using Nimblesite.DataProvider.Migration.Cli -->
   <Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider">
     <Exec
-      Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)../../Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Cli/Nimblesite.DataProvider.Migration.Cli.csproj&quot; -- --schema &quot;$(MSBuildThisFileDirectory)../Nimblesite.Lql.TypeProvider.FSharp.Tests/typeprovider-test-schema.yaml&quot; --output &quot;$(MSBuildThisFileDirectory)../Nimblesite.Lql.TypeProvider.FSharp.Tests/typeprovider-test.db&quot; --provider sqlite"
+      Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)../../Migration/Nimblesite.DataProvider.Migration.Cli/Nimblesite.DataProvider.Migration.Cli.csproj&quot; -- --schema &quot;$(MSBuildThisFileDirectory)../Nimblesite.Lql.TypeProvider.FSharp.Tests/typeprovider-test-schema.yaml&quot; --output &quot;$(MSBuildThisFileDirectory)../Nimblesite.Lql.TypeProvider.FSharp.Tests/typeprovider-test.db&quot; --provider sqlite"
       WorkingDirectory="$(MSBuildProjectDirectory)"
       StandardOutputImportance="High"
       StandardErrorImportance="High"
@@ -55,7 +55,7 @@
     <MakeDir Directories="$(MSBuildProjectDirectory)/Generated" />
     <!-- Run SQLite generator CLI to emit .g.cs into Generated folder -->
     <Exec
-      Command="dotnet run --project $(MSBuildThisFileDirectory)../../Nimblesite.DataProvider.Core/Nimblesite.DataProvider.SQLite.Cli/Nimblesite.DataProvider.SQLite.Cli.csproj -- --project-dir &quot;$(MSBuildProjectDirectory)&quot; --config &quot;$(MSBuildProjectDirectory)/Nimblesite.DataProvider.Core.json&quot; --out &quot;$(MSBuildProjectDirectory)/Generated&quot;"
+      Command="dotnet run --project $(MSBuildThisFileDirectory)../../DataProvider/Nimblesite.DataProvider.SQLite.Cli/Nimblesite.DataProvider.SQLite.Cli.csproj -- --project-dir &quot;$(MSBuildProjectDirectory)&quot; --config &quot;$(MSBuildProjectDirectory)/Nimblesite.DataProvider.Core.json&quot; --out &quot;$(MSBuildProjectDirectory)/Generated&quot;"
       WorkingDirectory="$(MSBuildProjectDirectory)"
       StandardOutputImportance="High"
       StandardErrorImportance="High"
