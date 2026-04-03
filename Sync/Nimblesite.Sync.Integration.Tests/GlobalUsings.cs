@@ -1,3 +1,4 @@
+global using Nimblesite.Sync.Core;
 global using System.Text.Json;
 global using Microsoft.Data.Sqlite;
 global using Microsoft.Extensions.Logging;

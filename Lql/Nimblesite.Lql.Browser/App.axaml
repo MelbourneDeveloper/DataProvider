@@ -1,7 +1,7 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="Lql.Browser.App"
-             xmlns:local="using:Lql.Browser"
+             x:Class="Nimblesite.Lql.Browser.App"
+             xmlns:local="using:Nimblesite.Lql.Browser"
              RequestedThemeVariant="Default">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 

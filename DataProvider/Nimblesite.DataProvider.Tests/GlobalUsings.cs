@@ -1,3 +1,5 @@
+global using Nimblesite.DataProvider.Core;
+global using Nimblesite.DataProvider.Core.CodeGeneration;
 // Global usings for Nimblesite.DataProvider.Tests
 global using IntError = Outcome.Result<int, Selecta.SqlError>.Error<int, Selecta.SqlError>;
 // Result type aliases for tests

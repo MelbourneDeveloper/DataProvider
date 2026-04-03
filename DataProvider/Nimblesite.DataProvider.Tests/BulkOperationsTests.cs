@@ -1,4 +1,3 @@
-using Nimblesite.DataProvider.Core.CodeGeneration;
 using Xunit;
 
 namespace Nimblesite.DataProvider.Tests;

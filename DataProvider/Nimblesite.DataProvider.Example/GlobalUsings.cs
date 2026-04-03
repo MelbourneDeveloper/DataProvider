@@ -1,3 +1,4 @@
+global using Nimblesite.DataProvider.Core;
 global using Generated;
 global using Selecta;
 // Type aliases for Result types to reduce verbosity in Nimblesite.DataProvider.Example

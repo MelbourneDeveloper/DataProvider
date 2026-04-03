@@ -1,3 +1,4 @@
+global using Nimblesite.Sync.Core;
 global using Microsoft.AspNetCore.Hosting;
 global using Microsoft.AspNetCore.Mvc.Testing;
 global using Microsoft.Data.Sqlite;

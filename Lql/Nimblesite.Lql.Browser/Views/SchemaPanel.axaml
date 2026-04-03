@@ -2,9 +2,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:vm="using:Lql.Browser.ViewModels"
+             xmlns:vm="using:Nimblesite.Lql.Browser.ViewModels"
              mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="600"
-             x:Class="Lql.Browser.Views.SchemaPanel"
+             x:Class="Nimblesite.Lql.Browser.Views.SchemaPanel"
              x:DataType="vm:SchemaPanelViewModel">
     
     <Border Background="{StaticResource SchemaPanelBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="0,0,1,0">

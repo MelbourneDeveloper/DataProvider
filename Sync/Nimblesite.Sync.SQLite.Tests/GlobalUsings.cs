@@ -1,3 +1,4 @@
+global using Nimblesite.Sync.Core;
 global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.Logging.Abstractions;
 // Type aliases for Result types in tests
