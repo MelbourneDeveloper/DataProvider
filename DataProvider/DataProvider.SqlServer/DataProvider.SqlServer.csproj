@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!-- Package Information -->
-    <PackageId>DataProvider.SqlServer</PackageId>
+    <PackageId>MelbourneDev.DataProvider.SqlServer</PackageId>
     <Version>0.1.0-beta</Version>
     <Authors>ChristianFindlay</Authors>
     <Description>SQL Server source generator for DataProvider. Provides compile-time safe database access with automatic code generation from SQL files for SQL Server databases.</Description>

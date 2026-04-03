@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!-- Package Information -->
-    <PackageId>DataProvider</PackageId>
+    <PackageId>MelbourneDev.DataProvider</PackageId>
     <Authors>ChristianFindlay</Authors>
     <Description>A source generator that creates compile-time safe extension methods for database operations from SQL files. Generates strongly-typed C# code based on your SQL queries and database schema, ensuring type safety and eliminating runtime SQL errors.</Description>
     <PackageTags>source-generator;sql;database;compile-time-safety;code-generation;sqlite;sqlserver</PackageTags>

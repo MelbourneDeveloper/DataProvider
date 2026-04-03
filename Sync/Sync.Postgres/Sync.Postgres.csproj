@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Sync.Postgres</RootNamespace>
+    <PackageId>MelbourneDev.Sync.Postgres</PackageId>
     <NoWarn>$(NoWarn);</NoWarn>
   </PropertyGroup>
 

@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <PackageId>MelbourneDev.Gatekeeper</PackageId>
     <NoWarn>CA1515;CA2100;RS1035;CA1508;CA2234;CA1819;CA2007;EPC12</NoWarn>
   </PropertyGroup>
 

@@ -1,6 +1,0 @@
--- Get encounters for a patient
--- Parameters: @patientId
-fhir_Encounter
-|> filter(fn(row) => row.fhir_Encounter.PatientId = @patientId)
-|> select(fhir_Encounter.Id, fhir_Encounter.Status, fhir_Encounter.Class, fhir_Encounter.PatientId, fhir_Encounter.PractitionerId, fhir_Encounter.ServiceType, fhir_Encounter.ReasonCode, fhir_Encounter.PeriodStart, fhir_Encounter.PeriodEnd, fhir_Encounter.Notes, fhir_Encounter.LastUpdated, fhir_Encounter.VersionId)
-|> order_by(fhir_Encounter.PeriodStart desc)

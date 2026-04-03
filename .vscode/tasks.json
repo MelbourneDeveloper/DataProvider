@@ -40,95 +40,6 @@
         },
 
         // ═══════════════════════════════════════════════════════════════
-        // SAMPLES / DASHBOARD
-        // ═══════════════════════════════════════════════════════════════
-        {
-            "label": "Samples: Start All (Fresh)",
-            "type": "shell",
-            "command": "./start.sh --fresh",
-            "options": {
-                "cwd": "${workspaceFolder}/Samples"
-            },
-            "problemMatcher": [],
-            "detail": "Kill all, clear DBs, start Clinical, Scheduling, Gatekeeper, ICD-10, Sync, Dashboard"
-        },
-        {
-            "label": "Samples: Start All (Continue)",
-            "type": "shell",
-            "command": "./start.sh",
-            "options": {
-                "cwd": "${workspaceFolder}/Samples"
-            },
-            "problemMatcher": [],
-            "detail": "Start all services without clearing databases"
-        },
-
-        // ═══════════════════════════════════════════════════════════════
-        // ICD-10-CM MICROSERVICE
-        // ═══════════════════════════════════════════════════════════════
-        {
-            "label": "ICD-10: Run API",
-            "type": "shell",
-            "command": "./run.sh",
-            "options": {
-                "cwd": "${workspaceFolder}/Samples/ICD10CM/scripts"
-            },
-            "problemMatcher": [],
-            "detail": "Start ICD-10-CM API on port 5558"
-        },
-        {
-            "label": "ICD-10: Start Embedding Service",
-            "type": "shell",
-            "command": "./start.sh",
-            "options": {
-                "cwd": "${workspaceFolder}/Samples/ICD10CM/scripts/Dependencies"
-            },
-            "problemMatcher": [],
-            "detail": "Docker: MedEmbed service for RAG search"
-        },
-        {
-            "label": "ICD-10: Stop Embedding Service",
-            "type": "shell",
-            "command": "./stop.sh",
-            "options": {
-                "cwd": "${workspaceFolder}/Samples/ICD10CM/scripts/Dependencies"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "ICD-10: Import Database (full)",
-            "type": "shell",
-            "command": "./import.sh",
-            "options": {
-                "cwd": "${workspaceFolder}/Samples/ICD10CM/scripts/CreateDb"
-            },
-            "problemMatcher": [],
-            "detail": "Migrate schema, import codes, generate embeddings (30-60 min)"
-        },
-        {
-            "label": "ICD-10: Run CLI",
-            "type": "shell",
-            "command": "dotnet run -- http://localhost:5558",
-            "options": {
-                "cwd": "${workspaceFolder}/Samples/ICD10CM/ICD10AM.Cli",
-                "env": {
-                    "EMBEDDING_URL": "http://localhost:8000"
-                }
-            },
-            "problemMatcher": [],
-            "detail": "Interactive CLI for ICD-10 code lookup"
-        },
-        {
-            "label": "ICD-10: Run Tests",
-            "type": "shell",
-            "command": "dotnet test",
-            "options": {
-                "cwd": "${workspaceFolder}/Samples/ICD10CM/ICD10AM.Api.Tests"
-            },
-            "problemMatcher": "$msCompile"
-        },
-
-        // ═══════════════════════════════════════════════════════════════
         // LQL EXTENSION
         // ═══════════════════════════════════════════════════════════════
         {
@@ -273,12 +184,5 @@
             },
             "problemMatcher": []
         },
-        {
-            "label": "Util: Kill All Sample Ports",
-            "type": "shell",
-            "command": "lsof -ti:5080,5001,5002,5090,5173 | xargs kill -9 2>/dev/null || true",
-            "problemMatcher": [],
-            "detail": "Kill ports: 5080, 5001, 5002, 5090, 5173"
-        }
     ]
 }

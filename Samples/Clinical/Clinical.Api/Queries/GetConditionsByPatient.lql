@@ -1,6 +1,0 @@
--- Get conditions for a patient
--- Parameters: @patientId
-fhir_Condition
-|> filter(fn(row) => row.fhir_Condition.SubjectReference = @patientId)
-|> select(fhir_Condition.Id, fhir_Condition.ClinicalStatus, fhir_Condition.VerificationStatus, fhir_Condition.Category, fhir_Condition.Severity, fhir_Condition.CodeSystem, fhir_Condition.CodeValue, fhir_Condition.CodeDisplay, fhir_Condition.SubjectReference, fhir_Condition.EncounterReference, fhir_Condition.OnsetDateTime, fhir_Condition.RecordedDate, fhir_Condition.RecorderReference, fhir_Condition.NoteText, fhir_Condition.LastUpdated, fhir_Condition.VersionId)
-|> order_by(fhir_Condition.RecordedDate desc)

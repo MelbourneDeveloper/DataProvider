@@ -131,8 +131,6 @@ jobs:
               - 'Directory.Packages.props'
             postgres:
               - 'Gatekeeper/**'
-              - 'Samples/Clinical/**'
-              - 'Samples/Scheduling/**'
               - 'Sync/**'
               - 'DataProvider/**'
               - 'Migration/**'
@@ -263,13 +261,6 @@ jobs:
 
       - name: Test Gatekeeper
         run: dotnet test Gatekeeper/Gatekeeper.Api.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-        env:
-          TEST_POSTGRES_CONNECTION: "Host=localhost;Database=postgres;Username=postgres;Password=changeme"
-
-      - name: Test Sample APIs
-        run: |
-          dotnet test Samples/Clinical/Clinical.Api.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-          dotnet test Samples/Scheduling/Scheduling.Api.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
         env:
           TEST_POSTGRES_CONNECTION: "Host=localhost;Database=postgres;Username=postgres;Password=changeme"
 

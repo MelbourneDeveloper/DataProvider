@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Sync</RootNamespace>
+    <PackageId>MelbourneDev.Sync</PackageId>
     <NoWarn>$(NoWarn);</NoWarn>
   </PropertyGroup>
 

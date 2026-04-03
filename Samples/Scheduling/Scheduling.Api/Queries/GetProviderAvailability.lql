@@ -1,6 +1,0 @@
--- Get provider availability schedule
--- Parameters: @practitionerRef
-fhir_Schedule
-|> join(fhir_Practitioner, on = fhir_Schedule.PractitionerReference = fhir_Practitioner.Id)
-|> filter(fn(row) => row.fhir_Schedule.PractitionerReference = @practitionerRef and row.fhir_Schedule.Active = 1)
-|> select(fhir_Schedule.Id, fhir_Schedule.PractitionerReference, fhir_Practitioner.NameFamily, fhir_Practitioner.NameGiven, fhir_Schedule.PlanningHorizon, fhir_Schedule.Active)

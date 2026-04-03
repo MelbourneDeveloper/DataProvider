@@ -1,6 +1,0 @@
--- Search practitioners by specialty
--- Parameters: @specialty
-fhir_Practitioner
-|> filter(fn(row) => row.fhir_Practitioner.Specialty like '%' || @specialty || '%')
-|> select(fhir_Practitioner.Id, fhir_Practitioner.Identifier, fhir_Practitioner.Active, fhir_Practitioner.NameFamily, fhir_Practitioner.NameGiven, fhir_Practitioner.Qualification, fhir_Practitioner.Specialty, fhir_Practitioner.TelecomEmail, fhir_Practitioner.TelecomPhone)
-|> order_by(fhir_Practitioner.NameFamily, fhir_Practitioner.NameGiven)

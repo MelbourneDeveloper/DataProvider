@@ -28,7 +28,7 @@ description: "DataProvider is an open-source .NET toolkit for type-safe database
       <li><strong><a href="/docs/migrations/">Migrations</a></strong> - YAML schemas: Database-agnostic, version-controlled schema definitions</li>
       <li><strong><a href="/docs/sync/">Sync</a></strong> - Offline-first: Bidirectional synchronization with conflict resolution</li>
       <li><strong><a href="/docs/gatekeeper/">Gatekeeper</a></strong> - Auth: WebAuthn authentication and role-based access control</li>
-      <li><strong><a href="/docs/samples/">Healthcare Samples</a></strong> - FHIR-compliant microservices with ICD-10 RAG search, demonstrating the full stack</li>
+      <li><strong><a href="/docs/samples/">Healthcare Samples</a></strong> - FHIR-compliant microservices with ICD-10 RAG search, demonstrating the full stack (<a href="https://github.com/MelbourneDeveloper/HealthcareSamples">separate repo</a>)</li>
     </ul>
 
     <h2>Get Involved</h2>

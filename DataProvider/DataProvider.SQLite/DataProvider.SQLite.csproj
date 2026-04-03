@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!-- Package Information -->
-    <PackageId>DataProvider.SQLite</PackageId>
+    <PackageId>MelbourneDev.DataProvider.SQLite</PackageId>
     <Authors>ChristianFindlay</Authors>
     <Description>SQLite source generator for DataProvider. Provides compile-time safe database access with automatic code generation from SQL files for SQLite databases.</Description>
     <PackageTags>source-generator;sql;sqlite;database;compile-time-safety;code-generation</PackageTags>

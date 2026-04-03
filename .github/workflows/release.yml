@@ -114,6 +114,14 @@ jobs:
           dotnet build DataProvider/DataProvider.Postgres.Cli/DataProvider.Postgres.Cli.csproj -c Release
           dotnet build DataProvider/DataProvider.SQLite.Cli/DataProvider.SQLite.Cli.csproj -c Release
           dotnet build Migration/Migration.Cli/Migration.Cli.csproj -c Release
+          dotnet build Lql/Lql/Lql.csproj -c Release
+          dotnet build Lql/Lql.Postgres/Lql.Postgres.csproj -c Release
+          dotnet build Lql/Lql.SQLite/Lql.SQLite.csproj -c Release
+          dotnet build Lql/Lql.SqlServer/Lql.SqlServer.csproj -c Release
+          dotnet build Sync/Sync/Sync.csproj -c Release
+          dotnet build Sync/Sync.Postgres/Sync.Postgres.csproj -c Release
+          dotnet build Sync/Sync.Http/Sync.Http.csproj -c Release
+          dotnet build Gatekeeper/Gatekeeper.Api/Gatekeeper.Api.csproj -c Release
 
       - name: Test core libraries
         run: |
@@ -129,6 +137,14 @@ jobs:
           dotnet pack Migration/Migration.Postgres/Migration.Postgres.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
           dotnet pack DataProvider/DataProvider/DataProvider.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
           dotnet pack DataProvider/DataProvider.SQLite/DataProvider.SQLite.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
+          dotnet pack Lql/Lql/Lql.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
+          dotnet pack Lql/Lql.Postgres/Lql.Postgres.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
+          dotnet pack Lql/Lql.SQLite/Lql.SQLite.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
+          dotnet pack Lql/Lql.SqlServer/Lql.SqlServer.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
+          dotnet pack Sync/Sync/Sync.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
+          dotnet pack Sync/Sync.Postgres/Sync.Postgres.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
+          dotnet pack Sync/Sync.Http/Sync.Http.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
+          dotnet pack Gatekeeper/Gatekeeper.Api/Gatekeeper.Api.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
 
       - name: Pack CLI tools
         run: |

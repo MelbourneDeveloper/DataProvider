@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Sync.SQLite</RootNamespace>
+    <PackageId>MelbourneDev.Sync.SQLite</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
