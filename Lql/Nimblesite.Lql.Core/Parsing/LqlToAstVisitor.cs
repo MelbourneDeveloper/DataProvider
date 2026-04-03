@@ -2,7 +2,7 @@ using System.Text;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace Nimblesite.Lql.Core.Parsing;
 

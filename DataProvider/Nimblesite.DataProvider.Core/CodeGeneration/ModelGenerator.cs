@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace Nimblesite.DataProvider.Core.CodeGeneration;
 

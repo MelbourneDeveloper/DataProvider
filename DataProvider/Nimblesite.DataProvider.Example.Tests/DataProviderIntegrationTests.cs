@@ -1,6 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Nimblesite.Lql.SQLite;
-using Selecta;
+using Nimblesite.Sql.Model;
 using Xunit;
 using static Nimblesite.DataProvider.Example.MapFunctions;
 

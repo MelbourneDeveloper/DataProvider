@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace Nimblesite.DataProvider.SQLite.Parsing;
 

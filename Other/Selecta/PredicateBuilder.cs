@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace Selecta;
+namespace Nimblesite.Sql.Model;
 
 /// <summary>
 /// PredicateBuilder enables dynamic construction of Expression trees for LINQ predicates.

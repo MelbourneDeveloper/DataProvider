@@ -1,7 +1,7 @@
 using System.Collections.Frozen;
 using Nimblesite.DataProvider.SQLite;
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 using Xunit;
 
 #pragma warning disable CA1307 // Specify StringComparison for clarity
@@ -118,7 +118,7 @@ using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace CustomGenerated;
 
@@ -281,7 +281,7 @@ using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace FluentGenerated;
 

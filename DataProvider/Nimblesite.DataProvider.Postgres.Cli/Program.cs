@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Npgsql;
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 #pragma warning disable CA1812 // Avoid uninstantiated internal classes - records are instantiated by JSON deserialization
 #pragma warning disable CA1849 // Call async methods when in an async method
@@ -329,7 +329,7 @@ internal static class Program
         _ = sb.AppendLine();
         _ = sb.AppendLine("using Npgsql;");
         _ = sb.AppendLine("using Outcome;");
-        _ = sb.AppendLine("using Selecta;");
+        _ = sb.AppendLine("using Nimblesite.Sql.Model;");
         _ = sb.AppendLine();
 
         // Extension class
@@ -1155,21 +1155,21 @@ internal static class Program
         _ = sb.AppendLine("using System.Collections.Immutable;");
         _ = sb.AppendLine("using Npgsql;");
         _ = sb.AppendLine("using Outcome;");
-        _ = sb.AppendLine("using Selecta;");
+        _ = sb.AppendLine("using Nimblesite.Sql.Model;");
         _ = sb.AppendLine();
         // Result type aliases must come after standard usings but before any type definitions
         // Use fully qualified names since type aliases don't use namespace context
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"using {fileName}Result = Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Selecta.SqlError>;"
+            $"using {fileName}Result = Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Nimblesite.Sql.Model.SqlError>;"
         );
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"using {fileName}Ok = Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Selecta.SqlError>.Ok<System.Collections.Immutable.ImmutableList<{recordName}>, Selecta.SqlError>;"
+            $"using {fileName}Ok = Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Nimblesite.Sql.Model.SqlError>.Ok<System.Collections.Immutable.ImmutableList<{recordName}>, Nimblesite.Sql.Model.SqlError>;"
         );
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"using {fileName}Error = Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Selecta.SqlError>.Error<System.Collections.Immutable.ImmutableList<{recordName}>, Selecta.SqlError>;"
+            $"using {fileName}Error = Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Nimblesite.Sql.Model.SqlError>.Error<System.Collections.Immutable.ImmutableList<{recordName}>, Nimblesite.Sql.Model.SqlError>;"
         );
         _ = sb.AppendLine();
 

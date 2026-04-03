@@ -1,13 +1,13 @@
 using Nimblesite.Lql.Core.Parsing;
 using Outcome;
-using Selecta;
-using StatementError = Outcome.Result<Nimblesite.Lql.Core.LqlStatement, Selecta.SqlError>.Error<
+using Nimblesite.Sql.Model;
+using StatementError = Outcome.Result<Nimblesite.Lql.Core.LqlStatement, Nimblesite.Sql.Model.SqlError>.Error<
     Nimblesite.Lql.Core.LqlStatement,
-    Selecta.SqlError
+    Nimblesite.Sql.Model.SqlError
 >;
-using StatementOk = Outcome.Result<Nimblesite.Lql.Core.LqlStatement, Selecta.SqlError>.Ok<
+using StatementOk = Outcome.Result<Nimblesite.Lql.Core.LqlStatement, Nimblesite.Sql.Model.SqlError>.Ok<
     Nimblesite.Lql.Core.LqlStatement,
-    Selecta.SqlError
+    Nimblesite.Sql.Model.SqlError
 >;
 
 namespace Nimblesite.Lql.Core;

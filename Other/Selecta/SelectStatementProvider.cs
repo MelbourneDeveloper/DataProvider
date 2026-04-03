@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace Selecta;
+namespace Nimblesite.Sql.Model;
 
 /// <summary>
 /// Query provider that builds SelectStatement from LINQ expressions

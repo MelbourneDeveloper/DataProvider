@@ -1,5 +1,5 @@
 using System.Collections.Frozen;
-using Selecta;
+using Nimblesite.Sql.Model;
 using Xunit;
 
 namespace Nimblesite.DataProvider.Tests;

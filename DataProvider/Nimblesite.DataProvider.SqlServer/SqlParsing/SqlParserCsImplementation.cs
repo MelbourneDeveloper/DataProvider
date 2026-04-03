@@ -1,5 +1,5 @@
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 using SqlParser;
 using SqlParser.Ast;
 

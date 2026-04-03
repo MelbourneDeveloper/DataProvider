@@ -73,9 +73,9 @@ module TestFixtures =
         use transaction = conn.BeginTransaction()
         let result = TestDataSeeder.SeedDataAsync(transaction).GetAwaiter().GetResult()
         match result with
-        | :? Outcome.Result<string, Selecta.SqlError>.Ok<string, Selecta.SqlError> ->
+        | :? Outcome.Result<string, Nimblesite.Sql.Model.SqlError>.Ok<string, Nimblesite.Sql.Model.SqlError> ->
             transaction.Commit()
-        | :? Outcome.Result<string, Selecta.SqlError>.Error<string, Selecta.SqlError> as err ->
+        | :? Outcome.Result<string, Nimblesite.Sql.Model.SqlError>.Error<string, Nimblesite.Sql.Model.SqlError> as err ->
             transaction.Rollback()
             failwithf "Failed to seed test data: %s" (err.Value.ToString())
         | _ ->

@@ -3,8 +3,8 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.Data.SqlClient;
 using Outcome;
-using Selecta;
-using SqlError = Selecta.SqlError;
+using Nimblesite.Sql.Model;
+using SqlError = Nimblesite.Sql.Model.SqlError;
 
 namespace Nimblesite.DataProvider.SqlServer;
 

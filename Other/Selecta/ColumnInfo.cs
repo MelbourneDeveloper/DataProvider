@@ -1,4 +1,4 @@
-namespace Selecta;
+namespace Nimblesite.Sql.Model;
 
 /// <summary>
 /// Represents a column in the SELECT list - a closed type hierarchy for different column types

@@ -1,6 +1,6 @@
 using System.Text;
 using Nimblesite.Lql.Core.FunctionMapping;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace Nimblesite.Lql.Postgres;
 

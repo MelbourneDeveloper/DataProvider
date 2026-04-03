@@ -1,4 +1,4 @@
-using Selecta;
+using Nimblesite.Sql.Model;
 using Xunit;
 
 #pragma warning disable CA1812 // Avoid uninstantiated internal classes

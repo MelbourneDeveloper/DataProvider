@@ -2,7 +2,7 @@ using Nimblesite.Lql.Postgres;
 using Nimblesite.Lql.SQLite;
 using Nimblesite.Lql.SqlServer;
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 using Xunit;
 
 namespace Nimblesite.Lql.Tests;

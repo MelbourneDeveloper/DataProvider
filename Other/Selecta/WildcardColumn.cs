@@ -1,4 +1,4 @@
-namespace Selecta;
+namespace Nimblesite.Sql.Model;
 
 /// <summary>
 /// Represents a wildcard column (*) that selects all columns

@@ -2,7 +2,7 @@ using System.Data;
 using Generated;
 using Microsoft.Data.Sqlite;
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace Nimblesite.Lql.TypeProvider.FSharp.Tests.Data;
 

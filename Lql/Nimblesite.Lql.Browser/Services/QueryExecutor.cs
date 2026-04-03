@@ -6,7 +6,7 @@ using Nimblesite.Lql.Browser.Models;
 using Nimblesite.Lql.Browser.ViewModels;
 using Nimblesite.Lql.SQLite;
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace Nimblesite.Lql.Browser.Services;
 

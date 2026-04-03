@@ -1,4 +1,4 @@
-namespace Selecta;
+namespace Nimblesite.Sql.Model;
 
 // Algebraic data type. Closed Hierarchy.
 

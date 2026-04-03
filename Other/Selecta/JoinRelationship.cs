@@ -1,4 +1,4 @@
-namespace Selecta;
+namespace Nimblesite.Sql.Model;
 
 /// <summary>
 /// Represents a single join relationship between two tables (for one-to-many relationships)

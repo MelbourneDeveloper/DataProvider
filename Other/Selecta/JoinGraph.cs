@@ -1,4 +1,4 @@
-namespace Selecta;
+namespace Nimblesite.Sql.Model;
 
 /// <summary>
 /// Represents the join relationships for one-to-many scenarios that need grouping

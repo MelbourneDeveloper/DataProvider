@@ -8,7 +8,7 @@ open ProviderImplementation.ProvidedTypes
 open Nimblesite.Lql.Core
 open Nimblesite.Lql.SQLite
 open Outcome
-open Selecta
+open Nimblesite.Sql.Model
 
 [<TypeProvider>]
 type public LqlTypeProvider(config: TypeProviderConfig) as this =

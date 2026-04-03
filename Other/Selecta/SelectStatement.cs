@@ -1,6 +1,6 @@
 using System.Collections.Frozen;
 
-namespace Selecta;
+namespace Nimblesite.Sql.Model;
 
 /// <summary>
 /// Represents a parsed SQL SELECT statement with extracted metadata that is generic for all SQL flavors

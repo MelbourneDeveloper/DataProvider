@@ -1,6 +1,6 @@
 using Outcome;
 
-namespace Selecta;
+namespace Nimblesite.Sql.Model;
 
 /// <summary>
 /// Abstraction for parsing SQL and extracting comprehensive metadata

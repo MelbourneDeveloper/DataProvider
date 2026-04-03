@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <PackageId>MelbourneDev.Selecta</PackageId>
-    <Description>Utility library for SQL result selection and mapping</Description>
+    <PackageId>Nimblesite.Sql.Model</PackageId>
+    <RootNamespace>Nimblesite.Sql.Model</RootNamespace>
+    <AssemblyName>Nimblesite.Sql.Model</AssemblyName>
+    <Description>Library for representing SQL queries as an object model</Description>
   </PropertyGroup>
 </Project>

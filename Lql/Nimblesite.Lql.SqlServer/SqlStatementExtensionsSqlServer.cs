@@ -1,5 +1,5 @@
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace Nimblesite.Lql.SqlServer;
 

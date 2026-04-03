@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace Nimblesite.DataProvider.Core.CodeGeneration;
 
@@ -49,7 +49,7 @@ public class DefaultTableOperationGenerator : ITableOperationGenerator
         sb.AppendLine("using System.Threading.Tasks;");
         sb.AppendLine(CultureInfo.InvariantCulture, $"using {GetConnectionNamespace()};");
         sb.AppendLine("using Outcome;");
-        sb.AppendLine("using Selecta;");
+        sb.AppendLine("using Nimblesite.Sql.Model;");
         sb.AppendLine();
         sb.AppendLine("namespace Generated");
         sb.AppendLine("{");

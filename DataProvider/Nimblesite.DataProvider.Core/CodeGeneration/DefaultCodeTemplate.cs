@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace Nimblesite.DataProvider.Core.CodeGeneration;
 
@@ -69,7 +69,7 @@ public class DefaultCodeTemplate : ICodeTemplate
         sb.AppendLine("using System.Threading.Tasks;");
         sb.AppendLine("using Microsoft.Data.Sqlite;");
         sb.AppendLine("using Outcome;");
-        sb.AppendLine("using Selecta;");
+        sb.AppendLine("using Nimblesite.Sql.Model;");
         sb.AppendLine();
 
         // Generate namespace

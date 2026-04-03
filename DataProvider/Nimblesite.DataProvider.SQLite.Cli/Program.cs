@@ -4,7 +4,7 @@ using System.Text.Json;
 using Nimblesite.DataProvider.Core.CodeGeneration;
 using Nimblesite.DataProvider.SQLite.Parsing;
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 #pragma warning disable CA1849 // Call async methods when in an async method
 
@@ -501,7 +501,7 @@ internal static class Program
         sb.AppendLine("using System.Threading.Tasks;");
         sb.AppendLine(CultureInfo.InvariantCulture, $"using {connectionNamespace};");
         sb.AppendLine("using Outcome;");
-        sb.AppendLine("using Selecta;");
+        sb.AppendLine("using Nimblesite.Sql.Model;");
         sb.AppendLine();
         sb.AppendLine(CultureInfo.InvariantCulture, $"namespace {namespaceName};");
         sb.AppendLine();

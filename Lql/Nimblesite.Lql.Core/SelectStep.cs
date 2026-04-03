@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace Nimblesite.Lql.Core;
 

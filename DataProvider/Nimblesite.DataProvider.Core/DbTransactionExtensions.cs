@@ -1,6 +1,6 @@
 using System.Data;
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace Nimblesite.DataProvider.Core;
 

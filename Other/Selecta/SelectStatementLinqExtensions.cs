@@ -2,7 +2,7 @@ using System.Data;
 using System.Globalization;
 using System.Linq.Expressions;
 
-namespace Selecta;
+namespace Nimblesite.Sql.Model;
 
 /// <summary>
 /// LINQ expression extensions for building SQL statements

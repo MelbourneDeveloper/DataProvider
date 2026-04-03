@@ -5,7 +5,7 @@ open Microsoft.Data.Sqlite
 open Nimblesite.Lql.Core
 open Nimblesite.Lql.SQLite
 open Outcome
-open Selecta
+open Nimblesite.Sql.Model
 
 //TODO: this does not belong here. Move to core code
 

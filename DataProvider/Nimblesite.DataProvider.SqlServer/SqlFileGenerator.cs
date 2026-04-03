@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace Nimblesite.DataProvider.SqlServer;
 

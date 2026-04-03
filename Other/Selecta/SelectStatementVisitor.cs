@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Linq.Expressions;
 
-namespace Selecta;
+namespace Nimblesite.Sql.Model;
 
 /// <summary>
 /// Expression visitor that builds SQL from LINQ expressions

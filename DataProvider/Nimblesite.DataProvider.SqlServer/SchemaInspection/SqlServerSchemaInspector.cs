@@ -144,15 +144,15 @@ internal sealed class SqlServerSchemaInspector : ISchemaInspector
     /// </summary>
     /// <param name="sqlQuery">The SQL query to analyze</param>
     /// <returns>Result containing metadata about the query result columns</returns>
-    public async Task<Result<SqlQueryMetadata, Selecta.SqlError>> GetSqlQueryMetadataAsync(
+    public async Task<Result<SqlQueryMetadata, Nimblesite.Sql.Model.SqlError>> GetSqlQueryMetadataAsync(
         string sqlQuery
     )
     {
         if (string.IsNullOrWhiteSpace(sqlQuery))
-            return new Result<SqlQueryMetadata, Selecta.SqlError>.Error<
+            return new Result<SqlQueryMetadata, Nimblesite.Sql.Model.SqlError>.Error<
                 SqlQueryMetadata,
-                Selecta.SqlError
-            >(new Selecta.SqlError("SQL query cannot be null or empty"));
+                Nimblesite.Sql.Model.SqlError
+            >(new Nimblesite.Sql.Model.SqlError("SQL query cannot be null or empty"));
 
         try
         {
@@ -224,24 +224,24 @@ internal sealed class SqlServerSchemaInspector : ISchemaInspector
                 SqlText = sqlQuery,
             };
 
-            return new Result<SqlQueryMetadata, Selecta.SqlError>.Ok<
+            return new Result<SqlQueryMetadata, Nimblesite.Sql.Model.SqlError>.Ok<
                 SqlQueryMetadata,
-                Selecta.SqlError
+                Nimblesite.Sql.Model.SqlError
             >(metadata);
         }
         catch (SqlException ex)
         {
-            return new Result<SqlQueryMetadata, Selecta.SqlError>.Error<
+            return new Result<SqlQueryMetadata, Nimblesite.Sql.Model.SqlError>.Error<
                 SqlQueryMetadata,
-                Selecta.SqlError
-            >(new Selecta.SqlError("SQL Server error during schema inspection", ex));
+                Nimblesite.Sql.Model.SqlError
+            >(new Nimblesite.Sql.Model.SqlError("SQL Server error during schema inspection", ex));
         }
         catch (Exception ex)
         {
-            return new Result<SqlQueryMetadata, Selecta.SqlError>.Error<
+            return new Result<SqlQueryMetadata, Nimblesite.Sql.Model.SqlError>.Error<
                 SqlQueryMetadata,
-                Selecta.SqlError
-            >(new Selecta.SqlError("Error analyzing SQL query", ex));
+                Nimblesite.Sql.Model.SqlError
+            >(new Nimblesite.Sql.Model.SqlError("Error analyzing SQL query", ex));
         }
     }
 

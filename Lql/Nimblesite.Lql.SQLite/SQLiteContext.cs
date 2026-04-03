@@ -1,4 +1,4 @@
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace Nimblesite.Lql.SQLite;
 

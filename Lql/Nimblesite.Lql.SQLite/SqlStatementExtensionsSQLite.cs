@@ -1,5 +1,5 @@
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace Nimblesite.Lql.SQLite;
 
@@ -50,7 +50,7 @@ public static class SqlStatementExtensionsSQLite
     }
 
     /// <summary>
-    /// Converts a Selecta.SelectStatement to SQLite syntax
+    /// Converts a Nimblesite.Sql.Model.SelectStatement to SQLite syntax
     /// TODO: this should not return a result because it can't fail
     /// </summary>
     /// <param name="statement">The SelectStatement to convert</param>

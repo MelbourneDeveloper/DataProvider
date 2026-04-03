@@ -1,6 +1,6 @@
 using System.Collections.Frozen;
 
-namespace Selecta;
+namespace Nimblesite.Sql.Model;
 
 /// <summary>
 /// Builder for constructing SelectStatement instances

@@ -2,17 +2,17 @@ using Microsoft.Data.Sqlite;
 using Xunit;
 using TestRecordListError = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<Nimblesite.DataProvider.Tests.DbTransactionExtensionsTests.TestRecord>,
-    Selecta.SqlError
+    Nimblesite.Sql.Model.SqlError
 >.Error<
     System.Collections.Generic.IReadOnlyList<Nimblesite.DataProvider.Tests.DbTransactionExtensionsTests.TestRecord>,
-    Selecta.SqlError
+    Nimblesite.Sql.Model.SqlError
 >;
 using TestRecordListOk = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<Nimblesite.DataProvider.Tests.DbTransactionExtensionsTests.TestRecord>,
-    Selecta.SqlError
+    Nimblesite.Sql.Model.SqlError
 >.Ok<
     System.Collections.Generic.IReadOnlyList<Nimblesite.DataProvider.Tests.DbTransactionExtensionsTests.TestRecord>,
-    Selecta.SqlError
+    Nimblesite.Sql.Model.SqlError
 >;
 
 namespace Nimblesite.DataProvider.Tests;
