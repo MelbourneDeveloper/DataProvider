@@ -1,3 +1,0 @@
-<Project>
-  <!-- Empty: prevents inheriting root Directory.Build.props which adds packages incompatible with H5/netstandard2.1 -->
-</Project>
