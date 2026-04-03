@@ -19,7 +19,7 @@
   <!-- You are not allowed to reference database platform specific dependencies here -->
 
   <ItemGroup>
-    <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
+    <ProjectReference Include="../../Other/Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj" />
   </ItemGroup>
 
   <!-- Disable problematic analyzer rules for generated code -->

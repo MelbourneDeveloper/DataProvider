@@ -32,7 +32,7 @@
     <ProjectReference Include="../../Lql/Nimblesite.Lql.SQLite/Nimblesite.Lql.SQLite.csproj" />
     <ProjectReference Include="../../Lql/Nimblesite.Lql.Core/Nimblesite.Lql.Core.csproj" />
     <ProjectReference Include="../../Lql/Nimblesite.Lql.TypeProvider.FSharp/Nimblesite.Lql.TypeProvider.FSharp.fsproj" />
-    <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
+    <ProjectReference Include="../../Other/Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj" />
   </ItemGroup>
 
 </Project>

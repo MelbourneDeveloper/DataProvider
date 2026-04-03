@@ -27,7 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="../Nimblesite.DataProvider.Core/Nimblesite.DataProvider.Core.csproj" />
     <ProjectReference Include="../Nimblesite.DataProvider.SQLite/Nimblesite.DataProvider.SQLite.csproj" />
-    <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
+    <ProjectReference Include="../../Other/Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj" />
     <ProjectReference Include="../../Lql/Nimblesite.Lql.SQLite/Nimblesite.Lql.SQLite.csproj" />
   </ItemGroup>
   <ItemGroup>

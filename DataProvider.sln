@@ -69,7 +69,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Mig
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Misc", "Misc", "{C841F5C2-8F30-5BE9-ECA6-260644CF6F9F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Selecta", "Other\Selecta\Selecta.csproj", "{BE9AC443-C15D-4962-A8D2-0CCD328E6B68}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sql.Model", "Other\Nimblesite.Sql.Model\Nimblesite.Sql.Model.csproj", "{BE9AC443-C15D-4962-A8D2-0CCD328E6B68}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sync.Http", "Sync\Nimblesite.Sync.Http\Nimblesite.Sync.Http.csproj", "{392C12C2-ECBA-4728-9D8D-54BD2E10F7ED}"
 EndProject
