@@ -40,14 +40,14 @@ public sealed record PushResult(int ChangesPushed, long FromVersion, long ToVers
 /// <example>
 /// <code>
 /// // After a full sync operation
-/// var syncResult = new Nimblesite.Sync.CoreResult(
+/// var syncResult = new SyncResult(
 ///     Pull: new PullResult(ChangesApplied: 42, FromVersion: 100, ToVersion: 142),
 ///     Push: new PushResult(ChangesPushed: 15, FromVersion: 50, ToVersion: 65)
 /// );
 /// Console.WriteLine($"Nimblesite.Sync.Core complete: pulled {syncResult.Pull.ChangesApplied}, pushed {syncResult.Push.ChangesPushed}");
 /// </code>
 /// </example>
-public sealed record Nimblesite.Sync.CoreResult(PullResult Pull, PushResult Push);
+public sealed record SyncResult(PullResult Pull, PushResult Push);
 
 /// <summary>
 /// Coordinates sync operations between replicas.
@@ -60,7 +60,7 @@ public sealed record Nimblesite.Sync.CoreResult(PullResult Pull, PushResult Push
 /// using var connection = new SqliteConnection("Data Source=local.db");
 /// connection.Open();
 ///
-/// var result = Nimblesite.Sync.CoreCoordinator.Nimblesite.Sync.Core(
+/// var result = SyncCoordinator.Sync(
 ///     myOriginId: "client-uuid-123",
 ///     lastServerVersion: 100,
 ///     lastPushVersion: 50,
@@ -77,7 +77,7 @@ public sealed record Nimblesite.Sync.CoreResult(PullResult Pull, PushResult Push
 /// );
 /// </code>
 /// </example>
-public static class Nimblesite.Sync.CoreCoordinator
+public static class SyncCoordinator
 {
     /// <summary>
     /// Pulls changes from a remote source and applies them locally.
@@ -96,8 +96,8 @@ public static class Nimblesite.Sync.CoreCoordinator
         string myOriginId,
         long lastSyncedVersion,
         BatchConfig config,
-        Func<long, int, Nimblesite.Sync.CoreLogListResult> fetchRemoteChanges,
-        Func<Nimblesite.Sync.CoreLogEntry, BoolSyncResult> applyLocalChange,
+        Func<long, int, SyncLogListResult> fetchRemoteChanges,
+        Func<SyncLogEntry, BoolSyncResult> applyLocalChange,
         Func<BoolSyncResult> enableTriggerSuppression,
         Func<BoolSyncResult> disableTriggerSuppression,
         Action<long> updateLastSyncedVersion,
@@ -147,13 +147,13 @@ public static class Nimblesite.Sync.CoreCoordinator
                     logger
                 );
 
-                if (batchResult is Nimblesite.Sync.CoreBatchError batchFailure)
+                if (batchResult is SyncBatchError batchFailure)
                 {
                     logger.LogError("PULL: Batch fetch failed: {Error}", batchFailure.Value);
                     return new PullResultError(batchFailure.Value);
                 }
 
-                var batch = ((Nimblesite.Sync.CoreBatchOk)batchResult).Value;
+                var batch = ((SyncBatchOk)batchResult).Value;
 
                 if (batch.Changes.Count == 0)
                 {
@@ -230,8 +230,8 @@ public static class Nimblesite.Sync.CoreCoordinator
     public static PushResultResult Push(
         long lastPushedVersion,
         BatchConfig config,
-        Func<long, int, Nimblesite.Sync.CoreLogListResult> fetchLocalChanges,
-        Func<IReadOnlyList<Nimblesite.Sync.CoreLogEntry>, BoolSyncResult> sendToRemote,
+        Func<long, int, SyncLogListResult> fetchLocalChanges,
+        Func<IReadOnlyList<SyncLogEntry>, BoolSyncResult> sendToRemote,
         Action<long> updateLastPushedVersion,
         ILogger logger
     )
@@ -263,13 +263,13 @@ public static class Nimblesite.Sync.CoreCoordinator
                 logger
             );
 
-            if (batchResult is Nimblesite.Sync.CoreBatchError batchFailure)
+            if (batchResult is SyncBatchError batchFailure)
             {
                 logger.LogError("PUSH: Batch fetch failed: {Error}", batchFailure.Value);
                 return new PushResultError(batchFailure.Value);
             }
 
-            var batch = ((Nimblesite.Sync.CoreBatchOk)batchResult).Value;
+            var batch = ((SyncBatchOk)batchResult).Value;
 
             if (batch.Changes.Count == 0)
             {
@@ -338,18 +338,18 @@ public static class Nimblesite.Sync.CoreCoordinator
     /// <param name="updateLastPushVersion">Action to update last push version.</param>
     /// <param name="logger">Logger for sync operations.</param>
     /// <returns>Nimblesite.Sync.Core result or sync error.</returns>
-    public static Nimblesite.Sync.CoreResultResult Nimblesite.Sync.Core(
+    public static SyncResultResult Nimblesite.Sync.Core(
         string myOriginId,
         long lastServerVersion,
         long lastPushVersion,
         BatchConfig config,
-        Func<long, int, Nimblesite.Sync.CoreLogListResult> fetchRemoteChanges,
-        Func<Nimblesite.Sync.CoreLogEntry, BoolSyncResult> applyLocalChange,
+        Func<long, int, SyncLogListResult> fetchRemoteChanges,
+        Func<SyncLogEntry, BoolSyncResult> applyLocalChange,
         Func<BoolSyncResult> enableTriggerSuppression,
         Func<BoolSyncResult> disableTriggerSuppression,
         Action<long> updateLastServerVersion,
-        Func<long, int, Nimblesite.Sync.CoreLogListResult> fetchLocalChanges,
-        Func<IReadOnlyList<Nimblesite.Sync.CoreLogEntry>, BoolSyncResult> sendToRemote,
+        Func<long, int, SyncLogListResult> fetchLocalChanges,
+        Func<IReadOnlyList<SyncLogEntry>, BoolSyncResult> sendToRemote,
         Action<long> updateLastPushVersion,
         ILogger logger
     )
@@ -378,7 +378,7 @@ public static class Nimblesite.Sync.CoreCoordinator
         if (pullResult is PullResultError pullFailure)
         {
             logger.LogError("SYNC: Pull phase failed: {Error}", pullFailure.Value);
-            return new Nimblesite.Sync.CoreResultError(pullFailure.Value);
+            return new SyncResultError(pullFailure.Value);
         }
 
         var pull = ((PullResultOk)pullResult).Value;
@@ -401,7 +401,7 @@ public static class Nimblesite.Sync.CoreCoordinator
         if (pushResult is PushResultError pushFailure)
         {
             logger.LogError("SYNC: Push phase failed: {Error}", pushFailure.Value);
-            return new Nimblesite.Sync.CoreResultError(pushFailure.Value);
+            return new SyncResultError(pushFailure.Value);
         }
 
         var push = ((PushResultOk)pushResult).Value;
@@ -416,6 +416,6 @@ public static class Nimblesite.Sync.CoreCoordinator
             push.ChangesPushed
         );
 
-        return new Nimblesite.Sync.CoreResultOk(new Nimblesite.Sync.CoreResult(pull, push));
+        return new SyncResultOk(new SyncResult(pull, push));
     }
 }

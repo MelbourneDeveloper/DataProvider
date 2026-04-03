@@ -34,9 +34,9 @@ using ParserRuleContext = Antlr4.Runtime.ParserRuleContext;
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.13.1")]
 [System.Diagnostics.DebuggerNonUserCode]
 [System.CLSCompliant(false)]
-public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeVisitor<Result>, ILqlVisitor<Result> {
+public partial class LqlBaseVisitor<Result> : AbstractParseTreeVisitor<Result>, ILqlVisitor<Result> {
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.program"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.program"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -44,9 +44,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitProgram([NotNull] Nimblesite.Lql.CoreParser.ProgramContext context) { return VisitChildren(context); }
+	public virtual Result VisitProgram([NotNull] LqlParser.ProgramContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.statement"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.statement"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -54,9 +54,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitStatement([NotNull] Nimblesite.Lql.CoreParser.StatementContext context) { return VisitChildren(context); }
+	public virtual Result VisitStatement([NotNull] LqlParser.StatementContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.letStmt"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.letStmt"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -64,9 +64,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitLetStmt([NotNull] Nimblesite.Lql.CoreParser.LetStmtContext context) { return VisitChildren(context); }
+	public virtual Result VisitLetStmt([NotNull] LqlParser.LetStmtContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.pipeExpr"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.pipeExpr"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -74,9 +74,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitPipeExpr([NotNull] Nimblesite.Lql.CoreParser.PipeExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitPipeExpr([NotNull] LqlParser.PipeExprContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.expr"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.expr"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -84,9 +84,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitExpr([NotNull] Nimblesite.Lql.CoreParser.ExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitExpr([NotNull] LqlParser.ExprContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.windowSpec"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.windowSpec"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -94,9 +94,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitWindowSpec([NotNull] Nimblesite.Lql.CoreParser.WindowSpecContext context) { return VisitChildren(context); }
+	public virtual Result VisitWindowSpec([NotNull] LqlParser.WindowSpecContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.partitionClause"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.partitionClause"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -104,9 +104,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitPartitionClause([NotNull] Nimblesite.Lql.CoreParser.PartitionClauseContext context) { return VisitChildren(context); }
+	public virtual Result VisitPartitionClause([NotNull] LqlParser.PartitionClauseContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.orderClause"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.orderClause"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -114,9 +114,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitOrderClause([NotNull] Nimblesite.Lql.CoreParser.OrderClauseContext context) { return VisitChildren(context); }
+	public virtual Result VisitOrderClause([NotNull] LqlParser.OrderClauseContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.lambdaExpr"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.lambdaExpr"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -124,9 +124,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitLambdaExpr([NotNull] Nimblesite.Lql.CoreParser.LambdaExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitLambdaExpr([NotNull] LqlParser.LambdaExprContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.qualifiedIdent"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.qualifiedIdent"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -134,9 +134,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitQualifiedIdent([NotNull] Nimblesite.Lql.CoreParser.QualifiedIdentContext context) { return VisitChildren(context); }
+	public virtual Result VisitQualifiedIdent([NotNull] LqlParser.QualifiedIdentContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.argList"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.argList"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -144,9 +144,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitArgList([NotNull] Nimblesite.Lql.CoreParser.ArgListContext context) { return VisitChildren(context); }
+	public virtual Result VisitArgList([NotNull] LqlParser.ArgListContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arg"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.arg"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -154,9 +154,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitArg([NotNull] Nimblesite.Lql.CoreParser.ArgContext context) { return VisitChildren(context); }
+	public virtual Result VisitArg([NotNull] LqlParser.ArgContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.columnAlias"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.columnAlias"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -164,9 +164,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitColumnAlias([NotNull] Nimblesite.Lql.CoreParser.ColumnAliasContext context) { return VisitChildren(context); }
+	public virtual Result VisitColumnAlias([NotNull] LqlParser.ColumnAliasContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arithmeticExpr"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.arithmeticExpr"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -174,9 +174,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitArithmeticExpr([NotNull] Nimblesite.Lql.CoreParser.ArithmeticExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitArithmeticExpr([NotNull] LqlParser.ArithmeticExprContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arithmeticTerm"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.arithmeticTerm"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -184,9 +184,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitArithmeticTerm([NotNull] Nimblesite.Lql.CoreParser.ArithmeticTermContext context) { return VisitChildren(context); }
+	public virtual Result VisitArithmeticTerm([NotNull] LqlParser.ArithmeticTermContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arithmeticFactor"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.arithmeticFactor"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -194,9 +194,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitArithmeticFactor([NotNull] Nimblesite.Lql.CoreParser.ArithmeticFactorContext context) { return VisitChildren(context); }
+	public virtual Result VisitArithmeticFactor([NotNull] LqlParser.ArithmeticFactorContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.functionCall"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.functionCall"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -204,9 +204,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitFunctionCall([NotNull] Nimblesite.Lql.CoreParser.FunctionCallContext context) { return VisitChildren(context); }
+	public virtual Result VisitFunctionCall([NotNull] LqlParser.FunctionCallContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.namedArg"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.namedArg"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -214,9 +214,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitNamedArg([NotNull] Nimblesite.Lql.CoreParser.NamedArgContext context) { return VisitChildren(context); }
+	public virtual Result VisitNamedArg([NotNull] LqlParser.NamedArgContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.logicalExpr"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.logicalExpr"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -224,9 +224,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitLogicalExpr([NotNull] Nimblesite.Lql.CoreParser.LogicalExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitLogicalExpr([NotNull] LqlParser.LogicalExprContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.andExpr"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.andExpr"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -234,9 +234,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitAndExpr([NotNull] Nimblesite.Lql.CoreParser.AndExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitAndExpr([NotNull] LqlParser.AndExprContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.atomicExpr"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.atomicExpr"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -244,9 +244,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitAtomicExpr([NotNull] Nimblesite.Lql.CoreParser.AtomicExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitAtomicExpr([NotNull] LqlParser.AtomicExprContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.comparison"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.comparison"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -254,9 +254,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitComparison([NotNull] Nimblesite.Lql.CoreParser.ComparisonContext context) { return VisitChildren(context); }
+	public virtual Result VisitComparison([NotNull] LqlParser.ComparisonContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.existsExpr"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.existsExpr"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -264,9 +264,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitExistsExpr([NotNull] Nimblesite.Lql.CoreParser.ExistsExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitExistsExpr([NotNull] LqlParser.ExistsExprContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.nullCheckExpr"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.nullCheckExpr"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -274,9 +274,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitNullCheckExpr([NotNull] Nimblesite.Lql.CoreParser.NullCheckExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitNullCheckExpr([NotNull] LqlParser.NullCheckExprContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.inExpr"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.inExpr"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -284,9 +284,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitInExpr([NotNull] Nimblesite.Lql.CoreParser.InExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitInExpr([NotNull] LqlParser.InExprContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.caseExpr"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.caseExpr"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -294,9 +294,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitCaseExpr([NotNull] Nimblesite.Lql.CoreParser.CaseExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitCaseExpr([NotNull] LqlParser.CaseExprContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.whenClause"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.whenClause"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -304,9 +304,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitWhenClause([NotNull] Nimblesite.Lql.CoreParser.WhenClauseContext context) { return VisitChildren(context); }
+	public virtual Result VisitWhenClause([NotNull] LqlParser.WhenClauseContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.caseResult"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.caseResult"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -314,9 +314,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitCaseResult([NotNull] Nimblesite.Lql.CoreParser.CaseResultContext context) { return VisitChildren(context); }
+	public virtual Result VisitCaseResult([NotNull] LqlParser.CaseResultContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.orderDirection"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.orderDirection"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -324,9 +324,9 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitOrderDirection([NotNull] Nimblesite.Lql.CoreParser.OrderDirectionContext context) { return VisitChildren(context); }
+	public virtual Result VisitOrderDirection([NotNull] LqlParser.OrderDirectionContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.comparisonOp"/>.
+	/// Visit a parse tree produced by <see cref="LqlParser.comparisonOp"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -334,6 +334,6 @@ public partial class Nimblesite.Lql.CoreBaseVisitor<Result> : AbstractParseTreeV
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitComparisonOp([NotNull] Nimblesite.Lql.CoreParser.ComparisonOpContext context) { return VisitChildren(context); }
+	public virtual Result VisitComparisonOp([NotNull] LqlParser.ComparisonOpContext context) { return VisitChildren(context); }
 }
 } // namespace Nimblesite.Lql.Core.Parsing

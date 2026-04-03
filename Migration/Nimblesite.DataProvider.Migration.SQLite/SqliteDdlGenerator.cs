@@ -120,7 +120,7 @@ public static class SqliteDdlGenerator
         // LQL expression takes precedence over raw SQL default
         if (column.DefaultLqlExpression is not null)
         {
-            var translated = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(column.DefaultLqlExpression);
+            var translated = LqlDefaultTranslator.ToSqlite(column.DefaultLqlExpression);
             sb.Append(CultureInfo.InvariantCulture, $" DEFAULT {translated}");
         }
         else if (column.DefaultValue is not null)

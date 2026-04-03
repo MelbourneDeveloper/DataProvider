@@ -24,8 +24,8 @@ public sealed partial class SpecConformanceTests : IDisposable
     {
         _db = new SqliteConnection($"Data Source={_dbPath}");
         _db.Open();
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, _originId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, _originId);
         CreatePersonTable();
     }
 
@@ -104,7 +104,7 @@ public sealed partial class SpecConformanceTests : IDisposable
     public void Spec5_4_OriginId_StoredInSyncState()
     {
         // Act
-        var result = Nimblesite.Sync.CoreSchema.GetOriginId(_db);
+        var result = SyncSchema.GetOriginId(_db);
 
         // Assert
         Assert.IsType<StringSyncOk>(result);
@@ -260,7 +260,7 @@ public sealed partial class SpecConformanceTests : IDisposable
 
         // Assert
         var changes = FetchAllChanges();
-        var deleteChange = changes.First(c => c.Operation == Nimblesite.Sync.CoreOperation.Delete);
+        var deleteChange = changes.First(c => c.Operation == SyncOperation.Delete);
         Assert.Null(deleteChange.Payload);
     }
 
@@ -278,9 +278,9 @@ public sealed partial class SpecConformanceTests : IDisposable
         TriggerGenerator.CreateTriggers(_db, "Person", TestLogger.L);
 
         // Act: Enable suppression and insert
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_db);
+        SyncSessionManager.EnableSuppression(_db);
         ExecuteSql("INSERT INTO Person (Id, Name, Email) VALUES ('p1', 'Alice', 'a@b.com')");
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_db);
+        SyncSessionManager.DisableSuppression(_db);
 
         // Assert: No log entry created
         var changes = FetchAllChanges();
@@ -308,13 +308,13 @@ public sealed partial class SpecConformanceTests : IDisposable
         Assert.Equal(0, initial);
 
         // Enable suppression
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_db);
+        SyncSessionManager.EnableSuppression(_db);
         cmd.CommandText = "SELECT sync_active FROM _sync_session";
         var active = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
         Assert.Equal(1, active);
 
         // Disable suppression
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_db);
+        SyncSessionManager.DisableSuppression(_db);
         cmd.CommandText = "SELECT sync_active FROM _sync_session";
         var disabled = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
         Assert.Equal(0, disabled);
@@ -413,14 +413,14 @@ public sealed partial class SpecConformanceTests : IDisposable
         }
 
         // Act: Fetch first batch of 3
-        var result1 = Nimblesite.Sync.CoreLogRepository.FetchChanges(_db, 0, 3);
-        Assert.IsType<Nimblesite.Sync.CoreLogListOk>(result1);
-        var batch1 = ((Nimblesite.Sync.CoreLogListOk)result1).Value;
+        var result1 = SyncLogRepository.FetchChanges(_db, 0, 3);
+        Assert.IsType<SyncLogListOk>(result1);
+        var batch1 = ((SyncLogListOk)result1).Value;
 
         // Act: Fetch next batch from where we left off
-        var result2 = Nimblesite.Sync.CoreLogRepository.FetchChanges(_db, batch1[^1].Version, 3);
-        Assert.IsType<Nimblesite.Sync.CoreLogListOk>(result2);
-        var batch2 = ((Nimblesite.Sync.CoreLogListOk)result2).Value;
+        var result2 = SyncLogRepository.FetchChanges(_db, batch1[^1].Version, 3);
+        Assert.IsType<SyncLogListOk>(result2);
+        var batch2 = ((SyncLogListOk)result2).Value;
 
         // Assert
         Assert.Equal(3, batch1.Count);
@@ -440,13 +440,13 @@ public sealed partial class SpecConformanceTests : IDisposable
     {
         // Arrange: Create entry with my own origin
         var myOrigin = "my-origin-123";
-        var batch = new Nimblesite.Sync.CoreBatch(
+        var batch = new SyncBatch(
             [
-                new Nimblesite.Sync.CoreLogEntry(
+                new SyncLogEntry(
                     1,
                     "Person",
                     "{\"Id\":\"p1\"}",
-                    Nimblesite.Sync.CoreOperation.Insert,
+                    SyncOperation.Insert,
                     "{\"Id\":\"p1\",\"Name\":\"Test\"}",
                     myOrigin,
                     DateTime.UtcNow.ToString("O")
@@ -457,7 +457,7 @@ public sealed partial class SpecConformanceTests : IDisposable
             false
         );
 
-        var applied = new List<Nimblesite.Sync.CoreLogEntry>();
+        var applied = new List<SyncLogEntry>();
 
         // Act
         var result = ChangeApplier.ApplyBatch(
@@ -552,11 +552,11 @@ public sealed partial class SpecConformanceTests : IDisposable
         // Arrange
         var entries = new[]
         {
-            new Nimblesite.Sync.CoreLogEntry(
+            new SyncLogEntry(
                 1,
                 "Person",
                 "{\"Id\":\"1\"}",
-                Nimblesite.Sync.CoreOperation.Insert,
+                SyncOperation.Insert,
                 "{\"Id\":\"1\",\"Name\":\"Alice\"}",
                 "origin-1",
                 "2025-01-01T00:00:00.000Z"
@@ -679,11 +679,11 @@ public sealed partial class SpecConformanceTests : IDisposable
         cmd.ExecuteNonQuery();
     }
 
-    private List<Nimblesite.Sync.CoreLogEntry> FetchAllChanges()
+    private List<SyncLogEntry> FetchAllChanges()
     {
-        var result = Nimblesite.Sync.CoreLogRepository.FetchChanges(_db, 0, 1000);
-        Assert.IsType<Nimblesite.Sync.CoreLogListOk>(result);
-        return [.. ((Nimblesite.Sync.CoreLogListOk)result).Value];
+        var result = SyncLogRepository.FetchChanges(_db, 0, 1000);
+        Assert.IsType<SyncLogListOk>(result);
+        return [.. ((SyncLogListOk)result).Value];
     }
 
     [GeneratedRegex(@"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$")]

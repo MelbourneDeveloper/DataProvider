@@ -30,7 +30,7 @@ public enum UnmappedTableBehavior
 /// <summary>
 /// Nimblesite.Sync.Core tracking strategy. Spec Section 7.5.1.
 /// </summary>
-public enum Nimblesite.Sync.CoreTrackingStrategy
+public enum SyncTrackingStrategy
 {
     /// <summary>Track last synced _sync_log version per mapping.</summary>
     Version,
@@ -88,7 +88,7 @@ public sealed record ColumnMapping(
 /// Filter expression to select which records to sync.
 /// </summary>
 /// <param name="Nimblesite.Lql.Core">LQL boolean expression, e.g. "IsActive = true AND DeletedAt IS NULL".</param>
-public sealed record Nimblesite.Sync.CoreFilter(string Nimblesite.Lql.Core);
+public sealed record SyncFilter(string Nimblesite.Lql.Core);
 
 /// <summary>
 /// Nimblesite.Sync.Core tracking configuration for a mapping.
@@ -96,9 +96,9 @@ public sealed record Nimblesite.Sync.CoreFilter(string Nimblesite.Lql.Core);
 /// <param name="Enabled">Whether sync tracking is enabled.</param>
 /// <param name="Strategy">Tracking strategy to use.</param>
 /// <param name="TrackingColumn">Column name for timestamp strategy.</param>
-public sealed record Nimblesite.Sync.CoreTrackingConfig(
+public sealed record SyncTrackingConfig(
     bool Enabled = true,
-    Nimblesite.Sync.CoreTrackingStrategy Strategy = Nimblesite.Sync.CoreTrackingStrategy.Version,
+    SyncTrackingStrategy Strategy = SyncTrackingStrategy.Version,
     string? TrackingColumn = null
 );
 
@@ -121,7 +121,7 @@ public sealed record TargetConfig(string Table, IReadOnlyList<ColumnMapping> Col
 /// <param name="ColumnMappings">Column mappings for single target.</param>
 /// <param name="ExcludedColumns">Columns to exclude from sync.</param>
 /// <param name="Filter">Optional filter expression.</param>
-/// <param name="Nimblesite.Sync.CoreTracking">Nimblesite.Sync.Core tracking configuration.</param>
+/// <param name="SyncTracking">Nimblesite.Sync.Core tracking configuration.</param>
 /// <param name="IsMultiTarget">True if mapping to multiple tables.</param>
 /// <param name="Targets">Target configurations for multi-target mapping.</param>
 public sealed record TableMapping(
@@ -133,8 +133,8 @@ public sealed record TableMapping(
     PkMapping? PkMapping,
     IReadOnlyList<ColumnMapping> ColumnMappings,
     IReadOnlyList<string> ExcludedColumns,
-    Nimblesite.Sync.CoreFilter? Filter,
-    Nimblesite.Sync.CoreTrackingConfig Nimblesite.Sync.CoreTracking,
+    SyncFilter? Filter,
+    SyncTrackingConfig SyncTracking,
     bool IsMultiTarget = false,
     IReadOnlyList<TargetConfig>? Targets = null
 )
@@ -156,7 +156,7 @@ public sealed record TableMapping(
             ColumnMappings: [],
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 }
 
@@ -166,7 +166,7 @@ public sealed record TableMapping(
 /// <param name="Version">Configuration format version.</param>
 /// <param name="UnmappedTableBehavior">Behavior for unmapped tables.</param>
 /// <param name="Mappings">List of table mappings.</param>
-public sealed record Nimblesite.Sync.CoreMappingConfig(
+public sealed record SyncMappingConfig(
     string Version,
     UnmappedTableBehavior UnmappedTableBehavior,
     IReadOnlyList<TableMapping> Mappings
@@ -175,11 +175,11 @@ public sealed record Nimblesite.Sync.CoreMappingConfig(
     /// <summary>
     /// Empty configuration with strict unmapped table behavior.
     /// </summary>
-    public static Nimblesite.Sync.CoreMappingConfig Empty => new("1.0", UnmappedTableBehavior.Strict, []);
+    public static SyncMappingConfig Empty => new("1.0", UnmappedTableBehavior.Strict, []);
 
     /// <summary>
     /// Configuration that passes through all tables unchanged.
     /// </summary>
-    public static Nimblesite.Sync.CoreMappingConfig Passthrough =>
+    public static SyncMappingConfig Passthrough =>
         new("1.0", UnmappedTableBehavior.Passthrough, []);
 }

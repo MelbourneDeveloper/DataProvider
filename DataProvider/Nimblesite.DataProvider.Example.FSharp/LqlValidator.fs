@@ -1,4 +1,4 @@
-module Nimblesite.Lql.CoreValidator
+module LqlValidator
 
 open System
 open Microsoft.Data.Sqlite
@@ -10,14 +10,14 @@ open Selecta
 //TODO: this does not belong here. Move to core code
 
 /// Validates LQL at compile time and provides execution methods
-type Nimblesite.Lql.CoreQuery private() =
+type LqlQuery private() =
     
     /// Validates and executes an LQL query
     static member inline Execute(connectionString: string, [<ReflectedDefinition>] lqlQuery: string) =
         // Validate at compile time
-        let statementResult = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlQuery)
+        let statementResult = LqlStatementConverter.ToStatement(lqlQuery)
         match statementResult with
-        | :? Outcome.Result<Nimblesite.Lql.CoreStatement, SqlError>.Ok<Nimblesite.Lql.CoreStatement, SqlError> as success ->
+        | :? Outcome.Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> as success ->
             let lqlStatement = success.Value
             match lqlStatement.AstNode with
             | :? Pipeline as pipeline ->
@@ -52,16 +52,16 @@ type Nimblesite.Lql.CoreQuery private() =
                 Ok(results |> List.ofSeq)
             | _ -> 
                 Error "Invalid LQL statement type"
-        | :? Outcome.Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError> as failure ->
+        | :? Outcome.Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> as failure ->
             Error(sprintf "Invalid LQL syntax: %s" failure.Value.Message)
         | _ ->
             Error "Unknown result type from LQL parser"
     
     /// Gets the SQL for an LQL query (for debugging)
     static member inline ToSql([<ReflectedDefinition>] lqlQuery: string) =
-        let statementResult = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlQuery)
+        let statementResult = LqlStatementConverter.ToStatement(lqlQuery)
         match statementResult with
-        | :? Outcome.Result<Nimblesite.Lql.CoreStatement, SqlError>.Ok<Nimblesite.Lql.CoreStatement, SqlError> as success ->
+        | :? Outcome.Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> as success ->
             let lqlStatement = success.Value
             match lqlStatement.AstNode with
             | :? Pipeline as pipeline ->
@@ -69,7 +69,7 @@ type Nimblesite.Lql.CoreQuery private() =
                 Ok(PipelineProcessor.ConvertPipelineToSql(pipeline, sqliteContext))
             | _ -> 
                 Error "Invalid LQL statement type"
-        | :? Outcome.Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError> as failure ->
+        | :? Outcome.Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> as failure ->
             Error(sprintf "Invalid LQL syntax: %s" failure.Value.Message)
         | _ ->
             Error "Unknown result type from LQL parser"

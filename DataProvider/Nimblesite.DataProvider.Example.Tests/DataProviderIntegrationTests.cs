@@ -11,13 +11,13 @@ namespace Nimblesite.DataProvider.Example.Tests;
 /// <summary>
 /// Integration tests for Nimblesite.DataProvider.Core code generation
 /// </summary>
-public sealed class Nimblesite.DataProvider.CoreIntegrationTests : IDisposable
+public sealed class DataProviderIntegrationTests : IDisposable
 {
     private readonly string _dbPath;
     private readonly string _connectionString;
     private readonly SqliteConnection _connection;
 
-    public Nimblesite.DataProvider.CoreIntegrationTests()
+    public DataProviderIntegrationTests()
     {
         _dbPath = Path.Combine(
             Path.GetTempPath(),
@@ -480,7 +480,7 @@ public sealed class Nimblesite.DataProvider.CoreIntegrationTests : IDisposable
             await pragmaCommand.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
 
-        // I don't know why this is here. We're supposed to use Nimblesite.DataProvider.Migration.Cores to create the schema and
+        // I don't know why this is here. We're supposed to use Migrations to create the schema and
         // inserts/updates are supposed to be extension methods.
 
         // Create all tables

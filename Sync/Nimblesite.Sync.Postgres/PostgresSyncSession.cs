@@ -23,7 +23,7 @@ public static class PostgresSyncSession
         catch (NpgsqlException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to enable suppression: {ex.Message}")
+                new SyncErrorDatabase($"Failed to enable suppression: {ex.Message}")
             );
         }
     }
@@ -45,7 +45,7 @@ public static class PostgresSyncSession
         catch (NpgsqlException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to disable suppression: {ex.Message}")
+                new SyncErrorDatabase($"Failed to disable suppression: {ex.Message}")
             );
         }
     }

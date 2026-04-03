@@ -83,7 +83,7 @@ public static class TriggerGenerator
         {
             logger.LogError("TRIGGER: Table {Table} not found or has no columns", tableName);
             return new StringSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Table '{tableName}' not found or has no columns")
+                new SyncErrorDatabase($"Table '{tableName}' not found or has no columns")
             );
         }
 
@@ -92,7 +92,7 @@ public static class TriggerGenerator
         {
             logger.LogError("TRIGGER: Table {Table} has no primary key", tableName);
             return new StringSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Table '{tableName}' has no primary key")
+                new SyncErrorDatabase($"Table '{tableName}' has no primary key")
             );
         }
 
@@ -163,7 +163,7 @@ public static class TriggerGenerator
         {
             logger.LogError(ex, "TRIGGER: Failed to create triggers for {Table}", tableName);
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to create triggers: {ex.Message}")
+                new SyncErrorDatabase($"Failed to create triggers: {ex.Message}")
             );
         }
     }
@@ -209,7 +209,7 @@ public static class TriggerGenerator
         {
             logger.LogError(ex, "TRIGGER: Failed to drop triggers for {Table}", tableName);
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to drop triggers: {ex.Message}")
+                new SyncErrorDatabase($"Failed to drop triggers: {ex.Message}")
             );
         }
     }
@@ -256,7 +256,7 @@ public static class TriggerGenerator
         catch (SqliteException ex)
         {
             return new ColumnInfoListError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get table columns: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get table columns: {ex.Message}")
             );
         }
     }

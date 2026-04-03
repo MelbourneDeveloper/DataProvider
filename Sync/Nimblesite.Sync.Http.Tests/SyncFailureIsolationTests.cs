@@ -5,7 +5,7 @@ namespace Nimblesite.Sync.Http.Tests;
 /// These tests MUST FAIL until the underlying issues are fixed.
 /// Based on sync errors: Connection timeout, Version mismatch, Pending stuck state.
 /// </summary>
-public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
+public sealed class SyncFailureIsolationTests : IDisposable
 {
     private readonly string _serverDbPath;
     private readonly SqliteConnection _serverConn;
@@ -18,7 +18,7 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
     /// <summary>
     /// Initializes test databases.
     /// </summary>
-    public Nimblesite.Sync.CoreFailureIsolationTests()
+    public SyncFailureIsolationTests()
     {
         _serverDbPath = Path.Combine(Path.GetTempPath(), $"sync_fail_server_{Guid.NewGuid()}.db");
         _serverConn = new SqliteConnection($"Data Source={_serverDbPath}");
@@ -33,8 +33,8 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
 
     private static void InitializeDatabase(SqliteConnection conn, string originId)
     {
-        Nimblesite.Sync.CoreSchema.CreateSchema(conn);
-        Nimblesite.Sync.CoreSchema.SetOriginId(conn, originId);
+        SyncSchema.CreateSchema(conn);
+        SyncSchema.SetOriginId(conn, originId);
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
@@ -110,18 +110,18 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
     #region Connection Timeout Tests (sync-004: Encounter enc-101)
 
     /// <summary>
-    /// FAILING TEST: Nimblesite.Sync.Core operations should handle timeout gracefully and return Nimblesite.Sync.CoreErrorDatabase.
+    /// FAILING TEST: Nimblesite.Sync.Core operations should handle timeout gracefully and return SyncErrorDatabase.
     /// Currently the sync times out after 30s with no graceful error handling.
     /// Error from production: "Connection timeout after 30s" for Encounter sync.
     /// </summary>
     [Fact]
-    public void Nimblesite.Sync.CorePull_WhenRemoteUnreachable_ShouldReturnTimeoutError_NotHang()
+    public void SyncPull_WhenRemoteUnreachable_ShouldReturnTimeoutError_NotHang()
     {
         // Arrange - simulate a slow/unreachable remote by using invalid connection
         var unreachableConnStr = "Data Source=/nonexistent/path/to/database.db";
 
         // Act - attempt to fetch changes with unreachable database
-        // This should fail fast with Nimblesite.Sync.CoreErrorDatabase, not hang for 30 seconds
+        // This should fail fast with SyncErrorDatabase, not hang for 30 seconds
         using var unreachableConn = new SqliteConnection(unreachableConnStr);
 
         var startTime = DateTime.UtcNow;
@@ -144,7 +144,7 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
     /// and allow retry, not leave the sync in a broken state.
     /// </summary>
     [Fact]
-    public async Task Nimblesite.Sync.CoreApply_WhenOperationTimesOut_ShouldRecordFailureAndAllowRetry()
+    public async Task SyncApply_WhenOperationTimesOut_ShouldRecordFailureAndAllowRetry()
     {
         // Arrange - insert an encounter that will be synced
         var encounterId = "enc-101";
@@ -158,9 +158,9 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
         }
 
         // Get the change
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(_clientConn, 0, 100);
-        Assert.True(changes is Nimblesite.Sync.CoreLogListOk);
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(_clientConn, 0, 100);
+        Assert.True(changes is SyncLogListOk);
+        var changesList = ((SyncLogListOk)changes).Value;
         Assert.Single(changesList);
         var encounterChange = changesList[0];
 
@@ -169,7 +169,7 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
 
         // The sync system should handle cancellation gracefully
         // Currently it doesn't - this test should fail to prove the bug
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_serverConn);
+        SyncSessionManager.EnableSuppression(_serverConn);
 
         var applyTask = Task.Run(
             () =>
@@ -185,7 +185,7 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
         // Currently the system does NOT handle this properly
         var taskCompleted = await Task.WhenAny(applyTask, Task.Delay(5000));
 
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_serverConn);
+        SyncSessionManager.DisableSuppression(_serverConn);
 
         // If task completed normally, verify the result
         if (taskCompleted == applyTask && !applyTask.IsCanceled && !applyTask.IsFaulted)
@@ -220,20 +220,20 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
         }
 
         // Get changes
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(_clientConn, 0, 100);
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(_clientConn, 0, 100);
+        var changesList = ((SyncLogListOk)changes).Value;
         Assert.Equal(10, changesList.Count);
 
         // Act - time the sync operation
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_serverConn);
+        SyncSessionManager.EnableSuppression(_serverConn);
         foreach (var change in changesList)
         {
             var result = ChangeApplierSQLite.ApplyChange(_serverConn, change);
             Assert.True(result is BoolSyncOk, $"Apply failed for {change.PkValue}: {result}");
         }
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_serverConn);
+        SyncSessionManager.DisableSuppression(_serverConn);
 
         stopwatch.Stop();
 
@@ -254,7 +254,7 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
     /// Error from production: "Version mismatch: local v3, re..." for Practitioner pract-202.
     /// </summary>
     [Fact]
-    public void Nimblesite.Sync.CoreConflict_WhenVersionMismatch_ShouldDetectAndReportConflict()
+    public void SyncConflict_WhenVersionMismatch_ShouldDetectAndReportConflict()
     {
         // Arrange - insert practitioner on server with version 5
         var practitionerId = "pract-202";
@@ -268,28 +268,28 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
         }
 
         // Get server change (version 5)
-        var serverChanges = Nimblesite.Sync.CoreLogRepository.FetchChanges(_serverConn, 0, 100);
-        _ = ((Nimblesite.Sync.CoreLogListOk)serverChanges).Value[0];
+        var serverChanges = SyncLogRepository.FetchChanges(_serverConn, 0, 100);
+        _ = ((SyncLogListOk)serverChanges).Value[0];
 
         // Create a conflicting client change with version 3 (older)
-        var clientChangeWithOldVersion = new Nimblesite.Sync.CoreLogEntry(
+        var clientChangeWithOldVersion = new SyncLogEntry(
             Version: 1,
             TableName: "fhir_Practitioner",
             PkValue: $"{{\"Id\":\"{practitionerId}\"}}",
-            Operation: Nimblesite.Sync.CoreOperation.Update,
+            Operation: SyncOperation.Update,
             Payload: $"{{\"Id\":\"{practitionerId}\",\"Identifier\":\"DR-202\",\"Active\":1,\"NameFamily\":\"Smith\",\"NameGiven\":\"Jane\",\"Qualification\":\"DO\",\"Specialty\":\"Neurology\",\"Version\":3}}",
             Origin: _clientOriginId,
             Timestamp: DateTime.UtcNow.AddMinutes(-10).ToString("O") // Older timestamp
         );
 
         // Act - attempt to apply client change with older version to server
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_serverConn);
+        SyncSessionManager.EnableSuppression(_serverConn);
         _ = ChangeApplierSQLite.ApplyChange(_serverConn, clientChangeWithOldVersion);
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_serverConn);
+        SyncSessionManager.DisableSuppression(_serverConn);
 
         // Assert - currently the system just overwrites without version check
         // This test SHOULD fail because we expect conflict detection
-        // The system should detect version 3 < version 5 and raise Nimblesite.Sync.CoreErrorUnresolvedConflict
+        // The system should detect version 3 < version 5 and raise SyncErrorUnresolvedConflict
 
         // Verify what actually happened
         using var verifyCmd = _serverConn.CreateCommand();
@@ -313,7 +313,7 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
     /// The server version should win when there's a conflict.
     /// </summary>
     [Fact]
-    public void Nimblesite.Sync.CoreConflict_ConcurrentPractitionerUpdates_ServerVersionShouldWin()
+    public void SyncConflict_ConcurrentPractitionerUpdates_ServerVersionShouldWin()
     {
         // Arrange - create practitioner on both sides
         var practitionerId = "pract-concurrent";
@@ -329,15 +329,15 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
         }
 
         // Fetch server's log entry
-        var serverChanges = Nimblesite.Sync.CoreLogRepository.FetchChanges(_serverConn, 0, 100);
-        var serverEntry = ((Nimblesite.Sync.CoreLogListOk)serverChanges).Value[0];
+        var serverChanges = SyncLogRepository.FetchChanges(_serverConn, 0, 100);
+        var serverEntry = ((SyncLogListOk)serverChanges).Value[0];
 
         // Create client change with older version (v1) and older timestamp
-        var clientEntry = new Nimblesite.Sync.CoreLogEntry(
+        var clientEntry = new SyncLogEntry(
             Version: 1,
             TableName: "fhir_Practitioner",
             PkValue: $"{{\"Id\":\"{practitionerId}\"}}",
-            Operation: Nimblesite.Sync.CoreOperation.Update,
+            Operation: SyncOperation.Update,
             Payload: $"{{\"Id\":\"{practitionerId}\",\"Identifier\":\"DR-CONC\",\"Active\":1,\"NameFamily\":\"ClientFamily\",\"NameGiven\":\"ClientGiven\",\"Specialty\":\"ClientSpecialty\",\"Version\":1}}",
             Origin: _clientOriginId,
             Timestamp: DateTime.UtcNow.AddHours(-1).ToString("O") // 1 hour older
@@ -361,9 +361,9 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
 
         // Now verify that applying the losing change doesn't overwrite the winner
         // This is where the bug is - the system doesn't check versions during apply
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_serverConn);
+        SyncSessionManager.EnableSuppression(_serverConn);
         _ = ChangeApplierSQLite.ApplyChange(_serverConn, clientEntry);
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_serverConn);
+        SyncSessionManager.DisableSuppression(_serverConn);
 
         // Verify server state after apply
         using var verifyCmd = _serverConn.CreateCommand();
@@ -379,7 +379,7 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
     /// FAILING TEST: Full resync should be required when client version is too far behind.
     /// </summary>
     [Fact]
-    public void Nimblesite.Sync.CoreVersionGap_WhenClientTooFarBehind_ShouldRequireFullResync()
+    public void SyncVersionGap_WhenClientTooFarBehind_ShouldRequireFullResync()
     {
         // Arrange - simulate server having purged old versions
         // Server's oldest available version is 100
@@ -435,17 +435,17 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
         }
 
         // Get the change
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(_clientConn, 0, 100);
-        Assert.True(changes is Nimblesite.Sync.CoreLogListOk);
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(_clientConn, 0, 100);
+        Assert.True(changes is SyncLogListOk);
+        var changesList = ((SyncLogListOk)changes).Value;
         Assert.Single(changesList);
 
         var appointmentChange = changesList[0];
 
         // Act - apply the change to server
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_serverConn);
+        SyncSessionManager.EnableSuppression(_serverConn);
         var result = ChangeApplierSQLite.ApplyChange(_serverConn, appointmentChange);
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_serverConn);
+        SyncSessionManager.DisableSuppression(_serverConn);
 
         // Assert - change should be applied successfully, not stuck
         Assert.True(
@@ -467,7 +467,7 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
     /// When an operation is pending for too long, it should be flagged.
     /// </summary>
     [Fact]
-    public void Nimblesite.Sync.CoreTracking_WhenOperationPendingTooLong_ShouldFlagAsStuck()
+    public void SyncTracking_WhenOperationPendingTooLong_ShouldFlagAsStuck()
     {
         // Arrange - simulate a sync operation that started but never completed
         var syncRecordId = "sync-003";
@@ -511,15 +511,15 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
         }
 
         // Get all changes
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(_clientConn, 0, 100);
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(_clientConn, 0, 100);
+        var changesList = ((SyncLogListOk)changes).Value;
         Assert.Equal(3, changesList.Count);
 
         // Act - sync all appointments
         var successCount = 0;
         var failCount = 0;
 
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_serverConn);
+        SyncSessionManager.EnableSuppression(_serverConn);
         foreach (var change in changesList)
         {
             var result = ChangeApplierSQLite.ApplyChange(_serverConn, change);
@@ -532,7 +532,7 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
                 failCount++;
             }
         }
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_serverConn);
+        SyncSessionManager.DisableSuppression(_serverConn);
 
         // Assert - all should succeed, none should be stuck
         Assert.Equal(3, successCount);
@@ -610,8 +610,8 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
         }
 
         // Get all changes
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(_clientConn, 0, 100);
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(_clientConn, 0, 100);
+        var changesList = ((SyncLogListOk)changes).Value;
 
         // Act - sync to server with timing
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -631,7 +631,7 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
             cmd.ExecuteNonQuery();
         }
 
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_serverConn);
+        SyncSessionManager.EnableSuppression(_serverConn);
 
         var results = new List<(string entity, bool success, string? error)>();
         foreach (var change in changesList)
@@ -646,7 +646,7 @@ public sealed class Nimblesite.Sync.CoreFailureIsolationTests : IDisposable
             results.Add((change.TableName, success, error));
         }
 
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_serverConn);
+        SyncSessionManager.DisableSuppression(_serverConn);
         stopwatch.Stop();
 
         // Assert - all entities should sync successfully

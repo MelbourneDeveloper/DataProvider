@@ -6,7 +6,7 @@ namespace Nimblesite.Sync.SQLite;
 /// Manages sync session state for trigger suppression in SQLite.
 /// Implements spec Section 8 (Trigger Suppression).
 /// </summary>
-public static class Nimblesite.Sync.CoreSessionManager
+public static class SyncSessionManager
 {
     /// <summary>
     /// Enables trigger suppression. Call before applying incoming changes.
@@ -25,7 +25,7 @@ public static class Nimblesite.Sync.CoreSessionManager
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to enable trigger suppression: {ex.Message}")
+                new SyncErrorDatabase($"Failed to enable trigger suppression: {ex.Message}")
             );
         }
     }
@@ -47,7 +47,7 @@ public static class Nimblesite.Sync.CoreSessionManager
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to disable trigger suppression: {ex.Message}")
+                new SyncErrorDatabase($"Failed to disable trigger suppression: {ex.Message}")
             );
         }
     }
@@ -69,7 +69,7 @@ public static class Nimblesite.Sync.CoreSessionManager
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to check suppression state: {ex.Message}")
+                new SyncErrorDatabase($"Failed to check suppression state: {ex.Message}")
             );
         }
     }

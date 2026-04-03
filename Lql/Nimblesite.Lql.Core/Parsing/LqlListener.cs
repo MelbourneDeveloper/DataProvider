@@ -26,310 +26,310 @@ using IToken = Antlr4.Runtime.IToken;
 
 /// <summary>
 /// This interface defines a complete listener for a parse tree produced by
-/// <see cref="Nimblesite.Lql.CoreParser"/>.
+/// <see cref="LqlParser"/>.
 /// </summary>
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.13.1")]
 [System.CLSCompliant(false)]
 public interface ILqlListener : IParseTreeListener {
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.program"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.program"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterProgram([NotNull] Nimblesite.Lql.CoreParser.ProgramContext context);
+	void EnterProgram([NotNull] LqlParser.ProgramContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.program"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.program"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitProgram([NotNull] Nimblesite.Lql.CoreParser.ProgramContext context);
+	void ExitProgram([NotNull] LqlParser.ProgramContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.statement"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.statement"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterStatement([NotNull] Nimblesite.Lql.CoreParser.StatementContext context);
+	void EnterStatement([NotNull] LqlParser.StatementContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.statement"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.statement"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitStatement([NotNull] Nimblesite.Lql.CoreParser.StatementContext context);
+	void ExitStatement([NotNull] LqlParser.StatementContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.letStmt"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.letStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterLetStmt([NotNull] Nimblesite.Lql.CoreParser.LetStmtContext context);
+	void EnterLetStmt([NotNull] LqlParser.LetStmtContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.letStmt"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.letStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitLetStmt([NotNull] Nimblesite.Lql.CoreParser.LetStmtContext context);
+	void ExitLetStmt([NotNull] LqlParser.LetStmtContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.pipeExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.pipeExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterPipeExpr([NotNull] Nimblesite.Lql.CoreParser.PipeExprContext context);
+	void EnterPipeExpr([NotNull] LqlParser.PipeExprContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.pipeExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.pipeExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitPipeExpr([NotNull] Nimblesite.Lql.CoreParser.PipeExprContext context);
+	void ExitPipeExpr([NotNull] LqlParser.PipeExprContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.expr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.expr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterExpr([NotNull] Nimblesite.Lql.CoreParser.ExprContext context);
+	void EnterExpr([NotNull] LqlParser.ExprContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.expr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.expr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitExpr([NotNull] Nimblesite.Lql.CoreParser.ExprContext context);
+	void ExitExpr([NotNull] LqlParser.ExprContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.windowSpec"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.windowSpec"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterWindowSpec([NotNull] Nimblesite.Lql.CoreParser.WindowSpecContext context);
+	void EnterWindowSpec([NotNull] LqlParser.WindowSpecContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.windowSpec"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.windowSpec"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitWindowSpec([NotNull] Nimblesite.Lql.CoreParser.WindowSpecContext context);
+	void ExitWindowSpec([NotNull] LqlParser.WindowSpecContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.partitionClause"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.partitionClause"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterPartitionClause([NotNull] Nimblesite.Lql.CoreParser.PartitionClauseContext context);
+	void EnterPartitionClause([NotNull] LqlParser.PartitionClauseContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.partitionClause"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.partitionClause"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitPartitionClause([NotNull] Nimblesite.Lql.CoreParser.PartitionClauseContext context);
+	void ExitPartitionClause([NotNull] LqlParser.PartitionClauseContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.orderClause"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.orderClause"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterOrderClause([NotNull] Nimblesite.Lql.CoreParser.OrderClauseContext context);
+	void EnterOrderClause([NotNull] LqlParser.OrderClauseContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.orderClause"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.orderClause"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitOrderClause([NotNull] Nimblesite.Lql.CoreParser.OrderClauseContext context);
+	void ExitOrderClause([NotNull] LqlParser.OrderClauseContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.lambdaExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.lambdaExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterLambdaExpr([NotNull] Nimblesite.Lql.CoreParser.LambdaExprContext context);
+	void EnterLambdaExpr([NotNull] LqlParser.LambdaExprContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.lambdaExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.lambdaExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitLambdaExpr([NotNull] Nimblesite.Lql.CoreParser.LambdaExprContext context);
+	void ExitLambdaExpr([NotNull] LqlParser.LambdaExprContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.qualifiedIdent"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.qualifiedIdent"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterQualifiedIdent([NotNull] Nimblesite.Lql.CoreParser.QualifiedIdentContext context);
+	void EnterQualifiedIdent([NotNull] LqlParser.QualifiedIdentContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.qualifiedIdent"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.qualifiedIdent"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitQualifiedIdent([NotNull] Nimblesite.Lql.CoreParser.QualifiedIdentContext context);
+	void ExitQualifiedIdent([NotNull] LqlParser.QualifiedIdentContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.argList"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.argList"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterArgList([NotNull] Nimblesite.Lql.CoreParser.ArgListContext context);
+	void EnterArgList([NotNull] LqlParser.ArgListContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.argList"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.argList"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitArgList([NotNull] Nimblesite.Lql.CoreParser.ArgListContext context);
+	void ExitArgList([NotNull] LqlParser.ArgListContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arg"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.arg"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterArg([NotNull] Nimblesite.Lql.CoreParser.ArgContext context);
+	void EnterArg([NotNull] LqlParser.ArgContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arg"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.arg"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitArg([NotNull] Nimblesite.Lql.CoreParser.ArgContext context);
+	void ExitArg([NotNull] LqlParser.ArgContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.columnAlias"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.columnAlias"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterColumnAlias([NotNull] Nimblesite.Lql.CoreParser.ColumnAliasContext context);
+	void EnterColumnAlias([NotNull] LqlParser.ColumnAliasContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.columnAlias"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.columnAlias"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitColumnAlias([NotNull] Nimblesite.Lql.CoreParser.ColumnAliasContext context);
+	void ExitColumnAlias([NotNull] LqlParser.ColumnAliasContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arithmeticExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.arithmeticExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterArithmeticExpr([NotNull] Nimblesite.Lql.CoreParser.ArithmeticExprContext context);
+	void EnterArithmeticExpr([NotNull] LqlParser.ArithmeticExprContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arithmeticExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.arithmeticExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitArithmeticExpr([NotNull] Nimblesite.Lql.CoreParser.ArithmeticExprContext context);
+	void ExitArithmeticExpr([NotNull] LqlParser.ArithmeticExprContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arithmeticTerm"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.arithmeticTerm"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterArithmeticTerm([NotNull] Nimblesite.Lql.CoreParser.ArithmeticTermContext context);
+	void EnterArithmeticTerm([NotNull] LqlParser.ArithmeticTermContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arithmeticTerm"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.arithmeticTerm"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitArithmeticTerm([NotNull] Nimblesite.Lql.CoreParser.ArithmeticTermContext context);
+	void ExitArithmeticTerm([NotNull] LqlParser.ArithmeticTermContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arithmeticFactor"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.arithmeticFactor"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterArithmeticFactor([NotNull] Nimblesite.Lql.CoreParser.ArithmeticFactorContext context);
+	void EnterArithmeticFactor([NotNull] LqlParser.ArithmeticFactorContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arithmeticFactor"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.arithmeticFactor"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitArithmeticFactor([NotNull] Nimblesite.Lql.CoreParser.ArithmeticFactorContext context);
+	void ExitArithmeticFactor([NotNull] LqlParser.ArithmeticFactorContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.functionCall"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.functionCall"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterFunctionCall([NotNull] Nimblesite.Lql.CoreParser.FunctionCallContext context);
+	void EnterFunctionCall([NotNull] LqlParser.FunctionCallContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.functionCall"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.functionCall"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitFunctionCall([NotNull] Nimblesite.Lql.CoreParser.FunctionCallContext context);
+	void ExitFunctionCall([NotNull] LqlParser.FunctionCallContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.namedArg"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.namedArg"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterNamedArg([NotNull] Nimblesite.Lql.CoreParser.NamedArgContext context);
+	void EnterNamedArg([NotNull] LqlParser.NamedArgContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.namedArg"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.namedArg"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitNamedArg([NotNull] Nimblesite.Lql.CoreParser.NamedArgContext context);
+	void ExitNamedArg([NotNull] LqlParser.NamedArgContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.logicalExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.logicalExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterLogicalExpr([NotNull] Nimblesite.Lql.CoreParser.LogicalExprContext context);
+	void EnterLogicalExpr([NotNull] LqlParser.LogicalExprContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.logicalExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.logicalExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitLogicalExpr([NotNull] Nimblesite.Lql.CoreParser.LogicalExprContext context);
+	void ExitLogicalExpr([NotNull] LqlParser.LogicalExprContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.andExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.andExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterAndExpr([NotNull] Nimblesite.Lql.CoreParser.AndExprContext context);
+	void EnterAndExpr([NotNull] LqlParser.AndExprContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.andExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.andExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitAndExpr([NotNull] Nimblesite.Lql.CoreParser.AndExprContext context);
+	void ExitAndExpr([NotNull] LqlParser.AndExprContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.atomicExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.atomicExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterAtomicExpr([NotNull] Nimblesite.Lql.CoreParser.AtomicExprContext context);
+	void EnterAtomicExpr([NotNull] LqlParser.AtomicExprContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.atomicExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.atomicExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitAtomicExpr([NotNull] Nimblesite.Lql.CoreParser.AtomicExprContext context);
+	void ExitAtomicExpr([NotNull] LqlParser.AtomicExprContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.comparison"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.comparison"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterComparison([NotNull] Nimblesite.Lql.CoreParser.ComparisonContext context);
+	void EnterComparison([NotNull] LqlParser.ComparisonContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.comparison"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.comparison"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitComparison([NotNull] Nimblesite.Lql.CoreParser.ComparisonContext context);
+	void ExitComparison([NotNull] LqlParser.ComparisonContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.existsExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.existsExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterExistsExpr([NotNull] Nimblesite.Lql.CoreParser.ExistsExprContext context);
+	void EnterExistsExpr([NotNull] LqlParser.ExistsExprContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.existsExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.existsExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitExistsExpr([NotNull] Nimblesite.Lql.CoreParser.ExistsExprContext context);
+	void ExitExistsExpr([NotNull] LqlParser.ExistsExprContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.nullCheckExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.nullCheckExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterNullCheckExpr([NotNull] Nimblesite.Lql.CoreParser.NullCheckExprContext context);
+	void EnterNullCheckExpr([NotNull] LqlParser.NullCheckExprContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.nullCheckExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.nullCheckExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitNullCheckExpr([NotNull] Nimblesite.Lql.CoreParser.NullCheckExprContext context);
+	void ExitNullCheckExpr([NotNull] LqlParser.NullCheckExprContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.inExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.inExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterInExpr([NotNull] Nimblesite.Lql.CoreParser.InExprContext context);
+	void EnterInExpr([NotNull] LqlParser.InExprContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.inExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.inExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitInExpr([NotNull] Nimblesite.Lql.CoreParser.InExprContext context);
+	void ExitInExpr([NotNull] LqlParser.InExprContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.caseExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.caseExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterCaseExpr([NotNull] Nimblesite.Lql.CoreParser.CaseExprContext context);
+	void EnterCaseExpr([NotNull] LqlParser.CaseExprContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.caseExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.caseExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitCaseExpr([NotNull] Nimblesite.Lql.CoreParser.CaseExprContext context);
+	void ExitCaseExpr([NotNull] LqlParser.CaseExprContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.whenClause"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.whenClause"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterWhenClause([NotNull] Nimblesite.Lql.CoreParser.WhenClauseContext context);
+	void EnterWhenClause([NotNull] LqlParser.WhenClauseContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.whenClause"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.whenClause"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitWhenClause([NotNull] Nimblesite.Lql.CoreParser.WhenClauseContext context);
+	void ExitWhenClause([NotNull] LqlParser.WhenClauseContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.caseResult"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.caseResult"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterCaseResult([NotNull] Nimblesite.Lql.CoreParser.CaseResultContext context);
+	void EnterCaseResult([NotNull] LqlParser.CaseResultContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.caseResult"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.caseResult"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitCaseResult([NotNull] Nimblesite.Lql.CoreParser.CaseResultContext context);
+	void ExitCaseResult([NotNull] LqlParser.CaseResultContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.orderDirection"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.orderDirection"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterOrderDirection([NotNull] Nimblesite.Lql.CoreParser.OrderDirectionContext context);
+	void EnterOrderDirection([NotNull] LqlParser.OrderDirectionContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.orderDirection"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.orderDirection"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitOrderDirection([NotNull] Nimblesite.Lql.CoreParser.OrderDirectionContext context);
+	void ExitOrderDirection([NotNull] LqlParser.OrderDirectionContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.comparisonOp"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.comparisonOp"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterComparisonOp([NotNull] Nimblesite.Lql.CoreParser.ComparisonOpContext context);
+	void EnterComparisonOp([NotNull] LqlParser.ComparisonOpContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.comparisonOp"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.comparisonOp"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitComparisonOp([NotNull] Nimblesite.Lql.CoreParser.ComparisonOpContext context);
+	void ExitComparisonOp([NotNull] LqlParser.ComparisonOpContext context);
 }
 } // namespace Nimblesite.Lql.Core.Parsing

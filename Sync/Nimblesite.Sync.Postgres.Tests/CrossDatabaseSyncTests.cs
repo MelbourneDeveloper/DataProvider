@@ -4,7 +4,7 @@ namespace Nimblesite.Sync.Postgres.Tests;
 
 /// <summary>
 /// E2E integration tests for bi-directional sync between SQLite and PostgreSQL.
-/// Tests the full sync protocol per spec.md Sections 7-15.
+/// Tests the full sync protocol per docs/specs/sync-spec.md Sections 7-15.
 /// Uses Testcontainers for real PostgreSQL instance.
 /// </summary>
 [SuppressMessage(
@@ -47,8 +47,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         PostgresSyncSchema.CreateSchema(_pgConn);
         PostgresSyncSchema.SetOriginId(_pgConn, _postgresOrigin);
 
-        Nimblesite.Sync.CoreSchema.CreateSchema(_sqliteConn);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_sqliteConn, _sqliteOrigin);
+        SyncSchema.CreateSchema(_sqliteConn);
+        SyncSchema.SetOriginId(_sqliteConn, _sqliteOrigin);
 
         // Create test table in both databases
         CreateTestTable(_pgConn);
@@ -116,7 +116,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         var changes = FetchChanges(_pgConn, 0);
         Assert.Single(changes);
         Assert.Equal("person", changes[0].TableName);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Insert, changes[0].Operation);
+        Assert.Equal(SyncOperation.Insert, changes[0].Operation);
         Assert.Contains("Alice", changes[0].Payload!);
         Assert.Equal(_postgresOrigin, changes[0].Origin);
     }
@@ -129,7 +129,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
 
         var changes = FetchChanges(_pgConn, 0);
         Assert.Equal(2, changes.Count);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Update, changes[1].Operation);
+        Assert.Equal(SyncOperation.Update, changes[1].Operation);
         Assert.Contains("Bobby", changes[1].Payload!);
     }
 
@@ -141,7 +141,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
 
         var changes = FetchChanges(_pgConn, 0);
         Assert.Equal(2, changes.Count);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Delete, changes[1].Operation);
+        Assert.Equal(SyncOperation.Delete, changes[1].Operation);
         Assert.Null(changes[1].Payload);
     }
 
@@ -175,7 +175,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
     public void Spec_S11_SyncSQLiteToPostgres_InsertPropagates()
     {
         // Insert in SQLite
-        InsertPerson(_sqliteConn, "sync1", "Nimblesite.Sync.CoreUser", "sync@test.com");
+        InsertPerson(_sqliteConn, "sync1", "SyncUser", "sync@test.com");
 
         // Fetch changes from SQLite
         var sqliteChanges = FetchChanges(_sqliteConn, 0);
@@ -199,7 +199,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         // Verify data in Postgres
         var person = GetPerson(_pgConn, "sync1");
         Assert.NotNull(person);
-        Assert.Equal("Nimblesite.Sync.CoreUser", person.Name);
+        Assert.Equal("SyncUser", person.Name);
         Assert.Equal("sync@test.com", person.Email);
     }
 
@@ -213,7 +213,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         var pgChanges = FetchChanges(_pgConn, 0);
 
         // Apply to SQLite (with suppression)
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_sqliteConn);
+        SyncSessionManager.EnableSuppression(_sqliteConn);
         try
         {
             foreach (var entry in pgChanges)
@@ -224,7 +224,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         }
         finally
         {
-            Nimblesite.Sync.CoreSessionManager.DisableSuppression(_sqliteConn);
+            SyncSessionManager.DisableSuppression(_sqliteConn);
         }
 
         // Verify data in SQLite
@@ -251,7 +251,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
 
         // Nimblesite.Sync.Core Postgres -> SQLite
         var pgChanges = FetchChanges(_pgConn, 0);
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_sqliteConn);
+        SyncSessionManager.EnableSuppression(_sqliteConn);
         foreach (var entry in pgChanges)
         {
             // Skip echo (own origin changes)
@@ -260,7 +260,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
                 ChangeApplierSQLite.ApplyChange(_sqliteConn, entry);
             }
         }
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_sqliteConn);
+        SyncSessionManager.DisableSuppression(_sqliteConn);
 
         // Both databases should have both records
         Assert.NotNull(GetPerson(_pgConn, "bidirA"));
@@ -354,9 +354,9 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
 
         while (true)
         {
-            var result = Nimblesite.Sync.CoreLogRepository.FetchChanges(_sqliteConn, lastVersion, batchSize + 1);
-            Assert.IsType<Nimblesite.Sync.CoreLogListOk>(result);
-            var changes = ((Nimblesite.Sync.CoreLogListOk)result).Value;
+            var result = SyncLogRepository.FetchChanges(_sqliteConn, lastVersion, batchSize + 1);
+            Assert.IsType<SyncLogListOk>(result);
+            var changes = ((SyncLogListOk)result).Value;
 
             if (changes.Count == 0)
                 break;
@@ -401,7 +401,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         Assert.Equal(_sqliteOrigin, changes[0].Origin);
 
         // Apply with echo prevention using ChangeApplier
-        var batch = new Nimblesite.Sync.CoreBatch(changes, 0, changes[0].Version, false);
+        var batch = new SyncBatch(changes, 0, changes[0].Version, false);
         var result = ChangeApplier.ApplyBatch(
             batch,
             _sqliteOrigin, // Same origin - should skip
@@ -451,7 +451,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
     [Fact]
     public void Spec_S13_ClientTracking_Postgres()
     {
-        var client = new Nimblesite.Sync.CoreClient(
+        var client = new SyncClient(
             OriginId: _sqliteOrigin,
             LastSyncVersion: 100,
             LastSyncTimestamp: DateTime.UtcNow.ToString("O"),
@@ -464,15 +464,15 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
 
         // Get client
         var getResult = PostgresSyncClientRepository.GetByOrigin(_pgConn, _sqliteOrigin);
-        Assert.IsType<Nimblesite.Sync.CoreClientOk>(getResult);
-        var retrieved = ((Nimblesite.Sync.CoreClientOk)getResult).Value;
+        Assert.IsType<SyncClientOk>(getResult);
+        var retrieved = ((SyncClientOk)getResult).Value;
         Assert.NotNull(retrieved);
         Assert.Equal(100, retrieved!.LastSyncVersion);
 
         // Get all clients
         var allResult = PostgresSyncClientRepository.GetAll(_pgConn);
-        Assert.IsType<Nimblesite.Sync.CoreClientListOk>(allResult);
-        Assert.Contains(((Nimblesite.Sync.CoreClientListOk)allResult).Value, c => c.OriginId == _sqliteOrigin);
+        Assert.IsType<SyncClientListOk>(allResult);
+        Assert.Contains(((SyncClientListOk)allResult).Value, c => c.OriginId == _sqliteOrigin);
     }
 
     #endregion
@@ -533,16 +533,16 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         cmd.ExecuteNonQuery();
     }
 
-    private static IReadOnlyList<Nimblesite.Sync.CoreLogEntry> FetchChanges(NpgsqlConnection conn, long fromVersion)
+    private static IReadOnlyList<SyncLogEntry> FetchChanges(NpgsqlConnection conn, long fromVersion)
     {
         var result = PostgresSyncLogRepository.FetchChanges(conn, fromVersion, 1000);
-        return result is Nimblesite.Sync.CoreLogListOk ok ? ok.Value : [];
+        return result is SyncLogListOk ok ? ok.Value : [];
     }
 
-    private static IReadOnlyList<Nimblesite.Sync.CoreLogEntry> FetchChanges(SqliteConnection conn, long fromVersion)
+    private static IReadOnlyList<SyncLogEntry> FetchChanges(SqliteConnection conn, long fromVersion)
     {
-        var result = Nimblesite.Sync.CoreLogRepository.FetchChanges(conn, fromVersion, 1000);
-        return result is Nimblesite.Sync.CoreLogListOk ok ? ok.Value : [];
+        var result = SyncLogRepository.FetchChanges(conn, fromVersion, 1000);
+        return result is SyncLogListOk ok ? ok.Value : [];
     }
 
     private static long GetLogCount(NpgsqlConnection conn)

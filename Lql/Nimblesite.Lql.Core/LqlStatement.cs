@@ -5,7 +5,7 @@ namespace Nimblesite.Lql.Core;
 /// <summary>
 /// Represents a parsed LQL statement that can be converted to various SQL dialects
 /// </summary>
-public class Nimblesite.Lql.CoreStatement
+public class LqlStatement
 {
     /// <summary>
     /// Gets the parsed AST node

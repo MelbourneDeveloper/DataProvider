@@ -17,17 +17,17 @@ public static class ChangeApplierSQLite
     /// <param name="connection">SQLite connection.</param>
     /// <param name="entry">The sync log entry to apply.</param>
     /// <returns>True if applied, false if FK violation, or error.</returns>
-    public static BoolSyncResult ApplyChange(SqliteConnection connection, Nimblesite.Sync.CoreLogEntry entry)
+    public static BoolSyncResult ApplyChange(SqliteConnection connection, SyncLogEntry entry)
     {
         try
         {
             return entry.Operation switch
             {
-                Nimblesite.Sync.CoreOperation.Insert => ApplyInsert(connection, entry),
-                Nimblesite.Sync.CoreOperation.Update => ApplyUpdate(connection, entry),
-                Nimblesite.Sync.CoreOperation.Delete => ApplyDelete(connection, entry),
+                SyncOperation.Insert => ApplyInsert(connection, entry),
+                SyncOperation.Update => ApplyUpdate(connection, entry),
+                SyncOperation.Delete => ApplyDelete(connection, entry),
                 _ => new BoolSyncError(
-                    new Nimblesite.Sync.CoreErrorDatabase($"Unknown operation: {entry.Operation}")
+                    new SyncErrorDatabase($"Unknown operation: {entry.Operation}")
                 ),
             };
         }
@@ -39,7 +39,7 @@ public static class ChangeApplierSQLite
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to apply change: {ex.Message}")
+                new SyncErrorDatabase($"Failed to apply change: {ex.Message}")
             );
         }
     }
@@ -49,17 +49,17 @@ public static class ChangeApplierSQLite
         "CA2100:Review SQL queries for security vulnerabilities",
         Justification = "Table names come from internal sync log, not user input"
     )]
-    private static BoolSyncResult ApplyInsert(SqliteConnection connection, Nimblesite.Sync.CoreLogEntry entry)
+    private static BoolSyncResult ApplyInsert(SqliteConnection connection, SyncLogEntry entry)
     {
         if (string.IsNullOrEmpty(entry.Payload))
         {
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase("Insert requires payload"));
+            return new BoolSyncError(new SyncErrorDatabase("Insert requires payload"));
         }
 
         var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(entry.Payload);
         if (data == null || data.Count == 0)
         {
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase("Invalid payload JSON"));
+            return new BoolSyncError(new SyncErrorDatabase("Invalid payload JSON"));
         }
 
         var columns = string.Join(", ", data.Keys);
@@ -83,24 +83,24 @@ public static class ChangeApplierSQLite
         "CA2100:Review SQL queries for security vulnerabilities",
         Justification = "Table names come from internal sync log, not user input"
     )]
-    private static BoolSyncResult ApplyUpdate(SqliteConnection connection, Nimblesite.Sync.CoreLogEntry entry)
+    private static BoolSyncResult ApplyUpdate(SqliteConnection connection, SyncLogEntry entry)
     {
         if (string.IsNullOrEmpty(entry.Payload))
         {
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase("Update requires payload"));
+            return new BoolSyncError(new SyncErrorDatabase("Update requires payload"));
         }
 
         var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(entry.Payload);
         if (data == null || data.Count == 0)
         {
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase("Invalid payload JSON"));
+            return new BoolSyncError(new SyncErrorDatabase("Invalid payload JSON"));
         }
 
         // Extract PK info
         var pkData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(entry.PkValue);
         if (pkData == null || pkData.Count == 0)
         {
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase("Invalid pk_value JSON"));
+            return new BoolSyncError(new SyncErrorDatabase("Invalid pk_value JSON"));
         }
 
         var pkColumn = pkData.Keys.First();
@@ -161,12 +161,12 @@ public static class ChangeApplierSQLite
         "CA2100:Review SQL queries for security vulnerabilities",
         Justification = "Table names come from internal sync log, not user input"
     )]
-    private static BoolSyncResult ApplyDelete(SqliteConnection connection, Nimblesite.Sync.CoreLogEntry entry)
+    private static BoolSyncResult ApplyDelete(SqliteConnection connection, SyncLogEntry entry)
     {
         var pkData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(entry.PkValue);
         if (pkData == null || pkData.Count == 0)
         {
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase("Invalid pk_value JSON"));
+            return new BoolSyncError(new SyncErrorDatabase("Invalid pk_value JSON"));
         }
 
         var pkColumn = pkData.Keys.First();

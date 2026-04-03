@@ -5,7 +5,7 @@ namespace Nimblesite.Lql.Tests;
 /// <summary>
 /// File-based tests for LQL arithmetic operations and expressions
 /// </summary>
-public partial class Nimblesite.Lql.CoreFileBasedTests
+public partial class LqlFileBasedTests
 {
     [Theory]
     [InlineData("arithmetic_basic", "PostgreSql")]

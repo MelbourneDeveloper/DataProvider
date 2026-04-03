@@ -45,12 +45,12 @@ internal static class PostgresSchemaInspector
             foreach (var tableName in tableNames)
             {
                 var tableResult = InspectTable(connection, schemaName, tableName, logger);
-                if (tableResult is TableResult.Ok<TableDefinition, Nimblesite.DataProvider.Migration.CoreError> ok)
+                if (tableResult is TableResult.Ok<TableDefinition, MigrationError> ok)
                 {
                     tables.Add(ok.Value);
                 }
                 else if (
-                    tableResult is TableResult.Error<TableDefinition, Nimblesite.DataProvider.Migration.CoreError> tableError
+                    tableResult is TableResult.Error<TableDefinition, MigrationError> tableError
                 )
                 {
                     logger?.LogWarning(
@@ -61,15 +61,15 @@ internal static class PostgresSchemaInspector
                 }
             }
 
-            return new SchemaResult.Ok<SchemaDefinition, Nimblesite.DataProvider.Migration.CoreError>(
+            return new SchemaResult.Ok<SchemaDefinition, MigrationError>(
                 new SchemaDefinition { Name = schemaName, Tables = tables.AsReadOnly() }
             );
         }
         catch (Exception ex)
         {
             logger?.LogError(ex, "Failed to inspect PostgreSQL schema");
-            return new SchemaResult.Error<SchemaDefinition, Nimblesite.DataProvider.Migration.CoreError>(
-                Nimblesite.DataProvider.Migration.CoreError.FromException(ex)
+            return new SchemaResult.Error<SchemaDefinition, MigrationError>(
+                MigrationError.FromException(ex)
             );
         }
     }
@@ -292,7 +292,7 @@ internal static class PostgresSchemaInspector
                 }
             }
 
-            return new TableResult.Ok<TableDefinition, Nimblesite.DataProvider.Migration.CoreError>(
+            return new TableResult.Ok<TableDefinition, MigrationError>(
                 new TableDefinition
                 {
                     Schema = schemaName,
@@ -307,8 +307,8 @@ internal static class PostgresSchemaInspector
         catch (Exception ex)
         {
             logger?.LogError(ex, "Failed to inspect table {Schema}.{Table}", schemaName, tableName);
-            return new TableResult.Error<TableDefinition, Nimblesite.DataProvider.Migration.CoreError>(
-                Nimblesite.DataProvider.Migration.CoreError.FromException(ex)
+            return new TableResult.Error<TableDefinition, MigrationError>(
+                MigrationError.FromException(ex)
             );
         }
     }

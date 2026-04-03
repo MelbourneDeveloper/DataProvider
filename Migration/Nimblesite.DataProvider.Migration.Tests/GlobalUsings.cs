@@ -6,20 +6,20 @@ global using Nimblesite.DataProvider.Migration.SQLite;
 global using Npgsql;
 global using Testcontainers.PostgreSql;
 global using Xunit;
-global using Nimblesite.DataProvider.Migration.CoreApplyResultError = Outcome.Result<bool, Nimblesite.DataProvider.Migration.Core.Nimblesite.DataProvider.Migration.CoreError>.Error<
+global using MigrationApplyResultError = Outcome.Result<bool, Nimblesite.DataProvider.Migration.Core.MigrationError>.Error<
     bool,
-    Nimblesite.DataProvider.Migration.Core.Nimblesite.DataProvider.Migration.CoreError
+    Nimblesite.DataProvider.Migration.Core.MigrationError
 >;
-global using Nimblesite.DataProvider.Migration.CoreApplyResultOk = Outcome.Result<bool, Nimblesite.DataProvider.Migration.Core.Nimblesite.DataProvider.Migration.CoreError>.Ok<
+global using MigrationApplyResultOk = Outcome.Result<bool, Nimblesite.DataProvider.Migration.Core.MigrationError>.Ok<
     bool,
-    Nimblesite.DataProvider.Migration.Core.Nimblesite.DataProvider.Migration.CoreError
+    Nimblesite.DataProvider.Migration.Core.MigrationError
 >;
 global using OperationsResultOk = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<Nimblesite.DataProvider.Migration.Core.SchemaOperation>,
-    Nimblesite.DataProvider.Migration.Core.Nimblesite.DataProvider.Migration.CoreError
->.Ok<System.Collections.Generic.IReadOnlyList<Nimblesite.DataProvider.Migration.Core.SchemaOperation>, Nimblesite.DataProvider.Migration.Core.Nimblesite.DataProvider.Migration.CoreError>;
+    Nimblesite.DataProvider.Migration.Core.MigrationError
+>.Ok<System.Collections.Generic.IReadOnlyList<Nimblesite.DataProvider.Migration.Core.SchemaOperation>, Nimblesite.DataProvider.Migration.Core.MigrationError>;
 // Type aliases for Result types per CLAUDE.md
 global using SchemaResultOk = Outcome.Result<
     Nimblesite.DataProvider.Migration.Core.SchemaDefinition,
-    Nimblesite.DataProvider.Migration.Core.Nimblesite.DataProvider.Migration.CoreError
->.Ok<Nimblesite.DataProvider.Migration.Core.SchemaDefinition, Nimblesite.DataProvider.Migration.Core.Nimblesite.DataProvider.Migration.CoreError>;
+    Nimblesite.DataProvider.Migration.Core.MigrationError
+>.Ok<Nimblesite.DataProvider.Migration.Core.SchemaDefinition, Nimblesite.DataProvider.Migration.Core.MigrationError>;

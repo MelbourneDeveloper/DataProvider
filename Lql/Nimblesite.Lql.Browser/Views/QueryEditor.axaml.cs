@@ -96,7 +96,7 @@ public partial class QueryEditor : UserControl
 
 #pragma warning disable CA1859 // Use concrete types when possible for improved performance
     private static IRegistryOptions CreateRegistryOptionsWithLqlGrammar() =>
-        new Nimblesite.Lql.CoreRegistryOptions();
+        new LqlRegistryOptions();
 #pragma warning restore CA1859 // Use concrete types when possible for improved performance
 
     private void OnDataContextChanged(object? sender, EventArgs e)

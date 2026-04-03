@@ -2,12 +2,12 @@ using System.CommandLine;
 using Nimblesite.Lql.Core;
 using Nimblesite.Lql.SQLite;
 using Selecta;
-using Nimblesite.Lql.CoreStatementError = Outcome.Result<Nimblesite.Lql.Core.Nimblesite.Lql.CoreStatement, Selecta.SqlError>.Error<
-    Nimblesite.Lql.Core.Nimblesite.Lql.CoreStatement,
+using LqlStatementError = Outcome.Result<Nimblesite.Lql.Core.LqlStatement, Selecta.SqlError>.Error<
+    Nimblesite.Lql.Core.LqlStatement,
     Selecta.SqlError
 >;
-using Nimblesite.Lql.CoreStatementOk = Outcome.Result<Nimblesite.Lql.Core.Nimblesite.Lql.CoreStatement, Selecta.SqlError>.Ok<
-    Nimblesite.Lql.Core.Nimblesite.Lql.CoreStatement,
+using LqlStatementOk = Outcome.Result<Nimblesite.Lql.Core.LqlStatement, Selecta.SqlError>.Ok<
+    Nimblesite.Lql.Core.LqlStatement,
     Selecta.SqlError
 >;
 using StringSqlError = Outcome.Result<string, Selecta.SqlError>.Error<string, Selecta.SqlError>;
@@ -106,18 +106,18 @@ internal static class Program
             Console.WriteLine($"📖 Reading LQL from: {inputFile.FullName}");
 
             // Parse the LQL using Nimblesite.Lql.Core
-            var parseResult = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlContent);
+            var parseResult = LqlStatementConverter.ToStatement(lqlContent);
 
             return parseResult switch
             {
-                Nimblesite.Lql.CoreStatementOk success => await ProcessSuccessfulParse(
+                LqlStatementOk success => await ProcessSuccessfulParse(
                         success.Value,
                         outputFile,
                         validate,
                         inputFile.FullName
                     )
                     .ConfigureAwait(false),
-                Nimblesite.Lql.CoreStatementError failure => HandleParseError(failure.Value),
+                LqlStatementError failure => HandleParseError(failure.Value),
             };
         }
         catch (Exception ex)
@@ -136,7 +136,7 @@ internal static class Program
     /// <param name="inputFileName">Input file name for logging</param>
     /// <returns>Exit code</returns>
     private static async Task<int> ProcessSuccessfulParse(
-        Nimblesite.Lql.CoreStatement statement,
+        LqlStatement statement,
         FileInfo? outputFile,
         bool validate,
         string inputFileName

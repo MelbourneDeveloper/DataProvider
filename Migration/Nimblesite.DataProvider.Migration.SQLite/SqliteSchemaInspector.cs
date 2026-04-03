@@ -38,12 +38,12 @@ internal static class SqliteSchemaInspector
             foreach (var tableName in tableNames)
             {
                 var tableResult = InspectTable(connection, tableName, logger);
-                if (tableResult is TableResult.Ok<TableDefinition, Nimblesite.DataProvider.Migration.CoreError> ok)
+                if (tableResult is TableResult.Ok<TableDefinition, MigrationError> ok)
                 {
                     tables.Add(ok.Value);
                 }
                 else if (
-                    tableResult is TableResult.Error<TableDefinition, Nimblesite.DataProvider.Migration.CoreError> tableError
+                    tableResult is TableResult.Error<TableDefinition, MigrationError> tableError
                 )
                 {
                     logger?.LogWarning(
@@ -54,15 +54,15 @@ internal static class SqliteSchemaInspector
                 }
             }
 
-            return new SchemaResult.Ok<SchemaDefinition, Nimblesite.DataProvider.Migration.CoreError>(
+            return new SchemaResult.Ok<SchemaDefinition, MigrationError>(
                 new SchemaDefinition { Name = "sqlite", Tables = tables.AsReadOnly() }
             );
         }
         catch (Exception ex)
         {
             logger?.LogError(ex, "Failed to inspect SQLite schema");
-            return new SchemaResult.Error<SchemaDefinition, Nimblesite.DataProvider.Migration.CoreError>(
-                Nimblesite.DataProvider.Migration.CoreError.FromException(ex)
+            return new SchemaResult.Error<SchemaDefinition, MigrationError>(
+                MigrationError.FromException(ex)
             );
         }
     }
@@ -243,7 +243,7 @@ internal static class SqliteSchemaInspector
                 }
             }
 
-            return new TableResult.Ok<TableDefinition, Nimblesite.DataProvider.Migration.CoreError>(
+            return new TableResult.Ok<TableDefinition, MigrationError>(
                 new TableDefinition
                 {
                     Schema = "main",
@@ -258,8 +258,8 @@ internal static class SqliteSchemaInspector
         catch (Exception ex)
         {
             logger?.LogError(ex, "Failed to inspect table {Table}", tableName);
-            return new TableResult.Error<TableDefinition, Nimblesite.DataProvider.Migration.CoreError>(
-                Nimblesite.DataProvider.Migration.CoreError.FromException(ex)
+            return new TableResult.Error<TableDefinition, MigrationError>(
+                MigrationError.FromException(ex)
             );
         }
     }

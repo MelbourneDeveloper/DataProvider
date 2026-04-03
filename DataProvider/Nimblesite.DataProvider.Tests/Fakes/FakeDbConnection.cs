@@ -3,7 +3,7 @@ using System.Data.Common;
 
 #pragma warning disable CA1515 // Make types internal
 #pragma warning disable CA2000 // Dispose objects before losing scope
-#pragma warning disable CA1849 // Nimblesite.Sync.Corehronous blocking calls
+#pragma warning disable CA1849 // Synchronous blocking calls
 #pragma warning disable CS8765 // Nullability of parameter doesn't match overridden member
 
 namespace Nimblesite.DataProvider.Tests.Fakes;

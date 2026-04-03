@@ -9,11 +9,11 @@ namespace Nimblesite.Lql.SqlServer;
 public static class SqlStatementExtensionsSqlServer
 {
     /// <summary>
-    /// Converts a Nimblesite.Lql.CoreStatement to SQL Server syntax
+    /// Converts a LqlStatement to SQL Server syntax
     /// </summary>
-    /// <param name="statement">The Nimblesite.Lql.CoreStatement to convert</param>
+    /// <param name="statement">The LqlStatement to convert</param>
     /// <returns>A Result containing either SQL Server SQL string or a SqlError</returns>
-    public static Result<string, SqlError> ToSqlServer(this Nimblesite.Lql.CoreStatement statement)
+    public static Result<string, SqlError> ToSqlServer(this LqlStatement statement)
     {
         ArgumentNullException.ThrowIfNull(statement);
 

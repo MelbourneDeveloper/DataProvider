@@ -13,7 +13,7 @@ public class FileTab : INotifyPropertyChanged
     private string _content = "";
     private bool _isModified;
     private bool _isActive;
-    private FileType _fileType = FileType.Nimblesite.Lql.Core;
+    private FileType _fileType = FileType.Lql;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -111,6 +111,6 @@ public class FileTab : INotifyPropertyChanged
 /// </summary>
 public enum FileType
 {
-    Nimblesite.Lql.Core,
+    Lql,
     Sql,
 }

@@ -2,7 +2,7 @@ using Xunit;
 
 #pragma warning disable CA1861 // Prefer static readonly fields
 #pragma warning disable CA2000 // Dispose objects before losing scope
-#pragma warning disable CA1849 // Nimblesite.Sync.Corehronous blocking calls
+#pragma warning disable CA1849 // Synchronous blocking calls
 
 namespace Nimblesite.DataProvider.Tests.Fakes;
 

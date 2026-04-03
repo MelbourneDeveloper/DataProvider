@@ -64,7 +64,7 @@ public partial class MainWindow : Window
         // Initialize TextMate if not already done
         if (_textMateInstallation == null)
         {
-            _textMateInstallation = Nimblesite.Lql.CoreTextMateSetup.SetupLqlTextMate(editor);
+            _textMateInstallation = LqlTextMateSetup.SetupLqlTextMate(editor);
         }
 
         // Temporarily remove text change handler to prevent infinite loops

@@ -17,7 +17,7 @@ namespace Nimblesite.DataProvider.Migration.Core;
 ///
 /// // Calculate safe (additive-only) migration operations
 /// var result = SchemaDiff.Calculate(currentSchema, desiredSchema);
-/// if (result is OperationsResult.Ok&lt;IReadOnlyList&lt;SchemaOperation&gt;, Nimblesite.DataProvider.Migration.CoreError&gt; ok)
+/// if (result is OperationsResult.Ok&lt;IReadOnlyList&lt;SchemaOperation&gt;, MigrationError&gt; ok)
 /// {
 ///     foreach (var op in ok.Value)
 ///     {
@@ -143,15 +143,15 @@ public static class SchemaDiff
                 }
             }
 
-            return new OperationsResult.Ok<IReadOnlyList<SchemaOperation>, Nimblesite.DataProvider.Migration.CoreError>(
+            return new OperationsResult.Ok<IReadOnlyList<SchemaOperation>, MigrationError>(
                 operations.AsReadOnly()
             );
         }
         catch (Exception ex)
         {
             logger?.LogError(ex, "Error calculating schema diff");
-            return new OperationsResult.Error<IReadOnlyList<SchemaOperation>, Nimblesite.DataProvider.Migration.CoreError>(
-                Nimblesite.DataProvider.Migration.CoreError.FromException(ex)
+            return new OperationsResult.Error<IReadOnlyList<SchemaOperation>, MigrationError>(
+                MigrationError.FromException(ex)
             );
         }
     }

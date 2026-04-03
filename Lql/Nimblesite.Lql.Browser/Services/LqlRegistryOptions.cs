@@ -10,7 +10,7 @@ namespace Nimblesite.Lql.Browser.Services;
 /// <summary>
 /// Custom registry options that provides LQL grammar support to TextMateSharp
 /// </summary>
-public sealed class Nimblesite.Lql.CoreRegistryOptions : IRegistryOptions
+public sealed class LqlRegistryOptions : IRegistryOptions
 {
     private readonly RegistryOptions _defaultOptions = new(ThemeName.DarkPlus);
     private IRawGrammar? _lqlGrammar;

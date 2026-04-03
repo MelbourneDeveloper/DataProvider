@@ -396,7 +396,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                 {
                     var diag = Diagnostic.Create(
                         new DiagnosticDescriptor(
-                            "Nimblesite.DataProvider.Core002",
+                            "DataProvider002",
                             "Configuration parsing failed",
                             "Failed to parse Nimblesite.DataProvider.Core.json: {0}",
                             "Nimblesite.DataProvider.Core",
@@ -416,7 +416,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
         {
             var diag = Diagnostic.Create(
                 new DiagnosticDescriptor(
-                    "Nimblesite.DataProvider.Core003",
+                    "DataProvider003",
                     "Configuration missing",
                     "Nimblesite.DataProvider.Core.json with ConnectionString is required for code generation",
                     "Nimblesite.DataProvider.Core",
@@ -656,7 +656,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                         {
                             var diagGrp = Diagnostic.Create(
                                 new DiagnosticDescriptor(
-                                    "Nimblesite.DataProvider.Core004",
+                                    "DataProvider004",
                                     "Grouping parsing failed",
                                     "Failed to parse {0}.grouping.json: {1}",
                                     "Nimblesite.DataProvider.Core",
@@ -704,7 +704,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
 
                     var diagGen = Diagnostic.Create(
                         new DiagnosticDescriptor(
-                            "Nimblesite.DataProvider.Core005",
+                            "DataProvider005",
                             "Code generation failed",
                             "Failed to generate code for {0}: {1}",
                             "Nimblesite.DataProvider.Core",
@@ -733,7 +733,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
 
                 var diag = Diagnostic.Create(
                     new DiagnosticDescriptor(
-                        "Nimblesite.DataProvider.Core006",
+                        "DataProvider006",
                         "Unexpected error",
                         "Unexpected error while generating for file '{0}': {1}",
                         "Nimblesite.DataProvider.Core",
@@ -751,7 +751,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
         // Generate table operations if configured
         var debugDiag = Diagnostic.Create(
             new DiagnosticDescriptor(
-                "Nimblesite.DataProvider.Core010",
+                "DataProvider010",
                 "Debug info",
                 "Processing {0} table configurations",
                 "Nimblesite.DataProvider.Core",
@@ -787,7 +787,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                         )!.Value;
                         var tableDiag = Diagnostic.Create(
                             new DiagnosticDescriptor(
-                                "Nimblesite.DataProvider.Core007",
+                                "DataProvider007",
                                 "Table metadata error",
                                 "Failed to get metadata for table {0}: {1}",
                                 "Nimblesite.DataProvider.Core",
@@ -836,7 +836,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                     {
                         var opsDiag = Diagnostic.Create(
                             new DiagnosticDescriptor(
-                                "Nimblesite.DataProvider.Core008",
+                                "DataProvider008",
                                 "Table operations generation failed",
                                 "Failed to generate table operations for {0}: {1}",
                                 "Nimblesite.DataProvider.Core",
@@ -854,7 +854,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                 {
                     var exceptionDiag = Diagnostic.Create(
                         new DiagnosticDescriptor(
-                            "Nimblesite.DataProvider.Core009",
+                            "DataProvider009",
                             "Table operations error",
                             "Error generating table operations for {0}: {1}",
                             "Nimblesite.DataProvider.Core",

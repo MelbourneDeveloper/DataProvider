@@ -6,7 +6,7 @@ namespace Nimblesite.DataProvider.Core;
 /// <example>
 /// <code>
 /// // Configure tables for code generation
-/// var config = new Nimblesite.DataProvider.CoreConfig
+/// var config = new DataProviderConfig
 /// {
 ///     ConnectionString = "Data Source=app.db",
 ///     Tables = new List&lt;TableConfig&gt;
@@ -17,7 +17,7 @@ namespace Nimblesite.DataProvider.Core;
 /// };
 /// </code>
 /// </example>
-public sealed record Nimblesite.DataProvider.CoreConfig
+public sealed record DataProviderConfig
 {
     /// <summary>
     /// List of tables to generate code for

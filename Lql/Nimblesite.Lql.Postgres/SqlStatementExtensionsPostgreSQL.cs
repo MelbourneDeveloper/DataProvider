@@ -9,11 +9,11 @@ namespace Nimblesite.Lql.Postgres;
 public static class SqlStatementExtensionsPostgreSQL
 {
     /// <summary>
-    /// Converts a Nimblesite.Lql.CoreStatement to PostgreSQL syntax
+    /// Converts a LqlStatement to PostgreSQL syntax
     /// </summary>
-    /// <param name="statement">The Nimblesite.Lql.CoreStatement to convert</param>
+    /// <param name="statement">The LqlStatement to convert</param>
     /// <returns>A Result containing either PostgreSQL SQL string or a SqlError</returns>
-    public static Result<string, SqlError> ToPostgreSql(this Nimblesite.Lql.CoreStatement statement)
+    public static Result<string, SqlError> ToPostgreSql(this LqlStatement statement)
     {
         ArgumentNullException.ThrowIfNull(statement);
 

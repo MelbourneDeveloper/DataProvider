@@ -7,7 +7,7 @@ namespace Nimblesite.DataProvider.Migration.Core;
 /// Translates LQL default expressions to platform-specific SQL.
 /// Provides consistent behavior across PostgreSQL and SQLite.
 /// </summary>
-public static partial class Nimblesite.Lql.CoreDefaultTranslator
+public static partial class LqlDefaultTranslator
 {
     /// <summary>
     /// Translates an LQL default expression to PostgreSQL SQL.

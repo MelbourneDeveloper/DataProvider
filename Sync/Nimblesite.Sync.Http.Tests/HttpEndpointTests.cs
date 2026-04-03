@@ -6,7 +6,7 @@ namespace Nimblesite.Sync.Http.Tests;
 /// <summary>
 /// Custom WebApplicationFactory that sets the correct content root path.
 /// </summary>
-public sealed class Nimblesite.Sync.CoreApiWebApplicationFactory : WebApplicationFactory<Program>
+public sealed class SyncApiWebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -22,12 +22,12 @@ public sealed class Nimblesite.Sync.CoreApiWebApplicationFactory : WebApplicatio
 /// Tests the FULL HTTP stack including rate limiting, validation, and error handling.
 /// Uses WebApplicationFactory for real ASP.NET Core hosting.
 /// </summary>
-public sealed class HttpEndpointTests : IClassFixture<Nimblesite.Sync.CoreApiWebApplicationFactory>
+public sealed class HttpEndpointTests : IClassFixture<SyncApiWebApplicationFactory>
 {
-    private readonly Nimblesite.Sync.CoreApiWebApplicationFactory _factory;
+    private readonly SyncApiWebApplicationFactory _factory;
     private readonly HttpClient _client;
 
-    public HttpEndpointTests(Nimblesite.Sync.CoreApiWebApplicationFactory factory)
+    public HttpEndpointTests(SyncApiWebApplicationFactory factory)
     {
         _factory = factory;
         _client = _factory.CreateClient();
@@ -176,7 +176,7 @@ public sealed class HttpEndpointTests : IClassFixture<Nimblesite.Sync.CoreApiWeb
     #region Nimblesite.Sync.Core State Endpoint
 
     [Fact]
-    public async Task Nimblesite.Sync.CoreState_WithoutConnectionString_ReturnsBadRequest()
+    public async Task SyncState_WithoutConnectionString_ReturnsBadRequest()
     {
         // Act
         var response = await _client.GetAsync("/sync/state?dbType=sqlite");
@@ -204,8 +204,8 @@ public sealed class HttpEndpointWithDatabaseTests : IDisposable
         _connection.Open();
 
         // Initialize sync schema
-        Nimblesite.Sync.CoreSchema.CreateSchema(_connection);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_connection, _originId);
+        SyncSchema.CreateSchema(_connection);
+        SyncSchema.SetOriginId(_connection, _originId);
 
         // Create test table with triggers
         using var cmd = _connection.CreateCommand();
@@ -235,7 +235,7 @@ public sealed class HttpEndpointWithDatabaseTests : IDisposable
     public void Database_InitializesCorrectly()
     {
         // Verify origin ID is set
-        var result = Nimblesite.Sync.CoreSchema.GetOriginId(_connection);
+        var result = SyncSchema.GetOriginId(_connection);
         Assert.IsType<StringSyncOk>(result);
         Assert.Equal(_originId, ((StringSyncOk)result).Value);
     }
@@ -250,12 +250,12 @@ public sealed class HttpEndpointWithDatabaseTests : IDisposable
         cmd.ExecuteNonQuery();
 
         // Assert
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(_connection, 0, 100);
-        Assert.IsType<Nimblesite.Sync.CoreLogListOk>(changes);
-        var list = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(_connection, 0, 100);
+        Assert.IsType<SyncLogListOk>(changes);
+        var list = ((SyncLogListOk)changes).Value;
         Assert.Single(list);
         Assert.Equal("Person", list[0].TableName);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Insert, list[0].Operation);
+        Assert.Equal(SyncOperation.Insert, list[0].Operation);
     }
 
     [Fact]
@@ -277,10 +277,10 @@ public sealed class HttpEndpointWithDatabaseTests : IDisposable
         }
 
         // Assert
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(_connection, 0, 100);
-        var list = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(_connection, 0, 100);
+        var list = ((SyncLogListOk)changes).Value;
         Assert.Equal(2, list.Count);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Update, list[1].Operation);
+        Assert.Equal(SyncOperation.Update, list[1].Operation);
     }
 
     [Fact]
@@ -302,28 +302,28 @@ public sealed class HttpEndpointWithDatabaseTests : IDisposable
         }
 
         // Assert
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(_connection, 0, 100);
-        var list = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(_connection, 0, 100);
+        var list = ((SyncLogListOk)changes).Value;
         Assert.Equal(2, list.Count);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Delete, list[1].Operation);
+        Assert.Equal(SyncOperation.Delete, list[1].Operation);
     }
 
     [Fact]
     public void TriggerSuppression_PreventsLogging()
     {
         // Act - insert with suppression enabled
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_connection);
+        SyncSessionManager.EnableSuppression(_connection);
         using (var cmd = _connection.CreateCommand())
         {
             cmd.CommandText =
                 "INSERT INTO Person (Id, Name, Email) VALUES ('suppressed', 'Suppressed', 's@test.com')";
             cmd.ExecuteNonQuery();
         }
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_connection);
+        SyncSessionManager.DisableSuppression(_connection);
 
         // Assert - no changes logged
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(_connection, 0, 100);
-        var list = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(_connection, 0, 100);
+        var list = ((SyncLogListOk)changes).Value;
         Assert.Empty(list);
     }
 
@@ -331,26 +331,26 @@ public sealed class HttpEndpointWithDatabaseTests : IDisposable
     public void ApplyChange_WithSuppression_DoesNotEcho()
     {
         // Arrange - simulate incoming change
-        var incomingEntry = new Nimblesite.Sync.CoreLogEntry(
+        var incomingEntry = new SyncLogEntry(
             Version: 1,
             TableName: "Person",
             PkValue: "{\"Id\":\"incoming1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: "{\"Id\":\"incoming1\",\"Name\":\"Incoming\",\"Email\":\"in@test.com\"}",
             Origin: "remote-origin",
             Timestamp: DateTime.UtcNow.ToString("O")
         );
 
         // Act - apply with suppression
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_connection);
+        SyncSessionManager.EnableSuppression(_connection);
         var result = ChangeApplierSQLite.ApplyChange(_connection, incomingEntry);
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_connection);
+        SyncSessionManager.DisableSuppression(_connection);
 
         // Assert - change applied but not logged
         Assert.IsType<BoolSyncOk>(result);
 
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(_connection, 0, 100);
-        var list = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(_connection, 0, 100);
+        var list = ((SyncLogListOk)changes).Value;
         Assert.Empty(list);
 
         // Verify data exists
@@ -367,7 +367,7 @@ public sealed class HttpEndpointWithDatabaseTests : IDisposable
 /// Uses WebApplicationFactory for real ASP.NET Core server + real SQLite databases.
 /// This is the PROOF that Nimblesite.Sync.Http extension methods work in a real scenario.
 /// </summary>
-public sealed class HttpSyncE2ETests : IClassFixture<Nimblesite.Sync.CoreApiWebApplicationFactory>, IDisposable
+public sealed class HttpSyncE2ETests : IClassFixture<SyncApiWebApplicationFactory>, IDisposable
 {
     private readonly HttpClient _client;
     private readonly string _serverDbPath;
@@ -377,7 +377,7 @@ public sealed class HttpSyncE2ETests : IClassFixture<Nimblesite.Sync.CoreApiWebA
     private readonly string _serverOriginId = Guid.NewGuid().ToString();
     private readonly string _clientOriginId = Guid.NewGuid().ToString();
 
-    public HttpSyncE2ETests(Nimblesite.Sync.CoreApiWebApplicationFactory factory)
+    public HttpSyncE2ETests(SyncApiWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
 
@@ -396,8 +396,8 @@ public sealed class HttpSyncE2ETests : IClassFixture<Nimblesite.Sync.CoreApiWebA
 
     private static void InitializeDatabase(SqliteConnection conn, string originId)
     {
-        Nimblesite.Sync.CoreSchema.CreateSchema(conn);
-        Nimblesite.Sync.CoreSchema.SetOriginId(conn, originId);
+        SyncSchema.CreateSchema(conn);
+        SyncSchema.SetOriginId(conn, originId);
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
@@ -448,9 +448,9 @@ public sealed class HttpSyncE2ETests : IClassFixture<Nimblesite.Sync.CoreApiWebA
         }
 
         // Get changes from client
-        var clientChanges = Nimblesite.Sync.CoreLogRepository.FetchChanges(_clientConn, 0, 100);
-        Assert.True(clientChanges is Nimblesite.Sync.CoreLogListOk);
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)clientChanges).Value;
+        var clientChanges = SyncLogRepository.FetchChanges(_clientConn, 0, 100);
+        Assert.True(clientChanges is SyncLogListOk);
+        var changesList = ((SyncLogListOk)clientChanges).Value;
         Assert.Single(changesList);
 
         // Build request - OriginId is the origin to SKIP (server's own origin prevents echo)
@@ -530,19 +530,19 @@ public sealed class HttpSyncE2ETests : IClassFixture<Nimblesite.Sync.CoreApiWebA
         // Apply changes to client (operation is returned as integer enum value)
         foreach (var change in changesArray.EnumerateArray())
         {
-            var entry = new Nimblesite.Sync.CoreLogEntry(
+            var entry = new SyncLogEntry(
                 Version: change.GetProperty("version").GetInt64(),
                 TableName: change.GetProperty("tableName").GetString() ?? "",
                 PkValue: change.GetProperty("pkValue").GetString() ?? "",
-                Operation: (Nimblesite.Sync.CoreOperation)change.GetProperty("operation").GetInt32(),
+                Operation: (SyncOperation)change.GetProperty("operation").GetInt32(),
                 Payload: change.GetProperty("payload").GetString() ?? "",
                 Origin: change.GetProperty("origin").GetString() ?? "",
                 Timestamp: change.GetProperty("timestamp").GetString() ?? ""
             );
 
-            Nimblesite.Sync.CoreSessionManager.EnableSuppression(_clientConn);
+            SyncSessionManager.EnableSuppression(_clientConn);
             var result = ChangeApplierSQLite.ApplyChange(_clientConn, entry);
-            Nimblesite.Sync.CoreSessionManager.DisableSuppression(_clientConn);
+            SyncSessionManager.DisableSuppression(_clientConn);
             Assert.True(result is BoolSyncOk, $"Apply failed: {result}");
         }
 
@@ -588,11 +588,11 @@ public sealed class HttpSyncE2ETests : IClassFixture<Nimblesite.Sync.CoreApiWebA
 
         foreach (var change in pullDoc.RootElement.GetProperty("changes").EnumerateArray())
         {
-            var entry = new Nimblesite.Sync.CoreLogEntry(
+            var entry = new SyncLogEntry(
                 Version: change.GetProperty("version").GetInt64(),
                 TableName: change.GetProperty("tableName").GetString() ?? "",
                 PkValue: change.GetProperty("pkValue").GetString() ?? "",
-                Operation: (Nimblesite.Sync.CoreOperation)change.GetProperty("operation").GetInt32(),
+                Operation: (SyncOperation)change.GetProperty("operation").GetInt32(),
                 Payload: change.GetProperty("payload").GetString() ?? "",
                 Origin: change.GetProperty("origin").GetString() ?? "",
                 Timestamp: change.GetProperty("timestamp").GetString() ?? ""
@@ -600,15 +600,15 @@ public sealed class HttpSyncE2ETests : IClassFixture<Nimblesite.Sync.CoreApiWebA
 
             if (entry.Origin != _clientOriginId)
             {
-                Nimblesite.Sync.CoreSessionManager.EnableSuppression(_clientConn);
+                SyncSessionManager.EnableSuppression(_clientConn);
                 ChangeApplierSQLite.ApplyChange(_clientConn, entry);
-                Nimblesite.Sync.CoreSessionManager.DisableSuppression(_clientConn);
+                SyncSessionManager.DisableSuppression(_clientConn);
             }
         }
 
         // Push from client -> server (OriginId = server's origin to not skip client changes)
-        var clientChanges = Nimblesite.Sync.CoreLogRepository.FetchChanges(_clientConn, 0, 100);
-        var clientChangesList = ((Nimblesite.Sync.CoreLogListOk)clientChanges).Value;
+        var clientChanges = SyncLogRepository.FetchChanges(_clientConn, 0, 100);
+        var clientChangesList = ((SyncLogListOk)clientChanges).Value;
 
         var pushRequest = new
         {
@@ -665,7 +665,7 @@ public sealed class HttpSyncE2ETests : IClassFixture<Nimblesite.Sync.CoreApiWebA
     /// Tests sync state endpoint returns correct max version.
     /// </summary>
     [Fact]
-    public async Task Nimblesite.Sync.CoreState_ReturnsCorrectMaxVersion()
+    public async Task SyncState_ReturnsCorrectMaxVersion()
     {
         // Arrange - insert multiple records
         for (var i = 0; i < 5; i++)

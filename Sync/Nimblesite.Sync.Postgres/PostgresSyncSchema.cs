@@ -97,7 +97,7 @@ public static class PostgresSyncSchema
         catch (NpgsqlException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to create schema: {ex.Message}")
+                new SyncErrorDatabase($"Failed to create schema: {ex.Message}")
             );
         }
     }
@@ -119,7 +119,7 @@ public static class PostgresSyncSchema
         catch (NpgsqlException ex)
         {
             return new StringSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get origin ID: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get origin ID: {ex.Message}")
             );
         }
     }
@@ -146,7 +146,7 @@ public static class PostgresSyncSchema
         catch (NpgsqlException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to set origin ID: {ex.Message}")
+                new SyncErrorDatabase($"Failed to set origin ID: {ex.Message}")
             );
         }
     }

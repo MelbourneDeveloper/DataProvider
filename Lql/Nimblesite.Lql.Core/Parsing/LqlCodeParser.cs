@@ -7,7 +7,7 @@ namespace Nimblesite.Lql.Core.Parsing;
 /// <summary>
 /// Utility class for parsing LQL code.
 /// </summary>
-internal static class Nimblesite.Lql.CoreCodeParser
+internal static class LqlCodeParser
 {
     private static readonly char[] SplitCharacters = [' ', '\t', '|', '>', '(', ')', ',', '='];
 
@@ -46,7 +46,7 @@ internal static class Nimblesite.Lql.CoreCodeParser
             var inputStream = new AntlrInputStream(lqlCode);
 
             // Create lexer
-            var lexer = new Nimblesite.Lql.CoreLexer(inputStream);
+            var lexer = new LqlLexer(inputStream);
             var lexerErrorListener = new DetailedLexerErrorListener(lqlCode);
             lexer.RemoveErrorListeners();
             lexer.AddErrorListener(lexerErrorListener);
@@ -55,7 +55,7 @@ internal static class Nimblesite.Lql.CoreCodeParser
             var tokenStream = new CommonTokenStream(lexer);
 
             // Create parser
-            var parser = new Nimblesite.Lql.CoreParser(tokenStream);
+            var parser = new LqlParser(tokenStream);
             var parserErrorListener = new DetailedParserErrorListener(lqlCode);
             parser.RemoveErrorListeners();
             parser.AddErrorListener(parserErrorListener);
@@ -82,7 +82,7 @@ internal static class Nimblesite.Lql.CoreCodeParser
             // Create visitor and visit the parse tree
             // For parsing, we don't need a SQL context - it's only needed for SQL generation
             // The actual SQL generation will use the appropriate context later
-            var visitor = new Nimblesite.Lql.CoreToAstVisitor(lqlCode);
+            var visitor = new LqlToAstVisitor(lqlCode);
             var astNode = visitor.Visit(programContext);
 
             return new Result<INode, SqlError>.Ok<INode, SqlError>(astNode);

@@ -26,7 +26,7 @@ public enum ConflictStrategy
 /// </summary>
 /// <param name="Winner">The change that won the conflict.</param>
 /// <param name="Strategy">The strategy used to resolve.</param>
-public sealed record ConflictResolution(Nimblesite.Sync.CoreLogEntry Winner, ConflictStrategy Strategy);
+public sealed record ConflictResolution(SyncLogEntry Winner, ConflictStrategy Strategy);
 
 /// <summary>
 /// Resolves conflicts between local and remote changes.
@@ -38,7 +38,7 @@ internal static class ConflictResolver
     /// Detects if two changes conflict.
     /// Conflicts occur when same table+PK changed by different origins.
     /// </summary>
-    public static bool IsConflict(Nimblesite.Sync.CoreLogEntry local, Nimblesite.Sync.CoreLogEntry remote) =>
+    public static bool IsConflict(SyncLogEntry local, SyncLogEntry remote) =>
         local.TableName == remote.TableName
         && local.PkValue == remote.PkValue
         && local.Origin != remote.Origin;
@@ -47,8 +47,8 @@ internal static class ConflictResolver
     /// Resolves a conflict using the specified strategy.
     /// </summary>
     public static ConflictResolution Resolve(
-        Nimblesite.Sync.CoreLogEntry local,
-        Nimblesite.Sync.CoreLogEntry remote,
+        SyncLogEntry local,
+        SyncLogEntry remote,
         ConflictStrategy strategy
     ) =>
         strategy switch
@@ -63,7 +63,7 @@ internal static class ConflictResolver
     /// Resolves conflict using Last-Write-Wins (timestamp comparison).
     /// On tie, higher version wins for determinism.
     /// </summary>
-    public static ConflictResolution ResolveLastWriteWins(Nimblesite.Sync.CoreLogEntry local, Nimblesite.Sync.CoreLogEntry remote)
+    public static ConflictResolution ResolveLastWriteWins(SyncLogEntry local, SyncLogEntry remote)
     {
         var comparison = string.Compare(
             local.Timestamp,
@@ -85,9 +85,9 @@ internal static class ConflictResolver
     /// Resolves a conflict using a custom resolution function.
     /// </summary>
     public static ConflictResolutionResult ResolveCustom(
-        Nimblesite.Sync.CoreLogEntry local,
-        Nimblesite.Sync.CoreLogEntry remote,
-        Func<Nimblesite.Sync.CoreLogEntry, Nimblesite.Sync.CoreLogEntry, Nimblesite.Sync.CoreLogEntryResult> resolver
+        SyncLogEntry local,
+        SyncLogEntry remote,
+        Func<SyncLogEntry, SyncLogEntry, SyncLogEntryResult> resolver
     )
     {
         var result = resolver(local, remote);

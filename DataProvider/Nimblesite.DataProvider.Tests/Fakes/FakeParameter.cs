@@ -39,7 +39,7 @@ internal sealed class FakeParameterCollection : DbParameterCollection
 
     public override int Count => _parameters.Count;
 
-    public override object Nimblesite.Sync.CoreRoot => _parameters;
+    public override object SyncRoot => _parameters;
 
     public override bool IsFixedSize => false;
 

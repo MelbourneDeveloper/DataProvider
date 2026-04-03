@@ -24,7 +24,7 @@ public static class SqliteConnectionSyncExtensions
                 ORDER BY created_at ASC
                 """;
 
-            var subscriptions = new List<Nimblesite.Sync.CoreSubscription>();
+            var subscriptions = new List<SyncSubscription>();
             using var reader = cmd.ExecuteReader();
 
             while (reader.Read())
@@ -37,7 +37,7 @@ public static class SqliteConnectionSyncExtensions
         catch (SqliteException ex)
         {
             return new SubscriptionListError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get subscriptions: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get subscriptions: {ex.Message}")
             );
         }
     }
@@ -60,7 +60,7 @@ public static class SqliteConnectionSyncExtensions
                 """;
             cmd.Parameters.AddWithValue("@tableName", tableName);
 
-            var subscriptions = new List<Nimblesite.Sync.CoreSubscription>();
+            var subscriptions = new List<SyncSubscription>();
             using var reader = cmd.ExecuteReader();
 
             while (reader.Read())
@@ -73,7 +73,7 @@ public static class SqliteConnectionSyncExtensions
         catch (SqliteException ex)
         {
             return new SubscriptionListError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get subscriptions: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get subscriptions: {ex.Message}")
             );
         }
     }
@@ -83,7 +83,7 @@ public static class SqliteConnectionSyncExtensions
     /// </summary>
     public static BoolSyncResult InsertSubscription(
         this SqliteConnection connection,
-        Nimblesite.Sync.CoreSubscription subscription
+        SyncSubscription subscription
     )
     {
         try
@@ -115,7 +115,7 @@ public static class SqliteConnectionSyncExtensions
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to insert subscription: {ex.Message}")
+                new SyncErrorDatabase($"Failed to insert subscription: {ex.Message}")
             );
         }
     }
@@ -141,7 +141,7 @@ public static class SqliteConnectionSyncExtensions
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to delete subscription: {ex.Message}")
+                new SyncErrorDatabase($"Failed to delete subscription: {ex.Message}")
             );
         }
     }
@@ -166,7 +166,7 @@ public static class SqliteConnectionSyncExtensions
         catch (SqliteException ex)
         {
             return new IntSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to delete subscriptions: {ex.Message}")
+                new SyncErrorDatabase($"Failed to delete subscriptions: {ex.Message}")
             );
         }
     }
@@ -194,7 +194,7 @@ public static class SqliteConnectionSyncExtensions
         catch (SqliteException ex)
         {
             return new IntSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to delete expired subscriptions: {ex.Message}")
+                new SyncErrorDatabase($"Failed to delete expired subscriptions: {ex.Message}")
             );
         }
     }
@@ -220,7 +220,7 @@ public static class SqliteConnectionSyncExtensions
         catch (SqliteException ex)
         {
             return new LongSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get oldest version: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get oldest version: {ex.Message}")
             );
         }
     }
@@ -246,7 +246,7 @@ public static class SqliteConnectionSyncExtensions
         catch (SqliteException ex)
         {
             return new IntSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to purge tombstones: {ex.Message}")
+                new SyncErrorDatabase($"Failed to purge tombstones: {ex.Message}")
             );
         }
     }
@@ -269,7 +269,7 @@ public static class SqliteConnectionSyncExtensions
         catch (SqliteException ex)
         {
             return new IntSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to purge sync log: {ex.Message}")
+                new SyncErrorDatabase($"Failed to purge sync log: {ex.Message}")
             );
         }
     }
@@ -279,7 +279,7 @@ public static class SqliteConnectionSyncExtensions
     /// <summary>
     /// Gets all tracked sync clients.
     /// </summary>
-    public static Nimblesite.Sync.CoreClientListResult GetAllSyncClients(this SqliteConnection connection)
+    public static SyncClientListResult GetAllSyncClients(this SqliteConnection connection)
     {
         try
         {
@@ -290,13 +290,13 @@ public static class SqliteConnectionSyncExtensions
                 ORDER BY last_sync_version ASC
                 """;
 
-            var clients = new List<Nimblesite.Sync.CoreClient>();
+            var clients = new List<SyncClient>();
             using var reader = cmd.ExecuteReader();
 
             while (reader.Read())
             {
                 clients.Add(
-                    new Nimblesite.Sync.CoreClient(
+                    new SyncClient(
                         OriginId: reader.GetString(0),
                         LastSyncVersion: reader.GetInt64(1),
                         LastSyncTimestamp: reader.GetString(2),
@@ -305,12 +305,12 @@ public static class SqliteConnectionSyncExtensions
                 );
             }
 
-            return new Nimblesite.Sync.CoreClientListOk(clients);
+            return new SyncClientListOk(clients);
         }
         catch (SqliteException ex)
         {
-            return new Nimblesite.Sync.CoreClientListError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get clients: {ex.Message}")
+            return new SyncClientListError(
+                new SyncErrorDatabase($"Failed to get clients: {ex.Message}")
             );
         }
     }
@@ -320,7 +320,7 @@ public static class SqliteConnectionSyncExtensions
     /// </summary>
     public static BoolSyncResult UpsertSyncClient(
         this SqliteConnection connection,
-        Nimblesite.Sync.CoreClient client
+        SyncClient client
     )
     {
         try
@@ -344,7 +344,7 @@ public static class SqliteConnectionSyncExtensions
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to upsert client: {ex.Message}")
+                new SyncErrorDatabase($"Failed to upsert client: {ex.Message}")
             );
         }
     }
@@ -373,12 +373,12 @@ public static class SqliteConnectionSyncExtensions
         catch (SqliteException ex)
         {
             return new IntSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to delete stale clients: {ex.Message}")
+                new SyncErrorDatabase($"Failed to delete stale clients: {ex.Message}")
             );
         }
     }
 
-    private static Nimblesite.Sync.CoreSubscription ReadSubscription(SqliteDataReader reader) =>
+    private static SyncSubscription ReadSubscription(SqliteDataReader reader) =>
         new(
             SubscriptionId: reader.GetString(0),
             OriginId: reader.GetString(1),

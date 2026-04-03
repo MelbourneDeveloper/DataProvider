@@ -17,7 +17,7 @@ internal static class TombstoneManager
     /// </summary>
     /// <param name="clients">All tracked client sync states.</param>
     /// <returns>Safe purge version, or 0 if no clients.</returns>
-    public static long CalculateSafePurgeVersion(IEnumerable<Nimblesite.Sync.CoreClient> clients)
+    public static long CalculateSafePurgeVersion(IEnumerable<SyncClient> clients)
     {
         var clientList = clients.ToList();
         return clientList.Count == 0 ? 0 : clientList.Min(c => c.LastSyncVersion);
@@ -40,7 +40,7 @@ internal static class TombstoneManager
     /// <param name="inactivityLimit">Max allowed inactivity period.</param>
     /// <returns>List of client origin IDs to remove.</returns>
     public static IReadOnlyList<string> FindStaleClients(
-        IEnumerable<Nimblesite.Sync.CoreClient> clients,
+        IEnumerable<SyncClient> clients,
         DateTime now,
         TimeSpan inactivityLimit
     )
@@ -68,7 +68,7 @@ internal static class TombstoneManager
     /// <param name="purgeTombstones">Function to delete tombstones below version.</param>
     /// <returns>Number of tombstones purged or error.</returns>
     public static IntSyncResult PurgeTombstones(
-        IEnumerable<Nimblesite.Sync.CoreClient> clients,
+        IEnumerable<SyncClient> clients,
         Func<long, IntSyncResult> purgeTombstones
     )
     {
@@ -90,14 +90,14 @@ internal static class TombstoneManager
     /// <param name="timestamp">Current UTC timestamp.</param>
     /// <param name="existingClient">Existing client record if any.</param>
     /// <returns>Updated client record.</returns>
-    public static Nimblesite.Sync.CoreClient UpdateClientSyncState(
+    public static SyncClient UpdateClientSyncState(
         string originId,
         long syncedToVersion,
         string timestamp,
-        Nimblesite.Sync.CoreClient? existingClient
+        SyncClient? existingClient
     ) =>
         existingClient is null
-            ? new Nimblesite.Sync.CoreClient(originId, syncedToVersion, timestamp, timestamp)
+            ? new SyncClient(originId, syncedToVersion, timestamp, timestamp)
             : existingClient with
             {
                 LastSyncVersion = syncedToVersion,
@@ -110,7 +110,7 @@ internal static class TombstoneManager
     /// <param name="clientVersion">Client's last synced version.</param>
     /// <param name="oldestVersion">Oldest available version in log.</param>
     /// <returns>FullResyncRequired error.</returns>
-    public static Nimblesite.Sync.CoreErrorFullResyncRequired CreateFullResyncError(
+    public static SyncErrorFullResyncRequired CreateFullResyncError(
         long clientVersion,
         long oldestVersion
     ) => new(clientVersion, oldestVersion);

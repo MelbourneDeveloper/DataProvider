@@ -13,7 +13,7 @@ namespace Nimblesite.Lql.Tests;
 /// Tests for error handling in LQL to PostgreSQL transformation.
 /// Tests invalid syntax, malformed queries, and edge cases using Result types.
 /// </summary>
-public class Nimblesite.Lql.CoreErrorHandlingTests
+public class LqlErrorHandlingTests
 {
     [Fact]
     public void EmptyInput_ShouldReturnError()
@@ -22,11 +22,11 @@ public class Nimblesite.Lql.CoreErrorHandlingTests
         const string lqlCode = "";
 
         // Act
-        var result = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
+        var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>>(result);
-        var failure = (Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
         Assert.Contains("Empty LQL input", failure.Value.Message, StringComparison.Ordinal);
     }
 
@@ -37,11 +37,11 @@ public class Nimblesite.Lql.CoreErrorHandlingTests
         const string lqlCode = "   \n\t   \n   ";
 
         // Act
-        var result = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
+        var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>>(result);
-        var failure = (Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
         Assert.Contains("whitespace", failure.Value.Message, StringComparison.Ordinal);
     }
 
@@ -54,11 +54,11 @@ public class Nimblesite.Lql.CoreErrorHandlingTests
             """;
 
         // Act
-        var result = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
+        var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>>(result);
-        var failure = (Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
         Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
         Assert.NotNull(failure.Value.Position);
         Assert.True(failure.Value.Position!.Line > 0);
@@ -74,11 +74,11 @@ public class Nimblesite.Lql.CoreErrorHandlingTests
             """;
 
         // Act
-        var result = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
+        var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>>(result);
-        var failure = (Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
         Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
         Assert.NotNull(failure.Value.Position);
     }
@@ -92,11 +92,11 @@ public class Nimblesite.Lql.CoreErrorHandlingTests
             """;
 
         // Act
-        var result = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
+        var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>>(result);
-        var failure = (Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
         Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
         Assert.NotNull(failure.Value.Position);
     }
@@ -110,11 +110,11 @@ public class Nimblesite.Lql.CoreErrorHandlingTests
             """;
 
         // Act
-        var result = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
+        var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>>(result);
-        var failure = (Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
         Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
         Assert.NotNull(failure.Value.Position);
     }
@@ -128,11 +128,11 @@ public class Nimblesite.Lql.CoreErrorHandlingTests
             """;
 
         // Act
-        var result = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
+        var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>>(result);
-        var failure = (Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
         Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
         Assert.NotNull(failure.Value.Position);
     }
@@ -146,11 +146,11 @@ public class Nimblesite.Lql.CoreErrorHandlingTests
             """;
 
         // Act
-        var result = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
+        var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>>(result);
-        var failure = (Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
         Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
         Assert.NotNull(failure.Value.Position);
     }
@@ -164,11 +164,11 @@ public class Nimblesite.Lql.CoreErrorHandlingTests
             """;
 
         // Act
-        var result = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
+        var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>>(result);
-        var failure = (Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
         Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
         Assert.NotNull(failure.Value.Position);
     }
@@ -182,11 +182,11 @@ public class Nimblesite.Lql.CoreErrorHandlingTests
             """;
 
         // Act
-        var result = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
+        var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>>(result);
-        var failure = (Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
         Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
         Assert.NotNull(failure.Value.Position);
     }
@@ -202,11 +202,11 @@ public class Nimblesite.Lql.CoreErrorHandlingTests
             """;
 
         // Act
-        var result = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
+        var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>>(result);
-        var failure = (Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
         Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
         Assert.NotNull(failure.Value.Position);
     }
@@ -222,11 +222,11 @@ public class Nimblesite.Lql.CoreErrorHandlingTests
             """;
 
         // Act
-        var result = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
+        var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>>(result);
-        var failure = (Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
         Assert.Contains("Syntax error", failure.Value.Message, StringComparison.Ordinal);
         Assert.NotNull(failure.Value.Position);
     }
@@ -244,11 +244,11 @@ public class Nimblesite.Lql.CoreErrorHandlingTests
             """;
 
         // Act
-        var result = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
+        var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>>(result);
-        var failure = (Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError>)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>>(result);
+        var failure = (Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result;
 
         // Check that the error message includes position information
         Assert.Contains("line", failure.Value.FormattedMessage, StringComparison.Ordinal);
@@ -269,11 +269,11 @@ public class Nimblesite.Lql.CoreErrorHandlingTests
             """;
 
         // Act
-        var result = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
+        var result = LqlStatementConverter.ToStatement(lqlCode);
 
         // Assert
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Ok<Nimblesite.Lql.CoreStatement, SqlError>>(result);
-        var success = (Result<Nimblesite.Lql.CoreStatement, SqlError>.Ok<Nimblesite.Lql.CoreStatement, SqlError>)result;
+        Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(result);
+        var success = (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)result;
         Assert.NotNull(success.Value);
     }
 }

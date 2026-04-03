@@ -16,7 +16,7 @@ public static class FileOperations
             ? new FileTab
             {
                 FileName = $"Untitled{tabNumber}.lql",
-                FileType = FileType.Nimblesite.Lql.Core,
+                FileType = FileType.Lql,
                 Content = "Customer |> select(*) |> limit(50)",
             }
             : new FileTab
@@ -77,7 +77,7 @@ public static class FileOperations
             FileName = fileName,
             FilePath = filePath,
             Content = content,
-            FileType = isLql ? FileType.Nimblesite.Lql.Core : FileType.Sql,
+            FileType = isLql ? FileType.Lql : FileType.Sql,
         };
     }
 
@@ -87,7 +87,7 @@ public static class FileOperations
     public static FileTab UpdateFileType(FileTab tab, string filePath)
     {
         var isLql = Path.GetExtension(filePath).Equals(".lql", StringComparison.OrdinalIgnoreCase);
-        tab.FileType = isLql ? FileType.Nimblesite.Lql.Core : FileType.Sql;
+        tab.FileType = isLql ? FileType.Lql : FileType.Sql;
         tab.FileName = Path.GetFileName(filePath);
         tab.FilePath = filePath;
         return tab;

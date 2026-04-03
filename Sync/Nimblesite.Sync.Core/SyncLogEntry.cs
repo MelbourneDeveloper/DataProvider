@@ -14,33 +14,33 @@ namespace Nimblesite.Sync.Core;
 /// <example>
 /// <code>
 /// // Create an insert entry for a new patient record
-/// var insertEntry = new Nimblesite.Sync.CoreLogEntry(
+/// var insertEntry = new SyncLogEntry(
 ///     Version: 1,
 ///     TableName: "patients",
 ///     PkValue: "{\"Id\": \"550e8400-e29b-41d4-a716-446655440000\"}",
-///     Operation: Nimblesite.Sync.CoreOperation.Insert,
+///     Operation: SyncOperation.Insert,
 ///     Payload: "{\"Id\": \"550e8400-e29b-41d4-a716-446655440000\", \"Name\": \"John Doe\"}",
 ///     Origin: "client-uuid-123",
 ///     Timestamp: DateTime.UtcNow.ToString("o")
 /// );
 ///
 /// // Create a delete entry (tombstone)
-/// var deleteEntry = new Nimblesite.Sync.CoreLogEntry(
+/// var deleteEntry = new SyncLogEntry(
 ///     Version: 2,
 ///     TableName: "patients",
 ///     PkValue: "{\"Id\": \"550e8400-e29b-41d4-a716-446655440000\"}",
-///     Operation: Nimblesite.Sync.CoreOperation.Delete,
+///     Operation: SyncOperation.Delete,
 ///     Payload: null,
 ///     Origin: "client-uuid-123",
 ///     Timestamp: DateTime.UtcNow.ToString("o")
 /// );
 /// </code>
 /// </example>
-public sealed record Nimblesite.Sync.CoreLogEntry(
+public sealed record SyncLogEntry(
     long Version,
     string TableName,
     string PkValue,
-    Nimblesite.Sync.CoreOperation Operation,
+    SyncOperation Operation,
     string? Payload,
     string Origin,
     string Timestamp

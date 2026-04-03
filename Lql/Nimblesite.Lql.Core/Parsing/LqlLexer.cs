@@ -30,7 +30,7 @@ using DFA = Antlr4.Runtime.Dfa.DFA;
 
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.13.1")]
 [System.CLSCompliant(false)]
-public partial class Nimblesite.Lql.CoreLexer : Lexer {
+public partial class LqlLexer : Lexer {
 	protected static DFA[] decisionToDFA;
 	protected static PredictionContextCache sharedContextCache = new PredictionContextCache();
 	public const int
@@ -63,10 +63,10 @@ public partial class Nimblesite.Lql.CoreLexer : Lexer {
 	};
 
 
-	public Nimblesite.Lql.CoreLexer(ICharStream input)
+	public LqlLexer(ICharStream input)
 	: this(input, Console.Out, Console.Error) { }
 
-	public Nimblesite.Lql.CoreLexer(ICharStream input, TextWriter output, TextWriter errorOutput)
+	public LqlLexer(ICharStream input, TextWriter output, TextWriter errorOutput)
 	: base(input, output, errorOutput)
 	{
 		Interpreter = new LexerATNSimulator(this, _ATN, decisionToDFA, sharedContextCache);
@@ -109,7 +109,7 @@ public partial class Nimblesite.Lql.CoreLexer : Lexer {
 
 	public override int[] SerializedAtn { get { return _serializedATN; } }
 
-	static Nimblesite.Lql.CoreLexer() {
+	static LqlLexer() {
 		decisionToDFA = new DFA[_ATN.NumberOfDecisions];
 		for (int i = 0; i < _ATN.NumberOfDecisions; i++) {
 			decisionToDFA[i] = new DFA(_ATN.GetDecisionState(i), i);

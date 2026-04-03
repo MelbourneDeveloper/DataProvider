@@ -57,8 +57,8 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
         var conn = new SqliteConnection($"Data Source={dbPath}");
         conn.Open();
 
-        Nimblesite.Sync.CoreSchema.CreateSchema(conn);
-        Nimblesite.Sync.CoreSchema.SetOriginId(conn, originId);
+        SyncSchema.CreateSchema(conn);
+        SyncSchema.SetOriginId(conn, originId);
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
@@ -150,10 +150,10 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             ColumnMappings: columnMappings,
             ExcludedColumns: ["PasswordHash", "SecurityStamp"],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-        var mappingConfig = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var mappingConfig = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         // Act - Insert in source with SOURCE schema columns
         using (var cmd = source.CreateCommand())
@@ -166,9 +166,9 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
         }
 
         // Fetch changes from source
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(source, 0, 100);
-        Assert.True(changes is Nimblesite.Sync.CoreLogListOk, $"FetchChanges failed: {changes}");
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(source, 0, 100);
+        Assert.True(changes is SyncLogListOk, $"FetchChanges failed: {changes}");
+        var changesList = ((SyncLogListOk)changes).Value;
         Assert.Single(changesList);
 
         // Apply mapping to transform the entry
@@ -242,10 +242,10 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             ColumnMappings: columnMappings,
             ExcludedColumns: ["PasswordHash", "SecurityStamp"],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-        var mappingConfig = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var mappingConfig = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         // Insert in source
         using (var cmd = source.CreateCommand())
@@ -258,8 +258,8 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
         }
 
         // Fetch changes
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(source, 0, 100);
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(source, 0, 100);
+        var changesList = ((SyncLogListOk)changes).Value;
 
         // Transform and apply
         PostgresSyncSession.EnableSuppression(target);
@@ -310,8 +310,8 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
         using var source = new SqliteConnection($"Data Source={dbPath}");
         source.Open();
 
-        Nimblesite.Sync.CoreSchema.CreateSchema(source);
-        Nimblesite.Sync.CoreSchema.SetOriginId(source, sourceOrigin);
+        SyncSchema.CreateSchema(source);
+        SyncSchema.SetOriginId(source, sourceOrigin);
 
         // Use SalesOrder instead of Order (reserved word in SQL)
         using (var cmd = source.CreateCommand())
@@ -360,12 +360,12 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             ColumnMappings: [],
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig(),
+            SyncTracking: new SyncTrackingConfig(),
             IsMultiTarget: true,
             Targets: targets
         );
 
-        var mappingConfig = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var mappingConfig = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         // Insert order
         using (var cmd = source.CreateCommand())
@@ -378,8 +378,8 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
         }
 
         // Fetch changes
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(source, 0, 100);
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(source, 0, 100);
+        var changesList = ((SyncLogListOk)changes).Value;
         Assert.Single(changesList);
 
         // Apply mapping
@@ -435,10 +435,10 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             ColumnMappings: columnMappings,
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-        var mappingConfig = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var mappingConfig = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         // Insert
         using (var cmd = source.CreateCommand())
@@ -450,8 +450,8 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        var insertChanges = Nimblesite.Sync.CoreLogRepository.FetchChanges(source, 0, 100);
-        var insertVersion = ((Nimblesite.Sync.CoreLogListOk)insertChanges).Value.Max(e => e.Version);
+        var insertChanges = SyncLogRepository.FetchChanges(source, 0, 100);
+        var insertVersion = ((SyncLogListOk)insertChanges).Value.Max(e => e.Version);
 
         // Update
         using (var cmd = source.CreateCommand())
@@ -464,10 +464,10 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
         }
 
         // Fetch update
-        var updateChanges = Nimblesite.Sync.CoreLogRepository.FetchChanges(source, insertVersion, 100);
-        var updateList = ((Nimblesite.Sync.CoreLogListOk)updateChanges).Value;
+        var updateChanges = SyncLogRepository.FetchChanges(source, insertVersion, 100);
+        var updateList = ((SyncLogListOk)updateChanges).Value;
         Assert.Single(updateList);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Update, updateList[0].Operation);
+        Assert.Equal(SyncOperation.Update, updateList[0].Operation);
 
         // Apply mapping to update
         var mappingResult = MappingEngine.ApplyMapping(
@@ -507,10 +507,10 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             ColumnMappings: [],
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-        var mappingConfig = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var mappingConfig = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         // Insert then delete
         using (var cmd = source.CreateCommand())
@@ -520,8 +520,8 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        var insertChanges = Nimblesite.Sync.CoreLogRepository.FetchChanges(source, 0, 100);
-        var insertVersion = ((Nimblesite.Sync.CoreLogListOk)insertChanges).Value.Max(e => e.Version);
+        var insertChanges = SyncLogRepository.FetchChanges(source, 0, 100);
+        var insertVersion = ((SyncLogListOk)insertChanges).Value.Max(e => e.Version);
 
         using (var cmd = source.CreateCommand())
         {
@@ -529,10 +529,10 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        var deleteChanges = Nimblesite.Sync.CoreLogRepository.FetchChanges(source, insertVersion, 100);
-        var deleteList = ((Nimblesite.Sync.CoreLogListOk)deleteChanges).Value;
+        var deleteChanges = SyncLogRepository.FetchChanges(source, insertVersion, 100);
+        var deleteList = ((SyncLogListOk)deleteChanges).Value;
         Assert.Single(deleteList);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Delete, deleteList[0].Operation);
+        Assert.Equal(SyncOperation.Delete, deleteList[0].Operation);
 
         // Apply mapping to delete
         var mappingResult = MappingEngine.ApplyMapping(
@@ -569,7 +569,7 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             ColumnMappings: [new("FullName", "Name")],
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
         // Pull: Customer -> User (reverse rename)
@@ -583,10 +583,10 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             ColumnMappings: [new("Name", "FullName")],
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             "1.0",
             UnmappedTableBehavior.Strict,
             [pushMapping, pullMapping]
@@ -634,10 +634,10 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             ColumnMappings: columnMappings,
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-        var mappingConfig = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var mappingConfig = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         // Insert with NULL email
         using (var cmd = source.CreateCommand())
@@ -647,8 +647,8 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(source, 0, 100);
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(source, 0, 100);
+        var changesList = ((SyncLogListOk)changes).Value;
         var entry = changesList[0];
 
         var mappingResult = MappingEngine.ApplyMapping(
@@ -692,10 +692,10 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             ColumnMappings: columnMappings,
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-        var mappingConfig = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var mappingConfig = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         // Unicode characters: Japanese, Chinese, Korean, Arabic, Emoji
         var unicodeNames = new[]
@@ -733,8 +733,8 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(source, 0, 100);
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(source, 0, 100);
+        var changesList = ((SyncLogListOk)changes).Value;
 
         foreach (var entry in changesList)
         {
@@ -798,10 +798,10 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             ColumnMappings: columnMappings,
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-        var mappingConfig = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var mappingConfig = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         // Special chars
         var specialCases = new[]
@@ -840,8 +840,8 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(source, 0, 100);
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(source, 0, 100);
+        var changesList = ((SyncLogListOk)changes).Value;
 
         foreach (var entry in changesList)
         {
@@ -883,10 +883,10 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             ColumnMappings: columnMappings,
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-        var mappingConfig = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var mappingConfig = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         // Insert with empty string (not NULL)
         using (var cmd = source.CreateCommand())
@@ -896,8 +896,8 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(source, 0, 100);
-        var entry = ((Nimblesite.Sync.CoreLogListOk)changes).Value[0];
+        var changes = SyncLogRepository.FetchChanges(source, 0, 100);
+        var entry = ((SyncLogListOk)changes).Value[0];
 
         var mappingResult = MappingEngine.ApplyMapping(
             entry,
@@ -939,10 +939,10 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             ColumnMappings: columnMappings,
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-        var mappingConfig = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var mappingConfig = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         // Very long string (10000 chars)
         var longName = new string('A', 10000);
@@ -970,8 +970,8 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(source, 0, 100);
-        var entry = ((Nimblesite.Sync.CoreLogListOk)changes).Value[0];
+        var changes = SyncLogRepository.FetchChanges(source, 0, 100);
+        var entry = ((SyncLogListOk)changes).Value[0];
 
         var mappingResult = MappingEngine.ApplyMapping(
             entry,
@@ -1015,10 +1015,10 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             ColumnMappings: columnMappings,
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-        var mappingConfig = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var mappingConfig = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         using (var cmd = source.CreateCommand())
         {
@@ -1027,8 +1027,8 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(source, 0, 100);
-        var entry = ((Nimblesite.Sync.CoreLogListOk)changes).Value[0];
+        var changes = SyncLogRepository.FetchChanges(source, 0, 100);
+        var entry = ((SyncLogListOk)changes).Value[0];
 
         var mappingResult = MappingEngine.ApplyMapping(
             entry,
@@ -1074,10 +1074,10 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
                 "CreatedAt",
             ],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-        var mappingConfig = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var mappingConfig = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         using (var cmd = source.CreateCommand())
         {
@@ -1086,8 +1086,8 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(source, 0, 100);
-        var entry = ((Nimblesite.Sync.CoreLogListOk)changes).Value[0];
+        var changes = SyncLogRepository.FetchChanges(source, 0, 100);
+        var entry = ((SyncLogListOk)changes).Value[0];
 
         var mappingResult = MappingEngine.ApplyMapping(
             entry,
@@ -1135,10 +1135,10 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             ColumnMappings: columnMappings,
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-        var mappingConfig = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var mappingConfig = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         // Name contains JSON-like structure
         var jsonLikeName = "{\"first\":\"John\",\"last\":\"Doe\"}";
@@ -1166,8 +1166,8 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(source, 0, 100);
-        var entry = ((Nimblesite.Sync.CoreLogListOk)changes).Value[0];
+        var changes = SyncLogRepository.FetchChanges(source, 0, 100);
+        var entry = ((SyncLogListOk)changes).Value[0];
 
         var mappingResult = MappingEngine.ApplyMapping(
             entry,
@@ -1193,12 +1193,12 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
 #pragma warning disable CA2100 // SQL from test fixtures, not user input
     private static void ApplyMappedEntryToPostgres(
         NpgsqlConnection conn,
-        Nimblesite.Sync.CoreOperation operation,
+        SyncOperation operation,
         MappedEntry mapped
     )
     {
         // Parse the mapped payload and PK
-        if (operation == Nimblesite.Sync.CoreOperation.Delete)
+        if (operation == SyncOperation.Delete)
         {
             using var pkDoc = JsonDocument.Parse(mapped.TargetPkValue);
             var pkValue = pkDoc.RootElement.EnumerateObject().First().Value.GetString();

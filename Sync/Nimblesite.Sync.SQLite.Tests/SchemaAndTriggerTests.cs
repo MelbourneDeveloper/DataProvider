@@ -4,7 +4,7 @@ using Xunit;
 namespace Nimblesite.Sync.SQLite.Tests;
 
 /// <summary>
-/// Integration tests for Nimblesite.Sync.CoreSchema and TriggerGenerator.
+/// Integration tests for SyncSchema and TriggerGenerator.
 /// Tests schema creation, trigger generation, and schema metadata operations.
 /// NO MOCKS - real SQLite databases only!
 /// </summary>
@@ -23,13 +23,13 @@ public sealed class SchemaAndTriggerTests : IDisposable
         _db.Open();
     }
 
-    #region Nimblesite.Sync.CoreSchema Tests
+    #region SyncSchema Tests
 
     [Fact]
     public void CreateSchema_EmptyDatabase_CreatesAllTables()
     {
         // Act
-        var result = Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        var result = SyncSchema.CreateSchema(_db);
 
         // Assert
         Assert.True(result is BoolSyncOk);
@@ -61,9 +61,9 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void CreateSchema_IdempotentMultipleCalls_Succeeds()
     {
         // Act
-        var result1 = Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        var result2 = Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        var result3 = Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        var result1 = SyncSchema.CreateSchema(_db);
+        var result2 = SyncSchema.CreateSchema(_db);
+        var result3 = SyncSchema.CreateSchema(_db);
 
         // Assert
         Assert.True(result1 is BoolSyncOk);
@@ -75,7 +75,7 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void CreateSchema_InitializesSyncState()
     {
         // Act
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        SyncSchema.CreateSchema(_db);
 
         // Assert
         using var cmd = _db.CreateCommand();
@@ -99,7 +99,7 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void CreateSchema_InitializesSyncSession()
     {
         // Act
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        SyncSchema.CreateSchema(_db);
 
         // Assert
         using var cmd = _db.CreateCommand();
@@ -113,10 +113,10 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void SetOriginId_ValidOrigin_StoresValue()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        SyncSchema.CreateSchema(_db);
 
         // Act
-        var result = Nimblesite.Sync.CoreSchema.SetOriginId(_db, OriginId);
+        var result = SyncSchema.SetOriginId(_db, OriginId);
 
         // Assert
         Assert.True(result is BoolSyncOk);
@@ -132,11 +132,11 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void GetOriginId_AfterSet_ReturnsValue()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, OriginId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, OriginId);
 
         // Act
-        var result = Nimblesite.Sync.CoreSchema.GetOriginId(_db);
+        var result = SyncSchema.GetOriginId(_db);
 
         // Assert
         Assert.True(result is StringSyncOk);
@@ -147,10 +147,10 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void GetOriginId_BeforeSet_ReturnsEmptyString()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        SyncSchema.CreateSchema(_db);
 
         // Act
-        var result = Nimblesite.Sync.CoreSchema.GetOriginId(_db);
+        var result = SyncSchema.GetOriginId(_db);
 
         // Assert
         Assert.True(result is StringSyncOk);
@@ -161,7 +161,7 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void CreateSchema_CreatesSyncLogIndexes()
     {
         // Act
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        SyncSchema.CreateSchema(_db);
 
         // Assert
         using var cmd = _db.CreateCommand();
@@ -186,7 +186,7 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void CreateSchema_CreatesSyncClientsIndex()
     {
         // Act
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        SyncSchema.CreateSchema(_db);
 
         // Assert
         using var cmd = _db.CreateCommand();
@@ -204,7 +204,7 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void CreateSchema_CreatesSubscriptionIndexes()
     {
         // Act
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        SyncSchema.CreateSchema(_db);
 
         // Assert
         using var cmd = _db.CreateCommand();
@@ -297,7 +297,7 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void GenerateTriggersFromSchema_ValidTable_ReturnsTriggers()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        SyncSchema.CreateSchema(_db);
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE Products (
@@ -327,7 +327,7 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void GenerateTriggersFromSchema_NonExistentTable_ReturnsError()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        SyncSchema.CreateSchema(_db);
 
         // Act
         var result = TriggerGenerator.GenerateTriggersFromSchema(
@@ -344,8 +344,8 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void CreateTriggers_ValidTable_CreatesTriggers()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, OriginId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, OriginId);
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE Orders (
@@ -386,7 +386,7 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void CreateTriggers_NonExistentTable_ReturnsError()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        SyncSchema.CreateSchema(_db);
 
         // Act
         var result = TriggerGenerator.CreateTriggers(_db, "NonExistent", NullLogger.Instance);
@@ -399,8 +399,8 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void DropTriggers_ExistingTriggers_RemovesThem()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, OriginId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, OriginId);
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE Items (
@@ -428,7 +428,7 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void DropTriggers_NonExistentTriggers_Succeeds()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        SyncSchema.CreateSchema(_db);
 
         // Act
         var result = TriggerGenerator.DropTriggers(_db, "NonExistent", NullLogger.Instance);
@@ -479,8 +479,8 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void Triggers_InsertLogsToSyncLog()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, OriginId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, OriginId);
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE Events (
@@ -508,8 +508,8 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void Triggers_UpdateLogsToSyncLog()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, OriginId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, OriginId);
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE Events (
@@ -537,8 +537,8 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void Triggers_DeleteLogsToSyncLog()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, OriginId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, OriginId);
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE Events (
@@ -570,8 +570,8 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void Triggers_SyncActiveSuppressions()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, OriginId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, OriginId);
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE Events (
@@ -603,8 +603,8 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void Triggers_LogPrimaryKeyAsJson()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, OriginId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, OriginId);
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE Records (
@@ -632,8 +632,8 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void Triggers_LogPayloadAsJson()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, OriginId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, OriginId);
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE Records (
@@ -666,8 +666,8 @@ public sealed class SchemaAndTriggerTests : IDisposable
     {
         // Arrange
         var myOrigin = "my-unique-origin";
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, myOrigin);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, myOrigin);
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE Tasks (
@@ -693,8 +693,8 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void Triggers_LogTimestamp()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, OriginId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, OriginId);
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE Tasks (
@@ -725,7 +725,7 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void GenerateTriggersFromSchema_TableWithoutPK_ReturnsError()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        SyncSchema.CreateSchema(_db);
         using var cmd = _db.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE NoPrimaryKey (
@@ -745,22 +745,22 @@ public sealed class SchemaAndTriggerTests : IDisposable
         // Assert
         Assert.True(result is StringSyncError);
         var error = ((StringSyncError)result).Value;
-        Assert.True(error is Nimblesite.Sync.CoreErrorDatabase);
-        Assert.Contains("no primary key", ((Nimblesite.Sync.CoreErrorDatabase)error).Message.ToLowerInvariant());
+        Assert.True(error is SyncErrorDatabase);
+        Assert.Contains("no primary key", ((SyncErrorDatabase)error).Message.ToLowerInvariant());
     }
 
     #endregion
 
-    #region Nimblesite.Sync.CoreSessionManager Tests
+    #region SyncSessionManager Tests
 
     [Fact]
     public void EnableSuppression_ValidConnection_SetsFlag()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        SyncSchema.CreateSchema(_db);
 
         // Act
-        var result = Nimblesite.Sync.CoreSessionManager.EnableSuppression(_db);
+        var result = SyncSessionManager.EnableSuppression(_db);
 
         // Assert
         Assert.True(result is BoolSyncOk);
@@ -774,11 +774,11 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void DisableSuppression_ValidConnection_ClearsFlag()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_db);
+        SyncSchema.CreateSchema(_db);
+        SyncSessionManager.EnableSuppression(_db);
 
         // Act
-        var result = Nimblesite.Sync.CoreSessionManager.DisableSuppression(_db);
+        var result = SyncSessionManager.DisableSuppression(_db);
 
         // Assert
         Assert.True(result is BoolSyncOk);
@@ -792,11 +792,11 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void IsSuppressionActive_WhenActive_ReturnsTrue()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_db);
+        SyncSchema.CreateSchema(_db);
+        SyncSessionManager.EnableSuppression(_db);
 
         // Act
-        var result = Nimblesite.Sync.CoreSessionManager.IsSuppressionActive(_db);
+        var result = SyncSessionManager.IsSuppressionActive(_db);
 
         // Assert
         Assert.True(result is BoolSyncOk);
@@ -807,10 +807,10 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void IsSuppressionActive_WhenInactive_ReturnsFalse()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        SyncSchema.CreateSchema(_db);
 
         // Act
-        var result = Nimblesite.Sync.CoreSessionManager.IsSuppressionActive(_db);
+        var result = SyncSessionManager.IsSuppressionActive(_db);
 
         // Assert
         Assert.True(result is BoolSyncOk);
@@ -821,20 +821,20 @@ public sealed class SchemaAndTriggerTests : IDisposable
     public void EnableDisable_MultipleToggles_WorksCorrectly()
     {
         // Arrange
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
+        SyncSchema.CreateSchema(_db);
 
         // Act & Assert
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_db);
-        Assert.True(((BoolSyncOk)Nimblesite.Sync.CoreSessionManager.IsSuppressionActive(_db)).Value);
+        SyncSessionManager.EnableSuppression(_db);
+        Assert.True(((BoolSyncOk)SyncSessionManager.IsSuppressionActive(_db)).Value);
 
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_db);
-        Assert.False(((BoolSyncOk)Nimblesite.Sync.CoreSessionManager.IsSuppressionActive(_db)).Value);
+        SyncSessionManager.DisableSuppression(_db);
+        Assert.False(((BoolSyncOk)SyncSessionManager.IsSuppressionActive(_db)).Value);
 
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_db);
-        Assert.True(((BoolSyncOk)Nimblesite.Sync.CoreSessionManager.IsSuppressionActive(_db)).Value);
+        SyncSessionManager.EnableSuppression(_db);
+        Assert.True(((BoolSyncOk)SyncSessionManager.IsSuppressionActive(_db)).Value);
 
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_db);
-        Assert.False(((BoolSyncOk)Nimblesite.Sync.CoreSessionManager.IsSuppressionActive(_db)).Value);
+        SyncSessionManager.DisableSuppression(_db);
+        Assert.False(((BoolSyncOk)SyncSessionManager.IsSuppressionActive(_db)).Value);
     }
 
     #endregion

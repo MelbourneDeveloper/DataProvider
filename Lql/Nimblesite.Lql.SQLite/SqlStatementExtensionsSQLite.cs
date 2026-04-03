@@ -9,12 +9,12 @@ namespace Nimblesite.Lql.SQLite;
 public static class SqlStatementExtensionsSQLite
 {
     /// <summary>
-    /// Converts a Nimblesite.Lql.CoreStatement to SQLite syntax
+    /// Converts a LqlStatement to SQLite syntax
     /// TODO: this should not return a result because it can't fail
     /// </summary>
-    /// <param name="statement">The Nimblesite.Lql.CoreStatement to convert</param>
+    /// <param name="statement">The LqlStatement to convert</param>
     /// <returns>A Result containing either SQLite SQL string or a SqlError</returns>
-    public static Result<string, SqlError> ToSQLite(this Nimblesite.Lql.CoreStatement statement)
+    public static Result<string, SqlError> ToSQLite(this LqlStatement statement)
     {
         ArgumentNullException.ThrowIfNull(statement);
 

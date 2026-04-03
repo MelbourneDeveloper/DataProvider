@@ -134,7 +134,7 @@ var schema = Schema.Define("MyApp")
 
 ### 4.3 YAML Schema Format
 
-Schema files use YAML format. See `migration_exe_spec.md` for CLI usage. The YAML format mirrors the C# records:
+Schema files use YAML format. See [migration-cli-spec.md](migration-cli-spec.md) for CLI usage. The YAML format mirrors the C# records:
 
 ```yaml
 name: MyApp

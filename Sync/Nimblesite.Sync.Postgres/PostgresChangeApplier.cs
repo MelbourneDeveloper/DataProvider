@@ -26,7 +26,7 @@ public static class PostgresChangeApplier
     )]
     public static BoolSyncResult ApplyChange(
         NpgsqlConnection connection,
-        Nimblesite.Sync.CoreLogEntry entry,
+        SyncLogEntry entry,
         ILogger logger
     )
     {
@@ -41,11 +41,11 @@ public static class PostgresChangeApplier
         {
             return entry.Operation switch
             {
-                Nimblesite.Sync.CoreOperation.Insert => ApplyInsert(connection, entry, logger),
-                Nimblesite.Sync.CoreOperation.Update => ApplyUpdate(connection, entry, logger),
-                Nimblesite.Sync.CoreOperation.Delete => ApplyDelete(connection, entry, logger),
+                SyncOperation.Insert => ApplyInsert(connection, entry, logger),
+                SyncOperation.Update => ApplyUpdate(connection, entry, logger),
+                SyncOperation.Delete => ApplyDelete(connection, entry, logger),
                 _ => new BoolSyncError(
-                    new Nimblesite.Sync.CoreErrorDatabase($"Unknown operation: {entry.Operation}")
+                    new SyncErrorDatabase($"Unknown operation: {entry.Operation}")
                 ),
             };
         }
@@ -67,26 +67,26 @@ public static class PostgresChangeApplier
                 entry.TableName
             );
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to apply change: {ex.Message}")
+                new SyncErrorDatabase($"Failed to apply change: {ex.Message}")
             );
         }
     }
 
     private static BoolSyncResult ApplyInsert(
         NpgsqlConnection connection,
-        Nimblesite.Sync.CoreLogEntry entry,
+        SyncLogEntry entry,
         ILogger logger
     )
     {
         if (entry.Payload is null)
         {
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase("Insert requires payload"));
+            return new BoolSyncError(new SyncErrorDatabase("Insert requires payload"));
         }
 
         var payload = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(entry.Payload);
         if (payload is null || payload.Count == 0)
         {
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase("Invalid payload format"));
+            return new BoolSyncError(new SyncErrorDatabase("Invalid payload format"));
         }
 
         // PostgreSQL lowercases unquoted identifiers, so we lowercase column and table names
@@ -122,25 +122,25 @@ public static class PostgresChangeApplier
 
     private static BoolSyncResult ApplyUpdate(
         NpgsqlConnection connection,
-        Nimblesite.Sync.CoreLogEntry entry,
+        SyncLogEntry entry,
         ILogger logger
     )
     {
         if (entry.Payload is null)
         {
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase("Update requires payload"));
+            return new BoolSyncError(new SyncErrorDatabase("Update requires payload"));
         }
 
         var payload = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(entry.Payload);
         if (payload is null || payload.Count == 0)
         {
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase("Invalid payload format"));
+            return new BoolSyncError(new SyncErrorDatabase("Invalid payload format"));
         }
 
         var pkJson = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(entry.PkValue);
         if (pkJson is null || pkJson.Count == 0)
         {
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase("Invalid pk_value format"));
+            return new BoolSyncError(new SyncErrorDatabase("Invalid pk_value format"));
         }
 
         var pkColumn = pkJson.Keys.First();
@@ -186,14 +186,14 @@ public static class PostgresChangeApplier
 
     private static BoolSyncResult ApplyDelete(
         NpgsqlConnection connection,
-        Nimblesite.Sync.CoreLogEntry entry,
+        SyncLogEntry entry,
         ILogger logger
     )
     {
         var pkJson = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(entry.PkValue);
         if (pkJson is null || pkJson.Count == 0)
         {
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase("Invalid pk_value format"));
+            return new BoolSyncError(new SyncErrorDatabase("Invalid pk_value format"));
         }
 
         var pkColumn = pkJson.Keys.First();

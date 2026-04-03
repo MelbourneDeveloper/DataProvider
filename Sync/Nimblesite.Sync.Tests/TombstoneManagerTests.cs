@@ -15,7 +15,7 @@ public sealed class TombstoneManagerTests
     {
         var clients = new[]
         {
-            new Nimblesite.Sync.CoreClient("origin-1", 100, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
+            new SyncClient("origin-1", 100, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
         };
 
         var result = TombstoneManager.CalculateSafePurgeVersion(clients);
@@ -28,9 +28,9 @@ public sealed class TombstoneManagerTests
     {
         var clients = new[]
         {
-            new Nimblesite.Sync.CoreClient("origin-1", 500, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
-            new Nimblesite.Sync.CoreClient("origin-2", 100, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
-            new Nimblesite.Sync.CoreClient("origin-3", 300, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
+            new SyncClient("origin-1", 500, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
+            new SyncClient("origin-2", 100, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
+            new SyncClient("origin-3", 300, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
         };
 
         var result = TombstoneManager.CalculateSafePurgeVersion(clients);
@@ -77,7 +77,7 @@ public sealed class TombstoneManagerTests
         var now = new DateTime(2025, 1, 15, 0, 0, 0, DateTimeKind.Utc);
         var clients = new[]
         {
-            new Nimblesite.Sync.CoreClient("origin-1", 100, "2025-01-10T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
+            new SyncClient("origin-1", 100, "2025-01-10T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
         };
 
         var result = TombstoneManager.FindStaleClients(clients, now, TimeSpan.FromDays(90));
@@ -91,8 +91,8 @@ public sealed class TombstoneManagerTests
         var now = new DateTime(2025, 6, 1, 0, 0, 0, DateTimeKind.Utc);
         var clients = new[]
         {
-            new Nimblesite.Sync.CoreClient("origin-1", 100, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
-            new Nimblesite.Sync.CoreClient("origin-2", 200, "2025-05-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
+            new SyncClient("origin-1", 100, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
+            new SyncClient("origin-2", 200, "2025-05-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
         };
 
         var result = TombstoneManager.FindStaleClients(clients, now, TimeSpan.FromDays(90));
@@ -107,8 +107,8 @@ public sealed class TombstoneManagerTests
         var now = new DateTime(2025, 12, 1, 0, 0, 0, DateTimeKind.Utc);
         var clients = new[]
         {
-            new Nimblesite.Sync.CoreClient("origin-1", 100, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
-            new Nimblesite.Sync.CoreClient("origin-2", 200, "2025-02-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
+            new SyncClient("origin-1", 100, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
+            new SyncClient("origin-2", 200, "2025-02-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
         };
 
         var result = TombstoneManager.FindStaleClients(clients, now, TimeSpan.FromDays(90));
@@ -139,8 +139,8 @@ public sealed class TombstoneManagerTests
     {
         var clients = new[]
         {
-            new Nimblesite.Sync.CoreClient("origin-1", 500, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
-            new Nimblesite.Sync.CoreClient("origin-2", 100, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
+            new SyncClient("origin-1", 500, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
+            new SyncClient("origin-2", 100, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
         };
         var purgedVersion = -1L;
 
@@ -177,7 +177,7 @@ public sealed class TombstoneManagerTests
     [Fact]
     public void UpdateClientSyncState_ExistingClient_UpdatesVersionAndTimestamp()
     {
-        var existing = new Nimblesite.Sync.CoreClient(
+        var existing = new SyncClient(
             "origin-1",
             50,
             "2024-12-01T00:00:00.000Z",

@@ -8,7 +8,7 @@ namespace Nimblesite.Sync.Tests;
 /// Real end-to-end integration tests syncing between two SQLite databases.
 /// No mocks - actual data flowing between server and client DBs.
 /// </summary>
-public sealed class Nimblesite.Sync.CoreIntegrationTests : IDisposable
+public sealed class SyncIntegrationTests : IDisposable
 {
     private static readonly ILogger Logger = NullLogger.Instance;
     private readonly string _serverDbPath = Path.Combine(
@@ -24,7 +24,7 @@ public sealed class Nimblesite.Sync.CoreIntegrationTests : IDisposable
     private const string ServerOrigin = "server-origin-001";
     private const string ClientOrigin = "client-origin-001";
 
-    public Nimblesite.Sync.CoreIntegrationTests()
+    public SyncIntegrationTests()
     {
         _serverDb = CreateSyncDatabase(ServerOrigin, _serverDbPath);
         _clientDb = CreateSyncDatabase(ClientOrigin, _clientDbPath);
@@ -116,7 +116,7 @@ public sealed class Nimblesite.Sync.CoreIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.Core_WithForeignKeys_HandlesCorrectOrder()
+    public void Sync_WithForeignKeys_HandlesCorrectOrder()
     {
         // Server has parent and child
         InsertParent(_serverDb, "parent1", "Parent One");
@@ -131,7 +131,7 @@ public sealed class Nimblesite.Sync.CoreIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.Core_EchoPreventionWorks_NoInfiniteLoop()
+    public void Sync_EchoPreventionWorks_NoInfiniteLoop()
     {
         // Server creates record
         InsertPerson(_serverDb, "p1", "Alice");
@@ -151,7 +151,7 @@ public sealed class Nimblesite.Sync.CoreIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.Core_LargeBatch_ProcessesInBatches()
+    public void Sync_LargeBatch_ProcessesInBatches()
     {
         // Create 50 records on server
         for (var i = 1; i <= 50; i++)
@@ -407,13 +407,13 @@ public sealed class Nimblesite.Sync.CoreIntegrationTests : IDisposable
         cmd.ExecuteNonQuery();
     }
 
-    private static IReadOnlyList<Nimblesite.Sync.CoreLogEntry> FetchChanges(
+    private static IReadOnlyList<SyncLogEntry> FetchChanges(
         SqliteConnection db,
         long fromVersion,
         int limit
     )
     {
-        var entries = new List<Nimblesite.Sync.CoreLogEntry>();
+        var entries = new List<SyncLogEntry>();
         using var cmd = db.CreateCommand();
         cmd.CommandText = """
             SELECT version, table_name, pk_value, operation, payload, origin, timestamp
@@ -429,7 +429,7 @@ public sealed class Nimblesite.Sync.CoreIntegrationTests : IDisposable
         while (reader.Read())
         {
             entries.Add(
-                new Nimblesite.Sync.CoreLogEntry(
+                new SyncLogEntry(
                     reader.GetInt64(0),
                     reader.GetString(1),
                     reader.GetString(2),
@@ -444,12 +444,12 @@ public sealed class Nimblesite.Sync.CoreIntegrationTests : IDisposable
         return entries;
     }
 
-    private static Nimblesite.Sync.CoreOperation ParseOperation(string op) =>
+    private static SyncOperation ParseOperation(string op) =>
         op switch
         {
-            "insert" => Nimblesite.Sync.CoreOperation.Insert,
-            "update" => Nimblesite.Sync.CoreOperation.Update,
-            "delete" => Nimblesite.Sync.CoreOperation.Delete,
+            "insert" => SyncOperation.Insert,
+            "update" => SyncOperation.Update,
+            "delete" => SyncOperation.Delete,
             _ => throw new ArgumentException($"Unknown operation: {op}"),
         };
 
@@ -477,7 +477,7 @@ public sealed class Nimblesite.Sync.CoreIntegrationTests : IDisposable
             var result = BatchManager.ProcessAllBatches(
                 lastVersion,
                 new BatchConfig(batchSize),
-                (from, limit) => new Nimblesite.Sync.CoreLogListOk(FetchChanges(source, from, limit)),
+                (from, limit) => new SyncLogListOk(FetchChanges(source, from, limit)),
                 batch =>
                 {
                     var applyResult = ChangeApplier.ApplyBatch(
@@ -515,7 +515,7 @@ public sealed class Nimblesite.Sync.CoreIntegrationTests : IDisposable
         // This is similar to pull but in reverse direction
         PullChanges(source, target, targetOrigin);
 
-    private static BoolSyncResult ApplyChange(SqliteConnection db, Nimblesite.Sync.CoreLogEntry entry)
+    private static BoolSyncResult ApplyChange(SqliteConnection db, SyncLogEntry entry)
     {
         try
         {
@@ -523,13 +523,13 @@ public sealed class Nimblesite.Sync.CoreIntegrationTests : IDisposable
 
             switch (entry.Operation)
             {
-                case Nimblesite.Sync.CoreOperation.Insert:
+                case SyncOperation.Insert:
                     ApplyInsert(db, entry);
                     break;
-                case Nimblesite.Sync.CoreOperation.Update:
+                case SyncOperation.Update:
                     ApplyUpdate(db, entry);
                     break;
-                case Nimblesite.Sync.CoreOperation.Delete:
+                case SyncOperation.Delete:
                     ApplyDelete(db, entry);
                     break;
             }
@@ -542,11 +542,11 @@ public sealed class Nimblesite.Sync.CoreIntegrationTests : IDisposable
         }
         catch (Exception ex)
         {
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase(ex.Message));
+            return new BoolSyncError(new SyncErrorDatabase(ex.Message));
         }
     }
 
-    private static void ApplyInsert(SqliteConnection db, Nimblesite.Sync.CoreLogEntry entry)
+    private static void ApplyInsert(SqliteConnection db, SyncLogEntry entry)
     {
         var payload = System.Text.Json.JsonSerializer.Deserialize<
             Dictionary<string, System.Text.Json.JsonElement>
@@ -578,11 +578,11 @@ public sealed class Nimblesite.Sync.CoreIntegrationTests : IDisposable
         cmd.ExecuteNonQuery();
     }
 
-    private static void ApplyUpdate(SqliteConnection db, Nimblesite.Sync.CoreLogEntry entry) =>
+    private static void ApplyUpdate(SqliteConnection db, SyncLogEntry entry) =>
         // For simplicity, treat update same as insert (upsert)
         ApplyInsert(db, entry);
 
-    private static void ApplyDelete(SqliteConnection db, Nimblesite.Sync.CoreLogEntry entry)
+    private static void ApplyDelete(SqliteConnection db, SyncLogEntry entry)
     {
         var pk = System.Text.Json.JsonSerializer.Deserialize<
             Dictionary<string, System.Text.Json.JsonElement>

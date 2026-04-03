@@ -21,7 +21,7 @@ internal static class HashVerifier
     /// Computes SHA-256 hash for a batch of changes.
     /// Format: "{version}:{table_name}:{pk_value}:{operation}:{payload}\n"
     /// </summary>
-    public static string ComputeBatchHash(IEnumerable<Nimblesite.Sync.CoreLogEntry> changes)
+    public static string ComputeBatchHash(IEnumerable<SyncLogEntry> changes)
     {
         var sb = new StringBuilder();
 
@@ -79,7 +79,7 @@ internal static class HashVerifier
     public static BoolSyncResult VerifyHash(string expected, string actual) =>
         string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase)
             ? new BoolSyncOk(true)
-            : new BoolSyncError(new Nimblesite.Sync.CoreErrorHashMismatch(expected, actual));
+            : new BoolSyncError(new SyncErrorHashMismatch(expected, actual));
 
     /// <summary>
     /// Converts a dictionary to canonical JSON per spec Section 15.2.

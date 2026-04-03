@@ -8,7 +8,7 @@ namespace Nimblesite.Sync.SQLite;
 /// FP-style - no instance state, pure functions.
 /// Implements spec Section 7 (Unified Change Log) and Section 12 (Batching).
 /// </summary>
-public static class Nimblesite.Sync.CoreLogRepository
+public static class SyncLogRepository
 {
     /// <summary>
     /// Fetches a batch of changes from the sync log.
@@ -17,7 +17,7 @@ public static class Nimblesite.Sync.CoreLogRepository
     /// <param name="fromVersion">Fetch changes with version greater than this.</param>
     /// <param name="batchSize">Maximum number of changes to fetch.</param>
     /// <returns>List of sync log entries or database error.</returns>
-    public static Nimblesite.Sync.CoreLogListResult FetchChanges(
+    public static SyncLogListResult FetchChanges(
         SqliteConnection connection,
         long fromVersion,
         int batchSize
@@ -36,13 +36,13 @@ public static class Nimblesite.Sync.CoreLogRepository
             cmd.Parameters.AddWithValue("@fromVersion", fromVersion);
             cmd.Parameters.AddWithValue("@batchSize", batchSize);
 
-            var entries = new List<Nimblesite.Sync.CoreLogEntry>();
+            var entries = new List<SyncLogEntry>();
             using var reader = cmd.ExecuteReader();
 
             while (reader.Read())
             {
                 entries.Add(
-                    new Nimblesite.Sync.CoreLogEntry(
+                    new SyncLogEntry(
                         Version: reader.GetInt64(0),
                         TableName: reader.GetString(1),
                         PkValue: reader.GetString(2),
@@ -54,12 +54,12 @@ public static class Nimblesite.Sync.CoreLogRepository
                 );
             }
 
-            return new Nimblesite.Sync.CoreLogListOk(entries);
+            return new SyncLogListOk(entries);
         }
         catch (SqliteException ex)
         {
-            return new Nimblesite.Sync.CoreLogListError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to fetch changes: {ex.Message}")
+            return new SyncLogListError(
+                new SyncErrorDatabase($"Failed to fetch changes: {ex.Message}")
             );
         }
     }
@@ -83,7 +83,7 @@ public static class Nimblesite.Sync.CoreLogRepository
         catch (SqliteException ex)
         {
             return new LongSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get last server version: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get last server version: {ex.Message}")
             );
         }
     }
@@ -108,7 +108,7 @@ public static class Nimblesite.Sync.CoreLogRepository
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to update last server version: {ex.Message}")
+                new SyncErrorDatabase($"Failed to update last server version: {ex.Message}")
             );
         }
     }
@@ -130,7 +130,7 @@ public static class Nimblesite.Sync.CoreLogRepository
         catch (SqliteException ex)
         {
             return new LongSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get max version: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get max version: {ex.Message}")
             );
         }
     }
@@ -153,7 +153,7 @@ public static class Nimblesite.Sync.CoreLogRepository
         catch (SqliteException ex)
         {
             return new LongSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get min version: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get min version: {ex.Message}")
             );
         }
     }
@@ -175,17 +175,17 @@ public static class Nimblesite.Sync.CoreLogRepository
         catch (SqliteException ex)
         {
             return new LongSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get entry count: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get entry count: {ex.Message}")
             );
         }
     }
 
-    private static Nimblesite.Sync.CoreOperation ParseOperation(string operation) =>
+    private static SyncOperation ParseOperation(string operation) =>
         operation.ToLowerInvariant() switch
         {
-            "insert" => Nimblesite.Sync.CoreOperation.Insert,
-            "update" => Nimblesite.Sync.CoreOperation.Update,
-            "delete" => Nimblesite.Sync.CoreOperation.Delete,
-            _ => Nimblesite.Sync.CoreOperation.Insert,
+            "insert" => SyncOperation.Insert,
+            "update" => SyncOperation.Update,
+            "delete" => SyncOperation.Delete,
+            _ => SyncOperation.Insert,
         };
 }

@@ -65,18 +65,18 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
 
         var ops = ((OperationsResultOk)operations).Value;
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             ops,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
         // Assert
         Assert.True(
-            result is Nimblesite.DataProvider.Migration.CoreApplyResultOk,
-            $"Nimblesite.DataProvider.Migration.Core failed: {(result as Nimblesite.DataProvider.Migration.CoreApplyResultError)?.Value}"
+            result is MigrationApplyResultOk,
+            $"Nimblesite.DataProvider.Migration.Core failed: {(result as MigrationApplyResultError)?.Value}"
         );
 
         // Verify table exists
@@ -124,18 +124,18 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
         ).Value;
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
         // Assert
         Assert.True(
-            result is Nimblesite.DataProvider.Migration.CoreApplyResultOk,
-            $"Nimblesite.DataProvider.Migration.Core failed: {(result as Nimblesite.DataProvider.Migration.CoreApplyResultError)?.Value}"
+            result is MigrationApplyResultOk,
+            $"Nimblesite.DataProvider.Migration.Core failed: {(result as MigrationApplyResultError)?.Value}"
         );
 
         var inspected = (
@@ -170,11 +170,11 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         var v1Ops = (
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
         ).Value;
-        _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        _ = MigrationRunner.Apply(
             _connection,
             v1Ops,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
@@ -205,16 +205,16 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         Assert.Equal(2, upgradeOps.Count);
         Assert.All(upgradeOps, op => Assert.IsType<AddColumnOperation>(op));
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             upgradeOps,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
         // Assert
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
 
         var finalSchema = (
             (SchemaResultOk)PostgresSchemaInspector.Inspect(_connection, "public", _logger)
@@ -244,11 +244,11 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         var v1Ops = (
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
         ).Value;
-        _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        _ = MigrationRunner.Apply(
             _connection,
             v1Ops,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
@@ -285,16 +285,16 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         Assert.Single(upgradeOps);
         Assert.IsType<CreateTableOperation>(upgradeOps[0]);
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             upgradeOps,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
         // Assert
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
 
         var finalSchema = (
             (SchemaResultOk)PostgresSchemaInspector.Inspect(_connection, "public", _logger)
@@ -324,11 +324,11 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         var v1Ops = (
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
         ).Value;
-        _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        _ = MigrationRunner.Apply(
             _connection,
             v1Ops,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
@@ -358,16 +358,16 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         Assert.Single(upgradeOps);
         Assert.IsType<CreateIndexOperation>(upgradeOps[0]);
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             upgradeOps,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
         // Assert
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
 
         var finalSchema = (
             (SchemaResultOk)PostgresSchemaInspector.Inspect(_connection, "public", _logger)
@@ -377,7 +377,7 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.DataProvider.Migration.Core_IsIdempotent_NoErrorOnRerun()
+    public void Migration_IsIdempotent_NoErrorOnRerun()
     {
         // Arrange
         var schema = Schema
@@ -402,15 +402,15 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
                 (OperationsResultOk)SchemaDiff.Calculate(currentSchema, schema, logger: _logger)
             ).Value;
 
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 _connection,
                 operations,
                 PostgresDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             // Second run should have 0 operations
             if (i == 1)
@@ -447,16 +447,16 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
         ).Value;
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
         // Assert
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
 
         // Verify native types are used
         using var cmd = _connection.CreateCommand();
@@ -503,18 +503,18 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
         ).Value;
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
         // Assert - Nimblesite.DataProvider.Migration.Core succeeded
         Assert.True(
-            result is Nimblesite.DataProvider.Migration.CoreApplyResultOk,
-            $"Nimblesite.DataProvider.Migration.Core failed: {(result as Nimblesite.DataProvider.Migration.CoreApplyResultError)?.Value}"
+            result is MigrationApplyResultOk,
+            $"Nimblesite.DataProvider.Migration.Core failed: {(result as MigrationApplyResultError)?.Value}"
         );
 
         // Verify index exists and is unique
@@ -558,11 +558,11 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         var operations = (
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
         ).Value;
-        _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        _ = MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
@@ -625,18 +625,18 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
         ).Value;
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
         // Assert
         Assert.True(
-            result is Nimblesite.DataProvider.Migration.CoreApplyResultOk,
-            $"Nimblesite.DataProvider.Migration.Core failed: {(result as Nimblesite.DataProvider.Migration.CoreApplyResultError)?.Value}"
+            result is MigrationApplyResultOk,
+            $"Nimblesite.DataProvider.Migration.Core failed: {(result as MigrationApplyResultError)?.Value}"
         );
 
         // Verify composite expression index exists
@@ -697,11 +697,11 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         var operations = (
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
         ).Value;
-        _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        _ = MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
@@ -766,18 +766,18 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
                 (OperationsResultOk)SchemaDiff.Calculate(currentSchema, schema, logger: _logger)
             ).Value;
 
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 _connection,
                 operations,
                 PostgresDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Both runs should succeed - IF NOT EXISTS handles already-existing index
             Assert.True(
-                result is Nimblesite.DataProvider.Migration.CoreApplyResultOk,
-                $"Nimblesite.DataProvider.Migration.Core {i + 1} failed: {(result as Nimblesite.DataProvider.Migration.CoreApplyResultError)?.Value}"
+                result is MigrationApplyResultOk,
+                $"Nimblesite.DataProvider.Migration.Core {i + 1} failed: {(result as MigrationApplyResultError)?.Value}"
             );
         }
 
@@ -819,11 +819,11 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         var v1Ops = (
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
         ).Value;
-        _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        _ = MigrationRunner.Apply(
             _connection,
             v1Ops,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
@@ -855,17 +855,17 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         Assert.Contains(upgradeOps, op => op is CreateIndexOperation);
 
         // Apply the upgrade
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             upgradeOps,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Destructive,
+            MigrationOptions.Destructive,
             _logger
         );
 
         Assert.True(
-            result is Nimblesite.DataProvider.Migration.CoreApplyResultOk,
-            $"Upgrade failed: {(result as Nimblesite.DataProvider.Migration.CoreApplyResultError)?.Value}"
+            result is MigrationApplyResultOk,
+            $"Upgrade failed: {(result as MigrationApplyResultError)?.Value}"
         );
 
         // Verify new expression index exists
@@ -902,11 +902,11 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         var v1Ops = (
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
         ).Value;
-        _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        _ = MigrationRunner.Apply(
             _connection,
             v1Ops,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
@@ -937,17 +937,17 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         Assert.Contains(upgradeOps, op => op is DropIndexOperation);
         Assert.Contains(upgradeOps, op => op is CreateIndexOperation);
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             upgradeOps,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Destructive,
+            MigrationOptions.Destructive,
             _logger
         );
 
         Assert.True(
-            result is Nimblesite.DataProvider.Migration.CoreApplyResultOk,
-            $"Upgrade failed: {(result as Nimblesite.DataProvider.Migration.CoreApplyResultError)?.Value}"
+            result is MigrationApplyResultOk,
+            $"Upgrade failed: {(result as MigrationApplyResultError)?.Value}"
         );
 
         // Verify new column index exists (no lower() function)
@@ -987,11 +987,11 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         var v1Ops = (
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
         ).Value;
-        _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        _ = MigrationRunner.Apply(
             _connection,
             v1Ops,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
@@ -1043,11 +1043,11 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         var v1Ops = (
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
         ).Value;
-        _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        _ = MigrationRunner.Apply(
             _connection,
             v1Ops,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
@@ -1074,16 +1074,16 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         Assert.Single(operations);
         Assert.IsType<DropTableOperation>(operations[0]);
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Destructive,
+            MigrationOptions.Destructive,
             _logger
         );
 
         // Assert
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
 
         var finalSchema = (
             (SchemaResultOk)PostgresSchemaInspector.Inspect(_connection, "public", _logger)
@@ -1097,7 +1097,7 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
     // =============================================================================
 
     [Fact]
-    public void Nimblesite.Lql.CoreDefault_NowFunction_GeneratesCurrentTimestamp()
+    public void LqlDefault_NowFunction_GeneratesCurrentTimestamp()
     {
         // Arrange - Create table with LQL now() default
         var schema = Schema
@@ -1123,15 +1123,15 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
         ).Value;
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
 
         // Insert a row without specifying created_at - should use default
         using var insertCmd = _connection.CreateCommand();
@@ -1150,7 +1150,7 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreDefault_GenUuidFunction_GeneratesValidUuid()
+    public void LqlDefault_GenUuidFunction_GeneratesValidUuid()
     {
         // Arrange - Create table with LQL gen_uuid() default
         var schema = Schema
@@ -1172,15 +1172,15 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
         ).Value;
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
 
         // Insert rows without specifying id - should generate unique UUIDs
         using var insertCmd = _connection.CreateCommand();
@@ -1209,7 +1209,7 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreDefault_BooleanTrue_GeneratesCorrectValue()
+    public void LqlDefault_BooleanTrue_GeneratesCorrectValue()
     {
         // Arrange
         var schema = Schema
@@ -1240,15 +1240,15 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
         ).Value;
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
 
         // Insert without specifying booleans
         using var insertCmd = _connection.CreateCommand();
@@ -1266,7 +1266,7 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreDefault_NumericLiterals_GeneratesCorrectValues()
+    public void LqlDefault_NumericLiterals_GeneratesCorrectValues()
     {
         // Arrange - Test integer and decimal defaults
         var schema = Schema
@@ -1294,15 +1294,15 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
         ).Value;
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
 
         // Insert without specifying values
         using var insertCmd = _connection.CreateCommand();
@@ -1321,7 +1321,7 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreDefault_StringLiteral_GeneratesCorrectValue()
+    public void LqlDefault_StringLiteral_GeneratesCorrectValue()
     {
         // Arrange - Test string literal default with single quotes
         var schema = Schema
@@ -1352,15 +1352,15 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
         ).Value;
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
 
         // Insert without specifying strings
         using var insertCmd = _connection.CreateCommand();
@@ -1378,7 +1378,7 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreDefault_AllTypesInOneTable_WorksTogether()
+    public void LqlDefault_AllTypesInOneTable_WorksTogether()
     {
         // Arrange - Comprehensive test with all LQL default types
         var schema = Schema
@@ -1422,15 +1422,15 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
             (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
         ).Value;
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
 
         // Insert only name - all other columns should use defaults
         using var insertCmd = _connection.CreateCommand();

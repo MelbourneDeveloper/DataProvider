@@ -22,8 +22,8 @@ public sealed class SubscriptionIntegrationTests : IDisposable
     {
         _db = new SqliteConnection($"Data Source={_dbPath}");
         _db.Open();
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, _originId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, _originId);
     }
 
     #region Section 10.2: Subscription Types
@@ -43,11 +43,11 @@ public sealed class SubscriptionIntegrationTests : IDisposable
             Timestamp
         );
 
-        var matchingChange = CreateChange("Orders", "{\"Id\":\"order-123\"}", Nimblesite.Sync.CoreOperation.Update);
+        var matchingChange = CreateChange("Orders", "{\"Id\":\"order-123\"}", SyncOperation.Update);
         var nonMatchingChange = CreateChange(
             "Orders",
             "{\"Id\":\"order-999\"}",
-            Nimblesite.Sync.CoreOperation.Update
+            SyncOperation.Update
         );
 
         // Act & Assert
@@ -69,10 +69,10 @@ public sealed class SubscriptionIntegrationTests : IDisposable
             Timestamp
         );
 
-        var insertChange = CreateChange("Products", "{\"Id\":\"p1\"}", Nimblesite.Sync.CoreOperation.Insert);
-        var updateChange = CreateChange("Products", "{\"Id\":\"p2\"}", Nimblesite.Sync.CoreOperation.Update);
-        var deleteChange = CreateChange("Products", "{\"Id\":\"p3\"}", Nimblesite.Sync.CoreOperation.Delete);
-        var otherTableChange = CreateChange("Orders", "{\"Id\":\"o1\"}", Nimblesite.Sync.CoreOperation.Insert);
+        var insertChange = CreateChange("Products", "{\"Id\":\"p1\"}", SyncOperation.Insert);
+        var updateChange = CreateChange("Products", "{\"Id\":\"p2\"}", SyncOperation.Update);
+        var deleteChange = CreateChange("Products", "{\"Id\":\"p3\"}", SyncOperation.Delete);
+        var otherTableChange = CreateChange("Orders", "{\"Id\":\"o1\"}", SyncOperation.Insert);
 
         // Act & Assert
         Assert.True(SubscriptionManager.MatchesChange(sub, insertChange));
@@ -96,7 +96,7 @@ public sealed class SubscriptionIntegrationTests : IDisposable
             Timestamp
         );
 
-        var change = CreateChange("Orders", "{\"Id\":\"o1\"}", Nimblesite.Sync.CoreOperation.Update);
+        var change = CreateChange("Orders", "{\"Id\":\"o1\"}", SyncOperation.Update);
 
         // Act & Assert: Matches table (query filtering is application-level)
         Assert.True(SubscriptionManager.MatchesChange(sub, change));
@@ -120,11 +120,11 @@ public sealed class SubscriptionIntegrationTests : IDisposable
             SubscriptionManager.CreateTableSubscription("sub-3", "origin-3", "Products", Timestamp),
         };
 
-        var change = new Nimblesite.Sync.CoreLogEntry(
+        var change = new SyncLogEntry(
             Version: 100,
             TableName: "Orders",
             PkValue: "{\"Id\":\"order-123\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Update,
+            Operation: SyncOperation.Update,
             Payload: "{\"Id\":\"order-123\",\"Status\":\"shipped\",\"Total\":99.99}",
             Origin: "server-origin",
             Timestamp: Timestamp
@@ -162,7 +162,7 @@ public sealed class SubscriptionIntegrationTests : IDisposable
     {
         // Arrange: Simulate client tracking applied versions
         var appliedVersions = new HashSet<long>();
-        var change = CreateChange("Orders", "{\"Id\":\"o1\"}", Nimblesite.Sync.CoreOperation.Update, version: 42);
+        var change = CreateChange("Orders", "{\"Id\":\"o1\"}", SyncOperation.Update, version: 42);
 
         // Act: Apply same change twice (simulating duplicate delivery)
         for (var i = 0; i < 2; i++)
@@ -346,11 +346,11 @@ public sealed class SubscriptionIntegrationTests : IDisposable
             "Orders",
             Timestamp
         );
-        var change = new Nimblesite.Sync.CoreLogEntry(
+        var change = new SyncLogEntry(
             1,
             "Orders",
             "{\"Id\":\"o1\"}",
-            Nimblesite.Sync.CoreOperation.Update,
+            SyncOperation.Update,
             "{\"Id\":\"o1\",\"Status\":\"shipped\",\"Amount\":150.00}",
             "server",
             Timestamp
@@ -375,10 +375,10 @@ public sealed class SubscriptionIntegrationTests : IDisposable
 
     #region Helpers
 
-    private static Nimblesite.Sync.CoreLogEntry CreateChange(
+    private static SyncLogEntry CreateChange(
         string tableName,
         string pkValue,
-        Nimblesite.Sync.CoreOperation operation,
+        SyncOperation operation,
         long version = 1
     ) =>
         new(
@@ -386,7 +386,7 @@ public sealed class SubscriptionIntegrationTests : IDisposable
             tableName,
             pkValue,
             operation,
-            operation == Nimblesite.Sync.CoreOperation.Delete ? null : "{\"Id\":\"test\"}",
+            operation == SyncOperation.Delete ? null : "{\"Id\":\"test\"}",
             "server-origin",
             Timestamp
         );

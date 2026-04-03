@@ -5,7 +5,7 @@ namespace Nimblesite.Lql.Tests;
 /// <summary>
 /// File-based tests for advanced LQL features - subqueries, CTEs, window functions, etc.
 /// </summary>
-public partial class Nimblesite.Lql.CoreFileBasedTests
+public partial class LqlFileBasedTests
 {
     [Theory]
     [InlineData("window_function", "PostgreSql")]

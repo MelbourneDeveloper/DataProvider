@@ -63,7 +63,7 @@ public sealed class TombstoneIntegrationTests : IDisposable
     public void Spec13_3_UpdateClientSyncState_TracksVersion()
     {
         // Arrange
-        var existingClient = new Nimblesite.Sync.CoreClient(
+        var existingClient = new SyncClient(
             _clientOrigin,
             50,
             "2024-12-01T00:00:00.000Z",
@@ -98,9 +98,9 @@ public sealed class TombstoneIntegrationTests : IDisposable
         // Arrange: Multiple clients at different versions
         var clients = new[]
         {
-            new Nimblesite.Sync.CoreClient("client-1", 500, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
-            new Nimblesite.Sync.CoreClient("client-2", 100, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"), // Slowest
-            new Nimblesite.Sync.CoreClient("client-3", 300, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
+            new SyncClient("client-1", 500, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
+            new SyncClient("client-2", 100, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"), // Slowest
+            new SyncClient("client-3", 300, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
         };
 
         // Act
@@ -119,8 +119,8 @@ public sealed class TombstoneIntegrationTests : IDisposable
         // Arrange
         var clients = new[]
         {
-            new Nimblesite.Sync.CoreClient("client-1", 500, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
-            new Nimblesite.Sync.CoreClient("client-2", 200, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
+            new SyncClient("client-1", 500, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
+            new SyncClient("client-2", 200, "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"),
         };
         var purgedVersion = -1L;
 
@@ -153,13 +153,13 @@ public sealed class TombstoneIntegrationTests : IDisposable
         var now = new DateTime(2025, 4, 10, 0, 0, 0, DateTimeKind.Utc);
         var clients = new[]
         {
-            new Nimblesite.Sync.CoreClient(
+            new SyncClient(
                 "stale-client",
                 100,
                 "2025-01-01T00:00:00.000Z", // 100 days ago
                 "2024-01-01T00:00:00.000Z"
             ),
-            new Nimblesite.Sync.CoreClient(
+            new SyncClient(
                 "active-client",
                 200,
                 "2025-04-01T00:00:00.000Z", // 9 days ago
@@ -298,13 +298,13 @@ public sealed class TombstoneIntegrationTests : IDisposable
         // Arrange: Two clients, one behind
         var clients = new[]
         {
-            new Nimblesite.Sync.CoreClient(
+            new SyncClient(
                 "fast-client",
                 100,
                 "2025-01-01T00:00:00.000Z",
                 "2025-01-01T00:00:00.000Z"
             ),
-            new Nimblesite.Sync.CoreClient(
+            new SyncClient(
                 "slow-client",
                 20,
                 "2025-01-01T00:00:00.000Z",
@@ -327,8 +327,8 @@ public sealed class TombstoneIntegrationTests : IDisposable
     {
         var conn = new SqliteConnection($"Data Source={dbPath}");
         conn.Open();
-        Nimblesite.Sync.CoreSchema.CreateSchema(conn);
-        Nimblesite.Sync.CoreSchema.SetOriginId(conn, originId);
+        SyncSchema.CreateSchema(conn);
+        SyncSchema.SetOriginId(conn, originId);
         return conn;
     }
 

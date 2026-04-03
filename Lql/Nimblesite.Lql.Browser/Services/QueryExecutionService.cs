@@ -110,10 +110,10 @@ public static class QueryExecutionService
         try
         {
             Console.WriteLine("Converting LQL to SQL...");
-            var lqlStatement = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlQuery);
+            var lqlStatement = LqlStatementConverter.ToStatement(lqlQuery);
 
             if (
-                lqlStatement is Result<Nimblesite.Lql.CoreStatement, SqlError>.Ok<Nimblesite.Lql.CoreStatement, SqlError> lqlSuccess
+                lqlStatement is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> lqlSuccess
             )
             {
                 Console.WriteLine("LQL parsed successfully");
@@ -141,7 +141,7 @@ public static class QueryExecutionService
             }
             else if (
                 lqlStatement
-                is Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError> lqlFailure
+                is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> lqlFailure
             )
             {
                 Console.WriteLine($"LQL parse error: {lqlFailure.Value.Message}");

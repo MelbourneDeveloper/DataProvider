@@ -9,7 +9,7 @@ namespace Nimblesite.Sync.Core;
 /// <example>
 /// <code>
 /// // Initialize sync state for a new client
-/// var state = new Nimblesite.Sync.CoreState(
+/// var state = new SyncState(
 ///     OriginId: Guid.NewGuid().ToString(),
 ///     LastServerVersion: 0,
 ///     LastPushVersion: 0
@@ -22,16 +22,16 @@ namespace Nimblesite.Sync.Core;
 /// var finalState = updatedState with { LastPushVersion = 65 };
 /// </code>
 /// </example>
-public sealed record Nimblesite.Sync.CoreState(string OriginId, long LastServerVersion, long LastPushVersion);
+public sealed record SyncState(string OriginId, long LastServerVersion, long LastPushVersion);
 
 /// <summary>
 /// Represents the ephemeral sync session state (_sync_session table).
 /// </summary>
-/// <param name="Nimblesite.Sync.CoreActive">When true (1), triggers are suppressed during change application.</param>
+/// <param name="SyncActive">When true (1), triggers are suppressed during change application.</param>
 /// <example>
 /// <code>
 /// // Enable trigger suppression during sync
-/// var session = new Nimblesite.Sync.CoreSession(Nimblesite.Sync.CoreActive: true);
+/// var session = new SyncSession(SyncActive: true);
 /// await syncSessionRepository.SetAsync(session);
 ///
 /// // Apply remote changes without triggering local change logging
@@ -41,11 +41,11 @@ public sealed record Nimblesite.Sync.CoreState(string OriginId, long LastServerV
 /// }
 ///
 /// // Disable trigger suppression
-/// var inactive = new Nimblesite.Sync.CoreSession(Nimblesite.Sync.CoreActive: false);
+/// var inactive = new SyncSession(SyncActive: false);
 /// await syncSessionRepository.SetAsync(inactive);
 /// </code>
 /// </example>
-public sealed record Nimblesite.Sync.CoreSession(bool Nimblesite.Sync.CoreActive);
+public sealed record SyncSession(bool SyncActive);
 
 /// <summary>
 /// Represents a client tracked by the server for tombstone retention (_sync_clients).
@@ -58,7 +58,7 @@ public sealed record Nimblesite.Sync.CoreSession(bool Nimblesite.Sync.CoreActive
 /// <example>
 /// <code>
 /// // Register a new sync client
-/// var client = new Nimblesite.Sync.CoreClient(
+/// var client = new SyncClient(
 ///     OriginId: Guid.NewGuid().ToString(),
 ///     LastSyncVersion: 0,
 ///     LastSyncTimestamp: DateTime.UtcNow.ToString("o"),
@@ -69,7 +69,7 @@ public sealed record Nimblesite.Sync.CoreSession(bool Nimblesite.Sync.CoreActive
 /// await syncClientRepository.UpsertAsync(client);
 /// </code>
 /// </example>
-public sealed record Nimblesite.Sync.CoreClient(
+public sealed record SyncClient(
     string OriginId,
     long LastSyncVersion,
     string LastSyncTimestamp,

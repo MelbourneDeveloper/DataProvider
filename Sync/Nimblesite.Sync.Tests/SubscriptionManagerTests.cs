@@ -179,7 +179,7 @@ public sealed class SubscriptionManagerTests
     [Fact]
     public void MatchesChange_RecordSubscription_NullFilter_ReturnsFalse()
     {
-        var sub = new Nimblesite.Sync.CoreSubscription(
+        var sub = new SyncSubscription(
             "sub-1",
             "origin-1",
             SubscriptionType.Record,
@@ -197,7 +197,7 @@ public sealed class SubscriptionManagerTests
     [Fact]
     public void MatchesChange_RecordSubscription_EmptyFilter_ReturnsFalse()
     {
-        var sub = new Nimblesite.Sync.CoreSubscription(
+        var sub = new SyncSubscription(
             "sub-1",
             "origin-1",
             SubscriptionType.Record,
@@ -489,8 +489,8 @@ public sealed class SubscriptionManagerTests
 
     #region Helper Methods
 
-    private static Nimblesite.Sync.CoreLogEntry CreateChange(string tableName, string pkValue) =>
-        new(1, tableName, pkValue, Nimblesite.Sync.CoreOperation.Insert, "{}", "test-origin", Timestamp);
+    private static SyncLogEntry CreateChange(string tableName, string pkValue) =>
+        new(1, tableName, pkValue, SyncOperation.Insert, "{}", "test-origin", Timestamp);
 
     #endregion
 }

@@ -35,7 +35,7 @@ public static class QueryExecutor
         }
 
         Console.WriteLine($"Query Text: {activeTab.Content}");
-        Console.WriteLine($"Is LQL Mode: {activeTab.FileType == FileType.Nimblesite.Lql.Core}");
+        Console.WriteLine($"Is LQL Mode: {activeTab.FileType == FileType.Lql}");
 
         try
         {
@@ -44,13 +44,13 @@ public static class QueryExecutor
 
             string sqlToExecute;
 
-            if (activeTab.FileType == FileType.Nimblesite.Lql.Core)
+            if (activeTab.FileType == FileType.Lql)
             {
                 Console.WriteLine("Converting LQL to SQL...");
-                var lqlStatement = Nimblesite.Lql.CoreStatementConverter.ToStatement(activeTab.Content);
+                var lqlStatement = LqlStatementConverter.ToStatement(activeTab.Content);
                 if (
                     lqlStatement
-                    is Result<Nimblesite.Lql.CoreStatement, SqlError>.Ok<Nimblesite.Lql.CoreStatement, SqlError> lqlSuccess
+                    is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> lqlSuccess
                 )
                 {
                     Console.WriteLine("LQL parsed successfully");
@@ -79,7 +79,7 @@ public static class QueryExecutor
                 }
                 else if (
                     lqlStatement
-                    is Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError> lqlFailure
+                    is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> lqlFailure
                 )
                 {
                     Console.WriteLine($"LQL parse error: {lqlFailure.Value.Message}");

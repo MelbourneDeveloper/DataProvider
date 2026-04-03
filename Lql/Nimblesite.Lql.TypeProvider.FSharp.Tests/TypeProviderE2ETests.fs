@@ -15,34 +15,34 @@ open Nimblesite.Lql.TypeProvider.FSharp.Tests.Data
 // =============================================================================
 
 // Basic select queries
-type SelectAll = Nimblesite.Lql.CoreCommand<"Customer |> select(*)">
-type SelectColumns = Nimblesite.Lql.CoreCommand<"Users |> select(Users.Id, Users.Name, Users.Email)">
-type SelectWithAlias = Nimblesite.Lql.CoreCommand<"Users |> select(Users.Id, Users.Name as username)">
+type SelectAll = LqlCommand<"Customer |> select(*)">
+type SelectColumns = LqlCommand<"Users |> select(Users.Id, Users.Name, Users.Email)">
+type SelectWithAlias = LqlCommand<"Users |> select(Users.Id, Users.Name as username)">
 
 // Filter queries
-type FilterSimple = Nimblesite.Lql.CoreCommand<"Users |> filter(fn(row) => row.Users.Age > 18) |> select(Users.Name)">
-type FilterComplex = Nimblesite.Lql.CoreCommand<"Users |> filter(fn(row) => row.Users.Age > 18 and row.Users.Status = 'active') |> select(*)">
-type FilterOr = Nimblesite.Lql.CoreCommand<"Users |> filter(fn(row) => row.Users.Age < 18 or row.Users.Role = 'admin') |> select(*)">
+type FilterSimple = LqlCommand<"Users |> filter(fn(row) => row.Users.Age > 18) |> select(Users.Name)">
+type FilterComplex = LqlCommand<"Users |> filter(fn(row) => row.Users.Age > 18 and row.Users.Status = 'active') |> select(*)">
+type FilterOr = LqlCommand<"Users |> filter(fn(row) => row.Users.Age < 18 or row.Users.Role = 'admin') |> select(*)">
 
 // Join queries
-type JoinSimple = Nimblesite.Lql.CoreCommand<"Users |> join(Orders, on = Users.Id = Orders.UserId) |> select(Users.Name, Orders.Total)">
-type JoinLeft = Nimblesite.Lql.CoreCommand<"Users |> left_join(Orders, on = Users.Id = Orders.UserId) |> select(Users.Name, Orders.Total)">
-type JoinMultiple = Nimblesite.Lql.CoreCommand<"Users |> join(Orders, on = Users.Id = Orders.UserId) |> join(Products, on = Orders.ProductId = Products.Id) |> select(Users.Name, Products.Name)">
+type JoinSimple = LqlCommand<"Users |> join(Orders, on = Users.Id = Orders.UserId) |> select(Users.Name, Orders.Total)">
+type JoinLeft = LqlCommand<"Users |> left_join(Orders, on = Users.Id = Orders.UserId) |> select(Users.Name, Orders.Total)">
+type JoinMultiple = LqlCommand<"Users |> join(Orders, on = Users.Id = Orders.UserId) |> join(Products, on = Orders.ProductId = Products.Id) |> select(Users.Name, Products.Name)">
 
 // Aggregation queries
-type GroupBy = Nimblesite.Lql.CoreCommand<"Orders |> group_by(Orders.UserId) |> select(Orders.UserId, count(*) as order_count)">
-type Aggregates = Nimblesite.Lql.CoreCommand<"Orders |> group_by(Orders.Status) |> select(Orders.Status, sum(Orders.Total) as total_sum, avg(Orders.Total) as avg_total)">
-type Having = Nimblesite.Lql.CoreCommand<"Orders |> group_by(Orders.UserId) |> having(fn(g) => count(*) > 5) |> select(Orders.UserId, count(*) as cnt)">
+type GroupBy = LqlCommand<"Orders |> group_by(Orders.UserId) |> select(Orders.UserId, count(*) as order_count)">
+type Aggregates = LqlCommand<"Orders |> group_by(Orders.Status) |> select(Orders.Status, sum(Orders.Total) as total_sum, avg(Orders.Total) as avg_total)">
+type Having = LqlCommand<"Orders |> group_by(Orders.UserId) |> having(fn(g) => count(*) > 5) |> select(Orders.UserId, count(*) as cnt)">
 
 // Order and limit
-type OrderBy = Nimblesite.Lql.CoreCommand<"Users |> order_by(Users.Name asc) |> select(*)">
-type OrderByDesc = Nimblesite.Lql.CoreCommand<"Users |> order_by(Users.CreatedAt desc) |> select(*)">
-type Limit = Nimblesite.Lql.CoreCommand<"Users |> order_by(Users.Id) |> limit(10) |> select(*)">
-type Offset = Nimblesite.Lql.CoreCommand<"Users |> order_by(Users.Id) |> limit(10) |> offset(20) |> select(*)">
+type OrderBy = LqlCommand<"Users |> order_by(Users.Name asc) |> select(*)">
+type OrderByDesc = LqlCommand<"Users |> order_by(Users.CreatedAt desc) |> select(*)">
+type Limit = LqlCommand<"Users |> order_by(Users.Id) |> limit(10) |> select(*)">
+type Offset = LqlCommand<"Users |> order_by(Users.Id) |> limit(10) |> offset(20) |> select(*)">
 
 // Arithmetic expressions
-type ArithmeticBasic = Nimblesite.Lql.CoreCommand<"Products |> select(Products.Price * Products.Quantity as total)">
-type ArithmeticComplex = Nimblesite.Lql.CoreCommand<"Orders |> select(Orders.Subtotal + Orders.Tax - Orders.Discount as final_total)">
+type ArithmeticBasic = LqlCommand<"Products |> select(Products.Price * Products.Quantity as total)">
+type ArithmeticComplex = LqlCommand<"Orders |> select(Orders.Subtotal + Orders.Tax - Orders.Discount as final_total)">
 
 // =============================================================================
 // E2E TEST FIXTURES - Test the type provider with REAL SQLite database file

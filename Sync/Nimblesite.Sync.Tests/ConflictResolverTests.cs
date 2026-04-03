@@ -2,7 +2,7 @@ namespace Nimblesite.Sync.Tests;
 
 public sealed class ConflictResolverTests
 {
-    private static Nimblesite.Sync.CoreLogEntry CreateEntry(
+    private static SyncLogEntry CreateEntry(
         long version,
         string tableName,
         string pkValue,
@@ -13,7 +13,7 @@ public sealed class ConflictResolverTests
             version,
             tableName,
             pkValue,
-            Nimblesite.Sync.CoreOperation.Update,
+            SyncOperation.Update,
             "{\"Id\":\"" + pkValue + "\"}",
             origin,
             timestamp
@@ -139,7 +139,7 @@ public sealed class ConflictResolverTests
         var local = CreateEntry(1, "Person", "pk-1", "origin-A", "2025-01-01T00:00:00.000Z");
         var remote = CreateEntry(2, "Person", "pk-1", "origin-B", "2025-01-01T00:00:01.000Z");
 
-        var result = ConflictResolver.ResolveCustom(local, remote, (l, r) => new Nimblesite.Sync.CoreLogEntryOk(l));
+        var result = ConflictResolver.ResolveCustom(local, remote, (l, r) => new SyncLogEntryOk(l));
 
         Assert.IsType<ConflictResolutionOk>(result);
         var success = (ConflictResolutionOk)result;
@@ -151,12 +151,12 @@ public sealed class ConflictResolverTests
     {
         var local = CreateEntry(1, "Person", "pk-1", "origin-A", "2025-01-01T00:00:00.000Z");
         var remote = CreateEntry(2, "Person", "pk-1", "origin-B", "2025-01-01T00:00:01.000Z");
-        var error = new Nimblesite.Sync.CoreErrorDatabase("Custom resolver failed");
+        var error = new SyncErrorDatabase("Custom resolver failed");
 
         var result = ConflictResolver.ResolveCustom(
             local,
             remote,
-            (l, r) => new Nimblesite.Sync.CoreLogEntryError(error)
+            (l, r) => new SyncLogEntryError(error)
         );
 
         Assert.IsType<ConflictResolutionError>(result);

@@ -2,11 +2,11 @@ open Microsoft.Data.Sqlite
 open Nimblesite.Lql.Core
 
 // ✅ VALID LQL using TRUE type provider with static parameter
-type ValidQuery = Nimblesite.Lql.CoreCommand<"Customer |> select(*)">
+type ValidQuery = LqlCommand<"Customer |> select(*)">
 
 // ❌ INVALID LQL - This WILL cause COMPILATION FAILURE
 // Uncomment the line below to test:
-// type InvalidQuery = Nimblesite.Lql.CoreCommand<"Customer |> seflect(*)">  // misspelled "select"
+// type InvalidQuery = LqlCommand<"Customer |> seflect(*)">  // misspelled "select"
 
 [<EntryPoint>]
 let main _ =

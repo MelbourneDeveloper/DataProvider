@@ -118,15 +118,15 @@ public sealed class PostgresEdgeCaseTests : IAsyncLifetime
         Assert.Single(operations);
         Assert.IsType<AddColumnOperation>(operations[0]);
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
 
         // Verify existing data preserved with NULL in new column
         cmd.CommandText = "SELECT id, name, email FROM evolving_table";
@@ -589,7 +589,7 @@ public sealed class PostgresEdgeCaseTests : IAsyncLifetime
 
         var result = ApplySchema(schema);
 
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
     }
 
     [Fact]
@@ -611,7 +611,7 @@ public sealed class PostgresEdgeCaseTests : IAsyncLifetime
 
         var result = ApplySchema(schema);
 
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
     }
 
     #endregion
@@ -656,7 +656,7 @@ public sealed class PostgresEdgeCaseTests : IAsyncLifetime
 
         var result = ApplySchema(schema);
 
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
 
         // Test cascade behavior
         using var cmd = _connection.CreateCommand();
@@ -736,22 +736,22 @@ public sealed class PostgresEdgeCaseTests : IAsyncLifetime
         // Should have: 2 AddColumn, 2 CreateIndex, 1 CreateTable
         Assert.Equal(5, operations.Count);
 
-        var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        var result = MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
 
-        Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+        Assert.True(result is MigrationApplyResultOk);
     }
 
     #endregion
 
     #region Helper Methods
 
-    private Outcome.Result<bool, Nimblesite.DataProvider.Migration.CoreError> ApplySchema(SchemaDefinition schema)
+    private Outcome.Result<bool, MigrationError> ApplySchema(SchemaDefinition schema)
     {
         var currentSchema = (
             (SchemaResultOk)PostgresSchemaInspector.Inspect(_connection, "public", _logger)
@@ -761,11 +761,11 @@ public sealed class PostgresEdgeCaseTests : IAsyncLifetime
             (OperationsResultOk)SchemaDiff.Calculate(currentSchema, schema, logger: _logger)
         ).Value;
 
-        return Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        return MigrationRunner.Apply(
             _connection,
             operations,
             PostgresDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
     }

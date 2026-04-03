@@ -1,4 +1,6 @@
+using System.Reflection;
 using Microsoft.Data.Sqlite;
+using Nimblesite.DataProvider.Migration.Core;
 using Nimblesite.DataProvider.Migration.Postgres;
 using Nimblesite.DataProvider.Migration.SQLite;
 using Npgsql;
@@ -6,34 +8,72 @@ using Npgsql;
 namespace Nimblesite.DataProvider.Migration.Cli;
 
 /// <summary>
-/// CLI tool to create databases from YAML schema definitions.
+/// CLI tool for database schema operations: migrate from YAML and export C# schemas to YAML.
 /// This is the ONLY canonical tool for database creation - all projects MUST use this.
 /// </summary>
 public static class Program
 {
     /// <summary>
-    /// Entry point - creates database from YAML schema file.
-    /// Usage: dotnet run -- --schema path/to/schema.yaml --output path/to/database.db --provider [sqlite|postgres]
+    /// Entry point - dispatches to migrate or export subcommand.
+    /// Usage:
+    ///   migrate: dotnet run -- migrate --schema path/to/schema.yaml --output path/to/database.db --provider [sqlite|postgres]
+    ///   export:  dotnet run -- export --assembly path/to/assembly.dll --type Namespace.SchemaClass --output path/to/schema.yaml
     /// </summary>
     public static int Main(string[] args)
     {
-        var parseResult = ParseArguments(args);
-
-        return parseResult switch
+        if (args.Length == 0 || args[0] is "--help" or "-h")
         {
-            ParseResult.Success success => ExecuteMigration(success),
-            ParseResult.Failure failure => ShowError(failure),
-            ParseResult.HelpRequested => ShowUsage(),
+            return ShowTopLevelUsage();
+        }
+
+        var command = args[0];
+        var remainingArgs = args[1..];
+
+        return command switch
+        {
+            "migrate" => RunMigrate(remainingArgs),
+            "export" => RunExport(remainingArgs),
+            _ when command.StartsWith('-') => RunMigrate(args), // backwards compat: no subcommand = migrate
+            _ => ShowUnknownCommand(command),
         };
     }
 
-    private static int ExecuteMigration(ParseResult.Success args)
+    private static int RunMigrate(string[] args)
     {
-        Console.WriteLine("Nimblesite.DataProvider.Migration.Cli - Database Schema Tool");
-        Console.WriteLine($"  Schema:   {args.SchemaPath}");
-        Console.WriteLine($"  Output:   {args.OutputPath}");
-        Console.WriteLine($"  Provider: {args.Provider}");
-        Console.WriteLine();
+        var parseResult = ParseMigrateArguments(args);
+
+        return parseResult switch
+        {
+            MigrateParseResult.Success success => ExecuteMigration(success),
+            MigrateParseResult.Failure failure => ShowMigrateError(failure),
+            MigrateParseResult.HelpRequested => ShowMigrateUsage(),
+        };
+    }
+
+    private static int RunExport(string[] args)
+    {
+        var parseResult = ParseExportArguments(args);
+
+        return parseResult switch
+        {
+            ExportParseResult.Success success => ExecuteExport(success),
+            ExportParseResult.Failure failure => ShowExportError(failure),
+            ExportParseResult.HelpRequested => ShowExportUsage(),
+        };
+    }
+
+    // ── Migrate ──────────────────────────────────────────────────────────
+
+    private static int ExecuteMigration(MigrateParseResult.Success args)
+    {
+        Console.WriteLine(
+            $"""
+            Nimblesite.DataProvider.Migration.Cli - Database Schema Tool
+              Schema:   {args.SchemaPath}
+              Output:   {args.OutputPath}
+              Provider: {args.Provider}
+            """
+        );
 
         if (!File.Exists(args.SchemaPath))
         {
@@ -66,14 +106,12 @@ public static class Program
     {
         try
         {
-            // Delete existing file to start fresh
             if (File.Exists(outputPath))
             {
                 File.Delete(outputPath);
                 Console.WriteLine($"Deleted existing database: {outputPath}");
             }
 
-            // Ensure directory exists
             var directory = Path.GetDirectoryName(outputPath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
@@ -95,9 +133,9 @@ public static class Program
                 tablesCreated++;
             }
 
-            Console.WriteLine();
-            Console.WriteLine($"Successfully created SQLite database with {tablesCreated} tables");
-            Console.WriteLine($"  Output: {outputPath}");
+            Console.WriteLine(
+                $"\nSuccessfully created SQLite database with {tablesCreated} tables\n  Output: {outputPath}"
+            );
             return 0;
         }
         catch (Exception ex)
@@ -123,25 +161,21 @@ public static class Program
                 onTableFailed: (table, ex) => Console.WriteLine($"  Failed table: {table} - {ex}")
             );
 
-            Console.WriteLine();
-
             if (result.Success)
             {
                 Console.WriteLine(
-                    $"Successfully created PostgreSQL database with {result.TablesCreated} tables"
+                    $"\nSuccessfully created PostgreSQL database with {result.TablesCreated} tables"
                 );
                 return 0;
             }
-            else
-            {
-                Console.WriteLine("PostgreSQL migration completed with errors:");
-                foreach (var error in result.Errors)
-                {
-                    Console.WriteLine($"  {error}");
-                }
 
-                return result.TablesCreated > 0 ? 0 : 1;
+            Console.WriteLine("PostgreSQL migration completed with errors:");
+            foreach (var error in result.Errors)
+            {
+                Console.WriteLine($"  {error}");
             }
+
+            return result.TablesCreated > 0 ? 0 : 1;
         }
         catch (Exception ex)
         {
@@ -152,67 +186,181 @@ public static class Program
 
     private static int ShowProviderError(string provider)
     {
-        Console.WriteLine($"Error: Unknown provider '{provider}'");
-        Console.WriteLine("Valid providers: sqlite, postgres");
+        Console.WriteLine(
+            $"Error: Unknown provider '{provider}'\nValid providers: sqlite, postgres"
+        );
         return 1;
     }
 
-    private static int ShowError(ParseResult.Failure failure)
+    // ── Export ────────────────────────────────────────────────────────────
+
+    private static int ExecuteExport(ExportParseResult.Success args)
     {
-        Console.WriteLine($"Error: {failure.Message}");
-        Console.WriteLine();
-        return ShowUsage();
+        Console.WriteLine(
+            $"""
+            Nimblesite.DataProvider.Migration.Cli - Export C# Schema to YAML
+              Assembly: {args.AssemblyPath}
+              Type:     {args.TypeName}
+              Output:   {args.OutputPath}
+            """
+        );
+
+        if (!File.Exists(args.AssemblyPath))
+        {
+            Console.WriteLine($"Error: Assembly not found: {args.AssemblyPath}");
+            return 1;
+        }
+
+        try
+        {
+            var assembly = Assembly.LoadFrom(args.AssemblyPath);
+            var schemaType = assembly.GetType(args.TypeName);
+
+            if (schemaType is null)
+            {
+                Console.WriteLine($"Error: Type '{args.TypeName}' not found in assembly");
+                return 1;
+            }
+
+            var schema = GetSchemaDefinition(schemaType);
+
+            if (schema is null)
+            {
+                Console.WriteLine(
+                    $"Error: Could not get SchemaDefinition from type '{args.TypeName}'\n  Expected: static property 'Definition' or static method 'Build()' returning SchemaDefinition"
+                );
+                return 1;
+            }
+
+            var directory = Path.GetDirectoryName(args.OutputPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            SchemaYamlSerializer.ToYamlFile(schema, args.OutputPath);
+            Console.WriteLine(
+                $"Successfully exported schema '{schema.Name}' with {schema.Tables.Count} tables\n  Output: {args.OutputPath}"
+            );
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex}");
+            return 1;
+        }
     }
 
-    private static int ShowUsage()
+    private static SchemaDefinition? GetSchemaDefinition(Type schemaType)
     {
-        Console.WriteLine("Nimblesite.DataProvider.Migration.Cli - Database Schema Tool");
-        Console.WriteLine();
-        Console.WriteLine("Usage:");
-        Console.WriteLine(
-            "  dotnet run --project Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Cli/Nimblesite.DataProvider.Migration.Cli.csproj -- \\"
+        var definitionProp = schemaType.GetProperty(
+            "Definition",
+            BindingFlags.Public | BindingFlags.Static
         );
-        Console.WriteLine("      --schema path/to/schema.yaml \\");
-        Console.WriteLine("      --output path/to/database.db \\");
-        Console.WriteLine("      --provider [sqlite|postgres]");
-        Console.WriteLine();
-        Console.WriteLine("Options:");
-        Console.WriteLine("  --schema    Path to YAML schema definition file (required)");
-        Console.WriteLine(
-            "  --output    Path to output database file (SQLite) or connection string (Postgres)"
+
+        if (definitionProp?.GetValue(null) is SchemaDefinition defFromProp)
+        {
+            return defFromProp;
+        }
+
+        var buildMethod = schemaType.GetMethod(
+            "Build",
+            BindingFlags.Public | BindingFlags.Static,
+            Type.EmptyTypes
         );
-        Console.WriteLine("  --provider  Database provider: sqlite or postgres (default: sqlite)");
-        Console.WriteLine();
-        Console.WriteLine("Examples:");
-        Console.WriteLine("  # SQLite (file path)");
+
+        if (buildMethod?.Invoke(null, null) is SchemaDefinition defFromMethod)
+        {
+            return defFromMethod;
+        }
+
+        return null;
+    }
+
+    // ── Usage / Errors ───────────────────────────────────────────────────
+
+    private static int ShowTopLevelUsage()
+    {
         Console.WriteLine(
-            "  dotnet run -- --schema my-schema.yaml --output ./build.db --provider sqlite"
+            """
+            Nimblesite.DataProvider.Migration.Cli - Database Schema Tool
+
+            Commands:
+              migrate   Create database from YAML schema definition
+              export    Export C# schema class to YAML file
+
+            Usage:
+              migration-cli migrate --schema schema.yaml --output database.db [--provider sqlite|postgres]
+              migration-cli export --assembly assembly.dll --type Namespace.SchemaClass --output schema.yaml
+
+            Run 'migration-cli <command> --help' for command-specific options.
+            """
         );
-        Console.WriteLine();
-        Console.WriteLine("  # PostgreSQL (connection string)");
-        Console.WriteLine("  dotnet run -- --schema my-schema.yaml \\");
-        Console.WriteLine(
-            "      --output \"Host=localhost;Database=mydb;Username=user;Password=pass\" \\"
-        );
-        Console.WriteLine("      --provider postgres");
-        Console.WriteLine();
-        Console.WriteLine("YAML Schema Format:");
-        Console.WriteLine("  name: my_schema");
-        Console.WriteLine("  tables:");
-        Console.WriteLine("    - name: Users");
-        Console.WriteLine("      columns:");
-        Console.WriteLine("        - name: Id");
-        Console.WriteLine("          type: Uuid");
-        Console.WriteLine("          isNullable: false");
-        Console.WriteLine("        - name: Email");
-        Console.WriteLine("          type: VarChar(255)");
-        Console.WriteLine("          isNullable: false");
-        Console.WriteLine("      primaryKey:");
-        Console.WriteLine("        columns: [Id]");
         return 1;
     }
 
-    private static ParseResult ParseArguments(string[] args)
+    private static int ShowUnknownCommand(string command)
+    {
+        Console.WriteLine($"Error: Unknown command '{command}'\nValid commands: migrate, export");
+        return 1;
+    }
+
+    private static int ShowMigrateError(MigrateParseResult.Failure failure)
+    {
+        Console.WriteLine($"Error: {failure.Message}\n");
+        return ShowMigrateUsage();
+    }
+
+    private static int ShowMigrateUsage()
+    {
+        Console.WriteLine(
+            """
+            Usage: migration-cli migrate [options]
+
+            Options:
+              --schema, -s    Path to YAML schema definition file (required)
+              --output, -o    Path to output database file (SQLite) or connection string (Postgres)
+              --provider, -p  Database provider: sqlite or postgres (default: sqlite)
+
+            Examples:
+              migration-cli migrate --schema my-schema.yaml --output ./build.db --provider sqlite
+              migration-cli migrate --schema my-schema.yaml --output "Host=localhost;Database=mydb;Username=user;Password=pass" --provider postgres
+            """
+        );
+        return 1;
+    }
+
+    private static int ShowExportError(ExportParseResult.Failure failure)
+    {
+        Console.WriteLine($"Error: {failure.Message}\n");
+        return ShowExportUsage();
+    }
+
+    private static int ShowExportUsage()
+    {
+        Console.WriteLine(
+            """
+            Usage: migration-cli export [options]
+
+            Options:
+              --assembly, -a  Path to compiled assembly containing schema class (required)
+              --type, -t      Fully qualified type name of schema class (required)
+              --output, -o    Path to output YAML file (required)
+
+            Examples:
+              migration-cli export -a bin/Debug/net10.0/MyProject.dll -t MyNamespace.MySchema -o schema.yaml
+
+            Schema Class Requirements:
+              - Static property 'Definition' returning SchemaDefinition, OR
+              - Static method 'Build()' returning SchemaDefinition
+            """
+        );
+        return 1;
+    }
+
+    // ── Argument Parsing ─────────────────────────────────────────────────
+
+    private static MigrateParseResult ParseMigrateArguments(string[] args)
     {
         string? schemaPath = null;
         string? outputPath = null;
@@ -227,7 +375,7 @@ public static class Program
                 case "--schema" or "-s":
                     if (i + 1 >= args.Length)
                     {
-                        return new ParseResult.Failure("--schema requires a path argument");
+                        return new MigrateParseResult.Failure("--schema requires a path argument");
                     }
 
                     schemaPath = args[++i];
@@ -237,7 +385,7 @@ public static class Program
                 or "-o":
                     if (i + 1 >= args.Length)
                     {
-                        return new ParseResult.Failure("--output requires a path argument");
+                        return new MigrateParseResult.Failure("--output requires a path argument");
                     }
 
                     outputPath = args[++i];
@@ -247,7 +395,7 @@ public static class Program
                 or "-p":
                     if (i + 1 >= args.Length)
                     {
-                        return new ParseResult.Failure(
+                        return new MigrateParseResult.Failure(
                             "--provider requires an argument (sqlite or postgres)"
                         );
                     }
@@ -257,12 +405,12 @@ public static class Program
 
                 case "--help"
                 or "-h":
-                    return new ParseResult.HelpRequested();
+                    return new MigrateParseResult.HelpRequested();
 
                 default:
                     if (arg.StartsWith('-'))
                     {
-                        return new ParseResult.Failure($"Unknown option: {arg}");
+                        return new MigrateParseResult.Failure($"Unknown option: {arg}");
                     }
 
                     break;
@@ -271,32 +419,125 @@ public static class Program
 
         if (string.IsNullOrEmpty(schemaPath))
         {
-            return new ParseResult.Failure("--schema is required");
+            return new MigrateParseResult.Failure("--schema is required");
         }
 
         if (string.IsNullOrEmpty(outputPath))
         {
-            return new ParseResult.Failure("--output is required");
+            return new MigrateParseResult.Failure("--output is required");
         }
 
-        return new ParseResult.Success(schemaPath, outputPath, provider);
+        return new MigrateParseResult.Success(schemaPath, outputPath, provider);
+    }
+
+    private static ExportParseResult ParseExportArguments(string[] args)
+    {
+        string? assemblyPath = null;
+        string? typeName = null;
+        string? outputPath = null;
+
+        for (var i = 0; i < args.Length; i++)
+        {
+            var arg = args[i];
+
+            switch (arg)
+            {
+                case "--assembly" or "-a":
+                    if (i + 1 >= args.Length)
+                    {
+                        return new ExportParseResult.Failure("--assembly requires a path argument");
+                    }
+
+                    assemblyPath = args[++i];
+                    break;
+
+                case "--type"
+                or "-t":
+                    if (i + 1 >= args.Length)
+                    {
+                        return new ExportParseResult.Failure(
+                            "--type requires a type name argument"
+                        );
+                    }
+
+                    typeName = args[++i];
+                    break;
+
+                case "--output"
+                or "-o":
+                    if (i + 1 >= args.Length)
+                    {
+                        return new ExportParseResult.Failure("--output requires a path argument");
+                    }
+
+                    outputPath = args[++i];
+                    break;
+
+                case "--help"
+                or "-h":
+                    return new ExportParseResult.HelpRequested();
+
+                default:
+                    if (arg.StartsWith('-'))
+                    {
+                        return new ExportParseResult.Failure($"Unknown option: {arg}");
+                    }
+
+                    break;
+            }
+        }
+
+        if (string.IsNullOrEmpty(assemblyPath))
+        {
+            return new ExportParseResult.Failure("--assembly is required");
+        }
+
+        if (string.IsNullOrEmpty(typeName))
+        {
+            return new ExportParseResult.Failure("--type is required");
+        }
+
+        if (string.IsNullOrEmpty(outputPath))
+        {
+            return new ExportParseResult.Failure("--output is required");
+        }
+
+        return new ExportParseResult.Success(assemblyPath, typeName, outputPath);
     }
 }
 
 /// <summary>
-/// Argument parsing result - closed type hierarchy.
+/// Migrate subcommand argument parsing result.
 /// </summary>
-public abstract record ParseResult
+public abstract record MigrateParseResult
 {
-    private ParseResult() { }
+    private MigrateParseResult() { }
 
-    /// <summary>Successfully parsed arguments.</summary>
+    /// <summary>Successfully parsed migrate arguments.</summary>
     public sealed record Success(string SchemaPath, string OutputPath, string Provider)
-        : ParseResult;
+        : MigrateParseResult;
 
     /// <summary>Parse error.</summary>
-    public sealed record Failure(string Message) : ParseResult;
+    public sealed record Failure(string Message) : MigrateParseResult;
 
     /// <summary>Help requested.</summary>
-    public sealed record HelpRequested : ParseResult;
+    public sealed record HelpRequested : MigrateParseResult;
+}
+
+/// <summary>
+/// Export subcommand argument parsing result.
+/// </summary>
+public abstract record ExportParseResult
+{
+    private ExportParseResult() { }
+
+    /// <summary>Successfully parsed export arguments.</summary>
+    public sealed record Success(string AssemblyPath, string TypeName, string OutputPath)
+        : ExportParseResult;
+
+    /// <summary>Parse error.</summary>
+    public sealed record Failure(string Message) : ExportParseResult;
+
+    /// <summary>Help requested.</summary>
+    public sealed record HelpRequested : ExportParseResult;
 }

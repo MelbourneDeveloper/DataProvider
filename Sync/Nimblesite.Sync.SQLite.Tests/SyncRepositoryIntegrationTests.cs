@@ -5,10 +5,10 @@ namespace Nimblesite.Sync.SQLite.Tests;
 
 /// <summary>
 /// Integration tests for SQLite repository classes.
-/// Tests Nimblesite.Sync.CoreClientRepository, Nimblesite.Sync.CoreLogRepository, and SubscriptionRepository.
+/// Tests SyncClientRepository, SyncLogRepository, and SubscriptionRepository.
 /// NO MOCKS - real SQLite databases only!
 /// </summary>
-public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
+public sealed class SyncRepositoryIntegrationTests : IDisposable
 {
     private readonly SqliteConnection _db;
     private readonly string _dbPath = Path.Combine(
@@ -18,12 +18,12 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
     private readonly string _originId = Guid.NewGuid().ToString();
     private const string Timestamp = "2025-01-01T00:00:00.000Z";
 
-    public Nimblesite.Sync.CoreRepositoryIntegrationTests()
+    public SyncRepositoryIntegrationTests()
     {
         _db = new SqliteConnection($"Data Source={_dbPath}");
         _db.Open();
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, _originId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, _originId);
 
         // Create test table with triggers
         using var cmd = _db.CreateCommand();
@@ -38,116 +38,116 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         TriggerGenerator.CreateTriggers(_db, "Person", NullLogger.Instance);
     }
 
-    #region Nimblesite.Sync.CoreClientRepository Tests
+    #region SyncClientRepository Tests
 
     [Fact]
-    public void Nimblesite.Sync.CoreClientRepository_GetAll_EmptyDatabase_ReturnsEmptyList()
+    public void SyncClientRepository_GetAll_EmptyDatabase_ReturnsEmptyList()
     {
         // Act
-        var result = Nimblesite.Sync.CoreClientRepository.GetAll(_db);
+        var result = SyncClientRepository.GetAll(_db);
 
         // Assert
-        Assert.True(result is Nimblesite.Sync.CoreClientListOk);
-        Assert.Empty(((Nimblesite.Sync.CoreClientListOk)result).Value);
+        Assert.True(result is SyncClientListOk);
+        Assert.Empty(((SyncClientListOk)result).Value);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreClientRepository_Upsert_NewClient_Inserts()
+    public void SyncClientRepository_Upsert_NewClient_Inserts()
     {
         // Arrange
-        var client = new Nimblesite.Sync.CoreClient("client-1", 100, Timestamp, Timestamp);
+        var client = new SyncClient("client-1", 100, Timestamp, Timestamp);
 
         // Act
-        var result = Nimblesite.Sync.CoreClientRepository.Upsert(_db, client);
+        var result = SyncClientRepository.Upsert(_db, client);
 
         // Assert
         Assert.True(result is BoolSyncOk);
 
-        var allClients = Nimblesite.Sync.CoreClientRepository.GetAll(_db);
-        Assert.Single(((Nimblesite.Sync.CoreClientListOk)allClients).Value);
+        var allClients = SyncClientRepository.GetAll(_db);
+        Assert.Single(((SyncClientListOk)allClients).Value);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreClientRepository_Upsert_ExistingClient_Updates()
+    public void SyncClientRepository_Upsert_ExistingClient_Updates()
     {
         // Arrange
-        var client1 = new Nimblesite.Sync.CoreClient("client-1", 100, Timestamp, Timestamp);
-        Nimblesite.Sync.CoreClientRepository.Upsert(_db, client1);
+        var client1 = new SyncClient("client-1", 100, Timestamp, Timestamp);
+        SyncClientRepository.Upsert(_db, client1);
 
-        var client2 = new Nimblesite.Sync.CoreClient("client-1", 200, "2025-02-01T00:00:00Z", Timestamp);
+        var client2 = new SyncClient("client-1", 200, "2025-02-01T00:00:00Z", Timestamp);
 
         // Act
-        var result = Nimblesite.Sync.CoreClientRepository.Upsert(_db, client2);
+        var result = SyncClientRepository.Upsert(_db, client2);
 
         // Assert
         Assert.True(result is BoolSyncOk);
 
-        var retrieved = Nimblesite.Sync.CoreClientRepository.GetByOrigin(_db, "client-1");
-        var client = ((Nimblesite.Sync.CoreClientOk)retrieved).Value;
+        var retrieved = SyncClientRepository.GetByOrigin(_db, "client-1");
+        var client = ((SyncClientOk)retrieved).Value;
         Assert.NotNull(client);
         Assert.Equal(200, client.LastSyncVersion);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreClientRepository_GetByOrigin_ExistingClient_ReturnsClient()
+    public void SyncClientRepository_GetByOrigin_ExistingClient_ReturnsClient()
     {
         // Arrange
-        var client = new Nimblesite.Sync.CoreClient("client-1", 100, Timestamp, Timestamp);
-        Nimblesite.Sync.CoreClientRepository.Upsert(_db, client);
+        var client = new SyncClient("client-1", 100, Timestamp, Timestamp);
+        SyncClientRepository.Upsert(_db, client);
 
         // Act
-        var result = Nimblesite.Sync.CoreClientRepository.GetByOrigin(_db, "client-1");
+        var result = SyncClientRepository.GetByOrigin(_db, "client-1");
 
         // Assert
-        Assert.True(result is Nimblesite.Sync.CoreClientOk);
-        var retrieved = ((Nimblesite.Sync.CoreClientOk)result).Value;
+        Assert.True(result is SyncClientOk);
+        var retrieved = ((SyncClientOk)result).Value;
         Assert.NotNull(retrieved);
         Assert.Equal("client-1", retrieved.OriginId);
         Assert.Equal(100, retrieved.LastSyncVersion);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreClientRepository_GetByOrigin_NonExistingClient_ReturnsNull()
+    public void SyncClientRepository_GetByOrigin_NonExistingClient_ReturnsNull()
     {
         // Act
-        var result = Nimblesite.Sync.CoreClientRepository.GetByOrigin(_db, "nonexistent");
+        var result = SyncClientRepository.GetByOrigin(_db, "nonexistent");
 
         // Assert
-        Assert.True(result is Nimblesite.Sync.CoreClientOk);
-        Assert.Null(((Nimblesite.Sync.CoreClientOk)result).Value);
+        Assert.True(result is SyncClientOk);
+        Assert.Null(((SyncClientOk)result).Value);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreClientRepository_Delete_ExistingClient_Removes()
+    public void SyncClientRepository_Delete_ExistingClient_Removes()
     {
         // Arrange
-        Nimblesite.Sync.CoreClientRepository.Upsert(_db, new Nimblesite.Sync.CoreClient("client-1", 100, Timestamp, Timestamp));
+        SyncClientRepository.Upsert(_db, new SyncClient("client-1", 100, Timestamp, Timestamp));
 
         // Act
-        var result = Nimblesite.Sync.CoreClientRepository.Delete(_db, "client-1");
+        var result = SyncClientRepository.Delete(_db, "client-1");
 
         // Assert
         Assert.True(result is BoolSyncOk);
 
-        var retrieved = Nimblesite.Sync.CoreClientRepository.GetByOrigin(_db, "client-1");
-        Assert.Null(((Nimblesite.Sync.CoreClientOk)retrieved).Value);
+        var retrieved = SyncClientRepository.GetByOrigin(_db, "client-1");
+        Assert.Null(((SyncClientOk)retrieved).Value);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreClientRepository_Delete_NonExistingClient_StillSucceeds()
+    public void SyncClientRepository_Delete_NonExistingClient_StillSucceeds()
     {
         // Act
-        var result = Nimblesite.Sync.CoreClientRepository.Delete(_db, "nonexistent");
+        var result = SyncClientRepository.Delete(_db, "nonexistent");
 
         // Assert
         Assert.True(result is BoolSyncOk);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreClientRepository_GetMinVersion_EmptyDatabase_ReturnsZero()
+    public void SyncClientRepository_GetMinVersion_EmptyDatabase_ReturnsZero()
     {
         // Act
-        var result = Nimblesite.Sync.CoreClientRepository.GetMinVersion(_db);
+        var result = SyncClientRepository.GetMinVersion(_db);
 
         // Assert
         Assert.True(result is LongSyncOk);
@@ -155,15 +155,15 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreClientRepository_GetMinVersion_WithClients_ReturnsMinimum()
+    public void SyncClientRepository_GetMinVersion_WithClients_ReturnsMinimum()
     {
         // Arrange
-        Nimblesite.Sync.CoreClientRepository.Upsert(_db, new Nimblesite.Sync.CoreClient("client-a", 300, Timestamp, Timestamp));
-        Nimblesite.Sync.CoreClientRepository.Upsert(_db, new Nimblesite.Sync.CoreClient("client-b", 100, Timestamp, Timestamp));
-        Nimblesite.Sync.CoreClientRepository.Upsert(_db, new Nimblesite.Sync.CoreClient("client-c", 200, Timestamp, Timestamp));
+        SyncClientRepository.Upsert(_db, new SyncClient("client-a", 300, Timestamp, Timestamp));
+        SyncClientRepository.Upsert(_db, new SyncClient("client-b", 100, Timestamp, Timestamp));
+        SyncClientRepository.Upsert(_db, new SyncClient("client-c", 200, Timestamp, Timestamp));
 
         // Act
-        var result = Nimblesite.Sync.CoreClientRepository.GetMinVersion(_db);
+        var result = SyncClientRepository.GetMinVersion(_db);
 
         // Assert
         Assert.True(result is LongSyncOk);
@@ -171,41 +171,41 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreClientRepository_DeleteMultiple_RemovesSpecified()
+    public void SyncClientRepository_DeleteMultiple_RemovesSpecified()
     {
         // Arrange
-        Nimblesite.Sync.CoreClientRepository.Upsert(_db, new Nimblesite.Sync.CoreClient("client-1", 100, Timestamp, Timestamp));
-        Nimblesite.Sync.CoreClientRepository.Upsert(_db, new Nimblesite.Sync.CoreClient("client-2", 200, Timestamp, Timestamp));
-        Nimblesite.Sync.CoreClientRepository.Upsert(_db, new Nimblesite.Sync.CoreClient("client-3", 300, Timestamp, Timestamp));
+        SyncClientRepository.Upsert(_db, new SyncClient("client-1", 100, Timestamp, Timestamp));
+        SyncClientRepository.Upsert(_db, new SyncClient("client-2", 200, Timestamp, Timestamp));
+        SyncClientRepository.Upsert(_db, new SyncClient("client-3", 300, Timestamp, Timestamp));
 
         // Act
-        var result = Nimblesite.Sync.CoreClientRepository.DeleteMultiple(_db, ["client-1", "client-2"]);
+        var result = SyncClientRepository.DeleteMultiple(_db, ["client-1", "client-2"]);
 
         // Assert
         Assert.True(result is IntSyncOk);
         Assert.Equal(2, ((IntSyncOk)result).Value);
 
-        var remaining = Nimblesite.Sync.CoreClientRepository.GetAll(_db);
-        Assert.Single(((Nimblesite.Sync.CoreClientListOk)remaining).Value);
+        var remaining = SyncClientRepository.GetAll(_db);
+        Assert.Single(((SyncClientListOk)remaining).Value);
     }
 
     #endregion
 
-    #region Nimblesite.Sync.CoreLogRepository Tests
+    #region SyncLogRepository Tests
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogRepository_FetchChanges_EmptyLog_ReturnsEmptyList()
+    public void SyncLogRepository_FetchChanges_EmptyLog_ReturnsEmptyList()
     {
         // Act
-        var result = Nimblesite.Sync.CoreLogRepository.FetchChanges(_db, 0, 100);
+        var result = SyncLogRepository.FetchChanges(_db, 0, 100);
 
         // Assert
-        Assert.True(result is Nimblesite.Sync.CoreLogListOk);
-        Assert.Empty(((Nimblesite.Sync.CoreLogListOk)result).Value);
+        Assert.True(result is SyncLogListOk);
+        Assert.Empty(((SyncLogListOk)result).Value);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogRepository_FetchChanges_WithEntries_ReturnsEntries()
+    public void SyncLogRepository_FetchChanges_WithEntries_ReturnsEntries()
     {
         // Arrange - Insert via user table to trigger logging
         using var cmd = _db.CreateCommand();
@@ -213,17 +213,17 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         cmd.ExecuteNonQuery();
 
         // Act
-        var result = Nimblesite.Sync.CoreLogRepository.FetchChanges(_db, 0, 100);
+        var result = SyncLogRepository.FetchChanges(_db, 0, 100);
 
         // Assert
-        Assert.True(result is Nimblesite.Sync.CoreLogListOk);
-        var entries = ((Nimblesite.Sync.CoreLogListOk)result).Value;
+        Assert.True(result is SyncLogListOk);
+        var entries = ((SyncLogListOk)result).Value;
         Assert.Single(entries);
         Assert.Equal("Person", entries[0].TableName);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogRepository_FetchChanges_RespectsBatchSize()
+    public void SyncLogRepository_FetchChanges_RespectsBatchSize()
     {
         // Arrange
         for (var i = 0; i < 10; i++)
@@ -235,15 +235,15 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         }
 
         // Act
-        var result = Nimblesite.Sync.CoreLogRepository.FetchChanges(_db, 0, 5);
+        var result = SyncLogRepository.FetchChanges(_db, 0, 5);
 
         // Assert
-        Assert.True(result is Nimblesite.Sync.CoreLogListOk);
-        Assert.Equal(5, ((Nimblesite.Sync.CoreLogListOk)result).Value.Count);
+        Assert.True(result is SyncLogListOk);
+        Assert.Equal(5, ((SyncLogListOk)result).Value.Count);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogRepository_FetchChanges_FromVersion_FiltersCorrectly()
+    public void SyncLogRepository_FetchChanges_FromVersion_FiltersCorrectly()
     {
         // Arrange
         for (var i = 0; i < 5; i++)
@@ -255,22 +255,22 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         }
 
         // Get the max version
-        var maxResult = Nimblesite.Sync.CoreLogRepository.GetMaxVersion(_db);
+        var maxResult = SyncLogRepository.GetMaxVersion(_db);
         var maxVersion = ((LongSyncOk)maxResult).Value;
 
         // Act - Fetch from version 3
-        var result = Nimblesite.Sync.CoreLogRepository.FetchChanges(_db, maxVersion - 2, 100);
+        var result = SyncLogRepository.FetchChanges(_db, maxVersion - 2, 100);
 
         // Assert
-        Assert.True(result is Nimblesite.Sync.CoreLogListOk);
-        Assert.Equal(2, ((Nimblesite.Sync.CoreLogListOk)result).Value.Count);
+        Assert.True(result is SyncLogListOk);
+        Assert.Equal(2, ((SyncLogListOk)result).Value.Count);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogRepository_GetMaxVersion_EmptyLog_ReturnsZero()
+    public void SyncLogRepository_GetMaxVersion_EmptyLog_ReturnsZero()
     {
         // Act
-        var result = Nimblesite.Sync.CoreLogRepository.GetMaxVersion(_db);
+        var result = SyncLogRepository.GetMaxVersion(_db);
 
         // Assert
         Assert.True(result is LongSyncOk);
@@ -278,7 +278,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogRepository_GetMaxVersion_WithEntries_ReturnsMax()
+    public void SyncLogRepository_GetMaxVersion_WithEntries_ReturnsMax()
     {
         // Arrange
         for (var i = 0; i < 5; i++)
@@ -290,7 +290,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         }
 
         // Act
-        var result = Nimblesite.Sync.CoreLogRepository.GetMaxVersion(_db);
+        var result = SyncLogRepository.GetMaxVersion(_db);
 
         // Assert
         Assert.True(result is LongSyncOk);
@@ -298,14 +298,14 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogRepository_Insert_LogsUpdate()
+    public void SyncLogRepository_Insert_LogsUpdate()
     {
         // Arrange
         using var insertCmd = _db.CreateCommand();
         insertCmd.CommandText = "INSERT INTO Person (Id, Name, Age) VALUES ('p1', 'Alice', 30)";
         insertCmd.ExecuteNonQuery();
 
-        var versionAfterInsert = ((LongSyncOk)Nimblesite.Sync.CoreLogRepository.GetMaxVersion(_db)).Value;
+        var versionAfterInsert = ((LongSyncOk)SyncLogRepository.GetMaxVersion(_db)).Value;
 
         // Act - Update
         using var updateCmd = _db.CreateCommand();
@@ -313,21 +313,21 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         updateCmd.ExecuteNonQuery();
 
         // Assert
-        var result = Nimblesite.Sync.CoreLogRepository.FetchChanges(_db, versionAfterInsert, 100);
-        var entries = ((Nimblesite.Sync.CoreLogListOk)result).Value;
+        var result = SyncLogRepository.FetchChanges(_db, versionAfterInsert, 100);
+        var entries = ((SyncLogListOk)result).Value;
         Assert.Single(entries);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Update, entries[0].Operation);
+        Assert.Equal(SyncOperation.Update, entries[0].Operation);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogRepository_Delete_LogsTombstone()
+    public void SyncLogRepository_Delete_LogsTombstone()
     {
         // Arrange
         using var insertCmd = _db.CreateCommand();
         insertCmd.CommandText = "INSERT INTO Person (Id, Name, Age) VALUES ('p1', 'Alice', 30)";
         insertCmd.ExecuteNonQuery();
 
-        var versionAfterInsert = ((LongSyncOk)Nimblesite.Sync.CoreLogRepository.GetMaxVersion(_db)).Value;
+        var versionAfterInsert = ((LongSyncOk)SyncLogRepository.GetMaxVersion(_db)).Value;
 
         // Act - Delete
         using var deleteCmd = _db.CreateCommand();
@@ -335,18 +335,18 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         deleteCmd.ExecuteNonQuery();
 
         // Assert
-        var result = Nimblesite.Sync.CoreLogRepository.FetchChanges(_db, versionAfterInsert, 100);
-        var entries = ((Nimblesite.Sync.CoreLogListOk)result).Value;
+        var result = SyncLogRepository.FetchChanges(_db, versionAfterInsert, 100);
+        var entries = ((SyncLogListOk)result).Value;
         Assert.Single(entries);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Delete, entries[0].Operation);
+        Assert.Equal(SyncOperation.Delete, entries[0].Operation);
         Assert.Null(entries[0].Payload); // Tombstone has no payload
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogRepository_GetLastServerVersion_Default_ReturnsZero()
+    public void SyncLogRepository_GetLastServerVersion_Default_ReturnsZero()
     {
         // Act
-        var result = Nimblesite.Sync.CoreLogRepository.GetLastServerVersion(_db);
+        var result = SyncLogRepository.GetLastServerVersion(_db);
 
         // Assert
         Assert.True(result is LongSyncOk);
@@ -354,24 +354,24 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogRepository_UpdateLastServerVersion_UpdatesValue()
+    public void SyncLogRepository_UpdateLastServerVersion_UpdatesValue()
     {
         // Act
-        var updateResult = Nimblesite.Sync.CoreLogRepository.UpdateLastServerVersion(_db, 100);
+        var updateResult = SyncLogRepository.UpdateLastServerVersion(_db, 100);
 
         // Assert
         Assert.True(updateResult is BoolSyncOk);
 
-        var getResult = Nimblesite.Sync.CoreLogRepository.GetLastServerVersion(_db);
+        var getResult = SyncLogRepository.GetLastServerVersion(_db);
         Assert.True(getResult is LongSyncOk);
         Assert.Equal(100, ((LongSyncOk)getResult).Value);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogRepository_GetMinVersion_EmptyLog_ReturnsZero()
+    public void SyncLogRepository_GetMinVersion_EmptyLog_ReturnsZero()
     {
         // Act
-        var result = Nimblesite.Sync.CoreLogRepository.GetMinVersion(_db);
+        var result = SyncLogRepository.GetMinVersion(_db);
 
         // Assert
         Assert.True(result is LongSyncOk);
@@ -379,7 +379,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogRepository_GetMinVersion_WithEntries_ReturnsMin()
+    public void SyncLogRepository_GetMinVersion_WithEntries_ReturnsMin()
     {
         // Arrange
         for (var i = 0; i < 5; i++)
@@ -391,7 +391,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         }
 
         // Act
-        var result = Nimblesite.Sync.CoreLogRepository.GetMinVersion(_db);
+        var result = SyncLogRepository.GetMinVersion(_db);
 
         // Assert
         Assert.True(result is LongSyncOk);
@@ -399,10 +399,10 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogRepository_GetEntryCount_EmptyLog_ReturnsZero()
+    public void SyncLogRepository_GetEntryCount_EmptyLog_ReturnsZero()
     {
         // Act
-        var result = Nimblesite.Sync.CoreLogRepository.GetEntryCount(_db);
+        var result = SyncLogRepository.GetEntryCount(_db);
 
         // Assert
         Assert.True(result is LongSyncOk);
@@ -410,7 +410,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogRepository_GetEntryCount_WithEntries_ReturnsCount()
+    public void SyncLogRepository_GetEntryCount_WithEntries_ReturnsCount()
     {
         // Arrange
         for (var i = 0; i < 5; i++)
@@ -422,7 +422,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         }
 
         // Act
-        var result = Nimblesite.Sync.CoreLogRepository.GetEntryCount(_db);
+        var result = SyncLogRepository.GetEntryCount(_db);
 
         // Assert
         Assert.True(result is LongSyncOk);
@@ -430,7 +430,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogRepository_FetchChanges_ContainsAllFields()
+    public void SyncLogRepository_FetchChanges_ContainsAllFields()
     {
         // Arrange
         using var cmd = _db.CreateCommand();
@@ -438,18 +438,18 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         cmd.ExecuteNonQuery();
 
         // Act
-        var result = Nimblesite.Sync.CoreLogRepository.FetchChanges(_db, 0, 100);
+        var result = SyncLogRepository.FetchChanges(_db, 0, 100);
 
         // Assert
-        Assert.True(result is Nimblesite.Sync.CoreLogListOk);
-        var entries = ((Nimblesite.Sync.CoreLogListOk)result).Value;
+        Assert.True(result is SyncLogListOk);
+        var entries = ((SyncLogListOk)result).Value;
         Assert.NotEmpty(entries);
 
         var entry = entries[^1];
         Assert.True(entry.Version > 0);
         Assert.Equal("Person", entry.TableName);
         Assert.Contains("fld1", entry.PkValue);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Insert, entry.Operation);
+        Assert.Equal(SyncOperation.Insert, entry.Operation);
         Assert.NotNull(entry.Payload);
         Assert.Equal(_originId, entry.Origin);
         Assert.NotEmpty(entry.Timestamp);
@@ -474,7 +474,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
     public void SubscriptionRepository_Insert_ValidSubscription_Succeeds()
     {
         // Arrange
-        var subscription = new Nimblesite.Sync.CoreSubscription(
+        var subscription = new SyncSubscription(
             "sub-1",
             _originId,
             SubscriptionType.Table,
@@ -498,7 +498,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
     public void SubscriptionRepository_GetById_ExistingSubscription_ReturnsSubscription()
     {
         // Arrange
-        var subscription = new Nimblesite.Sync.CoreSubscription(
+        var subscription = new SyncSubscription(
             "sub-1",
             _originId,
             SubscriptionType.Table,
@@ -536,7 +536,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         // Arrange
         SubscriptionRepository.Insert(
             _db,
-            new Nimblesite.Sync.CoreSubscription(
+            new SyncSubscription(
                 "sub-1",
                 _originId,
                 SubscriptionType.Table,
@@ -548,7 +548,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         );
         SubscriptionRepository.Insert(
             _db,
-            new Nimblesite.Sync.CoreSubscription(
+            new SyncSubscription(
                 "sub-2",
                 _originId,
                 SubscriptionType.Table,
@@ -577,7 +577,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         var origin2 = "origin-2";
         SubscriptionRepository.Insert(
             _db,
-            new Nimblesite.Sync.CoreSubscription(
+            new SyncSubscription(
                 "sub-1",
                 origin1,
                 SubscriptionType.Table,
@@ -589,7 +589,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         );
         SubscriptionRepository.Insert(
             _db,
-            new Nimblesite.Sync.CoreSubscription(
+            new SyncSubscription(
                 "sub-2",
                 origin2,
                 SubscriptionType.Table,
@@ -616,7 +616,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         // Arrange
         SubscriptionRepository.Insert(
             _db,
-            new Nimblesite.Sync.CoreSubscription(
+            new SyncSubscription(
                 "sub-1",
                 _originId,
                 SubscriptionType.Table,
@@ -644,7 +644,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         var origin1 = "origin-1";
         SubscriptionRepository.Insert(
             _db,
-            new Nimblesite.Sync.CoreSubscription(
+            new SyncSubscription(
                 "sub-1",
                 origin1,
                 SubscriptionType.Table,
@@ -656,7 +656,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         );
         SubscriptionRepository.Insert(
             _db,
-            new Nimblesite.Sync.CoreSubscription(
+            new SyncSubscription(
                 "sub-2",
                 origin1,
                 SubscriptionType.Table,
@@ -668,7 +668,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         );
         SubscriptionRepository.Insert(
             _db,
-            new Nimblesite.Sync.CoreSubscription(
+            new SyncSubscription(
                 "sub-3",
                 "origin-2",
                 SubscriptionType.Table,
@@ -696,7 +696,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         // Arrange
         SubscriptionRepository.Insert(
             _db,
-            new Nimblesite.Sync.CoreSubscription(
+            new SyncSubscription(
                 "sub-expired",
                 _originId,
                 SubscriptionType.Table,
@@ -708,7 +708,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         );
         SubscriptionRepository.Insert(
             _db,
-            new Nimblesite.Sync.CoreSubscription(
+            new SyncSubscription(
                 "sub-active",
                 _originId,
                 SubscriptionType.Table,
@@ -739,7 +739,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
     public void TombstoneManager_CalculateSafeVersion_WithClients_ReturnsMinVersion()
     {
         // Arrange
-        var clients = new List<Nimblesite.Sync.CoreClient>
+        var clients = new List<SyncClient>
         {
             new("client-1", 100, Timestamp, Timestamp),
             new("client-2", 200, Timestamp, Timestamp),
@@ -766,7 +766,7 @@ public sealed class Nimblesite.Sync.CoreRepositoryIntegrationTests : IDisposable
         deleteCmd.ExecuteNonQuery();
 
         // Get version
-        var maxVersion = ((LongSyncOk)Nimblesite.Sync.CoreLogRepository.GetMaxVersion(_db)).Value;
+        var maxVersion = ((LongSyncOk)SyncLogRepository.GetMaxVersion(_db)).Value;
 
         // Use extension method to purge tombstones
         var result = _db.PurgeTombstones(maxVersion + 1);

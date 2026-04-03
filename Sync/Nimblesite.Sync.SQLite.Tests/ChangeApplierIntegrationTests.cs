@@ -23,8 +23,8 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
         _dbPath = Path.Combine(Path.GetTempPath(), $"change_applier_{Guid.NewGuid():N}.db");
         _db = new SqliteConnection($"Data Source={_dbPath}");
         _db.Open();
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, _originId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, _originId);
 
         // Create test table
         using var cmd = _db.CreateCommand();
@@ -45,11 +45,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
     public void ApplyChange_Insert_CreatesNewRecord()
     {
         // Arrange
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Person",
             PkValue: "{\"Id\":\"p1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: "{\"Id\":\"p1\",\"Name\":\"Alice\",\"Age\":30,\"Email\":\"alice@example.com\"}",
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -75,11 +75,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
     public void ApplyChange_Insert_WithNullPayload_ReturnsError()
     {
         // Arrange
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Person",
             PkValue: "{\"Id\":\"p1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: null,
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -96,11 +96,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
     public void ApplyChange_Insert_WithEmptyPayload_ReturnsError()
     {
         // Arrange
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Person",
             PkValue: "{\"Id\":\"p1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: "{}",
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -117,11 +117,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
     public void ApplyChange_Insert_DuplicateKey_ReplacesExisting()
     {
         // Arrange - Insert first record
-        var entry1 = new Nimblesite.Sync.CoreLogEntry(
+        var entry1 = new SyncLogEntry(
             Version: 1,
             TableName: "Person",
             PkValue: "{\"Id\":\"p1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: "{\"Id\":\"p1\",\"Name\":\"Alice\",\"Age\":30}",
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -129,11 +129,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
         ChangeApplierSQLite.ApplyChange(_db, entry1);
 
         // Act - Insert with same PK (should replace)
-        var entry2 = new Nimblesite.Sync.CoreLogEntry(
+        var entry2 = new SyncLogEntry(
             Version: 2,
             TableName: "Person",
             PkValue: "{\"Id\":\"p1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: "{\"Id\":\"p1\",\"Name\":\"Alice Updated\",\"Age\":31}",
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -161,11 +161,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
         // Arrange - Insert first
         InsertPerson("p1", "Alice", 30);
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 2,
             TableName: "Person",
             PkValue: "{\"Id\":\"p1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Update,
+            Operation: SyncOperation.Update,
             Payload: "{\"Id\":\"p1\",\"Name\":\"Alice Updated\",\"Age\":31,\"Email\":\"alice.new@example.com\"}",
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -190,11 +190,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
     public void ApplyChange_Update_NonExistingRecord_InsertsAsUpsert()
     {
         // Arrange
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Person",
             PkValue: "{\"Id\":\"p1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Update,
+            Operation: SyncOperation.Update,
             Payload: "{\"Id\":\"p1\",\"Name\":\"Alice\",\"Age\":30}",
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -221,11 +221,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
         // Arrange
         InsertPerson("p1", "Alice", 30);
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 2,
             TableName: "Person",
             PkValue: "{\"Id\":\"p1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Delete,
+            Operation: SyncOperation.Delete,
             Payload: null,
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -246,11 +246,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
     public void ApplyChange_Delete_NonExistingRecord_StillSucceeds()
     {
         // Arrange
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Person",
             PkValue: "{\"Id\":\"nonexistent\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Delete,
+            Operation: SyncOperation.Delete,
             Payload: null,
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -267,11 +267,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
     public void ApplyChange_Delete_InvalidPkValue_ReturnsError()
     {
         // Arrange
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Person",
             PkValue: "{}",
-            Operation: Nimblesite.Sync.CoreOperation.Delete,
+            Operation: SyncOperation.Delete,
             Payload: null,
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -292,11 +292,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
     public void ApplyChange_Insert_HandlesStringValues()
     {
         // Arrange
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Person",
             PkValue: "{\"Id\":\"p1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: "{\"Id\":\"p1\",\"Name\":\"Alice\",\"Email\":\"alice@example.com\"}",
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -313,11 +313,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
     public void ApplyChange_Insert_HandlesIntegerValues()
     {
         // Arrange
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Person",
             PkValue: "{\"Id\":\"p1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: "{\"Id\":\"p1\",\"Name\":\"Alice\",\"Age\":25}",
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -338,11 +338,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
     public void ApplyChange_Insert_HandlesNullValues()
     {
         // Arrange
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Person",
             PkValue: "{\"Id\":\"p1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: "{\"Id\":\"p1\",\"Name\":\"Alice\",\"Email\":null}",
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -367,11 +367,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
         createCmd.CommandText = "CREATE TABLE Settings (Id TEXT PRIMARY KEY, Enabled INTEGER)";
         createCmd.ExecuteNonQuery();
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Settings",
             PkValue: "{\"Id\":\"s1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: "{\"Id\":\"s1\",\"Enabled\":true}",
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -396,11 +396,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
         createCmd.CommandText = "CREATE TABLE Settings (Id TEXT PRIMARY KEY, Enabled INTEGER)";
         createCmd.ExecuteNonQuery();
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Settings",
             PkValue: "{\"Id\":\"s1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: "{\"Id\":\"s1\",\"Enabled\":false}",
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -425,11 +425,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
         createCmd.CommandText = "CREATE TABLE Product (Id TEXT PRIMARY KEY, Price REAL)";
         createCmd.ExecuteNonQuery();
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Product",
             PkValue: "{\"Id\":\"prod1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: "{\"Id\":\"prod1\",\"Price\":99.99}",
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -470,11 +470,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
             """;
         cmd.ExecuteNonQuery();
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Employee",
             PkValue: "{\"Id\":\"e1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: "{\"Id\":\"e1\",\"Name\":\"John\",\"DeptId\":\"nonexistent\"}",
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -505,11 +505,11 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
             """;
         cmd.ExecuteNonQuery();
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Employee",
             PkValue: "{\"Id\":\"e1\"}",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: "{\"Id\":\"e1\",\"Name\":\"John\",\"DeptId\":\"d1\"}",
             Origin: "remote-origin",
             Timestamp: Timestamp
@@ -533,29 +533,29 @@ public sealed class ChangeApplierIntegrationTests : IDisposable
         // Arrange
         var entries = new[]
         {
-            new Nimblesite.Sync.CoreLogEntry(
+            new SyncLogEntry(
                 1,
                 "Person",
                 "{\"Id\":\"p1\"}",
-                Nimblesite.Sync.CoreOperation.Insert,
+                SyncOperation.Insert,
                 "{\"Id\":\"p1\",\"Name\":\"Alice\"}",
                 "origin",
                 Timestamp
             ),
-            new Nimblesite.Sync.CoreLogEntry(
+            new SyncLogEntry(
                 2,
                 "Person",
                 "{\"Id\":\"p2\"}",
-                Nimblesite.Sync.CoreOperation.Insert,
+                SyncOperation.Insert,
                 "{\"Id\":\"p2\",\"Name\":\"Bob\"}",
                 "origin",
                 Timestamp
             ),
-            new Nimblesite.Sync.CoreLogEntry(
+            new SyncLogEntry(
                 3,
                 "Person",
                 "{\"Id\":\"p3\"}",
-                Nimblesite.Sync.CoreOperation.Insert,
+                SyncOperation.Insert,
                 "{\"Id\":\"p3\",\"Name\":\"Charlie\"}",
                 "origin",
                 Timestamp

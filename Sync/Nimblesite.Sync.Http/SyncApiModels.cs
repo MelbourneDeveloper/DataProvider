@@ -5,7 +5,7 @@ namespace Nimblesite.Sync.Http;
 /// </summary>
 /// <param name="OriginId">Origin ID of the pushing client.</param>
 /// <param name="Changes">List of changes to push.</param>
-public sealed record PushChangesRequest(string OriginId, List<Nimblesite.Sync.CoreLogEntryDto> Changes);
+public sealed record PushChangesRequest(string OriginId, List<SyncLogEntryDto> Changes);
 
 /// <summary>
 /// Request to register a sync client.
@@ -24,7 +24,7 @@ public sealed record RegisterClientRequest(string OriginId, long LastSyncVersion
 /// <param name="Payload">JSON payload of the change.</param>
 /// <param name="Origin">Origin ID that made the change.</param>
 /// <param name="Timestamp">ISO 8601 timestamp.</param>
-public sealed record Nimblesite.Sync.CoreLogEntryDto(
+public sealed record SyncLogEntryDto(
     long Version,
     string TableName,
     string PkValue,

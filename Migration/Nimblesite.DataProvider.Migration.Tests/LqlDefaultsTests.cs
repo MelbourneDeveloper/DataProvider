@@ -8,7 +8,7 @@ namespace Nimblesite.DataProvider.Migration.Tests;
 /// 2. Default values are properly applied when inserting without explicit values
 /// 3. The resulting data is semantically equivalent across platforms
 /// </summary>
-public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
+public sealed class LqlDefaultsTests : IAsyncLifetime
 {
     private PostgreSqlContainer _postgres = null!;
     private NpgsqlConnection _pgConnection = null!;
@@ -62,7 +62,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     // =========================================================================
 
     [Fact]
-    public void Nimblesite.Lql.CoreBoolean_True_WorksOnBothPlatforms()
+    public void LqlBoolean_True_WorksOnBothPlatforms()
     {
         // Arrange - Same LQL schema for both platforms
         var schema = Schema
@@ -116,7 +116,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreBoolean_False_WorksOnBothPlatforms()
+    public void LqlBoolean_False_WorksOnBothPlatforms()
     {
         // Arrange
         var schema = Schema
@@ -166,7 +166,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     // =========================================================================
 
     [Fact]
-    public void Nimblesite.Lql.CoreNow_DefaultsToCurrentTime_BothPlatforms()
+    public void LqlNow_DefaultsToCurrentTime_BothPlatforms()
     {
         // Arrange
         var schema = Schema
@@ -225,7 +225,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreCurrentTimestamp_SameAsNow_BothPlatforms()
+    public void LqlCurrentTimestamp_SameAsNow_BothPlatforms()
     {
         // Arrange
         var schema = Schema
@@ -259,7 +259,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreCurrentDate_ReturnsDateOnly_BothPlatforms()
+    public void LqlCurrentDate_ReturnsDateOnly_BothPlatforms()
     {
         // Arrange
         var schema = Schema
@@ -300,7 +300,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     // =========================================================================
 
     [Fact]
-    public void Nimblesite.Lql.CoreNumericInteger_DefaultsCorrectly_BothPlatforms()
+    public void LqlNumericInteger_DefaultsCorrectly_BothPlatforms()
     {
         // Arrange
         var schema = Schema
@@ -335,7 +335,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreNumericDecimal_DefaultsCorrectly_BothPlatforms()
+    public void LqlNumericDecimal_DefaultsCorrectly_BothPlatforms()
     {
         // Arrange
         var schema = Schema
@@ -382,7 +382,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     // =========================================================================
 
     [Fact]
-    public void Nimblesite.Lql.CoreStringLiteral_DefaultsCorrectly_BothPlatforms()
+    public void LqlStringLiteral_DefaultsCorrectly_BothPlatforms()
     {
         // Arrange - Strings must be quoted with single quotes in LQL
         var schema = Schema
@@ -431,7 +431,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     // =========================================================================
 
     [Fact]
-    public void Nimblesite.Lql.CoreGenUuid_GeneratesValidUuid_BothPlatforms()
+    public void LqlGenUuid_GeneratesValidUuid_BothPlatforms()
     {
         // Arrange
         var schema = Schema
@@ -498,7 +498,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreUuidAlias_SameAsGenUuid_BothPlatforms()
+    public void LqlUuidAlias_SameAsGenUuid_BothPlatforms()
     {
         // Arrange - uuid() should work the same as gen_uuid()
         var schema = Schema
@@ -533,7 +533,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     // =========================================================================
 
     [Fact]
-    public void Nimblesite.Lql.CoreMultipleDefaults_AllWorkTogether_BothPlatforms()
+    public void LqlMultipleDefaults_AllWorkTogether_BothPlatforms()
     {
         // Arrange - Real-world scenario with multiple LQL defaults
         var schema = Schema
@@ -658,7 +658,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     // =========================================================================
 
     [Fact]
-    public void Nimblesite.Lql.CoreDefaults_Idempotent_BothPlatforms()
+    public void LqlDefaults_Idempotent_BothPlatforms()
     {
         // Arrange
         var schema = Schema
@@ -742,7 +742,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     // =========================================================================
 
     [Fact]
-    public void Nimblesite.Lql.CoreNumeric_LargeInteger_SameValueBothPlatforms()
+    public void LqlNumeric_LargeInteger_SameValueBothPlatforms()
     {
         // Arrange - Test large integer values (near int32 boundaries)
         var schema = Schema
@@ -773,7 +773,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreNumeric_VerySmallDecimal_SameValueBothPlatforms()
+    public void LqlNumeric_VerySmallDecimal_SameValueBothPlatforms()
     {
         // Arrange - Test precision with very small decimal values
         var schema = Schema
@@ -823,7 +823,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreString_SpecialCharacters_SameValueBothPlatforms()
+    public void LqlString_SpecialCharacters_SameValueBothPlatforms()
     {
         // Arrange - Test strings with special characters (escaped in LQL as SQL single quotes)
         var schema = Schema
@@ -902,7 +902,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreBoolean_MultipleColumns_AllDefaultCorrectly()
+    public void LqlBoolean_MultipleColumns_AllDefaultCorrectly()
     {
         // Arrange - Test multiple boolean defaults in various combinations
         var schema = Schema
@@ -941,7 +941,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreUuid_MultipleInserts_AllUnique_BothPlatforms()
+    public void LqlUuid_MultipleInserts_AllUnique_BothPlatforms()
     {
         // Arrange - Verify UUID generation is truly unique across many inserts
         var schema = Schema
@@ -980,7 +980,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreTimestamp_AllTimeTypes_WorkBothPlatforms()
+    public void LqlTimestamp_AllTimeTypes_WorkBothPlatforms()
     {
         // Arrange - Test all time-related LQL functions
         var schema = Schema
@@ -1050,7 +1050,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
         var operations = (
             (OperationsResultOk)SchemaDiff.Calculate(currentSchema, schema, logger: _logger)
         ).Value;
-        _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(conn, operations, generator, Nimblesite.DataProvider.Migration.CoreOptions.Default, _logger);
+        _ = MigrationRunner.Apply(conn, operations, generator, MigrationOptions.Default, _logger);
     }
 
     private void ApplySchema(
@@ -1063,7 +1063,7 @@ public sealed class Nimblesite.Lql.CoreDefaultsTests : IAsyncLifetime
         var operations = (
             (OperationsResultOk)SchemaDiff.Calculate(currentSchema, schema, logger: _logger)
         ).Value;
-        _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(conn, operations, generator, Nimblesite.DataProvider.Migration.CoreOptions.Default, _logger);
+        _ = MigrationRunner.Apply(conn, operations, generator, MigrationOptions.Default, _logger);
     }
 
     private void ExecutePg(string sql)

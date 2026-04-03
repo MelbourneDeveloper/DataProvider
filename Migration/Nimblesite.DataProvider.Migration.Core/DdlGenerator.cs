@@ -29,7 +29,7 @@ public static class DdlGenerator
 /// <summary>
 /// Nimblesite.DataProvider.Migration.Core runner for executing schema operations.
 /// </summary>
-public static class Nimblesite.DataProvider.Migration.CoreRunner
+public static class MigrationRunner
 {
     /// <summary>
     /// Apply schema operations to a database connection.
@@ -40,18 +40,18 @@ public static class Nimblesite.DataProvider.Migration.CoreRunner
     /// <param name="options">Nimblesite.DataProvider.Migration.Core options</param>
     /// <param name="logger">Optional logger</param>
     /// <returns>Result indicating success or failure</returns>
-    public static Nimblesite.DataProvider.Migration.CoreApplyResult Apply(
+    public static MigrationApplyResult Apply(
         IDbConnection connection,
         IReadOnlyList<SchemaOperation> operations,
         Func<SchemaOperation, string> generateDdl,
-        Nimblesite.DataProvider.Migration.CoreOptions options,
+        MigrationOptions options,
         ILogger? logger = null
     )
     {
         if (operations.Count == 0)
         {
             logger?.LogInformation("No operations to apply, schema is up to date");
-            return new Nimblesite.DataProvider.Migration.CoreApplyResult.Ok<bool, Nimblesite.DataProvider.Migration.CoreError>(true);
+            return new MigrationApplyResult.Ok<bool, MigrationError>(true);
         }
 
         // Check for destructive operations
@@ -63,8 +63,8 @@ public static class Nimblesite.DataProvider.Migration.CoreRunner
                 var msg =
                     $"Destructive operations detected but AllowDestructive=false: {string.Join(", ", destructive.Select(o => o.GetType().Name))}";
                 logger?.LogError(msg);
-                return new Nimblesite.DataProvider.Migration.CoreApplyResult.Error<bool, Nimblesite.DataProvider.Migration.CoreError>(
-                    Nimblesite.DataProvider.Migration.CoreError.FromMessage(msg)
+                return new MigrationApplyResult.Error<bool, MigrationError>(
+                    MigrationError.FromMessage(msg)
                 );
             }
         }
@@ -115,14 +115,14 @@ public static class Nimblesite.DataProvider.Migration.CoreRunner
                 operations.Count
             );
 
-            return new Nimblesite.DataProvider.Migration.CoreApplyResult.Ok<bool, Nimblesite.DataProvider.Migration.CoreError>(true);
+            return new MigrationApplyResult.Ok<bool, MigrationError>(true);
         }
         catch (Exception ex)
         {
             logger?.LogError(ex, "Nimblesite.DataProvider.Migration.Core failed, rolling back");
             transaction?.Rollback();
-            return new Nimblesite.DataProvider.Migration.CoreApplyResult.Error<bool, Nimblesite.DataProvider.Migration.CoreError>(
-                Nimblesite.DataProvider.Migration.CoreError.FromException(ex)
+            return new MigrationApplyResult.Error<bool, MigrationError>(
+                MigrationError.FromException(ex)
             );
         }
         finally

@@ -15,7 +15,7 @@ public static class PostgresSyncLogRepository
     /// <param name="fromVersion">Version to start from (exclusive).</param>
     /// <param name="limit">Maximum number of changes to return.</param>
     /// <returns>List of changes or database error.</returns>
-    public static Nimblesite.Sync.CoreLogListResult FetchChanges(
+    public static SyncLogListResult FetchChanges(
         NpgsqlConnection connection,
         long fromVersion,
         int limit
@@ -34,7 +34,7 @@ public static class PostgresSyncLogRepository
             cmd.Parameters.AddWithValue("@fromVersion", fromVersion);
             cmd.Parameters.AddWithValue("@limit", limit);
 
-            var changes = new List<Nimblesite.Sync.CoreLogEntry>();
+            var changes = new List<SyncLogEntry>();
             using var reader = cmd.ExecuteReader();
 
             while (reader.Read())
@@ -42,12 +42,12 @@ public static class PostgresSyncLogRepository
                 changes.Add(ReadSyncLogEntry(reader));
             }
 
-            return new Nimblesite.Sync.CoreLogListOk(changes);
+            return new SyncLogListOk(changes);
         }
         catch (NpgsqlException ex)
         {
-            return new Nimblesite.Sync.CoreLogListError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to fetch changes: {ex.Message}")
+            return new SyncLogListError(
+                new SyncErrorDatabase($"Failed to fetch changes: {ex.Message}")
             );
         }
     }
@@ -58,7 +58,7 @@ public static class PostgresSyncLogRepository
     /// <param name="connection">PostgreSQL connection.</param>
     /// <param name="entry">Entry to insert.</param>
     /// <returns>Success or database error.</returns>
-    public static BoolSyncResult Insert(NpgsqlConnection connection, Nimblesite.Sync.CoreLogEntry entry)
+    public static BoolSyncResult Insert(NpgsqlConnection connection, SyncLogEntry entry)
     {
         try
         {
@@ -83,7 +83,7 @@ public static class PostgresSyncLogRepository
         catch (NpgsqlException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to insert change: {ex.Message}")
+                new SyncErrorDatabase($"Failed to insert change: {ex.Message}")
             );
         }
     }
@@ -107,7 +107,7 @@ public static class PostgresSyncLogRepository
         catch (NpgsqlException ex)
         {
             return new LongSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get last server version: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get last server version: {ex.Message}")
             );
         }
     }
@@ -129,7 +129,7 @@ public static class PostgresSyncLogRepository
         catch (NpgsqlException ex)
         {
             return new LongSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get max version: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get max version: {ex.Message}")
             );
         }
     }
@@ -156,12 +156,12 @@ public static class PostgresSyncLogRepository
         catch (NpgsqlException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to update last server version: {ex.Message}")
+                new SyncErrorDatabase($"Failed to update last server version: {ex.Message}")
             );
         }
     }
 
-    private static Nimblesite.Sync.CoreLogEntry ReadSyncLogEntry(NpgsqlDataReader reader) =>
+    private static SyncLogEntry ReadSyncLogEntry(NpgsqlDataReader reader) =>
         new(
             Version: reader.GetInt64(0),
             TableName: reader.GetString(1),
@@ -172,12 +172,12 @@ public static class PostgresSyncLogRepository
             Timestamp: reader.GetString(6)
         );
 
-    private static Nimblesite.Sync.CoreOperation ParseOperation(string op) =>
+    private static SyncOperation ParseOperation(string op) =>
         op.ToLowerInvariant() switch
         {
-            "insert" => Nimblesite.Sync.CoreOperation.Insert,
-            "update" => Nimblesite.Sync.CoreOperation.Update,
-            "delete" => Nimblesite.Sync.CoreOperation.Delete,
-            _ => Nimblesite.Sync.CoreOperation.Update,
+            "insert" => SyncOperation.Insert,
+            "update" => SyncOperation.Update,
+            "delete" => SyncOperation.Delete,
+            _ => SyncOperation.Update,
         };
 }

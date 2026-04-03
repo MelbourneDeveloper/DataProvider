@@ -5,7 +5,7 @@ namespace Nimblesite.Lql.Tests;
 /// <summary>
 /// File-based tests for basic LQL operations - select, filter, simple joins
 /// </summary>
-public partial class Nimblesite.Lql.CoreFileBasedTests
+public partial class LqlFileBasedTests
 {
     [Theory]
     [InlineData("simple_select", "PostgreSql")]

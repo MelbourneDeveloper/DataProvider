@@ -23,19 +23,19 @@ public sealed record MappingSyncState(
 /// <param name="MappingId">Mapping identifier.</param>
 /// <param name="SourcePk">JSON pk_value from source table.</param>
 /// <param name="PayloadHash">SHA-256 hash of canonical JSON payload.</param>
-/// <param name="Nimblesite.Sync.CoreedAt">ISO 8601 UTC timestamp when synced.</param>
+/// <param name="SyncedAt">ISO 8601 UTC timestamp when synced.</param>
 public sealed record RecordHash(
     string MappingId,
     string SourcePk,
     string PayloadHash,
-    string Nimblesite.Sync.CoreedAt
+    string SyncedAt
 );
 
 /// <summary>
 /// Manages sync tracking state per spec Section 7.5.
 /// Determines whether records should be synced based on tracking strategy.
 /// </summary>
-internal static class Nimblesite.Sync.CoreTrackingManager
+internal static class SyncTrackingManager
 {
     /// <summary>
     /// Determines if an entry should be synced based on tracking state.
@@ -47,23 +47,23 @@ internal static class Nimblesite.Sync.CoreTrackingManager
     /// <param name="getRecordHash">Function to get record hash.</param>
     /// <returns>True if entry should be synced.</returns>
     public static bool ShouldSync(
-        Nimblesite.Sync.CoreLogEntry entry,
+        SyncLogEntry entry,
         TableMapping mapping,
         Func<string, MappingSyncState?> getMappingState,
         Func<string, string, RecordHash?> getRecordHash
     )
     {
-        if (!mapping.Nimblesite.Sync.CoreTracking.Enabled)
+        if (!mapping.SyncTracking.Enabled)
         {
             return true;
         }
 
-        return mapping.Nimblesite.Sync.CoreTracking.Strategy switch
+        return mapping.SyncTracking.Strategy switch
         {
-            Nimblesite.Sync.CoreTrackingStrategy.Version => ShouldSyncByVersion(entry, mapping.Id, getMappingState),
-            Nimblesite.Sync.CoreTrackingStrategy.Hash => ShouldSyncByHash(entry, mapping.Id, getRecordHash),
-            Nimblesite.Sync.CoreTrackingStrategy.Timestamp => true, // Timestamp strategy handled at query time
-            Nimblesite.Sync.CoreTrackingStrategy.External => true, // External tracking is app responsibility
+            SyncTrackingStrategy.Version => ShouldSyncByVersion(entry, mapping.Id, getMappingState),
+            SyncTrackingStrategy.Hash => ShouldSyncByHash(entry, mapping.Id, getRecordHash),
+            SyncTrackingStrategy.Timestamp => true, // Timestamp strategy handled at query time
+            SyncTrackingStrategy.External => true, // External tracking is app responsibility
             _ => true,
         };
     }
@@ -72,7 +72,7 @@ internal static class Nimblesite.Sync.CoreTrackingManager
     /// Checks if entry should sync based on version tracking.
     /// </summary>
     private static bool ShouldSyncByVersion(
-        Nimblesite.Sync.CoreLogEntry entry,
+        SyncLogEntry entry,
         string mappingId,
         Func<string, MappingSyncState?> getMappingState
     )
@@ -85,7 +85,7 @@ internal static class Nimblesite.Sync.CoreTrackingManager
     /// Checks if entry should sync based on payload hash.
     /// </summary>
     private static bool ShouldSyncByHash(
-        Nimblesite.Sync.CoreLogEntry entry,
+        SyncLogEntry entry,
         string mappingId,
         Func<string, string, RecordHash?> getRecordHash
     )
@@ -162,6 +162,6 @@ internal static class Nimblesite.Sync.CoreTrackingManager
             MappingId: mappingId,
             SourcePk: sourcePk,
             PayloadHash: ComputePayloadHash(payload),
-            Nimblesite.Sync.CoreedAt: DateTime.UtcNow.ToString("O")
+            SyncedAt: DateTime.UtcNow.ToString("O")
         );
 }

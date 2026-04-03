@@ -3,7 +3,7 @@ namespace Nimblesite.Sync.Core;
 /// <summary>
 /// Represents the type of change operation tracked in the sync log.
 /// </summary>
-public enum Nimblesite.Sync.CoreOperation
+public enum SyncOperation
 {
     /// <summary>
     /// A new row was inserted.

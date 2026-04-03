@@ -9,7 +9,7 @@ namespace Nimblesite.Sync.Core;
 /// Supports: upper(col), lower(col), concat(a, b, ...), coalesce(a, b),
 /// substring(col, start, len), trim(col), length(col).
 /// </summary>
-internal static partial class Nimblesite.Lql.CoreExpressionEvaluator
+internal static partial class LqlExpressionEvaluator
 {
     /// <summary>
     /// Evaluates an LQL expression against a JSON source object.

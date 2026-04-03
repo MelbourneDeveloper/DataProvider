@@ -28,7 +28,7 @@ public sealed class EndToEndSyncTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.Core_InsertInSource_AppearsInTarget()
+    public void Sync_InsertInSource_AppearsInTarget()
     {
         // Arrange: Insert a person in source
         InsertPerson(_sourceDb, "p1", "Alice", "alice@example.com");
@@ -47,7 +47,7 @@ public sealed class EndToEndSyncTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.Core_UpdateInSource_UpdatesTarget()
+    public void Sync_UpdateInSource_UpdatesTarget()
     {
         // Arrange: Insert then update in source
         InsertPerson(_sourceDb, "p1", "Alice", "alice@example.com");
@@ -67,7 +67,7 @@ public sealed class EndToEndSyncTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.Core_DeleteInSource_DeletesFromTarget()
+    public void Sync_DeleteInSource_DeletesFromTarget()
     {
         // Arrange: Insert in both, then delete from source
         InsertPerson(_sourceDb, "p1", "Alice", "alice@example.com");
@@ -83,7 +83,7 @@ public sealed class EndToEndSyncTests : IDisposable
         // Act: Nimblesite.Sync.Core delete
         var changes2 = FetchChangesFromSource(changes1.Max(c => c.Version));
         Assert.Single(changes2);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Delete, changes2[0].Operation);
+        Assert.Equal(SyncOperation.Delete, changes2[0].Operation);
 
         ApplyChangesToTarget(changes2);
 
@@ -92,7 +92,7 @@ public sealed class EndToEndSyncTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.Core_MultipleRecords_AllSynced()
+    public void Sync_MultipleRecords_AllSynced()
     {
         // Arrange: Insert multiple records
         InsertPerson(_sourceDb, "p1", "Alice", "alice@example.com");
@@ -112,7 +112,7 @@ public sealed class EndToEndSyncTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.Core_BatchedChanges_AllApplied()
+    public void Sync_BatchedChanges_AllApplied()
     {
         // Arrange: Insert many records
         for (int i = 0; i < 50; i++)
@@ -121,7 +121,7 @@ public sealed class EndToEndSyncTests : IDisposable
         }
 
         // Act: Fetch in batches of 10
-        var allChanges = new List<Nimblesite.Sync.CoreLogEntry>();
+        var allChanges = new List<SyncLogEntry>();
         long fromVersion = 0;
         while (true)
         {
@@ -148,16 +148,16 @@ public sealed class EndToEndSyncTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.Core_TriggerSuppression_PreventsDuplicateLogging()
+    public void Sync_TriggerSuppression_PreventsDuplicateLogging()
     {
         // Arrange: Insert in source, sync to target
         InsertPerson(_sourceDb, "p1", "Alice", "alice@example.com");
         var changes = FetchChangesFromSource();
 
         // Act: Apply with suppression enabled
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_targetDb);
+        SyncSessionManager.EnableSuppression(_targetDb);
         ApplyChangesToTarget(changes, skipSuppression: true);
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_targetDb);
+        SyncSessionManager.DisableSuppression(_targetDb);
 
         // Assert: Target should NOT have logged this change (it came from sync)
         var targetChanges = FetchChanges(_targetDb, 0);
@@ -168,14 +168,14 @@ public sealed class EndToEndSyncTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.Core_SkipsOwnOriginChanges()
+    public void Sync_SkipsOwnOriginChanges()
     {
         // Arrange: Create change with target's own origin
-        var fakeEntry = new Nimblesite.Sync.CoreLogEntry(
+        var fakeEntry = new SyncLogEntry(
             1,
             "Person",
             "{\"Id\":\"p1\"}",
-            Nimblesite.Sync.CoreOperation.Insert,
+            SyncOperation.Insert,
             "{\"Id\":\"p1\",\"Name\":\"Fake\",\"Email\":\"fake@example.com\"}",
             _targetOrigin, // Same as target's origin
             DateTime.UtcNow.ToString("O")
@@ -183,7 +183,7 @@ public sealed class EndToEndSyncTests : IDisposable
 
         // Act: Try to apply - should skip because it's own origin
         var result = ChangeApplier.ApplyBatch(
-            new Nimblesite.Sync.CoreBatch([fakeEntry], 0, 1, false),
+            new SyncBatch([fakeEntry], 0, 1, false),
             _targetOrigin,
             3,
             entry => ApplySingleChange(_targetDb, entry),
@@ -198,7 +198,7 @@ public sealed class EndToEndSyncTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.Core_BiDirectional_BothDbsGetChanges()
+    public void Sync_BiDirectional_BothDbsGetChanges()
     {
         // Arrange: Insert in source
         InsertPerson(_sourceDb, "p1", "From Source", "source@example.com");
@@ -230,8 +230,8 @@ public sealed class EndToEndSyncTests : IDisposable
 
     private static void SetupSchema(SqliteConnection connection, string originId)
     {
-        Nimblesite.Sync.CoreSchema.CreateSchema(connection);
-        Nimblesite.Sync.CoreSchema.SetOriginId(connection, originId);
+        SyncSchema.CreateSchema(connection);
+        SyncSchema.SetOriginId(connection, originId);
 
         // Create Person table
         using var cmd = connection.CreateCommand();
@@ -246,7 +246,7 @@ public sealed class EndToEndSyncTests : IDisposable
 
         // Use TriggerGenerator to create sync triggers (spec Section 9)
         var triggerResult = TriggerGenerator.CreateTriggers(connection, "Person", TestLogger.L);
-        if (triggerResult is BoolSyncError { Value: Nimblesite.Sync.CoreErrorDatabase dbError })
+        if (triggerResult is BoolSyncError { Value: SyncErrorDatabase dbError })
         {
             throw new InvalidOperationException($"Failed to create triggers: {dbError.Message}");
         }
@@ -293,30 +293,30 @@ public sealed class EndToEndSyncTests : IDisposable
         return null;
     }
 
-    private List<Nimblesite.Sync.CoreLogEntry> FetchChangesFromSource(long fromVersion = 0, int batchSize = 1000)
+    private List<SyncLogEntry> FetchChangesFromSource(long fromVersion = 0, int batchSize = 1000)
     {
-        var result = Nimblesite.Sync.CoreLogRepository.FetchChanges(_sourceDb, fromVersion, batchSize);
-        Assert.IsType<Nimblesite.Sync.CoreLogListOk>(result);
-        return [.. ((Nimblesite.Sync.CoreLogListOk)result).Value];
+        var result = SyncLogRepository.FetchChanges(_sourceDb, fromVersion, batchSize);
+        Assert.IsType<SyncLogListOk>(result);
+        return [.. ((SyncLogListOk)result).Value];
     }
 
-    private static List<Nimblesite.Sync.CoreLogEntry> FetchChanges(
+    private static List<SyncLogEntry> FetchChanges(
         SqliteConnection db,
         long fromVersion,
         int batchSize = 1000
     )
     {
-        var result = Nimblesite.Sync.CoreLogRepository.FetchChanges(db, fromVersion, batchSize);
-        Assert.IsType<Nimblesite.Sync.CoreLogListOk>(result);
-        return [.. ((Nimblesite.Sync.CoreLogListOk)result).Value];
+        var result = SyncLogRepository.FetchChanges(db, fromVersion, batchSize);
+        Assert.IsType<SyncLogListOk>(result);
+        return [.. ((SyncLogListOk)result).Value];
     }
 
-    private void ApplyChangesToTarget(List<Nimblesite.Sync.CoreLogEntry> changes, bool skipSuppression = false) =>
+    private void ApplyChangesToTarget(List<SyncLogEntry> changes, bool skipSuppression = false) =>
         ApplyChanges(_targetDb, changes, _targetOrigin, skipSuppression);
 
     private static void ApplyChanges(
         SqliteConnection db,
-        List<Nimblesite.Sync.CoreLogEntry> changes,
+        List<SyncLogEntry> changes,
         string myOrigin,
         bool skipSuppression = false
     )
@@ -326,12 +326,12 @@ public sealed class EndToEndSyncTests : IDisposable
 
         if (!skipSuppression)
         {
-            Nimblesite.Sync.CoreSessionManager.EnableSuppression(db);
+            SyncSessionManager.EnableSuppression(db);
         }
 
         try
         {
-            var batch = new Nimblesite.Sync.CoreBatch(
+            var batch = new SyncBatch(
                 changes,
                 changes.Min(c => c.Version) - 1,
                 changes.Max(c => c.Version),
@@ -352,12 +352,12 @@ public sealed class EndToEndSyncTests : IDisposable
         {
             if (!skipSuppression)
             {
-                Nimblesite.Sync.CoreSessionManager.DisableSuppression(db);
+                SyncSessionManager.DisableSuppression(db);
             }
         }
     }
 
-    private static BoolSyncResult ApplySingleChange(SqliteConnection db, Nimblesite.Sync.CoreLogEntry entry)
+    private static BoolSyncResult ApplySingleChange(SqliteConnection db, SyncLogEntry entry)
     {
         try
         {
@@ -367,8 +367,8 @@ public sealed class EndToEndSyncTests : IDisposable
             {
                 switch (entry.Operation)
                 {
-                    case Nimblesite.Sync.CoreOperation.Insert:
-                    case Nimblesite.Sync.CoreOperation.Update:
+                    case SyncOperation.Insert:
+                    case SyncOperation.Update:
                         var payload = System.Text.Json.JsonSerializer.Deserialize<
                             Dictionary<string, string>
                         >(entry.Payload!);
@@ -381,7 +381,7 @@ public sealed class EndToEndSyncTests : IDisposable
                         cmd.Parameters.AddWithValue("@email", payload["Email"]);
                         break;
 
-                    case Nimblesite.Sync.CoreOperation.Delete:
+                    case SyncOperation.Delete:
                         var pk = System.Text.Json.JsonSerializer.Deserialize<
                             Dictionary<string, string>
                         >(entry.PkValue);
@@ -401,7 +401,7 @@ public sealed class EndToEndSyncTests : IDisposable
             {
                 return new BoolSyncOk(false);
             }
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase(ex.Message));
+            return new BoolSyncError(new SyncErrorDatabase(ex.Message));
         }
     }
 

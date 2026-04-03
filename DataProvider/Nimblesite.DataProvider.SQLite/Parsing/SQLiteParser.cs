@@ -266,7 +266,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 229;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & -6339801325483589630L) != 0) || ((((_la - 66)) & ~0x3f) == 0 && ((1L << (_la - 66)) & -7971300971697405919L) != 0) || ((((_la - 130)) & ~0x3f) == 0 && ((1L << (_la - 130)) & 550913L) != 0)) {
 				{
@@ -276,7 +276,7 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 231;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			State = 232;
@@ -338,7 +338,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 237;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==SCOL) {
 				{
@@ -348,20 +348,20 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 239;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			State = 240;
 			sql_stmt();
 			State = 249;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_alt = Interpreter.AdaptivePredict(TokenStream,3,Context);
 			while ( _alt!=2 && _alt!=global::Antlr4.Runtime.Atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
 					{
 					{
 					State = 242;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 					do {
 						{
@@ -371,7 +371,7 @@ internal partial class SQLiteParser : Parser {
 						}
 						}
 						State = 244;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						_la = TokenStream.LA(1);
 					} while ( _la==SCOL );
 					State = 246;
@@ -380,11 +380,11 @@ internal partial class SQLiteParser : Parser {
 					} 
 				}
 				State = 251;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_alt = Interpreter.AdaptivePredict(TokenStream,3,Context);
 			}
 			State = 255;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_alt = Interpreter.AdaptivePredict(TokenStream,4,Context);
 			while ( _alt!=2 && _alt!=global::Antlr4.Runtime.Atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
@@ -396,7 +396,7 @@ internal partial class SQLiteParser : Parser {
 					} 
 				}
 				State = 257;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_alt = Interpreter.AdaptivePredict(TokenStream,4,Context);
 			}
 			}
@@ -520,14 +520,14 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 263;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==EXPLAIN_) {
 				{
 				State = 258;
 				Match(EXPLAIN_);
 				State = 261;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==QUERY_) {
 					{
@@ -542,7 +542,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 289;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,7,Context) ) {
 			case 1:
 				{
@@ -767,7 +767,7 @@ internal partial class SQLiteParser : Parser {
 			State = 292;
 			Match(TABLE_);
 			State = 296;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,8,Context) ) {
 			case 1:
 				{
@@ -781,14 +781,14 @@ internal partial class SQLiteParser : Parser {
 			State = 298;
 			table_name();
 			State = 321;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case RENAME_:
 				{
 				State = 299;
 				Match(RENAME_);
 				State = 309;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,10,Context) ) {
 				case 1:
 					{
@@ -801,7 +801,7 @@ internal partial class SQLiteParser : Parser {
 				case 2:
 					{
 					State = 303;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					switch ( Interpreter.AdaptivePredict(TokenStream,9,Context) ) {
 					case 1:
 						{
@@ -826,7 +826,7 @@ internal partial class SQLiteParser : Parser {
 				State = 311;
 				Match(ADD_);
 				State = 313;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,11,Context) ) {
 				case 1:
 					{
@@ -844,7 +844,7 @@ internal partial class SQLiteParser : Parser {
 				State = 316;
 				Match(DROP_);
 				State = 318;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,12,Context) ) {
 				case 1:
 					{
@@ -915,7 +915,7 @@ internal partial class SQLiteParser : Parser {
 			State = 323;
 			Match(ANALYZE_);
 			State = 331;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,15,Context) ) {
 			case 1:
 				{
@@ -926,7 +926,7 @@ internal partial class SQLiteParser : Parser {
 			case 2:
 				{
 				State = 328;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,14,Context) ) {
 				case 1:
 					{
@@ -998,7 +998,7 @@ internal partial class SQLiteParser : Parser {
 			State = 333;
 			Match(ATTACH_);
 			State = 335;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,16,Context) ) {
 			case 1:
 				{
@@ -1069,7 +1069,7 @@ internal partial class SQLiteParser : Parser {
 			State = 341;
 			Match(BEGIN_);
 			State = 343;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (((((_la - 58)) & ~0x3f) == 0 && ((1L << (_la - 58)) & 16779265L) != 0)) {
 				{
@@ -1086,14 +1086,14 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 349;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==TRANSACTION_) {
 				{
 				State = 345;
 				Match(TRANSACTION_);
 				State = 347;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,18,Context) ) {
 				case 1:
 					{
@@ -1163,7 +1163,7 @@ internal partial class SQLiteParser : Parser {
 			    Consume();
 			}
 			State = 353;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==TRANSACTION_) {
 				{
@@ -1227,7 +1227,7 @@ internal partial class SQLiteParser : Parser {
 			State = 355;
 			Match(ROLLBACK_);
 			State = 357;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==TRANSACTION_) {
 				{
@@ -1237,14 +1237,14 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 364;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==TO_) {
 				{
 				State = 359;
 				Match(TO_);
 				State = 361;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,22,Context) ) {
 				case 1:
 					{
@@ -1362,7 +1362,7 @@ internal partial class SQLiteParser : Parser {
 			State = 369;
 			Match(RELEASE_);
 			State = 371;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,24,Context) ) {
 			case 1:
 				{
@@ -1454,7 +1454,7 @@ internal partial class SQLiteParser : Parser {
 			State = 375;
 			Match(CREATE_);
 			State = 377;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==UNIQUE_) {
 				{
@@ -1466,7 +1466,7 @@ internal partial class SQLiteParser : Parser {
 			State = 379;
 			Match(INDEX_);
 			State = 383;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,26,Context) ) {
 			case 1:
 				{
@@ -1480,7 +1480,7 @@ internal partial class SQLiteParser : Parser {
 				break;
 			}
 			State = 388;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,27,Context) ) {
 			case 1:
 				{
@@ -1502,7 +1502,7 @@ internal partial class SQLiteParser : Parser {
 			State = 394;
 			indexed_column();
 			State = 399;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==COMMA) {
 				{
@@ -1514,13 +1514,13 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 401;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			State = 402;
 			Match(CLOSE_PAR);
 			State = 405;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==WHERE_) {
 				{
@@ -1590,7 +1590,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 409;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,30,Context) ) {
 			case 1:
 				{
@@ -1606,7 +1606,7 @@ internal partial class SQLiteParser : Parser {
 				break;
 			}
 			State = 413;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==COLLATE_) {
 				{
@@ -1618,7 +1618,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 416;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==ASC_ || _la==DESC_) {
 				{
@@ -1715,7 +1715,7 @@ internal partial class SQLiteParser : Parser {
 			State = 418;
 			Match(CREATE_);
 			State = 420;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==TEMP_ || _la==TEMPORARY_) {
 				{
@@ -1734,7 +1734,7 @@ internal partial class SQLiteParser : Parser {
 			State = 422;
 			Match(TABLE_);
 			State = 426;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,34,Context) ) {
 			case 1:
 				{
@@ -1748,7 +1748,7 @@ internal partial class SQLiteParser : Parser {
 				break;
 			}
 			State = 431;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,35,Context) ) {
 			case 1:
 				{
@@ -1762,7 +1762,7 @@ internal partial class SQLiteParser : Parser {
 			State = 433;
 			table_name();
 			State = 457;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case OPEN_PAR:
 				{
@@ -1771,7 +1771,7 @@ internal partial class SQLiteParser : Parser {
 				State = 435;
 				column_def();
 				State = 440;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_alt = Interpreter.AdaptivePredict(TokenStream,36,Context);
 				while ( _alt!=1 && _alt!=global::Antlr4.Runtime.Atn.ATN.INVALID_ALT_NUMBER ) {
 					if ( _alt==1+1 ) {
@@ -1785,11 +1785,11 @@ internal partial class SQLiteParser : Parser {
 						} 
 					}
 					State = 442;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_alt = Interpreter.AdaptivePredict(TokenStream,36,Context);
 				}
 				State = 447;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -1801,13 +1801,13 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 449;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				State = 450;
 				Match(CLOSE_PAR);
 				State = 453;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==WITHOUT_) {
 					{
@@ -1891,7 +1891,7 @@ internal partial class SQLiteParser : Parser {
 			State = 459;
 			column_name();
 			State = 461;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,40,Context) ) {
 			case 1:
 				{
@@ -1901,7 +1901,7 @@ internal partial class SQLiteParser : Parser {
 				break;
 			}
 			State = 466;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 72673329139417088L) != 0) || ((((_la - 102)) & ~0x3f) == 0 && ((1L << (_la - 102)) & 274877941765L) != 0) || _la==GENERATED_) {
 				{
@@ -1911,7 +1911,7 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 468;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			}
@@ -1975,7 +1975,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 470;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_alt = 1+1;
 			do {
 				switch (_alt) {
@@ -1991,11 +1991,11 @@ internal partial class SQLiteParser : Parser {
 					throw new NoViableAltException(this);
 				}
 				State = 472;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_alt = Interpreter.AdaptivePredict(TokenStream,42,Context);
 			} while ( _alt!=1 && _alt!=global::Antlr4.Runtime.Atn.ATN.INVALID_ALT_NUMBER );
 			State = 484;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,43,Context) ) {
 			case 1:
 				{
@@ -2109,7 +2109,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 488;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==CONSTRAINT_) {
 				{
@@ -2121,7 +2121,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 539;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case PRIMARY_:
 				{
@@ -2131,7 +2131,7 @@ internal partial class SQLiteParser : Parser {
 				State = 491;
 				Match(KEY_);
 				State = 493;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==ASC_ || _la==DESC_) {
 					{
@@ -2141,7 +2141,7 @@ internal partial class SQLiteParser : Parser {
 				}
 
 				State = 496;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==ON_) {
 					{
@@ -2151,7 +2151,7 @@ internal partial class SQLiteParser : Parser {
 				}
 
 				State = 499;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==AUTOINCREMENT_) {
 					{
@@ -2168,13 +2168,13 @@ internal partial class SQLiteParser : Parser {
 			case UNIQUE_:
 				{
 				State = 506;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch (TokenStream.LA(1)) {
 				case NOT_:
 				case NULL_:
 					{
 					State = 502;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 					if (_la==NOT_) {
 						{
@@ -2197,7 +2197,7 @@ internal partial class SQLiteParser : Parser {
 					throw new NoViableAltException(this);
 				}
 				State = 509;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==ON_) {
 					{
@@ -2225,7 +2225,7 @@ internal partial class SQLiteParser : Parser {
 				State = 516;
 				Match(DEFAULT_);
 				State = 523;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,51,Context) ) {
 				case 1:
 					{
@@ -2270,7 +2270,7 @@ internal partial class SQLiteParser : Parser {
 			case GENERATED_:
 				{
 				State = 530;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==GENERATED_) {
 					{
@@ -2290,7 +2290,7 @@ internal partial class SQLiteParser : Parser {
 				State = 535;
 				Match(CLOSE_PAR);
 				State = 537;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==VIRTUAL_ || _la==STORED_) {
 					{
@@ -2360,7 +2360,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 542;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==PLUS || _la==MINUS) {
 				{
@@ -2460,7 +2460,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 548;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==CONSTRAINT_) {
 				{
@@ -2472,13 +2472,13 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 587;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case PRIMARY_:
 			case UNIQUE_:
 				{
 				State = 553;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch (TokenStream.LA(1)) {
 				case PRIMARY_:
 					{
@@ -2502,7 +2502,7 @@ internal partial class SQLiteParser : Parser {
 				State = 556;
 				indexed_column();
 				State = 561;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -2514,13 +2514,13 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 563;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				State = 564;
 				Match(CLOSE_PAR);
 				State = 566;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==ON_) {
 					{
@@ -2554,7 +2554,7 @@ internal partial class SQLiteParser : Parser {
 				State = 576;
 				column_name();
 				State = 581;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -2566,7 +2566,7 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 583;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				State = 584;
@@ -2699,7 +2699,7 @@ internal partial class SQLiteParser : Parser {
 			State = 590;
 			foreign_table();
 			State = 602;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==OPEN_PAR) {
 				{
@@ -2708,7 +2708,7 @@ internal partial class SQLiteParser : Parser {
 				State = 592;
 				column_name();
 				State = 597;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -2720,7 +2720,7 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 599;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				State = 600;
@@ -2729,12 +2729,12 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 618;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==MATCH_ || _la==ON_) {
 				{
 				State = 616;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch (TokenStream.LA(1)) {
 				case ON_:
 					{
@@ -2750,7 +2750,7 @@ internal partial class SQLiteParser : Parser {
 					    Consume();
 					}
 					State = 612;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					switch (TokenStream.LA(1)) {
 					case SET_:
 						{
@@ -2805,16 +2805,16 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 620;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			State = 629;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,69,Context) ) {
 			case 1:
 				{
 				State = 622;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==NOT_) {
 					{
@@ -2826,7 +2826,7 @@ internal partial class SQLiteParser : Parser {
 				State = 624;
 				Match(DEFERRABLE_);
 				State = 627;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==INITIALLY_) {
 					{
@@ -3035,7 +3035,7 @@ internal partial class SQLiteParser : Parser {
 			State = 635;
 			Match(CREATE_);
 			State = 637;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==TEMP_ || _la==TEMPORARY_) {
 				{
@@ -3054,7 +3054,7 @@ internal partial class SQLiteParser : Parser {
 			State = 639;
 			Match(TRIGGER_);
 			State = 643;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,71,Context) ) {
 			case 1:
 				{
@@ -3068,7 +3068,7 @@ internal partial class SQLiteParser : Parser {
 				break;
 			}
 			State = 648;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,72,Context) ) {
 			case 1:
 				{
@@ -3082,7 +3082,7 @@ internal partial class SQLiteParser : Parser {
 			State = 650;
 			trigger_name();
 			State = 655;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case BEFORE_:
 				{
@@ -3112,7 +3112,7 @@ internal partial class SQLiteParser : Parser {
 				break;
 			}
 			State = 671;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case DELETE_:
 				{
@@ -3131,7 +3131,7 @@ internal partial class SQLiteParser : Parser {
 				State = 659;
 				Match(UPDATE_);
 				State = 669;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==OF_) {
 					{
@@ -3140,7 +3140,7 @@ internal partial class SQLiteParser : Parser {
 					State = 661;
 					column_name();
 					State = 666;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 					while (_la==COMMA) {
 						{
@@ -3152,7 +3152,7 @@ internal partial class SQLiteParser : Parser {
 						}
 						}
 						State = 668;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						_la = TokenStream.LA(1);
 					}
 					}
@@ -3168,7 +3168,7 @@ internal partial class SQLiteParser : Parser {
 			State = 674;
 			table_name();
 			State = 678;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==FOR_) {
 				{
@@ -3182,7 +3182,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 682;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==WHEN_) {
 				{
@@ -3196,13 +3196,13 @@ internal partial class SQLiteParser : Parser {
 			State = 684;
 			Match(BEGIN_);
 			State = 693;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			do {
 				{
 				{
 				State = 689;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,79,Context) ) {
 				case 1:
 					{
@@ -3234,7 +3234,7 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 695;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			} while ( _la==DELETE_ || ((((_la - 88)) & ~0x3f) == 0 && ((1L << (_la - 88)) & 2386912217732743169L) != 0) );
 			State = 697;
@@ -3317,7 +3317,7 @@ internal partial class SQLiteParser : Parser {
 			State = 699;
 			Match(CREATE_);
 			State = 701;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==TEMP_ || _la==TEMPORARY_) {
 				{
@@ -3336,7 +3336,7 @@ internal partial class SQLiteParser : Parser {
 			State = 703;
 			Match(VIEW_);
 			State = 707;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,82,Context) ) {
 			case 1:
 				{
@@ -3350,7 +3350,7 @@ internal partial class SQLiteParser : Parser {
 				break;
 			}
 			State = 712;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,83,Context) ) {
 			case 1:
 				{
@@ -3364,7 +3364,7 @@ internal partial class SQLiteParser : Parser {
 			State = 714;
 			view_name();
 			State = 726;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==OPEN_PAR) {
 				{
@@ -3373,7 +3373,7 @@ internal partial class SQLiteParser : Parser {
 				State = 716;
 				column_name();
 				State = 721;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -3385,7 +3385,7 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 723;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				State = 724;
@@ -3478,7 +3478,7 @@ internal partial class SQLiteParser : Parser {
 			State = 733;
 			Match(TABLE_);
 			State = 737;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,86,Context) ) {
 			case 1:
 				{
@@ -3492,7 +3492,7 @@ internal partial class SQLiteParser : Parser {
 				break;
 			}
 			State = 742;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,87,Context) ) {
 			case 1:
 				{
@@ -3510,7 +3510,7 @@ internal partial class SQLiteParser : Parser {
 			State = 746;
 			module_name();
 			State = 758;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==OPEN_PAR) {
 				{
@@ -3519,7 +3519,7 @@ internal partial class SQLiteParser : Parser {
 				State = 748;
 				module_argument();
 				State = 753;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -3531,7 +3531,7 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 755;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				State = 756;
@@ -3617,7 +3617,7 @@ internal partial class SQLiteParser : Parser {
 			State = 760;
 			Match(WITH_);
 			State = 762;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,90,Context) ) {
 			case 1:
 				{
@@ -3637,7 +3637,7 @@ internal partial class SQLiteParser : Parser {
 			State = 768;
 			Match(CLOSE_PAR);
 			State = 778;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==COMMA) {
 				{
@@ -3657,7 +3657,7 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 780;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			}
@@ -3723,7 +3723,7 @@ internal partial class SQLiteParser : Parser {
 			State = 781;
 			table_name();
 			State = 793;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==OPEN_PAR) {
 				{
@@ -3732,7 +3732,7 @@ internal partial class SQLiteParser : Parser {
 				State = 783;
 				column_name();
 				State = 788;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -3744,7 +3744,7 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 790;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				State = 791;
@@ -3822,7 +3822,7 @@ internal partial class SQLiteParser : Parser {
 			State = 799;
 			Match(UNION_);
 			State = 801;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==ALL_) {
 				{
@@ -3908,7 +3908,7 @@ internal partial class SQLiteParser : Parser {
 			State = 806;
 			table_name();
 			State = 818;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==OPEN_PAR) {
 				{
@@ -3917,7 +3917,7 @@ internal partial class SQLiteParser : Parser {
 				State = 808;
 				column_name();
 				State = 813;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -3929,7 +3929,7 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 815;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				State = 816;
@@ -4006,7 +4006,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 826;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==WITH_) {
 				{
@@ -4022,7 +4022,7 @@ internal partial class SQLiteParser : Parser {
 			State = 830;
 			qualified_table_name();
 			State = 833;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==WHERE_) {
 				{
@@ -4034,7 +4034,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 836;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==RETURNING_) {
 				{
@@ -4110,7 +4110,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 839;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==WITH_) {
 				{
@@ -4126,7 +4126,7 @@ internal partial class SQLiteParser : Parser {
 			State = 843;
 			qualified_table_name();
 			State = 846;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==WHERE_) {
 				{
@@ -4138,7 +4138,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 849;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==RETURNING_) {
 				{
@@ -4148,12 +4148,12 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 855;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==LIMIT_ || _la==ORDER_) {
 				{
 				State = 852;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==ORDER_) {
 					{
@@ -4219,7 +4219,7 @@ internal partial class SQLiteParser : Parser {
 			State = 857;
 			Match(DETACH_);
 			State = 859;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,105,Context) ) {
 			case 1:
 				{
@@ -4303,7 +4303,7 @@ internal partial class SQLiteParser : Parser {
 			    Consume();
 			}
 			State = 867;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,106,Context) ) {
 			case 1:
 				{
@@ -4315,7 +4315,7 @@ internal partial class SQLiteParser : Parser {
 				break;
 			}
 			State = 872;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,107,Context) ) {
 			case 1:
 				{
@@ -4488,7 +4488,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 964;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,121,Context) ) {
 			case 1:
 				{
@@ -4505,12 +4505,12 @@ internal partial class SQLiteParser : Parser {
 			case 3:
 				{
 				State = 887;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,109,Context) ) {
 				case 1:
 					{
 					State = 882;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					switch ( Interpreter.AdaptivePredict(TokenStream,108,Context) ) {
 					case 1:
 						{
@@ -4547,7 +4547,7 @@ internal partial class SQLiteParser : Parser {
 				State = 894;
 				Match(OPEN_PAR);
 				State = 907;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch (TokenStream.LA(1)) {
 				case OPEN_PAR:
 				case PLUS:
@@ -4716,7 +4716,7 @@ internal partial class SQLiteParser : Parser {
 					{
 					{
 					State = 896;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					switch ( Interpreter.AdaptivePredict(TokenStream,110,Context) ) {
 					case 1:
 						{
@@ -4728,7 +4728,7 @@ internal partial class SQLiteParser : Parser {
 					State = 898;
 					expr(0);
 					State = 903;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 					while (_la==COMMA) {
 						{
@@ -4740,7 +4740,7 @@ internal partial class SQLiteParser : Parser {
 						}
 						}
 						State = 905;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						_la = TokenStream.LA(1);
 					}
 					}
@@ -4760,7 +4760,7 @@ internal partial class SQLiteParser : Parser {
 				State = 909;
 				Match(CLOSE_PAR);
 				State = 911;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,113,Context) ) {
 				case 1:
 					{
@@ -4770,7 +4770,7 @@ internal partial class SQLiteParser : Parser {
 					break;
 				}
 				State = 914;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,114,Context) ) {
 				case 1:
 					{
@@ -4788,7 +4788,7 @@ internal partial class SQLiteParser : Parser {
 				State = 917;
 				expr(0);
 				State = 922;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -4800,7 +4800,7 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 924;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				State = 925;
@@ -4826,12 +4826,12 @@ internal partial class SQLiteParser : Parser {
 			case 8:
 				{
 				State = 938;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==EXISTS_ || _la==NOT_) {
 					{
 					State = 935;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 					if (_la==NOT_) {
 						{
@@ -4858,7 +4858,7 @@ internal partial class SQLiteParser : Parser {
 				State = 944;
 				Match(CASE_);
 				State = 946;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,118,Context) ) {
 				case 1:
 					{
@@ -4868,7 +4868,7 @@ internal partial class SQLiteParser : Parser {
 					break;
 				}
 				State = 953;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				do {
 					{
@@ -4884,11 +4884,11 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 955;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				} while ( _la==WHEN_ );
 				State = 959;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==ELSE_) {
 					{
@@ -4912,7 +4912,7 @@ internal partial class SQLiteParser : Parser {
 			}
 			Context.Stop = TokenStream.LT(-1);
 			State = 1091;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_alt = Interpreter.AdaptivePredict(TokenStream,138,Context);
 			while ( _alt!=2 && _alt!=global::Antlr4.Runtime.Atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
@@ -4921,7 +4921,7 @@ internal partial class SQLiteParser : Parser {
 					_prevctx = _localctx;
 					{
 					State = 1089;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					switch ( Interpreter.AdaptivePredict(TokenStream,137,Context) ) {
 					case 1:
 						{
@@ -5018,7 +5018,7 @@ internal partial class SQLiteParser : Parser {
 						State = 981;
 						if (!(Precpred(Context, 15))) throw new FailedPredicateException(this, "Precpred(Context, 15)");
 						State = 1000;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						switch ( Interpreter.AdaptivePredict(TokenStream,123,Context) ) {
 						case 1:
 							{
@@ -5063,7 +5063,7 @@ internal partial class SQLiteParser : Parser {
 							State = 989;
 							Match(IS_);
 							State = 991;
-							ErrorHandler.Nimblesite.Sync.Core(this);
+							ErrorHandler.Sync(this);
 							_la = TokenStream.LA(1);
 							if (_la==NOT_) {
 								{
@@ -5146,7 +5146,7 @@ internal partial class SQLiteParser : Parser {
 						State = 1010;
 						Match(IS_);
 						State = 1012;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						switch ( Interpreter.AdaptivePredict(TokenStream,124,Context) ) {
 						case 1:
 							{
@@ -5166,7 +5166,7 @@ internal partial class SQLiteParser : Parser {
 						State = 1015;
 						if (!(Precpred(Context, 5))) throw new FailedPredicateException(this, "Precpred(Context, 5)");
 						State = 1017;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						_la = TokenStream.LA(1);
 						if (_la==NOT_) {
 							{
@@ -5204,7 +5204,7 @@ internal partial class SQLiteParser : Parser {
 						State = 1027;
 						if (!(Precpred(Context, 8))) throw new FailedPredicateException(this, "Precpred(Context, 8)");
 						State = 1029;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						_la = TokenStream.LA(1);
 						if (_la==NOT_) {
 							{
@@ -5225,7 +5225,7 @@ internal partial class SQLiteParser : Parser {
 						State = 1032;
 						expr(0);
 						State = 1035;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						switch ( Interpreter.AdaptivePredict(TokenStream,127,Context) ) {
 						case 1:
 							{
@@ -5245,7 +5245,7 @@ internal partial class SQLiteParser : Parser {
 						State = 1037;
 						if (!(Precpred(Context, 7))) throw new FailedPredicateException(this, "Precpred(Context, 7)");
 						State = 1042;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						switch (TokenStream.LA(1)) {
 						case ISNULL_:
 							{
@@ -5279,7 +5279,7 @@ internal partial class SQLiteParser : Parser {
 						State = 1044;
 						if (!(Precpred(Context, 4))) throw new FailedPredicateException(this, "Precpred(Context, 4)");
 						State = 1046;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						_la = TokenStream.LA(1);
 						if (_la==NOT_) {
 							{
@@ -5291,14 +5291,14 @@ internal partial class SQLiteParser : Parser {
 						State = 1048;
 						Match(IN_);
 						State = 1087;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						switch ( Interpreter.AdaptivePredict(TokenStream,136,Context) ) {
 						case 1:
 							{
 							State = 1049;
 							Match(OPEN_PAR);
 							State = 1059;
-							ErrorHandler.Nimblesite.Sync.Core(this);
+							ErrorHandler.Sync(this);
 							switch ( Interpreter.AdaptivePredict(TokenStream,131,Context) ) {
 							case 1:
 								{
@@ -5311,7 +5311,7 @@ internal partial class SQLiteParser : Parser {
 								State = 1051;
 								expr(0);
 								State = 1056;
-								ErrorHandler.Nimblesite.Sync.Core(this);
+								ErrorHandler.Sync(this);
 								_la = TokenStream.LA(1);
 								while (_la==COMMA) {
 									{
@@ -5323,7 +5323,7 @@ internal partial class SQLiteParser : Parser {
 									}
 									}
 									State = 1058;
-									ErrorHandler.Nimblesite.Sync.Core(this);
+									ErrorHandler.Sync(this);
 									_la = TokenStream.LA(1);
 								}
 								}
@@ -5336,7 +5336,7 @@ internal partial class SQLiteParser : Parser {
 						case 2:
 							{
 							State = 1065;
-							ErrorHandler.Nimblesite.Sync.Core(this);
+							ErrorHandler.Sync(this);
 							switch ( Interpreter.AdaptivePredict(TokenStream,132,Context) ) {
 							case 1:
 								{
@@ -5354,7 +5354,7 @@ internal partial class SQLiteParser : Parser {
 						case 3:
 							{
 							State = 1071;
-							ErrorHandler.Nimblesite.Sync.Core(this);
+							ErrorHandler.Sync(this);
 							switch ( Interpreter.AdaptivePredict(TokenStream,133,Context) ) {
 							case 1:
 								{
@@ -5370,14 +5370,14 @@ internal partial class SQLiteParser : Parser {
 							State = 1074;
 							Match(OPEN_PAR);
 							State = 1083;
-							ErrorHandler.Nimblesite.Sync.Core(this);
+							ErrorHandler.Sync(this);
 							_la = TokenStream.LA(1);
 							if ((((_la) & ~0x3f) == 0 && ((1L << _la) & -33552632L) != 0) || ((((_la - 64)) & ~0x3f) == 0 && ((1L << (_la - 64)) & -1152921504606846977L) != 0) || ((((_la - 128)) & ~0x3f) == 0 && ((1L << (_la - 128)) & 4476578029606273023L) != 0)) {
 								{
 								State = 1075;
 								expr(0);
 								State = 1080;
-								ErrorHandler.Nimblesite.Sync.Core(this);
+								ErrorHandler.Sync(this);
 								_la = TokenStream.LA(1);
 								while (_la==COMMA) {
 									{
@@ -5389,7 +5389,7 @@ internal partial class SQLiteParser : Parser {
 									}
 									}
 									State = 1082;
-									ErrorHandler.Nimblesite.Sync.Core(this);
+									ErrorHandler.Sync(this);
 									_la = TokenStream.LA(1);
 								}
 								}
@@ -5406,7 +5406,7 @@ internal partial class SQLiteParser : Parser {
 					} 
 				}
 				State = 1093;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_alt = Interpreter.AdaptivePredict(TokenStream,138,Context);
 			}
 			}
@@ -5470,7 +5470,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1095;
 			Match(OPEN_PAR);
 			State = 1100;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case IGNORE_:
 				{
@@ -5627,7 +5627,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1107;
 			expr(0);
 			State = 1112;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==COMMA) {
 				{
@@ -5639,7 +5639,7 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 1114;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			State = 1115;
@@ -5705,7 +5705,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1118;
 			value_row();
 			State = 1123;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==COMMA) {
 				{
@@ -5717,7 +5717,7 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 1125;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			}
@@ -5814,7 +5814,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 1127;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==WITH_) {
 				{
@@ -5824,7 +5824,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 1134;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,143,Context) ) {
 			case 1:
 				{
@@ -5859,7 +5859,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1136;
 			Match(INTO_);
 			State = 1140;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,144,Context) ) {
 			case 1:
 				{
@@ -5873,7 +5873,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1142;
 			table_name();
 			State = 1145;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==AS_) {
 				{
@@ -5885,7 +5885,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 1158;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==OPEN_PAR) {
 				{
@@ -5894,7 +5894,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1148;
 				column_name();
 				State = 1153;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -5906,7 +5906,7 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 1155;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				State = 1156;
@@ -5915,7 +5915,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 1169;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case SELECT_:
 			case VALUES_:
@@ -5923,7 +5923,7 @@ internal partial class SQLiteParser : Parser {
 				{
 				{
 				State = 1162;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,148,Context) ) {
 				case 1:
 					{
@@ -5939,7 +5939,7 @@ internal partial class SQLiteParser : Parser {
 					break;
 				}
 				State = 1165;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==ON_) {
 					{
@@ -5963,7 +5963,7 @@ internal partial class SQLiteParser : Parser {
 				throw new NoViableAltException(this);
 			}
 			State = 1172;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==RETURNING_) {
 				{
@@ -6033,7 +6033,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1175;
 			result_column();
 			State = 1180;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==COMMA) {
 				{
@@ -6045,7 +6045,7 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 1182;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			}
@@ -6142,7 +6142,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1184;
 			Match(CONFLICT_);
 			State = 1199;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==OPEN_PAR) {
 				{
@@ -6151,7 +6151,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1186;
 				indexed_column();
 				State = 1191;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -6163,13 +6163,13 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 1193;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				State = 1194;
 				Match(CLOSE_PAR);
 				State = 1197;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==WHERE_) {
 					{
@@ -6186,7 +6186,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1201;
 			Match(DO_);
 			State = 1228;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case NOTHING_:
 				{
@@ -6202,7 +6202,7 @@ internal partial class SQLiteParser : Parser {
 				Match(SET_);
 				{
 				State = 1207;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,156,Context) ) {
 				case 1:
 					{
@@ -6222,7 +6222,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1210;
 				expr(0);
 				State = 1221;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -6230,7 +6230,7 @@ internal partial class SQLiteParser : Parser {
 					State = 1211;
 					Match(COMMA);
 					State = 1214;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					switch ( Interpreter.AdaptivePredict(TokenStream,157,Context) ) {
 					case 1:
 						{
@@ -6252,11 +6252,11 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 1223;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				State = 1226;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==WHERE_) {
 					{
@@ -6334,7 +6334,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1230;
 			Match(PRAGMA_);
 			State = 1234;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,161,Context) ) {
 			case 1:
 				{
@@ -6348,7 +6348,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1236;
 			pragma_name();
 			State = 1243;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case ASSIGN:
 				{
@@ -6447,7 +6447,7 @@ internal partial class SQLiteParser : Parser {
 		EnterRule(_localctx, 82, RULE_pragma_value);
 		try {
 			State = 1248;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,163,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
@@ -6531,7 +6531,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1250;
 			Match(REINDEX_);
 			State = 1261;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,166,Context) ) {
 			case 1:
 				{
@@ -6542,7 +6542,7 @@ internal partial class SQLiteParser : Parser {
 			case 2:
 				{
 				State = 1255;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,164,Context) ) {
 				case 1:
 					{
@@ -6554,7 +6554,7 @@ internal partial class SQLiteParser : Parser {
 					break;
 				}
 				State = 1259;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,165,Context) ) {
 				case 1:
 					{
@@ -6640,7 +6640,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 1264;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==WITH_) {
 				{
@@ -6652,7 +6652,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1266;
 			select_core();
 			State = 1272;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_alt = Interpreter.AdaptivePredict(TokenStream,168,Context);
 			while ( _alt!=2 && _alt!=global::Antlr4.Runtime.Atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
@@ -6666,11 +6666,11 @@ internal partial class SQLiteParser : Parser {
 					} 
 				}
 				State = 1274;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_alt = Interpreter.AdaptivePredict(TokenStream,168,Context);
 			}
 			State = 1276;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==ORDER_) {
 				{
@@ -6680,7 +6680,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 1279;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==LIMIT_) {
 				{
@@ -6755,7 +6755,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1281;
 			table_or_subquery();
 			State = 1289;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==COMMA || _la==CROSS_ || ((((_la - 76)) & ~0x3f) == 0 && ((1L << (_la - 76)) & 562949971511297L) != 0)) {
 				{
@@ -6765,7 +6765,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1283;
 				table_or_subquery();
 				State = 1285;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,171,Context) ) {
 				case 1:
 					{
@@ -6777,7 +6777,7 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 1291;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			}
@@ -6881,7 +6881,7 @@ internal partial class SQLiteParser : Parser {
 		int _la;
 		try {
 			State = 1355;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case SELECT_:
 				EnterOuterAlt(_localctx, 1);
@@ -6890,7 +6890,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1292;
 				Match(SELECT_);
 				State = 1294;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,173,Context) ) {
 				case 1:
 					{
@@ -6909,7 +6909,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1296;
 				result_column();
 				State = 1301;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -6921,25 +6921,25 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 1303;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				State = 1316;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==FROM_) {
 					{
 					State = 1304;
 					Match(FROM_);
 					State = 1314;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					switch ( Interpreter.AdaptivePredict(TokenStream,176,Context) ) {
 					case 1:
 						{
 						State = 1305;
 						table_or_subquery();
 						State = 1310;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						_la = TokenStream.LA(1);
 						while (_la==COMMA) {
 							{
@@ -6951,7 +6951,7 @@ internal partial class SQLiteParser : Parser {
 							}
 							}
 							State = 1312;
-							ErrorHandler.Nimblesite.Sync.Core(this);
+							ErrorHandler.Sync(this);
 							_la = TokenStream.LA(1);
 						}
 						}
@@ -6967,7 +6967,7 @@ internal partial class SQLiteParser : Parser {
 				}
 
 				State = 1320;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==WHERE_) {
 					{
@@ -6979,7 +6979,7 @@ internal partial class SQLiteParser : Parser {
 				}
 
 				State = 1336;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==GROUP_) {
 					{
@@ -6991,7 +6991,7 @@ internal partial class SQLiteParser : Parser {
 					_localctx._expr = expr(0);
 					_localctx._groupByExpr.Add(_localctx._expr);
 					State = 1329;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 					while (_la==COMMA) {
 						{
@@ -7004,11 +7004,11 @@ internal partial class SQLiteParser : Parser {
 						}
 						}
 						State = 1331;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						_la = TokenStream.LA(1);
 					}
 					State = 1334;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 					if (_la==HAVING_) {
 						{
@@ -7023,7 +7023,7 @@ internal partial class SQLiteParser : Parser {
 				}
 
 				State = 1352;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==WINDOW_) {
 					{
@@ -7036,7 +7036,7 @@ internal partial class SQLiteParser : Parser {
 					State = 1341;
 					window_defn();
 					State = 1349;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 					while (_la==COMMA) {
 						{
@@ -7052,7 +7052,7 @@ internal partial class SQLiteParser : Parser {
 						}
 						}
 						State = 1351;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						_la = TokenStream.LA(1);
 					}
 					}
@@ -7177,7 +7177,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 1360;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==WITH_) {
 				{
@@ -7189,7 +7189,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1362;
 			select_core();
 			State = 1364;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==ORDER_) {
 				{
@@ -7199,7 +7199,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 1367;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==LIMIT_) {
 				{
@@ -7285,7 +7285,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 1370;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==WITH_) {
 				{
@@ -7297,20 +7297,20 @@ internal partial class SQLiteParser : Parser {
 			State = 1372;
 			select_core();
 			State = 1382;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			do {
 				{
 				{
 				State = 1379;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch (TokenStream.LA(1)) {
 				case UNION_:
 					{
 					State = 1373;
 					Match(UNION_);
 					State = 1375;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 					if (_la==ALL_) {
 						{
@@ -7341,11 +7341,11 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 1384;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			} while ( _la==EXCEPT_ || _la==INTERSECT_ || _la==UNION_ );
 			State = 1387;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==ORDER_) {
 				{
@@ -7355,7 +7355,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 1390;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==LIMIT_) {
 				{
@@ -7452,14 +7452,14 @@ internal partial class SQLiteParser : Parser {
 		int _la;
 		try {
 			State = 1456;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,206,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
 				{
 				{
 				State = 1395;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,194,Context) ) {
 				case 1:
 					{
@@ -7473,12 +7473,12 @@ internal partial class SQLiteParser : Parser {
 				State = 1397;
 				table_name();
 				State = 1402;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,196,Context) ) {
 				case 1:
 					{
 					State = 1399;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					switch ( Interpreter.AdaptivePredict(TokenStream,195,Context) ) {
 					case 1:
 						{
@@ -7493,7 +7493,7 @@ internal partial class SQLiteParser : Parser {
 					break;
 				}
 				State = 1409;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch (TokenStream.LA(1)) {
 				case INDEXED_:
 					{
@@ -7569,7 +7569,7 @@ internal partial class SQLiteParser : Parser {
 				EnterOuterAlt(_localctx, 2);
 				{
 				State = 1414;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,198,Context) ) {
 				case 1:
 					{
@@ -7587,7 +7587,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1418;
 				expr(0);
 				State = 1423;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -7599,18 +7599,18 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 1425;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				State = 1426;
 				Match(CLOSE_PAR);
 				State = 1431;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,201,Context) ) {
 				case 1:
 					{
 					State = 1428;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					switch ( Interpreter.AdaptivePredict(TokenStream,200,Context) ) {
 					case 1:
 						{
@@ -7632,14 +7632,14 @@ internal partial class SQLiteParser : Parser {
 				State = 1433;
 				Match(OPEN_PAR);
 				State = 1443;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,203,Context) ) {
 				case 1:
 					{
 					State = 1434;
 					table_or_subquery();
 					State = 1439;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 					while (_la==COMMA) {
 						{
@@ -7651,7 +7651,7 @@ internal partial class SQLiteParser : Parser {
 						}
 						}
 						State = 1441;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						_la = TokenStream.LA(1);
 					}
 					}
@@ -7677,12 +7677,12 @@ internal partial class SQLiteParser : Parser {
 				State = 1449;
 				Match(CLOSE_PAR);
 				State = 1454;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,205,Context) ) {
 				case 1:
 					{
 					State = 1451;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					switch ( Interpreter.AdaptivePredict(TokenStream,204,Context) ) {
 					case 1:
 						{
@@ -7754,7 +7754,7 @@ internal partial class SQLiteParser : Parser {
 		int _la;
 		try {
 			State = 1470;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,209,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
@@ -7780,12 +7780,12 @@ internal partial class SQLiteParser : Parser {
 				State = 1463;
 				expr(0);
 				State = 1468;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==AS_ || _la==IDENTIFIER || _la==STRING_LITERAL) {
 					{
 					State = 1465;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 					if (_la==AS_) {
 						{
@@ -7854,7 +7854,7 @@ internal partial class SQLiteParser : Parser {
 		int _la;
 		try {
 			State = 1485;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case COMMA:
 				EnterOuterAlt(_localctx, 1);
@@ -7873,7 +7873,7 @@ internal partial class SQLiteParser : Parser {
 				EnterOuterAlt(_localctx, 2);
 				{
 				State = 1474;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==NATURAL_) {
 					{
@@ -7883,7 +7883,7 @@ internal partial class SQLiteParser : Parser {
 				}
 
 				State = 1482;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch (TokenStream.LA(1)) {
 				case FULL_:
 				case LEFT_:
@@ -7899,7 +7899,7 @@ internal partial class SQLiteParser : Parser {
 					    Consume();
 					}
 					State = 1478;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 					if (_la==OUTER_) {
 						{
@@ -7994,7 +7994,7 @@ internal partial class SQLiteParser : Parser {
 		int _la;
 		try {
 			State = 1501;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case ON_:
 				EnterOuterAlt(_localctx, 1);
@@ -8015,7 +8015,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1491;
 				column_name();
 				State = 1496;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -8027,7 +8027,7 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 1498;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				State = 1499;
@@ -8084,7 +8084,7 @@ internal partial class SQLiteParser : Parser {
 		int _la;
 		try {
 			State = 1509;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case UNION_:
 				EnterOuterAlt(_localctx, 1);
@@ -8092,7 +8092,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1503;
 				Match(UNION_);
 				State = 1505;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==ALL_) {
 					{
@@ -8219,7 +8219,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 1512;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==WITH_) {
 				{
@@ -8231,7 +8231,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1514;
 			Match(UPDATE_);
 			State = 1517;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,219,Context) ) {
 			case 1:
 				{
@@ -8254,7 +8254,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1520;
 			Match(SET_);
 			State = 1523;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,220,Context) ) {
 			case 1:
 				{
@@ -8274,7 +8274,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1526;
 			expr(0);
 			State = 1537;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==COMMA) {
 				{
@@ -8282,7 +8282,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1527;
 				Match(COMMA);
 				State = 1530;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,221,Context) ) {
 				case 1:
 					{
@@ -8304,25 +8304,25 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 1539;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			State = 1552;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==FROM_) {
 				{
 				State = 1540;
 				Match(FROM_);
 				State = 1550;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,224,Context) ) {
 				case 1:
 					{
 					State = 1541;
 					table_or_subquery();
 					State = 1546;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 					while (_la==COMMA) {
 						{
@@ -8334,7 +8334,7 @@ internal partial class SQLiteParser : Parser {
 						}
 						}
 						State = 1548;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						_la = TokenStream.LA(1);
 					}
 					}
@@ -8350,7 +8350,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 1556;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==WHERE_) {
 				{
@@ -8362,7 +8362,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 1559;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==RETURNING_) {
 				{
@@ -8433,7 +8433,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1562;
 			column_name();
 			State = 1567;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==COMMA) {
 				{
@@ -8445,7 +8445,7 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 1569;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			State = 1570;
@@ -8546,7 +8546,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 1573;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==WITH_) {
 				{
@@ -8558,7 +8558,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1575;
 			Match(UPDATE_);
 			State = 1578;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,230,Context) ) {
 			case 1:
 				{
@@ -8581,7 +8581,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1581;
 			Match(SET_);
 			State = 1584;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,231,Context) ) {
 			case 1:
 				{
@@ -8601,7 +8601,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1587;
 			expr(0);
 			State = 1598;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==COMMA) {
 				{
@@ -8609,7 +8609,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1588;
 				Match(COMMA);
 				State = 1591;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,232,Context) ) {
 				case 1:
 					{
@@ -8631,11 +8631,11 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 1600;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			State = 1603;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==WHERE_) {
 				{
@@ -8647,7 +8647,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 1606;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==RETURNING_) {
 				{
@@ -8657,12 +8657,12 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 1612;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==LIMIT_ || _la==ORDER_) {
 				{
 				State = 1609;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==ORDER_) {
 					{
@@ -8739,7 +8739,7 @@ internal partial class SQLiteParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 1617;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,238,Context) ) {
 			case 1:
 				{
@@ -8753,7 +8753,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1619;
 			table_name();
 			State = 1622;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==AS_) {
 				{
@@ -8765,7 +8765,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 1629;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case INDEXED_:
 				{
@@ -8875,7 +8875,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1631;
 			Match(VACUUM_);
 			State = 1633;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,241,Context) ) {
 			case 1:
 				{
@@ -8885,7 +8885,7 @@ internal partial class SQLiteParser : Parser {
 				break;
 			}
 			State = 1637;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==INTO_) {
 				{
@@ -9035,7 +9035,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1645;
 			Match(OPEN_PAR);
 			State = 1647;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,243,Context) ) {
 			case 1:
 				{
@@ -9045,7 +9045,7 @@ internal partial class SQLiteParser : Parser {
 				break;
 			}
 			State = 1659;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==PARTITION_) {
 				{
@@ -9056,7 +9056,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1651;
 				expr(0);
 				State = 1656;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -9068,7 +9068,7 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 1658;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				}
@@ -9082,7 +9082,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1663;
 			ordering_term();
 			State = 1668;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==COMMA) {
 				{
@@ -9094,12 +9094,12 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 1670;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			}
 			State = 1672;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (((((_la - 128)) & ~0x3f) == 0 && ((1L << (_la - 128)) & 2251799880794113L) != 0)) {
 				{
@@ -9192,7 +9192,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1676;
 			Match(OVER_);
 			State = 1710;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,254,Context) ) {
 			case 1:
 				{
@@ -9205,7 +9205,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1678;
 				Match(OPEN_PAR);
 				State = 1680;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,248,Context) ) {
 				case 1:
 					{
@@ -9215,7 +9215,7 @@ internal partial class SQLiteParser : Parser {
 					break;
 				}
 				State = 1692;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==PARTITION_) {
 					{
@@ -9226,7 +9226,7 @@ internal partial class SQLiteParser : Parser {
 					State = 1684;
 					expr(0);
 					State = 1689;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 					while (_la==COMMA) {
 						{
@@ -9238,14 +9238,14 @@ internal partial class SQLiteParser : Parser {
 						}
 						}
 						State = 1691;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						_la = TokenStream.LA(1);
 					}
 					}
 				}
 
 				State = 1704;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==ORDER_) {
 					{
@@ -9256,7 +9256,7 @@ internal partial class SQLiteParser : Parser {
 					State = 1696;
 					ordering_term();
 					State = 1701;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 					while (_la==COMMA) {
 						{
@@ -9268,14 +9268,14 @@ internal partial class SQLiteParser : Parser {
 						}
 						}
 						State = 1703;
-						ErrorHandler.Nimblesite.Sync.Core(this);
+						ErrorHandler.Sync(this);
 						_la = TokenStream.LA(1);
 					}
 					}
 				}
 
 				State = 1707;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (((((_la - 128)) & ~0x3f) == 0 && ((1L << (_la - 128)) & 2251799880794113L) != 0)) {
 					{
@@ -9347,14 +9347,14 @@ internal partial class SQLiteParser : Parser {
 			State = 1712;
 			frame_clause();
 			State = 1722;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==EXCLUDE_) {
 				{
 				State = 1713;
 				Match(EXCLUDE_);
 				State = 1720;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch (TokenStream.LA(1)) {
 				case NO_:
 					{
@@ -9459,7 +9459,7 @@ internal partial class SQLiteParser : Parser {
 			    Consume();
 			}
 			State = 1731;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,257,Context) ) {
 			case 1:
 				{
@@ -9546,7 +9546,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1734;
 			Match(OPEN_PAR);
 			State = 1744;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case OPEN_PAR:
 			case PLUS:
@@ -9716,7 +9716,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1735;
 				expr(0);
 				State = 1740;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -9728,7 +9728,7 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 1742;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				}
@@ -9814,7 +9814,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1749;
 			Match(OPEN_PAR);
 			State = 1762;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case OPEN_PAR:
 			case PLUS:
@@ -9982,7 +9982,7 @@ internal partial class SQLiteParser : Parser {
 			case BLOB_LITERAL:
 				{
 				State = 1751;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,260,Context) ) {
 				case 1:
 					{
@@ -9994,7 +9994,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1753;
 				expr(0);
 				State = 1758;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -10006,7 +10006,7 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 1760;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				}
@@ -10025,7 +10025,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1764;
 			Match(CLOSE_PAR);
 			State = 1766;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==FILTER_) {
 				{
@@ -10110,7 +10110,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1769;
 			Match(OPEN_PAR);
 			State = 1779;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case OPEN_PAR:
 			case PLUS:
@@ -10280,7 +10280,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1770;
 				expr(0);
 				State = 1775;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
@@ -10292,7 +10292,7 @@ internal partial class SQLiteParser : Parser {
 					}
 					}
 					State = 1777;
-					ErrorHandler.Nimblesite.Sync.Core(this);
+					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				}
@@ -10311,7 +10311,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1781;
 			Match(CLOSE_PAR);
 			State = 1783;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==FILTER_) {
 				{
@@ -10323,7 +10323,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1785;
 			Match(OVER_);
 			State = 1788;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,267,Context) ) {
 			case 1:
 				{
@@ -10398,7 +10398,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1790;
 			Match(WITH_);
 			State = 1792;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,268,Context) ) {
 			case 1:
 				{
@@ -10410,7 +10410,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1794;
 			common_table_expression();
 			State = 1799;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==COMMA) {
 				{
@@ -10422,7 +10422,7 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 1801;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			}
@@ -10489,7 +10489,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1804;
 			ordering_term();
 			State = 1809;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==COMMA) {
 				{
@@ -10501,7 +10501,7 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 1811;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			}
@@ -10563,7 +10563,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1813;
 			expr(0);
 			State = 1816;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==COMMA || _la==OFFSET_) {
 				{
@@ -10642,7 +10642,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1818;
 			expr(0);
 			State = 1821;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==COLLATE_) {
 				{
@@ -10654,7 +10654,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 1824;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==ASC_ || _la==DESC_) {
 				{
@@ -10664,7 +10664,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 1828;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==NULLS_) {
 				{
@@ -10789,7 +10789,7 @@ internal partial class SQLiteParser : Parser {
 		EnterRule(_localctx, 144, RULE_frame_left);
 		try {
 			State = 1842;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,275,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
@@ -10878,7 +10878,7 @@ internal partial class SQLiteParser : Parser {
 		EnterRule(_localctx, 146, RULE_frame_right);
 		try {
 			State = 1854;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,276,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
@@ -10966,7 +10966,7 @@ internal partial class SQLiteParser : Parser {
 		EnterRule(_localctx, 148, RULE_frame_single);
 		try {
 			State = 1863;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,277,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
@@ -11084,7 +11084,7 @@ internal partial class SQLiteParser : Parser {
 		int _la;
 		try {
 			State = 1950;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case FIRST_VALUE_:
 			case LAST_VALUE_:
@@ -11110,7 +11110,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1870;
 				Match(OPEN_PAR);
 				State = 1872;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==PARTITION_) {
 					{
@@ -11122,7 +11122,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1874;
 				order_by_expr_asc_desc();
 				State = 1876;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (((((_la - 128)) & ~0x3f) == 0 && ((1L << (_la - 128)) & 2251799880794113L) != 0)) {
 					{
@@ -11157,7 +11157,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1884;
 				Match(OPEN_PAR);
 				State = 1886;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==PARTITION_) {
 					{
@@ -11167,7 +11167,7 @@ internal partial class SQLiteParser : Parser {
 				}
 
 				State = 1889;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==ORDER_) {
 					{
@@ -11203,7 +11203,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1896;
 				Match(OPEN_PAR);
 				State = 1898;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==PARTITION_) {
 					{
@@ -11236,7 +11236,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1905;
 				expr(0);
 				State = 1907;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,283,Context) ) {
 				case 1:
 					{
@@ -11246,7 +11246,7 @@ internal partial class SQLiteParser : Parser {
 					break;
 				}
 				State = 1910;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==COMMA) {
 					{
@@ -11262,7 +11262,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1914;
 				Match(OPEN_PAR);
 				State = 1916;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==PARTITION_) {
 					{
@@ -11297,7 +11297,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1928;
 				Match(OPEN_PAR);
 				State = 1930;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==PARTITION_) {
 					{
@@ -11309,7 +11309,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1932;
 				order_by_expr_asc_desc();
 				State = 1934;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (((((_la - 128)) & ~0x3f) == 0 && ((1L << (_la - 128)) & 2251799880794113L) != 0)) {
 					{
@@ -11338,7 +11338,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1943;
 				Match(OPEN_PAR);
 				State = 1945;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==PARTITION_) {
 					{
@@ -11517,7 +11517,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1959;
 			Match(BY_);
 			State = 1961;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_alt = 1;
 			do {
 				switch (_alt) {
@@ -11533,7 +11533,7 @@ internal partial class SQLiteParser : Parser {
 					throw new NoViableAltException(this);
 				}
 				State = 1963;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_alt = Interpreter.AdaptivePredict(TokenStream,290,Context);
 			} while ( _alt!=2 && _alt!=global::Antlr4.Runtime.Atn.ATN.INVALID_ALT_NUMBER );
 			}
@@ -11594,7 +11594,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1966;
 			Match(BY_);
 			State = 1968;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			do {
 				{
@@ -11604,7 +11604,7 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 1970;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			} while ( (((_la) & ~0x3f) == 0 && ((1L << _la) & -33552632L) != 0) || ((((_la - 64)) & ~0x3f) == 0 && ((1L << (_la - 64)) & -1152921504606846977L) != 0) || ((((_la - 128)) & ~0x3f) == 0 && ((1L << (_la - 128)) & 4476578029606273023L) != 0) );
 			}
@@ -11726,7 +11726,7 @@ internal partial class SQLiteParser : Parser {
 			State = 1976;
 			expr(0);
 			State = 1978;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==ASC_ || _la==DESC_) {
 				{
@@ -11736,7 +11736,7 @@ internal partial class SQLiteParser : Parser {
 			}
 
 			State = 1987;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==COMMA) {
 				{
@@ -11746,7 +11746,7 @@ internal partial class SQLiteParser : Parser {
 				State = 1981;
 				expr(0);
 				State = 1983;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==ASC_ || _la==DESC_) {
 					{
@@ -11758,7 +11758,7 @@ internal partial class SQLiteParser : Parser {
 				}
 				}
 				State = 1989;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			}
@@ -12013,7 +12013,7 @@ internal partial class SQLiteParser : Parser {
 		EnterRule(_localctx, 172, RULE_module_argument);
 		try {
 			State = 2000;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,295,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
@@ -13474,7 +13474,7 @@ internal partial class SQLiteParser : Parser {
 		EnterRule(_localctx, 224, RULE_any_name);
 		try {
 			State = 2059;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case IDENTIFIER:
 				EnterOuterAlt(_localctx, 1);

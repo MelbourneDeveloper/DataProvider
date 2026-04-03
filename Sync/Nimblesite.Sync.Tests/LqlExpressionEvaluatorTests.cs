@@ -4,21 +4,21 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Nimblesite.Sync.Tests;
 
 /// <summary>
-/// Tests for Nimblesite.Lql.CoreExpressionEvaluator and LQL transforms in MappingEngine.
+/// Tests for LqlExpressionEvaluator and LQL transforms in MappingEngine.
 /// Proves that LQL can transform data between databases with different schemas.
 /// </summary>
-public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
+public sealed class LqlExpressionEvaluatorTests
 {
-    private readonly NullLogger<Nimblesite.Lql.CoreExpressionEvaluatorTests> _logger = new();
+    private readonly NullLogger<LqlExpressionEvaluatorTests> _logger = new();
 
-    #region Nimblesite.Lql.CoreExpressionEvaluator Direct Tests
+    #region LqlExpressionEvaluator Direct Tests
 
     [Fact]
     public void Upper_TransformsToUppercase()
     {
         var source = JsonDocument.Parse("""{"Name":"alice"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("upper(Name)", source);
+        var result = LqlExpressionEvaluator.Evaluate("upper(Name)", source);
 
         Assert.Equal("ALICE", result);
     }
@@ -28,7 +28,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
     {
         var source = JsonDocument.Parse("""{"Name":"ALICE"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("lower(Name)", source);
+        var result = LqlExpressionEvaluator.Evaluate("lower(Name)", source);
 
         Assert.Equal("alice", result);
     }
@@ -38,7 +38,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
     {
         var source = JsonDocument.Parse("""{"FirstName":"John","LastName":"Doe"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("concat(FirstName, ' ', LastName)", source);
+        var result = LqlExpressionEvaluator.Evaluate("concat(FirstName, ' ', LastName)", source);
 
         Assert.Equal("John Doe", result);
     }
@@ -48,7 +48,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
     {
         var source = JsonDocument.Parse("""{"Name":"Alice"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("concat('Hello, ', Name, '!')", source);
+        var result = LqlExpressionEvaluator.Evaluate("concat('Hello, ', Name, '!')", source);
 
         Assert.Equal("Hello, Alice!", result);
     }
@@ -59,7 +59,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
         var source = JsonDocument.Parse("""{"Email":"alice@example.com"}""").RootElement;
 
         // substring(value, start, length) - 1-based index
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("substring(Email, 1, 5)", source);
+        var result = LqlExpressionEvaluator.Evaluate("substring(Email, 1, 5)", source);
 
         Assert.Equal("alice", result);
     }
@@ -69,7 +69,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
     {
         var source = JsonDocument.Parse("""{"Name":"  Alice  "}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("trim(Name)", source);
+        var result = LqlExpressionEvaluator.Evaluate("trim(Name)", source);
 
         Assert.Equal("Alice", result);
     }
@@ -79,7 +79,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
     {
         var source = JsonDocument.Parse("""{"Name":"Alice"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("length(Name)", source);
+        var result = LqlExpressionEvaluator.Evaluate("length(Name)", source);
 
         Assert.Equal(5, result);
     }
@@ -89,7 +89,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
     {
         var source = JsonDocument.Parse("""{"Nickname":"","FullName":"Alice Smith"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("coalesce(Nickname, FullName)", source);
+        var result = LqlExpressionEvaluator.Evaluate("coalesce(Nickname, FullName)", source);
 
         Assert.Equal("Alice Smith", result);
     }
@@ -99,7 +99,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
     {
         var source = JsonDocument.Parse("""{"Code":"ABC123XYZ"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("left(Code, 3)", source);
+        var result = LqlExpressionEvaluator.Evaluate("left(Code, 3)", source);
 
         Assert.Equal("ABC", result);
     }
@@ -109,7 +109,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
     {
         var source = JsonDocument.Parse("""{"Code":"ABC123XYZ"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("right(Code, 3)", source);
+        var result = LqlExpressionEvaluator.Evaluate("right(Code, 3)", source);
 
         Assert.Equal("XYZ", result);
     }
@@ -119,7 +119,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
     {
         var source = JsonDocument.Parse("""{"Text":"Hello World"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("replace(Text, 'World', 'Universe')", source);
+        var result = LqlExpressionEvaluator.Evaluate("replace(Text, 'World', 'Universe')", source);
 
         Assert.Equal("Hello Universe", result);
     }
@@ -129,7 +129,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
     {
         var source = JsonDocument.Parse("""{"CreatedAt":"2024-06-15T10:30:00Z"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("dateFormat(CreatedAt, 'yyyy-MM-dd')", source);
+        var result = LqlExpressionEvaluator.Evaluate("dateFormat(CreatedAt, 'yyyy-MM-dd')", source);
 
         Assert.Equal("2024-06-15", result);
     }
@@ -139,7 +139,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
     {
         var source = JsonDocument.Parse("""{"Name":"  alice  "}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Name |> trim() |> upper()", source);
+        var result = LqlExpressionEvaluator.Evaluate("Name |> trim() |> upper()", source);
 
         Assert.Equal("ALICE", result);
     }
@@ -149,7 +149,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
     {
         var source = JsonDocument.Parse("""{"Name":"Alice","Age":30}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Name", source);
+        var result = LqlExpressionEvaluator.Evaluate("Name", source);
 
         Assert.Equal("Alice", result);
     }
@@ -159,7 +159,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
     {
         var source = JsonDocument.Parse("""{"FirstName":"Alice"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("upper(firstname)", source);
+        var result = LqlExpressionEvaluator.Evaluate("upper(firstname)", source);
 
         Assert.Equal("ALICE", result);
     }
@@ -173,11 +173,11 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
     {
         var columnMappings = new List<ColumnMapping>
         {
-            new("Name", "DisplayName", TransformType.Nimblesite.Lql.Core, null, "upper(Name)"),
+            new("Name", "DisplayName", TransformType.Lql, null, "upper(Name)"),
         };
 
         var mapping = CreateMappingWithColumns("user-mapping", "User", "Customer", columnMappings);
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
         var entry = CreateEntry("User", """{"Id":"u1"}""", """{"Id":"u1","Name":"alice"}""");
 
         var result = MappingEngine.ApplyMapping(entry, config, MappingDirection.Push, _logger);
@@ -197,14 +197,14 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
             new(
                 "FirstName",
                 "FullName",
-                TransformType.Nimblesite.Lql.Core,
+                TransformType.Lql,
                 null,
                 "concat(FirstName, ' ', LastName)"
             ),
         };
 
         var mapping = CreateMappingWithColumns("user-mapping", "User", "Customer", columnMappings);
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
         var entry = CreateEntry(
             "User",
             """{"Id":"u1"}""",
@@ -226,11 +226,11 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
         var columnMappings = new List<ColumnMapping>
         {
             new("Email", "Email"),
-            new("Email", "Domain", TransformType.Nimblesite.Lql.Core, null, "right(Email, 11)"),
+            new("Email", "Domain", TransformType.Lql, null, "right(Email, 11)"),
         };
 
         var mapping = CreateMappingWithColumns("user-mapping", "User", "Customer", columnMappings);
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
         var entry = CreateEntry(
             "User",
             """{"Id":"u1"}""",
@@ -253,14 +253,14 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
             new(
                 "Username",
                 "NormalizedUsername",
-                TransformType.Nimblesite.Lql.Core,
+                TransformType.Lql,
                 null,
                 "Username |> trim() |> lower()"
             ),
         };
 
         var mapping = CreateMappingWithColumns("user-mapping", "User", "Customer", columnMappings);
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
         var entry = CreateEntry(
             "User",
             """{"Id":"u1"}""",
@@ -285,14 +285,14 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
             new(
                 "CreatedAt",
                 "CreatedDate",
-                TransformType.Nimblesite.Lql.Core,
+                TransformType.Lql,
                 null,
                 "dateFormat(CreatedAt, 'yyyy-MM-dd')"
             ),
         };
 
         var mapping = CreateMappingWithColumns("user-mapping", "User", "Customer", columnMappings);
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
         var entry = CreateEntry(
             "User",
             """{"Id":"u1"}""",
@@ -316,16 +316,16 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
             new(
                 "FirstName",
                 "FullName",
-                TransformType.Nimblesite.Lql.Core,
+                TransformType.Lql,
                 null,
                 "concat(FirstName, ' ', LastName)"
             ),
-            new("Email", "NormalizedEmail", TransformType.Nimblesite.Lql.Core, null, "lower(Email)"),
-            new("Username", "DisplayName", TransformType.Nimblesite.Lql.Core, null, "upper(Username)"),
+            new("Email", "NormalizedEmail", TransformType.Lql, null, "lower(Email)"),
+            new("Username", "DisplayName", TransformType.Lql, null, "upper(Username)"),
         };
 
         var mapping = CreateMappingWithColumns("user-mapping", "User", "Customer", columnMappings);
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
         var entry = CreateEntry(
             "User",
             """{"Id":"u1"}""",
@@ -347,13 +347,13 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
         // Mix of constant transforms and LQL transforms
         var columnMappings = new List<ColumnMapping>
         {
-            new("Name", "DisplayName", TransformType.Nimblesite.Lql.Core, null, "upper(Name)"),
-            new(null, "Nimblesite.Sync.CoreSource", TransformType.Constant, "mobile-app"),
+            new("Name", "DisplayName", TransformType.Lql, null, "upper(Name)"),
+            new(null, "SyncSource", TransformType.Constant, "mobile-app"),
             new(null, "Version", TransformType.Constant, "1.0"),
         };
 
         var mapping = CreateMappingWithColumns("user-mapping", "User", "Customer", columnMappings);
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
         var entry = CreateEntry("User", """{"Id":"u1"}""", """{"Id":"u1","Name":"alice"}""");
 
         var result = MappingEngine.ApplyMapping(entry, config, MappingDirection.Push, _logger);
@@ -383,7 +383,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
             new(
                 "first_name",
                 "FullName",
-                TransformType.Nimblesite.Lql.Core,
+                TransformType.Lql,
                 null,
                 "concat(first_name, ' ', last_name)"
             ),
@@ -393,7 +393,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
             new(
                 "email_address",
                 "NormalizedEmail",
-                TransformType.Nimblesite.Lql.Core,
+                TransformType.Lql,
                 null,
                 "lower(email_address)"
             ),
@@ -407,7 +407,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
             "ServerUser",
             columnMappings
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var mobileEntry = CreateEntry(
             "MobileUser",
@@ -448,12 +448,12 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
             // Rename CustomerNumber to CustomerId
             new("CustomerNumber", "CustomerId"),
             // Trim and titlecase the name
-            new("CUST_NAME", "DisplayName", TransformType.Nimblesite.Lql.Core, null, "trim(CUST_NAME)"),
+            new("CUST_NAME", "DisplayName", TransformType.Lql, null, "trim(CUST_NAME)"),
             // Combine address lines
             new(
                 "ADDR_LINE_1",
                 "FullAddress",
-                TransformType.Nimblesite.Lql.Core,
+                TransformType.Lql,
                 null,
                 "concat(ADDR_LINE_1, ', ', ADDR_LINE_2)"
             ),
@@ -469,7 +469,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
             "ModernCustomer",
             columnMappings
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var legacyEntry = CreateEntry(
             "LegacyCustomer",
@@ -510,9 +510,9 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
         {
             new("OrderId", "EntityId"),
             new(null, "EntityType", TransformType.Constant, "Order"),
-            new("Status", "Action", TransformType.Nimblesite.Lql.Core, null, "upper(Status)"),
+            new("Status", "Action", TransformType.Lql, null, "upper(Status)"),
             new("OrderDate", "Timestamp"),
-            new("Total", "Details", TransformType.Nimblesite.Lql.Core, null, "concat('Order total: $', Total)"),
+            new("Total", "Details", TransformType.Lql, null, "concat('Order total: $', Total)"),
         };
 
         var mapping = CreateMappingWithColumns(
@@ -521,7 +521,7 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
             "AuditLog",
             columnMappings
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var orderEntry = CreateEntry(
             "Order",
@@ -547,40 +547,40 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
     #region Edge Cases
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_NullSource_ReturnsNull()
+    public void LqlTransform_NullSource_ReturnsNull()
     {
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("", JsonDocument.Parse("{}").RootElement);
+        var result = LqlExpressionEvaluator.Evaluate("", JsonDocument.Parse("{}").RootElement);
 
         Assert.Null(result);
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_MissingColumn_ReturnsNull()
+    public void LqlTransform_MissingColumn_ReturnsNull()
     {
         var source = JsonDocument.Parse("""{"Name":"Alice"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("upper(NonExistent)", source);
+        var result = LqlExpressionEvaluator.Evaluate("upper(NonExistent)", source);
 
         // Should return empty string for missing column
         Assert.True(string.IsNullOrEmpty(result?.ToString()));
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_NumericColumn_Works()
+    public void LqlTransform_NumericColumn_Works()
     {
         var source = JsonDocument.Parse("""{"Price":99.99}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Price", source);
+        var result = LqlExpressionEvaluator.Evaluate("Price", source);
 
         Assert.Equal(99.99, result);
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_BooleanColumn_Works()
+    public void LqlTransform_BooleanColumn_Works()
     {
         var source = JsonDocument.Parse("""{"IsActive":true}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("IsActive", source);
+        var result = LqlExpressionEvaluator.Evaluate("IsActive", source);
 
         Assert.Equal(true, result);
     }
@@ -605,15 +605,15 @@ public sealed class Nimblesite.Lql.CoreExpressionEvaluatorTests
             ColumnMappings: columnMappings,
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-    private static Nimblesite.Sync.CoreLogEntry CreateEntry(string table, string pk, string? payload) =>
+    private static SyncLogEntry CreateEntry(string table, string pk, string? payload) =>
         new(
             Version: 1,
             TableName: table,
             PkValue: pk,
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: payload,
             Origin: "test-origin",
             Timestamp: "2024-01-01T00:00:00Z"

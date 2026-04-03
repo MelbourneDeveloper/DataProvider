@@ -3,18 +3,18 @@ namespace Nimblesite.DataProvider.Migration.Core;
 /// <summary>
 /// Options for migration execution.
 /// </summary>
-public sealed record Nimblesite.DataProvider.Migration.CoreOptions
+public sealed record MigrationOptions
 {
     /// <summary>
     /// Default migration options (safe, additive only).
     /// </summary>
-    public static Nimblesite.DataProvider.Migration.CoreOptions Default => new();
+    public static MigrationOptions Default => new();
 
     /// <summary>
     /// Nimblesite.DataProvider.Migration.Core options that allow destructive operations.
     /// USE WITH CAUTION.
     /// </summary>
-    public static Nimblesite.DataProvider.Migration.CoreOptions Destructive => new() { AllowDestructive = true };
+    public static MigrationOptions Destructive => new() { AllowDestructive = true };
 
     /// <summary>
     /// Whether to allow destructive operations (DROP TABLE, DROP COLUMN).

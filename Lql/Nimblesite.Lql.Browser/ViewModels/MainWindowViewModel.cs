@@ -495,7 +495,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
 
         Console.WriteLine($"Query Text: {ActiveTab.Content}");
-        Console.WriteLine($"Is LQL Mode: {ActiveTab.FileType == FileType.Nimblesite.Lql.Core}");
+        Console.WriteLine($"Is LQL Mode: {ActiveTab.FileType == FileType.Lql}");
 
         try
         {
@@ -505,14 +505,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
             string sqlToExecute;
 
-            if (ActiveTab.FileType == FileType.Nimblesite.Lql.Core)
+            if (ActiveTab.FileType == FileType.Lql)
             {
                 Console.WriteLine("Converting LQL to SQL...");
                 MessagesPanelViewModel.AddInfo("Converting LQL to SQL...");
-                var lqlStatement = Nimblesite.Lql.CoreStatementConverter.ToStatement(ActiveTab.Content);
+                var lqlStatement = LqlStatementConverter.ToStatement(ActiveTab.Content);
                 if (
                     lqlStatement
-                    is Result<Nimblesite.Lql.CoreStatement, SqlError>.Ok<Nimblesite.Lql.CoreStatement, SqlError> lqlSuccess
+                    is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> lqlSuccess
                 )
                 {
                     Console.WriteLine("LQL parsed successfully");
@@ -546,7 +546,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 }
                 else if (
                     lqlStatement
-                    is Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError> lqlFailure
+                    is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> lqlFailure
                 )
                 {
                     Console.WriteLine($"LQL parse error: {lqlFailure.Value.Message}");

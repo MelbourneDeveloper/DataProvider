@@ -168,8 +168,8 @@ public sealed class MappingConfigParserTests
 
         var success = Assert.IsType<MappingConfigParseOk>(result);
         var colMapping = success.Config.Mappings[0].ColumnMappings[0];
-        Assert.Equal(TransformType.Nimblesite.Lql.Core, colMapping.Transform);
-        Assert.Contains("dateFormat", colMapping.Nimblesite.Lql.Core);
+        Assert.Equal(TransformType.Lql, colMapping.Transform);
+        Assert.Contains("dateFormat", colMapping.Lql);
     }
 
     [Fact]
@@ -222,7 +222,7 @@ public sealed class MappingConfigParserTests
         var success = Assert.IsType<MappingConfigParseOk>(result);
         var filter = success.Config.Mappings[0].Filter;
         Assert.NotNull(filter);
-        Assert.Contains("IsActive", filter.Nimblesite.Lql.Core);
+        Assert.Contains("IsActive", filter.Lql);
     }
 
     [Fact]
@@ -250,9 +250,9 @@ public sealed class MappingConfigParserTests
         var result = MappingConfigParser.Parse(json, _logger);
 
         var success = Assert.IsType<MappingConfigParseOk>(result);
-        var tracking = success.Config.Mappings[0].Nimblesite.Sync.CoreTracking;
+        var tracking = success.Config.Mappings[0].SyncTracking;
         Assert.True(tracking.Enabled);
-        Assert.Equal(Nimblesite.Sync.CoreTrackingStrategy.Hash, tracking.Strategy);
+        Assert.Equal(SyncTrackingStrategy.Hash, tracking.Strategy);
         Assert.Equal("_synced_version", tracking.TrackingColumn);
     }
 
@@ -401,7 +401,7 @@ public sealed class MappingConfigParserTests
     [Fact]
     public void ToJson_EmptyConfig_ProducesValidJson()
     {
-        var config = Nimblesite.Sync.CoreMappingConfig.Empty;
+        var config = SyncMappingConfig.Empty;
 
         var json = MappingConfigParser.ToJson(config);
 
@@ -526,8 +526,8 @@ public sealed class MappingConfigParserTests
         Assert.Equal(4, mapping.ColumnMappings.Count);
         Assert.Equal(2, mapping.ExcludedColumns.Count);
         Assert.NotNull(mapping.Filter);
-        Assert.True(mapping.Nimblesite.Sync.CoreTracking.Enabled);
-        Assert.Equal(Nimblesite.Sync.CoreTrackingStrategy.Version, mapping.Nimblesite.Sync.CoreTracking.Strategy);
+        Assert.True(mapping.SyncTracking.Enabled);
+        Assert.Equal(SyncTrackingStrategy.Version, mapping.SyncTracking.Strategy);
     }
 
     #endregion

@@ -11,10 +11,10 @@ namespace Nimblesite.DataProvider.Tests;
 public sealed class ConfigurationTypesTests
 {
     [Fact]
-    public void Nimblesite.DataProvider.CoreConfig_CanBeCreatedWithDefaults()
+    public void DataProviderConfig_CanBeCreatedWithDefaults()
     {
         // Arrange & Act
-        var config = new Nimblesite.DataProvider.CoreConfig();
+        var config = new DataProviderConfig();
 
         // Assert
         Assert.NotNull(config.Tables);
@@ -23,7 +23,7 @@ public sealed class ConfigurationTypesTests
     }
 
     [Fact]
-    public void Nimblesite.DataProvider.CoreConfig_CanBeCreatedWithTablesAndConnectionString()
+    public void DataProviderConfig_CanBeCreatedWithTablesAndConnectionString()
     {
         // Arrange
         var tables = new List<TableConfig>
@@ -32,7 +32,7 @@ public sealed class ConfigurationTypesTests
         }.AsReadOnly();
 
         // Act
-        var config = new Nimblesite.DataProvider.CoreConfig
+        var config = new DataProviderConfig
         {
             Tables = tables,
             ConnectionString = "Data Source=test.db",
@@ -91,10 +91,10 @@ public sealed class ConfigurationTypesTests
     }
 
     [Fact]
-    public void Nimblesite.DataProvider.CoreConfig_JsonSerialization_WorksCorrectly()
+    public void DataProviderConfig_JsonSerialization_WorksCorrectly()
     {
         // Arrange
-        var config = new Nimblesite.DataProvider.CoreConfig
+        var config = new DataProviderConfig
         {
             Tables = new List<TableConfig>
             {
@@ -117,7 +117,7 @@ public sealed class ConfigurationTypesTests
             config,
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
         );
-        var deserialized = JsonSerializer.Deserialize<Nimblesite.DataProvider.CoreConfig>(
+        var deserialized = JsonSerializer.Deserialize<DataProviderConfig>(
             json,
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
         );
@@ -269,7 +269,7 @@ public sealed class ConfigurationTypesTests
     }
 
     [Fact]
-    public void Nimblesite.DataProvider.CoreConfig_RecordEquality_WorksCorrectly()
+    public void DataProviderConfig_RecordEquality_WorksCorrectly()
     {
         // Arrange
         var tables = new List<TableConfig>
@@ -277,9 +277,9 @@ public sealed class ConfigurationTypesTests
             new() { Name = "Invoice", Schema = "dbo" },
         }.AsReadOnly();
 
-        var config1 = new Nimblesite.DataProvider.CoreConfig { Tables = tables, ConnectionString = "test" };
-        var config2 = new Nimblesite.DataProvider.CoreConfig { Tables = tables, ConnectionString = "test" };
-        var config3 = new Nimblesite.DataProvider.CoreConfig { Tables = tables, ConnectionString = "different" };
+        var config1 = new DataProviderConfig { Tables = tables, ConnectionString = "test" };
+        var config2 = new DataProviderConfig { Tables = tables, ConnectionString = "test" };
+        var config3 = new DataProviderConfig { Tables = tables, ConnectionString = "different" };
 
         // Act & Assert
         Assert.Equal(config1, config2);

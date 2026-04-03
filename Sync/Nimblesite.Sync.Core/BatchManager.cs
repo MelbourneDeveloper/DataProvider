@@ -16,10 +16,10 @@ internal static class BatchManager
     /// <param name="fetchChanges">Function to fetch changes.</param>
     /// <param name="logger">Logger for batch operations.</param>
     /// <returns>Batch result or sync error.</returns>
-    public static Nimblesite.Sync.CoreBatchResult FetchBatch(
+    public static SyncBatchResult FetchBatch(
         long fromVersion,
         int batchSize,
-        Func<long, int, Nimblesite.Sync.CoreLogListResult> fetchChanges,
+        Func<long, int, SyncLogListResult> fetchChanges,
         ILogger logger
     )
     {
@@ -31,14 +31,14 @@ internal static class BatchManager
 
         var fetchResult = fetchChanges(fromVersion, batchSize + 1);
 
-        if (fetchResult is Nimblesite.Sync.CoreLogListOk(var changes))
+        if (fetchResult is SyncLogListOk(var changes))
         {
             return CreateBatchFromChanges(changes, fromVersion, batchSize, logger);
         }
 
-        var error = ((Nimblesite.Sync.CoreLogListError)fetchResult).Value;
+        var error = ((SyncLogListError)fetchResult).Value;
         logger.LogError("BATCH: Fetch failed: {Error}", error);
-        return new Nimblesite.Sync.CoreBatchError(error);
+        return new SyncBatchError(error);
     }
 
     /// <summary>
@@ -54,8 +54,8 @@ internal static class BatchManager
     public static IntSyncResult ProcessAllBatches(
         long startVersion,
         BatchConfig config,
-        Func<long, int, Nimblesite.Sync.CoreLogListResult> fetchChanges,
-        Func<Nimblesite.Sync.CoreBatch, BatchApplyResultResult> applyBatch,
+        Func<long, int, SyncLogListResult> fetchChanges,
+        Func<SyncBatch, BatchApplyResultResult> applyBatch,
         Action<long> updateVersion,
         ILogger logger
     )
@@ -77,7 +77,7 @@ internal static class BatchManager
 
             switch (batchResult)
             {
-                case Nimblesite.Sync.CoreBatchOk(var batch):
+                case SyncBatchOk(var batch):
                     if (batch.Changes.Count == 0)
                     {
                         logger.LogInformation(
@@ -131,7 +131,7 @@ internal static class BatchManager
 
                     break;
 
-                case Nimblesite.Sync.CoreBatchError(var batchError):
+                case SyncBatchError(var batchError):
                     logger.LogError(
                         "BATCH: Fetch failed on batch {BatchNumber}: {Error}",
                         batchNumber,
@@ -142,8 +142,8 @@ internal static class BatchManager
         }
     }
 
-    private static Nimblesite.Sync.CoreBatchResult CreateBatchFromChanges(
-        IReadOnlyList<Nimblesite.Sync.CoreLogEntry> changes,
+    private static SyncBatchResult CreateBatchFromChanges(
+        IReadOnlyList<SyncLogEntry> changes,
         long fromVersion,
         int batchSize,
         ILogger logger
@@ -163,7 +163,7 @@ internal static class BatchManager
             hash.Length >= 16 ? hash[..16] : hash
         );
 
-        return new Nimblesite.Sync.CoreBatchOk(new Nimblesite.Sync.CoreBatch(batchChanges, fromVersion, toVersion, hasMore, hash));
+        return new SyncBatchOk(new SyncBatch(batchChanges, fromVersion, toVersion, hasMore, hash));
     }
 
     /// <summary>
@@ -172,7 +172,7 @@ internal static class BatchManager
     /// <param name="batch">The batch to verify.</param>
     /// <param name="logger">Logger for hash verification.</param>
     /// <returns>True if hash matches or no hash present, error if mismatch.</returns>
-    public static BoolSyncResult VerifyBatchHash(Nimblesite.Sync.CoreBatch batch, ILogger logger)
+    public static BoolSyncResult VerifyBatchHash(SyncBatch batch, ILogger logger)
     {
         if (batch.Hash is null)
         {

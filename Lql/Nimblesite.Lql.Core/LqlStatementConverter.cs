@@ -1,33 +1,33 @@
 using Nimblesite.Lql.Core.Parsing;
 using Outcome;
 using Selecta;
-using StatementError = Outcome.Result<Nimblesite.Lql.Core.Nimblesite.Lql.CoreStatement, Selecta.SqlError>.Error<
-    Nimblesite.Lql.Core.Nimblesite.Lql.CoreStatement,
+using StatementError = Outcome.Result<Nimblesite.Lql.Core.LqlStatement, Selecta.SqlError>.Error<
+    Nimblesite.Lql.Core.LqlStatement,
     Selecta.SqlError
 >;
-using StatementOk = Outcome.Result<Nimblesite.Lql.Core.Nimblesite.Lql.CoreStatement, Selecta.SqlError>.Ok<
-    Nimblesite.Lql.Core.Nimblesite.Lql.CoreStatement,
+using StatementOk = Outcome.Result<Nimblesite.Lql.Core.LqlStatement, Selecta.SqlError>.Ok<
+    Nimblesite.Lql.Core.LqlStatement,
     Selecta.SqlError
 >;
 
 namespace Nimblesite.Lql.Core;
 
 /// <summary>
-/// Converts LQL code to Nimblesite.Lql.CoreStatement and provides PostgreSQL generation.
+/// Converts LQL code to LqlStatement and provides PostgreSQL generation.
 /// </summary>
-public static class Nimblesite.Lql.CoreStatementConverter
+public static class LqlStatementConverter
 {
     /// <summary>
-    /// Converts LQL code to a Nimblesite.Lql.CoreStatement using the Antlr parser.
+    /// Converts LQL code to a LqlStatement using the Antlr parser.
     /// </summary>
     /// <param name="lqlCode">The LQL code to convert.</param>
-    /// <returns>A Result containing either a Nimblesite.Lql.CoreStatement or a SqlError.</returns>
-    public static Result<Nimblesite.Lql.CoreStatement, SqlError> ToStatement(string lqlCode)
+    /// <returns>A Result containing either a LqlStatement or a SqlError.</returns>
+    public static Result<LqlStatement, SqlError> ToStatement(string lqlCode)
     {
-        var parseResult = Nimblesite.Lql.CoreCodeParser.Parse(lqlCode);
+        var parseResult = LqlCodeParser.Parse(lqlCode);
 
-        return parseResult.Match<Result<Nimblesite.Lql.CoreStatement, SqlError>>(
-            success => new StatementOk(new Nimblesite.Lql.CoreStatement { AstNode = success }),
+        return parseResult.Match<Result<LqlStatement, SqlError>>(
+            success => new StatementOk(new LqlStatement { AstNode = success }),
             failure => new StatementError(failure)
         );
     }

@@ -8,28 +8,28 @@ namespace Nimblesite.Sync.Tests;
 /// Tests null handling, empty strings, special characters, Unicode, nested data,
 /// and unusual transformation scenarios.
 /// </summary>
-public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
+public sealed class LqlMappingCornerCaseTests
 {
-    private readonly NullLogger<Nimblesite.Lql.CoreMappingCornerCaseTests> _logger = new();
+    private readonly NullLogger<LqlMappingCornerCaseTests> _logger = new();
 
     #region Null and Empty Value Handling
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_NullStringColumn_ReturnsEmptyString()
+    public void LqlTransform_NullStringColumn_ReturnsEmptyString()
     {
         var source = JsonDocument.Parse("""{"Name":null}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("upper(Name)", source);
+        var result = LqlExpressionEvaluator.Evaluate("upper(Name)", source);
 
         Assert.True(string.IsNullOrEmpty(result?.ToString()));
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_EmptyString_ReturnsEmpty()
+    public void LqlTransform_EmptyString_ReturnsEmpty()
     {
         var source = JsonDocument.Parse("""{"Name":""}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("upper(Name)", source);
+        var result = LqlExpressionEvaluator.Evaluate("upper(Name)", source);
 
         Assert.Equal("", result);
     }
@@ -41,7 +41,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
             .Parse("""{"First":"John","Middle":null,"Last":"Doe"}""")
             .RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate(
+        var result = LqlExpressionEvaluator.Evaluate(
             "concat(First, ' ', Middle, ' ', Last)",
             source
         );
@@ -56,7 +56,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"A":null,"B":null,"C":""}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("coalesce(A, B, C)", source);
+        var result = LqlExpressionEvaluator.Evaluate("coalesce(A, B, C)", source);
 
         // Should return empty or first non-null
         Assert.True(result == null || string.IsNullOrEmpty(result.ToString()));
@@ -67,7 +67,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"A":"","B":"","C":"found"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("coalesce(A, B, C)", source);
+        var result = LqlExpressionEvaluator.Evaluate("coalesce(A, B, C)", source);
 
         Assert.Equal("found", result);
     }
@@ -77,11 +77,11 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     #region Special Characters and Unicode
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_UnicodeCharacters_Preserved()
+    public void LqlTransform_UnicodeCharacters_Preserved()
     {
         var source = JsonDocument.Parse("""{"Name":"日本語テスト"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Name", source);
+        var result = LqlExpressionEvaluator.Evaluate("Name", source);
 
         Assert.Equal("日本語テスト", result);
     }
@@ -91,7 +91,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Name":"café"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("upper(Name)", source);
+        var result = LqlExpressionEvaluator.Evaluate("upper(Name)", source);
 
         Assert.Equal("CAFÉ", result);
     }
@@ -101,7 +101,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Name":"MÜNCHEN"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("lower(Name)", source);
+        var result = LqlExpressionEvaluator.Evaluate("lower(Name)", source);
 
         Assert.Equal("münchen", result);
     }
@@ -111,37 +111,37 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Prefix":"Hello","Suffix":"🎉"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("concat(Prefix, ' ', Suffix)", source);
+        var result = LqlExpressionEvaluator.Evaluate("concat(Prefix, ' ', Suffix)", source);
 
         Assert.Equal("Hello 🎉", result);
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_StringWithQuotes_Handled()
+    public void LqlTransform_StringWithQuotes_Handled()
     {
         var source = JsonDocument.Parse("""{"Text":"Say \"Hello\" to me"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Text", source);
+        var result = LqlExpressionEvaluator.Evaluate("Text", source);
 
         Assert.Equal("Say \"Hello\" to me", result);
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_StringWithBackslash_Preserved()
+    public void LqlTransform_StringWithBackslash_Preserved()
     {
         var source = JsonDocument.Parse("""{"Path":"C:\\Users\\Test"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Path", source);
+        var result = LqlExpressionEvaluator.Evaluate("Path", source);
 
         Assert.Equal("C:\\Users\\Test", result);
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_StringWithNewlines_Preserved()
+    public void LqlTransform_StringWithNewlines_Preserved()
     {
         var source = JsonDocument.Parse("""{"Text":"Line1\nLine2\nLine3"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Text", source);
+        var result = LqlExpressionEvaluator.Evaluate("Text", source);
 
         Assert.Contains("\n", result?.ToString());
     }
@@ -151,51 +151,51 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     #region Numeric Edge Cases
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_IntegerZero_ReturnsZero()
+    public void LqlTransform_IntegerZero_ReturnsZero()
     {
         var source = JsonDocument.Parse("""{"Value":0}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Value", source);
+        var result = LqlExpressionEvaluator.Evaluate("Value", source);
 
         Assert.Equal(0L, result);
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_NegativeNumber_Preserved()
+    public void LqlTransform_NegativeNumber_Preserved()
     {
         var source = JsonDocument.Parse("""{"Value":-123}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Value", source);
+        var result = LqlExpressionEvaluator.Evaluate("Value", source);
 
         Assert.Equal(-123L, result);
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_LargeInteger_Preserved()
+    public void LqlTransform_LargeInteger_Preserved()
     {
         var source = JsonDocument.Parse("""{"Value":9223372036854775807}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Value", source);
+        var result = LqlExpressionEvaluator.Evaluate("Value", source);
 
         Assert.Equal(9223372036854775807L, result);
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_FloatingPoint_Preserved()
+    public void LqlTransform_FloatingPoint_Preserved()
     {
         var source = JsonDocument.Parse("""{"Value":3.14159265359}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Value", source);
+        var result = LqlExpressionEvaluator.Evaluate("Value", source);
 
         Assert.Equal(3.14159265359, result);
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_ScientificNotation_Parsed()
+    public void LqlTransform_ScientificNotation_Parsed()
     {
         var source = JsonDocument.Parse("""{"Value":1.5e10}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Value", source);
+        var result = LqlExpressionEvaluator.Evaluate("Value", source);
 
         Assert.Equal(1.5e10, result);
     }
@@ -205,21 +205,21 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     #region Boolean Edge Cases
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_BooleanTrue_Preserved()
+    public void LqlTransform_BooleanTrue_Preserved()
     {
         var source = JsonDocument.Parse("""{"Active":true}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Active", source);
+        var result = LqlExpressionEvaluator.Evaluate("Active", source);
 
         Assert.Equal(true, result);
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreTransform_BooleanFalse_Preserved()
+    public void LqlTransform_BooleanFalse_Preserved()
     {
         var source = JsonDocument.Parse("""{"Active":false}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Active", source);
+        var result = LqlExpressionEvaluator.Evaluate("Active", source);
 
         Assert.Equal(false, result);
     }
@@ -233,7 +233,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Text":"Hello"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("substring(Text, 100, 5)", source);
+        var result = LqlExpressionEvaluator.Evaluate("substring(Text, 100, 5)", source);
 
         Assert.Equal("", result);
     }
@@ -243,7 +243,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Text":"Hello"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("substring(Text, 3, 100)", source);
+        var result = LqlExpressionEvaluator.Evaluate("substring(Text, 3, 100)", source);
 
         // Starting at position 3 (1-based), get remaining
         Assert.Equal("llo", result);
@@ -254,7 +254,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Text":"Hi"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("left(Text, 100)", source);
+        var result = LqlExpressionEvaluator.Evaluate("left(Text, 100)", source);
 
         Assert.Equal("Hi", result);
     }
@@ -264,7 +264,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Text":"Hi"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("right(Text, 100)", source);
+        var result = LqlExpressionEvaluator.Evaluate("right(Text, 100)", source);
 
         Assert.Equal("Hi", result);
     }
@@ -274,7 +274,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Text":"Hello"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("left(Text, 0)", source);
+        var result = LqlExpressionEvaluator.Evaluate("left(Text, 0)", source);
 
         Assert.Equal("", result);
     }
@@ -284,7 +284,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Text":"Hello World"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("replace(Text, 'NOTFOUND', 'X')", source);
+        var result = LqlExpressionEvaluator.Evaluate("replace(Text, 'NOTFOUND', 'X')", source);
 
         Assert.Equal("Hello World", result);
     }
@@ -294,7 +294,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Text":"a-b-c-d"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("replace(Text, '-', '_')", source);
+        var result = LqlExpressionEvaluator.Evaluate("replace(Text, '-', '_')", source);
 
         Assert.Equal("a_b_c_d", result);
     }
@@ -304,7 +304,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Text":"NoSpaces"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("trim(Text)", source);
+        var result = LqlExpressionEvaluator.Evaluate("trim(Text)", source);
 
         Assert.Equal("NoSpaces", result);
     }
@@ -314,7 +314,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Text":"   "}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("trim(Text)", source);
+        var result = LqlExpressionEvaluator.Evaluate("trim(Text)", source);
 
         Assert.Equal("", result);
     }
@@ -324,7 +324,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Text":""}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("length(Text)", source);
+        var result = LqlExpressionEvaluator.Evaluate("length(Text)", source);
 
         Assert.Equal(0, result);
     }
@@ -334,7 +334,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Text":"日本語"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("length(Text)", source);
+        var result = LqlExpressionEvaluator.Evaluate("length(Text)", source);
 
         Assert.Equal(3, result);
     }
@@ -348,7 +348,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Date":"not-a-date"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("dateFormat(Date, 'yyyy-MM-dd')", source);
+        var result = LqlExpressionEvaluator.Evaluate("dateFormat(Date, 'yyyy-MM-dd')", source);
 
         Assert.Equal("not-a-date", result);
     }
@@ -358,7 +358,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Date":""}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("dateFormat(Date, 'yyyy-MM-dd')", source);
+        var result = LqlExpressionEvaluator.Evaluate("dateFormat(Date, 'yyyy-MM-dd')", source);
 
         Assert.Equal("", result);
     }
@@ -368,7 +368,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Date":"2024-12-25T15:30:00Z"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("dateFormat(Date, 'yyyy-MM-dd')", source);
+        var result = LqlExpressionEvaluator.Evaluate("dateFormat(Date, 'yyyy-MM-dd')", source);
 
         Assert.Equal("2024-12-25", result);
     }
@@ -378,7 +378,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Date":"2024-06-15T14:30:45Z"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("dateFormat(Date, 'HH:mm:ss')", source);
+        var result = LqlExpressionEvaluator.Evaluate("dateFormat(Date, 'HH:mm:ss')", source);
 
         Assert.Equal("14:30:45", result);
     }
@@ -392,7 +392,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Name":""}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Name |> trim() |> upper()", source);
+        var result = LqlExpressionEvaluator.Evaluate("Name |> trim() |> upper()", source);
 
         Assert.Equal("", result);
     }
@@ -402,7 +402,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Text":"  HeLLo WoRLd  "}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate("Text |> trim() |> lower()", source);
+        var result = LqlExpressionEvaluator.Evaluate("Text |> trim() |> lower()", source);
 
         Assert.Equal("hello world", result);
     }
@@ -412,7 +412,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var source = JsonDocument.Parse("""{"Path":"users/admin/home"}""").RootElement;
 
-        var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate(
+        var result = LqlExpressionEvaluator.Evaluate(
             "Path |> replace('/', '_') |> upper()",
             source
         );
@@ -431,15 +431,15 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
             "test",
             "Source",
             "Target",
-            [new ColumnMapping("Name", "DisplayName", TransformType.Nimblesite.Lql.Core, null, "upper(Name)")]
+            [new ColumnMapping("Name", "DisplayName", TransformType.Lql, null, "upper(Name)")]
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Delete,
+            Operation: SyncOperation.Delete,
             Payload: null, // DELETE operations have null payload
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -464,9 +464,9 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
             ColumnMappings: [], // Empty - should passthrough
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var entry = CreateEntry(
             "Source",
@@ -488,11 +488,11 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
     {
         var columnMappings = new List<ColumnMapping>
         {
-            new("NonExistent", "DisplayName", TransformType.Nimblesite.Lql.Core, null, "upper(NonExistent)"),
+            new("NonExistent", "DisplayName", TransformType.Lql, null, "upper(NonExistent)"),
         };
 
         var mapping = CreateMappingWithColumns("test", "Source", "Target", columnMappings);
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var entry = CreateEntry("Source", """{"Id":"1"}""", """{"Id":"1","Name":"Alice"}""");
 
@@ -509,13 +509,13 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
         var columnMappings = new List<ColumnMapping>
         {
             new("Name", "Name"), // Direct mapping
-            new("Email", "NormalizedEmail", TransformType.Nimblesite.Lql.Core, null, "lower(Email)"), // LQL transform
+            new("Email", "NormalizedEmail", TransformType.Lql, null, "lower(Email)"), // LQL transform
             new(null, "Source", TransformType.Constant, "mobile-app"), // Constant
             new("Status", "StatusCode"), // Direct mapping
         };
 
         var mapping = CreateMappingWithColumns("test", "Source", "Target", columnMappings);
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var entry = CreateEntry(
             "Source",
@@ -546,9 +546,9 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
             ColumnMappings: [],
             ExcludedColumns: ["Password", "Salt", "SecurityToken", "InternalNotes"],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var entry = CreateEntry(
             "User",
@@ -583,9 +583,9 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
             ColumnMappings: [],
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var entry = CreateEntry("Source", """{"UserId":"user-123"}""", """{"Name":"Test"}""");
 
@@ -608,7 +608,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
                     new ColumnMapping(
                         "Name",
                         "DisplayName",
-                        TransformType.Nimblesite.Lql.Core,
+                        TransformType.Lql,
                         null,
                         "upper(Name)"
                     ),
@@ -634,11 +634,11 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
             ColumnMappings: [],
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig(),
+            SyncTracking: new SyncTrackingConfig(),
             IsMultiTarget: true,
             Targets: targets
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var entry = CreateEntry(
             "User",
@@ -669,10 +669,10 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
         // Simulate normalizing messy address data
         var columnMappings = new List<ColumnMapping>
         {
-            new("street", "Street", TransformType.Nimblesite.Lql.Core, null, "trim(street)"),
-            new("city", "City", TransformType.Nimblesite.Lql.Core, null, "city |> trim() |> upper()"),
-            new("state", "State", TransformType.Nimblesite.Lql.Core, null, "upper(state)"),
-            new("zip", "PostalCode", TransformType.Nimblesite.Lql.Core, null, "left(zip, 5)"),
+            new("street", "Street", TransformType.Lql, null, "trim(street)"),
+            new("city", "City", TransformType.Lql, null, "city |> trim() |> upper()"),
+            new("state", "State", TransformType.Lql, null, "upper(state)"),
+            new("zip", "PostalCode", TransformType.Lql, null, "left(zip, 5)"),
         };
 
         var mapping = CreateMappingWithColumns(
@@ -681,7 +681,7 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
             "Address",
             columnMappings
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var entry = CreateEntry(
             "RawAddress",
@@ -707,9 +707,9 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
         // Remove sensitive fields, normalize remaining
         var columnMappings = new List<ColumnMapping>
         {
-            new("username", "Username", TransformType.Nimblesite.Lql.Core, null, "lower(username)"),
-            new("email", "Email", TransformType.Nimblesite.Lql.Core, null, "lower(email)"),
-            new("display_name", "DisplayName", TransformType.Nimblesite.Lql.Core, null, "trim(display_name)"),
+            new("username", "Username", TransformType.Lql, null, "lower(username)"),
+            new("email", "Email", TransformType.Lql, null, "lower(email)"),
+            new("display_name", "DisplayName", TransformType.Lql, null, "trim(display_name)"),
             // Constant for sync source
             new(null, "DataSource", TransformType.Constant, "legacy_crm"),
         };
@@ -724,9 +724,9 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
             ColumnMappings: columnMappings,
             ExcludedColumns: ["password_hash", "ssn", "credit_card"],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var entry = CreateEntry(
             "LegacyUser",
@@ -775,15 +775,15 @@ public sealed class Nimblesite.Lql.CoreMappingCornerCaseTests
             ColumnMappings: columnMappings,
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-    private static Nimblesite.Sync.CoreLogEntry CreateEntry(string table, string pk, string? payload) =>
+    private static SyncLogEntry CreateEntry(string table, string pk, string? payload) =>
         new(
             Version: 1,
             TableName: table,
             PkValue: pk,
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: payload,
             Origin: "test-origin",
             Timestamp: "2024-01-01T00:00:00Z"

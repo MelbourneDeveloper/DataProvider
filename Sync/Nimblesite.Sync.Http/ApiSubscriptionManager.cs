@@ -44,7 +44,7 @@ public sealed class ApiSubscriptionManager : IDisposable
     /// <param name="tableName">Table to subscribe to.</param>
     /// <param name="pkValue">Optional primary key for record-level subscription.</param>
     /// <returns>Channel to read changes from.</returns>
-    public Channel<Nimblesite.Sync.CoreLogEntry> Subscribe(string subscriptionId, string tableName, string? pkValue)
+    public Channel<SyncLogEntry> Subscribe(string subscriptionId, string tableName, string? pkValue)
     {
         _logger.LogInformation(
             "SUBS: Creating subscription {Id} for {Table}/{Pk}",
@@ -53,7 +53,7 @@ public sealed class ApiSubscriptionManager : IDisposable
             pkValue
         );
 
-        var channel = Channel.CreateBounded<Nimblesite.Sync.CoreLogEntry>(
+        var channel = Channel.CreateBounded<SyncLogEntry>(
             new BoundedChannelOptions(1000) { FullMode = BoundedChannelFullMode.DropOldest }
         );
         var sub = new Subscription(subscriptionId, tableName, pkValue, channel, DateTime.UtcNow);
@@ -79,13 +79,13 @@ public sealed class ApiSubscriptionManager : IDisposable
     /// Notify all matching subscriptions of a change.
     /// </summary>
     /// <param name="entry">The change to notify about.</param>
-    public void NotifyChange(Nimblesite.Sync.CoreLogEntryDto entry)
+    public void NotifyChange(SyncLogEntryDto entry)
     {
-        var syncEntry = new Nimblesite.Sync.CoreLogEntry(
+        var syncEntry = new SyncLogEntry(
             entry.Version,
             entry.TableName,
             entry.PkValue,
-            Enum.Parse<Nimblesite.Sync.CoreOperation>(entry.Operation, true),
+            Enum.Parse<SyncOperation>(entry.Operation, true),
             entry.Payload,
             entry.Origin,
             entry.Timestamp
@@ -125,11 +125,11 @@ public sealed class ApiSubscriptionManager : IDisposable
         string Id,
         string TableName,
         string? PkValue,
-        Channel<Nimblesite.Sync.CoreLogEntry> Channel,
+        Channel<SyncLogEntry> Channel,
         DateTime CreatedAt
     )
     {
-        public bool Matches(Nimblesite.Sync.CoreLogEntry entry)
+        public bool Matches(SyncLogEntry entry)
         {
             if (!string.Equals(TableName, entry.TableName, StringComparison.OrdinalIgnoreCase))
                 return false;

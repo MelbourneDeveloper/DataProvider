@@ -14,7 +14,7 @@ public sealed class BatchManagerTests : IDisposable
         var result = BatchManager.FetchBatch(
             0,
             100,
-            (from, limit) => new Nimblesite.Sync.CoreLogListOk(_db.FetchChanges(from, limit)),
+            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit)),
             _logger
         );
 
@@ -48,7 +48,7 @@ public sealed class BatchManagerTests : IDisposable
         var result = BatchManager.FetchBatch(
             0,
             100,
-            (from, limit) => new Nimblesite.Sync.CoreLogListOk(_db.FetchChanges(from, limit)),
+            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit)),
             _logger
         );
 
@@ -77,7 +77,7 @@ public sealed class BatchManagerTests : IDisposable
         var result = BatchManager.FetchBatch(
             0,
             3,
-            (from, limit) => new Nimblesite.Sync.CoreLogListOk(_db.FetchChanges(from, limit)),
+            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit)),
             _logger
         );
 
@@ -105,7 +105,7 @@ public sealed class BatchManagerTests : IDisposable
         var result = BatchManager.FetchBatch(
             3,
             100,
-            (from, limit) => new Nimblesite.Sync.CoreLogListOk(_db.FetchChanges(from, limit)),
+            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit)),
             _logger
         );
 
@@ -130,13 +130,13 @@ public sealed class BatchManagerTests : IDisposable
             );
         }
 
-        var appliedBatches = new List<Nimblesite.Sync.CoreBatch>();
+        var appliedBatches = new List<SyncBatch>();
         var lastVersion = 0L;
 
         var result = BatchManager.ProcessAllBatches(
             0,
             new BatchConfig(BatchSize: 3),
-            (from, limit) => new Nimblesite.Sync.CoreLogListOk(_db.FetchChanges(from, limit)),
+            (from, limit) => new SyncLogListOk(_db.FetchChanges(from, limit)),
             batch =>
             {
                 appliedBatches.Add(batch);
@@ -154,10 +154,10 @@ public sealed class BatchManagerTests : IDisposable
         Assert.Equal(10, lastVersion);
     }
 
-    private static T AssertSuccess<T>(Result<T, Nimblesite.Sync.CoreError> result)
+    private static T AssertSuccess<T>(Result<T, SyncError> result)
     {
-        Assert.IsType<Result<T, Nimblesite.Sync.CoreError>.Ok<T, Nimblesite.Sync.CoreError>>(result);
-        return ((Result<T, Nimblesite.Sync.CoreError>.Ok<T, Nimblesite.Sync.CoreError>)result).Value;
+        Assert.IsType<Result<T, SyncError>.Ok<T, SyncError>>(result);
+        return ((Result<T, SyncError>.Ok<T, SyncError>)result).Value;
     }
 
     public void Dispose() => _db.Dispose();

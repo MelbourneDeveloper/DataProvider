@@ -22,8 +22,8 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
     {
         _db = new SqliteConnection($"Data Source={_dbPath}");
         _db.Open();
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, _originId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, _originId);
     }
 
     #region Subscription Extension Methods
@@ -44,7 +44,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
     public void InsertSubscription_ValidSubscription_Succeeds()
     {
         // Arrange
-        var subscription = new Nimblesite.Sync.CoreSubscription(
+        var subscription = new SyncSubscription(
             SubscriptionId: "sub-1",
             OriginId: _originId,
             Type: SubscriptionType.Table,
@@ -70,7 +70,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
     public void GetAllSubscriptions_WithSubscriptions_ReturnsAll()
     {
         // Arrange
-        var sub1 = new Nimblesite.Sync.CoreSubscription(
+        var sub1 = new SyncSubscription(
             "sub-1",
             _originId,
             SubscriptionType.Table,
@@ -79,7 +79,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
             Timestamp,
             null
         );
-        var sub2 = new Nimblesite.Sync.CoreSubscription(
+        var sub2 = new SyncSubscription(
             "sub-2",
             _originId,
             SubscriptionType.Record,
@@ -104,7 +104,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
     public void GetSubscriptionsByTable_FiltersCorrectly()
     {
         // Arrange
-        var ordersSub = new Nimblesite.Sync.CoreSubscription(
+        var ordersSub = new SyncSubscription(
             "sub-orders",
             _originId,
             SubscriptionType.Table,
@@ -113,7 +113,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
             Timestamp,
             null
         );
-        var productsSub = new Nimblesite.Sync.CoreSubscription(
+        var productsSub = new SyncSubscription(
             "sub-products",
             _originId,
             SubscriptionType.Table,
@@ -139,7 +139,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
     public void DeleteSubscription_ExistingSubscription_Removes()
     {
         // Arrange
-        var subscription = new Nimblesite.Sync.CoreSubscription(
+        var subscription = new SyncSubscription(
             "sub-1",
             _originId,
             SubscriptionType.Table,
@@ -167,7 +167,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
         var origin1 = "origin-1";
         var origin2 = "origin-2";
         _db.InsertSubscription(
-            new Nimblesite.Sync.CoreSubscription(
+            new SyncSubscription(
                 "sub-1",
                 origin1,
                 SubscriptionType.Table,
@@ -178,7 +178,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
             )
         );
         _db.InsertSubscription(
-            new Nimblesite.Sync.CoreSubscription(
+            new SyncSubscription(
                 "sub-2",
                 origin1,
                 SubscriptionType.Table,
@@ -189,7 +189,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
             )
         );
         _db.InsertSubscription(
-            new Nimblesite.Sync.CoreSubscription(
+            new SyncSubscription(
                 "sub-3",
                 origin2,
                 SubscriptionType.Table,
@@ -216,7 +216,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
     public void DeleteExpiredSubscriptions_RemovesExpired()
     {
         // Arrange
-        var expiredSub = new Nimblesite.Sync.CoreSubscription(
+        var expiredSub = new SyncSubscription(
             "sub-expired",
             _originId,
             SubscriptionType.Table,
@@ -225,7 +225,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
             "2025-01-01T00:00:00Z",
             "2025-06-01T00:00:00Z"
         );
-        var activeSub = new Nimblesite.Sync.CoreSubscription(
+        var activeSub = new SyncSubscription(
             "sub-active",
             _originId,
             SubscriptionType.Table,
@@ -234,7 +234,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
             "2025-01-01T00:00:00Z",
             "2025-12-31T23:59:59Z"
         );
-        var noExpirySub = new Nimblesite.Sync.CoreSubscription(
+        var noExpirySub = new SyncSubscription(
             "sub-no-expiry",
             _originId,
             SubscriptionType.Table,
@@ -312,7 +312,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
         cmd.ExecuteNonQuery();
 
         // Get current max version
-        var maxVersionResult = Nimblesite.Sync.CoreLogRepository.GetMaxVersion(_db);
+        var maxVersionResult = SyncLogRepository.GetMaxVersion(_db);
         var maxVersion = ((LongSyncOk)maxVersionResult).Value;
 
         // Act
@@ -342,7 +342,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
         cmd.Parameters.AddWithValue("@ts", Timestamp);
         cmd.ExecuteNonQuery();
 
-        var maxVersionResult = Nimblesite.Sync.CoreLogRepository.GetMaxVersion(_db);
+        var maxVersionResult = SyncLogRepository.GetMaxVersion(_db);
         var maxVersion = ((LongSyncOk)maxVersionResult).Value;
 
         // Act
@@ -367,15 +367,15 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
         var result = _db.GetAllSyncClients();
 
         // Assert
-        Assert.True(result is Nimblesite.Sync.CoreClientListOk);
-        Assert.Empty(((Nimblesite.Sync.CoreClientListOk)result).Value);
+        Assert.True(result is SyncClientListOk);
+        Assert.Empty(((SyncClientListOk)result).Value);
     }
 
     [Fact]
     public void UpsertSyncClient_NewClient_Inserts()
     {
         // Arrange
-        var client = new Nimblesite.Sync.CoreClient(
+        var client = new SyncClient(
             OriginId: "client-1",
             LastSyncVersion: 100,
             LastSyncTimestamp: Timestamp,
@@ -389,17 +389,17 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
         Assert.True(result is BoolSyncOk);
 
         var allClients = _db.GetAllSyncClients();
-        Assert.Single(((Nimblesite.Sync.CoreClientListOk)allClients).Value);
+        Assert.Single(((SyncClientListOk)allClients).Value);
     }
 
     [Fact]
     public void UpsertSyncClient_ExistingClient_Updates()
     {
         // Arrange
-        var client1 = new Nimblesite.Sync.CoreClient("client-1", 100, Timestamp, Timestamp);
+        var client1 = new SyncClient("client-1", 100, Timestamp, Timestamp);
         _db.UpsertSyncClient(client1);
 
-        var client2 = new Nimblesite.Sync.CoreClient("client-1", 200, "2025-02-01T00:00:00Z", Timestamp);
+        var client2 = new SyncClient("client-1", 200, "2025-02-01T00:00:00Z", Timestamp);
 
         // Act
         var result = _db.UpsertSyncClient(client2);
@@ -408,7 +408,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
         Assert.True(result is BoolSyncOk);
 
         var allClients = _db.GetAllSyncClients();
-        var clients = ((Nimblesite.Sync.CoreClientListOk)allClients).Value;
+        var clients = ((SyncClientListOk)allClients).Value;
         Assert.Single(clients);
         Assert.Equal(200, clients[0].LastSyncVersion);
     }
@@ -417,16 +417,16 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
     public void GetAllSyncClients_MultipleClients_ReturnsOrderedByVersion()
     {
         // Arrange
-        _db.UpsertSyncClient(new Nimblesite.Sync.CoreClient("client-a", 300, Timestamp, Timestamp));
-        _db.UpsertSyncClient(new Nimblesite.Sync.CoreClient("client-b", 100, Timestamp, Timestamp));
-        _db.UpsertSyncClient(new Nimblesite.Sync.CoreClient("client-c", 200, Timestamp, Timestamp));
+        _db.UpsertSyncClient(new SyncClient("client-a", 300, Timestamp, Timestamp));
+        _db.UpsertSyncClient(new SyncClient("client-b", 100, Timestamp, Timestamp));
+        _db.UpsertSyncClient(new SyncClient("client-c", 200, Timestamp, Timestamp));
 
         // Act
         var result = _db.GetAllSyncClients();
 
         // Assert
-        Assert.True(result is Nimblesite.Sync.CoreClientListOk);
-        var clients = ((Nimblesite.Sync.CoreClientListOk)result).Value;
+        Assert.True(result is SyncClientListOk);
+        var clients = ((SyncClientListOk)result).Value;
         Assert.Equal(3, clients.Count);
         Assert.Equal("client-b", clients[0].OriginId); // Lowest version first
         Assert.Equal("client-c", clients[1].OriginId);
@@ -437,9 +437,9 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
     public void DeleteStaleSyncClients_RemovesSpecifiedClients()
     {
         // Arrange
-        _db.UpsertSyncClient(new Nimblesite.Sync.CoreClient("client-1", 100, Timestamp, Timestamp));
-        _db.UpsertSyncClient(new Nimblesite.Sync.CoreClient("client-2", 200, Timestamp, Timestamp));
-        _db.UpsertSyncClient(new Nimblesite.Sync.CoreClient("client-3", 300, Timestamp, Timestamp));
+        _db.UpsertSyncClient(new SyncClient("client-1", 100, Timestamp, Timestamp));
+        _db.UpsertSyncClient(new SyncClient("client-2", 200, Timestamp, Timestamp));
+        _db.UpsertSyncClient(new SyncClient("client-3", 300, Timestamp, Timestamp));
 
         // Act
         var result = _db.DeleteStaleSyncClients(["client-1", "client-2"]);
@@ -449,7 +449,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
         Assert.Equal(2, ((IntSyncOk)result).Value);
 
         var remaining = _db.GetAllSyncClients();
-        var clients = ((Nimblesite.Sync.CoreClientListOk)remaining).Value;
+        var clients = ((SyncClientListOk)remaining).Value;
         Assert.Single(clients);
         Assert.Equal("client-3", clients[0].OriginId);
     }
@@ -462,7 +462,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
     public void InsertAndRetrieve_RecordSubscription_TypePreserved()
     {
         // Arrange
-        var subscription = new Nimblesite.Sync.CoreSubscription(
+        var subscription = new SyncSubscription(
             "sub-1",
             _originId,
             SubscriptionType.Record,
@@ -487,7 +487,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
     public void InsertAndRetrieve_QuerySubscription_TypePreserved()
     {
         // Arrange
-        var subscription = new Nimblesite.Sync.CoreSubscription(
+        var subscription = new SyncSubscription(
             "sub-1",
             _originId,
             SubscriptionType.Query,
@@ -513,7 +513,7 @@ public sealed class SqliteExtensionIntegrationTests : IDisposable
     {
         // Arrange
         var expiresAt = "2025-12-31T23:59:59.999Z";
-        var subscription = new Nimblesite.Sync.CoreSubscription(
+        var subscription = new SyncSubscription(
             "sub-1",
             _originId,
             SubscriptionType.Table,

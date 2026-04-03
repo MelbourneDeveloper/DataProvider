@@ -5,7 +5,7 @@ namespace Nimblesite.Lql.Tests;
 /// <summary>
 /// File-based tests for LQL join operations
 /// </summary>
-public partial class Nimblesite.Lql.CoreFileBasedTests
+public partial class LqlFileBasedTests
 {
     /*
     TODO: many of these are not generating the correct SQL

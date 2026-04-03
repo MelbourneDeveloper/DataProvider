@@ -7,7 +7,7 @@ namespace Nimblesite.Lql.Browser.Models;
 /// <summary>
 /// Static methods for setting up LQL TextMate integration
 /// </summary>
-public static class Nimblesite.Lql.CoreTextMateSetup
+public static class LqlTextMateSetup
 {
     /// <summary>
     /// Sets up TextMate with dark theme for LQL syntax highlighting

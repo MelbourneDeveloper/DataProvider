@@ -24,7 +24,7 @@ public static class SubscriptionRepository
                 ORDER BY created_at ASC
                 """;
 
-            var subscriptions = new List<Nimblesite.Sync.CoreSubscription>();
+            var subscriptions = new List<SyncSubscription>();
             using var reader = cmd.ExecuteReader();
 
             while (reader.Read())
@@ -37,7 +37,7 @@ public static class SubscriptionRepository
         catch (SqliteException ex)
         {
             return new SubscriptionListError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get subscriptions: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get subscriptions: {ex.Message}")
             );
         }
     }
@@ -72,7 +72,7 @@ public static class SubscriptionRepository
         catch (SqliteException ex)
         {
             return new SubscriptionError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get subscription: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get subscription: {ex.Message}")
             );
         }
     }
@@ -96,7 +96,7 @@ public static class SubscriptionRepository
                 """;
             cmd.Parameters.AddWithValue("@tableName", tableName);
 
-            var subscriptions = new List<Nimblesite.Sync.CoreSubscription>();
+            var subscriptions = new List<SyncSubscription>();
             using var reader = cmd.ExecuteReader();
 
             while (reader.Read())
@@ -109,7 +109,7 @@ public static class SubscriptionRepository
         catch (SqliteException ex)
         {
             return new SubscriptionListError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get subscriptions: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get subscriptions: {ex.Message}")
             );
         }
     }
@@ -133,7 +133,7 @@ public static class SubscriptionRepository
                 """;
             cmd.Parameters.AddWithValue("@originId", originId);
 
-            var subscriptions = new List<Nimblesite.Sync.CoreSubscription>();
+            var subscriptions = new List<SyncSubscription>();
             using var reader = cmd.ExecuteReader();
 
             while (reader.Read())
@@ -146,7 +146,7 @@ public static class SubscriptionRepository
         catch (SqliteException ex)
         {
             return new SubscriptionListError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get subscriptions: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get subscriptions: {ex.Message}")
             );
         }
     }
@@ -157,7 +157,7 @@ public static class SubscriptionRepository
     /// <param name="connection">SQLite connection.</param>
     /// <param name="subscription">Subscription to insert.</param>
     /// <returns>Success or database error.</returns>
-    public static BoolSyncResult Insert(SqliteConnection connection, Nimblesite.Sync.CoreSubscription subscription)
+    public static BoolSyncResult Insert(SqliteConnection connection, SyncSubscription subscription)
     {
         try
         {
@@ -188,7 +188,7 @@ public static class SubscriptionRepository
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to insert subscription: {ex.Message}")
+                new SyncErrorDatabase($"Failed to insert subscription: {ex.Message}")
             );
         }
     }
@@ -213,7 +213,7 @@ public static class SubscriptionRepository
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to delete subscription: {ex.Message}")
+                new SyncErrorDatabase($"Failed to delete subscription: {ex.Message}")
             );
         }
     }
@@ -238,7 +238,7 @@ public static class SubscriptionRepository
         catch (SqliteException ex)
         {
             return new IntSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to delete subscriptions: {ex.Message}")
+                new SyncErrorDatabase($"Failed to delete subscriptions: {ex.Message}")
             );
         }
     }
@@ -266,12 +266,12 @@ public static class SubscriptionRepository
         catch (SqliteException ex)
         {
             return new IntSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to delete expired subscriptions: {ex.Message}")
+                new SyncErrorDatabase($"Failed to delete expired subscriptions: {ex.Message}")
             );
         }
     }
 
-    private static Nimblesite.Sync.CoreSubscription ReadSubscription(SqliteDataReader reader) =>
+    private static SyncSubscription ReadSubscription(SqliteDataReader reader) =>
         new(
             SubscriptionId: reader.GetString(0),
             OriginId: reader.GetString(1),

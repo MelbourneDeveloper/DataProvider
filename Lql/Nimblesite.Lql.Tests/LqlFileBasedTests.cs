@@ -11,7 +11,7 @@ namespace Nimblesite.Lql.Tests;
 /// File-based tests for LQL to PostgreSQL transformation.
 /// Tests read LQL input and expected SQL output from external files.
 /// </summary>
-public partial class Nimblesite.Lql.CoreFileBasedTests
+public partial class LqlFileBasedTests
 {
     private static readonly string TestDataDirectory = Path.Combine(
         AppDomain.CurrentDomain.BaseDirectory,
@@ -44,16 +44,16 @@ public partial class Nimblesite.Lql.CoreFileBasedTests
         string expectedSql = File.ReadAllText(expectedSqlFile).Trim();
 
         // Act
-        var statementResult = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
-        if (statementResult is Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError> failure)
+        var statementResult = LqlStatementConverter.ToStatement(lqlCode);
+        if (statementResult is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> failure)
         {
             throw new InvalidOperationException(
                 $"Parsing failed for {testCaseName}: {failure.Value.DetailedMessage}"
             );
         }
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Ok<Nimblesite.Lql.CoreStatement, SqlError>>(statementResult);
+        Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(statementResult);
         var statement = (
-            (Result<Nimblesite.Lql.CoreStatement, SqlError>.Ok<Nimblesite.Lql.CoreStatement, SqlError>)statementResult
+            (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)statementResult
         ).Value;
 
         Result<string, SqlError> sqlResult = dialect switch
@@ -164,10 +164,10 @@ public partial class Nimblesite.Lql.CoreFileBasedTests
         // Act & Assert
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-        var statementResult = Nimblesite.Lql.CoreStatementConverter.ToStatement(largeLqlCode);
-        Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Ok<Nimblesite.Lql.CoreStatement, SqlError>>(statementResult);
+        var statementResult = LqlStatementConverter.ToStatement(largeLqlCode);
+        Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(statementResult);
         var statement = (
-            (Result<Nimblesite.Lql.CoreStatement, SqlError>.Ok<Nimblesite.Lql.CoreStatement, SqlError>)statementResult
+            (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)statementResult
         ).Value;
 
         var sqlResult = statement.ToPostgreSql();
@@ -191,12 +191,12 @@ public partial class Nimblesite.Lql.CoreFileBasedTests
         // Act & Assert
         for (int i = 0; i < 1000; i++)
         {
-            var statementResult = Nimblesite.Lql.CoreStatementConverter.ToStatement(lqlCode);
-            Assert.IsType<Result<Nimblesite.Lql.CoreStatement, SqlError>.Ok<Nimblesite.Lql.CoreStatement, SqlError>>(
+            var statementResult = LqlStatementConverter.ToStatement(lqlCode);
+            Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(
                 statementResult
             );
             var statement = (
-                (Result<Nimblesite.Lql.CoreStatement, SqlError>.Ok<Nimblesite.Lql.CoreStatement, SqlError>)statementResult
+                (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)statementResult
             ).Value;
 
             var sqlResult = statement.ToPostgreSql();

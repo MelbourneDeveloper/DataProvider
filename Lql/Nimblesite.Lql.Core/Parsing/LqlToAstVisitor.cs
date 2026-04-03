@@ -9,17 +9,17 @@ namespace Nimblesite.Lql.Core.Parsing;
 /// <summary>
 /// Visitor that converts ANTLR parse tree to transpiler AST nodes.
 /// </summary>
-internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseVisitor<INode>
+internal sealed class LqlToAstVisitor : LqlBaseVisitor<INode>
 {
     private readonly Dictionary<string, INode> _variables = [];
     private HashSet<string>? _lambdaScope;
     private readonly string _sourceCode;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Nimblesite.Lql.CoreToAstVisitor"/> class.
+    /// Initializes a new instance of the <see cref="LqlToAstVisitor"/> class.
     /// </summary>
     /// <param name="sourceCode">Optional LQL source code used to enrich error positions.</param>
-    public Nimblesite.Lql.CoreToAstVisitor(string sourceCode = "")
+    public LqlToAstVisitor(string sourceCode = "")
     {
         _sourceCode = sourceCode;
     }
@@ -65,7 +65,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="context">The program context.</param>
     /// <returns>The last statement's AST node.</returns>
-    public override INode VisitProgram([NotNull] Nimblesite.Lql.CoreParser.ProgramContext context)
+    public override INode VisitProgram([NotNull] LqlParser.ProgramContext context)
     {
         INode? lastResult = null;
 
@@ -83,7 +83,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="context">The statement context.</param>
     /// <returns>The statement's AST node.</returns>
-    public override INode VisitStatement([NotNull] Nimblesite.Lql.CoreParser.StatementContext context)
+    public override INode VisitStatement([NotNull] LqlParser.StatementContext context)
     {
         if (context.letStmt() != null)
         {
@@ -103,7 +103,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="context">The let statement context.</param>
     /// <returns>The pipe expression's AST node.</returns>
-    public override INode VisitLetStmt([NotNull] Nimblesite.Lql.CoreParser.LetStmtContext context)
+    public override INode VisitLetStmt([NotNull] LqlParser.LetStmtContext context)
     {
         string varName = context.IDENT().GetText();
 
@@ -118,7 +118,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="context">The pipe expression context.</param>
     /// <returns>The pipeline AST node.</returns>
-    public override INode VisitPipeExpr([NotNull] Nimblesite.Lql.CoreParser.PipeExprContext context)
+    public override INode VisitPipeExpr([NotNull] LqlParser.PipeExprContext context)
     {
         var expressions = context.expr();
 
@@ -153,7 +153,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="context">The expression context.</param>
     /// <returns>The expression's AST node.</returns>
-    public override INode VisitExpr([NotNull] Nimblesite.Lql.CoreParser.ExprContext context)
+    public override INode VisitExpr([NotNull] LqlParser.ExprContext context)
     {
         if (context.IDENT() != null && context.windowSpec() != null)
         {
@@ -234,7 +234,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="context">The CASE expression context.</param>
     /// <returns>An identifier containing the formatted CASE statement.</returns>
-    public override INode VisitCaseExpr([NotNull] Nimblesite.Lql.CoreParser.CaseExprContext context)
+    public override INode VisitCaseExpr([NotNull] LqlParser.CaseExprContext context)
     {
         var caseExpressionText = ProcessCaseExpressionToSql(context, _lambdaScope);
         return new Identifier(caseExpressionText);
@@ -245,7 +245,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="context">The lambda expression context.</param>
     /// <returns>The lambda expression as an identifier with proper variable scope.</returns>
-    public override INode VisitLambdaExpr([NotNull] Nimblesite.Lql.CoreParser.LambdaExprContext context)
+    public override INode VisitLambdaExpr([NotNull] LqlParser.LambdaExprContext context)
     {
         // Extract the lambda variable names
         var parameters = context.IDENT().Select(ident => ident.GetText()).ToList();
@@ -272,12 +272,12 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="lambdaVariables">The lambda variable names.</param>
     /// <returns>The processed condition text.</returns>
     private static string ProcessLambdaLogicalExpr(
-        Nimblesite.Lql.CoreParser.LogicalExprContext logicalExpr,
+        LqlParser.LogicalExprContext logicalExpr,
         List<string> lambdaVariables
     )
     {
         // Create a new visitor instance with lambda variable scope
-        var visitor = new Nimblesite.Lql.CoreToAstVisitor();
+        var visitor = new LqlToAstVisitor();
         visitor._lambdaScope = new HashSet<string>(
             lambdaVariables,
             StringComparer.OrdinalIgnoreCase
@@ -294,7 +294,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="lambdaScope">The lambda variables in scope.</param>
     /// <returns>The SQL condition text.</returns>
     private static string ProcessLogicalExpressionToSql(
-        Nimblesite.Lql.CoreParser.LogicalExprContext logicalExpr,
+        LqlParser.LogicalExprContext logicalExpr,
         HashSet<string>? lambdaScope
     )
     {
@@ -343,7 +343,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="lambdaScope">The lambda variables in scope.</param>
     /// <returns>The SQL comparison text.</returns>
     private static string ProcessComparisonToSql(
-        Nimblesite.Lql.CoreParser.ComparisonContext comparison,
+        LqlParser.ComparisonContext comparison,
         HashSet<string>? lambdaScope
     )
     {
@@ -436,7 +436,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="lambdaScope">The lambda variables in scope.</param>
     /// <returns>The SQL arithmetic expression text.</returns>
     private static string ProcessArithmeticExpressionToSql(
-        Nimblesite.Lql.CoreParser.ArithmeticExprContext arithmeticExpr,
+        LqlParser.ArithmeticExprContext arithmeticExpr,
         HashSet<string>? lambdaScope
     )
     {
@@ -481,7 +481,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="lambdaScope">The lambda variables in scope.</param>
     /// <returns>The SQL arithmetic term text.</returns>
     private static string ProcessArithmeticTermToSql(
-        Nimblesite.Lql.CoreParser.ArithmeticTermContext arithmeticTerm,
+        LqlParser.ArithmeticTermContext arithmeticTerm,
         HashSet<string>? lambdaScope
     )
     {
@@ -526,7 +526,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="lambdaScope">The lambda variables in scope.</param>
     /// <returns>The SQL arithmetic factor text.</returns>
     private static string ProcessArithmeticFactorToSql(
-        Nimblesite.Lql.CoreParser.ArithmeticFactorContext arithmeticFactor,
+        LqlParser.ArithmeticFactorContext arithmeticFactor,
         HashSet<string>? lambdaScope
     )
     {
@@ -593,7 +593,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="lambdaScope">The lambda variables in scope.</param>
     /// <returns>The properly formatted SQL CASE statement.</returns>
     private static string ProcessCaseExpressionToSql(
-        Nimblesite.Lql.CoreParser.CaseExprContext caseExpr,
+        LqlParser.CaseExprContext caseExpr,
         HashSet<string>? lambdaScope
     )
     {
@@ -647,22 +647,22 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
 #pragma warning restore CA1859
     {
         // Handle different types of expressions
-        if (context is Nimblesite.Lql.CoreParser.ArithmeticExprContext arithmeticExpr)
+        if (context is LqlParser.ArithmeticExprContext arithmeticExpr)
         {
             return ProcessArithmeticExpressionToSql(arithmeticExpr, lambdaScope);
         }
 
-        if (context is Nimblesite.Lql.CoreParser.QualifiedIdentContext qualifiedIdent)
+        if (context is LqlParser.QualifiedIdentContext qualifiedIdent)
         {
             return ProcessQualifiedIdentifierToSql(qualifiedIdent, lambdaScope);
         }
         // Handle CASE expressions properly
-        if (context is Nimblesite.Lql.CoreParser.CaseExprContext caseExpr)
+        if (context is LqlParser.CaseExprContext caseExpr)
         {
             return ProcessCaseExpressionToSql(caseExpr, lambdaScope);
         }
 
-        if (context is Nimblesite.Lql.CoreParser.CaseResultContext caseResult)
+        if (context is LqlParser.CaseResultContext caseResult)
         {
             // Process the case result based on its content
             if (caseResult.arithmeticExpr() != null)
@@ -713,7 +713,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="lambdaScope">The lambda variables in scope.</param>
     /// <returns>The SQL identifier text.</returns>
     private static string ProcessQualifiedIdentifierToSql(
-        Nimblesite.Lql.CoreParser.QualifiedIdentContext qualifiedIdent,
+        LqlParser.QualifiedIdentContext qualifiedIdent,
         HashSet<string>? lambdaScope
     )
     {
@@ -740,7 +740,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="baseNode">The base node for the step.</param>
     /// <param name="expr">The expression context.</param>
     /// <returns>The pipeline step.</returns>
-    private IStep ConvertToStep(INode baseNode, Nimblesite.Lql.CoreParser.ExprContext expr)
+    private IStep ConvertToStep(INode baseNode, LqlParser.ExprContext expr)
     {
         if (expr.IDENT() == null)
         {
@@ -784,9 +784,9 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <returns>The JOIN step.</returns>
     private JoinStep CreateJoinStepWithType(
         INode baseNode,
-        Nimblesite.Lql.CoreParser.ArgContext[] args,
+        LqlParser.ArgContext[] args,
         string joinType,
-        Nimblesite.Lql.CoreParser.ExprContext context
+        LqlParser.ExprContext context
     )
     {
         if (args.Length < 1)
@@ -819,7 +819,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="baseNode">The base node.</param>
     /// <param name="args">The arguments.</param>
     /// <returns>The filter step.</returns>
-    private static FilterStep CreateFilterStep(INode baseNode, Nimblesite.Lql.CoreParser.ArgContext[] args)
+    private static FilterStep CreateFilterStep(INode baseNode, LqlParser.ArgContext[] args)
     {
         WhereCondition condition;
 
@@ -845,7 +845,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="baseNode">The base node.</param>
     /// <param name="args">The arguments.</param>
     /// <returns>The SELECT step.</returns>
-    private static SelectStep CreateSelectStep(INode baseNode, Nimblesite.Lql.CoreParser.ArgContext[] args)
+    private static SelectStep CreateSelectStep(INode baseNode, LqlParser.ArgContext[] args)
     {
         var columns = args.Select(MapArgToColumnInfo).ToList();
         return new SelectStep(columns) { Base = baseNode };
@@ -857,7 +857,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="arg">The argument context from ANTLR parsing.</param>
     /// <returns>A ColumnInfo representing the column selection.</returns>
-    private static ColumnInfo MapArgToColumnInfo(Nimblesite.Lql.CoreParser.ArgContext arg)
+    private static ColumnInfo MapArgToColumnInfo(LqlParser.ArgContext arg)
     {
         // Handle column alias first (expressions with "as" keyword)
         if (arg.columnAlias() != null)
@@ -947,7 +947,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="columnAlias">The column alias context.</param>
     /// <returns>A ColumnInfo with proper column and alias information.</returns>
-    private static ColumnInfo MapColumnAliasToColumnInfo(Nimblesite.Lql.CoreParser.ColumnAliasContext columnAlias)
+    private static ColumnInfo MapColumnAliasToColumnInfo(LqlParser.ColumnAliasContext columnAlias)
     {
         string? alias = null;
 
@@ -1007,7 +1007,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="baseNode">The base node.</param>
     /// <param name="args">The arguments.</param>
     /// <returns>The UNION step.</returns>
-    private UnionStep CreateUnionStep(INode baseNode, Nimblesite.Lql.CoreParser.ArgContext[] args)
+    private UnionStep CreateUnionStep(INode baseNode, LqlParser.ArgContext[] args)
     {
         string otherQuery;
 
@@ -1031,7 +1031,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="baseNode">The base node.</param>
     /// <param name="args">The arguments.</param>
     /// <returns>The INSERT step.</returns>
-    private static InsertStep CreateInsertStep(INode baseNode, Nimblesite.Lql.CoreParser.ArgContext[] args)
+    private static InsertStep CreateInsertStep(INode baseNode, LqlParser.ArgContext[] args)
     {
         string table;
 
@@ -1057,7 +1057,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="arg">The argument context.</param>
     /// <returns>The condition string.</returns>
-    private static string ExtractConditionFromLambda(Nimblesite.Lql.CoreParser.ArgContext arg)
+    private static string ExtractConditionFromLambda(LqlParser.ArgContext arg)
     {
         // Check if this is a lambda expression directly
         if (arg.lambdaExpr() != null)
@@ -1118,7 +1118,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="lambdaExpr">The lambda expression context.</param>
     /// <returns>The condition string.</returns>
-    private static string ExtractLambdaCondition(Nimblesite.Lql.CoreParser.LambdaExprContext lambdaExpr)
+    private static string ExtractLambdaCondition(LqlParser.LambdaExprContext lambdaExpr)
     {
         // Extract the lambda variable names
         var parameters = lambdaExpr.IDENT().Select(ident => ident.GetText()).ToList();
@@ -1144,7 +1144,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="args">The arguments array.</param>
     /// <param name="name">The parameter name.</param>
     /// <returns>The parameter value or null if not found.</returns>
-    private static string? ExtractNamedArgValue(Nimblesite.Lql.CoreParser.ArgContext[] args, string name)
+    private static string? ExtractNamedArgValue(LqlParser.ArgContext[] args, string name)
     {
         foreach (var arg in args)
         {
@@ -1188,7 +1188,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="arg">The argument context.</param>
     /// <returns>The identifier text.</returns>
-    private static string ExtractIdentifier(Nimblesite.Lql.CoreParser.ArgContext arg)
+    private static string ExtractIdentifier(LqlParser.ArgContext arg)
     {
         // Debug: print what we're processing
         //var argText = arg.GetText();
@@ -1266,7 +1266,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="columnAlias">The column alias context.</param>
     /// <returns>The formatted column alias text.</returns>
-    private static string ExtractColumnAlias(Nimblesite.Lql.CoreParser.ColumnAliasContext columnAlias)
+    private static string ExtractColumnAlias(LqlParser.ColumnAliasContext columnAlias)
     {
         // Extract the main column/expression part
         string columnPart = "";
@@ -1318,7 +1318,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="functionCall">The function call context.</param>
     /// <returns>The formatted function call text.</returns>
-    private static string ExtractFunctionCall(Nimblesite.Lql.CoreParser.FunctionCallContext functionCall)
+    private static string ExtractFunctionCall(LqlParser.FunctionCallContext functionCall)
     {
         // Build the function call properly using the grammar structure
         string functionName = functionCall.IDENT().GetText();
@@ -1374,7 +1374,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="arithmeticExpr">The arithmetic expression context.</param>
     /// <returns>The formatted arithmetic expression text.</returns>
     private static string ExtractArithmeticExpression(
-        Nimblesite.Lql.CoreParser.ArithmeticExprContext arithmeticExpr
+        LqlParser.ArithmeticExprContext arithmeticExpr
     ) =>
         // Process arithmetic expression properly using the grammar structure
         ProcessArithmeticExpressionToSql(arithmeticExpr, null);
@@ -1384,7 +1384,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="context">The expression context containing the window function.</param>
     /// <returns>The formatted window function text.</returns>
-    private static string ExtractWindowFunction(Nimblesite.Lql.CoreParser.ExprContext context)
+    private static string ExtractWindowFunction(LqlParser.ExprContext context)
     {
         string functionName = context.IDENT().GetText().ToUpperInvariant();
 
@@ -1460,7 +1460,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="arg">The argument context containing the order item.</param>
     /// <returns>The formatted order item with proper spacing.</returns>
-    private static string ProcessWindowOrderItem(Nimblesite.Lql.CoreParser.ArgContext arg)
+    private static string ProcessWindowOrderItem(LqlParser.ArgContext arg)
     {
         // Check if it's a comparison with orderDirection
         if (arg.comparison() != null)
@@ -1504,7 +1504,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="arg">The argument context.</param>
     /// <returns>The union query string.</returns>
-    private string ExtractUnionQuery(Nimblesite.Lql.CoreParser.ArgContext arg)
+    private string ExtractUnionQuery(LqlParser.ArgContext arg)
     {
         // Try to process the argument as a pipe expression first
         if (arg.pipeExpr() != null)
@@ -1639,7 +1639,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <returns>The SELECT DISTINCT step.</returns>
     private static SelectDistinctStep CreateSelectDistinctStep(
         INode baseNode,
-        Nimblesite.Lql.CoreParser.ArgContext[] args
+        LqlParser.ArgContext[] args
     )
     {
         var columns = args.Select(MapArgToColumnInfo).ToList();
@@ -1652,7 +1652,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="baseNode">The base node.</param>
     /// <param name="args">The arguments.</param>
     /// <returns>The GROUP BY step.</returns>
-    private static GroupByStep CreateGroupByStep(INode baseNode, Nimblesite.Lql.CoreParser.ArgContext[] args)
+    private static GroupByStep CreateGroupByStep(INode baseNode, LqlParser.ArgContext[] args)
     {
         var columns = args.Select(ExtractIdentifier).ToList();
         return new GroupByStep(columns) { Base = baseNode };
@@ -1664,7 +1664,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="baseNode">The base node.</param>
     /// <param name="args">The arguments.</param>
     /// <returns>The ORDER BY step.</returns>
-    private static OrderByStep CreateOrderByStep(INode baseNode, Nimblesite.Lql.CoreParser.ArgContext[] args)
+    private static OrderByStep CreateOrderByStep(INode baseNode, LqlParser.ArgContext[] args)
     {
         var orderItems = args.Select(ExtractOrderItem).ToList();
         return new OrderByStep(orderItems) { Base = baseNode };
@@ -1675,7 +1675,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// </summary>
     /// <param name="arg">The argument context.</param>
     /// <returns>Tuple of column name and direction.</returns>
-    private static (string Column, string Direction) ExtractOrderItem(Nimblesite.Lql.CoreParser.ArgContext arg)
+    private static (string Column, string Direction) ExtractOrderItem(LqlParser.ArgContext arg)
     {
         // Check if it's a comparison with orderDirection
         if (arg.comparison() != null)
@@ -1756,7 +1756,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="baseNode">The base node.</param>
     /// <param name="args">The arguments.</param>
     /// <returns>The HAVING step.</returns>
-    private static HavingStep CreateHavingStep(INode baseNode, Nimblesite.Lql.CoreParser.ArgContext[] args)
+    private static HavingStep CreateHavingStep(INode baseNode, LqlParser.ArgContext[] args)
     {
         string condition = args.Length > 0 ? ExtractConditionFromLambda(args[0]) : "true";
         return new HavingStep { Base = baseNode, Condition = condition };
@@ -1768,7 +1768,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="baseNode">The base node.</param>
     /// <param name="args">The arguments.</param>
     /// <returns>The LIMIT step.</returns>
-    private static LimitStep CreateLimitStep(INode baseNode, Nimblesite.Lql.CoreParser.ArgContext[] args)
+    private static LimitStep CreateLimitStep(INode baseNode, LqlParser.ArgContext[] args)
     {
         string limit = args.Length > 0 ? ExtractIdentifier(args[0]) : "10";
         return new LimitStep { Base = baseNode, Count = limit };
@@ -1780,7 +1780,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="baseNode">The base node.</param>
     /// <param name="args">The arguments.</param>
     /// <returns>The OFFSET step.</returns>
-    private static OffsetStep CreateOffsetStep(INode baseNode, Nimblesite.Lql.CoreParser.ArgContext[] args)
+    private static OffsetStep CreateOffsetStep(INode baseNode, LqlParser.ArgContext[] args)
     {
         string offset = args.Length > 0 ? ExtractIdentifier(args[0]) : "0";
         return new OffsetStep { Base = baseNode, Count = offset };
@@ -1792,7 +1792,7 @@ internal sealed class Nimblesite.Lql.CoreToAstVisitor : Nimblesite.Lql.CoreBaseV
     /// <param name="baseNode">The base node.</param>
     /// <param name="args">The arguments.</param>
     /// <returns>The UNION ALL step.</returns>
-    private UnionAllStep CreateUnionAllStep(INode baseNode, Nimblesite.Lql.CoreParser.ArgContext[] args)
+    private UnionAllStep CreateUnionAllStep(INode baseNode, LqlParser.ArgContext[] args)
     {
         string otherQuery =
             args.Length > 0 ? ExtractUnionQuery(args[0]) : "-- UNION ALL query not found";

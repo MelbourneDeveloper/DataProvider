@@ -126,7 +126,7 @@ public static class SchemaVerifier
             // Verify the default contains expected pattern
             if (expected.DefaultLqlExpression is not null)
             {
-                var translated = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(expected.DefaultLqlExpression);
+                var translated = LqlDefaultTranslator.ToPostgres(expected.DefaultLqlExpression);
                 Assert.Contains(translated.ToLowerInvariant(), actualDefault.ToLowerInvariant());
             }
         }
@@ -414,7 +414,7 @@ public static class SchemaVerifier
         if (expected.DefaultLqlExpression is not null)
         {
             Assert.NotNull(columnInfo.DefaultValue);
-            var translated = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(expected.DefaultLqlExpression);
+            var translated = LqlDefaultTranslator.ToSqlite(expected.DefaultLqlExpression);
             Assert.Equal(translated, columnInfo.DefaultValue);
         }
         else if (expected.DefaultValue is not null)

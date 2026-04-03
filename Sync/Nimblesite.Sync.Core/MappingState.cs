@@ -32,12 +32,12 @@ public sealed record MappingStateEntry(
 /// <param name="MappingId">Mapping identifier.</param>
 /// <param name="SourcePk">JSON-serialized source primary key.</param>
 /// <param name="PayloadHash">SHA-256 hash of canonical JSON payload.</param>
-/// <param name="Nimblesite.Sync.CoreedAt">ISO 8601 timestamp when synced.</param>
+/// <param name="SyncedAt">ISO 8601 timestamp when synced.</param>
 public sealed record RecordHashEntry(
     string MappingId,
     string SourcePk,
     string PayloadHash,
-    string Nimblesite.Sync.CoreedAt
+    string SyncedAt
 );
 
 /// <summary>

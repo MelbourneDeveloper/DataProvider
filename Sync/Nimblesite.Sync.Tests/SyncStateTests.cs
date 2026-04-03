@@ -1,14 +1,14 @@
 namespace Nimblesite.Sync.Tests;
 
 /// <summary>
-/// Tests for Nimblesite.Sync.CoreState, Nimblesite.Sync.CoreSession, and Nimblesite.Sync.CoreClient records.
+/// Tests for SyncState, SyncSession, and SyncClient records.
 /// </summary>
-public sealed class Nimblesite.Sync.CoreStateTests
+public sealed class SyncStateTests
 {
     [Fact]
-    public void Nimblesite.Sync.CoreState_CreatesCorrectRecord()
+    public void SyncState_CreatesCorrectRecord()
     {
-        var state = new Nimblesite.Sync.CoreState("origin-123", 100, 50);
+        var state = new SyncState("origin-123", 100, 50);
 
         Assert.Equal("origin-123", state.OriginId);
         Assert.Equal(100, state.LastServerVersion);
@@ -16,20 +16,20 @@ public sealed class Nimblesite.Sync.CoreStateTests
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreState_RecordEquality()
+    public void SyncState_RecordEquality()
     {
-        var state1 = new Nimblesite.Sync.CoreState("origin-123", 100, 50);
-        var state2 = new Nimblesite.Sync.CoreState("origin-123", 100, 50);
-        var state3 = new Nimblesite.Sync.CoreState("origin-456", 100, 50);
+        var state1 = new SyncState("origin-123", 100, 50);
+        var state2 = new SyncState("origin-123", 100, 50);
+        var state3 = new SyncState("origin-456", 100, 50);
 
         Assert.Equal(state1, state2);
         Assert.NotEqual(state1, state3);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreState_With_CreatesModifiedCopy()
+    public void SyncState_With_CreatesModifiedCopy()
     {
-        var state = new Nimblesite.Sync.CoreState("origin-123", 100, 50);
+        var state = new SyncState("origin-123", 100, 50);
         var updated = state with { LastServerVersion = 200 };
 
         Assert.Equal("origin-123", updated.OriginId);
@@ -39,30 +39,30 @@ public sealed class Nimblesite.Sync.CoreStateTests
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreSession_CreatesCorrectRecord()
+    public void SyncSession_CreatesCorrectRecord()
     {
-        var session = new Nimblesite.Sync.CoreSession(true);
-        Assert.True(session.Nimblesite.Sync.CoreActive);
+        var session = new SyncSession(true);
+        Assert.True(session.SyncActive);
 
-        var sessionInactive = new Nimblesite.Sync.CoreSession(false);
-        Assert.False(sessionInactive.Nimblesite.Sync.CoreActive);
+        var sessionInactive = new SyncSession(false);
+        Assert.False(sessionInactive.SyncActive);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreSession_RecordEquality()
+    public void SyncSession_RecordEquality()
     {
-        var session1 = new Nimblesite.Sync.CoreSession(true);
-        var session2 = new Nimblesite.Sync.CoreSession(true);
-        var session3 = new Nimblesite.Sync.CoreSession(false);
+        var session1 = new SyncSession(true);
+        var session2 = new SyncSession(true);
+        var session3 = new SyncSession(false);
 
         Assert.Equal(session1, session2);
         Assert.NotEqual(session1, session3);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreClient_CreatesCorrectRecord()
+    public void SyncClient_CreatesCorrectRecord()
     {
-        var client = new Nimblesite.Sync.CoreClient(
+        var client = new SyncClient(
             "client-001",
             100,
             "2024-01-01T00:00:00Z",
@@ -76,20 +76,20 @@ public sealed class Nimblesite.Sync.CoreStateTests
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreClient_RecordEquality()
+    public void SyncClient_RecordEquality()
     {
-        var client1 = new Nimblesite.Sync.CoreClient("c1", 100, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z");
-        var client2 = new Nimblesite.Sync.CoreClient("c1", 100, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z");
-        var client3 = new Nimblesite.Sync.CoreClient("c2", 100, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z");
+        var client1 = new SyncClient("c1", 100, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z");
+        var client2 = new SyncClient("c1", 100, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z");
+        var client3 = new SyncClient("c2", 100, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z");
 
         Assert.Equal(client1, client2);
         Assert.NotEqual(client1, client3);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreClient_With_CreatesModifiedCopy()
+    public void SyncClient_With_CreatesModifiedCopy()
     {
-        var client = new Nimblesite.Sync.CoreClient("c1", 100, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z");
+        var client = new SyncClient("c1", 100, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z");
         var updated = client with { LastSyncVersion = 200 };
 
         Assert.Equal("c1", updated.OriginId);
@@ -98,13 +98,13 @@ public sealed class Nimblesite.Sync.CoreStateTests
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogEntry_CreatesCorrectRecord()
+    public void SyncLogEntry_CreatesCorrectRecord()
     {
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             1,
             "Person",
             "{\"Id\":\"p1\"}",
-            Nimblesite.Sync.CoreOperation.Insert,
+            SyncOperation.Insert,
             "{\"Id\":\"p1\",\"Name\":\"Alice\"}",
             "origin-1",
             "2024-01-01T00:00:00Z"
@@ -113,35 +113,35 @@ public sealed class Nimblesite.Sync.CoreStateTests
         Assert.Equal(1, entry.Version);
         Assert.Equal("Person", entry.TableName);
         Assert.Equal("{\"Id\":\"p1\"}", entry.PkValue);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Insert, entry.Operation);
+        Assert.Equal(SyncOperation.Insert, entry.Operation);
         Assert.Equal("{\"Id\":\"p1\",\"Name\":\"Alice\"}", entry.Payload);
         Assert.Equal("origin-1", entry.Origin);
         Assert.Equal("2024-01-01T00:00:00Z", entry.Timestamp);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreLogEntry_DeleteHasNullPayload()
+    public void SyncLogEntry_DeleteHasNullPayload()
     {
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             1,
             "Person",
             "{\"Id\":\"p1\"}",
-            Nimblesite.Sync.CoreOperation.Delete,
+            SyncOperation.Delete,
             null,
             "origin-1",
             "2024-01-01T00:00:00Z"
         );
 
         Assert.Null(entry.Payload);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Delete, entry.Operation);
+        Assert.Equal(SyncOperation.Delete, entry.Operation);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreOperation_HasCorrectValues()
+    public void SyncOperation_HasCorrectValues()
     {
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Insert, (Nimblesite.Sync.CoreOperation)0);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Update, (Nimblesite.Sync.CoreOperation)1);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Delete, (Nimblesite.Sync.CoreOperation)2);
+        Assert.Equal(SyncOperation.Insert, (SyncOperation)0);
+        Assert.Equal(SyncOperation.Update, (SyncOperation)1);
+        Assert.Equal(SyncOperation.Delete, (SyncOperation)2);
     }
 
     [Fact]
@@ -153,9 +153,9 @@ public sealed class Nimblesite.Sync.CoreStateTests
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreSubscription_CreatesCorrectRecord()
+    public void SyncSubscription_CreatesCorrectRecord()
     {
-        var sub = new Nimblesite.Sync.CoreSubscription(
+        var sub = new SyncSubscription(
             "sub-1",
             "origin-1",
             SubscriptionType.Table,
@@ -177,11 +177,11 @@ public sealed class Nimblesite.Sync.CoreStateTests
     [Fact]
     public void ChangeNotification_CreatesCorrectRecord()
     {
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             1,
             "Person",
             "{\"Id\":\"p1\"}",
-            Nimblesite.Sync.CoreOperation.Insert,
+            SyncOperation.Insert,
             "{}",
             "origin",
             "2024-01-01T00:00:00Z"
@@ -214,11 +214,11 @@ public sealed class Nimblesite.Sync.CoreStateTests
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreResult_CreatesCorrectRecord()
+    public void SyncResult_CreatesCorrectRecord()
     {
         var pull = new PullResult(10, 0, 100);
         var push = new PushResult(5, 0, 50);
-        var result = new Nimblesite.Sync.CoreResult(pull, push);
+        var result = new SyncResult(pull, push);
 
         Assert.Equal(pull, result.Pull);
         Assert.Equal(push, result.Push);
@@ -253,13 +253,13 @@ public sealed class Nimblesite.Sync.CoreStateTests
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreBatch_CreatesCorrectRecord()
+    public void SyncBatch_CreatesCorrectRecord()
     {
-        var changes = new List<Nimblesite.Sync.CoreLogEntry>
+        var changes = new List<SyncLogEntry>
         {
-            new(1, "T", "PK", Nimblesite.Sync.CoreOperation.Insert, "{}", "O", "TS"),
+            new(1, "T", "PK", SyncOperation.Insert, "{}", "O", "TS"),
         };
-        var batch = new Nimblesite.Sync.CoreBatch(changes, 0, 1, false);
+        var batch = new SyncBatch(changes, 0, 1, false);
 
         Assert.Single(batch.Changes);
         Assert.Equal(0, batch.FromVersion);
@@ -268,25 +268,25 @@ public sealed class Nimblesite.Sync.CoreStateTests
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreBatch_HasMore_True()
+    public void SyncBatch_HasMore_True()
     {
-        var changes = new List<Nimblesite.Sync.CoreLogEntry>
+        var changes = new List<SyncLogEntry>
         {
-            new(1, "T", "PK", Nimblesite.Sync.CoreOperation.Insert, "{}", "O", "TS"),
+            new(1, "T", "PK", SyncOperation.Insert, "{}", "O", "TS"),
         };
-        var batch = new Nimblesite.Sync.CoreBatch(changes, 0, 1, true);
+        var batch = new SyncBatch(changes, 0, 1, true);
 
         Assert.True(batch.HasMore);
     }
 
     [Fact]
-    public void Nimblesite.Sync.CoreBatch_WithHash()
+    public void SyncBatch_WithHash()
     {
-        var changes = new List<Nimblesite.Sync.CoreLogEntry>
+        var changes = new List<SyncLogEntry>
         {
-            new(1, "T", "PK", Nimblesite.Sync.CoreOperation.Insert, "{}", "O", "TS"),
+            new(1, "T", "PK", SyncOperation.Insert, "{}", "O", "TS"),
         };
-        var batch = new Nimblesite.Sync.CoreBatch(changes, 0, 1, false, "abc123hash");
+        var batch = new SyncBatch(changes, 0, 1, false, "abc123hash");
 
         Assert.Equal("abc123hash", batch.Hash);
     }

@@ -69,8 +69,8 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     /// </summary>
     private void SetupSqliteSource(string originId)
     {
-        Nimblesite.Sync.CoreSchema.CreateSchema(_sqliteConn);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_sqliteConn, originId);
+        SyncSchema.CreateSchema(_sqliteConn);
+        SyncSchema.SetOriginId(_sqliteConn, originId);
 
         using var cmd = _sqliteConn.CreateCommand();
         cmd.CommandText = """
@@ -117,7 +117,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     /// <summary>
     /// Creates mapping config for User -> Customer transformation.
     /// </summary>
-    private static Nimblesite.Sync.CoreMappingConfig CreateUserToCustomerMapping() =>
+    private static SyncMappingConfig CreateUserToCustomerMapping() =>
         new(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
@@ -137,7 +137,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: "FullName",
                             Target: "name_upper",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "upper(FullName)"
                         ),
                         new ColumnMapping(
@@ -149,13 +149,13 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: "CreatedAt",
                             Target: "registered_date",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "CreatedAt |> dateFormat('yyyy-MM-dd')"
                         ),
                     ],
                     ExcludedColumns: ["PasswordHash", "SecurityStamp"],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
@@ -207,11 +207,11 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     public void MappingEngine_TransformsUserToCustomer_WithLql()
     {
         // Arrange - create a User sync log entry
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "User",
             PkValue: """{"Id":"u123"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"u123","FullName":"Alice Smith","EmailAddress":"alice@example.com","PasswordHash":"secret","SecurityStamp":"xyz","CreatedAt":"2024-06-15T10:30:00Z"}""",
             Origin: "source-origin",
             Timestamp: "2024-06-15T10:30:00Z"
@@ -258,7 +258,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     public void MappingEngine_WithConcatTransform_CombinesColumns()
     {
         // Arrange - mapping with concat
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -275,22 +275,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "full_name",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "concat(FirstName, ' ', LastName)"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Person",
             PkValue: """{"Id":"p1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"p1","FirstName":"John","LastName":"Doe"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -309,7 +309,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     public void MappingEngine_WithCoalesceTransform_ReturnsFirstNonNull()
     {
         // Arrange
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -326,22 +326,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "phone",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "coalesce(Mobile, Home, Office)"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Contact",
             PkValue: """{"Id":"c1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"c1","Mobile":"","Home":"555-1234","Office":"555-5678"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -360,7 +360,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     public void MappingEngine_WithSubstringTransform_ExtractsText()
     {
         // Arrange
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -377,22 +377,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "sku_prefix",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "substring(SKU, 1, 3)"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Product",
             PkValue: """{"Id":"p1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"p1","SKU":"ABC-12345"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -430,9 +430,9 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
         }
 
         // Fetch changes from SQLite
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(_sqliteConn, 0, 100);
-        Assert.True(changes is Nimblesite.Sync.CoreLogListOk, $"Fetch failed: {changes}");
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(_sqliteConn, 0, 100);
+        Assert.True(changes is SyncLogListOk, $"Fetch failed: {changes}");
+        var changesList = ((SyncLogListOk)changes).Value;
         Assert.Single(changesList);
 
         // Apply mapping to transform the entry
@@ -451,8 +451,8 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
             // Merge PK into payload - PostgresChangeApplier expects PK in payload for inserts
             var mergedPayload = MergePkIntoPayload(entry.TargetPkValue, entry.MappedPayload);
 
-            // Create a new Nimblesite.Sync.CoreLogEntry with the mapped data
-            var targetEntry = new Nimblesite.Sync.CoreLogEntry(
+            // Create a new SyncLogEntry with the mapped data
+            var targetEntry = new SyncLogEntry(
                 Version: changesList[0].Version,
                 TableName: entry.TargetTable,
                 PkValue: entry.TargetPkValue,
@@ -517,8 +517,8 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
         }
 
         // Fetch and transform all changes
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(_sqliteConn, 0, 100);
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(_sqliteConn, 0, 100);
+        var changesList = ((SyncLogListOk)changes).Value;
         Assert.Equal(3, changesList.Count);
 
         // Apply all with mapping
@@ -538,7 +538,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                 // Merge PK into payload - PostgresChangeApplier expects PK in payload for inserts
                 var mergedPayload = MergePkIntoPayload(entry.TargetPkValue, entry.MappedPayload);
 
-                var targetEntry = new Nimblesite.Sync.CoreLogEntry(
+                var targetEntry = new SyncLogEntry(
                     change.Version,
                     entry.TargetTable,
                     entry.TargetPkValue,
@@ -580,11 +580,11 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
         // Arrange
         var config = CreateUserToCustomerMapping();
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "User",
             PkValue: """{"Id":"u999"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Delete,
+            Operation: SyncOperation.Delete,
             Payload: null, // Deletes have no payload
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -609,11 +609,11 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
         // Arrange
         var config = CreateUserToCustomerMapping();
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 2,
             TableName: "User",
             PkValue: """{"Id":"u888"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Update,
+            Operation: SyncOperation.Update,
             Payload: """{"Id":"u888","FullName":"Updated Name","EmailAddress":"new@example.com","PasswordHash":"newhash","SecurityStamp":"newstamp","CreatedAt":"2024-01-01T00:00:00Z"}""",
             Origin: "test",
             Timestamp: "2024-01-02T00:00:00Z"
@@ -635,10 +635,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     // ========== CORNER CASE TESTS ==========
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_WithNullValue_ReturnsNull()
+    public void LqlExpression_WithNullValue_ReturnsNull()
     {
         // Arrange - payload with null field
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -655,22 +655,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "upper_name",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "upper(Name)"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Name":null}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -685,10 +685,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_WithEmptyString_ReturnsEmpty()
+    public void LqlExpression_WithEmptyString_ReturnsEmpty()
     {
         // Arrange
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -705,22 +705,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "upper_name",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "upper(Name)"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Name":""}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -736,10 +736,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_ReplaceFunction_WorksCorrectly()
+    public void LqlExpression_ReplaceFunction_WorksCorrectly()
     {
         // Arrange
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -756,22 +756,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "clean_phone",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "replace(Phone, '-', '')"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Phone":"555-123-4567"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -787,10 +787,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_LeftFunction_ExtractsPrefix()
+    public void LqlExpression_LeftFunction_ExtractsPrefix()
     {
         // Arrange
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -807,22 +807,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "initials",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "left(Name, 2)"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Name":"Alexander"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -838,10 +838,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_RightFunction_ExtractsSuffix()
+    public void LqlExpression_RightFunction_ExtractsSuffix()
     {
         // Arrange
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -858,22 +858,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "last_four",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "right(CardNumber, 4)"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","CardNumber":"1234567890123456"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -889,10 +889,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_TrimFunction_RemovesWhitespace()
+    public void LqlExpression_TrimFunction_RemovesWhitespace()
     {
         // Arrange
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -909,22 +909,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "clean_name",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "trim(Name)"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Name":"  Hello World  "}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -940,10 +940,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_LengthFunction_ReturnsStringLength()
+    public void LqlExpression_LengthFunction_ReturnsStringLength()
     {
         // Arrange
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -960,22 +960,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "name_length",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "length(Name)"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Name":"Hello"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -991,10 +991,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_NestedConcat_BuildsComplexString()
+    public void LqlExpression_NestedConcat_BuildsComplexString()
     {
         // Arrange
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -1011,22 +1011,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "display",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "concat(Title, ': ', FirstName, ' ', LastName, ' (', Department, ')')"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Title":"Dr","FirstName":"John","LastName":"Smith","Department":"Engineering"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -1045,10 +1045,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_CoalesceWithAllNull_ReturnsEmpty()
+    public void LqlExpression_CoalesceWithAllNull_ReturnsEmpty()
     {
         // Arrange
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -1065,22 +1065,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "phone",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "coalesce(Mobile, Home, Work)"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Mobile":"","Home":"","Work":""}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -1104,10 +1104,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_DateFormatWithDifferentTimezones_PreservesUtc()
+    public void LqlExpression_DateFormatWithDifferentTimezones_PreservesUtc()
     {
         // Arrange
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -1124,23 +1124,23 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "date_only",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "CreatedAt |> dateFormat('yyyy-MM-dd')"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
         // Test with explicit timezone offset
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","CreatedAt":"2024-12-25T23:30:00+00:00"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -1159,17 +1159,17 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     public void MappingEngine_UnmappedTable_WithPassthrough_ReturnsIdentity()
     {
         // Arrange
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Passthrough,
             Mappings: [] // No mappings defined
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "UnknownTable",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Data":"test"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -1189,17 +1189,17 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     public void MappingEngine_UnmappedTable_WithStrict_ReturnsSkipped()
     {
         // Arrange
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings: [] // No mappings defined
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "UnknownTable",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Data":"test"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -1216,7 +1216,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     public void MappingEngine_DisabledMapping_ReturnsSkipped()
     {
         // Arrange
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -1231,16 +1231,16 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                     ColumnMappings: [],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Data":"test"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -1258,7 +1258,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     public void MappingEngine_WrongDirection_ReturnsSkipped()
     {
         // Arrange - mapping only for Pull direction
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -1273,16 +1273,16 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                     ColumnMappings: [],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Data":"test"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -1299,7 +1299,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     public void MappingEngine_BothDirection_WorksForPushAndPull()
     {
         // Arrange - mapping for Both directions
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -1314,16 +1314,16 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                     ColumnMappings: [new ColumnMapping("Data", "data")],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Data":"test"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -1341,10 +1341,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     // ========== ADDITIONAL CORNER CASE TESTS ==========
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_PipelineWithMultipleSteps_TransformsCorrectly()
+    public void LqlExpression_PipelineWithMultipleSteps_TransformsCorrectly()
     {
         // Arrange - use pipe operator to chain transforms
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -1361,22 +1361,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "clean_name",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "Name |> trim() |> upper()"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Name":"  hello world  "}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -1392,10 +1392,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_NumericValue_PreservesType()
+    public void LqlExpression_NumericValue_PreservesType()
     {
         // Arrange - test numeric field handling
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -1414,16 +1414,16 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Amount":123.45,"Count":42}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -1440,10 +1440,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_BooleanValue_PreservesType()
+    public void LqlExpression_BooleanValue_PreservesType()
     {
         // Arrange
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -1462,16 +1462,16 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","IsActive":true,"IsVerified":false}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -1488,10 +1488,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_SpecialCharactersInString_EscapedCorrectly()
+    public void LqlExpression_SpecialCharactersInString_EscapedCorrectly()
     {
         // Arrange - strings with special JSON characters
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -1506,16 +1506,16 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                     ColumnMappings: [new ColumnMapping("Description", "description")],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Description":"Line1\nLine2\tTabbed \"quoted\""}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -1534,11 +1534,11 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_VeryLongString_HandledCorrectly()
+    public void LqlExpression_VeryLongString_HandledCorrectly()
     {
         // Arrange - test with very long string
         var longString = new string('x', 10000);
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -1556,22 +1556,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "data_length",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "length(Data)"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: $$$"""{"Id":"1","Data":"{{{longString}}}"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -1588,10 +1588,10 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreExpression_UnicodeCharacters_PreservedCorrectly()
+    public void LqlExpression_UnicodeCharacters_PreservedCorrectly()
     {
         // Arrange - test Unicode handling
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -1609,22 +1609,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "name_upper",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "upper(Name)"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Name":"日本語テスト 中文测试 émojis: 🎉🚀"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -1646,7 +1646,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     public void MappingEngine_MultipleColumnMappings_AllApplied()
     {
         // Arrange - many column mappings
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -1674,22 +1674,22 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                         new ColumnMapping(
                             Source: null,
                             Target: "computed",
-                            Transform: TransformType.Nimblesite.Lql.Core,
+                            Transform: TransformType.Lql,
                             Nimblesite.Lql.Core: "concat(Col1, '-', Col2)"
                         ),
                     ],
                     ExcludedColumns: [],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Col1":"A","Col2":"B","Col3":"C","Col4":"D","Col5":"E"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -1714,7 +1714,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
     public void MappingEngine_ExcludeMultipleColumns_AllExcluded()
     {
         // Arrange - exclude many columns
-        var config = new Nimblesite.Sync.CoreMappingConfig(
+        var config = new SyncMappingConfig(
             Version: "1.0",
             UnmappedTableBehavior: UnmappedTableBehavior.Strict,
             Mappings:
@@ -1729,16 +1729,16 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                     ColumnMappings: [new ColumnMapping("Name", "name")],
                     ExcludedColumns: ["Password", "Salt", "Token", "Secret", "PrivateKey"],
                     Filter: null,
-                    Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+                    SyncTracking: new SyncTrackingConfig()
                 ),
             ]
         );
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "Source",
             PkValue: """{"Id":"1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: """{"Id":"1","Name":"User","Password":"hash","Salt":"xyz","Token":"abc","Secret":"123","PrivateKey":"key"}""",
             Origin: "test",
             Timestamp: "2024-01-01T00:00:00Z"

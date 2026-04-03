@@ -7,7 +7,7 @@ namespace Nimblesite.Sync.Core;
 /// Database-agnostic sync schema definition using the Nimblesite.DataProvider.Migration.Core framework.
 /// Implements spec Appendix A schema for all supported databases.
 /// </summary>
-public static class Nimblesite.Sync.CoreSchemaDefinition
+public static class SyncSchemaDefinition
 {
     /// <summary>
     /// Gets the complete sync schema definition.

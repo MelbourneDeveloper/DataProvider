@@ -57,8 +57,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         conn.Open();
 
         // Create sync schema
-        Nimblesite.Sync.CoreSchema.CreateSchema(conn);
-        Nimblesite.Sync.CoreSchema.SetOriginId(conn, originId);
+        SyncSchema.CreateSchema(conn);
+        SyncSchema.SetOriginId(conn, originId);
 
         // Create test table
         using var cmd = conn.CreateCommand();
@@ -134,9 +134,9 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         }
 
         // Fetch changes from SQLite
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(sqlite, 0, 100);
-        Assert.True(changes is Nimblesite.Sync.CoreLogListOk, $"FetchChanges failed: {changes}");
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(sqlite, 0, 100);
+        Assert.True(changes is SyncLogListOk, $"FetchChanges failed: {changes}");
+        var changesList = ((SyncLogListOk)changes).Value;
         Assert.Single(changesList);
 
         // Apply changes to Postgres with suppression
@@ -179,18 +179,18 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
 
         // Fetch changes from Postgres
         var changes = PostgresSyncLogRepository.FetchChanges(postgres, 0, 100);
-        Assert.True(changes is Nimblesite.Sync.CoreLogListOk, $"FetchChanges failed: {changes}");
-        var changesList = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        Assert.True(changes is SyncLogListOk, $"FetchChanges failed: {changes}");
+        var changesList = ((SyncLogListOk)changes).Value;
         Assert.Single(changesList);
 
         // Apply changes to SQLite with suppression
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(sqlite);
+        SyncSessionManager.EnableSuppression(sqlite);
         foreach (var entry in changesList)
         {
             var result = ChangeApplierSQLite.ApplyChange(sqlite, entry);
             Assert.True(result is BoolSyncOk, $"ApplyChange failed: {result}");
         }
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(sqlite);
+        SyncSessionManager.DisableSuppression(sqlite);
 
         // Assert - Verify in SQLite (note: SQLite preserves case from payload)
         using var verifyCmd = sqlite.CreateCommand();
@@ -230,8 +230,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         }
 
         // Nimblesite.Sync.Core SQLite -> Postgres
-        var sqliteChanges = Nimblesite.Sync.CoreLogRepository.FetchChanges(sqlite, 0, 100);
-        var sqliteChangesList = ((Nimblesite.Sync.CoreLogListOk)sqliteChanges).Value;
+        var sqliteChanges = SyncLogRepository.FetchChanges(sqlite, 0, 100);
+        var sqliteChangesList = ((SyncLogListOk)sqliteChanges).Value;
 
         PostgresSyncSession.EnableSuppression(postgres);
         foreach (var entry in sqliteChangesList)
@@ -242,9 +242,9 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
 
         // Nimblesite.Sync.Core Postgres -> SQLite (skip echo)
         var postgresChanges = PostgresSyncLogRepository.FetchChanges(postgres, 0, 100);
-        var postgresChangesList = ((Nimblesite.Sync.CoreLogListOk)postgresChanges).Value;
+        var postgresChangesList = ((SyncLogListOk)postgresChanges).Value;
 
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(sqlite);
+        SyncSessionManager.EnableSuppression(sqlite);
         foreach (var entry in postgresChangesList)
         {
             if (entry.Origin != sqliteOriginId)
@@ -252,7 +252,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
                 ChangeApplierSQLite.ApplyChange(sqlite, entry);
             }
         }
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(sqlite);
+        SyncSessionManager.DisableSuppression(sqlite);
 
         // Assert - Both databases have both records
         using var pgCmd = postgres.CreateCommand();
@@ -291,15 +291,15 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         }
 
         // Nimblesite.Sync.Core to Postgres
-        var insertChanges = Nimblesite.Sync.CoreLogRepository.FetchChanges(sqlite, 0, 100);
+        var insertChanges = SyncLogRepository.FetchChanges(sqlite, 0, 100);
         PostgresSyncSession.EnableSuppression(postgres);
-        foreach (var entry in ((Nimblesite.Sync.CoreLogListOk)insertChanges).Value)
+        foreach (var entry in ((SyncLogListOk)insertChanges).Value)
         {
             PostgresChangeApplier.ApplyChange(postgres, entry, _logger);
         }
         PostgresSyncSession.DisableSuppression(postgres);
 
-        var versionAfterInsert = ((Nimblesite.Sync.CoreLogListOk)insertChanges).Value.Max(e => e.Version);
+        var versionAfterInsert = ((SyncLogListOk)insertChanges).Value.Max(e => e.Version);
 
         // Act - Update in SQLite
         using (var cmd = sqlite.CreateCommand())
@@ -310,11 +310,11 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         }
 
         // Nimblesite.Sync.Core update to Postgres
-        var updateChanges = Nimblesite.Sync.CoreLogRepository.FetchChanges(sqlite, versionAfterInsert, 100);
-        Assert.True(updateChanges is Nimblesite.Sync.CoreLogListOk);
-        var updateList = ((Nimblesite.Sync.CoreLogListOk)updateChanges).Value;
+        var updateChanges = SyncLogRepository.FetchChanges(sqlite, versionAfterInsert, 100);
+        Assert.True(updateChanges is SyncLogListOk);
+        var updateList = ((SyncLogListOk)updateChanges).Value;
         Assert.Single(updateList);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Update, updateList[0].Operation);
+        Assert.Equal(SyncOperation.Update, updateList[0].Operation);
 
         PostgresSyncSession.EnableSuppression(postgres);
         var applyResult = PostgresChangeApplier.ApplyChange(postgres, updateList[0], _logger);
@@ -348,15 +348,15 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        var insertChanges = Nimblesite.Sync.CoreLogRepository.FetchChanges(sqlite, 0, 100);
+        var insertChanges = SyncLogRepository.FetchChanges(sqlite, 0, 100);
         PostgresSyncSession.EnableSuppression(postgres);
-        foreach (var entry in ((Nimblesite.Sync.CoreLogListOk)insertChanges).Value)
+        foreach (var entry in ((SyncLogListOk)insertChanges).Value)
         {
             PostgresChangeApplier.ApplyChange(postgres, entry, _logger);
         }
         PostgresSyncSession.DisableSuppression(postgres);
 
-        var versionAfterInsert = ((Nimblesite.Sync.CoreLogListOk)insertChanges).Value.Max(e => e.Version);
+        var versionAfterInsert = ((SyncLogListOk)insertChanges).Value.Max(e => e.Version);
 
         // Act - Delete in SQLite
         using (var cmd = sqlite.CreateCommand())
@@ -366,11 +366,11 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         }
 
         // Fetch tombstone
-        var deleteChanges = Nimblesite.Sync.CoreLogRepository.FetchChanges(sqlite, versionAfterInsert, 100);
-        Assert.True(deleteChanges is Nimblesite.Sync.CoreLogListOk);
-        var deleteList = ((Nimblesite.Sync.CoreLogListOk)deleteChanges).Value;
+        var deleteChanges = SyncLogRepository.FetchChanges(sqlite, versionAfterInsert, 100);
+        Assert.True(deleteChanges is SyncLogListOk);
+        var deleteList = ((SyncLogListOk)deleteChanges).Value;
         Assert.Single(deleteList);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Delete, deleteList[0].Operation);
+        Assert.Equal(SyncOperation.Delete, deleteList[0].Operation);
 
         // Nimblesite.Sync.Core tombstone to Postgres
         PostgresSyncSession.EnableSuppression(postgres);
@@ -397,18 +397,18 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         using var sqlite = CreateSqliteDb(sqliteOriginId);
 
         // Insert WITH suppression - should NOT log
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(sqlite);
+        SyncSessionManager.EnableSuppression(sqlite);
         using (var cmd = sqlite.CreateCommand())
         {
             cmd.CommandText =
                 "INSERT INTO Person (Id, Name, Email) VALUES ('s1', 'Suppressed', 'suppressed@example.com')";
             cmd.ExecuteNonQuery();
         }
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(sqlite);
+        SyncSessionManager.DisableSuppression(sqlite);
 
         // Assert - No changes logged
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(sqlite, 0, 100);
-        var list = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(sqlite, 0, 100);
+        var list = ((SyncLogListOk)changes).Value;
         Assert.Empty(list);
 
         // Insert WITHOUT suppression - should log
@@ -420,8 +420,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         }
 
         // Assert - One change logged
-        var changes2 = Nimblesite.Sync.CoreLogRepository.FetchChanges(sqlite, 0, 100);
-        var list2 = ((Nimblesite.Sync.CoreLogListOk)changes2).Value;
+        var changes2 = SyncLogRepository.FetchChanges(sqlite, 0, 100);
+        var list2 = ((SyncLogListOk)changes2).Value;
         Assert.Single(list2);
     }
 
@@ -452,8 +452,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
 
         while (true)
         {
-            var batch = Nimblesite.Sync.CoreLogRepository.FetchChanges(sqlite, fromVersion, batchSize);
-            var batchList = ((Nimblesite.Sync.CoreLogListOk)batch).Value;
+            var batch = SyncLogRepository.FetchChanges(sqlite, fromVersion, batchSize);
+            var batchList = ((SyncLogListOk)batch).Value;
 
             if (batchList.Count == 0)
                 break;
@@ -497,8 +497,8 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         }
 
         // Get changes
-        var changes = Nimblesite.Sync.CoreLogRepository.FetchChanges(sqlite, 0, 100);
-        var list = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var changes = SyncLogRepository.FetchChanges(sqlite, 0, 100);
+        var list = ((SyncLogListOk)changes).Value;
 
         // Compute batch hash
         var hash1 = HashVerifier.ComputeBatchHash(list);

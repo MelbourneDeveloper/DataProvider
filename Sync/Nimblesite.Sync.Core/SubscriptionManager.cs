@@ -31,7 +31,7 @@ public enum SubscriptionType
 /// <param name="Filter">JSON filter: pk_values for record, query criteria for query. Null for table.</param>
 /// <param name="CreatedAt">ISO 8601 UTC timestamp when subscription was created.</param>
 /// <param name="ExpiresAt">Optional expiration timestamp. Null for no expiry.</param>
-public sealed record Nimblesite.Sync.CoreSubscription(
+public sealed record SyncSubscription(
     string SubscriptionId,
     string OriginId,
     SubscriptionType Type,
@@ -46,7 +46,7 @@ public sealed record Nimblesite.Sync.CoreSubscription(
 /// </summary>
 /// <param name="SubscriptionId">The subscription that triggered this notification.</param>
 /// <param name="Change">The change that occurred.</param>
-public sealed record ChangeNotification(string SubscriptionId, Nimblesite.Sync.CoreLogEntry Change);
+public sealed record ChangeNotification(string SubscriptionId, SyncLogEntry Change);
 
 /// <summary>
 /// Manages real-time subscriptions for sync notifications.
@@ -64,7 +64,7 @@ internal static class SubscriptionManager
     /// <param name="timestamp">Current UTC timestamp.</param>
     /// <param name="expiresAt">Optional expiration timestamp.</param>
     /// <returns>New subscription record.</returns>
-    public static Nimblesite.Sync.CoreSubscription CreateRecordSubscription(
+    public static SyncSubscription CreateRecordSubscription(
         string subscriptionId,
         string originId,
         string tableName,
@@ -91,7 +91,7 @@ internal static class SubscriptionManager
     /// <param name="timestamp">Current UTC timestamp.</param>
     /// <param name="expiresAt">Optional expiration timestamp.</param>
     /// <returns>New subscription record.</returns>
-    public static Nimblesite.Sync.CoreSubscription CreateTableSubscription(
+    public static SyncSubscription CreateTableSubscription(
         string subscriptionId,
         string originId,
         string tableName,
@@ -118,7 +118,7 @@ internal static class SubscriptionManager
     /// <param name="timestamp">Current UTC timestamp.</param>
     /// <param name="expiresAt">Optional expiration timestamp.</param>
     /// <returns>New subscription record.</returns>
-    public static Nimblesite.Sync.CoreSubscription CreateQuerySubscription(
+    public static SyncSubscription CreateQuerySubscription(
         string subscriptionId,
         string originId,
         string tableName,
@@ -142,7 +142,7 @@ internal static class SubscriptionManager
     /// <param name="subscription">The subscription to check.</param>
     /// <param name="change">The change to match against.</param>
     /// <returns>True if the subscription should receive this change.</returns>
-    public static bool MatchesChange(Nimblesite.Sync.CoreSubscription subscription, Nimblesite.Sync.CoreLogEntry change)
+    public static bool MatchesChange(SyncSubscription subscription, SyncLogEntry change)
     {
         if (subscription.TableName != change.TableName)
         {
@@ -164,7 +164,7 @@ internal static class SubscriptionManager
     /// <param name="subscription">The subscription to check.</param>
     /// <param name="currentTimestamp">Current UTC timestamp.</param>
     /// <returns>True if the subscription has expired.</returns>
-    public static bool IsExpired(Nimblesite.Sync.CoreSubscription subscription, string currentTimestamp) =>
+    public static bool IsExpired(SyncSubscription subscription, string currentTimestamp) =>
         subscription.ExpiresAt is not null
         && string.Compare(currentTimestamp, subscription.ExpiresAt, StringComparison.Ordinal) > 0;
 
@@ -174,9 +174,9 @@ internal static class SubscriptionManager
     /// <param name="subscriptions">All active subscriptions.</param>
     /// <param name="change">The change to find matching subscriptions for.</param>
     /// <returns>Matching subscriptions.</returns>
-    public static IReadOnlyList<Nimblesite.Sync.CoreSubscription> FindMatchingSubscriptions(
-        IEnumerable<Nimblesite.Sync.CoreSubscription> subscriptions,
-        Nimblesite.Sync.CoreLogEntry change
+    public static IReadOnlyList<SyncSubscription> FindMatchingSubscriptions(
+        IEnumerable<SyncSubscription> subscriptions,
+        SyncLogEntry change
     ) => [.. subscriptions.Where(s => MatchesChange(s, change))];
 
     /// <summary>
@@ -186,8 +186,8 @@ internal static class SubscriptionManager
     /// <param name="change">The change to notify about.</param>
     /// <returns>Notifications to send.</returns>
     public static IReadOnlyList<ChangeNotification> CreateNotifications(
-        IEnumerable<Nimblesite.Sync.CoreSubscription> subscriptions,
-        Nimblesite.Sync.CoreLogEntry change
+        IEnumerable<SyncSubscription> subscriptions,
+        SyncLogEntry change
     ) =>
         [
             .. FindMatchingSubscriptions(subscriptions, change)
@@ -200,8 +200,8 @@ internal static class SubscriptionManager
     /// <param name="subscriptions">Subscriptions to filter.</param>
     /// <param name="currentTimestamp">Current UTC timestamp.</param>
     /// <returns>Active (non-expired) subscriptions.</returns>
-    public static IReadOnlyList<Nimblesite.Sync.CoreSubscription> FilterExpired(
-        IEnumerable<Nimblesite.Sync.CoreSubscription> subscriptions,
+    public static IReadOnlyList<SyncSubscription> FilterExpired(
+        IEnumerable<SyncSubscription> subscriptions,
         string currentTimestamp
     ) => [.. subscriptions.Where(s => !IsExpired(s, currentTimestamp))];
 

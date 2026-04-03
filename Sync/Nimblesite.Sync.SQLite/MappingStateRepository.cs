@@ -45,7 +45,7 @@ public static class MappingStateRepository
         catch (SqliteException ex)
         {
             return new MappingStateError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get mapping state: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get mapping state: {ex.Message}")
             );
         }
     }
@@ -85,7 +85,7 @@ public static class MappingStateRepository
         catch (SqliteException ex)
         {
             return new MappingStateListError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get mapping states: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get mapping states: {ex.Message}")
             );
         }
     }
@@ -122,7 +122,7 @@ public static class MappingStateRepository
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to upsert mapping state: {ex.Message}")
+                new SyncErrorDatabase($"Failed to upsert mapping state: {ex.Message}")
             );
         }
     }
@@ -146,7 +146,7 @@ public static class MappingStateRepository
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to delete mapping state: {ex.Message}")
+                new SyncErrorDatabase($"Failed to delete mapping state: {ex.Message}")
             );
         }
     }
@@ -193,7 +193,7 @@ public static class MappingStateRepository
         catch (SqliteException ex)
         {
             return new RecordHashError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get record hash: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get record hash: {ex.Message}")
             );
         }
     }
@@ -222,14 +222,14 @@ public static class MappingStateRepository
             cmd.Parameters.AddWithValue("@mappingId", entry.MappingId);
             cmd.Parameters.AddWithValue("@sourcePk", entry.SourcePk);
             cmd.Parameters.AddWithValue("@hash", entry.PayloadHash);
-            cmd.Parameters.AddWithValue("@syncedAt", entry.Nimblesite.Sync.CoreedAt);
+            cmd.Parameters.AddWithValue("@syncedAt", entry.SyncedAt);
             cmd.ExecuteNonQuery();
             return new BoolSyncOk(true);
         }
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to upsert record hash: {ex.Message}")
+                new SyncErrorDatabase($"Failed to upsert record hash: {ex.Message}")
             );
         }
     }
@@ -256,7 +256,7 @@ public static class MappingStateRepository
         catch (SqliteException ex)
         {
             return new IntSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to delete record hashes: {ex.Message}")
+                new SyncErrorDatabase($"Failed to delete record hashes: {ex.Message}")
             );
         }
     }
@@ -285,7 +285,7 @@ public static class MappingStateRepository
         catch (SqliteException ex)
         {
             return new LongSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get min synced version: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get min synced version: {ex.Message}")
             );
         }
     }

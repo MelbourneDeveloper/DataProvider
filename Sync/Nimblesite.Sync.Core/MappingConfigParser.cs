@@ -48,7 +48,7 @@ internal static class MappingConfigParser
                 _ => UnmappedTableBehavior.Strict,
             };
 
-            var config = new Nimblesite.Sync.CoreMappingConfig(
+            var config = new SyncMappingConfig(
                 Version: dto.Version ?? "1.0",
                 UnmappedTableBehavior: unmappedBehavior,
                 Mappings: mappings
@@ -102,25 +102,25 @@ internal static class MappingConfigParser
 
         var excludedColumns = dto.ExcludedColumns ?? [];
 
-        var filter = !string.IsNullOrWhiteSpace(dto.Filter?.Nimblesite.Lql.Core)
-            ? new Nimblesite.Sync.CoreFilter(dto.Filter.Nimblesite.Lql.Core)
+        var filter = !string.IsNullOrWhiteSpace(dto.Filter?.Lql)
+            ? new SyncFilter(dto.Filter.Lql)
             : null;
 
-        var trackingStrategy = dto.Nimblesite.Sync.CoreTracking?.Strategy switch
+        var trackingStrategy = dto.SyncTracking?.Strategy switch
         {
             { } s when s.Equals("hash", StringComparison.OrdinalIgnoreCase) =>
-                Nimblesite.Sync.CoreTrackingStrategy.Hash,
+                SyncTrackingStrategy.Hash,
             { } s when s.Equals("timestamp", StringComparison.OrdinalIgnoreCase) =>
-                Nimblesite.Sync.CoreTrackingStrategy.Timestamp,
+                SyncTrackingStrategy.Timestamp,
             { } s when s.Equals("external", StringComparison.OrdinalIgnoreCase) =>
-                Nimblesite.Sync.CoreTrackingStrategy.External,
-            _ => Nimblesite.Sync.CoreTrackingStrategy.Version,
+                SyncTrackingStrategy.External,
+            _ => SyncTrackingStrategy.Version,
         };
 
-        var syncTracking = new Nimblesite.Sync.CoreTrackingConfig(
-            Enabled: dto.Nimblesite.Sync.CoreTracking?.Enabled ?? true,
+        var syncTracking = new SyncTrackingConfig(
+            Enabled: dto.SyncTracking?.Enabled ?? true,
             Strategy: trackingStrategy,
-            TrackingColumn: dto.Nimblesite.Sync.CoreTracking?.TrackingColumn
+            TrackingColumn: dto.SyncTracking?.TrackingColumn
         );
 
         var targets = dto
@@ -139,7 +139,7 @@ internal static class MappingConfigParser
             ColumnMappings: columnMappings,
             ExcludedColumns: excludedColumns,
             Filter: filter,
-            Nimblesite.Sync.CoreTracking: syncTracking,
+            SyncTracking: syncTracking,
             IsMultiTarget: dto.MultiTarget ?? false,
             Targets: targets
         );
@@ -159,7 +159,7 @@ internal static class MappingConfigParser
         {
             { } s when s.Equals("constant", StringComparison.OrdinalIgnoreCase) =>
                 TransformType.Constant,
-            { } s when s.Equals("lql", StringComparison.OrdinalIgnoreCase) => TransformType.Nimblesite.Lql.Core,
+            { } s when s.Equals("lql", StringComparison.OrdinalIgnoreCase) => TransformType.Lql,
             _ => TransformType.None,
         };
 
@@ -168,7 +168,7 @@ internal static class MappingConfigParser
             Target: dto.Target,
             Transform: transform,
             Value: dto.Value,
-            Nimblesite.Lql.Core: dto.Nimblesite.Lql.Core
+            Nimblesite.Lql.Core: dto.Lql
         );
     }
 
@@ -205,7 +205,7 @@ internal static class MappingConfigParser
     /// </summary>
     /// <param name="config">Config to serialize.</param>
     /// <returns>JSON string.</returns>
-    public static string ToJson(Nimblesite.Sync.CoreMappingConfig config)
+    public static string ToJson(SyncMappingConfig config)
     {
         var dto = new MappingConfigDto
         {
@@ -244,16 +244,16 @@ internal static class MappingConfigParser
                     Target = c.Target,
                     Transform = c.Transform == TransformType.None ? null : ToLowerCase(c.Transform),
                     Value = c.Value,
-                    Nimblesite.Lql.Core = c.Nimblesite.Lql.Core,
+                    Nimblesite.Lql.Core = c.Lql,
                 }),
             ],
             ExcludedColumns = [.. m.ExcludedColumns],
-            Filter = m.Filter is not null ? new FilterDto { Nimblesite.Lql.Core = m.Filter.Nimblesite.Lql.Core } : null,
-            Nimblesite.Sync.CoreTracking = new Nimblesite.Sync.CoreTrackingDto
+            Filter = m.Filter is not null ? new FilterDto { Nimblesite.Lql.Core = m.Filter.Lql } : null,
+            SyncTracking = new SyncTrackingDto
             {
-                Enabled = m.Nimblesite.Sync.CoreTracking.Enabled,
-                Strategy = ToLowerCase(m.Nimblesite.Sync.CoreTracking.Strategy),
-                TrackingColumn = m.Nimblesite.Sync.CoreTracking.TrackingColumn,
+                Enabled = m.SyncTracking.Enabled,
+                Strategy = ToLowerCase(m.SyncTracking.Strategy),
+                TrackingColumn = m.SyncTracking.TrackingColumn,
             },
             Targets = m
                 .Targets?.Select(t => new TargetDto
@@ -268,7 +268,7 @@ internal static class MappingConfigParser
                             Transform =
                                 c.Transform == TransformType.None ? null : ToLowerCase(c.Transform),
                             Value = c.Value,
-                            Nimblesite.Lql.Core = c.Nimblesite.Lql.Core,
+                            Nimblesite.Lql.Core = c.Lql,
                         }),
                     ],
                 })
@@ -315,7 +315,7 @@ internal static class MappingConfigParser
         public FilterDto? Filter { get; set; }
 
         [JsonPropertyName("sync_tracking")]
-        public Nimblesite.Sync.CoreTrackingDto? Nimblesite.Sync.CoreTracking { get; set; }
+        public SyncTrackingDto? SyncTracking { get; set; }
 
         public List<TargetDto>? Targets { get; set; }
     }
@@ -343,7 +343,7 @@ internal static class MappingConfigParser
         public string Nimblesite.Lql.Core { get; set; } = "";
     }
 
-    private sealed class Nimblesite.Sync.CoreTrackingDto
+    private sealed class SyncTrackingDto
     {
         public bool Enabled { get; set; } = true;
         public string? Strategy { get; set; }
@@ -376,7 +376,7 @@ public abstract record MappingConfigParseResult
 /// Successful parse result.
 /// </summary>
 /// <param name="Config">Parsed configuration.</param>
-public sealed record MappingConfigParseOk(Nimblesite.Sync.CoreMappingConfig Config) : MappingConfigParseResult;
+public sealed record MappingConfigParseOk(SyncMappingConfig Config) : MappingConfigParseResult;
 
 /// <summary>
 /// Failed parse result.

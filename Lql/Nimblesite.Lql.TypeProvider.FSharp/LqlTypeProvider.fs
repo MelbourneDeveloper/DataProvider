@@ -11,7 +11,7 @@ open Outcome
 open Selecta
 
 [<TypeProvider>]
-type public Nimblesite.Lql.CoreTypeProvider(config: TypeProviderConfig) as this =
+type public LqlTypeProvider(config: TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces(config)
 
     let namespaceName = "Nimblesite.Lql.Core"
@@ -33,7 +33,7 @@ type public Nimblesite.Lql.CoreTypeProvider(config: TypeProviderConfig) as this 
         t.AddXmlDoc(sprintf "✅ Compile-time validated LQL: '%s' → SQL: '%s'" lqlQuery sql)
         t
 
-    let rootType = ProvidedTypeDefinition(thisAssembly, namespaceName, "Nimblesite.Lql.CoreCommand", Some typeof<obj>, isErased = true)
+    let rootType = ProvidedTypeDefinition(thisAssembly, namespaceName, "LqlCommand", Some typeof<obj>, isErased = true)
     
     do
         rootType.DefineStaticParameters(
@@ -46,9 +46,9 @@ type public Nimblesite.Lql.CoreTypeProvider(config: TypeProviderConfig) as this 
                     invalidArg "Query" "LQL query cannot be null or empty!"
                 
                 try
-                    let result = Nimblesite.Lql.CoreStatementConverter.ToStatement lqlQuery
+                    let result = LqlStatementConverter.ToStatement lqlQuery
                     match result with
-                    | :? Outcome.Result<Nimblesite.Lql.CoreStatement, SqlError>.Ok<Nimblesite.Lql.CoreStatement, SqlError> as success ->
+                    | :? Outcome.Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> as success ->
                         // Valid LQL - convert to SQL
                         let sqlResult = success.Value.ToSQLite()
                         match sqlResult with
@@ -59,7 +59,7 @@ type public Nimblesite.Lql.CoreTypeProvider(config: TypeProviderConfig) as this 
                             failwith (sprintf "❌ COMPILATION FAILED: SQL generation error - %s for LQL: '%s'" sqlFailure.Value.Message lqlQuery)
                         | _ ->
                             failwith (sprintf "❌ COMPILATION FAILED: Unknown SQL generation error for LQL: '%s'" lqlQuery)
-                    | :? Outcome.Result<Nimblesite.Lql.CoreStatement, SqlError>.Error<Nimblesite.Lql.CoreStatement, SqlError> as failure ->
+                    | :? Outcome.Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> as failure ->
                         let error = failure.Value
                         let position = 
                             match error.Position with

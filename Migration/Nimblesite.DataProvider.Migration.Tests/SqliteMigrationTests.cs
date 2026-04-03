@@ -63,16 +63,16 @@ public sealed class SqliteMigrationTests
 
             var ops = ((OperationsResultOk)operations).Value;
 
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 ops,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Assert
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             // Verify table exists
             var inspected = SqliteSchemaInspector.Inspect(connection, _logger);
@@ -134,16 +134,16 @@ public sealed class SqliteMigrationTests
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
             ).Value;
 
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Assert
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             var inspected = (
                 (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
@@ -188,11 +188,11 @@ public sealed class SqliteMigrationTests
             var v1Ops = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
             ).Value;
-            _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            _ = MigrationRunner.Apply(
                 connection,
                 v1Ops,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
@@ -222,16 +222,16 @@ public sealed class SqliteMigrationTests
             Assert.Equal(2, upgradeOps.Count);
             Assert.All(upgradeOps, op => Assert.IsType<AddColumnOperation>(op));
 
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 upgradeOps,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Assert
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             var finalSchema = (
                 (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
@@ -266,11 +266,11 @@ public sealed class SqliteMigrationTests
             var v1Ops = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
             ).Value;
-            _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            _ = MigrationRunner.Apply(
                 connection,
                 v1Ops,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
@@ -300,16 +300,16 @@ public sealed class SqliteMigrationTests
             Assert.Single(upgradeOps);
             Assert.IsType<CreateTableOperation>(upgradeOps[0]);
 
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 upgradeOps,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Assert
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             var finalSchema = (
                 (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
@@ -347,11 +347,11 @@ public sealed class SqliteMigrationTests
             var v1Ops = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
             ).Value;
-            _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            _ = MigrationRunner.Apply(
                 connection,
                 v1Ops,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
@@ -379,16 +379,16 @@ public sealed class SqliteMigrationTests
             Assert.Single(upgradeOps);
             Assert.IsType<CreateIndexOperation>(upgradeOps[0]);
 
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 upgradeOps,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Assert
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             var finalSchema = (
                 (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
@@ -405,7 +405,7 @@ public sealed class SqliteMigrationTests
     }
 
     [Fact]
-    public void Nimblesite.DataProvider.Migration.Core_IsIdempotent_NoErrorOnRerun()
+    public void Migration_IsIdempotent_NoErrorOnRerun()
     {
         // Arrange
         var (connection, dbPath) = CreateTestDb();
@@ -433,15 +433,15 @@ public sealed class SqliteMigrationTests
                     (OperationsResultOk)SchemaDiff.Calculate(currentSchema, schema, logger: _logger)
                 ).Value;
 
-                var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+                var result = MigrationRunner.Apply(
                     connection,
                     operations,
                     SqliteDdlGenerator.Generate,
-                    Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                    MigrationOptions.Default,
                     _logger
                 );
 
-                Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+                Assert.True(result is MigrationApplyResultOk);
 
                 // Second run should have 0 operations
                 if (i == 1)
@@ -504,16 +504,16 @@ public sealed class SqliteMigrationTests
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
             ).Value;
 
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Assert
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             var inspected = (
                 (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
@@ -547,11 +547,11 @@ public sealed class SqliteMigrationTests
             var v1Ops = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
             ).Value;
-            _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            _ = MigrationRunner.Apply(
                 connection,
                 v1Ops,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
@@ -604,11 +604,11 @@ public sealed class SqliteMigrationTests
             var v1Ops = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
             ).Value;
-            _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            _ = MigrationRunner.Apply(
                 connection,
                 v1Ops,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
@@ -631,16 +631,16 @@ public sealed class SqliteMigrationTests
             Assert.Single(operations);
             Assert.IsType<DropTableOperation>(operations[0]);
 
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Destructive,
+                MigrationOptions.Destructive,
                 _logger
             );
 
             // Assert
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             var finalSchema = (
                 (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
@@ -680,11 +680,11 @@ public sealed class SqliteMigrationTests
             var operations = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
             ).Value;
-            _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            _ = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
@@ -722,17 +722,17 @@ public sealed class SqliteMigrationTests
             var dropOperation = new DropTableOperation("main", "ToBeDropped");
 
             // Act - try to apply destructive operation with default options
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 [dropOperation],
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default, // AllowDestructive = false
+                MigrationOptions.Default, // AllowDestructive = false
                 _logger
             );
 
             // Assert - should fail with useful error message
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultError);
-            var error = ((Nimblesite.DataProvider.Migration.CoreApplyResultError)result).Value;
+            Assert.True(result is MigrationApplyResultError);
+            var error = ((MigrationApplyResultError)result).Value;
             Assert.Contains("Destructive", error.Message);
             Assert.Contains("DropTableOperation", error.Message);
         }
@@ -760,11 +760,11 @@ public sealed class SqliteMigrationTests
             var createOp = new CreateTableOperation(badTable);
 
             // Act
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 [createOp],
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
@@ -912,18 +912,18 @@ public sealed class SqliteMigrationTests
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
             ).Value;
 
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Assert - Nimblesite.DataProvider.Migration.Core succeeded
             Assert.True(
-                result is Nimblesite.DataProvider.Migration.CoreApplyResultOk,
-                $"Nimblesite.DataProvider.Migration.Core failed: {(result as Nimblesite.DataProvider.Migration.CoreApplyResultError)?.Value}"
+                result is MigrationApplyResultOk,
+                $"Nimblesite.DataProvider.Migration.Core failed: {(result as MigrationApplyResultError)?.Value}"
             );
 
             // Verify index exists
@@ -966,11 +966,11 @@ public sealed class SqliteMigrationTests
             var operations = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
             ).Value;
-            _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            _ = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
@@ -1032,18 +1032,18 @@ public sealed class SqliteMigrationTests
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
             ).Value;
 
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Assert
             Assert.True(
-                result is Nimblesite.DataProvider.Migration.CoreApplyResultOk,
-                $"Nimblesite.DataProvider.Migration.Core failed: {(result as Nimblesite.DataProvider.Migration.CoreApplyResultError)?.Value}"
+                result is MigrationApplyResultOk,
+                $"Nimblesite.DataProvider.Migration.Core failed: {(result as MigrationApplyResultError)?.Value}"
             );
 
             // Verify composite expression index exists
@@ -1092,17 +1092,17 @@ public sealed class SqliteMigrationTests
                     (OperationsResultOk)SchemaDiff.Calculate(currentSchema, schema, logger: _logger)
                 ).Value;
 
-                var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+                var result = MigrationRunner.Apply(
                     connection,
                     operations,
                     SqliteDdlGenerator.Generate,
-                    Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                    MigrationOptions.Default,
                     _logger
                 );
 
                 Assert.True(
-                    result is Nimblesite.DataProvider.Migration.CoreApplyResultOk,
-                    $"Nimblesite.DataProvider.Migration.Core {i + 1} failed: {(result as Nimblesite.DataProvider.Migration.CoreApplyResultError)?.Value}"
+                    result is MigrationApplyResultOk,
+                    $"Nimblesite.DataProvider.Migration.Core {i + 1} failed: {(result as MigrationApplyResultError)?.Value}"
                 );
 
                 // Second run should have 0 operations (schema already matches)
@@ -1185,11 +1185,11 @@ public sealed class SqliteMigrationTests
             var v1Ops = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
             ).Value;
-            _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            _ = MigrationRunner.Apply(
                 connection,
                 v1Ops,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
@@ -1220,15 +1220,15 @@ public sealed class SqliteMigrationTests
             Assert.Contains(upgradeOps, op => op is CreateIndexOperation);
 
             // Apply the upgrade
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 upgradeOps,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Destructive,
+                MigrationOptions.Destructive,
                 _logger
             );
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             // Verify new expression index exists
             using var cmd = connection.CreateCommand();
@@ -1269,11 +1269,11 @@ public sealed class SqliteMigrationTests
             var v1Ops = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, v1, logger: _logger)
             ).Value;
-            _ = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            _ = MigrationRunner.Apply(
                 connection,
                 v1Ops,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
@@ -1303,15 +1303,15 @@ public sealed class SqliteMigrationTests
             Assert.Contains(upgradeOps, op => op is DropIndexOperation);
             Assert.Contains(upgradeOps, op => op is CreateIndexOperation);
 
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 upgradeOps,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Destructive,
+                MigrationOptions.Destructive,
                 _logger
             );
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             // Verify new column index exists (no lower() function)
             using var cmd = connection.CreateCommand();
@@ -1332,7 +1332,7 @@ public sealed class SqliteMigrationTests
     // =============================================================================
 
     [Fact]
-    public void Nimblesite.Lql.CoreDefault_NowFunction_TranslatesToCurrentTimestamp()
+    public void LqlDefault_NowFunction_TranslatesToCurrentTimestamp()
     {
         // Arrange
         var (connection, dbPath) = CreateTestDb();
@@ -1359,16 +1359,16 @@ public sealed class SqliteMigrationTests
             var operations = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
             ).Value;
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Assert
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             // Verify table DDL contains datetime('now') - the SQLite translation of now()
             using var cmd = connection.CreateCommand();
@@ -1395,7 +1395,7 @@ public sealed class SqliteMigrationTests
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreDefault_BooleanTrue_TranslatesTo1()
+    public void LqlDefault_BooleanTrue_TranslatesTo1()
     {
         // Arrange
         var (connection, dbPath) = CreateTestDb();
@@ -1427,16 +1427,16 @@ public sealed class SqliteMigrationTests
             var operations = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
             ).Value;
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Assert
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             // Verify table DDL contains 1 and 0 for boolean defaults
             using var cmd = connection.CreateCommand();
@@ -1465,7 +1465,7 @@ public sealed class SqliteMigrationTests
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreDefault_NumericValues_PassThrough()
+    public void LqlDefault_NumericValues_PassThrough()
     {
         // Arrange
         var (connection, dbPath) = CreateTestDb();
@@ -1498,16 +1498,16 @@ public sealed class SqliteMigrationTests
             var operations = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
             ).Value;
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Assert
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             // Insert and verify defaults work
             using var insertCmd = connection.CreateCommand();
@@ -1529,7 +1529,7 @@ public sealed class SqliteMigrationTests
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreDefault_StringLiteral_PassThrough()
+    public void LqlDefault_StringLiteral_PassThrough()
     {
         // Arrange
         var (connection, dbPath) = CreateTestDb();
@@ -1561,16 +1561,16 @@ public sealed class SqliteMigrationTests
             var operations = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
             ).Value;
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Assert
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             // Insert and verify defaults work
             using var insertCmd = connection.CreateCommand();
@@ -1591,7 +1591,7 @@ public sealed class SqliteMigrationTests
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreDefault_GenUuid_GeneratesValidUuidFormat()
+    public void LqlDefault_GenUuid_GeneratesValidUuidFormat()
     {
         // Arrange
         var (connection, dbPath) = CreateTestDb();
@@ -1618,16 +1618,16 @@ public sealed class SqliteMigrationTests
             var operations = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
             ).Value;
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Assert
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             // Insert multiple rows and verify UUIDs are generated and unique
             using var insertCmd = connection.CreateCommand();
@@ -1662,7 +1662,7 @@ public sealed class SqliteMigrationTests
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreDefault_CurrentDate_ReturnsDateOnly()
+    public void LqlDefault_CurrentDate_ReturnsDateOnly()
     {
         // Arrange
         var (connection, dbPath) = CreateTestDb();
@@ -1689,16 +1689,16 @@ public sealed class SqliteMigrationTests
             var operations = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
             ).Value;
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Assert
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             // Insert and verify default date
             using var insertCmd = connection.CreateCommand();
@@ -1718,7 +1718,7 @@ public sealed class SqliteMigrationTests
     }
 
     [Fact]
-    public void Nimblesite.Lql.CoreDefault_MixedDefaults_AllWorkTogether()
+    public void LqlDefault_MixedDefaults_AllWorkTogether()
     {
         // Arrange - A complex table with multiple LQL defaults
         var (connection, dbPath) = CreateTestDb();
@@ -1760,16 +1760,16 @@ public sealed class SqliteMigrationTests
             var operations = (
                 (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
             ).Value;
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
             // Assert
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             // Insert with no columns specified - all defaults should apply
             using var insertCmd = connection.CreateCommand();

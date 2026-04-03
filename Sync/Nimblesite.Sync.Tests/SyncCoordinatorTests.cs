@@ -6,10 +6,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Nimblesite.Sync.Tests;
 
 /// <summary>
-/// Integration tests for Nimblesite.Sync.CoreCoordinator.
+/// Integration tests for SyncCoordinator.
 /// Uses real SQLite databases - no mocks.
 /// </summary>
-public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
+public sealed class SyncCoordinatorTests : IDisposable
 {
     private static readonly ILogger Logger = NullLogger.Instance;
     private readonly string _serverDbPath = Path.Combine(
@@ -25,7 +25,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
     private const string ServerOrigin = "server-coord-001";
     private const string ClientOrigin = "client-coord-001";
 
-    public Nimblesite.Sync.CoreCoordinatorTests()
+    public SyncCoordinatorTests()
     {
         _serverDb = CreateSyncDatabase(ServerOrigin, _serverDbPath);
         _clientDb = CreateSyncDatabase(ClientOrigin, _clientDbPath);
@@ -38,7 +38,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
     {
         var lastVersion = 0L;
 
-        var result = Nimblesite.Sync.CoreCoordinator.Pull(
+        var result = SyncCoordinator.Pull(
             ClientOrigin,
             lastVersion,
             new BatchConfig(100),
@@ -64,7 +64,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
         InsertPerson(_serverDb, "p1", "Alice");
         InsertPerson(_serverDb, "p2", "Bob");
 
-        var result = Nimblesite.Sync.CoreCoordinator.Pull(
+        var result = SyncCoordinator.Pull(
             ClientOrigin,
             0,
             new BatchConfig(100),
@@ -102,7 +102,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
             ClientOrigin
         );
 
-        var result = Nimblesite.Sync.CoreCoordinator.Pull(
+        var result = SyncCoordinator.Pull(
             ClientOrigin,
             0,
             new BatchConfig(100),
@@ -131,7 +131,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
             InsertPerson(_serverDb, $"p{i}", $"Person {i}");
         }
 
-        var result = Nimblesite.Sync.CoreCoordinator.Pull(
+        var result = SyncCoordinator.Pull(
             ClientOrigin,
             0,
             new BatchConfig(10), // Small batches
@@ -161,7 +161,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
         InsertParent(_serverDb, "parent1", "Parent One");
         InsertChild(_serverDb, "child1", "parent1", "Child One");
 
-        var result = Nimblesite.Sync.CoreCoordinator.Pull(
+        var result = SyncCoordinator.Pull(
             ClientOrigin,
             0,
             new BatchConfig(100, 3), // Allow retries
@@ -184,13 +184,13 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
     [Fact]
     public void Pull_TriggerSuppressionFailure_ReturnsError()
     {
-        var result = Nimblesite.Sync.CoreCoordinator.Pull(
+        var result = SyncCoordinator.Pull(
             ClientOrigin,
             0,
             new BatchConfig(100),
             (from, limit) => FetchChanges(_serverDb, from, limit),
             entry => ApplyChange(_clientDb, entry),
-            () => new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase("Suppression failed")),
+            () => new BoolSyncError(new SyncErrorDatabase("Suppression failed")),
             () => DisableSuppression(_clientDb),
             v => SetLastSyncVersion(_clientDb, v),
             Logger
@@ -198,17 +198,17 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
 
         Assert.IsType<PullResultError>(result);
         var error = ((PullResultError)result).Value;
-        Assert.IsType<Nimblesite.Sync.CoreErrorDatabase>(error);
+        Assert.IsType<SyncErrorDatabase>(error);
     }
 
     [Fact]
     public void Pull_FetchError_ReturnsError()
     {
-        var result = Nimblesite.Sync.CoreCoordinator.Pull(
+        var result = SyncCoordinator.Pull(
             ClientOrigin,
             0,
             new BatchConfig(100),
-            (from, limit) => new Nimblesite.Sync.CoreLogListError(new Nimblesite.Sync.CoreErrorDatabase("Fetch failed")),
+            (from, limit) => new SyncLogListError(new SyncErrorDatabase("Fetch failed")),
             entry => ApplyChange(_clientDb, entry),
             () => EnableSuppression(_clientDb),
             () => DisableSuppression(_clientDb),
@@ -225,7 +225,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
         InsertPerson(_serverDb, "p1", "Alice");
 
         var capturedVersion = 0L;
-        _ = Nimblesite.Sync.CoreCoordinator.Pull(
+        _ = SyncCoordinator.Pull(
             ClientOrigin,
             0,
             new BatchConfig(100),
@@ -247,7 +247,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
     [Fact]
     public void Push_EmptyClient_ReturnsZeroChanges()
     {
-        var result = Nimblesite.Sync.CoreCoordinator.Push(
+        var result = SyncCoordinator.Push(
             0,
             new BatchConfig(100),
             (from, limit) => FetchChanges(_clientDb, from, limit),
@@ -267,7 +267,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
         InsertPerson(_clientDb, "p1", "Charlie");
         InsertPerson(_clientDb, "p2", "Diana");
 
-        var result = Nimblesite.Sync.CoreCoordinator.Push(
+        var result = SyncCoordinator.Push(
             0,
             new BatchConfig(100),
             (from, limit) => FetchChanges(_clientDb, from, limit),
@@ -292,7 +292,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
             InsertPerson(_clientDb, $"p{i}", $"Person {i}");
         }
 
-        var result = Nimblesite.Sync.CoreCoordinator.Push(
+        var result = SyncCoordinator.Push(
             0,
             new BatchConfig(10),
             (from, limit) => FetchChanges(_clientDb, from, limit),
@@ -311,11 +311,11 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
     {
         InsertPerson(_clientDb, "p1", "Alice");
 
-        var result = Nimblesite.Sync.CoreCoordinator.Push(
+        var result = SyncCoordinator.Push(
             0,
             new BatchConfig(100),
             (from, limit) => FetchChanges(_clientDb, from, limit),
-            changes => new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase("Send failed")),
+            changes => new BoolSyncError(new SyncErrorDatabase("Send failed")),
             v => SetLastPushVersion(_clientDb, v),
             Logger
         );
@@ -328,7 +328,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
     #region Bidirectional Nimblesite.Sync.Core Tests
 
     [Fact]
-    public void Nimblesite.Sync.Core_PullThenPush_Both()
+    public void Sync_PullThenPush_Both()
     {
         // Server has Alice
         InsertPerson(_serverDb, "s1", "ServerAlice");
@@ -336,7 +336,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
         // Client has Bob
         InsertPerson(_clientDb, "c1", "ClientBob");
 
-        var result = Nimblesite.Sync.CoreCoordinator.Nimblesite.Sync.Core(
+        var result = SyncCoordinator.Sync(
             ClientOrigin,
             0,
             0,
@@ -352,8 +352,8 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
             Logger
         );
 
-        Assert.IsType<Nimblesite.Sync.CoreResultOk>(result);
-        var sync = ((Nimblesite.Sync.CoreResultOk)result).Value;
+        Assert.IsType<SyncResultOk>(result);
+        var sync = ((SyncResultOk)result).Value;
         Assert.Equal(1, sync.Pull.ChangesApplied);
         Assert.Equal(1, sync.Push.ChangesPushed);
 
@@ -367,14 +367,14 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
     }
 
     [Fact]
-    public void Nimblesite.Sync.Core_PullFailure_ReturnsError()
+    public void Sync_PullFailure_ReturnsError()
     {
-        var result = Nimblesite.Sync.CoreCoordinator.Nimblesite.Sync.Core(
+        var result = SyncCoordinator.Sync(
             ClientOrigin,
             0,
             0,
             new BatchConfig(100),
-            (from, limit) => new Nimblesite.Sync.CoreLogListError(new Nimblesite.Sync.CoreErrorDatabase("Pull failed")),
+            (from, limit) => new SyncLogListError(new SyncErrorDatabase("Pull failed")),
             entry => ApplyChange(_clientDb, entry),
             () => EnableSuppression(_clientDb),
             () => DisableSuppression(_clientDb),
@@ -385,16 +385,16 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
             Logger
         );
 
-        Assert.IsType<Nimblesite.Sync.CoreResultError>(result);
+        Assert.IsType<SyncResultError>(result);
     }
 
     [Fact]
-    public void Nimblesite.Sync.Core_PushFailure_AfterSuccessfulPull_ReturnsError()
+    public void Sync_PushFailure_AfterSuccessfulPull_ReturnsError()
     {
         InsertPerson(_serverDb, "s1", "ServerAlice");
         InsertPerson(_clientDb, "c1", "ClientBob");
 
-        var result = Nimblesite.Sync.CoreCoordinator.Nimblesite.Sync.Core(
+        var result = SyncCoordinator.Sync(
             ClientOrigin,
             0,
             0,
@@ -405,22 +405,22 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
             () => DisableSuppression(_clientDb),
             v => SetLastSyncVersion(_clientDb, v),
             (from, limit) => FetchChanges(_clientDb, from, limit),
-            changes => new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase("Push failed")),
+            changes => new BoolSyncError(new SyncErrorDatabase("Push failed")),
             v => SetLastPushVersion(_clientDb, v),
             Logger
         );
 
-        Assert.IsType<Nimblesite.Sync.CoreResultError>(result);
+        Assert.IsType<SyncResultError>(result);
         // Pull should have succeeded - client has server's data
         Assert.Equal("ServerAlice", GetPersonName(_clientDb, "s1"));
     }
 
     [Fact]
-    public void Nimblesite.Sync.Core_IncrementalSync_OnlyNewChanges()
+    public void Sync_IncrementalSync_OnlyNewChanges()
     {
         // Initial sync
         InsertPerson(_serverDb, "s1", "ServerAlice");
-        var result1 = Nimblesite.Sync.CoreCoordinator.Pull(
+        var result1 = SyncCoordinator.Pull(
             ClientOrigin,
             0,
             new BatchConfig(100),
@@ -439,7 +439,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
         InsertPerson(_serverDb, "s2", "ServerBob");
 
         // Second sync from last version
-        var result2 = Nimblesite.Sync.CoreCoordinator.Pull(
+        var result2 = SyncCoordinator.Pull(
             ClientOrigin,
             firstPull.ToVersion,
             new BatchConfig(100),
@@ -564,11 +564,11 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
         return conn;
     }
 
-    private static Nimblesite.Sync.CoreLogListResult FetchChanges(SqliteConnection db, long fromVersion, int limit)
+    private static SyncLogListResult FetchChanges(SqliteConnection db, long fromVersion, int limit)
     {
         try
         {
-            var entries = new List<Nimblesite.Sync.CoreLogEntry>();
+            var entries = new List<SyncLogEntry>();
             using var cmd = db.CreateCommand();
             cmd.CommandText = """
                 SELECT version, table_name, pk_value, operation, payload, origin, timestamp
@@ -584,7 +584,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
             while (reader.Read())
             {
                 entries.Add(
-                    new Nimblesite.Sync.CoreLogEntry(
+                    new SyncLogEntry(
                         reader.GetInt64(0),
                         reader.GetString(1),
                         reader.GetString(2),
@@ -596,11 +596,11 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
                 );
             }
 
-            return new Nimblesite.Sync.CoreLogListOk(entries);
+            return new SyncLogListOk(entries);
         }
         catch (SqliteException ex)
         {
-            return new Nimblesite.Sync.CoreLogListError(new Nimblesite.Sync.CoreErrorDatabase(ex.Message));
+            return new SyncLogListError(new SyncErrorDatabase(ex.Message));
         }
     }
 
@@ -620,17 +620,17 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
         return new BoolSyncOk(true);
     }
 
-    private static BoolSyncResult ApplyChange(SqliteConnection db, Nimblesite.Sync.CoreLogEntry entry)
+    private static BoolSyncResult ApplyChange(SqliteConnection db, SyncLogEntry entry)
     {
         try
         {
             switch (entry.Operation)
             {
-                case Nimblesite.Sync.CoreOperation.Insert:
-                case Nimblesite.Sync.CoreOperation.Update:
+                case SyncOperation.Insert:
+                case SyncOperation.Update:
                     ApplyUpsert(db, entry);
                     break;
-                case Nimblesite.Sync.CoreOperation.Delete:
+                case SyncOperation.Delete:
                     ApplyDelete(db, entry);
                     break;
             }
@@ -642,13 +642,13 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
         }
         catch (SqliteException ex)
         {
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase(ex.Message));
+            return new BoolSyncError(new SyncErrorDatabase(ex.Message));
         }
     }
 
     private static BoolSyncResult ApplyChangesToTarget(
         SqliteConnection db,
-        IReadOnlyList<Nimblesite.Sync.CoreLogEntry> changes,
+        IReadOnlyList<SyncLogEntry> changes,
         string targetOrigin
     )
     {
@@ -670,7 +670,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
         }
     }
 
-    private static void ApplyUpsert(SqliteConnection db, Nimblesite.Sync.CoreLogEntry entry)
+    private static void ApplyUpsert(SqliteConnection db, SyncLogEntry entry)
     {
         var payload = System.Text.Json.JsonSerializer.Deserialize<
             Dictionary<string, System.Text.Json.JsonElement>
@@ -700,7 +700,7 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
         cmd.ExecuteNonQuery();
     }
 
-    private static void ApplyDelete(SqliteConnection db, Nimblesite.Sync.CoreLogEntry entry)
+    private static void ApplyDelete(SqliteConnection db, SyncLogEntry entry)
     {
         var pk = System.Text.Json.JsonSerializer.Deserialize<
             Dictionary<string, System.Text.Json.JsonElement>
@@ -802,12 +802,12 @@ public sealed class Nimblesite.Sync.CoreCoordinatorTests : IDisposable
         cmd.ExecuteNonQuery();
     }
 
-    private static Nimblesite.Sync.CoreOperation ParseOperation(string op) =>
+    private static SyncOperation ParseOperation(string op) =>
         op switch
         {
-            "insert" => Nimblesite.Sync.CoreOperation.Insert,
-            "update" => Nimblesite.Sync.CoreOperation.Update,
-            "delete" => Nimblesite.Sync.CoreOperation.Delete,
+            "insert" => SyncOperation.Insert,
+            "update" => SyncOperation.Update,
+            "delete" => SyncOperation.Delete,
             _ => throw new ArgumentException($"Unknown operation: {op}"),
         };
 

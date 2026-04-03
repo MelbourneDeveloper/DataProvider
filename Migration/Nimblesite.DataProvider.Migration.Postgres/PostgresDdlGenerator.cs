@@ -8,7 +8,7 @@ namespace Nimblesite.DataProvider.Migration.Postgres;
 /// <param name="Success">Whether the migration completed without errors.</param>
 /// <param name="TablesCreated">Number of tables successfully created or already existing.</param>
 /// <param name="Errors">List of table names and error messages for any failures.</param>
-public sealed record Nimblesite.DataProvider.Migration.CoreResult(bool Success, int TablesCreated, IReadOnlyList<string> Errors);
+public sealed record MigrationResult(bool Success, int TablesCreated, IReadOnlyList<string> Errors);
 
 /// <summary>
 /// PostgreSQL DDL generator for schema operations.
@@ -25,7 +25,7 @@ public static class PostgresDdlGenerator
     /// <param name="onTableCreated">Optional callback for each table created (table name).</param>
     /// <param name="onTableFailed">Optional callback for each table that failed (table name, exception).</param>
     /// <returns>Nimblesite.DataProvider.Migration.Core result with success status and any errors.</returns>
-    public static Nimblesite.DataProvider.Migration.CoreResult MigrateSchema(
+    public static MigrationResult MigrateSchema(
         IDbConnection connection,
         SchemaDefinition schema,
         Action<string>? onTableCreated = null,
@@ -53,7 +53,7 @@ public static class PostgresDdlGenerator
             }
         }
 
-        return new Nimblesite.DataProvider.Migration.CoreResult(
+        return new MigrationResult(
             Success: errors.Count == 0,
             TablesCreated: tablesCreated,
             Errors: errors.AsReadOnly()
@@ -205,7 +205,7 @@ public static class PostgresDdlGenerator
         // LQL expression takes precedence over raw SQL default
         if (column.DefaultLqlExpression is not null)
         {
-            var translated = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(column.DefaultLqlExpression);
+            var translated = LqlDefaultTranslator.ToPostgres(column.DefaultLqlExpression);
             sb.Append(CultureInfo.InvariantCulture, $" DEFAULT {translated}");
         }
         else if (column.DefaultValue is not null)

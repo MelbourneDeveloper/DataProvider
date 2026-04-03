@@ -7,7 +7,7 @@ namespace Nimblesite.Sync.SQLite;
 /// Creates and manages sync schema tables for SQLite.
 /// Implements spec Appendix A schema.
 /// </summary>
-public static class Nimblesite.Sync.CoreSchema
+public static class SyncSchema
 {
     /// <summary>
     /// SQL to create sync state table (_sync_state).
@@ -158,7 +158,7 @@ public static class Nimblesite.Sync.CoreSchema
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to create sync schema: {ex.Message}")
+                new SyncErrorDatabase($"Failed to create sync schema: {ex.Message}")
             );
         }
     }
@@ -182,7 +182,7 @@ public static class Nimblesite.Sync.CoreSchema
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to set origin ID: {ex.Message}")
+                new SyncErrorDatabase($"Failed to set origin ID: {ex.Message}")
             );
         }
     }
@@ -201,12 +201,12 @@ public static class Nimblesite.Sync.CoreSchema
             var result = cmd.ExecuteScalar();
             return result is string originId
                 ? new StringSyncOk(originId)
-                : new StringSyncError(new Nimblesite.Sync.CoreErrorDatabase("Origin ID not found"));
+                : new StringSyncError(new SyncErrorDatabase("Origin ID not found"));
         }
         catch (SqliteException ex)
         {
             return new StringSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get origin ID: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get origin ID: {ex.Message}")
             );
         }
     }

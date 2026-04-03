@@ -94,9 +94,9 @@ public sealed class TestDb : IDisposable
         cmd.ExecuteNonQuery();
     }
 
-    public IReadOnlyList<Nimblesite.Sync.CoreLogEntry> FetchChanges(long fromVersion, int limit)
+    public IReadOnlyList<SyncLogEntry> FetchChanges(long fromVersion, int limit)
     {
-        var entries = new List<Nimblesite.Sync.CoreLogEntry>();
+        var entries = new List<SyncLogEntry>();
         using var cmd = Connection.CreateCommand();
         cmd.CommandText = """
             SELECT version, table_name, pk_value, operation, payload, origin, timestamp
@@ -112,7 +112,7 @@ public sealed class TestDb : IDisposable
         while (reader.Read())
         {
             entries.Add(
-                new Nimblesite.Sync.CoreLogEntry(
+                new SyncLogEntry(
                     reader.GetInt64(0),
                     reader.GetString(1),
                     reader.GetString(2),
@@ -127,12 +127,12 @@ public sealed class TestDb : IDisposable
         return entries;
     }
 
-    private static Nimblesite.Sync.CoreOperation ParseOperation(string op) =>
+    private static SyncOperation ParseOperation(string op) =>
         op switch
         {
-            "insert" => Nimblesite.Sync.CoreOperation.Insert,
-            "update" => Nimblesite.Sync.CoreOperation.Update,
-            "delete" => Nimblesite.Sync.CoreOperation.Delete,
+            "insert" => SyncOperation.Insert,
+            "update" => SyncOperation.Update,
+            "delete" => SyncOperation.Delete,
             _ => throw new ArgumentException($"Unknown operation: {op}"),
         };
 

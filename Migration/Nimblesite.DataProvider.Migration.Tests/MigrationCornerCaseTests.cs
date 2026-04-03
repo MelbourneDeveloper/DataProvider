@@ -4,7 +4,7 @@ namespace Nimblesite.DataProvider.Migration.Tests;
 /// Corner case and edge case tests for migrations.
 /// Tests special characters, reserved words, extreme values, and unusual schemas.
 /// </summary>
-public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
+public sealed class MigrationCornerCaseTests
 {
     private readonly ILogger _logger = NullLogger.Instance;
 
@@ -54,7 +54,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
             VerifyTableExists(connection, "user_roles_history");
         }
         finally
@@ -87,7 +87,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             var inspected = (
                 (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
@@ -120,7 +120,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             var inspected = (
                 (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
@@ -153,7 +153,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
         }
         finally
         {
@@ -190,7 +190,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             var inspected = (
                 (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
@@ -224,7 +224,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
         }
         finally
         {
@@ -254,7 +254,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
         }
         finally
         {
@@ -288,7 +288,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
         }
         finally
         {
@@ -321,7 +321,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             var inspected = (
                 (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
@@ -361,7 +361,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             var inspected = (
                 (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
@@ -399,7 +399,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             var inspected = (
                 (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
@@ -438,7 +438,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             // Verify all columns except Id are nullable
             var inspected = (
@@ -480,7 +480,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
         }
         finally
         {
@@ -515,7 +515,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
         }
         finally
         {
@@ -542,7 +542,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
         }
         finally
         {
@@ -569,7 +569,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
         }
         finally
         {
@@ -600,7 +600,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
         }
         finally
         {
@@ -649,7 +649,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
         }
         finally
         {
@@ -691,7 +691,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
         }
         finally
         {
@@ -746,15 +746,15 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
             Assert.Equal(4, operations.Count(op => op is AddColumnOperation));
             Assert.Equal(2, operations.Count(op => op is CreateIndexOperation));
 
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
         }
         finally
         {
@@ -815,15 +815,15 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
             Assert.Single(operations);
             Assert.IsType<CreateIndexOperation>(operations[0]);
 
-            var result = Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+            var result = MigrationRunner.Apply(
                 connection,
                 operations,
                 SqliteDdlGenerator.Generate,
-                Nimblesite.DataProvider.Migration.CoreOptions.Default,
+                MigrationOptions.Default,
                 _logger
             );
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
 
             var finalSchema = (
                 (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
@@ -860,7 +860,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
             var result = ApplySchema(connection, schema);
 
-            Assert.True(result is Nimblesite.DataProvider.Migration.CoreApplyResultOk);
+            Assert.True(result is MigrationApplyResultOk);
         }
         finally
         {
@@ -872,7 +872,7 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
 
     #region Helper Methods
 
-    private Outcome.Result<bool, Nimblesite.DataProvider.Migration.CoreError> ApplySchema(
+    private Outcome.Result<bool, MigrationError> ApplySchema(
         SqliteConnection connection,
         SchemaDefinition schema
     )
@@ -885,11 +885,11 @@ public sealed class Nimblesite.DataProvider.Migration.CoreCornerCaseTests
             (OperationsResultOk)SchemaDiff.Calculate(currentSchema, schema, logger: _logger)
         ).Value;
 
-        return Nimblesite.DataProvider.Migration.CoreRunner.Apply(
+        return MigrationRunner.Apply(
             connection,
             operations,
             SqliteDdlGenerator.Generate,
-            Nimblesite.DataProvider.Migration.CoreOptions.Default,
+            MigrationOptions.Default,
             _logger
         );
     }

@@ -11,12 +11,12 @@ namespace Nimblesite.Sync.Core;
 /// <example>
 /// <code>
 /// // Create a batch with changes
-/// var changes = new List&lt;Nimblesite.Sync.CoreLogEntry&gt;
+/// var changes = new List&lt;SyncLogEntry&gt;
 /// {
-///     new Nimblesite.Sync.CoreLogEntry(Version: 101, TableName: "patients", ...),
-///     new Nimblesite.Sync.CoreLogEntry(Version: 102, TableName: "appointments", ...),
+///     new SyncLogEntry(Version: 101, TableName: "patients", ...),
+///     new SyncLogEntry(Version: 102, TableName: "appointments", ...),
 /// };
-/// var batch = new Nimblesite.Sync.CoreBatch(
+/// var batch = new SyncBatch(
 ///     Changes: changes,
 ///     FromVersion: 100,
 ///     ToVersion: 102,
@@ -31,8 +31,8 @@ namespace Nimblesite.Sync.Core;
 /// }
 /// </code>
 /// </example>
-public sealed record Nimblesite.Sync.CoreBatch(
-    IReadOnlyList<Nimblesite.Sync.CoreLogEntry> Changes,
+public sealed record SyncBatch(
+    IReadOnlyList<SyncLogEntry> Changes,
     long FromVersion,
     long ToVersion,
     bool HasMore,
@@ -53,7 +53,7 @@ public sealed record Nimblesite.Sync.CoreBatch(
 /// var largeConfig = new BatchConfig(BatchSize: 5000, MaxRetryPasses: 5);
 ///
 /// // Perform sync with custom config
-/// var result = Nimblesite.Sync.CoreCoordinator.Nimblesite.Sync.Core(
+/// var result = SyncCoordinator.Sync(
 ///     myOriginId: originId,
 ///     lastServerVersion: 0,
 ///     lastPushVersion: 0,

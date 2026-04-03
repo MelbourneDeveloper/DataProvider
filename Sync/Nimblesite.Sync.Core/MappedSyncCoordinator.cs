@@ -58,10 +58,10 @@ public static class MappedSyncCoordinator
     public static PullResultResult PullWithMapping(
         string myOriginId,
         long lastSyncedVersion,
-        Nimblesite.Sync.CoreMappingConfig mappingConfig,
+        SyncMappingConfig mappingConfig,
         BatchConfig config,
-        Func<long, int, Nimblesite.Sync.CoreLogListResult> fetchRemoteChanges,
-        Func<MappedEntry, Nimblesite.Sync.CoreOperation, BoolSyncResult> applyMappedChange,
+        Func<long, int, SyncLogListResult> fetchRemoteChanges,
+        Func<MappedEntry, SyncOperation, BoolSyncResult> applyMappedChange,
         Func<BoolSyncResult> enableTriggerSuppression,
         Func<BoolSyncResult> disableTriggerSuppression,
         Action<long> updateLastSyncedVersion,
@@ -105,12 +105,12 @@ public static class MappedSyncCoordinator
                     logger
                 );
 
-                if (batchResult is Nimblesite.Sync.CoreBatchError batchError)
+                if (batchResult is SyncBatchError batchError)
                 {
                     return new PullResultError(batchError.Value);
                 }
 
-                var batch = ((Nimblesite.Sync.CoreBatchOk)batchResult).Value;
+                var batch = ((SyncBatchOk)batchResult).Value;
                 if (batch.Changes.Count == 0)
                 {
                     break;
@@ -140,7 +140,7 @@ public static class MappedSyncCoordinator
                     // Check sync tracking
                     if (
                         mapping is not null
-                        && !Nimblesite.Sync.CoreTrackingManager.ShouldSync(
+                        && !SyncTrackingManager.ShouldSync(
                             entry,
                             mapping,
                             getMappingState,
@@ -202,12 +202,12 @@ public static class MappedSyncCoordinator
 
                                 // Save record hash if using hash strategy
                                 if (
-                                    mapping?.Nimblesite.Sync.CoreTracking.Strategy == Nimblesite.Sync.CoreTrackingStrategy.Hash
+                                    mapping?.SyncTracking.Strategy == SyncTrackingStrategy.Hash
                                     && mapped.MappedPayload is not null
                                 )
                                 {
                                     saveRecordHash(
-                                        Nimblesite.Sync.CoreTrackingManager.CreateRecordHash(
+                                        SyncTrackingManager.CreateRecordHash(
                                             mapped.MappingId,
                                             entry.PkValue,
                                             mapped.MappedPayload
@@ -232,7 +232,7 @@ public static class MappedSyncCoordinator
             foreach (var (mappingId, count) in mappingCounts)
             {
                 var existing = getMappingState(mappingId);
-                var updated = Nimblesite.Sync.CoreTrackingManager.UpdateMappingState(
+                var updated = SyncTrackingManager.UpdateMappingState(
                     mappingId,
                     currentVersion,
                     count,
@@ -274,11 +274,11 @@ public static class MappedSyncCoordinator
     /// <returns>Push result or error.</returns>
     public static PushResultResult PushWithMapping(
         long lastPushedVersion,
-        Nimblesite.Sync.CoreMappingConfig mappingConfig,
+        SyncMappingConfig mappingConfig,
         BatchConfig config,
-        Func<long, int, Nimblesite.Sync.CoreLogListResult> fetchLocalChanges,
+        Func<long, int, SyncLogListResult> fetchLocalChanges,
         Func<
-            IReadOnlyList<(MappedEntry Entry, Nimblesite.Sync.CoreLogEntry Original)>,
+            IReadOnlyList<(MappedEntry Entry, SyncLogEntry Original)>,
             BoolSyncResult
         > sendMappedChanges,
         Action<long> updateLastPushedVersion,
@@ -309,18 +309,18 @@ public static class MappedSyncCoordinator
                 logger
             );
 
-            if (batchResult is Nimblesite.Sync.CoreBatchError batchError)
+            if (batchResult is SyncBatchError batchError)
             {
                 return new PushResultError(batchError.Value);
             }
 
-            var batch = ((Nimblesite.Sync.CoreBatchOk)batchResult).Value;
+            var batch = ((SyncBatchOk)batchResult).Value;
             if (batch.Changes.Count == 0)
             {
                 break;
             }
 
-            var mappedChanges = new List<(MappedEntry Entry, Nimblesite.Sync.CoreLogEntry Original)>();
+            var mappedChanges = new List<(MappedEntry Entry, SyncLogEntry Original)>();
 
             foreach (var entry in batch.Changes)
             {
@@ -332,7 +332,7 @@ public static class MappedSyncCoordinator
 
                 if (
                     mapping is not null
-                    && !Nimblesite.Sync.CoreTrackingManager.ShouldSync(
+                    && !SyncTrackingManager.ShouldSync(
                         entry,
                         mapping,
                         getMappingState,
@@ -390,12 +390,12 @@ public static class MappedSyncCoordinator
                     );
 
                     if (
-                        mapping?.Nimblesite.Sync.CoreTracking.Strategy == Nimblesite.Sync.CoreTrackingStrategy.Hash
+                        mapping?.SyncTracking.Strategy == SyncTrackingStrategy.Hash
                         && mapped.MappedPayload is not null
                     )
                     {
                         saveRecordHash(
-                            Nimblesite.Sync.CoreTrackingManager.CreateRecordHash(
+                            SyncTrackingManager.CreateRecordHash(
                                 mapped.MappingId,
                                 original.PkValue,
                                 mapped.MappedPayload
@@ -418,7 +418,7 @@ public static class MappedSyncCoordinator
         foreach (var (mappingId, count) in mappingCounts)
         {
             var existing = getMappingState(mappingId);
-            var updated = Nimblesite.Sync.CoreTrackingManager.UpdateMappingState(
+            var updated = SyncTrackingManager.UpdateMappingState(
                 mappingId,
                 currentVersion,
                 count,

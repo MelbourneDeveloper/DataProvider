@@ -6,14 +6,14 @@ namespace Nimblesite.Sync.SQLite;
 /// Repository for managing sync clients in SQLite.
 /// Implements spec Section 13 (Tombstone Retention) client tracking.
 /// </summary>
-public static class Nimblesite.Sync.CoreClientRepository
+public static class SyncClientRepository
 {
     /// <summary>
     /// Gets all sync clients from _sync_clients table.
     /// </summary>
     /// <param name="connection">SQLite connection.</param>
     /// <returns>List of sync clients or database error.</returns>
-    public static Nimblesite.Sync.CoreClientListResult GetAll(SqliteConnection connection)
+    public static SyncClientListResult GetAll(SqliteConnection connection)
     {
         try
         {
@@ -24,13 +24,13 @@ public static class Nimblesite.Sync.CoreClientRepository
                 ORDER BY last_sync_version ASC
                 """;
 
-            var clients = new List<Nimblesite.Sync.CoreClient>();
+            var clients = new List<SyncClient>();
             using var reader = cmd.ExecuteReader();
 
             while (reader.Read())
             {
                 clients.Add(
-                    new Nimblesite.Sync.CoreClient(
+                    new SyncClient(
                         OriginId: reader.GetString(0),
                         LastSyncVersion: reader.GetInt64(1),
                         LastSyncTimestamp: reader.GetString(2),
@@ -39,12 +39,12 @@ public static class Nimblesite.Sync.CoreClientRepository
                 );
             }
 
-            return new Nimblesite.Sync.CoreClientListOk(clients);
+            return new SyncClientListOk(clients);
         }
         catch (SqliteException ex)
         {
-            return new Nimblesite.Sync.CoreClientListError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get sync clients: {ex.Message}")
+            return new SyncClientListError(
+                new SyncErrorDatabase($"Failed to get sync clients: {ex.Message}")
             );
         }
     }
@@ -55,7 +55,7 @@ public static class Nimblesite.Sync.CoreClientRepository
     /// <param name="connection">SQLite connection.</param>
     /// <param name="originId">Origin ID to look up.</param>
     /// <returns>Nimblesite.Sync.Core client if found, null if not found, or database error.</returns>
-    public static Nimblesite.Sync.CoreClientResult GetByOrigin(SqliteConnection connection, string originId)
+    public static SyncClientResult GetByOrigin(SqliteConnection connection, string originId)
     {
         try
         {
@@ -71,22 +71,22 @@ public static class Nimblesite.Sync.CoreClientRepository
 
             if (!reader.Read())
             {
-                return new Nimblesite.Sync.CoreClientOk(null);
+                return new SyncClientOk(null);
             }
 
-            var client = new Nimblesite.Sync.CoreClient(
+            var client = new SyncClient(
                 OriginId: reader.GetString(0),
                 LastSyncVersion: reader.GetInt64(1),
                 LastSyncTimestamp: reader.GetString(2),
                 CreatedAt: reader.GetString(3)
             );
 
-            return new Nimblesite.Sync.CoreClientOk(client);
+            return new SyncClientOk(client);
         }
         catch (SqliteException ex)
         {
-            return new Nimblesite.Sync.CoreClientError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get sync client: {ex.Message}")
+            return new SyncClientError(
+                new SyncErrorDatabase($"Failed to get sync client: {ex.Message}")
             );
         }
     }
@@ -98,7 +98,7 @@ public static class Nimblesite.Sync.CoreClientRepository
     /// <param name="connection">SQLite connection.</param>
     /// <param name="client">Client to upsert.</param>
     /// <returns>Success or database error.</returns>
-    public static BoolSyncResult Upsert(SqliteConnection connection, Nimblesite.Sync.CoreClient client)
+    public static BoolSyncResult Upsert(SqliteConnection connection, SyncClient client)
     {
         try
         {
@@ -121,7 +121,7 @@ public static class Nimblesite.Sync.CoreClientRepository
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to upsert sync client: {ex.Message}")
+                new SyncErrorDatabase($"Failed to upsert sync client: {ex.Message}")
             );
         }
     }
@@ -145,7 +145,7 @@ public static class Nimblesite.Sync.CoreClientRepository
         catch (SqliteException ex)
         {
             return new BoolSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to delete sync client: {ex.Message}")
+                new SyncErrorDatabase($"Failed to delete sync client: {ex.Message}")
             );
         }
     }
@@ -171,7 +171,7 @@ public static class Nimblesite.Sync.CoreClientRepository
         catch (SqliteException ex)
         {
             return new LongSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to get minimum sync version: {ex.Message}")
+                new SyncErrorDatabase($"Failed to get minimum sync version: {ex.Message}")
             );
         }
     }
@@ -204,7 +204,7 @@ public static class Nimblesite.Sync.CoreClientRepository
         catch (SqliteException ex)
         {
             return new IntSyncError(
-                new Nimblesite.Sync.CoreErrorDatabase($"Failed to delete sync clients: {ex.Message}")
+                new SyncErrorDatabase($"Failed to delete sync clients: {ex.Message}")
             );
         }
     }

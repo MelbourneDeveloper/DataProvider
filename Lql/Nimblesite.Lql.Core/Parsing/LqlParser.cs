@@ -33,7 +33,7 @@ using DFA = Antlr4.Runtime.Dfa.DFA;
 
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.13.1")]
 [System.CLSCompliant(false)]
-public partial class Nimblesite.Lql.CoreParser : Parser {
+public partial class LqlParser : Parser {
 	protected static DFA[] decisionToDFA;
 	protected static PredictionContextCache sharedContextCache = new PredictionContextCache();
 	public const int
@@ -97,23 +97,23 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 
 	public override int[] SerializedAtn { get { return _serializedATN; } }
 
-	static Nimblesite.Lql.CoreParser() {
+	static LqlParser() {
 		decisionToDFA = new DFA[_ATN.NumberOfDecisions];
 		for (int i = 0; i < _ATN.NumberOfDecisions; i++) {
 			decisionToDFA[i] = new DFA(_ATN.GetDecisionState(i), i);
 		}
 	}
 
-		public Nimblesite.Lql.CoreParser(ITokenStream input) : this(input, Console.Out, Console.Error) { }
+		public LqlParser(ITokenStream input) : this(input, Console.Out, Console.Error) { }
 
-		public Nimblesite.Lql.CoreParser(ITokenStream input, TextWriter output, TextWriter errorOutput)
+		public LqlParser(ITokenStream input, TextWriter output, TextWriter errorOutput)
 		: base(input, output, errorOutput)
 	{
 		Interpreter = new ParserATNSimulator(this, _ATN, decisionToDFA, sharedContextCache);
 	}
 
 	public partial class ProgramContext : ParserRuleContext {
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode Eof() { return GetToken(Nimblesite.Lql.CoreParser.Eof, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode Eof() { return GetToken(LqlParser.Eof, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public StatementContext[] statement() {
 			return GetRuleContexts<StatementContext>();
 		}
@@ -152,7 +152,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 63;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 179018089482944594L) != 0)) {
 				{
@@ -162,7 +162,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				}
 				}
 				State = 65;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			State = 66;
@@ -216,7 +216,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		EnterRule(_localctx, 2, RULE_statement);
 		try {
 			State = 70;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case T__0:
 				EnterOuterAlt(_localctx, 1);
@@ -256,7 +256,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 	}
 
 	public partial class LetStmtContext : ParserRuleContext {
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(Nimblesite.Lql.CoreParser.IDENT, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(LqlParser.IDENT, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public PipeExprContext pipeExpr() {
 			return GetRuleContext<PipeExprContext>(0);
 		}
@@ -352,7 +352,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			State = 77;
 			expr();
 			State = 82;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==T__2) {
 				{
@@ -364,7 +364,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				}
 				}
 				State = 84;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			}
@@ -381,8 +381,8 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 	}
 
 	public partial class ExprContext : ParserRuleContext {
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(Nimblesite.Lql.CoreParser.IDENT, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OVER() { return GetToken(Nimblesite.Lql.CoreParser.OVER, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(LqlParser.IDENT, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OVER() { return GetToken(LqlParser.OVER, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public WindowSpecContext windowSpec() {
 			return GetRuleContext<WindowSpecContext>(0);
 		}
@@ -401,11 +401,11 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		[System.Diagnostics.DebuggerNonUserCode] public CaseExprContext caseExpr() {
 			return GetRuleContext<CaseExprContext>(0);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode INT() { return GetToken(Nimblesite.Lql.CoreParser.INT, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DECIMAL() { return GetToken(Nimblesite.Lql.CoreParser.DECIMAL, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ASTERISK() { return GetToken(Nimblesite.Lql.CoreParser.ASTERISK, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode STRING() { return GetToken(Nimblesite.Lql.CoreParser.STRING, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PARAMETER() { return GetToken(Nimblesite.Lql.CoreParser.PARAMETER, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode INT() { return GetToken(LqlParser.INT, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DECIMAL() { return GetToken(LqlParser.DECIMAL, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ASTERISK() { return GetToken(LqlParser.ASTERISK, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode STRING() { return GetToken(LqlParser.STRING, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PARAMETER() { return GetToken(LqlParser.PARAMETER, 0); }
 		public ExprContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
 		{
@@ -436,7 +436,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		int _la;
 		try {
 			State = 115;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,5,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
@@ -446,7 +446,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				State = 86;
 				Match(T__3);
 				State = 88;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 179299564526764112L) != 0)) {
 					{
@@ -475,7 +475,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				State = 97;
 				Match(T__3);
 				State = 99;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 179299564526764112L) != 0)) {
 					{
@@ -614,7 +614,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 118;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==PARTITION) {
 				{
@@ -624,7 +624,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			}
 
 			State = 121;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==ORDER) {
 				{
@@ -647,8 +647,8 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 	}
 
 	public partial class PartitionClauseContext : ParserRuleContext {
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PARTITION() { return GetToken(Nimblesite.Lql.CoreParser.PARTITION, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode BY() { return GetToken(Nimblesite.Lql.CoreParser.BY, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PARTITION() { return GetToken(LqlParser.PARTITION, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode BY() { return GetToken(LqlParser.BY, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ArgListContext argList() {
 			return GetRuleContext<ArgListContext>(0);
 		}
@@ -702,8 +702,8 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 	}
 
 	public partial class OrderClauseContext : ParserRuleContext {
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ORDER() { return GetToken(Nimblesite.Lql.CoreParser.ORDER, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode BY() { return GetToken(Nimblesite.Lql.CoreParser.BY, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ORDER() { return GetToken(LqlParser.ORDER, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode BY() { return GetToken(LqlParser.BY, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ArgListContext argList() {
 			return GetRuleContext<ArgListContext>(0);
 		}
@@ -757,9 +757,9 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 	}
 
 	public partial class LambdaExprContext : ParserRuleContext {
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] IDENT() { return GetTokens(Nimblesite.Lql.CoreParser.IDENT); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] IDENT() { return GetTokens(LqlParser.IDENT); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT(int i) {
-			return GetToken(Nimblesite.Lql.CoreParser.IDENT, i);
+			return GetToken(LqlParser.IDENT, i);
 		}
 		[System.Diagnostics.DebuggerNonUserCode] public LogicalExprContext logicalExpr() {
 			return GetRuleContext<LogicalExprContext>(0);
@@ -802,7 +802,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			State = 133;
 			Match(IDENT);
 			State = 138;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==T__6) {
 				{
@@ -814,7 +814,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				}
 				}
 				State = 140;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			State = 141;
@@ -837,9 +837,9 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 	}
 
 	public partial class QualifiedIdentContext : ParserRuleContext {
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] IDENT() { return GetTokens(Nimblesite.Lql.CoreParser.IDENT); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] IDENT() { return GetTokens(LqlParser.IDENT); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT(int i) {
-			return GetToken(Nimblesite.Lql.CoreParser.IDENT, i);
+			return GetToken(LqlParser.IDENT, i);
 		}
 		public QualifiedIdentContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
@@ -875,7 +875,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			State = 145;
 			Match(IDENT);
 			State = 148;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			do {
 				{
@@ -887,7 +887,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				}
 				}
 				State = 150;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			} while ( _la==T__8 );
 			}
@@ -944,7 +944,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			State = 152;
 			arg();
 			State = 157;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==T__6) {
 				{
@@ -956,7 +956,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				}
 				}
 				State = 159;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			}
@@ -1029,7 +1029,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		EnterRule(_localctx, 22, RULE_arg);
 		try {
 			State = 173;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,11,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
@@ -1128,11 +1128,11 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		[System.Diagnostics.DebuggerNonUserCode] public QualifiedIdentContext qualifiedIdent() {
 			return GetRuleContext<QualifiedIdentContext>(0);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] IDENT() { return GetTokens(Nimblesite.Lql.CoreParser.IDENT); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] IDENT() { return GetTokens(LqlParser.IDENT); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT(int i) {
-			return GetToken(Nimblesite.Lql.CoreParser.IDENT, i);
+			return GetToken(LqlParser.IDENT, i);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode AS() { return GetToken(Nimblesite.Lql.CoreParser.AS, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode AS() { return GetToken(LqlParser.AS, 0); }
 		public ColumnAliasContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
 		{
@@ -1165,7 +1165,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 179;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,12,Context) ) {
 			case 1:
 				{
@@ -1193,7 +1193,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				break;
 			}
 			State = 183;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==AS) {
 				{
@@ -1258,7 +1258,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			State = 185;
 			arithmeticTerm();
 			State = 190;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 7168L) != 0)) {
 				{
@@ -1277,7 +1277,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				}
 				}
 				State = 192;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
 			}
@@ -1300,9 +1300,9 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		[System.Diagnostics.DebuggerNonUserCode] public ArithmeticFactorContext arithmeticFactor(int i) {
 			return GetRuleContext<ArithmeticFactorContext>(i);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] ASTERISK() { return GetTokens(Nimblesite.Lql.CoreParser.ASTERISK); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] ASTERISK() { return GetTokens(LqlParser.ASTERISK); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ASTERISK(int i) {
-			return GetToken(Nimblesite.Lql.CoreParser.ASTERISK, i);
+			return GetToken(LqlParser.ASTERISK, i);
 		}
 		public ArithmeticTermContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
@@ -1339,7 +1339,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			State = 193;
 			arithmeticFactor();
 			State = 198;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_alt = Interpreter.AdaptivePredict(TokenStream,15,Context);
 			while ( _alt!=2 && _alt!=global::Antlr4.Runtime.Atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
@@ -1360,7 +1360,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 					} 
 				}
 				State = 200;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_alt = Interpreter.AdaptivePredict(TokenStream,15,Context);
 			}
 			}
@@ -1380,17 +1380,17 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		[System.Diagnostics.DebuggerNonUserCode] public QualifiedIdentContext qualifiedIdent() {
 			return GetRuleContext<QualifiedIdentContext>(0);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(Nimblesite.Lql.CoreParser.IDENT, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode INT() { return GetToken(Nimblesite.Lql.CoreParser.INT, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DECIMAL() { return GetToken(Nimblesite.Lql.CoreParser.DECIMAL, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode STRING() { return GetToken(Nimblesite.Lql.CoreParser.STRING, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(LqlParser.IDENT, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode INT() { return GetToken(LqlParser.INT, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DECIMAL() { return GetToken(LqlParser.DECIMAL, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode STRING() { return GetToken(LqlParser.STRING, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public FunctionCallContext functionCall() {
 			return GetRuleContext<FunctionCallContext>(0);
 		}
 		[System.Diagnostics.DebuggerNonUserCode] public CaseExprContext caseExpr() {
 			return GetRuleContext<CaseExprContext>(0);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PARAMETER() { return GetToken(Nimblesite.Lql.CoreParser.PARAMETER, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PARAMETER() { return GetToken(LqlParser.PARAMETER, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ArithmeticExprContext arithmeticExpr() {
 			return GetRuleContext<ArithmeticExprContext>(0);
 		}
@@ -1423,7 +1423,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		EnterRule(_localctx, 30, RULE_arithmeticFactor);
 		try {
 			State = 213;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,16,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
@@ -1506,11 +1506,11 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 	}
 
 	public partial class FunctionCallContext : ParserRuleContext {
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(Nimblesite.Lql.CoreParser.IDENT, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(LqlParser.IDENT, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ArgListContext argList() {
 			return GetRuleContext<ArgListContext>(0);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DISTINCT() { return GetToken(Nimblesite.Lql.CoreParser.DISTINCT, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DISTINCT() { return GetToken(LqlParser.DISTINCT, 0); }
 		public FunctionCallContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
 		{
@@ -1547,12 +1547,12 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			State = 216;
 			Match(T__3);
 			State = 221;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 179299564560318544L) != 0)) {
 				{
 				State = 218;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==DISTINCT) {
 					{
@@ -1582,8 +1582,8 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 	}
 
 	public partial class NamedArgContext : ParserRuleContext {
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(Nimblesite.Lql.CoreParser.IDENT, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ON() { return GetToken(Nimblesite.Lql.CoreParser.ON, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(LqlParser.IDENT, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ON() { return GetToken(LqlParser.ON, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ComparisonContext comparison() {
 			return GetRuleContext<ComparisonContext>(0);
 		}
@@ -1633,7 +1633,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			State = 226;
 			Match(T__1);
 			State = 229;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,19,Context) ) {
 			case 1:
 				{
@@ -1668,9 +1668,9 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		[System.Diagnostics.DebuggerNonUserCode] public AndExprContext andExpr(int i) {
 			return GetRuleContext<AndExprContext>(i);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] OR() { return GetTokens(Nimblesite.Lql.CoreParser.OR); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] OR() { return GetTokens(LqlParser.OR); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OR(int i) {
-			return GetToken(Nimblesite.Lql.CoreParser.OR, i);
+			return GetToken(LqlParser.OR, i);
 		}
 		public LogicalExprContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
@@ -1706,7 +1706,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			State = 231;
 			andExpr();
 			State = 236;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_alt = Interpreter.AdaptivePredict(TokenStream,20,Context);
 			while ( _alt!=2 && _alt!=global::Antlr4.Runtime.Atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
@@ -1720,7 +1720,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 					} 
 				}
 				State = 238;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_alt = Interpreter.AdaptivePredict(TokenStream,20,Context);
 			}
 			}
@@ -1743,9 +1743,9 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		[System.Diagnostics.DebuggerNonUserCode] public AtomicExprContext atomicExpr(int i) {
 			return GetRuleContext<AtomicExprContext>(i);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] AND() { return GetTokens(Nimblesite.Lql.CoreParser.AND); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] AND() { return GetTokens(LqlParser.AND); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode AND(int i) {
-			return GetToken(Nimblesite.Lql.CoreParser.AND, i);
+			return GetToken(LqlParser.AND, i);
 		}
 		public AndExprContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
@@ -1781,7 +1781,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			State = 239;
 			atomicExpr();
 			State = 244;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_alt = Interpreter.AdaptivePredict(TokenStream,21,Context);
 			while ( _alt!=2 && _alt!=global::Antlr4.Runtime.Atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
@@ -1795,7 +1795,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 					} 
 				}
 				State = 246;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_alt = Interpreter.AdaptivePredict(TokenStream,21,Context);
 			}
 			}
@@ -1847,7 +1847,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		EnterRule(_localctx, 40, RULE_atomicExpr);
 		try {
 			State = 252;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,22,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
@@ -1896,16 +1896,16 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		[System.Diagnostics.DebuggerNonUserCode] public QualifiedIdentContext qualifiedIdent(int i) {
 			return GetRuleContext<QualifiedIdentContext>(i);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode STRING() { return GetToken(Nimblesite.Lql.CoreParser.STRING, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] IDENT() { return GetTokens(Nimblesite.Lql.CoreParser.IDENT); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode STRING() { return GetToken(LqlParser.STRING, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] IDENT() { return GetTokens(LqlParser.IDENT); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT(int i) {
-			return GetToken(Nimblesite.Lql.CoreParser.IDENT, i);
+			return GetToken(LqlParser.IDENT, i);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode INT() { return GetToken(Nimblesite.Lql.CoreParser.INT, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DECIMAL() { return GetToken(Nimblesite.Lql.CoreParser.DECIMAL, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] PARAMETER() { return GetTokens(Nimblesite.Lql.CoreParser.PARAMETER); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode INT() { return GetToken(LqlParser.INT, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DECIMAL() { return GetToken(LqlParser.DECIMAL, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] PARAMETER() { return GetTokens(LqlParser.PARAMETER); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PARAMETER(int i) {
-			return GetToken(Nimblesite.Lql.CoreParser.PARAMETER, i);
+			return GetToken(LqlParser.PARAMETER, i);
 		}
 		[System.Diagnostics.DebuggerNonUserCode] public OrderDirectionContext orderDirection() {
 			return GetRuleContext<OrderDirectionContext>(0);
@@ -1952,7 +1952,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		int _la;
 		try {
 			State = 307;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,29,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
@@ -1973,7 +1973,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				State = 259;
 				comparisonOp();
 				State = 266;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,23,Context) ) {
 				case 1:
 					{
@@ -2022,7 +2022,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				State = 269;
 				comparisonOp();
 				State = 276;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,24,Context) ) {
 				case 1:
 					{
@@ -2071,7 +2071,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				State = 279;
 				comparisonOp();
 				State = 286;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				switch ( Interpreter.AdaptivePredict(TokenStream,25,Context) ) {
 				case 1:
 					{
@@ -2118,7 +2118,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				State = 288;
 				qualifiedIdent();
 				State = 290;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==ASC || _la==DESC) {
 					{
@@ -2135,7 +2135,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				State = 292;
 				Match(IDENT);
 				State = 294;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==ASC || _la==DESC) {
 					{
@@ -2152,7 +2152,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				State = 296;
 				Match(PARAMETER);
 				State = 298;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==ASC || _la==DESC) {
 					{
@@ -2226,7 +2226,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 	}
 
 	public partial class ExistsExprContext : ParserRuleContext {
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode EXISTS() { return GetToken(Nimblesite.Lql.CoreParser.EXISTS, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode EXISTS() { return GetToken(LqlParser.EXISTS, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public PipeExprContext pipeExpr() {
 			return GetRuleContext<PipeExprContext>(0);
 		}
@@ -2285,11 +2285,11 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		[System.Diagnostics.DebuggerNonUserCode] public QualifiedIdentContext qualifiedIdent() {
 			return GetRuleContext<QualifiedIdentContext>(0);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(Nimblesite.Lql.CoreParser.IDENT, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PARAMETER() { return GetToken(Nimblesite.Lql.CoreParser.PARAMETER, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IS() { return GetToken(Nimblesite.Lql.CoreParser.IS, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode NULL() { return GetToken(Nimblesite.Lql.CoreParser.NULL, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode NOT() { return GetToken(Nimblesite.Lql.CoreParser.NOT, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(LqlParser.IDENT, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PARAMETER() { return GetToken(LqlParser.PARAMETER, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IS() { return GetToken(LqlParser.IS, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode NULL() { return GetToken(LqlParser.NULL, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode NOT() { return GetToken(LqlParser.NOT, 0); }
 		public NullCheckExprContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
 		{
@@ -2322,7 +2322,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 317;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,30,Context) ) {
 			case 1:
 				{
@@ -2347,7 +2347,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			State = 319;
 			Match(IS);
 			State = 321;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==NOT) {
 				{
@@ -2373,12 +2373,12 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 	}
 
 	public partial class InExprContext : ParserRuleContext {
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IN() { return GetToken(Nimblesite.Lql.CoreParser.IN, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IN() { return GetToken(LqlParser.IN, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public QualifiedIdentContext qualifiedIdent() {
 			return GetRuleContext<QualifiedIdentContext>(0);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(Nimblesite.Lql.CoreParser.IDENT, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PARAMETER() { return GetToken(Nimblesite.Lql.CoreParser.PARAMETER, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(LqlParser.IDENT, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PARAMETER() { return GetToken(LqlParser.PARAMETER, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public PipeExprContext pipeExpr() {
 			return GetRuleContext<PipeExprContext>(0);
 		}
@@ -2416,7 +2416,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			EnterOuterAlt(_localctx, 1);
 			{
 			State = 328;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,32,Context) ) {
 			case 1:
 				{
@@ -2442,7 +2442,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			State = 331;
 			Match(T__3);
 			State = 334;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,33,Context) ) {
 			case 1:
 				{
@@ -2473,15 +2473,15 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 	}
 
 	public partial class CaseExprContext : ParserRuleContext {
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CASE() { return GetToken(Nimblesite.Lql.CoreParser.CASE, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode END() { return GetToken(Nimblesite.Lql.CoreParser.END, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CASE() { return GetToken(LqlParser.CASE, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode END() { return GetToken(LqlParser.END, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public WhenClauseContext[] whenClause() {
 			return GetRuleContexts<WhenClauseContext>();
 		}
 		[System.Diagnostics.DebuggerNonUserCode] public WhenClauseContext whenClause(int i) {
 			return GetRuleContext<WhenClauseContext>(i);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ELSE() { return GetToken(Nimblesite.Lql.CoreParser.ELSE, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ELSE() { return GetToken(LqlParser.ELSE, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public CaseResultContext caseResult() {
 			return GetRuleContext<CaseResultContext>(0);
 		}
@@ -2519,7 +2519,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 			State = 338;
 			Match(CASE);
 			State = 340;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			do {
 				{
@@ -2529,11 +2529,11 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 				}
 				}
 				State = 342;
-				ErrorHandler.Nimblesite.Sync.Core(this);
+				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			} while ( _la==WHEN );
 			State = 346;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==ELSE) {
 				{
@@ -2560,11 +2560,11 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 	}
 
 	public partial class WhenClauseContext : ParserRuleContext {
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode WHEN() { return GetToken(Nimblesite.Lql.CoreParser.WHEN, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode WHEN() { return GetToken(LqlParser.WHEN, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ComparisonContext comparison() {
 			return GetRuleContext<ComparisonContext>(0);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode THEN() { return GetToken(Nimblesite.Lql.CoreParser.THEN, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode THEN() { return GetToken(LqlParser.THEN, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public CaseResultContext caseResult() {
 			return GetRuleContext<CaseResultContext>(0);
 		}
@@ -2629,11 +2629,11 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		[System.Diagnostics.DebuggerNonUserCode] public QualifiedIdentContext qualifiedIdent() {
 			return GetRuleContext<QualifiedIdentContext>(0);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(Nimblesite.Lql.CoreParser.IDENT, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode INT() { return GetToken(Nimblesite.Lql.CoreParser.INT, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DECIMAL() { return GetToken(Nimblesite.Lql.CoreParser.DECIMAL, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode STRING() { return GetToken(Nimblesite.Lql.CoreParser.STRING, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PARAMETER() { return GetToken(Nimblesite.Lql.CoreParser.PARAMETER, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(LqlParser.IDENT, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode INT() { return GetToken(LqlParser.INT, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DECIMAL() { return GetToken(LqlParser.DECIMAL, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode STRING() { return GetToken(LqlParser.STRING, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode PARAMETER() { return GetToken(LqlParser.PARAMETER, 0); }
 		public CaseResultContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
 		{
@@ -2663,7 +2663,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 		EnterRule(_localctx, 54, RULE_caseResult);
 		try {
 			State = 363;
-			ErrorHandler.Nimblesite.Sync.Core(this);
+			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,36,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
@@ -2735,8 +2735,8 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 	}
 
 	public partial class OrderDirectionContext : ParserRuleContext {
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ASC() { return GetToken(Nimblesite.Lql.CoreParser.ASC, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DESC() { return GetToken(Nimblesite.Lql.CoreParser.DESC, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ASC() { return GetToken(LqlParser.ASC, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DESC() { return GetToken(LqlParser.DESC, 0); }
 		public OrderDirectionContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
 		{
@@ -2791,7 +2791,7 @@ public partial class Nimblesite.Lql.CoreParser : Parser {
 	}
 
 	public partial class ComparisonOpContext : ParserRuleContext {
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode LIKE() { return GetToken(Nimblesite.Lql.CoreParser.LIKE, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode LIKE() { return GetToken(LqlParser.LIKE, 0); }
 		public ComparisonOpContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
 		{

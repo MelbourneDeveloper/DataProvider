@@ -35,367 +35,367 @@ using ParserRuleContext = Antlr4.Runtime.ParserRuleContext;
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.13.1")]
 [System.Diagnostics.DebuggerNonUserCode]
 [System.CLSCompliant(false)]
-public partial class Nimblesite.Lql.CoreBaseListener : ILqlListener {
+public partial class LqlBaseListener : ILqlListener {
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.program"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.program"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterProgram([NotNull] Nimblesite.Lql.CoreParser.ProgramContext context) { }
+	public virtual void EnterProgram([NotNull] LqlParser.ProgramContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.program"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.program"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitProgram([NotNull] Nimblesite.Lql.CoreParser.ProgramContext context) { }
+	public virtual void ExitProgram([NotNull] LqlParser.ProgramContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.statement"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.statement"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterStatement([NotNull] Nimblesite.Lql.CoreParser.StatementContext context) { }
+	public virtual void EnterStatement([NotNull] LqlParser.StatementContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.statement"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.statement"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitStatement([NotNull] Nimblesite.Lql.CoreParser.StatementContext context) { }
+	public virtual void ExitStatement([NotNull] LqlParser.StatementContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.letStmt"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.letStmt"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterLetStmt([NotNull] Nimblesite.Lql.CoreParser.LetStmtContext context) { }
+	public virtual void EnterLetStmt([NotNull] LqlParser.LetStmtContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.letStmt"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.letStmt"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitLetStmt([NotNull] Nimblesite.Lql.CoreParser.LetStmtContext context) { }
+	public virtual void ExitLetStmt([NotNull] LqlParser.LetStmtContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.pipeExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.pipeExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterPipeExpr([NotNull] Nimblesite.Lql.CoreParser.PipeExprContext context) { }
+	public virtual void EnterPipeExpr([NotNull] LqlParser.PipeExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.pipeExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.pipeExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitPipeExpr([NotNull] Nimblesite.Lql.CoreParser.PipeExprContext context) { }
+	public virtual void ExitPipeExpr([NotNull] LqlParser.PipeExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.expr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.expr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterExpr([NotNull] Nimblesite.Lql.CoreParser.ExprContext context) { }
+	public virtual void EnterExpr([NotNull] LqlParser.ExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.expr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.expr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitExpr([NotNull] Nimblesite.Lql.CoreParser.ExprContext context) { }
+	public virtual void ExitExpr([NotNull] LqlParser.ExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.windowSpec"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.windowSpec"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterWindowSpec([NotNull] Nimblesite.Lql.CoreParser.WindowSpecContext context) { }
+	public virtual void EnterWindowSpec([NotNull] LqlParser.WindowSpecContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.windowSpec"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.windowSpec"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitWindowSpec([NotNull] Nimblesite.Lql.CoreParser.WindowSpecContext context) { }
+	public virtual void ExitWindowSpec([NotNull] LqlParser.WindowSpecContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.partitionClause"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.partitionClause"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterPartitionClause([NotNull] Nimblesite.Lql.CoreParser.PartitionClauseContext context) { }
+	public virtual void EnterPartitionClause([NotNull] LqlParser.PartitionClauseContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.partitionClause"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.partitionClause"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitPartitionClause([NotNull] Nimblesite.Lql.CoreParser.PartitionClauseContext context) { }
+	public virtual void ExitPartitionClause([NotNull] LqlParser.PartitionClauseContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.orderClause"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.orderClause"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterOrderClause([NotNull] Nimblesite.Lql.CoreParser.OrderClauseContext context) { }
+	public virtual void EnterOrderClause([NotNull] LqlParser.OrderClauseContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.orderClause"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.orderClause"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitOrderClause([NotNull] Nimblesite.Lql.CoreParser.OrderClauseContext context) { }
+	public virtual void ExitOrderClause([NotNull] LqlParser.OrderClauseContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.lambdaExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.lambdaExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterLambdaExpr([NotNull] Nimblesite.Lql.CoreParser.LambdaExprContext context) { }
+	public virtual void EnterLambdaExpr([NotNull] LqlParser.LambdaExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.lambdaExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.lambdaExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitLambdaExpr([NotNull] Nimblesite.Lql.CoreParser.LambdaExprContext context) { }
+	public virtual void ExitLambdaExpr([NotNull] LqlParser.LambdaExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.qualifiedIdent"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.qualifiedIdent"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterQualifiedIdent([NotNull] Nimblesite.Lql.CoreParser.QualifiedIdentContext context) { }
+	public virtual void EnterQualifiedIdent([NotNull] LqlParser.QualifiedIdentContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.qualifiedIdent"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.qualifiedIdent"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitQualifiedIdent([NotNull] Nimblesite.Lql.CoreParser.QualifiedIdentContext context) { }
+	public virtual void ExitQualifiedIdent([NotNull] LqlParser.QualifiedIdentContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.argList"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.argList"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterArgList([NotNull] Nimblesite.Lql.CoreParser.ArgListContext context) { }
+	public virtual void EnterArgList([NotNull] LqlParser.ArgListContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.argList"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.argList"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitArgList([NotNull] Nimblesite.Lql.CoreParser.ArgListContext context) { }
+	public virtual void ExitArgList([NotNull] LqlParser.ArgListContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arg"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.arg"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterArg([NotNull] Nimblesite.Lql.CoreParser.ArgContext context) { }
+	public virtual void EnterArg([NotNull] LqlParser.ArgContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arg"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.arg"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitArg([NotNull] Nimblesite.Lql.CoreParser.ArgContext context) { }
+	public virtual void ExitArg([NotNull] LqlParser.ArgContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.columnAlias"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.columnAlias"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterColumnAlias([NotNull] Nimblesite.Lql.CoreParser.ColumnAliasContext context) { }
+	public virtual void EnterColumnAlias([NotNull] LqlParser.ColumnAliasContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.columnAlias"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.columnAlias"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitColumnAlias([NotNull] Nimblesite.Lql.CoreParser.ColumnAliasContext context) { }
+	public virtual void ExitColumnAlias([NotNull] LqlParser.ColumnAliasContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arithmeticExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.arithmeticExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterArithmeticExpr([NotNull] Nimblesite.Lql.CoreParser.ArithmeticExprContext context) { }
+	public virtual void EnterArithmeticExpr([NotNull] LqlParser.ArithmeticExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arithmeticExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.arithmeticExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitArithmeticExpr([NotNull] Nimblesite.Lql.CoreParser.ArithmeticExprContext context) { }
+	public virtual void ExitArithmeticExpr([NotNull] LqlParser.ArithmeticExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arithmeticTerm"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.arithmeticTerm"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterArithmeticTerm([NotNull] Nimblesite.Lql.CoreParser.ArithmeticTermContext context) { }
+	public virtual void EnterArithmeticTerm([NotNull] LqlParser.ArithmeticTermContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arithmeticTerm"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.arithmeticTerm"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitArithmeticTerm([NotNull] Nimblesite.Lql.CoreParser.ArithmeticTermContext context) { }
+	public virtual void ExitArithmeticTerm([NotNull] LqlParser.ArithmeticTermContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arithmeticFactor"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.arithmeticFactor"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterArithmeticFactor([NotNull] Nimblesite.Lql.CoreParser.ArithmeticFactorContext context) { }
+	public virtual void EnterArithmeticFactor([NotNull] LqlParser.ArithmeticFactorContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.arithmeticFactor"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.arithmeticFactor"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitArithmeticFactor([NotNull] Nimblesite.Lql.CoreParser.ArithmeticFactorContext context) { }
+	public virtual void ExitArithmeticFactor([NotNull] LqlParser.ArithmeticFactorContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.functionCall"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.functionCall"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterFunctionCall([NotNull] Nimblesite.Lql.CoreParser.FunctionCallContext context) { }
+	public virtual void EnterFunctionCall([NotNull] LqlParser.FunctionCallContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.functionCall"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.functionCall"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitFunctionCall([NotNull] Nimblesite.Lql.CoreParser.FunctionCallContext context) { }
+	public virtual void ExitFunctionCall([NotNull] LqlParser.FunctionCallContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.namedArg"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.namedArg"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterNamedArg([NotNull] Nimblesite.Lql.CoreParser.NamedArgContext context) { }
+	public virtual void EnterNamedArg([NotNull] LqlParser.NamedArgContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.namedArg"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.namedArg"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitNamedArg([NotNull] Nimblesite.Lql.CoreParser.NamedArgContext context) { }
+	public virtual void ExitNamedArg([NotNull] LqlParser.NamedArgContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.logicalExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.logicalExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterLogicalExpr([NotNull] Nimblesite.Lql.CoreParser.LogicalExprContext context) { }
+	public virtual void EnterLogicalExpr([NotNull] LqlParser.LogicalExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.logicalExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.logicalExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitLogicalExpr([NotNull] Nimblesite.Lql.CoreParser.LogicalExprContext context) { }
+	public virtual void ExitLogicalExpr([NotNull] LqlParser.LogicalExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.andExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.andExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterAndExpr([NotNull] Nimblesite.Lql.CoreParser.AndExprContext context) { }
+	public virtual void EnterAndExpr([NotNull] LqlParser.AndExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.andExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.andExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitAndExpr([NotNull] Nimblesite.Lql.CoreParser.AndExprContext context) { }
+	public virtual void ExitAndExpr([NotNull] LqlParser.AndExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.atomicExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.atomicExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterAtomicExpr([NotNull] Nimblesite.Lql.CoreParser.AtomicExprContext context) { }
+	public virtual void EnterAtomicExpr([NotNull] LqlParser.AtomicExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.atomicExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.atomicExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitAtomicExpr([NotNull] Nimblesite.Lql.CoreParser.AtomicExprContext context) { }
+	public virtual void ExitAtomicExpr([NotNull] LqlParser.AtomicExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.comparison"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.comparison"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterComparison([NotNull] Nimblesite.Lql.CoreParser.ComparisonContext context) { }
+	public virtual void EnterComparison([NotNull] LqlParser.ComparisonContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.comparison"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.comparison"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitComparison([NotNull] Nimblesite.Lql.CoreParser.ComparisonContext context) { }
+	public virtual void ExitComparison([NotNull] LqlParser.ComparisonContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.existsExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.existsExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterExistsExpr([NotNull] Nimblesite.Lql.CoreParser.ExistsExprContext context) { }
+	public virtual void EnterExistsExpr([NotNull] LqlParser.ExistsExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.existsExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.existsExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitExistsExpr([NotNull] Nimblesite.Lql.CoreParser.ExistsExprContext context) { }
+	public virtual void ExitExistsExpr([NotNull] LqlParser.ExistsExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.nullCheckExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.nullCheckExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterNullCheckExpr([NotNull] Nimblesite.Lql.CoreParser.NullCheckExprContext context) { }
+	public virtual void EnterNullCheckExpr([NotNull] LqlParser.NullCheckExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.nullCheckExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.nullCheckExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitNullCheckExpr([NotNull] Nimblesite.Lql.CoreParser.NullCheckExprContext context) { }
+	public virtual void ExitNullCheckExpr([NotNull] LqlParser.NullCheckExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.inExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.inExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterInExpr([NotNull] Nimblesite.Lql.CoreParser.InExprContext context) { }
+	public virtual void EnterInExpr([NotNull] LqlParser.InExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.inExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.inExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitInExpr([NotNull] Nimblesite.Lql.CoreParser.InExprContext context) { }
+	public virtual void ExitInExpr([NotNull] LqlParser.InExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.caseExpr"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.caseExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterCaseExpr([NotNull] Nimblesite.Lql.CoreParser.CaseExprContext context) { }
+	public virtual void EnterCaseExpr([NotNull] LqlParser.CaseExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.caseExpr"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.caseExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitCaseExpr([NotNull] Nimblesite.Lql.CoreParser.CaseExprContext context) { }
+	public virtual void ExitCaseExpr([NotNull] LqlParser.CaseExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.whenClause"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.whenClause"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterWhenClause([NotNull] Nimblesite.Lql.CoreParser.WhenClauseContext context) { }
+	public virtual void EnterWhenClause([NotNull] LqlParser.WhenClauseContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.whenClause"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.whenClause"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitWhenClause([NotNull] Nimblesite.Lql.CoreParser.WhenClauseContext context) { }
+	public virtual void ExitWhenClause([NotNull] LqlParser.WhenClauseContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.caseResult"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.caseResult"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterCaseResult([NotNull] Nimblesite.Lql.CoreParser.CaseResultContext context) { }
+	public virtual void EnterCaseResult([NotNull] LqlParser.CaseResultContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.caseResult"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.caseResult"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitCaseResult([NotNull] Nimblesite.Lql.CoreParser.CaseResultContext context) { }
+	public virtual void ExitCaseResult([NotNull] LqlParser.CaseResultContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.orderDirection"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.orderDirection"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterOrderDirection([NotNull] Nimblesite.Lql.CoreParser.OrderDirectionContext context) { }
+	public virtual void EnterOrderDirection([NotNull] LqlParser.OrderDirectionContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.orderDirection"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.orderDirection"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitOrderDirection([NotNull] Nimblesite.Lql.CoreParser.OrderDirectionContext context) { }
+	public virtual void ExitOrderDirection([NotNull] LqlParser.OrderDirectionContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.comparisonOp"/>.
+	/// Enter a parse tree produced by <see cref="LqlParser.comparisonOp"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterComparisonOp([NotNull] Nimblesite.Lql.CoreParser.ComparisonOpContext context) { }
+	public virtual void EnterComparisonOp([NotNull] LqlParser.ComparisonOpContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Nimblesite.Lql.CoreParser.comparisonOp"/>.
+	/// Exit a parse tree produced by <see cref="LqlParser.comparisonOp"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitComparisonOp([NotNull] Nimblesite.Lql.CoreParser.ComparisonOpContext context) { }
+	public virtual void ExitComparisonOp([NotNull] LqlParser.ComparisonOpContext context) { }
 
 	/// <inheritdoc/>
 	/// <remarks>The default implementation does nothing.</remarks>

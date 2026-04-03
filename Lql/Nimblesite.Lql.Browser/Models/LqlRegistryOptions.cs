@@ -5,7 +5,7 @@ namespace Nimblesite.Lql.Browser.Models;
 /// <summary>
 /// Helper class for creating registry options with LQL support
 /// </summary>
-public static class Nimblesite.Lql.CoreRegistryOptions
+public static class LqlRegistryOptions
 {
     /// <summary>
     /// Creates registry options with dark theme

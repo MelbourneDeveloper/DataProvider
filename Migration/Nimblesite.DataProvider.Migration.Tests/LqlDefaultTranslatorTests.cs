@@ -1,10 +1,10 @@
 namespace Nimblesite.DataProvider.Migration.Tests;
 
 /// <summary>
-/// Unit tests for Nimblesite.Lql.CoreDefaultTranslator covering all code paths.
+/// Unit tests for LqlDefaultTranslator covering all code paths.
 /// Tests both ToPostgres() and ToSqlite() methods for complete coverage.
 /// </summary>
-public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
+public sealed class LqlDefaultTranslatorTests
 {
     // =========================================================================
     // NULL HANDLING - ArgumentNullException
@@ -12,11 +12,11 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
 
     [Fact]
     public void ToPostgres_NullInput_ThrowsArgumentNullException() =>
-        Assert.Throws<ArgumentNullException>(() => Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(null!));
+        Assert.Throws<ArgumentNullException>(() => LqlDefaultTranslator.ToPostgres(null!));
 
     [Fact]
     public void ToSqlite_NullInput_ThrowsArgumentNullException() =>
-        Assert.Throws<ArgumentNullException>(() => Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(null!));
+        Assert.Throws<ArgumentNullException>(() => LqlDefaultTranslator.ToSqlite(null!));
 
     // =========================================================================
     // TIMESTAMP FUNCTIONS - now(), current_timestamp(), current_date(), current_time()
@@ -34,7 +34,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("CURRENT_TIME()", "CURRENT_TIME")]
     public void ToPostgres_TimestampFunctions_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(input);
+        var result = LqlDefaultTranslator.ToPostgres(input);
         Assert.Equal(expected, result);
     }
 
@@ -47,7 +47,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("current_time()", "(time('now'))")]
     public void ToSqlite_TimestampFunctions_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(input);
+        var result = LqlDefaultTranslator.ToSqlite(input);
         Assert.Equal(expected, result);
     }
 
@@ -62,7 +62,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("UUID()")]
     public void ToPostgres_UuidFunctions_TranslatesToGenRandomUuid(string input)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(input);
+        var result = LqlDefaultTranslator.ToPostgres(input);
         Assert.Equal("gen_random_uuid()", result);
     }
 
@@ -73,7 +73,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("UUID()")]
     public void ToSqlite_UuidFunctions_TranslatesToHexExpression(string input)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(input);
+        var result = LqlDefaultTranslator.ToSqlite(input);
 
         // Should contain the SQLite UUID v4 expression parts
         Assert.Contains("hex(randomblob", result);
@@ -96,7 +96,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("False", "false")]
     public void ToPostgres_BooleanLiterals_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(input);
+        var result = LqlDefaultTranslator.ToPostgres(input);
         Assert.Equal(expected, result);
     }
 
@@ -109,7 +109,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("False", "0")]
     public void ToSqlite_BooleanLiterals_TranslatesToIntegerValues(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(input);
+        var result = LqlDefaultTranslator.ToSqlite(input);
         Assert.Equal(expected, result);
     }
 
@@ -127,7 +127,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("  123  ", "123")] // Whitespace trimmed
     public void ToPostgres_IntegerLiterals_PassThrough(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(input);
+        var result = LqlDefaultTranslator.ToPostgres(input);
         Assert.Equal(expected, result);
     }
 
@@ -140,7 +140,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("-2147483648", "-2147483648")]
     public void ToSqlite_IntegerLiterals_PassThrough(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(input);
+        var result = LqlDefaultTranslator.ToSqlite(input);
         Assert.Equal(expected, result);
     }
 
@@ -153,7 +153,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("  1.5  ", "1.5")] // Whitespace trimmed
     public void ToPostgres_DecimalLiterals_PassThrough(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(input);
+        var result = LqlDefaultTranslator.ToPostgres(input);
         Assert.Equal(expected, result);
     }
 
@@ -164,7 +164,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("0.00000001", "0.00000001")]
     public void ToSqlite_DecimalLiterals_PassThrough(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(input);
+        var result = LqlDefaultTranslator.ToSqlite(input);
         Assert.Equal(expected, result);
     }
 
@@ -181,7 +181,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("'snake_case'", "'snake_case'")]
     public void ToPostgres_StringLiterals_PassThrough(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(input);
+        var result = LqlDefaultTranslator.ToPostgres(input);
         Assert.Equal(expected, result);
     }
 
@@ -192,7 +192,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("'test123'", "'test123'")]
     public void ToSqlite_StringLiterals_PassThrough(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(input);
+        var result = LqlDefaultTranslator.ToSqlite(input);
         Assert.Equal(expected, result);
     }
 
@@ -206,7 +206,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("lower(column_name)", "lower(column_name)")]
     public void ToPostgres_LowerFunction_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(input);
+        var result = LqlDefaultTranslator.ToPostgres(input);
         Assert.Equal(expected, result);
     }
 
@@ -215,7 +215,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("LOWER(name)", "lower(name)")]
     public void ToSqlite_LowerFunction_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(input);
+        var result = LqlDefaultTranslator.ToSqlite(input);
         Assert.Equal(expected, result);
     }
 
@@ -224,7 +224,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("UPPER(name)", "upper(name)")]
     public void ToPostgres_UpperFunction_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(input);
+        var result = LqlDefaultTranslator.ToPostgres(input);
         Assert.Equal(expected, result);
     }
 
@@ -233,7 +233,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("UPPER(name)", "upper(name)")]
     public void ToSqlite_UpperFunction_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(input);
+        var result = LqlDefaultTranslator.ToSqlite(input);
         Assert.Equal(expected, result);
     }
 
@@ -243,7 +243,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("coalesce(name, 'default')", "COALESCE(name, 'default')")]
     public void ToPostgres_CoalesceFunction_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(input);
+        var result = LqlDefaultTranslator.ToPostgres(input);
         Assert.Equal(expected, result);
     }
 
@@ -252,7 +252,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("COALESCE(x, y, z)", "coalesce(x, y, z)")]
     public void ToSqlite_CoalesceFunction_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(input);
+        var result = LqlDefaultTranslator.ToSqlite(input);
         Assert.Equal(expected, result);
     }
 
@@ -261,7 +261,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("LENGTH(text)", "length(text)")]
     public void ToPostgres_LengthFunction_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(input);
+        var result = LqlDefaultTranslator.ToPostgres(input);
         Assert.Equal(expected, result);
     }
 
@@ -270,7 +270,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("LENGTH(text)", "length(text)")]
     public void ToSqlite_LengthFunction_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(input);
+        var result = LqlDefaultTranslator.ToSqlite(input);
         Assert.Equal(expected, result);
     }
 
@@ -281,28 +281,28 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [Fact]
     public void ToPostgres_SubstringWith3Args_UsesFromForSyntax()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres("substring(text, 1, 5)");
+        var result = LqlDefaultTranslator.ToPostgres("substring(text, 1, 5)");
         Assert.Equal("substring(text from 1 for 5)", result);
     }
 
     [Fact]
     public void ToPostgres_SubstringWith2Args_UsesCommaSyntax()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres("substring(text, 1)");
+        var result = LqlDefaultTranslator.ToPostgres("substring(text, 1)");
         Assert.Equal("substring(text, 1)", result);
     }
 
     [Fact]
     public void ToSqlite_SubstringWith3Args_UsesSubstrFunction()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite("substring(text, 1, 5)");
+        var result = LqlDefaultTranslator.ToSqlite("substring(text, 1, 5)");
         Assert.Equal("substr(text, 1, 5)", result);
     }
 
     [Fact]
     public void ToSqlite_SubstringWith2Args_UsesSubstrFunction()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite("substring(text, 1)");
+        var result = LqlDefaultTranslator.ToSqlite("substring(text, 1)");
         Assert.Equal("substr(text, 1)", result);
     }
 
@@ -315,7 +315,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("TRIM(text)", "trim(text)")]
     public void ToPostgres_TrimFunction_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(input);
+        var result = LqlDefaultTranslator.ToPostgres(input);
         Assert.Equal(expected, result);
     }
 
@@ -324,7 +324,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("TRIM(text)", "trim(text)")]
     public void ToSqlite_TrimFunction_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(input);
+        var result = LqlDefaultTranslator.ToSqlite(input);
         Assert.Equal(expected, result);
     }
 
@@ -337,28 +337,28 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("concat(first, ' ', last)", "concat(first, ' ', last)")]
     public void ToPostgres_ConcatFunction_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(input);
+        var result = LqlDefaultTranslator.ToPostgres(input);
         Assert.Equal(expected, result);
     }
 
     [Fact]
     public void ToSqlite_ConcatWith2Args_UsesConcatOperator()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite("concat(a, b)");
+        var result = LqlDefaultTranslator.ToSqlite("concat(a, b)");
         Assert.Equal("a || b", result);
     }
 
     [Fact]
     public void ToSqlite_ConcatWith3Args_UsesConcatOperator()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite("concat(first, ' ', last)");
+        var result = LqlDefaultTranslator.ToSqlite("concat(first, ' ', last)");
         Assert.Equal("first || ' ' || last", result);
     }
 
     [Fact]
     public void ToSqlite_ConcatWithNoArgs_ReturnsEmptyString()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite("concat()");
+        var result = LqlDefaultTranslator.ToSqlite("concat()");
         Assert.Equal("''", result);
     }
 
@@ -371,7 +371,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("ABS(-10)", "abs(-10)")]
     public void ToPostgres_AbsFunction_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(input);
+        var result = LqlDefaultTranslator.ToPostgres(input);
         Assert.Equal(expected, result);
     }
 
@@ -380,7 +380,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("ABS(-10)", "abs(-10)")]
     public void ToSqlite_AbsFunction_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(input);
+        var result = LqlDefaultTranslator.ToSqlite(input);
         Assert.Equal(expected, result);
     }
 
@@ -394,7 +394,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("ROUND(amount, 0)", "round(amount, 0)")]
     public void ToPostgres_RoundFunction_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(input);
+        var result = LqlDefaultTranslator.ToPostgres(input);
         Assert.Equal(expected, result);
     }
 
@@ -404,7 +404,7 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [InlineData("ROUND(amount, 0)", "round(amount, 0)")]
     public void ToSqlite_RoundFunction_TranslatesCorrectly(string input, string expected)
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(input);
+        var result = LqlDefaultTranslator.ToSqlite(input);
         Assert.Equal(expected, result);
     }
 
@@ -415,28 +415,28 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [Fact]
     public void ToPostgres_UnknownFunction_PassThroughWithArgs()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres("custom_func(arg1, arg2)");
+        var result = LqlDefaultTranslator.ToPostgres("custom_func(arg1, arg2)");
         Assert.Equal("custom_func(arg1, arg2)", result);
     }
 
     [Fact]
     public void ToSqlite_UnknownFunction_PassThroughWithArgs()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite("custom_func(arg1, arg2)");
+        var result = LqlDefaultTranslator.ToSqlite("custom_func(arg1, arg2)");
         Assert.Equal("custom_func(arg1, arg2)", result);
     }
 
     [Fact]
     public void ToPostgres_UnknownFunctionNoArgs_PassThrough()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres("my_function()");
+        var result = LqlDefaultTranslator.ToPostgres("my_function()");
         Assert.Equal("my_function()", result);
     }
 
     [Fact]
     public void ToSqlite_UnknownFunctionNoArgs_PassThrough()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite("my_function()");
+        var result = LqlDefaultTranslator.ToSqlite("my_function()");
         Assert.Equal("my_function()", result);
     }
 
@@ -447,28 +447,28 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [Fact]
     public void ToPostgres_ColumnReference_PassThrough()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres("column_name");
+        var result = LqlDefaultTranslator.ToPostgres("column_name");
         Assert.Equal("column_name", result);
     }
 
     [Fact]
     public void ToSqlite_ColumnReference_PassThrough()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite("column_name");
+        var result = LqlDefaultTranslator.ToSqlite("column_name");
         Assert.Equal("column_name", result);
     }
 
     [Fact]
     public void ToPostgres_ComplexExpression_PassThrough()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres("some_expression + 1");
+        var result = LqlDefaultTranslator.ToPostgres("some_expression + 1");
         Assert.Equal("some_expression + 1", result);
     }
 
     [Fact]
     public void ToSqlite_ComplexExpression_PassThrough()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite("some_expression + 1");
+        var result = LqlDefaultTranslator.ToSqlite("some_expression + 1");
         Assert.Equal("some_expression + 1", result);
     }
 
@@ -479,28 +479,28 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     [Fact]
     public void ToPostgres_FunctionWithWhitespaceInArgs_PreservesWhitespace()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres("coalesce( a , b , c )");
+        var result = LqlDefaultTranslator.ToPostgres("coalesce( a , b , c )");
         Assert.Equal("COALESCE(a, b, c)", result);
     }
 
     [Fact]
     public void ToSqlite_FunctionWithWhitespaceInArgs_PreservesWhitespace()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite("coalesce( a , b , c )");
+        var result = LqlDefaultTranslator.ToSqlite("coalesce( a , b , c )");
         Assert.Equal("coalesce(a, b, c)", result);
     }
 
     [Fact]
     public void ToPostgres_FunctionWithEmptyArgs_HandlesGracefully()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres("lower()");
+        var result = LqlDefaultTranslator.ToPostgres("lower()");
         Assert.Equal("lower()", result);
     }
 
     [Fact]
     public void ToSqlite_FunctionWithEmptyArgs_HandlesGracefully()
     {
-        var result = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite("lower()");
+        var result = LqlDefaultTranslator.ToSqlite("lower()");
         Assert.Equal("lower()", result);
     }
 
@@ -521,8 +521,8 @@ public sealed class Nimblesite.Lql.CoreDefaultTranslatorTests
     public void BothPlatforms_SameLql_ProduceValidSql(string lql)
     {
         // These should not throw and should produce non-empty results
-        var pgResult = Nimblesite.Lql.CoreDefaultTranslator.ToPostgres(lql);
-        var sqliteResult = Nimblesite.Lql.CoreDefaultTranslator.ToSqlite(lql);
+        var pgResult = LqlDefaultTranslator.ToPostgres(lql);
+        var sqliteResult = LqlDefaultTranslator.ToSqlite(lql);
 
         Assert.False(string.IsNullOrEmpty(pgResult));
         Assert.False(string.IsNullOrEmpty(sqliteResult));

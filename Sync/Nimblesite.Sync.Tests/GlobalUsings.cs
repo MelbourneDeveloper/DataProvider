@@ -1,67 +1,67 @@
 global using Xunit;
 // Type aliases for Outcome Result types to simplify test assertions
-global using BatchApplyResultError = Outcome.Result<Nimblesite.Sync.Core.BatchApplyResult, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>.Error<
+global using BatchApplyResultError = Outcome.Result<Nimblesite.Sync.Core.BatchApplyResult, Nimblesite.Sync.Core.SyncError>.Error<
     Nimblesite.Sync.Core.BatchApplyResult,
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreError
+    Nimblesite.Sync.Core.SyncError
 >;
-global using BatchApplyResultOk = Outcome.Result<Nimblesite.Sync.Core.BatchApplyResult, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>.Ok<
+global using BatchApplyResultOk = Outcome.Result<Nimblesite.Sync.Core.BatchApplyResult, Nimblesite.Sync.Core.SyncError>.Ok<
     Nimblesite.Sync.Core.BatchApplyResult,
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreError
+    Nimblesite.Sync.Core.SyncError
 >;
-global using BoolSyncError = Outcome.Result<bool, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>.Error<bool, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>;
-global using BoolSyncOk = Outcome.Result<bool, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>.Ok<bool, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>;
-global using BoolSyncResult = Outcome.Result<bool, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>;
+global using BoolSyncError = Outcome.Result<bool, Nimblesite.Sync.Core.SyncError>.Error<bool, Nimblesite.Sync.Core.SyncError>;
+global using BoolSyncOk = Outcome.Result<bool, Nimblesite.Sync.Core.SyncError>.Ok<bool, Nimblesite.Sync.Core.SyncError>;
+global using BoolSyncResult = Outcome.Result<bool, Nimblesite.Sync.Core.SyncError>;
 global using ConflictResolutionError = Outcome.Result<
     Nimblesite.Sync.Core.ConflictResolution,
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreError
->.Error<Nimblesite.Sync.Core.ConflictResolution, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>;
-global using ConflictResolutionOk = Outcome.Result<Nimblesite.Sync.Core.ConflictResolution, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>.Ok<
+    Nimblesite.Sync.Core.SyncError
+>.Error<Nimblesite.Sync.Core.ConflictResolution, Nimblesite.Sync.Core.SyncError>;
+global using ConflictResolutionOk = Outcome.Result<Nimblesite.Sync.Core.ConflictResolution, Nimblesite.Sync.Core.SyncError>.Ok<
     Nimblesite.Sync.Core.ConflictResolution,
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreError
+    Nimblesite.Sync.Core.SyncError
 >;
-global using IntSyncOk = Outcome.Result<int, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>.Ok<int, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>;
-global using PullResultError = Outcome.Result<Nimblesite.Sync.Core.PullResult, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>.Error<
+global using IntSyncOk = Outcome.Result<int, Nimblesite.Sync.Core.SyncError>.Ok<int, Nimblesite.Sync.Core.SyncError>;
+global using PullResultError = Outcome.Result<Nimblesite.Sync.Core.PullResult, Nimblesite.Sync.Core.SyncError>.Error<
     Nimblesite.Sync.Core.PullResult,
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreError
+    Nimblesite.Sync.Core.SyncError
 >;
-// Nimblesite.Sync.CoreCoordinator result types
-global using PullResultOk = Outcome.Result<Nimblesite.Sync.Core.PullResult, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>.Ok<
+// SyncCoordinator result types
+global using PullResultOk = Outcome.Result<Nimblesite.Sync.Core.PullResult, Nimblesite.Sync.Core.SyncError>.Ok<
     Nimblesite.Sync.Core.PullResult,
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreError
+    Nimblesite.Sync.Core.SyncError
 >;
-global using PushResultError = Outcome.Result<Nimblesite.Sync.Core.PushResult, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>.Error<
+global using PushResultError = Outcome.Result<Nimblesite.Sync.Core.PushResult, Nimblesite.Sync.Core.SyncError>.Error<
     Nimblesite.Sync.Core.PushResult,
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreError
+    Nimblesite.Sync.Core.SyncError
 >;
-global using PushResultOk = Outcome.Result<Nimblesite.Sync.Core.PushResult, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>.Ok<
+global using PushResultOk = Outcome.Result<Nimblesite.Sync.Core.PushResult, Nimblesite.Sync.Core.SyncError>.Ok<
     Nimblesite.Sync.Core.PushResult,
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreError
+    Nimblesite.Sync.Core.SyncError
 >;
-global using Nimblesite.Sync.CoreLogEntryError = Outcome.Result<Nimblesite.Sync.Core.Nimblesite.Sync.CoreLogEntry, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>.Error<
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreLogEntry,
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreError
+global using SyncLogEntryError = Outcome.Result<Nimblesite.Sync.Core.SyncLogEntry, Nimblesite.Sync.Core.SyncError>.Error<
+    Nimblesite.Sync.Core.SyncLogEntry,
+    Nimblesite.Sync.Core.SyncError
 >;
-global using Nimblesite.Sync.CoreLogEntryOk = Outcome.Result<Nimblesite.Sync.Core.Nimblesite.Sync.CoreLogEntry, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>.Ok<
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreLogEntry,
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreError
+global using SyncLogEntryOk = Outcome.Result<Nimblesite.Sync.Core.SyncLogEntry, Nimblesite.Sync.Core.SyncError>.Ok<
+    Nimblesite.Sync.Core.SyncLogEntry,
+    Nimblesite.Sync.Core.SyncError
 >;
-global using Nimblesite.Sync.CoreLogListError = Outcome.Result<
-    System.Collections.Generic.IReadOnlyList<Nimblesite.Sync.Core.Nimblesite.Sync.CoreLogEntry>,
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreError
->.Error<System.Collections.Generic.IReadOnlyList<Nimblesite.Sync.Core.Nimblesite.Sync.CoreLogEntry>, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>;
-global using Nimblesite.Sync.CoreLogListOk = Outcome.Result<
-    System.Collections.Generic.IReadOnlyList<Nimblesite.Sync.Core.Nimblesite.Sync.CoreLogEntry>,
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreError
->.Ok<System.Collections.Generic.IReadOnlyList<Nimblesite.Sync.Core.Nimblesite.Sync.CoreLogEntry>, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>;
-global using Nimblesite.Sync.CoreLogListResult = Outcome.Result<
-    System.Collections.Generic.IReadOnlyList<Nimblesite.Sync.Core.Nimblesite.Sync.CoreLogEntry>,
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreError
+global using SyncLogListError = Outcome.Result<
+    System.Collections.Generic.IReadOnlyList<Nimblesite.Sync.Core.SyncLogEntry>,
+    Nimblesite.Sync.Core.SyncError
+>.Error<System.Collections.Generic.IReadOnlyList<Nimblesite.Sync.Core.SyncLogEntry>, Nimblesite.Sync.Core.SyncError>;
+global using SyncLogListOk = Outcome.Result<
+    System.Collections.Generic.IReadOnlyList<Nimblesite.Sync.Core.SyncLogEntry>,
+    Nimblesite.Sync.Core.SyncError
+>.Ok<System.Collections.Generic.IReadOnlyList<Nimblesite.Sync.Core.SyncLogEntry>, Nimblesite.Sync.Core.SyncError>;
+global using SyncLogListResult = Outcome.Result<
+    System.Collections.Generic.IReadOnlyList<Nimblesite.Sync.Core.SyncLogEntry>,
+    Nimblesite.Sync.Core.SyncError
 >;
-global using Nimblesite.Sync.CoreResultError = Outcome.Result<Nimblesite.Sync.Core.Nimblesite.Sync.CoreResult, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>.Error<
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreResult,
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreError
+global using SyncResultError = Outcome.Result<Nimblesite.Sync.Core.SyncResult, Nimblesite.Sync.Core.SyncError>.Error<
+    Nimblesite.Sync.Core.SyncResult,
+    Nimblesite.Sync.Core.SyncError
 >;
-global using Nimblesite.Sync.CoreResultOk = Outcome.Result<Nimblesite.Sync.Core.Nimblesite.Sync.CoreResult, Nimblesite.Sync.Core.Nimblesite.Sync.CoreError>.Ok<
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreResult,
-    Nimblesite.Sync.Core.Nimblesite.Sync.CoreError
+global using SyncResultOk = Outcome.Result<Nimblesite.Sync.Core.SyncResult, Nimblesite.Sync.Core.SyncError>.Ok<
+    Nimblesite.Sync.Core.SyncResult,
+    Nimblesite.Sync.Core.SyncError
 >;

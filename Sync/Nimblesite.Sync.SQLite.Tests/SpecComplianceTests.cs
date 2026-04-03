@@ -5,7 +5,7 @@ using Xunit;
 namespace Nimblesite.Sync.SQLite.Tests;
 
 /// <summary>
-/// Integration tests proving spec.md compliance.
+/// Integration tests proving docs/specs/sync-spec.md compliance.
 /// Every spec section with testable requirements is covered.
 /// NO MOCKS - REAL SQLITE DATABASES ONLY!
 /// </summary>
@@ -22,8 +22,8 @@ public sealed class SpecComplianceTests : IDisposable
     {
         _db = new SqliteConnection($"Data Source={_dbPath}");
         _db.Open();
-        Nimblesite.Sync.CoreSchema.CreateSchema(_db);
-        Nimblesite.Sync.CoreSchema.SetOriginId(_db, _originId);
+        SyncSchema.CreateSchema(_db);
+        SyncSchema.SetOriginId(_db, _originId);
         CreateTestTable();
     }
 
@@ -50,7 +50,7 @@ public sealed class SpecComplianceTests : IDisposable
     public void Spec_S5_OriginId_Is36CharUuid()
     {
         // Spec S5.4: Origin ID MUST be 36 characters (standard UUID format)
-        var result = Nimblesite.Sync.CoreSchema.GetOriginId(_db);
+        var result = SyncSchema.GetOriginId(_db);
         Assert.IsType<StringSyncOk>(result);
         var originId = ((StringSyncOk)result).Value;
         Assert.Equal(36, originId.Length);
@@ -111,15 +111,15 @@ public sealed class SpecComplianceTests : IDisposable
         Assert.Equal(3, changes.Count);
 
         // Insert
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Insert, changes[0].Operation);
+        Assert.Equal(SyncOperation.Insert, changes[0].Operation);
         Assert.NotNull(changes[0].Payload);
 
         // Update
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Update, changes[1].Operation);
+        Assert.Equal(SyncOperation.Update, changes[1].Operation);
         Assert.NotNull(changes[1].Payload);
 
         // Delete (tombstone)
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Delete, changes[2].Operation);
+        Assert.Equal(SyncOperation.Delete, changes[2].Operation);
         Assert.Null(changes[2].Payload); // Delete has NULL payload
     }
 
@@ -148,11 +148,11 @@ public sealed class SpecComplianceTests : IDisposable
     public void Spec_S8_TriggerSuppression_PreventsLoggingWhenActive()
     {
         // Spec S8.3: When sync_active = 1, triggers don't log
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_db);
+        SyncSessionManager.EnableSuppression(_db);
 
         InsertPerson("p1", "Alice", "alice@example.com");
 
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_db);
+        SyncSessionManager.DisableSuppression(_db);
 
         var changes = FetchChanges(0);
         Assert.Empty(changes); // No changes logged when suppression active
@@ -162,7 +162,7 @@ public sealed class SpecComplianceTests : IDisposable
     public void Spec_S8_TriggerSuppression_LogsWhenDisabled()
     {
         // Verify normal behavior - triggers log when suppression disabled
-        var suppressionResult = Nimblesite.Sync.CoreSessionManager.IsSuppressionActive(_db);
+        var suppressionResult = SyncSessionManager.IsSuppressionActive(_db);
         Assert.IsType<BoolSyncOk>(suppressionResult);
         Assert.False(((BoolSyncOk)suppressionResult).Value);
 
@@ -205,9 +205,9 @@ public sealed class SpecComplianceTests : IDisposable
 
         var changes = FetchChanges(0).Where(c => c.TableName == "Product").ToList();
         Assert.Equal(3, changes.Count);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Insert, changes[0].Operation);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Update, changes[1].Operation);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Delete, changes[2].Operation);
+        Assert.Equal(SyncOperation.Insert, changes[0].Operation);
+        Assert.Equal(SyncOperation.Update, changes[1].Operation);
+        Assert.Equal(SyncOperation.Delete, changes[2].Operation);
     }
 
     [Fact]
@@ -221,14 +221,14 @@ public sealed class SpecComplianceTests : IDisposable
         TriggerGenerator.CreateTriggers(_db, "Category", TestLogger.L);
 
         // Enable suppression
-        Nimblesite.Sync.CoreSessionManager.EnableSuppression(_db);
+        SyncSessionManager.EnableSuppression(_db);
 
         // Insert while suppression active
         using var insertCmd = _db.CreateCommand();
         insertCmd.CommandText = "INSERT INTO Category (Id, Name) VALUES ('cat1', 'Electronics')";
         insertCmd.ExecuteNonQuery();
 
-        Nimblesite.Sync.CoreSessionManager.DisableSuppression(_db);
+        SyncSessionManager.DisableSuppression(_db);
 
         // No changes should be logged
         var changes = FetchChanges(0).Where(c => c.TableName == "Category").ToList();
@@ -251,20 +251,20 @@ public sealed class SpecComplianceTests : IDisposable
             DateTime.UtcNow.ToString("O")
         );
 
-        var matchingChange = new Nimblesite.Sync.CoreLogEntry(
+        var matchingChange = new SyncLogEntry(
             1,
             "Person",
             "{\"Id\":\"p1\"}",
-            Nimblesite.Sync.CoreOperation.Update,
+            SyncOperation.Update,
             "{}",
             _originId,
             ""
         );
-        var nonMatchingChange = new Nimblesite.Sync.CoreLogEntry(
+        var nonMatchingChange = new SyncLogEntry(
             2,
             "Person",
             "{\"Id\":\"p3\"}",
-            Nimblesite.Sync.CoreOperation.Update,
+            SyncOperation.Update,
             "{}",
             _originId,
             ""
@@ -285,29 +285,29 @@ public sealed class SpecComplianceTests : IDisposable
             DateTime.UtcNow.ToString("O")
         );
 
-        var change1 = new Nimblesite.Sync.CoreLogEntry(
+        var change1 = new SyncLogEntry(
             1,
             "Person",
             "{\"Id\":\"p1\"}",
-            Nimblesite.Sync.CoreOperation.Insert,
+            SyncOperation.Insert,
             "{}",
             _originId,
             ""
         );
-        var change2 = new Nimblesite.Sync.CoreLogEntry(
+        var change2 = new SyncLogEntry(
             2,
             "Person",
             "{\"Id\":\"p999\"}",
-            Nimblesite.Sync.CoreOperation.Delete,
+            SyncOperation.Delete,
             null,
             _originId,
             ""
         );
-        var wrongTable = new Nimblesite.Sync.CoreLogEntry(
+        var wrongTable = new SyncLogEntry(
             3,
             "Order",
             "{\"Id\":\"o1\"}",
-            Nimblesite.Sync.CoreOperation.Insert,
+            SyncOperation.Insert,
             "{}",
             _originId,
             ""
@@ -399,7 +399,7 @@ public sealed class SpecComplianceTests : IDisposable
         var changes = FetchChanges(0);
 
         // Try to apply own change back
-        var batch = new Nimblesite.Sync.CoreBatch(changes, 0, changes[0].Version, false);
+        var batch = new SyncBatch(changes, 0, changes[0].Version, false);
         var result = ChangeApplier.ApplyBatch(
             batch,
             _originId,
@@ -445,12 +445,12 @@ public sealed class SpecComplianceTests : IDisposable
         var batch = BatchManager.FetchBatch(
             0,
             10,
-            (from, size) => Nimblesite.Sync.CoreLogRepository.FetchChanges(_db, from, size),
+            (from, size) => SyncLogRepository.FetchChanges(_db, from, size),
             NullLogger.Instance
         );
 
-        Assert.IsType<Nimblesite.Sync.CoreBatchOk>(batch);
-        var batchData = ((Nimblesite.Sync.CoreBatchOk)batch).Value;
+        Assert.IsType<SyncBatchOk>(batch);
+        var batchData = ((SyncBatchOk)batch).Value;
         Assert.Equal(10, batchData.Changes.Count);
         Assert.True(batchData.HasMore);
     }
@@ -464,12 +464,12 @@ public sealed class SpecComplianceTests : IDisposable
         var batch = BatchManager.FetchBatch(
             0,
             100,
-            (from, size) => Nimblesite.Sync.CoreLogRepository.FetchChanges(_db, from, size),
+            (from, size) => SyncLogRepository.FetchChanges(_db, from, size),
             NullLogger.Instance
         );
 
-        Assert.IsType<Nimblesite.Sync.CoreBatchOk>(batch);
-        var batchData = ((Nimblesite.Sync.CoreBatchOk)batch).Value;
+        Assert.IsType<SyncBatchOk>(batch);
+        var batchData = ((SyncBatchOk)batch).Value;
         Assert.Single(batchData.Changes);
         Assert.False(batchData.HasMore);
     }
@@ -482,7 +482,7 @@ public sealed class SpecComplianceTests : IDisposable
     public void Spec_S13_TombstoneRetention_CalculatesSafePurgeVersion()
     {
         // Spec S13.4: Safe purge = MIN(last_sync_version) across all clients
-        var clients = new List<Nimblesite.Sync.CoreClient>
+        var clients = new List<SyncClient>
         {
             new("client1", 100, DateTime.UtcNow.ToString("O"), DateTime.UtcNow.ToString("O")),
             new("client2", 50, DateTime.UtcNow.ToString("O"), DateTime.UtcNow.ToString("O")),
@@ -510,7 +510,7 @@ public sealed class SpecComplianceTests : IDisposable
     {
         // Spec S13.5: Clients inactive > 90 days are stale
         var now = DateTime.UtcNow;
-        var clients = new List<Nimblesite.Sync.CoreClient>
+        var clients = new List<SyncClient>
         {
             new("active", 100, now.AddDays(-10).ToString("O"), now.AddDays(-100).ToString("O")),
             new("stale", 50, now.AddDays(-100).ToString("O"), now.AddDays(-100).ToString("O")),
@@ -525,7 +525,7 @@ public sealed class SpecComplianceTests : IDisposable
     public void Spec_S13_SyncClientRepository_CrudOperations()
     {
         // Test full CRUD on _sync_clients table
-        var client = new Nimblesite.Sync.CoreClient(
+        var client = new SyncClient(
             Guid.NewGuid().ToString(),
             100,
             DateTime.UtcNow.ToString("O"),
@@ -533,13 +533,13 @@ public sealed class SpecComplianceTests : IDisposable
         );
 
         // Upsert (insert)
-        var upsertResult = Nimblesite.Sync.CoreClientRepository.Upsert(_db, client);
+        var upsertResult = SyncClientRepository.Upsert(_db, client);
         Assert.IsType<BoolSyncOk>(upsertResult);
 
         // GetByOrigin
-        var getResult = Nimblesite.Sync.CoreClientRepository.GetByOrigin(_db, client.OriginId);
-        Assert.IsType<Nimblesite.Sync.CoreClientOk>(getResult);
-        var retrieved = ((Nimblesite.Sync.CoreClientOk)getResult).Value;
+        var getResult = SyncClientRepository.GetByOrigin(_db, client.OriginId);
+        Assert.IsType<SyncClientOk>(getResult);
+        var retrieved = ((SyncClientOk)getResult).Value;
         Assert.NotNull(retrieved);
         Assert.Equal(100, retrieved!.LastSyncVersion);
 
@@ -548,17 +548,17 @@ public sealed class SpecComplianceTests : IDisposable
         {
             LastSyncVersion = 200,
         };
-        Nimblesite.Sync.CoreClientRepository.Upsert(_db, updated);
+        SyncClientRepository.Upsert(_db, updated);
 
-        var afterUpdate = Nimblesite.Sync.CoreClientRepository.GetByOrigin(_db, client.OriginId);
-        Assert.Equal(200, ((Nimblesite.Sync.CoreClientOk)afterUpdate).Value!.LastSyncVersion);
+        var afterUpdate = SyncClientRepository.GetByOrigin(_db, client.OriginId);
+        Assert.Equal(200, ((SyncClientOk)afterUpdate).Value!.LastSyncVersion);
 
         // Delete
-        var deleteResult = Nimblesite.Sync.CoreClientRepository.Delete(_db, client.OriginId);
+        var deleteResult = SyncClientRepository.Delete(_db, client.OriginId);
         Assert.IsType<BoolSyncOk>(deleteResult);
 
-        var afterDelete = Nimblesite.Sync.CoreClientRepository.GetByOrigin(_db, client.OriginId);
-        Assert.Null(((Nimblesite.Sync.CoreClientOk)afterDelete).Value);
+        var afterDelete = SyncClientRepository.GetByOrigin(_db, client.OriginId);
+        Assert.Null(((SyncClientOk)afterDelete).Value);
     }
 
     #endregion
@@ -569,29 +569,29 @@ public sealed class SpecComplianceTests : IDisposable
     public void Spec_S14_ConflictDetection_SameTablePkDifferentOrigin()
     {
         // Spec S14.1: Conflict when same table+PK, different origin
-        var local = new Nimblesite.Sync.CoreLogEntry(
+        var local = new SyncLogEntry(
             1,
             "Person",
             "{\"Id\":\"p1\"}",
-            Nimblesite.Sync.CoreOperation.Update,
+            SyncOperation.Update,
             "{}",
             "origin-A",
             "2025-01-01T00:00:00.000Z"
         );
-        var remote = new Nimblesite.Sync.CoreLogEntry(
+        var remote = new SyncLogEntry(
             2,
             "Person",
             "{\"Id\":\"p1\"}",
-            Nimblesite.Sync.CoreOperation.Update,
+            SyncOperation.Update,
             "{}",
             "origin-B",
             "2025-01-01T00:00:01.000Z"
         );
-        var noConflict = new Nimblesite.Sync.CoreLogEntry(
+        var noConflict = new SyncLogEntry(
             3,
             "Person",
             "{\"Id\":\"p2\"}",
-            Nimblesite.Sync.CoreOperation.Update,
+            SyncOperation.Update,
             "{}",
             "origin-B",
             "2025-01-01T00:00:01.000Z"
@@ -605,20 +605,20 @@ public sealed class SpecComplianceTests : IDisposable
     public void Spec_S14_LastWriteWins_HigherTimestampWins()
     {
         // Spec S14.2: LWW - highest timestamp wins
-        var older = new Nimblesite.Sync.CoreLogEntry(
+        var older = new SyncLogEntry(
             1,
             "Person",
             "{\"Id\":\"p1\"}",
-            Nimblesite.Sync.CoreOperation.Update,
+            SyncOperation.Update,
             "{\"Name\":\"Old\"}",
             "origin-A",
             "2025-01-01T00:00:00.000Z"
         );
-        var newer = new Nimblesite.Sync.CoreLogEntry(
+        var newer = new SyncLogEntry(
             2,
             "Person",
             "{\"Id\":\"p1\"}",
-            Nimblesite.Sync.CoreOperation.Update,
+            SyncOperation.Update,
             "{\"Name\":\"New\"}",
             "origin-B",
             "2025-01-01T00:00:01.000Z"
@@ -632,20 +632,20 @@ public sealed class SpecComplianceTests : IDisposable
     [Fact]
     public void Spec_S14_ServerWins_AlwaysChoosesRemote()
     {
-        var local = new Nimblesite.Sync.CoreLogEntry(
+        var local = new SyncLogEntry(
             1,
             "Person",
             "{\"Id\":\"p1\"}",
-            Nimblesite.Sync.CoreOperation.Update,
+            SyncOperation.Update,
             "{}",
             "origin-A",
             "2025-01-01T00:00:01.000Z"
         );
-        var remote = new Nimblesite.Sync.CoreLogEntry(
+        var remote = new SyncLogEntry(
             2,
             "Person",
             "{\"Id\":\"p1\"}",
-            Nimblesite.Sync.CoreOperation.Update,
+            SyncOperation.Update,
             "{}",
             "origin-B",
             "2025-01-01T00:00:00.000Z"
@@ -658,20 +658,20 @@ public sealed class SpecComplianceTests : IDisposable
     [Fact]
     public void Spec_S14_ClientWins_AlwaysChoosesLocal()
     {
-        var local = new Nimblesite.Sync.CoreLogEntry(
+        var local = new SyncLogEntry(
             1,
             "Person",
             "{\"Id\":\"p1\"}",
-            Nimblesite.Sync.CoreOperation.Update,
+            SyncOperation.Update,
             "{}",
             "origin-A",
             "2025-01-01T00:00:00.000Z"
         );
-        var remote = new Nimblesite.Sync.CoreLogEntry(
+        var remote = new SyncLogEntry(
             2,
             "Person",
             "{\"Id\":\"p1\"}",
-            Nimblesite.Sync.CoreOperation.Update,
+            SyncOperation.Update,
             "{}",
             "origin-B",
             "2025-01-01T00:00:01.000Z"
@@ -713,12 +713,12 @@ public sealed class SpecComplianceTests : IDisposable
         var batch = BatchManager.FetchBatch(
             0,
             100,
-            (from, size) => Nimblesite.Sync.CoreLogRepository.FetchChanges(_db, from, size),
+            (from, size) => SyncLogRepository.FetchChanges(_db, from, size),
             NullLogger.Instance
         );
 
-        Assert.IsType<Nimblesite.Sync.CoreBatchOk>(batch);
-        var batchData = ((Nimblesite.Sync.CoreBatchOk)batch).Value;
+        Assert.IsType<SyncBatchOk>(batch);
+        var batchData = ((SyncBatchOk)batch).Value;
         Assert.NotNull(batchData.Hash);
 
         // Verify the hash matches
@@ -735,7 +735,7 @@ public sealed class SpecComplianceTests : IDisposable
         var changes = FetchChanges(0);
 
         // Create batch with wrong hash
-        var batch = new Nimblesite.Sync.CoreBatch(changes, 0, changes[0].Version, false, "wrong_hash_value");
+        var batch = new SyncBatch(changes, 0, changes[0].Version, false, "wrong_hash_value");
 
         var verifyResult = BatchManager.VerifyBatchHash(batch, NullLogger.Instance);
         Assert.IsType<BoolSyncError>(verifyResult);
@@ -941,14 +941,14 @@ public sealed class SpecComplianceTests : IDisposable
         cmd.ExecuteNonQuery();
     }
 
-    private List<Nimblesite.Sync.CoreLogEntry> FetchChanges(long fromVersion)
+    private List<SyncLogEntry> FetchChanges(long fromVersion)
     {
-        var result = Nimblesite.Sync.CoreLogRepository.FetchChanges(_db, fromVersion, 1000);
-        Assert.IsType<Nimblesite.Sync.CoreLogListOk>(result);
-        return [.. ((Nimblesite.Sync.CoreLogListOk)result).Value];
+        var result = SyncLogRepository.FetchChanges(_db, fromVersion, 1000);
+        Assert.IsType<SyncLogListOk>(result);
+        return [.. ((SyncLogListOk)result).Value];
     }
 
-    private BoolSyncResult ApplySingleChange(Nimblesite.Sync.CoreLogEntry entry) =>
+    private BoolSyncResult ApplySingleChange(SyncLogEntry entry) =>
         ChangeApplierSQLite.ApplyChange(_db, entry);
 
     private List<string> GetTables()

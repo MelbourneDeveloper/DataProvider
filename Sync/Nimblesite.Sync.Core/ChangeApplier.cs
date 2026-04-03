@@ -19,10 +19,10 @@ internal static class ChangeApplier
     /// <param name="logger">Logger for change application.</param>
     /// <returns>Result of applying the batch.</returns>
     public static BatchApplyResultResult ApplyBatch(
-        Nimblesite.Sync.CoreBatch batch,
+        SyncBatch batch,
         string myOriginId,
         int maxRetryPasses,
-        Func<Nimblesite.Sync.CoreLogEntry, BoolSyncResult> applyChange,
+        Func<SyncLogEntry, BoolSyncResult> applyChange,
         ILogger logger
     )
     {
@@ -34,7 +34,7 @@ internal static class ChangeApplier
             myOriginId
         );
 
-        var deferred = new List<Nimblesite.Sync.CoreLogEntry>();
+        var deferred = new List<SyncLogEntry>();
         var appliedCount = 0;
         var skippedCount = 0;
 
@@ -113,7 +113,7 @@ internal static class ChangeApplier
                 deferred.Count
             );
 
-            var stillDeferred = new List<Nimblesite.Sync.CoreLogEntry>();
+            var stillDeferred = new List<SyncLogEntry>();
 
             foreach (var entry in deferred)
             {
@@ -169,7 +169,7 @@ internal static class ChangeApplier
             );
 
             return new BatchApplyResultError(
-                new Nimblesite.Sync.CoreErrorDeferredChangeFailed(
+                new SyncErrorDeferredChangeFailed(
                     deferred[0],
                     $"{deferred.Count} changes could not be applied after {maxRetryPasses} retry passes"
                 )

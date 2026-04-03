@@ -34,8 +34,8 @@ If a project defines its schema in C# code (e.g., `ExampleSchema.cs`, `ClinicalS
 
 1. Schema is defined in a **separate Migrations assembly** (e.g., `MyProject.Migrations/`) with NO dependencies on generated code
 2. Build step compiles the Migrations assembly first
-3. Schema.Export.Cli exports C# schema to YAML file
-4. Migration.Cli reads YAML and creates database
+3. Migration.Cli `export` subcommand exports C# schema to YAML file
+4. Migration.Cli `migrate` subcommand reads YAML and creates database
 5. DataProvider code generation runs against the created database
 6. Main project (e.g., `MyProject.Api/`) compiles with generated code
 
@@ -84,17 +84,17 @@ The API/main assembly:
 
 ## MSBuild Integration
 
-Consumer projects call Schema.Export.Cli then Migration.Cli in pre-build targets:
+Consumer projects call Migration.Cli with `export` then `migrate` subcommands in pre-build targets:
 
 ```xml
 <!-- Step 1: Export C# schema to YAML (Migrations assembly must be built first) -->
 <Target Name="ExportSchemaToYaml" BeforeTargets="CreateBuildDatabase">
-    <Exec Command='dotnet run --project "$(SolutionDir)Migration/Schema.Export.Cli/Schema.Export.Cli.csproj" -- --assembly "$(SolutionDir)MyProject.Migrations/bin/Debug/net9.0/MyProject.Migrations.dll" --type "MyProject.Migrations.MyProjectSchema" --output "$(MSBuildProjectDirectory)/schema.yaml"' />
+    <Exec Command='dotnet run --project "$(SolutionDir)Migration/Migration.Cli/Migration.Cli.csproj" -- export --assembly "$(SolutionDir)MyProject.Migrations/bin/Debug/net9.0/MyProject.Migrations.dll" --type "MyProject.Migrations.MyProjectSchema" --output "$(MSBuildProjectDirectory)/schema.yaml"' />
 </Target>
 
 <!-- Step 2: Create database from YAML -->
 <Target Name="CreateBuildDatabase" BeforeTargets="GenerateDataProvider">
-    <Exec Command='dotnet run --project "$(SolutionDir)Migration/Migration.Cli/Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/schema.yaml" --output "$(MSBuildProjectDirectory)/build.db" --provider sqlite' />
+    <Exec Command='dotnet run --project "$(SolutionDir)Migration/Migration.Cli/Migration.Cli.csproj" -- migrate --schema "$(MSBuildProjectDirectory)/schema.yaml" --output "$(MSBuildProjectDirectory)/build.db" --provider sqlite' />
 </Target>
 ```
 
@@ -107,8 +107,8 @@ To avoid circular dependencies, the build order MUST be:
 ```
 1. Migration/Migration.csproj           # Core types
 2. MyProject.Migrations/                # Schema definition (refs Migration only)
-3. Schema.Export.Cli                    # Export schema to YAML
-4. Migration.Cli                        # Create DB from YAML
+3. Migration.Cli export                 # Export schema to YAML
+4. Migration.Cli migrate               # Create DB from YAML
 5. DataProvider code generation         # Generate C# from DB
 6. MyProject.Api/                       # Main project with generated code
 ```

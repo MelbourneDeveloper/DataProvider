@@ -9,7 +9,7 @@ namespace Nimblesite.Sync.Http;
 /// Extension methods for configuring sync API endpoints and services.
 /// These are TOOLS for spinning up a sync server - not an actual server.
 /// </summary>
-public static class Nimblesite.Sync.CoreEndpointExtensions
+public static class SyncEndpointExtensions
 {
     /// <summary>
     /// Adds sync API services to the service collection.
@@ -130,7 +130,7 @@ public static class Nimblesite.Sync.CoreEndpointExtensions
 
                     try
                     {
-                        var entries = Nimblesite.Sync.CoreHelpers.FetchChanges(
+                        var entries = SyncHelpers.FetchChanges(
                             connStr,
                             dbType,
                             fromVersion,
@@ -197,7 +197,7 @@ public static class Nimblesite.Sync.CoreEndpointExtensions
                             return Results.BadRequest("Max 10000 changes per request");
                         }
 
-                        var applied = Nimblesite.Sync.CoreHelpers.ApplyChanges(
+                        var applied = SyncHelpers.ApplyChanges(
                             connStr,
                             dbType,
                             body.Changes,
@@ -255,14 +255,14 @@ public static class Nimblesite.Sync.CoreEndpointExtensions
                             return Results.BadRequest("OriginId required");
                         }
 
-                        var client = new Nimblesite.Sync.CoreClient(
+                        var client = new SyncClient(
                             body.OriginId,
                             body.LastSyncVersion,
                             DateTime.UtcNow.ToString("O"),
                             DateTime.UtcNow.ToString("O")
                         );
 
-                        _ = Nimblesite.Sync.CoreHelpers.UpsertClient(connStr, dbType, client, logger);
+                        _ = SyncHelpers.UpsertClient(connStr, dbType, client, logger);
 
                         return Results.Ok(new { Registered = true, Client = client });
                     }
@@ -298,7 +298,7 @@ public static class Nimblesite.Sync.CoreEndpointExtensions
 
                     try
                     {
-                        var maxVersion = Nimblesite.Sync.CoreHelpers.GetMaxVersion(connStr, dbType, logger);
+                        var maxVersion = SyncHelpers.GetMaxVersion(connStr, dbType, logger);
 
                         return Results.Ok(
                             new

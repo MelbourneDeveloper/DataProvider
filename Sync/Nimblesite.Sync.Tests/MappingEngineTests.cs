@@ -21,7 +21,7 @@ public sealed class MappingEngineTests
             "Customer",
             MappingDirection.Push
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var found = MappingEngine.FindMapping("User", config, MappingDirection.Push);
 
@@ -33,7 +33,7 @@ public sealed class MappingEngineTests
     public void FindMapping_BothDirection_MatchesPush()
     {
         var mapping = CreateTestMapping("user-both", "User", "Customer", MappingDirection.Both);
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var found = MappingEngine.FindMapping("User", config, MappingDirection.Push);
 
@@ -45,7 +45,7 @@ public sealed class MappingEngineTests
     public void FindMapping_BothDirection_MatchesPull()
     {
         var mapping = CreateTestMapping("user-both", "User", "Customer", MappingDirection.Both);
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var found = MappingEngine.FindMapping("User", config, MappingDirection.Pull);
 
@@ -56,7 +56,7 @@ public sealed class MappingEngineTests
     public void FindMapping_WrongDirection_ReturnsNull()
     {
         var mapping = CreateTestMapping("user-push", "User", "Customer", MappingDirection.Push);
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var found = MappingEngine.FindMapping("User", config, MappingDirection.Pull);
 
@@ -72,7 +72,7 @@ public sealed class MappingEngineTests
             "OrderSummary",
             MappingDirection.Push
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
 
         var found = MappingEngine.FindMapping("User", config, MappingDirection.Push);
 
@@ -86,7 +86,7 @@ public sealed class MappingEngineTests
     [Fact]
     public void ApplyMapping_PassthroughMode_NoMapping_ReturnsIdentity()
     {
-        var config = Nimblesite.Sync.CoreMappingConfig.Passthrough;
+        var config = SyncMappingConfig.Passthrough;
         var entry = CreateEntry("Person", """{"Id":"p1"}""", """{"Id":"p1","Name":"Alice"}""");
 
         var result = MappingEngine.ApplyMapping(entry, config, MappingDirection.Push, _logger);
@@ -100,7 +100,7 @@ public sealed class MappingEngineTests
     [Fact]
     public void ApplyMapping_StrictMode_NoMapping_ReturnsSkipped()
     {
-        var config = Nimblesite.Sync.CoreMappingConfig.Empty;
+        var config = SyncMappingConfig.Empty;
         var entry = CreateEntry("Person", """{"Id":"p1"}""", """{"Id":"p1","Name":"Alice"}""");
 
         var result = MappingEngine.ApplyMapping(entry, config, MappingDirection.Push, _logger);
@@ -122,7 +122,7 @@ public sealed class MappingEngineTests
             "Customer",
             MappingDirection.Push
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
         var entry = CreateEntry("User", """{"Id":"u1"}""", """{"Id":"u1","Name":"Alice"}""");
 
         var result = MappingEngine.ApplyMapping(entry, config, MappingDirection.Push, _logger);
@@ -145,9 +145,9 @@ public sealed class MappingEngineTests
             ColumnMappings: [],
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
         var entry = CreateEntry("User", """{"Id":"u1"}""", """{"Id":"u1","Name":"Alice"}""");
 
         var result = MappingEngine.ApplyMapping(entry, config, MappingDirection.Push, _logger);
@@ -176,9 +176,9 @@ public sealed class MappingEngineTests
             ColumnMappings: columnMappings,
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
         var entry = CreateEntry(
             "User",
             """{"Id":"u1"}""",
@@ -213,9 +213,9 @@ public sealed class MappingEngineTests
             ColumnMappings: columnMappings,
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
         var entry = CreateEntry("User", """{"Id":"u1"}""", """{"Id":"u1","Name":"Alice"}""");
 
         var result = MappingEngine.ApplyMapping(entry, config, MappingDirection.Push, _logger);
@@ -238,9 +238,9 @@ public sealed class MappingEngineTests
             ColumnMappings: [],
             ExcludedColumns: ["PasswordHash", "SecurityStamp"],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
         var entry = CreateEntry(
             "User",
             """{"Id":"u1"}""",
@@ -268,9 +268,9 @@ public sealed class MappingEngineTests
             ColumnMappings: [],
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
         var entry = CreateEntry("User", """{"Id":"u1"}""", """{"Id":"u1"}""");
 
         var result = MappingEngine.ApplyMapping(entry, config, MappingDirection.Push, _logger);
@@ -311,11 +311,11 @@ public sealed class MappingEngineTests
             ColumnMappings: [],
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig(),
+            SyncTracking: new SyncTrackingConfig(),
             IsMultiTarget: true,
             Targets: targets
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
         var entry = CreateEntry(
             "Order",
             """{"Id":"o1"}""",
@@ -352,11 +352,11 @@ public sealed class MappingEngineTests
             ColumnMappings: [],
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig(),
+            SyncTracking: new SyncTrackingConfig(),
             IsMultiTarget: true,
             Targets: targets
         );
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
         var entry = CreateEntry("Order", """{"Id":"o1"}""", """{"Id":"o1","Total":99.99}""");
 
         var result = MappingEngine.ApplyMapping(entry, config, MappingDirection.Push, _logger);
@@ -416,12 +416,12 @@ public sealed class MappingEngineTests
     public void ApplyMapping_DeleteOperation_NullPayload_Succeeds()
     {
         var mapping = CreateTestMapping("user-mapping", "User", "Customer", MappingDirection.Push);
-        var config = new Nimblesite.Sync.CoreMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var config = new SyncMappingConfig("1.0", UnmappedTableBehavior.Strict, [mapping]);
+        var entry = new SyncLogEntry(
             Version: 1,
             TableName: "User",
             PkValue: """{"Id":"u1"}""",
-            Operation: Nimblesite.Sync.CoreOperation.Delete,
+            Operation: SyncOperation.Delete,
             Payload: null,
             Origin: "origin-1",
             Timestamp: "2024-01-01T00:00:00Z"
@@ -453,15 +453,15 @@ public sealed class MappingEngineTests
             ColumnMappings: [],
             ExcludedColumns: [],
             Filter: null,
-            Nimblesite.Sync.CoreTracking: new Nimblesite.Sync.CoreTrackingConfig()
+            SyncTracking: new SyncTrackingConfig()
         );
 
-    private static Nimblesite.Sync.CoreLogEntry CreateEntry(string table, string pk, string? payload) =>
+    private static SyncLogEntry CreateEntry(string table, string pk, string? payload) =>
         new(
             Version: 1,
             TableName: table,
             PkValue: pk,
-            Operation: Nimblesite.Sync.CoreOperation.Insert,
+            Operation: SyncOperation.Insert,
             Payload: payload,
             Origin: "test-origin",
             Timestamp: "2024-01-01T00:00:00Z"

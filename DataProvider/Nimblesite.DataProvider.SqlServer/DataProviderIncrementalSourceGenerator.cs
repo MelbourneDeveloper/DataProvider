@@ -9,7 +9,7 @@ namespace Nimblesite.DataProvider.SqlServer;
 /// and produces strongly-typed data access extension methods.
 /// </summary>
 [Generator]
-public class Nimblesite.DataProvider.CoreIncrementalSourceGenerator : IIncrementalGenerator
+public class DataProviderIncrementalSourceGenerator : IIncrementalGenerator
 {
     /// <summary>
     /// Initializes the incremental generator pipeline, wiring up inputs for SQL files and configuration
@@ -76,7 +76,7 @@ public class Nimblesite.DataProvider.CoreIncrementalSourceGenerator : IIncrement
                     context.ReportDiagnostic(
                         Diagnostic.Create(
                             new DiagnosticDescriptor(
-                                "Nimblesite.DataProvider.Core002",
+                                "DataProvider002",
                                 "Configuration parsing failed",
                                 "Failed to parse Nimblesite.DataProvider.Core.json: {0}",
                                 "Nimblesite.DataProvider.Core",
@@ -97,7 +97,7 @@ public class Nimblesite.DataProvider.CoreIncrementalSourceGenerator : IIncrement
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     new DiagnosticDescriptor(
-                        "Nimblesite.DataProvider.Core003",
+                        "DataProvider003",
                         "Configuration missing",
                         "Nimblesite.DataProvider.Core.json configuration file is required for code generation",
                         "Nimblesite.DataProvider.Core",
@@ -116,7 +116,7 @@ public class Nimblesite.DataProvider.CoreIncrementalSourceGenerator : IIncrement
         context.ReportDiagnostic(
             Diagnostic.Create(
                 new DiagnosticDescriptor(
-                    "Nimblesite.DataProvider.Core005",
+                    "DataProvider005",
                     "Source generator delegated to CLI",
                     "Code generation is handled by CLI in MSBuild target, not by this incremental generator",
                     "Nimblesite.DataProvider.Core",

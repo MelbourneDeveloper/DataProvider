@@ -13,22 +13,22 @@ public sealed class ChangeApplierTests : IDisposable
     public void ApplyBatch_SkipsOwnOriginChanges()
     {
         var myOrigin = "my-origin";
-        var batch = new Nimblesite.Sync.CoreBatch(
+        var batch = new SyncBatch(
             [
-                new Nimblesite.Sync.CoreLogEntry(
+                new SyncLogEntry(
                     1,
                     "Person",
                     "{\"Id\":\"1\"}",
-                    Nimblesite.Sync.CoreOperation.Insert,
+                    SyncOperation.Insert,
                     "{\"Id\":\"1\",\"Name\":\"Alice\"}",
                     myOrigin,
                     "2025-01-01T00:00:00.000Z"
                 ),
-                new Nimblesite.Sync.CoreLogEntry(
+                new SyncLogEntry(
                     2,
                     "Person",
                     "{\"Id\":\"2\"}",
-                    Nimblesite.Sync.CoreOperation.Insert,
+                    SyncOperation.Insert,
                     "{\"Id\":\"2\",\"Name\":\"Bob\"}",
                     "other-origin",
                     "2025-01-01T00:00:01.000Z"
@@ -39,7 +39,7 @@ public sealed class ChangeApplierTests : IDisposable
             false
         );
 
-        var appliedEntries = new List<Nimblesite.Sync.CoreLogEntry>();
+        var appliedEntries = new List<SyncLogEntry>();
 
         var result = ChangeApplier.ApplyBatch(
             batch,
@@ -63,22 +63,22 @@ public sealed class ChangeApplierTests : IDisposable
     public void ApplyBatch_DefersAndRetriesFkViolations()
     {
         // Simulate: Child insert comes before Parent insert (FK violation on first try)
-        var batch = new Nimblesite.Sync.CoreBatch(
+        var batch = new SyncBatch(
             [
-                new Nimblesite.Sync.CoreLogEntry(
+                new SyncLogEntry(
                     1,
                     "Child",
                     "{\"Id\":\"c1\"}",
-                    Nimblesite.Sync.CoreOperation.Insert,
+                    SyncOperation.Insert,
                     "{\"Id\":\"c1\",\"ParentId\":\"p1\",\"Name\":\"Child1\"}",
                     "other",
                     "2025-01-01T00:00:00.000Z"
                 ),
-                new Nimblesite.Sync.CoreLogEntry(
+                new SyncLogEntry(
                     2,
                     "Parent",
                     "{\"Id\":\"p1\"}",
-                    Nimblesite.Sync.CoreOperation.Insert,
+                    SyncOperation.Insert,
                     "{\"Id\":\"p1\",\"Name\":\"Parent1\"}",
                     "other",
                     "2025-01-01T00:00:01.000Z"
@@ -120,13 +120,13 @@ public sealed class ChangeApplierTests : IDisposable
     [Fact]
     public void ApplyBatch_FailsAfterMaxRetries()
     {
-        var batch = new Nimblesite.Sync.CoreBatch(
+        var batch = new SyncBatch(
             [
-                new Nimblesite.Sync.CoreLogEntry(
+                new SyncLogEntry(
                     1,
                     "Child",
                     "{\"Id\":\"c1\"}",
-                    Nimblesite.Sync.CoreOperation.Insert,
+                    SyncOperation.Insert,
                     "{\"Id\":\"c1\",\"ParentId\":\"missing\"}",
                     "other",
                     "2025-01-01T00:00:00.000Z"
@@ -147,7 +147,7 @@ public sealed class ChangeApplierTests : IDisposable
 
         Assert.IsType<BatchApplyResultError>(result);
         var failure = (BatchApplyResultError)result;
-        Assert.IsType<Nimblesite.Sync.CoreErrorDeferredChangeFailed>(failure.Value);
+        Assert.IsType<SyncErrorDeferredChangeFailed>(failure.Value);
     }
 
     [Fact]
@@ -156,22 +156,22 @@ public sealed class ChangeApplierTests : IDisposable
         // Insert Parent first
         InsertParent("p1", "Parent1");
 
-        var batch = new Nimblesite.Sync.CoreBatch(
+        var batch = new SyncBatch(
             [
-                new Nimblesite.Sync.CoreLogEntry(
+                new SyncLogEntry(
                     1,
                     "Child",
                     "{\"Id\":\"c1\"}",
-                    Nimblesite.Sync.CoreOperation.Insert,
+                    SyncOperation.Insert,
                     "{\"Id\":\"c1\",\"ParentId\":\"p1\",\"Name\":\"Child1\"}",
                     "other",
                     "2025-01-01T00:00:00.000Z"
                 ),
-                new Nimblesite.Sync.CoreLogEntry(
+                new SyncLogEntry(
                     2,
                     "Child",
                     "{\"Id\":\"c1\"}",
-                    Nimblesite.Sync.CoreOperation.Update,
+                    SyncOperation.Update,
                     "{\"Id\":\"c1\",\"ParentId\":\"p1\",\"Name\":\"UpdatedChild\"}",
                     "other",
                     "2025-01-01T00:00:01.000Z"
@@ -218,13 +218,13 @@ public sealed class ChangeApplierTests : IDisposable
         return cmd.ExecuteScalar() as string;
     }
 
-    private BoolSyncResult ApplyToDb(Nimblesite.Sync.CoreLogEntry entry)
+    private BoolSyncResult ApplyToDb(SyncLogEntry entry)
     {
         try
         {
             using var cmd = _db.Connection.CreateCommand();
 
-            if (entry.Operation == Nimblesite.Sync.CoreOperation.Insert && entry.TableName == "Child")
+            if (entry.Operation == SyncOperation.Insert && entry.TableName == "Child")
             {
                 var payload = System.Text.Json.JsonSerializer.Deserialize<
                     Dictionary<string, string>
@@ -235,7 +235,7 @@ public sealed class ChangeApplierTests : IDisposable
                 cmd.Parameters.AddWithValue("$parentId", payload["ParentId"]);
                 cmd.Parameters.AddWithValue("$name", payload["Name"]);
             }
-            else if (entry.Operation == Nimblesite.Sync.CoreOperation.Update && entry.TableName == "Child")
+            else if (entry.Operation == SyncOperation.Update && entry.TableName == "Child")
             {
                 var payload = System.Text.Json.JsonSerializer.Deserialize<
                     Dictionary<string, string>
@@ -244,7 +244,7 @@ public sealed class ChangeApplierTests : IDisposable
                 cmd.Parameters.AddWithValue("$id", payload!["Id"]);
                 cmd.Parameters.AddWithValue("$name", payload["Name"]);
             }
-            else if (entry.Operation == Nimblesite.Sync.CoreOperation.Delete && entry.TableName == "Child")
+            else if (entry.Operation == SyncOperation.Delete && entry.TableName == "Child")
             {
                 var pk = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(
                     entry.PkValue
@@ -266,14 +266,14 @@ public sealed class ChangeApplierTests : IDisposable
         }
         catch (Exception ex)
         {
-            return new BoolSyncError(new Nimblesite.Sync.CoreErrorDatabase(ex.Message));
+            return new BoolSyncError(new SyncErrorDatabase(ex.Message));
         }
     }
 
-    private static T AssertSuccess<T>(Result<T, Nimblesite.Sync.CoreError> result)
+    private static T AssertSuccess<T>(Result<T, SyncError> result)
     {
-        Assert.IsType<Result<T, Nimblesite.Sync.CoreError>.Ok<T, Nimblesite.Sync.CoreError>>(result);
-        return ((Result<T, Nimblesite.Sync.CoreError>.Ok<T, Nimblesite.Sync.CoreError>)result).Value;
+        Assert.IsType<Result<T, SyncError>.Ok<T, SyncError>>(result);
+        return ((Result<T, SyncError>.Ok<T, SyncError>)result).Value;
     }
 
     public void Dispose() => _db.Dispose();

@@ -1,9 +1,9 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nimblesite.Lql.Core", "Lql", "{54B846BA-A27D-B76F-8730-402A5742FF43}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nimblesite.Lql.Core", "Nimblesite.Lql.Core", "{54B846BA-A27D-B76F-8730-402A5742FF43}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.Core", "Lql\Nimblesite.Lql.Core\Nimblesite.Lql.Core.csproj", "{6A15D05D-A3F0-41C7-BCDC-A1A5390CD181}"
 EndProject
@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.Cli.SQLite.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.Postgres", "Lql\Nimblesite.Lql.Postgres\Nimblesite.Lql.Postgres.csproj", "{9DF737C9-6EE5-4255-85C9-65337350DFDD}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nimblesite.DataProvider.Core", "DataProvider", "{43BAF0A3-C050-BE83-B489-7FC6F9FDE235}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nimblesite.DataProvider.Core", "Nimblesite.DataProvider.Core", "{43BAF0A3-C050-BE83-B489-7FC6F9FDE235}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Core", "DataProvider\Nimblesite.DataProvider.Core\Nimblesite.DataProvider.Core.csproj", "{7D4F4EC0-C221-4BC9-8F8C-77BD4A3D39AA}"
 EndProject
@@ -39,7 +39,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nimblesite.DataProvider.Exa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.Browser", "Lql\Nimblesite.Lql.Browser\Nimblesite.Lql.Browser.csproj", "{0D96933C-DE5D-472B-9E9F-68DD15B85CF7}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nimblesite.Sync.Core", "Sync", "{5E63119C-E70B-5D45-ECC9-8CBACC584223}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nimblesite.Sync.Core", "Nimblesite.Sync.Core", "{5E63119C-E70B-5D45-ECC9-8CBACC584223}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sync.Core", "Sync\Nimblesite.Sync.Core\Nimblesite.Sync.Core.csproj", "{C0B4116E-0635-4597-971D-6B70229FA30A}"
 EndProject
@@ -57,7 +57,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sync.Postgres.Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sync.Integration.Tests", "Sync\Nimblesite.Sync.Integration.Tests\Nimblesite.Sync.Integration.Tests.csproj", "{1ACC151C-A655-472F-9177-996410A41665}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nimblesite.DataProvider.Migration.Core", "Migration", "{C7F49633-8D5E-7E19-1580-A6459B2EAE66}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nimblesite.DataProvider.Migration.Core", "Nimblesite.DataProvider.Migration.Core", "{C7F49633-8D5E-7E19-1580-A6459B2EAE66}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Migration.Core", "Migration\Nimblesite.DataProvider.Migration.Core\Nimblesite.DataProvider.Migration.Core.csproj", "{5EB8D367-90CC-473F-8F89-B898D8F8BD43}"
 EndProject
@@ -82,8 +82,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Migration.Cli", "Migration\Nimblesite.DataProvider.Migration.Cli\Nimblesite.DataProvider.Migration.Cli.csproj", "{57572A45-33CD-4928-9C30-13480AEDB313}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Postgres.Cli", "DataProvider\Nimblesite.DataProvider.Postgres.Cli\Nimblesite.DataProvider.Postgres.Cli.csproj", "{A8A70E6D-1D43-437F-9971-44A4FA1BDD74}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Schema.Export.Cli", "Migration\Nimblesite.DataProvider.Schema.Export.Cli\Nimblesite.DataProvider.Schema.Export.Cli.csproj", "{0858FE19-C59B-4A77-B76E-7053E8AFCC8D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.Cli.SQLite", "Lql\Nimblesite.Lql.Cli.SQLite\Nimblesite.Lql.Cli.SQLite.csproj", "{1AE87774-E914-40BC-95BA-56FB45D78C0D}"
 EndProject
@@ -511,18 +509,6 @@ Global
 		{A8A70E6D-1D43-437F-9971-44A4FA1BDD74}.Release|x64.Build.0 = Release|Any CPU
 		{A8A70E6D-1D43-437F-9971-44A4FA1BDD74}.Release|x86.ActiveCfg = Release|Any CPU
 		{A8A70E6D-1D43-437F-9971-44A4FA1BDD74}.Release|x86.Build.0 = Release|Any CPU
-		{0858FE19-C59B-4A77-B76E-7053E8AFCC8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0858FE19-C59B-4A77-B76E-7053E8AFCC8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0858FE19-C59B-4A77-B76E-7053E8AFCC8D}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{0858FE19-C59B-4A77-B76E-7053E8AFCC8D}.Debug|x64.Build.0 = Debug|Any CPU
-		{0858FE19-C59B-4A77-B76E-7053E8AFCC8D}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{0858FE19-C59B-4A77-B76E-7053E8AFCC8D}.Debug|x86.Build.0 = Debug|Any CPU
-		{0858FE19-C59B-4A77-B76E-7053E8AFCC8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0858FE19-C59B-4A77-B76E-7053E8AFCC8D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0858FE19-C59B-4A77-B76E-7053E8AFCC8D}.Release|x64.ActiveCfg = Release|Any CPU
-		{0858FE19-C59B-4A77-B76E-7053E8AFCC8D}.Release|x64.Build.0 = Release|Any CPU
-		{0858FE19-C59B-4A77-B76E-7053E8AFCC8D}.Release|x86.ActiveCfg = Release|Any CPU
-		{0858FE19-C59B-4A77-B76E-7053E8AFCC8D}.Release|x86.Build.0 = Release|Any CPU
 		{1AE87774-E914-40BC-95BA-56FB45D78C0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1AE87774-E914-40BC-95BA-56FB45D78C0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1AE87774-E914-40BC-95BA-56FB45D78C0D}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -610,7 +596,6 @@ Global
 		{2FD305AC-927E-4D24-9FA6-923C30E4E4A8} = {048F5F03-6DDC-C04F-70D5-B8139DC8E373}
 		{57572A45-33CD-4928-9C30-13480AEDB313} = {C7F49633-8D5E-7E19-1580-A6459B2EAE66}
 		{A8A70E6D-1D43-437F-9971-44A4FA1BDD74} = {43BAF0A3-C050-BE83-B489-7FC6F9FDE235}
-		{0858FE19-C59B-4A77-B76E-7053E8AFCC8D} = {C7F49633-8D5E-7E19-1580-A6459B2EAE66}
 		{1AE87774-E914-40BC-95BA-56FB45D78C0D} = {54B846BA-A27D-B76F-8730-402A5742FF43}
 		{6AB2EA96-4A75-49DB-AC65-B247BBFAE9A3} = {54B846BA-A27D-B76F-8730-402A5742FF43}
 		{B0104C42-1B46-4CA5-9E91-A5F09D7E5B92} = {54B846BA-A27D-B76F-8730-402A5742FF43}

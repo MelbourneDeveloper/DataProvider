@@ -67,19 +67,19 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
     {
         var result = PostgresSyncLogRepository.FetchChanges(_conn, 0, 100);
 
-        Assert.IsType<Nimblesite.Sync.CoreLogListOk>(result);
-        var list = ((Nimblesite.Sync.CoreLogListOk)result).Value;
+        Assert.IsType<SyncLogListOk>(result);
+        var list = ((SyncLogListOk)result).Value;
         Assert.Empty(list);
     }
 
     [Fact]
     public void Insert_And_FetchChanges_RoundTrips()
     {
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             0,
             "TestTable",
             "{\"Id\":\"t1\"}",
-            Nimblesite.Sync.CoreOperation.Insert,
+            SyncOperation.Insert,
             "{\"Id\":\"t1\",\"Name\":\"Test\"}",
             "test-origin",
             DateTime.UtcNow.ToString("O")
@@ -89,12 +89,12 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         Assert.IsType<BoolSyncOk>(insertResult);
 
         var fetchResult = PostgresSyncLogRepository.FetchChanges(_conn, 0, 100);
-        Assert.IsType<Nimblesite.Sync.CoreLogListOk>(fetchResult);
-        var list = ((Nimblesite.Sync.CoreLogListOk)fetchResult).Value;
+        Assert.IsType<SyncLogListOk>(fetchResult);
+        var list = ((SyncLogListOk)fetchResult).Value;
         Assert.Single(list);
         Assert.Equal("TestTable", list[0].TableName);
         Assert.Equal("{\"Id\":\"t1\"}", list[0].PkValue);
-        Assert.Equal(Nimblesite.Sync.CoreOperation.Insert, list[0].Operation);
+        Assert.Equal(SyncOperation.Insert, list[0].Operation);
     }
 
     [Fact]
@@ -103,11 +103,11 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         // Insert 3 entries
         for (var i = 1; i <= 3; i++)
         {
-            var entry = new Nimblesite.Sync.CoreLogEntry(
+            var entry = new SyncLogEntry(
                 0,
                 "TestTable",
                 $"{{\"Id\":\"t{i}\"}}",
-                Nimblesite.Sync.CoreOperation.Insert,
+                SyncOperation.Insert,
                 $"{{\"Id\":\"t{i}\",\"Name\":\"Test {i}\"}}",
                 "test-origin",
                 DateTime.UtcNow.ToString("O")
@@ -117,17 +117,17 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
 
         // Fetch from version 0 - should get all 3
         var all = PostgresSyncLogRepository.FetchChanges(_conn, 0, 100);
-        var allList = ((Nimblesite.Sync.CoreLogListOk)all).Value;
+        var allList = ((SyncLogListOk)all).Value;
         Assert.Equal(3, allList.Count);
 
         // Fetch from version 1 - should get 2
         var from1 = PostgresSyncLogRepository.FetchChanges(_conn, 1, 100);
-        var from1List = ((Nimblesite.Sync.CoreLogListOk)from1).Value;
+        var from1List = ((SyncLogListOk)from1).Value;
         Assert.Equal(2, from1List.Count);
 
         // Fetch from version 2 - should get 1
         var from2 = PostgresSyncLogRepository.FetchChanges(_conn, 2, 100);
-        var from2List = ((Nimblesite.Sync.CoreLogListOk)from2).Value;
+        var from2List = ((SyncLogListOk)from2).Value;
         Assert.Single(from2List);
     }
 
@@ -137,11 +137,11 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         // Insert 10 entries
         for (var i = 1; i <= 10; i++)
         {
-            var entry = new Nimblesite.Sync.CoreLogEntry(
+            var entry = new SyncLogEntry(
                 0,
                 "TestTable",
                 $"{{\"Id\":\"t{i}\"}}",
-                Nimblesite.Sync.CoreOperation.Insert,
+                SyncOperation.Insert,
                 $"{{\"Id\":\"t{i}\",\"Name\":\"Test {i}\"}}",
                 "test-origin",
                 DateTime.UtcNow.ToString("O")
@@ -150,7 +150,7 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         }
 
         var limited = PostgresSyncLogRepository.FetchChanges(_conn, 0, 5);
-        var list = ((Nimblesite.Sync.CoreLogListOk)limited).Value;
+        var list = ((SyncLogListOk)limited).Value;
         Assert.Equal(5, list.Count);
     }
 
@@ -170,11 +170,11 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         // Insert 3 entries
         for (var i = 1; i <= 3; i++)
         {
-            var entry = new Nimblesite.Sync.CoreLogEntry(
+            var entry = new SyncLogEntry(
                 0,
                 "TestTable",
                 $"{{\"Id\":\"t{i}\"}}",
-                Nimblesite.Sync.CoreOperation.Insert,
+                SyncOperation.Insert,
                 $"{{\"Id\":\"t{i}\",\"Name\":\"Test {i}\"}}",
                 "test-origin",
                 DateTime.UtcNow.ToString("O")
@@ -224,16 +224,16 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
     [Fact]
     public void Insert_AllOperationTypes()
     {
-        var operations = new[] { Nimblesite.Sync.CoreOperation.Insert, Nimblesite.Sync.CoreOperation.Update, Nimblesite.Sync.CoreOperation.Delete };
+        var operations = new[] { SyncOperation.Insert, SyncOperation.Update, SyncOperation.Delete };
 
         foreach (var op in operations)
         {
-            var entry = new Nimblesite.Sync.CoreLogEntry(
+            var entry = new SyncLogEntry(
                 0,
                 "TestTable",
                 $"{{\"Id\":\"op{op}\"}}",
                 op,
-                op == Nimblesite.Sync.CoreOperation.Delete ? null : $"{{\"Id\":\"op{op}\",\"Name\":\"Test\"}}",
+                op == SyncOperation.Delete ? null : $"{{\"Id\":\"op{op}\",\"Name\":\"Test\"}}",
                 "test-origin",
                 DateTime.UtcNow.ToString("O")
             );
@@ -242,12 +242,12 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         }
 
         var fetchResult = PostgresSyncLogRepository.FetchChanges(_conn, 0, 100);
-        var list = ((Nimblesite.Sync.CoreLogListOk)fetchResult).Value;
+        var list = ((SyncLogListOk)fetchResult).Value;
         Assert.Equal(3, list.Count);
 
-        Assert.Contains(list, e => e.Operation == Nimblesite.Sync.CoreOperation.Insert);
-        Assert.Contains(list, e => e.Operation == Nimblesite.Sync.CoreOperation.Update);
-        Assert.Contains(list, e => e.Operation == Nimblesite.Sync.CoreOperation.Delete);
+        Assert.Contains(list, e => e.Operation == SyncOperation.Insert);
+        Assert.Contains(list, e => e.Operation == SyncOperation.Update);
+        Assert.Contains(list, e => e.Operation == SyncOperation.Delete);
     }
 
     #endregion
@@ -259,15 +259,15 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
     {
         var result = PostgresSyncClientRepository.GetAll(_conn);
 
-        Assert.IsType<Nimblesite.Sync.CoreClientListOk>(result);
-        var list = ((Nimblesite.Sync.CoreClientListOk)result).Value;
+        Assert.IsType<SyncClientListOk>(result);
+        var list = ((SyncClientListOk)result).Value;
         Assert.Empty(list);
     }
 
     [Fact]
     public void Upsert_And_GetAll_RoundTrips()
     {
-        var client = new Nimblesite.Sync.CoreClient(
+        var client = new SyncClient(
             "client-001",
             10,
             DateTime.UtcNow.ToString("O"),
@@ -278,8 +278,8 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         Assert.IsType<BoolSyncOk>(upsertResult);
 
         var getResult = PostgresSyncClientRepository.GetAll(_conn);
-        Assert.IsType<Nimblesite.Sync.CoreClientListOk>(getResult);
-        var list = ((Nimblesite.Sync.CoreClientListOk)getResult).Value;
+        Assert.IsType<SyncClientListOk>(getResult);
+        var list = ((SyncClientListOk)getResult).Value;
         Assert.Single(list);
         Assert.Equal("client-001", list[0].OriginId);
         Assert.Equal(10, list[0].LastSyncVersion);
@@ -290,15 +290,15 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
     {
         var result = PostgresSyncClientRepository.GetByOrigin(_conn, "nonexistent");
 
-        Assert.IsType<Nimblesite.Sync.CoreClientOk>(result);
-        var client = ((Nimblesite.Sync.CoreClientOk)result).Value;
+        Assert.IsType<SyncClientOk>(result);
+        var client = ((SyncClientOk)result).Value;
         Assert.Null(client);
     }
 
     [Fact]
     public void GetByOrigin_Found_ReturnsClient()
     {
-        var client = new Nimblesite.Sync.CoreClient(
+        var client = new SyncClient(
             "client-002",
             20,
             DateTime.UtcNow.ToString("O"),
@@ -307,8 +307,8 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         PostgresSyncClientRepository.Upsert(_conn, client);
 
         var result = PostgresSyncClientRepository.GetByOrigin(_conn, "client-002");
-        Assert.IsType<Nimblesite.Sync.CoreClientOk>(result);
-        var found = ((Nimblesite.Sync.CoreClientOk)result).Value;
+        Assert.IsType<SyncClientOk>(result);
+        var found = ((SyncClientOk)result).Value;
         Assert.NotNull(found);
         Assert.Equal("client-002", found.OriginId);
         Assert.Equal(20, found.LastSyncVersion);
@@ -317,7 +317,7 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
     [Fact]
     public void Upsert_UpdatesExisting()
     {
-        var client1 = new Nimblesite.Sync.CoreClient(
+        var client1 = new SyncClient(
             "client-003",
             10,
             DateTime.UtcNow.ToString("O"),
@@ -325,7 +325,7 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         );
         PostgresSyncClientRepository.Upsert(_conn, client1);
 
-        var client2 = new Nimblesite.Sync.CoreClient(
+        var client2 = new SyncClient(
             "client-003",
             50,
             DateTime.UtcNow.ToString("O"),
@@ -334,14 +334,14 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         PostgresSyncClientRepository.Upsert(_conn, client2);
 
         var result = PostgresSyncClientRepository.GetByOrigin(_conn, "client-003");
-        var found = ((Nimblesite.Sync.CoreClientOk)result).Value!;
+        var found = ((SyncClientOk)result).Value!;
         Assert.Equal(50, found.LastSyncVersion);
     }
 
     [Fact]
     public void Delete_RemovesClient()
     {
-        var client = new Nimblesite.Sync.CoreClient(
+        var client = new SyncClient(
             "client-004",
             10,
             DateTime.UtcNow.ToString("O"),
@@ -353,7 +353,7 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         Assert.IsType<BoolSyncOk>(deleteResult);
 
         var getResult = PostgresSyncClientRepository.GetByOrigin(_conn, "client-004");
-        var found = ((Nimblesite.Sync.CoreClientOk)getResult).Value;
+        var found = ((SyncClientOk)getResult).Value;
         Assert.Null(found);
     }
 
@@ -379,9 +379,9 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
     {
         var clients = new[]
         {
-            new Nimblesite.Sync.CoreClient("c1", 100, DateTime.UtcNow.ToString("O"), DateTime.UtcNow.ToString("O")),
-            new Nimblesite.Sync.CoreClient("c2", 50, DateTime.UtcNow.ToString("O"), DateTime.UtcNow.ToString("O")),
-            new Nimblesite.Sync.CoreClient("c3", 75, DateTime.UtcNow.ToString("O"), DateTime.UtcNow.ToString("O")),
+            new SyncClient("c1", 100, DateTime.UtcNow.ToString("O"), DateTime.UtcNow.ToString("O")),
+            new SyncClient("c2", 50, DateTime.UtcNow.ToString("O"), DateTime.UtcNow.ToString("O")),
+            new SyncClient("c3", 75, DateTime.UtcNow.ToString("O"), DateTime.UtcNow.ToString("O")),
         };
 
         foreach (var client in clients)
@@ -399,9 +399,9 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
     {
         var clients = new[]
         {
-            new Nimblesite.Sync.CoreClient("c1", 100, DateTime.UtcNow.ToString("O"), DateTime.UtcNow.ToString("O")),
-            new Nimblesite.Sync.CoreClient("c2", 25, DateTime.UtcNow.ToString("O"), DateTime.UtcNow.ToString("O")),
-            new Nimblesite.Sync.CoreClient("c3", 50, DateTime.UtcNow.ToString("O"), DateTime.UtcNow.ToString("O")),
+            new SyncClient("c1", 100, DateTime.UtcNow.ToString("O"), DateTime.UtcNow.ToString("O")),
+            new SyncClient("c2", 25, DateTime.UtcNow.ToString("O"), DateTime.UtcNow.ToString("O")),
+            new SyncClient("c3", 50, DateTime.UtcNow.ToString("O"), DateTime.UtcNow.ToString("O")),
         };
 
         foreach (var client in clients)
@@ -410,7 +410,7 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
         }
 
         var result = PostgresSyncClientRepository.GetAll(_conn);
-        var list = ((Nimblesite.Sync.CoreClientListOk)result).Value;
+        var list = ((SyncClientListOk)result).Value;
 
         // Should be ordered by last_sync_version ASC
         Assert.Equal("c2", list[0].OriginId); // 25
@@ -564,11 +564,11 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
             """;
         createCmd.ExecuteNonQuery();
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             1,
             "test_person",
             "{\"id\":\"p1\"}",
-            Nimblesite.Sync.CoreOperation.Insert,
+            SyncOperation.Insert,
             "{\"id\":\"p1\",\"name\":\"Alice\"}",
             "test-origin",
             DateTime.UtcNow.ToString("O")
@@ -598,11 +598,11 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
             """;
         createCmd.ExecuteNonQuery();
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             1,
             "test_update",
             "{\"id\":\"u1\"}",
-            Nimblesite.Sync.CoreOperation.Update,
+            SyncOperation.Update,
             "{\"id\":\"u1\",\"name\":\"Updated\"}",
             "test-origin",
             DateTime.UtcNow.ToString("O")
@@ -631,11 +631,11 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
             """;
         createCmd.ExecuteNonQuery();
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             1,
             "test_delete",
             "{\"id\":\"d1\"}",
-            Nimblesite.Sync.CoreOperation.Delete,
+            SyncOperation.Delete,
             null,
             "test-origin",
             DateTime.UtcNow.ToString("O")
@@ -666,11 +666,11 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
             """;
         createCmd.ExecuteNonQuery();
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             1,
             "test_upsert",
             "{\"id\":\"x1\"}",
-            Nimblesite.Sync.CoreOperation.Insert,
+            SyncOperation.Insert,
             "{\"id\":\"x1\",\"name\":\"Upserted\"}",
             "test-origin",
             DateTime.UtcNow.ToString("O")
@@ -697,11 +697,11 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
             """;
         createCmd.ExecuteNonQuery();
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             1,
             "test_update_upsert",
             "{\"id\":\"new1\"}",
-            Nimblesite.Sync.CoreOperation.Update,
+            SyncOperation.Update,
             "{\"id\":\"new1\",\"name\":\"NewRecord\"}",
             "test-origin",
             DateTime.UtcNow.ToString("O")
@@ -731,11 +731,11 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
             """;
         createCmd.ExecuteNonQuery();
 
-        var entry = new Nimblesite.Sync.CoreLogEntry(
+        var entry = new SyncLogEntry(
             1,
             "test_child",
             "{\"id\":\"c1\"}",
-            Nimblesite.Sync.CoreOperation.Insert,
+            SyncOperation.Insert,
             "{\"id\":\"c1\",\"parent_id\":\"nonexistent\"}",
             "test-origin",
             DateTime.UtcNow.ToString("O")
@@ -806,9 +806,9 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
 
         // Check sync log
         var changes = PostgresSyncLogRepository.FetchChanges(_conn, 0, 100);
-        var list = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var list = ((SyncLogListOk)changes).Value;
         var insertEntry = list.FirstOrDefault(e =>
-            e.TableName == "test_log_insert" && e.Operation == Nimblesite.Sync.CoreOperation.Insert
+            e.TableName == "test_log_insert" && e.Operation == SyncOperation.Insert
         );
 
         Assert.NotNull(insertEntry);
@@ -843,9 +843,9 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
 
         // Check sync log
         var changes = PostgresSyncLogRepository.FetchChanges(_conn, maxBefore, 100);
-        var list = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var list = ((SyncLogListOk)changes).Value;
         var updateEntry = list.FirstOrDefault(e =>
-            e.TableName == "test_log_update" && e.Operation == Nimblesite.Sync.CoreOperation.Update
+            e.TableName == "test_log_update" && e.Operation == SyncOperation.Update
         );
 
         Assert.NotNull(updateEntry);
@@ -878,9 +878,9 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
 
         // Check sync log
         var changes = PostgresSyncLogRepository.FetchChanges(_conn, maxBefore, 100);
-        var list = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var list = ((SyncLogListOk)changes).Value;
         var deleteEntry = list.FirstOrDefault(e =>
-            e.TableName == "test_log_delete" && e.Operation == Nimblesite.Sync.CoreOperation.Delete
+            e.TableName == "test_log_delete" && e.Operation == SyncOperation.Delete
         );
 
         Assert.NotNull(deleteEntry);
@@ -916,7 +916,7 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
 
         // Check sync log - should be empty
         var changes = PostgresSyncLogRepository.FetchChanges(_conn, maxBefore, 100);
-        var list = ((Nimblesite.Sync.CoreLogListOk)changes).Value;
+        var list = ((SyncLogListOk)changes).Value;
         Assert.Empty(list);
 
         // Disable and insert
@@ -929,7 +929,7 @@ public sealed class PostgresRepositoryTests : IAsyncLifetime
 
         // Check sync log - should have entry
         var changes2 = PostgresSyncLogRepository.FetchChanges(_conn, maxBefore, 100);
-        var list2 = ((Nimblesite.Sync.CoreLogListOk)changes2).Value;
+        var list2 = ((SyncLogListOk)changes2).Value;
         Assert.Single(list2);
     }
 

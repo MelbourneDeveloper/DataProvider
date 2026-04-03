@@ -17,20 +17,20 @@ public sealed class HashVerifierTests
     {
         var entries = new[]
         {
-            new Nimblesite.Sync.CoreLogEntry(
+            new SyncLogEntry(
                 1,
                 "Person",
                 "{\"Id\":\"1\"}",
-                Nimblesite.Sync.CoreOperation.Insert,
+                SyncOperation.Insert,
                 "{\"Id\":\"1\",\"Name\":\"Alice\"}",
                 "origin-1",
                 "2025-01-01T00:00:00.000Z"
             ),
-            new Nimblesite.Sync.CoreLogEntry(
+            new SyncLogEntry(
                 2,
                 "Person",
                 "{\"Id\":\"2\"}",
-                Nimblesite.Sync.CoreOperation.Insert,
+                SyncOperation.Insert,
                 "{\"Id\":\"2\",\"Name\":\"Bob\"}",
                 "origin-1",
                 "2025-01-01T00:00:01.000Z"
@@ -48,11 +48,11 @@ public sealed class HashVerifierTests
     {
         var entries1 = new[]
         {
-            new Nimblesite.Sync.CoreLogEntry(
+            new SyncLogEntry(
                 1,
                 "Person",
                 "{\"Id\":\"1\"}",
-                Nimblesite.Sync.CoreOperation.Insert,
+                SyncOperation.Insert,
                 "{\"Id\":\"1\",\"Name\":\"Alice\"}",
                 "origin-1",
                 "2025-01-01T00:00:00.000Z"
@@ -61,11 +61,11 @@ public sealed class HashVerifierTests
 
         var entries2 = new[]
         {
-            new Nimblesite.Sync.CoreLogEntry(
+            new SyncLogEntry(
                 1,
                 "Person",
                 "{\"Id\":\"1\"}",
-                Nimblesite.Sync.CoreOperation.Insert,
+                SyncOperation.Insert,
                 "{\"Id\":\"1\",\"Name\":\"Bob\"}",
                 "origin-1",
                 "2025-01-01T00:00:00.000Z"
@@ -83,11 +83,11 @@ public sealed class HashVerifierTests
     {
         var entries = new[]
         {
-            new Nimblesite.Sync.CoreLogEntry(
+            new SyncLogEntry(
                 1,
                 "Person",
                 "{\"Id\":\"1\"}",
-                Nimblesite.Sync.CoreOperation.Delete,
+                SyncOperation.Delete,
                 null,
                 "origin-1",
                 "2025-01-01T00:00:00.000Z"
@@ -153,7 +153,7 @@ public sealed class HashVerifierTests
 
         Assert.IsType<BoolSyncError>(result);
         var failure = (BoolSyncError)result;
-        Assert.IsType<Nimblesite.Sync.CoreErrorHashMismatch>(failure.Value);
+        Assert.IsType<SyncErrorHashMismatch>(failure.Value);
     }
 
     [Fact]

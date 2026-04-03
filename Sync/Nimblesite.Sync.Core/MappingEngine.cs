@@ -44,7 +44,7 @@ public sealed record MappingSkipped(string Reason) : MappingResult;
 /// Mapping failed with an error.
 /// </summary>
 /// <param name="Error">Error that occurred.</param>
-public sealed record MappingFailed(Nimblesite.Sync.CoreError Error) : MappingResult;
+public sealed record MappingFailed(SyncError Error) : MappingResult;
 
 /// <summary>
 /// Engine for applying data mappings to sync log entries.
@@ -62,8 +62,8 @@ internal static class MappingEngine
     /// <param name="logger">Logger for diagnostics.</param>
     /// <returns>Mapping result.</returns>
     public static MappingResult ApplyMapping(
-        Nimblesite.Sync.CoreLogEntry entry,
-        Nimblesite.Sync.CoreMappingConfig config,
+        SyncLogEntry entry,
+        SyncMappingConfig config,
         MappingDirection direction,
         ILogger logger
     )
@@ -100,7 +100,7 @@ internal static class MappingEngine
     /// <returns>Matching mapping or null.</returns>
     public static TableMapping? FindMapping(
         string tableName,
-        Nimblesite.Sync.CoreMappingConfig config,
+        SyncMappingConfig config,
         MappingDirection direction
     ) =>
         config.Mappings.FirstOrDefault(m =>
@@ -112,7 +112,7 @@ internal static class MappingEngine
     /// Applies a single-target mapping to an entry.
     /// </summary>
     private static MappingResult ApplySingleTargetMapping(
-        Nimblesite.Sync.CoreLogEntry entry,
+        SyncLogEntry entry,
         TableMapping mapping,
         ILogger logger
     )
@@ -135,7 +135,7 @@ internal static class MappingEngine
                 entry.Version,
                 entry.TableName
             );
-            return new MappingFailed(new Nimblesite.Sync.CoreErrorDatabase($"JSON mapping error: {ex.Message}"));
+            return new MappingFailed(new SyncErrorDatabase($"JSON mapping error: {ex.Message}"));
         }
     }
 
@@ -144,7 +144,7 @@ internal static class MappingEngine
     /// Per spec Section 7.3 order-split example.
     /// </summary>
     private static MappingResult ApplyMultiTargetMapping(
-        Nimblesite.Sync.CoreLogEntry entry,
+        SyncLogEntry entry,
         TableMapping mapping,
         ILogger logger
     )
@@ -152,7 +152,7 @@ internal static class MappingEngine
         if (mapping.Targets is null || mapping.Targets.Count == 0)
         {
             return new MappingFailed(
-                new Nimblesite.Sync.CoreErrorDatabase($"Multi-target mapping {mapping.Id} has no targets")
+                new SyncErrorDatabase($"Multi-target mapping {mapping.Id} has no targets")
             );
         }
 
@@ -173,7 +173,7 @@ internal static class MappingEngine
         catch (JsonException ex)
         {
             logger.LogError(ex, "JSON error in multi-target mapping {Id}", mapping.Id);
-            return new MappingFailed(new Nimblesite.Sync.CoreErrorDatabase($"JSON mapping error: {ex.Message}"));
+            return new MappingFailed(new SyncErrorDatabase($"JSON mapping error: {ex.Message}"));
         }
     }
 
@@ -271,7 +271,7 @@ internal static class MappingEngine
         colMap.Transform switch
         {
             TransformType.Constant => colMap.Value,
-            TransformType.Nimblesite.Lql.Core => ApplyLqlTransform(source, colMap, logger),
+            TransformType.Lql => ApplyLqlTransform(source, colMap, logger),
             _ when colMap.Source is not null => source.TryGetProperty(colMap.Source, out var prop)
                 ? JsonElementToObject(prop)
                 : null,
@@ -280,7 +280,7 @@ internal static class MappingEngine
 
     /// <summary>
     /// Applies LQL transformation to a value.
-    /// Uses Nimblesite.Lql.CoreExpressionEvaluator for simple transforms.
+    /// Uses LqlExpressionEvaluator for simple transforms.
     /// </summary>
     private static object? ApplyLqlTransform(
         JsonElement source,
@@ -288,7 +288,7 @@ internal static class MappingEngine
         ILogger logger
     )
     {
-        if (string.IsNullOrWhiteSpace(colMap.Nimblesite.Lql.Core))
+        if (string.IsNullOrWhiteSpace(colMap.Lql))
         {
             logger.LogWarning(
                 "LQL transform has empty expression for column {Target}",
@@ -303,8 +303,8 @@ internal static class MappingEngine
 
         try
         {
-            var result = Nimblesite.Lql.CoreExpressionEvaluator.Evaluate(colMap.Nimblesite.Lql.Core, source);
-            logger.LogDebug("LQL transform '{Nimblesite.Lql.Core}' evaluated to '{Result}'", colMap.Nimblesite.Lql.Core, result);
+            var result = LqlExpressionEvaluator.Evaluate(colMap.Lql, source);
+            logger.LogDebug("LQL transform '{Nimblesite.Lql.Core}' evaluated to '{Result}'", colMap.Lql, result);
             return result;
         }
         catch (Exception ex)
@@ -312,7 +312,7 @@ internal static class MappingEngine
             logger.LogWarning(
                 ex,
                 "LQL transform failed for expression '{Nimblesite.Lql.Core}', falling back to source column",
-                colMap.Nimblesite.Lql.Core
+                colMap.Lql
             );
 
             if (colMap.Source is not null && source.TryGetProperty(colMap.Source, out var prop))
@@ -349,7 +349,7 @@ internal static class MappingEngine
     /// <summary>
     /// Creates an identity-mapped entry (passthrough).
     /// </summary>
-    private static MappedEntry CreateIdentityMappedEntry(Nimblesite.Sync.CoreLogEntry entry) =>
+    private static MappedEntry CreateIdentityMappedEntry(SyncLogEntry entry) =>
         new(
             TargetTable: entry.TableName,
             TargetPkValue: entry.PkValue,

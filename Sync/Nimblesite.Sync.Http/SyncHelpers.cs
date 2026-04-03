@@ -10,12 +10,12 @@ namespace Nimblesite.Sync.Http;
 /// Helper methods for sync database operations.
 /// Static methods that work with both SQLite and PostgreSQL.
 /// </summary>
-public static class Nimblesite.Sync.CoreHelpers
+public static class SyncHelpers
 {
     /// <summary>
     /// Fetches changes from the sync log for the specified database type.
     /// </summary>
-    public static List<Nimblesite.Sync.CoreLogEntry> FetchChanges(
+    public static List<SyncLogEntry> FetchChanges(
         string connectionString,
         string dbType,
         long fromVersion,
@@ -40,7 +40,7 @@ public static class Nimblesite.Sync.CoreHelpers
     public static int ApplyChanges(
         string connectionString,
         string dbType,
-        List<Nimblesite.Sync.CoreLogEntryDto> changes,
+        List<SyncLogEntryDto> changes,
         string originId,
         ILogger logger
     ) =>
@@ -57,7 +57,7 @@ public static class Nimblesite.Sync.CoreHelpers
     public static bool UpsertClient(
         string connectionString,
         string dbType,
-        Nimblesite.Sync.CoreClient client,
+        SyncClient client,
         ILogger logger
     ) =>
         dbType.ToLowerInvariant() switch
@@ -78,7 +78,7 @@ public static class Nimblesite.Sync.CoreHelpers
             _ => throw new ArgumentException($"Unknown database type: {dbType}"),
         };
 
-    private static List<Nimblesite.Sync.CoreLogEntry> FetchChangesFromSqlite(
+    private static List<SyncLogEntry> FetchChangesFromSqlite(
         string connectionString,
         long fromVersion,
         int batchSize,
@@ -88,11 +88,11 @@ public static class Nimblesite.Sync.CoreHelpers
         using var conn = new SqliteConnection(connectionString);
         conn.Open();
         return SQLite
-            .Nimblesite.Sync.CoreLogRepository.FetchChanges(conn, fromVersion, batchSize)
-            .Match<List<Nimblesite.Sync.CoreLogEntry>>(ok => [.. ok], _ => []);
+            .SyncLogRepository.FetchChanges(conn, fromVersion, batchSize)
+            .Match<List<SyncLogEntry>>(ok => [.. ok], _ => []);
     }
 
-    private static List<Nimblesite.Sync.CoreLogEntry> FetchChangesFromPostgres(
+    private static List<SyncLogEntry> FetchChangesFromPostgres(
         string connectionString,
         long fromVersion,
         int batchSize,
@@ -103,12 +103,12 @@ public static class Nimblesite.Sync.CoreHelpers
         conn.Open();
         return Postgres
             .PostgresSyncLogRepository.FetchChanges(conn, fromVersion, batchSize)
-            .Match<List<Nimblesite.Sync.CoreLogEntry>>(ok => [.. ok], _ => []);
+            .Match<List<SyncLogEntry>>(ok => [.. ok], _ => []);
     }
 
     private static int ApplyChangesToSqlite(
         string connectionString,
-        List<Nimblesite.Sync.CoreLogEntryDto> changes,
+        List<SyncLogEntryDto> changes,
         string originId,
         ILogger logger
     )
@@ -116,7 +116,7 @@ public static class Nimblesite.Sync.CoreHelpers
         using var conn = new SqliteConnection(connectionString);
         conn.Open();
 
-        SQLite.Nimblesite.Sync.CoreSessionManager.EnableSuppression(conn);
+        SQLite.SyncSessionManager.EnableSuppression(conn);
 
         try
         {
@@ -126,31 +126,31 @@ public static class Nimblesite.Sync.CoreHelpers
                 if (change.Origin == originId)
                     continue;
 
-                var entry = new Nimblesite.Sync.CoreLogEntry(
+                var entry = new SyncLogEntry(
                     change.Version,
                     change.TableName,
                     change.PkValue,
-                    Enum.Parse<Nimblesite.Sync.CoreOperation>(change.Operation, true),
+                    Enum.Parse<SyncOperation>(change.Operation, true),
                     change.Payload,
                     change.Origin,
                     change.Timestamp
                 );
 
                 var result = SQLite.ChangeApplierSQLite.ApplyChange(conn, entry);
-                if (result is Outcome.Result<bool, Nimblesite.Sync.CoreError>.Ok<bool, Nimblesite.Sync.CoreError>)
+                if (result is Outcome.Result<bool, SyncError>.Ok<bool, SyncError>)
                     applied++;
             }
             return applied;
         }
         finally
         {
-            SQLite.Nimblesite.Sync.CoreSessionManager.DisableSuppression(conn);
+            SQLite.SyncSessionManager.DisableSuppression(conn);
         }
     }
 
     private static int ApplyChangesToPostgres(
         string connectionString,
-        List<Nimblesite.Sync.CoreLogEntryDto> changes,
+        List<SyncLogEntryDto> changes,
         string originId,
         ILogger logger
     )
@@ -168,18 +168,18 @@ public static class Nimblesite.Sync.CoreHelpers
                 if (change.Origin == originId)
                     continue;
 
-                var entry = new Nimblesite.Sync.CoreLogEntry(
+                var entry = new SyncLogEntry(
                     change.Version,
                     change.TableName,
                     change.PkValue,
-                    Enum.Parse<Nimblesite.Sync.CoreOperation>(change.Operation, true),
+                    Enum.Parse<SyncOperation>(change.Operation, true),
                     change.Payload,
                     change.Origin,
                     change.Timestamp
                 );
 
                 var result = Postgres.PostgresChangeApplier.ApplyChange(conn, entry, logger);
-                if (result is Outcome.Result<bool, Nimblesite.Sync.CoreError>.Ok<bool, Nimblesite.Sync.CoreError>)
+                if (result is Outcome.Result<bool, SyncError>.Ok<bool, SyncError>)
                     applied++;
             }
             return applied;
@@ -192,33 +192,33 @@ public static class Nimblesite.Sync.CoreHelpers
 
     private static bool UpsertClientSqlite(
         string connectionString,
-        Nimblesite.Sync.CoreClient client,
+        SyncClient client,
         ILogger logger
     )
     {
         using var conn = new SqliteConnection(connectionString);
         conn.Open();
-        var result = SQLite.Nimblesite.Sync.CoreClientRepository.Upsert(conn, client);
-        return result is Outcome.Result<bool, Nimblesite.Sync.CoreError>.Ok<bool, Nimblesite.Sync.CoreError>;
+        var result = SQLite.SyncClientRepository.Upsert(conn, client);
+        return result is Outcome.Result<bool, SyncError>.Ok<bool, SyncError>;
     }
 
     private static bool UpsertClientPostgres(
         string connectionString,
-        Nimblesite.Sync.CoreClient client,
+        SyncClient client,
         ILogger logger
     )
     {
         using var conn = new NpgsqlConnection(connectionString);
         conn.Open();
         var result = Postgres.PostgresSyncClientRepository.Upsert(conn, client);
-        return result is Outcome.Result<bool, Nimblesite.Sync.CoreError>.Ok<bool, Nimblesite.Sync.CoreError>;
+        return result is Outcome.Result<bool, SyncError>.Ok<bool, SyncError>;
     }
 
     private static long GetMaxVersionSqlite(string connectionString, ILogger logger)
     {
         using var conn = new SqliteConnection(connectionString);
         conn.Open();
-        return SQLite.Nimblesite.Sync.CoreLogRepository.GetMaxVersion(conn).Match(ok => ok, _ => 0);
+        return SQLite.SyncLogRepository.GetMaxVersion(conn).Match(ok => ok, _ => 0);
     }
 
     private static long GetMaxVersionPostgres(string connectionString, ILogger logger)

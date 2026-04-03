@@ -3,7 +3,7 @@ namespace Nimblesite.Lql.Core;
 /// <summary>
 /// Extension methods for working with nodes and steps.
 /// </summary>
-internal static class Nimblesite.Lql.CoreExtensions
+internal static class LqlExtensions
 {
     /// <summary>
     /// Wraps a node in an identity step.
