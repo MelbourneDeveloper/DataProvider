@@ -1,6 +1,6 @@
 using System.Globalization;
-using Migration;
-using Migration.Postgres;
+using Nimblesite.DataProvider.Migration.Core;
+using Nimblesite.DataProvider.Migration.Postgres;
 using Npgsql;
 
 namespace Gatekeeper.Api.Tests;

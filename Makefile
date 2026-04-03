@@ -1,6 +1,6 @@
 # agent-pmo:d75d5c8
 # =============================================================================
-# Standard Makefile — DataProvider
+# Standard Makefile — Nimblesite.DataProvider.Core
 # Cross-platform: Linux, macOS, Windows (via GNU Make)
 # All targets are language-agnostic. Add language-specific helpers below.
 # =============================================================================
@@ -84,7 +84,7 @@ setup:
 
 # =============================================================================
 # LANGUAGE-SPECIFIC IMPLEMENTATIONS
-# DataProvider is a multi-language repo: C#/.NET (primary), Rust, TypeScript
+# Nimblesite.DataProvider.Core is a multi-language repo: C#/.NET (primary), Rust, TypeScript
 # =============================================================================
 
 _build: _build_dotnet _build_rust _build_ts

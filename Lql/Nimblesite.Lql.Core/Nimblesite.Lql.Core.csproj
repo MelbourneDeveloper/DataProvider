@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <PackageId>Nimblesite.Lql.Core</PackageId>
+    <!-- CS3021: CLSCompliant not needed (generated ANTLR code) -->
+    <NoWarn>CA1515;CA1866;CA1310;CA1834;CS3021</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- ANTLR runtime (generated parser files are checked into git) -->
+    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
+  </ItemGroup>
+</Project>

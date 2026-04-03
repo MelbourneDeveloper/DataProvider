@@ -1,0 +1,76 @@
+using Outcome;
+using Selecta;
+
+namespace Nimblesite.Lql.SQLite;
+
+/// <summary>
+/// SQLite-specific extension methods for SelectStatement
+/// </summary>
+public static class SqlStatementExtensionsSQLite
+{
+    /// <summary>
+    /// Converts a Nimblesite.Lql.CoreStatement to SQLite syntax
+    /// TODO: this should not return a result because it can't fail
+    /// </summary>
+    /// <param name="statement">The Nimblesite.Lql.CoreStatement to convert</param>
+    /// <returns>A Result containing either SQLite SQL string or a SqlError</returns>
+    public static Result<string, SqlError> ToSQLite(this Nimblesite.Lql.CoreStatement statement)
+    {
+        ArgumentNullException.ThrowIfNull(statement);
+
+        if (statement.ParseError != null)
+        {
+            return new Result<string, SqlError>.Error<string, SqlError>(statement.ParseError);
+        }
+
+        if (statement.AstNode == null)
+        {
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("No AST node found in statement")
+            );
+        }
+
+        try
+        {
+            if (statement.AstNode is Pipeline pipeline)
+            {
+                var sql = ConvertPipelineToSQLite(pipeline);
+                return new Result<string, SqlError>.Ok<string, SqlError>(sql);
+            }
+
+            var unknownSql = statement.AstNode is Identifier identifier
+                ? $"SELECT *\nFROM {identifier.Name}"
+                : "-- Unknown AST node type";
+            return new Result<string, SqlError>.Ok<string, SqlError>(unknownSql);
+        }
+        catch (Exception ex)
+        {
+            return new Result<string, SqlError>.Error<string, SqlError>(SqlError.FromException(ex));
+        }
+    }
+
+    /// <summary>
+    /// Converts a Selecta.SelectStatement to SQLite syntax
+    /// TODO: this should not return a result because it can't fail
+    /// </summary>
+    /// <param name="statement">The SelectStatement to convert</param>
+    /// <returns>A Result containing either SQLite SQL string or a SqlError</returns>
+    public static Result<string, SqlError> ToSQLite(this SelectStatement statement)
+    {
+        try
+        {
+            var sql = SQLiteContext.ToSQLiteSql(statement);
+            return new Result<string, SqlError>.Ok<string, SqlError>(sql);
+        }
+        catch (Exception ex)
+        {
+            return new Result<string, SqlError>.Error<string, SqlError>(SqlError.FromException(ex));
+        }
+    }
+
+    private static string ConvertPipelineToSQLite(Pipeline pipeline)
+    {
+        var context = new SQLiteContext();
+        return PipelineProcessor.ConvertPipelineToSql(pipeline, context);
+    }
+}

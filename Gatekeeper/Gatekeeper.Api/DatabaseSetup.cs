@@ -1,5 +1,5 @@
-using Migration;
-using Migration.Postgres;
+using Nimblesite.DataProvider.Migration.Core;
+using Nimblesite.DataProvider.Migration.Postgres;
 using InitError = Outcome.Result<bool, string>.Error<bool, string>;
 using InitOk = Outcome.Result<bool, string>.Ok<bool, string>;
 using InitResult = Outcome.Result<bool, string>;

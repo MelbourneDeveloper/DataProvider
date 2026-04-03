@@ -8,8 +8,8 @@
     <Authors>ChristianFindlay</Authors>
     <Company>MelbourneDeveloper</Company>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/MelbourneDeveloper/DataProvider</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/MelbourneDeveloper/DataProvider</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/MelbourneDeveloper/Nimblesite.DataProvider.Core</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/MelbourneDeveloper/Nimblesite.DataProvider.Core</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>

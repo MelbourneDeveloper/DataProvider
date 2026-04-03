@@ -1,8 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <PackageId>MelbourneDev.Lql.SQLite</PackageId>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="../Lql/Lql.csproj" />
-  </ItemGroup>
-</Project>

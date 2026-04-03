@@ -3,75 +3,75 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lql", "Lql", "{54B846BA-A27D-B76F-8730-402A5742FF43}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nimblesite.Lql.Core", "Lql", "{54B846BA-A27D-B76F-8730-402A5742FF43}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lql", "Lql\Lql\Lql.csproj", "{6A15D05D-A3F0-41C7-BCDC-A1A5390CD181}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.Core", "Lql\Nimblesite.Lql.Core\Nimblesite.Lql.Core.csproj", "{6A15D05D-A3F0-41C7-BCDC-A1A5390CD181}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lql.SQLite", "Lql\Lql.SQLite\Lql.SQLite.csproj", "{903D712A-27E0-4615-AB93-16083E5B3E3A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.SQLite", "Lql\Nimblesite.Lql.SQLite\Nimblesite.Lql.SQLite.csproj", "{903D712A-27E0-4615-AB93-16083E5B3E3A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lql.SqlServer", "Lql\Lql.SqlServer\Lql.SqlServer.csproj", "{AD717205-C676-4DF9-8095-4583BA342515}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.SqlServer", "Lql\Nimblesite.Lql.SqlServer\Nimblesite.Lql.SqlServer.csproj", "{AD717205-C676-4DF9-8095-4583BA342515}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lql.Tests", "Lql\Lql.Tests\Lql.Tests.csproj", "{707C273D-CCC9-4CF3-B234-F54B2AB3D178}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.Tests", "Lql\Nimblesite.Lql.Tests\Nimblesite.Lql.Tests.csproj", "{707C273D-CCC9-4CF3-B234-F54B2AB3D178}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LqlCli.SQLite.Tests", "Lql\LqlCli.SQLite.Tests\LqlCli.SQLite.Tests.csproj", "{DC406D52-3A4B-4632-AD67-462875C067D3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.Cli.SQLite.Tests", "Lql\Nimblesite.Lql.Cli.SQLite.Tests\Nimblesite.Lql.Cli.SQLite.Tests.csproj", "{DC406D52-3A4B-4632-AD67-462875C067D3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lql.Postgres", "Lql\Lql.Postgres\Lql.Postgres.csproj", "{9DF737C9-6EE5-4255-85C9-65337350DFDD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.Postgres", "Lql\Nimblesite.Lql.Postgres\Nimblesite.Lql.Postgres.csproj", "{9DF737C9-6EE5-4255-85C9-65337350DFDD}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DataProvider", "DataProvider", "{43BAF0A3-C050-BE83-B489-7FC6F9FDE235}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nimblesite.DataProvider.Core", "DataProvider", "{43BAF0A3-C050-BE83-B489-7FC6F9FDE235}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataProvider", "DataProvider\DataProvider\DataProvider.csproj", "{7D4F4EC0-C221-4BC9-8F8C-77BD4A3D39AA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Core", "DataProvider\Nimblesite.DataProvider.Core\Nimblesite.DataProvider.Core.csproj", "{7D4F4EC0-C221-4BC9-8F8C-77BD4A3D39AA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataProvider.Tests", "DataProvider\DataProvider.Tests\DataProvider.Tests.csproj", "{C1F8DBEE-EBA0-4C58-B7C1-F4BCC8E6674D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Tests", "DataProvider\Nimblesite.DataProvider.Tests\Nimblesite.DataProvider.Tests.csproj", "{C1F8DBEE-EBA0-4C58-B7C1-F4BCC8E6674D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataProvider.SQLite.Cli", "DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj", "{2B1441F1-4429-487C-9D0A-FC65B64BF43E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.SQLite.Cli", "DataProvider\Nimblesite.DataProvider.SQLite.Cli\Nimblesite.DataProvider.SQLite.Cli.csproj", "{2B1441F1-4429-487C-9D0A-FC65B64BF43E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataProvider.SQLite", "DataProvider\DataProvider.SQLite\DataProvider.SQLite.csproj", "{A7EC2050-FE5E-4BBD-AF5F-7F07D3688118}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.SQLite", "DataProvider\Nimblesite.DataProvider.SQLite\Nimblesite.DataProvider.SQLite.csproj", "{A7EC2050-FE5E-4BBD-AF5F-7F07D3688118}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataProvider.Example.Tests", "DataProvider\DataProvider.Example.Tests\DataProvider.Example.Tests.csproj", "{16FA9B36-CB2A-4B79-A3BE-937C94BF03F8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Example.Tests", "DataProvider\Nimblesite.DataProvider.Example.Tests\Nimblesite.DataProvider.Example.Tests.csproj", "{16FA9B36-CB2A-4B79-A3BE-937C94BF03F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataProvider.Example", "DataProvider\DataProvider.Example\DataProvider.Example.csproj", "{EA9A0385-249F-4141-AD03-D67649110A84}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Example", "DataProvider\Nimblesite.DataProvider.Example\Nimblesite.DataProvider.Example.csproj", "{EA9A0385-249F-4141-AD03-D67649110A84}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Lql.TypeProvider.FSharp", "Lql\Lql.TypeProvider.FSharp\Lql.TypeProvider.FSharp.fsproj", "{B1234567-89AB-CDEF-0123-456789ABCDEF}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nimblesite.Lql.TypeProvider.FSharp", "Lql\Nimblesite.Lql.TypeProvider.FSharp\Nimblesite.Lql.TypeProvider.FSharp.fsproj", "{B1234567-89AB-CDEF-0123-456789ABCDEF}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "DataProvider.SQLite.FSharp", "DataProvider\DataProvider.SQLite.FSharp\DataProvider.SQLite.FSharp.fsproj", "{D1234567-89AB-CDEF-0123-456789ABCDEF}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nimblesite.DataProvider.SQLite.FSharp", "DataProvider\Nimblesite.DataProvider.SQLite.FSharp\Nimblesite.DataProvider.SQLite.FSharp.fsproj", "{D1234567-89AB-CDEF-0123-456789ABCDEF}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DataProvider.Example.FSharp", "DataProvider\DataProvider.Example.FSharp\DataProvider.Example.FSharp.fsproj", "{5C11B1F1-F6FF-45B9-B037-EDD054EED3F3}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nimblesite.DataProvider.Example.FSharp", "DataProvider\Nimblesite.DataProvider.Example.FSharp\Nimblesite.DataProvider.Example.FSharp.fsproj", "{5C11B1F1-F6FF-45B9-B037-EDD054EED3F3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lql.Browser", "Lql\Lql.Browser\Lql.Browser.csproj", "{0D96933C-DE5D-472B-9E9F-68DD15B85CF7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.Browser", "Lql\Nimblesite.Lql.Browser\Nimblesite.Lql.Browser.csproj", "{0D96933C-DE5D-472B-9E9F-68DD15B85CF7}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sync", "Sync", "{5E63119C-E70B-5D45-ECC9-8CBACC584223}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nimblesite.Sync.Core", "Sync", "{5E63119C-E70B-5D45-ECC9-8CBACC584223}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync", "Sync\Sync\Sync.csproj", "{C0B4116E-0635-4597-971D-6B70229FA30A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sync.Core", "Sync\Nimblesite.Sync.Core\Nimblesite.Sync.Core.csproj", "{C0B4116E-0635-4597-971D-6B70229FA30A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync.SQLite", "Sync\Sync.SQLite\Sync.SQLite.csproj", "{9B303409-0052-45B9-8616-CC1ED80A5595}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sync.SQLite", "Sync\Nimblesite.Sync.SQLite\Nimblesite.Sync.SQLite.csproj", "{9B303409-0052-45B9-8616-CC1ED80A5595}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync.Tests", "Sync\Sync.Tests\Sync.Tests.csproj", "{50CFDEC4-66C8-4330-8D5F-9D96A764378B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sync.Tests", "Sync\Nimblesite.Sync.Tests\Nimblesite.Sync.Tests.csproj", "{50CFDEC4-66C8-4330-8D5F-9D96A764378B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync.SQLite.Tests", "Sync\Sync.SQLite.Tests\Sync.SQLite.Tests.csproj", "{3522A6C5-6205-4C7D-B805-84847035A921}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sync.SQLite.Tests", "Sync\Nimblesite.Sync.SQLite.Tests\Nimblesite.Sync.SQLite.Tests.csproj", "{3522A6C5-6205-4C7D-B805-84847035A921}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync.Http.Tests", "Sync\Sync.Http.Tests\Sync.Http.Tests.csproj", "{1EF92A45-C551-4B0F-9180-00E978DA499E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sync.Http.Tests", "Sync\Nimblesite.Sync.Http.Tests\Nimblesite.Sync.Http.Tests.csproj", "{1EF92A45-C551-4B0F-9180-00E978DA499E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync.Postgres", "Sync\Sync.Postgres\Sync.Postgres.csproj", "{FC26C0FB-162E-4B4F-8561-9A688F4B42D2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sync.Postgres", "Sync\Nimblesite.Sync.Postgres\Nimblesite.Sync.Postgres.csproj", "{FC26C0FB-162E-4B4F-8561-9A688F4B42D2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync.Postgres.Tests", "Sync\Sync.Postgres.Tests\Sync.Postgres.Tests.csproj", "{D295DE84-3797-46B4-812E-E56FB629A341}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sync.Postgres.Tests", "Sync\Nimblesite.Sync.Postgres.Tests\Nimblesite.Sync.Postgres.Tests.csproj", "{D295DE84-3797-46B4-812E-E56FB629A341}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync.Integration.Tests", "Sync\Sync.Integration.Tests\Sync.Integration.Tests.csproj", "{1ACC151C-A655-472F-9177-996410A41665}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sync.Integration.Tests", "Sync\Nimblesite.Sync.Integration.Tests\Nimblesite.Sync.Integration.Tests.csproj", "{1ACC151C-A655-472F-9177-996410A41665}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Migration", "Migration", "{C7F49633-8D5E-7E19-1580-A6459B2EAE66}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nimblesite.DataProvider.Migration.Core", "Migration", "{C7F49633-8D5E-7E19-1580-A6459B2EAE66}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Migration", "Migration\Migration\Migration.csproj", "{5EB8D367-90CC-473F-8F89-B898D8F8BD43}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Migration.Core", "Migration\Nimblesite.DataProvider.Migration.Core\Nimblesite.DataProvider.Migration.Core.csproj", "{5EB8D367-90CC-473F-8F89-B898D8F8BD43}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Migration.SQLite", "Migration\Migration.SQLite\Migration.SQLite.csproj", "{99B714F6-43FE-46F6-A9B3-B362B8B8F87D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Migration.SQLite", "Migration\Nimblesite.DataProvider.Migration.SQLite\Nimblesite.DataProvider.Migration.SQLite.csproj", "{99B714F6-43FE-46F6-A9B3-B362B8B8F87D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Migration.Postgres", "Migration\Migration.Postgres\Migration.Postgres.csproj", "{988EAF3A-7320-4630-AFDC-233AC33AAA65}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Migration.Postgres", "Migration\Nimblesite.DataProvider.Migration.Postgres\Nimblesite.DataProvider.Migration.Postgres.csproj", "{988EAF3A-7320-4630-AFDC-233AC33AAA65}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Migration.Tests", "Migration\Migration.Tests\Migration.Tests.csproj", "{E23F2826-1857-4C3F-A90B-D4443DD84EFA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Migration.Tests", "Migration\Nimblesite.DataProvider.Migration.Tests\Nimblesite.DataProvider.Migration.Tests.csproj", "{E23F2826-1857-4C3F-A90B-D4443DD84EFA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Misc", "Misc", "{C841F5C2-8F30-5BE9-ECA6-260644CF6F9F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Selecta", "Other\Selecta\Selecta.csproj", "{BE9AC443-C15D-4962-A8D2-0CCD328E6B68}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync.Http", "Sync\Sync.Http\Sync.Http.csproj", "{392C12C2-ECBA-4728-9D8D-54BD2E10F7ED}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sync.Http", "Sync\Nimblesite.Sync.Http\Nimblesite.Sync.Http.csproj", "{392C12C2-ECBA-4728-9D8D-54BD2E10F7ED}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Gatekeeper", "Gatekeeper", "{048F5F03-6DDC-C04F-70D5-B8139DC8E373}"
 EndProject
@@ -79,27 +79,19 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gatekeeper.Api", "Gatekeepe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gatekeeper.Api.Tests", "Gatekeeper\Gatekeeper.Api.Tests\Gatekeeper.Api.Tests.csproj", "{2FD305AC-927E-4D24-9FA6-923C30E4E4A8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Migration.Cli", "Migration\Migration.Cli\Migration.Cli.csproj", "{57572A45-33CD-4928-9C30-13480AEDB313}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Migration.Cli", "Migration\Nimblesite.DataProvider.Migration.Cli\Nimblesite.DataProvider.Migration.Cli.csproj", "{57572A45-33CD-4928-9C30-13480AEDB313}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataProvider.Postgres.Cli", "DataProvider\DataProvider.Postgres.Cli\DataProvider.Postgres.Cli.csproj", "{A8A70E6D-1D43-437F-9971-44A4FA1BDD74}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Postgres.Cli", "DataProvider\Nimblesite.DataProvider.Postgres.Cli\Nimblesite.DataProvider.Postgres.Cli.csproj", "{A8A70E6D-1D43-437F-9971-44A4FA1BDD74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Schema.Export.Cli", "Migration\Schema.Export.Cli\Schema.Export.Cli.csproj", "{0858FE19-C59B-4A77-B76E-7053E8AFCC8D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Schema.Export.Cli", "Migration\Nimblesite.DataProvider.Schema.Export.Cli\Nimblesite.DataProvider.Schema.Export.Cli.csproj", "{0858FE19-C59B-4A77-B76E-7053E8AFCC8D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LqlCli.SQLite", "Lql\LqlCli.SQLite\LqlCli.SQLite.csproj", "{1AE87774-E914-40BC-95BA-56FB45D78C0D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.Cli.SQLite", "Lql\Nimblesite.Lql.Cli.SQLite\Nimblesite.Lql.Cli.SQLite.csproj", "{1AE87774-E914-40BC-95BA-56FB45D78C0D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LqlWebsite", "Lql\LqlWebsite\LqlWebsite.csproj", "{6AB2EA96-4A75-49DB-AC65-B247BBFAE9A3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.Website", "Lql\Nimblesite.Lql.Website\Nimblesite.Lql.Website.csproj", "{6AB2EA96-4A75-49DB-AC65-B247BBFAE9A3}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Lql.TypeProvider.FSharp.Tests", "Lql\Lql.TypeProvider.FSharp.Tests\Lql.TypeProvider.FSharp.Tests.fsproj", "{B0104C42-1B46-4CA5-9E91-A5F09D7E5B92}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nimblesite.Lql.TypeProvider.FSharp.Tests", "Lql\Nimblesite.Lql.TypeProvider.FSharp.Tests\Nimblesite.Lql.TypeProvider.FSharp.Tests.fsproj", "{B0104C42-1B46-4CA5-9E91-A5F09D7E5B92}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lql.TypeProvider.FSharp.Tests.Data", "Lql\Lql.TypeProvider.FSharp.Tests.Data\Lql.TypeProvider.FSharp.Tests.Data.csproj", "{0D6A831B-4759-46F2-8527-51C8A9CB6F6F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ICD10.Api", "Samples\ICD10\ICD10.Api\ICD10.Api.csproj", "{94C443C0-AB5B-4FEC-9DB1-C1F29AB86653}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ICD10.Api.Tests", "Samples\ICD10\ICD10.Api.Tests\ICD10.Api.Tests.csproj", "{31970639-E4E9-4AEF-83A1-B4DF00A4720C}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ICD10.Cli", "Samples\ICD10\ICD10.Cli\ICD10.Cli.csproj", "{57FF1C59-233D-49F2-B9A5-3E996EB484DE}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ICD10.Cli.Tests", "Samples\ICD10\ICD10.Cli.Tests\ICD10.Cli.Tests.csproj", "{3A1E29E7-2A50-4F26-96D7-D38D3328E595}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.TypeProvider.FSharp.Tests.Data", "Lql\Nimblesite.Lql.TypeProvider.FSharp.Tests.Data\Nimblesite.Lql.TypeProvider.FSharp.Tests.Data.csproj", "{0D6A831B-4759-46F2-8527-51C8A9CB6F6F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -579,54 +571,6 @@ Global
 		{0D6A831B-4759-46F2-8527-51C8A9CB6F6F}.Release|x64.Build.0 = Release|Any CPU
 		{0D6A831B-4759-46F2-8527-51C8A9CB6F6F}.Release|x86.ActiveCfg = Release|Any CPU
 		{0D6A831B-4759-46F2-8527-51C8A9CB6F6F}.Release|x86.Build.0 = Release|Any CPU
-		{94C443C0-AB5B-4FEC-9DB1-C1F29AB86653}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{94C443C0-AB5B-4FEC-9DB1-C1F29AB86653}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{94C443C0-AB5B-4FEC-9DB1-C1F29AB86653}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{94C443C0-AB5B-4FEC-9DB1-C1F29AB86653}.Debug|x64.Build.0 = Debug|Any CPU
-		{94C443C0-AB5B-4FEC-9DB1-C1F29AB86653}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{94C443C0-AB5B-4FEC-9DB1-C1F29AB86653}.Debug|x86.Build.0 = Debug|Any CPU
-		{94C443C0-AB5B-4FEC-9DB1-C1F29AB86653}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{94C443C0-AB5B-4FEC-9DB1-C1F29AB86653}.Release|Any CPU.Build.0 = Release|Any CPU
-		{94C443C0-AB5B-4FEC-9DB1-C1F29AB86653}.Release|x64.ActiveCfg = Release|Any CPU
-		{94C443C0-AB5B-4FEC-9DB1-C1F29AB86653}.Release|x64.Build.0 = Release|Any CPU
-		{94C443C0-AB5B-4FEC-9DB1-C1F29AB86653}.Release|x86.ActiveCfg = Release|Any CPU
-		{94C443C0-AB5B-4FEC-9DB1-C1F29AB86653}.Release|x86.Build.0 = Release|Any CPU
-		{31970639-E4E9-4AEF-83A1-B4DF00A4720C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{31970639-E4E9-4AEF-83A1-B4DF00A4720C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{31970639-E4E9-4AEF-83A1-B4DF00A4720C}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{31970639-E4E9-4AEF-83A1-B4DF00A4720C}.Debug|x64.Build.0 = Debug|Any CPU
-		{31970639-E4E9-4AEF-83A1-B4DF00A4720C}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{31970639-E4E9-4AEF-83A1-B4DF00A4720C}.Debug|x86.Build.0 = Debug|Any CPU
-		{31970639-E4E9-4AEF-83A1-B4DF00A4720C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{31970639-E4E9-4AEF-83A1-B4DF00A4720C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{31970639-E4E9-4AEF-83A1-B4DF00A4720C}.Release|x64.ActiveCfg = Release|Any CPU
-		{31970639-E4E9-4AEF-83A1-B4DF00A4720C}.Release|x64.Build.0 = Release|Any CPU
-		{31970639-E4E9-4AEF-83A1-B4DF00A4720C}.Release|x86.ActiveCfg = Release|Any CPU
-		{31970639-E4E9-4AEF-83A1-B4DF00A4720C}.Release|x86.Build.0 = Release|Any CPU
-		{57FF1C59-233D-49F2-B9A5-3E996EB484DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{57FF1C59-233D-49F2-B9A5-3E996EB484DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{57FF1C59-233D-49F2-B9A5-3E996EB484DE}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{57FF1C59-233D-49F2-B9A5-3E996EB484DE}.Debug|x64.Build.0 = Debug|Any CPU
-		{57FF1C59-233D-49F2-B9A5-3E996EB484DE}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{57FF1C59-233D-49F2-B9A5-3E996EB484DE}.Debug|x86.Build.0 = Debug|Any CPU
-		{57FF1C59-233D-49F2-B9A5-3E996EB484DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{57FF1C59-233D-49F2-B9A5-3E996EB484DE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{57FF1C59-233D-49F2-B9A5-3E996EB484DE}.Release|x64.ActiveCfg = Release|Any CPU
-		{57FF1C59-233D-49F2-B9A5-3E996EB484DE}.Release|x64.Build.0 = Release|Any CPU
-		{57FF1C59-233D-49F2-B9A5-3E996EB484DE}.Release|x86.ActiveCfg = Release|Any CPU
-		{57FF1C59-233D-49F2-B9A5-3E996EB484DE}.Release|x86.Build.0 = Release|Any CPU
-		{3A1E29E7-2A50-4F26-96D7-D38D3328E595}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3A1E29E7-2A50-4F26-96D7-D38D3328E595}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3A1E29E7-2A50-4F26-96D7-D38D3328E595}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{3A1E29E7-2A50-4F26-96D7-D38D3328E595}.Debug|x64.Build.0 = Debug|Any CPU
-		{3A1E29E7-2A50-4F26-96D7-D38D3328E595}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{3A1E29E7-2A50-4F26-96D7-D38D3328E595}.Debug|x86.Build.0 = Debug|Any CPU
-		{3A1E29E7-2A50-4F26-96D7-D38D3328E595}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3A1E29E7-2A50-4F26-96D7-D38D3328E595}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3A1E29E7-2A50-4F26-96D7-D38D3328E595}.Release|x64.ActiveCfg = Release|Any CPU
-		{3A1E29E7-2A50-4F26-96D7-D38D3328E595}.Release|x64.Build.0 = Release|Any CPU
-		{3A1E29E7-2A50-4F26-96D7-D38D3328E595}.Release|x86.ActiveCfg = Release|Any CPU
-		{3A1E29E7-2A50-4F26-96D7-D38D3328E595}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -671,10 +615,6 @@ Global
 		{6AB2EA96-4A75-49DB-AC65-B247BBFAE9A3} = {54B846BA-A27D-B76F-8730-402A5742FF43}
 		{B0104C42-1B46-4CA5-9E91-A5F09D7E5B92} = {54B846BA-A27D-B76F-8730-402A5742FF43}
 		{0D6A831B-4759-46F2-8527-51C8A9CB6F6F} = {54B846BA-A27D-B76F-8730-402A5742FF43}
-		{94C443C0-AB5B-4FEC-9DB1-C1F29AB86653} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
-		{31970639-E4E9-4AEF-83A1-B4DF00A4720C} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
-		{57FF1C59-233D-49F2-B9A5-3E996EB484DE} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
-		{3A1E29E7-2A50-4F26-96D7-D38D3328E595} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {53128A75-E7B6-4B83-B079-A309FCC2AD9C}

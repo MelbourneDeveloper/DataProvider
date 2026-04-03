@@ -117,15 +117,15 @@ jobs:
           filters: |
             dotnet:
               - 'DataProvider/**'
-              - 'Lql/Lql/**'
-              - 'Lql/Lql.Tests/**'
-              - 'Lql/LqlCli.SQLite.Tests/**'
-              - 'Lql/Lql.TypeProvider.FSharp.Tests/**'
+              - 'Lql/Nimblesite.Lql.Core/**'
+              - 'Lql/Nimblesite.Lql.Tests/**'
+              - 'Lql/Nimblesite.Lql.Cli.SQLite.Tests/**'
+              - 'Lql/Nimblesite.Lql.TypeProvider.FSharp.Tests/**'
               - 'Migration/**'
-              - 'Sync/Sync/**'
-              - 'Sync/Sync.Tests/**'
-              - 'Sync/Sync.SQLite/**'
-              - 'Sync/Sync.SQLite.Tests/**'
+              - 'Sync/Nimblesite.Sync.Core/**'
+              - 'Sync/Nimblesite.Sync.Tests/**'
+              - 'Sync/Nimblesite.Sync.SQLite/**'
+              - 'Sync/Nimblesite.Sync.SQLite.Tests/**'
               - 'Other/Selecta/**'
               - 'Directory.Build.props'
               - 'Directory.Packages.props'
@@ -183,29 +183,29 @@ jobs:
 
       - name: Build CLI tools (needed by F# Type Provider MSBuild targets)
         run: |
-          dotnet build Migration/Migration.Cli -c Debug
-          dotnet build DataProvider/DataProvider.SQLite.Cli -c Debug
+          dotnet build Migration/Nimblesite.DataProvider.Migration.Cli -c Debug
+          dotnet build DataProvider/Nimblesite.DataProvider.SQLite.Cli -c Debug
 
       - name: Test DataProvider
         run: |
-          dotnet test DataProvider/DataProvider.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-          dotnet test DataProvider/DataProvider.Example.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test DataProvider/Nimblesite.DataProvider.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test DataProvider/Nimblesite.DataProvider.Example.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
       - name: Test LQL
         run: |
-          dotnet test Lql/Lql.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-          dotnet test Lql/LqlCli.SQLite.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Lql/Nimblesite.Lql.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Lql/Nimblesite.Lql.Cli.SQLite.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
       - name: Test LQL F# Type Provider
-        run: dotnet test Lql/Lql.TypeProvider.FSharp.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test Lql/Nimblesite.Lql.TypeProvider.FSharp.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
       - name: Test Migration
-        run: dotnet test Migration/Migration.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test Migration/Nimblesite.DataProvider.Migration.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
       - name: Test Sync (SQLite)
         run: |
-          dotnet test Sync/Sync.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-          dotnet test Sync/Sync.SQLite.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Sync/Nimblesite.Sync.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Sync/Nimblesite.Sync.SQLite.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -256,8 +256,8 @@ jobs:
 
       - name: Build CLI tools (needed by MSBuild code generation targets)
         run: |
-          dotnet build Migration/Migration.Cli -c Debug
-          dotnet build DataProvider/DataProvider.SQLite.Cli -c Debug
+          dotnet build Migration/Nimblesite.DataProvider.Migration.Cli -c Debug
+          dotnet build DataProvider/Nimblesite.DataProvider.SQLite.Cli -c Debug
 
       - name: Test Gatekeeper
         run: dotnet test Gatekeeper/Gatekeeper.Api.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
@@ -266,9 +266,9 @@ jobs:
 
       - name: Test Sync (Postgres)
         run: |
-          dotnet test Sync/Sync.Postgres.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-          dotnet test Sync/Sync.Integration.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-          dotnet test Sync/Sync.Http.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Sync/Nimblesite.Sync.Postgres.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Sync/Nimblesite.Sync.Integration.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Sync/Nimblesite.Sync.Http.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
         env:
           TESTCONTAINERS_RYUK_DISABLED: false
 
@@ -352,9 +352,9 @@ jobs:
 
       - name: Build CLI tools (needed by MSBuild code generation targets)
         run: |
-          dotnet build Migration/Migration.Cli -c Debug
-          dotnet build DataProvider/DataProvider.SQLite.Cli -c Debug
-          dotnet build Lql/LqlCli.SQLite -c Debug
+          dotnet build Migration/Nimblesite.DataProvider.Migration.Cli -c Debug
+          dotnet build DataProvider/Nimblesite.DataProvider.SQLite.Cli -c Debug
+          dotnet build Lql/Nimblesite.Lql.Cli.SQLite -c Debug
 
       - name: Test ICD10
         run: |
@@ -428,7 +428,7 @@ jobs:
           dotnet build Samples/Clinical/Clinical.Sync -c Release
           dotnet build Samples/Scheduling/Scheduling.Sync -c Release
           dotnet build Samples/ICD10/ICD10.Api/ICD10.Api.csproj -c Release
-          dotnet build Migration/Migration.Cli -c Release
+          dotnet build Migration/Nimblesite.DataProvider.Migration.Cli -c Release
           dotnet build Samples/Dashboard/Dashboard.Integration.Tests -c Release
 
       - name: Install Playwright browsers

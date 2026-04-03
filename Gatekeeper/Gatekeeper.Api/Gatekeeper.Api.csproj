@@ -17,11 +17,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\DataProvider\DataProvider\DataProvider.csproj" />
-    <ProjectReference Include="..\..\Sync\Sync.Postgres\Sync.Postgres.csproj" />
+    <ProjectReference Include="..\..\DataProvider\Nimblesite.DataProvider.Core\Nimblesite.DataProvider.Core.csproj" />
+    <ProjectReference Include="..\..\Sync\Nimblesite.Sync.Postgres\Nimblesite.Sync.Postgres.csproj" />
     <ProjectReference Include="..\..\Other\Selecta\Selecta.csproj" />
-    <ProjectReference Include="..\..\Migration\Migration\Migration.csproj" />
-    <ProjectReference Include="..\..\Migration\Migration.Postgres\Migration.Postgres.csproj" />
+    <ProjectReference Include="..\..\Migration\Nimblesite.DataProvider.Migration.Core\Nimblesite.DataProvider.Migration.Core.csproj" />
+    <ProjectReference Include="..\..\Migration\Nimblesite.DataProvider.Migration.Postgres\Nimblesite.DataProvider.Migration.Postgres.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,7 +36,7 @@
   <!-- Create database from YAML using Migration.Cli -->
   <Target Name="CreateDatabaseSchema" BeforeTargets="TranspileLqlAndGenerateDataProvider">
     <Exec
-      Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)..\..\Migration\Migration.Cli\Migration.Cli.csproj&quot; -- --schema &quot;$(MSBuildProjectDirectory)/gatekeeper-schema.yaml&quot; --output &quot;$(MSBuildProjectDirectory)/gatekeeper.db&quot; --provider sqlite"
+      Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)..\..\Migration\Nimblesite.DataProvider.Migration.Cli\Nimblesite.DataProvider.Migration.Cli.csproj&quot; -- --schema &quot;$(MSBuildProjectDirectory)/gatekeeper-schema.yaml&quot; --output &quot;$(MSBuildProjectDirectory)/gatekeeper.db&quot; --provider sqlite"
       WorkingDirectory="$(MSBuildProjectDirectory)"
       StandardOutputImportance="High"
       StandardErrorImportance="High"
@@ -53,7 +53,7 @@
     <RemoveDir Directories="$(MSBuildProjectDirectory)/Generated" />
     <MakeDir Directories="$(MSBuildProjectDirectory)/Generated" />
     <Exec
-      Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)..\..\DataProvider\DataProvider.SQLite.Cli\DataProvider.SQLite.Cli.csproj&quot; -- --project-dir &quot;$(MSBuildProjectDirectory)&quot; --config &quot;$(MSBuildProjectDirectory)/DataProvider.json&quot; --out &quot;$(MSBuildProjectDirectory)/Generated&quot; --connection-type NpgsqlConnection"
+      Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)..\..\DataProvider\Nimblesite.DataProvider.SQLite.Cli\Nimblesite.DataProvider.SQLite.Cli.csproj&quot; -- --project-dir &quot;$(MSBuildProjectDirectory)&quot; --config &quot;$(MSBuildProjectDirectory)/DataProvider.json&quot; --out &quot;$(MSBuildProjectDirectory)/Generated&quot; --connection-type NpgsqlConnection"
       WorkingDirectory="$(MSBuildProjectDirectory)"
       StandardOutputImportance="High"
       StandardErrorImportance="High"
