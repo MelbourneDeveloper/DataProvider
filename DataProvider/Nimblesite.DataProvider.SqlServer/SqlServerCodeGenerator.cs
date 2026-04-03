@@ -2,8 +2,8 @@ using System.Globalization;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.Data.SqlClient;
-using Outcome;
 using Nimblesite.Sql.Model;
+using Outcome;
 using SqlError = Nimblesite.Sql.Model.SqlError;
 
 namespace Nimblesite.DataProvider.SqlServer;

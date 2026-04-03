@@ -3,8 +3,8 @@ using System.Globalization;
 using System.Text.Json;
 using Nimblesite.DataProvider.Core.CodeGeneration;
 using Nimblesite.DataProvider.SQLite.Parsing;
-using Outcome;
 using Nimblesite.Sql.Model;
+using Outcome;
 
 #pragma warning disable CA1849 // Call async methods when in an async method
 

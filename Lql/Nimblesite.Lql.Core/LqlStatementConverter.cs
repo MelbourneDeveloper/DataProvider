@@ -1,14 +1,14 @@
 using Nimblesite.Lql.Core.Parsing;
-using Outcome;
 using Nimblesite.Sql.Model;
-using StatementError = Outcome.Result<Nimblesite.Lql.Core.LqlStatement, Nimblesite.Sql.Model.SqlError>.Error<
+using Outcome;
+using StatementError = Outcome.Result<
     Nimblesite.Lql.Core.LqlStatement,
     Nimblesite.Sql.Model.SqlError
->;
-using StatementOk = Outcome.Result<Nimblesite.Lql.Core.LqlStatement, Nimblesite.Sql.Model.SqlError>.Ok<
+>.Error<Nimblesite.Lql.Core.LqlStatement, Nimblesite.Sql.Model.SqlError>;
+using StatementOk = Outcome.Result<
     Nimblesite.Lql.Core.LqlStatement,
     Nimblesite.Sql.Model.SqlError
->;
+>.Ok<Nimblesite.Lql.Core.LqlStatement, Nimblesite.Sql.Model.SqlError>;
 
 namespace Nimblesite.Lql.Core;
 

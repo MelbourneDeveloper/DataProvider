@@ -2,8 +2,8 @@ using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
-using Outcome;
 using Nimblesite.Sql.Model;
+using Outcome;
 
 namespace Nimblesite.DataProvider.SQLite.Parsing;
 

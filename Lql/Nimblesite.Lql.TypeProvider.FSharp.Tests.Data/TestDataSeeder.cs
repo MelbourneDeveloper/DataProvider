@@ -1,8 +1,8 @@
 using System.Data;
 using Generated;
 using Microsoft.Data.Sqlite;
-using Outcome;
 using Nimblesite.Sql.Model;
+using Outcome;
 
 namespace Nimblesite.Lql.TypeProvider.FSharp.Tests.Data;
 

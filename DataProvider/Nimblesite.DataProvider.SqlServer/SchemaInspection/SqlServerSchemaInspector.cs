@@ -144,9 +144,9 @@ internal sealed class SqlServerSchemaInspector : ISchemaInspector
     /// </summary>
     /// <param name="sqlQuery">The SQL query to analyze</param>
     /// <returns>Result containing metadata about the query result columns</returns>
-    public async Task<Result<SqlQueryMetadata, Nimblesite.Sql.Model.SqlError>> GetSqlQueryMetadataAsync(
-        string sqlQuery
-    )
+    public async Task<
+        Result<SqlQueryMetadata, Nimblesite.Sql.Model.SqlError>
+    > GetSqlQueryMetadataAsync(string sqlQuery)
     {
         if (string.IsNullOrWhiteSpace(sqlQuery))
             return new Result<SqlQueryMetadata, Nimblesite.Sql.Model.SqlError>.Error<

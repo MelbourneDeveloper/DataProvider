@@ -2,16 +2,22 @@ using System.CommandLine;
 using Nimblesite.Lql.Core;
 using Nimblesite.Lql.SQLite;
 using Nimblesite.Sql.Model;
-using LqlStatementError = Outcome.Result<Nimblesite.Lql.Core.LqlStatement, Nimblesite.Sql.Model.SqlError>.Error<
+using LqlStatementError = Outcome.Result<
     Nimblesite.Lql.Core.LqlStatement,
     Nimblesite.Sql.Model.SqlError
->;
-using LqlStatementOk = Outcome.Result<Nimblesite.Lql.Core.LqlStatement, Nimblesite.Sql.Model.SqlError>.Ok<
+>.Error<Nimblesite.Lql.Core.LqlStatement, Nimblesite.Sql.Model.SqlError>;
+using LqlStatementOk = Outcome.Result<
     Nimblesite.Lql.Core.LqlStatement,
     Nimblesite.Sql.Model.SqlError
+>.Ok<Nimblesite.Lql.Core.LqlStatement, Nimblesite.Sql.Model.SqlError>;
+using StringSqlError = Outcome.Result<string, Nimblesite.Sql.Model.SqlError>.Error<
+    string,
+    Nimblesite.Sql.Model.SqlError
 >;
-using StringSqlError = Outcome.Result<string, Nimblesite.Sql.Model.SqlError>.Error<string, Nimblesite.Sql.Model.SqlError>;
-using StringSqlOk = Outcome.Result<string, Nimblesite.Sql.Model.SqlError>.Ok<string, Nimblesite.Sql.Model.SqlError>;
+using StringSqlOk = Outcome.Result<string, Nimblesite.Sql.Model.SqlError>.Ok<
+    string,
+    Nimblesite.Sql.Model.SqlError
+>;
 
 namespace Nimblesite.Lql.Cli.SQLite;
 

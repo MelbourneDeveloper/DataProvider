@@ -5,8 +5,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using Nimblesite.DataProvider.Core.CodeGeneration;
 using Nimblesite.DataProvider.SQLite.CodeGeneration;
-using Outcome;
 using Nimblesite.Sql.Model;
+using Outcome;
 
 namespace Nimblesite.DataProvider.SQLite;
 

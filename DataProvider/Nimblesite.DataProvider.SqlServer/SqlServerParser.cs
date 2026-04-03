@@ -1,6 +1,6 @@
 using Nimblesite.DataProvider.SqlServer.SqlParsing;
-using Outcome;
 using Nimblesite.Sql.Model;
+using Outcome;
 
 namespace Nimblesite.DataProvider.SqlServer;
 

@@ -1,5 +1,5 @@
-using Outcome;
 using Nimblesite.Sql.Model;
+using Outcome;
 
 namespace Nimblesite.Lql.SqlServer;
 

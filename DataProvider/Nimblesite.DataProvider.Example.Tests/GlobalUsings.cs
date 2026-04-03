@@ -4,7 +4,10 @@ global using Nimblesite.DataProvider.Core;
 global using CustomerListError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.Customer>,
     Nimblesite.Sql.Model.SqlError
->.Error<System.Collections.Immutable.ImmutableList<Generated.Customer>, Nimblesite.Sql.Model.SqlError>;
+>.Error<
+    System.Collections.Immutable.ImmutableList<Generated.Customer>,
+    Nimblesite.Sql.Model.SqlError
+>;
 global using CustomerListOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.Customer>,
     Nimblesite.Sql.Model.SqlError
@@ -16,7 +19,10 @@ global using CustomerReadOnlyListOk = Outcome.Result<
 global using InvoiceListError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.Invoice>,
     Nimblesite.Sql.Model.SqlError
->.Error<System.Collections.Immutable.ImmutableList<Generated.Invoice>, Nimblesite.Sql.Model.SqlError>;
+>.Error<
+    System.Collections.Immutable.ImmutableList<Generated.Invoice>,
+    Nimblesite.Sql.Model.SqlError
+>;
 global using InvoiceListOk = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.Invoice>,
     Nimblesite.Sql.Model.SqlError
@@ -33,4 +39,7 @@ global using StringSqlError = Outcome.Result<string, Nimblesite.Sql.Model.SqlErr
     string,
     Nimblesite.Sql.Model.SqlError
 >;
-global using StringSqlOk = Outcome.Result<string, Nimblesite.Sql.Model.SqlError>.Ok<string, Nimblesite.Sql.Model.SqlError>;
+global using StringSqlOk = Outcome.Result<string, Nimblesite.Sql.Model.SqlError>.Ok<
+    string,
+    Nimblesite.Sql.Model.SqlError
+>;

@@ -5,8 +5,8 @@ using Microsoft.Data.Sqlite;
 using Nimblesite.Lql.Browser.Models;
 using Nimblesite.Lql.Browser.ViewModels;
 using Nimblesite.Lql.SQLite;
-using Outcome;
 using Nimblesite.Sql.Model;
+using Outcome;
 
 namespace Nimblesite.Lql.Browser.Services;
 

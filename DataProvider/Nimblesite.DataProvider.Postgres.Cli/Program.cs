@@ -2,9 +2,9 @@ using System.CommandLine;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using Nimblesite.Sql.Model;
 using Npgsql;
 using Outcome;
-using Nimblesite.Sql.Model;
 
 #pragma warning disable CA1812 // Avoid uninstantiated internal classes - records are instantiated by JSON deserialization
 #pragma warning disable CA1849 // Call async methods when in an async method

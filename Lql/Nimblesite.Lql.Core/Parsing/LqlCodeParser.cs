@@ -1,6 +1,6 @@
 using Antlr4.Runtime;
-using Outcome;
 using Nimblesite.Sql.Model;
+using Outcome;
 
 namespace Nimblesite.Lql.Core.Parsing;
 

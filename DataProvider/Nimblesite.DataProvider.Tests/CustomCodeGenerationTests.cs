@@ -1,7 +1,7 @@
 using System.Collections.Frozen;
 using Nimblesite.DataProvider.SQLite;
-using Outcome;
 using Nimblesite.Sql.Model;
+using Outcome;
 using Xunit;
 
 #pragma warning disable CA1307 // Specify StringComparison for clarity
