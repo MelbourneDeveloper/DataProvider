@@ -7,7 +7,7 @@ using Selecta;
 namespace Nimblesite.Lql.TypeProvider.FSharp.Tests.Data;
 
 /// <summary>
-/// Seeds the test database with sample data using generated Nimblesite.DataProvider.Core extensions
+/// Seeds the test database with sample data using generated DataProvider extensions
 /// </summary>
 public static class TestDataSeeder
 {

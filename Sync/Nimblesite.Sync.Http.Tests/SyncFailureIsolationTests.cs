@@ -110,7 +110,7 @@ public sealed class SyncFailureIsolationTests : IDisposable
     #region Connection Timeout Tests (sync-004: Encounter enc-101)
 
     /// <summary>
-    /// FAILING TEST: Nimblesite.Sync.Core operations should handle timeout gracefully and return SyncErrorDatabase.
+    /// FAILING TEST: Sync operations should handle timeout gracefully and return SyncErrorDatabase.
     /// Currently the sync times out after 30s with no graceful error handling.
     /// Error from production: "Connection timeout after 30s" for Encounter sync.
     /// </summary>
@@ -414,7 +414,7 @@ public sealed class SyncFailureIsolationTests : IDisposable
 
     #endregion
 
-    #region Pending Nimblesite.Sync.Core State Tests (sync-003: Appointment appt-789)
+    #region Pending Sync State Tests (sync-003: Appointment appt-789)
 
     /// <summary>
     /// FAILING TEST: Appointment sync should not get stuck in pending state.
@@ -463,7 +463,7 @@ public sealed class SyncFailureIsolationTests : IDisposable
     }
 
     /// <summary>
-    /// FAILING TEST: Nimblesite.Sync.Core should track and report stuck operations.
+    /// FAILING TEST: Sync should track and report stuck operations.
     /// When an operation is pending for too long, it should be flagged.
     /// </summary>
     [Fact]
@@ -480,7 +480,7 @@ public sealed class SyncFailureIsolationTests : IDisposable
         // Assert
         Assert.True(
             isStuck,
-            $"Nimblesite.Sync.Core operation {syncRecordId} has been pending for 5 minutes - should be flagged as stuck"
+            $"Sync operation {syncRecordId} has been pending for 5 minutes - should be flagged as stuck"
         );
 
         // The sync system should have a way to:
@@ -551,7 +551,7 @@ public sealed class SyncFailureIsolationTests : IDisposable
 
     #endregion
 
-    #region Cross-Service Nimblesite.Sync.Core Tests
+    #region Cross-Service Sync Tests
 
     /// <summary>
     /// FAILING TEST: Clinical.Api to Scheduling.Api sync should not fail.
@@ -652,7 +652,7 @@ public sealed class SyncFailureIsolationTests : IDisposable
         // Assert - all entities should sync successfully
         foreach (var (entity, success, error) in results)
         {
-            Assert.True(success, $"Nimblesite.Sync.Core failed for {entity}: {error}");
+            Assert.True(success, $"Sync failed for {entity}: {error}");
         }
 
         // Should complete quickly, not timeout

@@ -27,9 +27,9 @@ public abstract class FunctionMappingProviderBase : IFunctionMappingProvider
     }
 
     /// <summary>
-    /// Gets the function mapping for a specific Nimblesite.Lql.Core function
+    /// Gets the function mapping for a specific Lql function
     /// </summary>
-    /// <param name="lqlFunction">The Nimblesite.Lql.Core function name</param>
+    /// <param name="lqlFunction">The Lql function name</param>
     /// <returns>The function mapping or null if not found</returns>
     public FunctionMap? GetFunctionMapping(string lqlFunction)
     {
@@ -47,7 +47,7 @@ public abstract class FunctionMappingProviderBase : IFunctionMappingProvider
     public SqlSyntaxMapping GetSyntaxMapping() => _syntaxMapping.Value;
 
     /// <summary>
-    /// Transpiles a function call from Nimblesite.Lql.Core to the target dialect
+    /// Transpiles a function call from Lql to the target dialect
     /// </summary>
     /// <param name="functionName">The function name</param>
     /// <param name="arguments">The function arguments</param>

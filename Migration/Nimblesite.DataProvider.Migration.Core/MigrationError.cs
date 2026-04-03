@@ -1,7 +1,7 @@
 namespace Nimblesite.DataProvider.Migration.Core;
 
 /// <summary>
-/// Nimblesite.DataProvider.Migration.Core error with message and optional inner exception.
+/// Migration error with message and optional inner exception.
 /// </summary>
 /// <param name="Message">Error message</param>
 /// <param name="InnerException">Optional inner exception</param>

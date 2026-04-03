@@ -28,7 +28,7 @@ public enum UnmappedTableBehavior
 }
 
 /// <summary>
-/// Nimblesite.Sync.Core tracking strategy. Spec Section 7.5.1.
+/// Sync tracking strategy. Spec Section 7.5.1.
 /// </summary>
 public enum SyncTrackingStrategy
 {
@@ -57,7 +57,7 @@ public enum TransformType
     Constant,
 
     /// <summary>LQL expression transform.</summary>
-    Nimblesite.Lql.Core,
+    Lql,
 }
 
 /// <summary>
@@ -75,23 +75,23 @@ public sealed record PkMapping(string SourceColumn, string TargetColumn);
 /// <param name="Target">Target column name.</param>
 /// <param name="Transform">Transform type to apply.</param>
 /// <param name="Value">Constant value when Transform=Constant.</param>
-/// <param name="Nimblesite.Lql.Core">LQL expression when Transform=Nimblesite.Lql.Core.</param>
+/// <param name="Lql">LQL expression when Transform=Nimblesite.Lql.Core.</param>
 public sealed record ColumnMapping(
     string? Source,
     string Target,
     TransformType Transform = TransformType.None,
     string? Value = null,
-    string? Nimblesite.Lql.Core = null
+    string? Lql = null
 );
 
 /// <summary>
 /// Filter expression to select which records to sync.
 /// </summary>
-/// <param name="Nimblesite.Lql.Core">LQL boolean expression, e.g. "IsActive = true AND DeletedAt IS NULL".</param>
-public sealed record SyncFilter(string Nimblesite.Lql.Core);
+/// <param name="Lql">LQL boolean expression, e.g. "IsActive = true AND DeletedAt IS NULL".</param>
+public sealed record SyncFilter(string Lql);
 
 /// <summary>
-/// Nimblesite.Sync.Core tracking configuration for a mapping.
+/// Sync tracking configuration for a mapping.
 /// </summary>
 /// <param name="Enabled">Whether sync tracking is enabled.</param>
 /// <param name="Strategy">Tracking strategy to use.</param>
@@ -115,13 +115,13 @@ public sealed record TargetConfig(string Table, IReadOnlyList<ColumnMapping> Col
 /// <param name="Id">Unique mapping identifier.</param>
 /// <param name="SourceTable">Source table name.</param>
 /// <param name="TargetTable">Target table name (single target). NULL for multi-target.</param>
-/// <param name="Direction">Nimblesite.Sync.Core direction.</param>
+/// <param name="Direction">Sync direction.</param>
 /// <param name="Enabled">Whether mapping is active.</param>
 /// <param name="PkMapping">Primary key column mapping.</param>
 /// <param name="ColumnMappings">Column mappings for single target.</param>
 /// <param name="ExcludedColumns">Columns to exclude from sync.</param>
 /// <param name="Filter">Optional filter expression.</param>
-/// <param name="SyncTracking">Nimblesite.Sync.Core tracking configuration.</param>
+/// <param name="SyncTracking">Sync tracking configuration.</param>
 /// <param name="IsMultiTarget">True if mapping to multiple tables.</param>
 /// <param name="Targets">Target configurations for multi-target mapping.</param>
 public sealed record TableMapping(
@@ -143,7 +143,7 @@ public sealed record TableMapping(
     /// Creates a simple identity mapping (same table/column names).
     /// </summary>
     /// <param name="tableName">Table name.</param>
-    /// <param name="direction">Nimblesite.Sync.Core direction.</param>
+    /// <param name="direction">Sync direction.</param>
     /// <returns>Identity mapping.</returns>
     public static TableMapping Identity(string tableName, MappingDirection direction) =>
         new(

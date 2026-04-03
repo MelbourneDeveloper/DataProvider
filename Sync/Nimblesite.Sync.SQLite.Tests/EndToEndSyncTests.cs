@@ -53,7 +53,7 @@ public sealed class EndToEndSyncTests : IDisposable
         InsertPerson(_sourceDb, "p1", "Alice", "alice@example.com");
         UpdatePerson(_sourceDb, "p1", "Alice Updated", "alice.updated@example.com");
 
-        // Act: Nimblesite.Sync.Core all changes
+        // Act: Sync all changes
         var changes = FetchChangesFromSource();
         Assert.Equal(2, changes.Count);
 
@@ -80,7 +80,7 @@ public sealed class EndToEndSyncTests : IDisposable
         // Delete from source
         DeletePerson(_sourceDb, "p1");
 
-        // Act: Nimblesite.Sync.Core delete
+        // Act: Sync delete
         var changes2 = FetchChangesFromSource(changes1.Max(c => c.Version));
         Assert.Single(changes2);
         Assert.Equal(SyncOperation.Delete, changes2[0].Operation);
@@ -206,11 +206,11 @@ public sealed class EndToEndSyncTests : IDisposable
         // Insert in target (simulating offline change)
         InsertPerson(_targetDb, "p2", "From Target", "target@example.com");
 
-        // Act: Nimblesite.Sync.Core source -> target
+        // Act: Sync source -> target
         var sourceChanges = FetchChangesFromSource();
         ApplyChangesToTarget(sourceChanges);
 
-        // Nimblesite.Sync.Core target -> source
+        // Sync target -> source
         var targetChanges = FetchChanges(_targetDb, 0);
         ApplyChanges(_sourceDb, targetChanges, _sourceOrigin);
 

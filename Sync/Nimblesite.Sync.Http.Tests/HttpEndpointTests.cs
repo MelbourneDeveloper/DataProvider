@@ -173,7 +173,7 @@ public sealed class HttpEndpointTests : IClassFixture<SyncApiWebApplicationFacto
 
     #endregion
 
-    #region Nimblesite.Sync.Core State Endpoint
+    #region Sync State Endpoint
 
     [Fact]
     public async Task SyncState_WithoutConnectionString_ReturnsBadRequest()

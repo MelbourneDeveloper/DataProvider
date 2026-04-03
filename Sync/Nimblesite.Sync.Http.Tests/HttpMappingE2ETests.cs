@@ -138,7 +138,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: "FullName",
                             Target: "name_upper",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "upper(FullName)"
+                            Lql: "upper(FullName)"
                         ),
                         new ColumnMapping(
                             Source: null,
@@ -150,7 +150,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: "CreatedAt",
                             Target: "registered_date",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "CreatedAt |> dateFormat('yyyy-MM-dd')"
+                            Lql: "CreatedAt |> dateFormat('yyyy-MM-dd')"
                         ),
                     ],
                     ExcludedColumns: ["PasswordHash", "SecurityStamp"],
@@ -276,7 +276,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "full_name",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "concat(FirstName, ' ', LastName)"
+                            Lql: "concat(FirstName, ' ', LastName)"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -327,7 +327,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "phone",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "coalesce(Mobile, Home, Office)"
+                            Lql: "coalesce(Mobile, Home, Office)"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -378,7 +378,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "sku_prefix",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "substring(SKU, 1, 3)"
+                            Lql: "substring(SKU, 1, 3)"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -656,7 +656,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "upper_name",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "upper(Name)"
+                            Lql: "upper(Name)"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -706,7 +706,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "upper_name",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "upper(Name)"
+                            Lql: "upper(Name)"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -757,7 +757,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "clean_phone",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "replace(Phone, '-', '')"
+                            Lql: "replace(Phone, '-', '')"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -808,7 +808,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "initials",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "left(Name, 2)"
+                            Lql: "left(Name, 2)"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -859,7 +859,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "last_four",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "right(CardNumber, 4)"
+                            Lql: "right(CardNumber, 4)"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -910,7 +910,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "clean_name",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "trim(Name)"
+                            Lql: "trim(Name)"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -961,7 +961,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "name_length",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "length(Name)"
+                            Lql: "length(Name)"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -1012,7 +1012,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "display",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "concat(Title, ': ', FirstName, ' ', LastName, ' (', Department, ')')"
+                            Lql: "concat(Title, ': ', FirstName, ' ', LastName, ' (', Department, ')')"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -1066,7 +1066,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "phone",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "coalesce(Mobile, Home, Work)"
+                            Lql: "coalesce(Mobile, Home, Work)"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -1125,7 +1125,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "date_only",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "CreatedAt |> dateFormat('yyyy-MM-dd')"
+                            Lql: "CreatedAt |> dateFormat('yyyy-MM-dd')"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -1362,7 +1362,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "clean_name",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "Name |> trim() |> upper()"
+                            Lql: "Name |> trim() |> upper()"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -1557,7 +1557,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "data_length",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "length(Data)"
+                            Lql: "length(Data)"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -1610,7 +1610,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "name_upper",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "upper(Name)"
+                            Lql: "upper(Name)"
                         ),
                     ],
                     ExcludedColumns: [],
@@ -1675,7 +1675,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
                             Source: null,
                             Target: "computed",
                             Transform: TransformType.Lql,
-                            Nimblesite.Lql.Core: "concat(Col1, '-', Col2)"
+                            Lql: "concat(Col1, '-', Col2)"
                         ),
                     ],
                     ExcludedColumns: [],

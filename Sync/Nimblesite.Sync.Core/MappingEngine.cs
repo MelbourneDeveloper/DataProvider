@@ -54,9 +54,9 @@ internal static class MappingEngine
 {
     /// <summary>
     /// Applies mapping configuration to a sync log entry.
-    /// Per spec Section 7.5.3 - Nimblesite.Sync.Core Decision Logic.
+    /// Per spec Section 7.5.3 - Sync Decision Logic.
     /// </summary>
-    /// <param name="entry">Nimblesite.Sync.Core log entry to map.</param>
+    /// <param name="entry">Sync log entry to map.</param>
     /// <param name="config">Mapping configuration.</param>
     /// <param name="direction">Current sync direction.</param>
     /// <param name="logger">Logger for diagnostics.</param>
@@ -96,7 +96,7 @@ internal static class MappingEngine
     /// </summary>
     /// <param name="tableName">Source table name.</param>
     /// <param name="config">Mapping configuration.</param>
-    /// <param name="direction">Nimblesite.Sync.Core direction.</param>
+    /// <param name="direction">Sync direction.</param>
     /// <returns>Matching mapping or null.</returns>
     public static TableMapping? FindMapping(
         string tableName,
@@ -304,14 +304,14 @@ internal static class MappingEngine
         try
         {
             var result = LqlExpressionEvaluator.Evaluate(colMap.Lql, source);
-            logger.LogDebug("LQL transform '{Nimblesite.Lql.Core}' evaluated to '{Result}'", colMap.Lql, result);
+            logger.LogDebug("LQL transform '{Lql}' evaluated to '{Result}'", colMap.Lql, result);
             return result;
         }
         catch (Exception ex)
         {
             logger.LogWarning(
                 ex,
-                "LQL transform failed for expression '{Nimblesite.Lql.Core}', falling back to source column",
+                "LQL transform failed for expression '{Lql}', falling back to source column",
                 colMap.Lql
             );
 

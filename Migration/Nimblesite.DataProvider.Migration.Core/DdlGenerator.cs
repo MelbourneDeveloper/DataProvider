@@ -27,7 +27,7 @@ public static class DdlGenerator
 }
 
 /// <summary>
-/// Nimblesite.DataProvider.Migration.Core runner for executing schema operations.
+/// Migration runner for executing schema operations.
 /// </summary>
 public static class MigrationRunner
 {
@@ -37,7 +37,7 @@ public static class MigrationRunner
     /// <param name="connection">Open database connection</param>
     /// <param name="operations">Operations to apply</param>
     /// <param name="generateDdl">Platform-specific DDL generator</param>
-    /// <param name="options">Nimblesite.DataProvider.Migration.Core options</param>
+    /// <param name="options">Migration options</param>
     /// <param name="logger">Optional logger</param>
     /// <returns>Result indicating success or failure</returns>
     public static MigrationApplyResult Apply(
@@ -111,7 +111,7 @@ public static class MigrationRunner
 
             transaction?.Commit();
             logger?.LogInformation(
-                "Nimblesite.DataProvider.Migration.Core completed: {Count} operations applied",
+                "Migration completed: {Count} operations applied",
                 operations.Count
             );
 
@@ -119,7 +119,7 @@ public static class MigrationRunner
         }
         catch (Exception ex)
         {
-            logger?.LogError(ex, "Nimblesite.DataProvider.Migration.Core failed, rolling back");
+            logger?.LogError(ex, "Migration failed, rolling back");
             transaction?.Rollback();
             return new MigrationApplyResult.Error<bool, MigrationError>(
                 MigrationError.FromException(ex)

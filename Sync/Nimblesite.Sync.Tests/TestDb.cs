@@ -25,13 +25,13 @@ public sealed class TestDb : IDisposable
     {
         using var cmd = Connection.CreateCommand();
         cmd.CommandText = """
-            -- Nimblesite.Sync.Core state (persistent)
+            -- Sync state (persistent)
             CREATE TABLE _sync_state (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL
             );
 
-            -- Nimblesite.Sync.Core session (ephemeral flag)
+            -- Sync session (ephemeral flag)
             CREATE TABLE _sync_session (
                 sync_active INTEGER DEFAULT 0
             );

@@ -42,7 +42,7 @@ public sealed record RecordHashEntry(
 
 /// <summary>
 /// Static methods for managing mapping state.
-/// Implements spec Section 7.5.3 - Nimblesite.Sync.Core Decision Logic.
+/// Implements spec Section 7.5.3 - Sync Decision Logic.
 /// </summary>
 internal static class MappingStateManager
 {

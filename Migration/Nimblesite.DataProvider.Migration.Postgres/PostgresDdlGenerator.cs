@@ -24,7 +24,7 @@ public static class PostgresDdlGenerator
     /// <param name="schema">Schema definition to migrate.</param>
     /// <param name="onTableCreated">Optional callback for each table created (table name).</param>
     /// <param name="onTableFailed">Optional callback for each table that failed (table name, exception).</param>
-    /// <returns>Nimblesite.DataProvider.Migration.Core result with success status and any errors.</returns>
+    /// <returns>Migration result with success status and any errors.</returns>
     public static MigrationResult MigrateSchema(
         IDbConnection connection,
         SchemaDefinition schema,

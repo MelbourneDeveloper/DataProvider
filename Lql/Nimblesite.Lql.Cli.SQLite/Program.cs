@@ -130,7 +130,7 @@ internal static class Program
     /// <summary>
     /// Processes a successfully parsed LQL statement
     /// </summary>
-    /// <param name="statement">The parsed Nimblesite.Lql.Core statement</param>
+    /// <param name="statement">The parsed Lql statement</param>
     /// <param name="outputFile">Optional output file</param>
     /// <param name="validate">Whether to only validate</param>
     /// <param name="inputFileName">Input file name for logging</param>

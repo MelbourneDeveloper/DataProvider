@@ -212,7 +212,7 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// PROVES: Nimblesite.Sync.Core can transform and apply mapped data to target database.
+    /// PROVES: Sync can transform and apply mapped data to target database.
     /// Full E2E: Insert in source -> Transform via MappingEngine -> Apply to target.
     /// </summary>
     [Fact]

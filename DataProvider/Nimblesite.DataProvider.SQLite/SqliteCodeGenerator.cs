@@ -399,7 +399,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                             "DataProvider002",
                             "Configuration parsing failed",
                             "Failed to parse Nimblesite.DataProvider.Core.json: {0}",
-                            "Nimblesite.DataProvider.Core",
+                            "DataProvider",
                             DiagnosticSeverity.Error,
                             true
                         ),
@@ -419,7 +419,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                     "DataProvider003",
                     "Configuration missing",
                     "Nimblesite.DataProvider.Core.json with ConnectionString is required for code generation",
-                    "Nimblesite.DataProvider.Core",
+                    "DataProvider",
                     DiagnosticSeverity.Error,
                     true
                 ),
@@ -626,7 +626,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                             "DL0002",
                             "Database metadata error",
                             "Failed to get column metadata for {0}: {1}",
-                            "Nimblesite.DataProvider.Core",
+                            "DataProvider",
                             DiagnosticSeverity.Error,
                             true
                         ),
@@ -659,7 +659,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                                     "DataProvider004",
                                     "Grouping parsing failed",
                                     "Failed to parse {0}.grouping.json: {1}",
-                                    "Nimblesite.DataProvider.Core",
+                                    "DataProvider",
                                     DiagnosticSeverity.Error,
                                     true
                                 ),
@@ -707,7 +707,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                             "DataProvider005",
                             "Code generation failed",
                             "Failed to generate code for {0}: {1}",
-                            "Nimblesite.DataProvider.Core",
+                            "DataProvider",
                             DiagnosticSeverity.Error,
                             true
                         ),
@@ -736,7 +736,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                         "DataProvider006",
                         "Unexpected error",
                         "Unexpected error while generating for file '{0}': {1}",
-                        "Nimblesite.DataProvider.Core",
+                        "DataProvider",
                         DiagnosticSeverity.Error,
                         true
                     ),
@@ -754,7 +754,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                 "DataProvider010",
                 "Debug info",
                 "Processing {0} table configurations",
-                "Nimblesite.DataProvider.Core",
+                "DataProvider",
                 DiagnosticSeverity.Info,
                 true
             ),
@@ -790,7 +790,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                                 "DataProvider007",
                                 "Table metadata error",
                                 "Failed to get metadata for table {0}: {1}",
-                                "Nimblesite.DataProvider.Core",
+                                "DataProvider",
                                 DiagnosticSeverity.Warning,
                                 true
                             ),
@@ -839,7 +839,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                                 "DataProvider008",
                                 "Table operations generation failed",
                                 "Failed to generate table operations for {0}: {1}",
-                                "Nimblesite.DataProvider.Core",
+                                "DataProvider",
                                 DiagnosticSeverity.Error,
                                 true
                             ),
@@ -857,7 +857,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                             "DataProvider009",
                             "Table operations error",
                             "Error generating table operations for {0}: {1}",
-                            "Nimblesite.DataProvider.Core",
+                            "DataProvider",
                             DiagnosticSeverity.Error,
                             true
                         ),

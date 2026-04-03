@@ -76,7 +76,7 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         // Assert
         Assert.True(
             result is MigrationApplyResultOk,
-            $"Nimblesite.DataProvider.Migration.Core failed: {(result as MigrationApplyResultError)?.Value}"
+            $"Migration failed: {(result as MigrationApplyResultError)?.Value}"
         );
 
         // Verify table exists
@@ -135,7 +135,7 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         // Assert
         Assert.True(
             result is MigrationApplyResultOk,
-            $"Nimblesite.DataProvider.Migration.Core failed: {(result as MigrationApplyResultError)?.Value}"
+            $"Migration failed: {(result as MigrationApplyResultError)?.Value}"
         );
 
         var inspected = (
@@ -511,10 +511,10 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
             _logger
         );
 
-        // Assert - Nimblesite.DataProvider.Migration.Core succeeded
+        // Assert - Migration succeeded
         Assert.True(
             result is MigrationApplyResultOk,
-            $"Nimblesite.DataProvider.Migration.Core failed: {(result as MigrationApplyResultError)?.Value}"
+            $"Migration failed: {(result as MigrationApplyResultError)?.Value}"
         );
 
         // Verify index exists and is unique
@@ -636,7 +636,7 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
         // Assert
         Assert.True(
             result is MigrationApplyResultOk,
-            $"Nimblesite.DataProvider.Migration.Core failed: {(result as MigrationApplyResultError)?.Value}"
+            $"Migration failed: {(result as MigrationApplyResultError)?.Value}"
         );
 
         // Verify composite expression index exists
@@ -777,7 +777,7 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
             // Both runs should succeed - IF NOT EXISTS handles already-existing index
             Assert.True(
                 result is MigrationApplyResultOk,
-                $"Nimblesite.DataProvider.Migration.Core {i + 1} failed: {(result as MigrationApplyResultError)?.Value}"
+                $"Migration {i + 1} failed: {(result as MigrationApplyResultError)?.Value}"
             );
         }
 

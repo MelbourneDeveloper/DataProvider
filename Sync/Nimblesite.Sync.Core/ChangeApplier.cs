@@ -4,7 +4,7 @@ namespace Nimblesite.Sync.Core;
 
 /// <summary>
 /// Applies changes to the local database with FK violation defer/retry.
-/// Implements spec Section 11 (Bi-Directional Nimblesite.Sync.Core Protocol).
+/// Implements spec Section 11 (Bi-Directional Sync Protocol).
 /// </summary>
 internal static class ChangeApplier
 {

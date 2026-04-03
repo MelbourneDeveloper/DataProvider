@@ -14,7 +14,7 @@ open Selecta
 type public LqlTypeProvider(config: TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces(config)
 
-    let namespaceName = "Nimblesite.Lql.Core"
+    let namespaceName = "Lql"
     let thisAssembly = Assembly.GetExecutingAssembly()
 
     let createValidatedType(typeName: string, lqlQuery: string, sql: string) =

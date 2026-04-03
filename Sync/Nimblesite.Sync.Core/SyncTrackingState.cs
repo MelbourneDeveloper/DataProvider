@@ -39,9 +39,9 @@ internal static class SyncTrackingManager
 {
     /// <summary>
     /// Determines if an entry should be synced based on tracking state.
-    /// Per spec Section 7.5.3 - Nimblesite.Sync.Core Decision Logic.
+    /// Per spec Section 7.5.3 - Sync Decision Logic.
     /// </summary>
-    /// <param name="entry">Nimblesite.Sync.Core log entry.</param>
+    /// <param name="entry">Sync log entry.</param>
     /// <param name="mapping">Table mapping with tracking config.</param>
     /// <param name="getMappingState">Function to get mapping state.</param>
     /// <param name="getRecordHash">Function to get record hash.</param>

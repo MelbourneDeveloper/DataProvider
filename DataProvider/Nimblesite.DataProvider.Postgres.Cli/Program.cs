@@ -1371,7 +1371,7 @@ internal static class Program
 }
 
 /// <summary>
-/// Configuration for PostgreSQL Nimblesite.DataProvider.Core code generation.
+/// Configuration for PostgreSQL DataProvider code generation.
 /// </summary>
 internal sealed record PostgresDataProviderConfig
 {

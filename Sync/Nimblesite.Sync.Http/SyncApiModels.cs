@@ -17,7 +17,7 @@ public sealed record RegisterClientRequest(string OriginId, long LastSyncVersion
 /// <summary>
 /// DTO for sync log entry (JSON serialization).
 /// </summary>
-/// <param name="Version">Nimblesite.Sync.Core version number.</param>
+/// <param name="Version">Sync version number.</param>
 /// <param name="TableName">Name of the table.</param>
 /// <param name="PkValue">Primary key value (JSON).</param>
 /// <param name="Operation">Operation type (INSERT, UPDATE, DELETE).</param>

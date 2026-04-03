@@ -4,7 +4,7 @@ open System.Data
 open Nimblesite.DataProvider.Core
 
 /// <summary>
-/// F# bindings for the existing C# Nimblesite.DataProvider.Core functionality
+/// F# bindings for the existing C# DataProvider functionality
 /// </summary>
 module SimpleSqlite =
     

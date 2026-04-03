@@ -168,7 +168,7 @@ internal static class MappingConfigParser
             Target: dto.Target,
             Transform: transform,
             Value: dto.Value,
-            Nimblesite.Lql.Core: dto.Lql
+            Lql: dto.Lql
         );
     }
 
@@ -244,11 +244,11 @@ internal static class MappingConfigParser
                     Target = c.Target,
                     Transform = c.Transform == TransformType.None ? null : ToLowerCase(c.Transform),
                     Value = c.Value,
-                    Nimblesite.Lql.Core = c.Lql,
+                    Lql = c.Lql,
                 }),
             ],
             ExcludedColumns = [.. m.ExcludedColumns],
-            Filter = m.Filter is not null ? new FilterDto { Nimblesite.Lql.Core = m.Filter.Lql } : null,
+            Filter = m.Filter is not null ? new FilterDto { Lql = m.Filter.Lql } : null,
             SyncTracking = new SyncTrackingDto
             {
                 Enabled = m.SyncTracking.Enabled,
@@ -268,7 +268,7 @@ internal static class MappingConfigParser
                             Transform =
                                 c.Transform == TransformType.None ? null : ToLowerCase(c.Transform),
                             Value = c.Value,
-                            Nimblesite.Lql.Core = c.Lql,
+                            Lql = c.Lql,
                         }),
                     ],
                 })
@@ -335,12 +335,12 @@ internal static class MappingConfigParser
         public string Target { get; set; } = "";
         public string? Transform { get; set; }
         public string? Value { get; set; }
-        public string? Nimblesite.Lql.Core { get; set; }
+        public string? Lql { get; set; }
     }
 
     private sealed class FilterDto
     {
-        public string Nimblesite.Lql.Core { get; set; } = "";
+        public string Lql { get; set; } = "";
     }
 
     private sealed class SyncTrackingDto

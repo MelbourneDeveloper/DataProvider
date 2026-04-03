@@ -389,7 +389,7 @@ public sealed class SpecComplianceTests : IDisposable
 
     #endregion
 
-    #region Section 11: Bi-Directional Nimblesite.Sync.Core Protocol
+    #region Section 11: Bi-Directional Sync Protocol
 
     [Fact]
     public void Spec_S11_EchoPrevention_SkipsOwnOriginChanges()

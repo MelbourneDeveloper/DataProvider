@@ -31,14 +31,14 @@ public sealed record MappedPushResult(
 );
 
 /// <summary>
-/// Nimblesite.Sync.Core coordinator with data mapping support.
+/// Sync coordinator with data mapping support.
 /// Applies mappings (Section 7) during sync operations.
 /// </summary>
 public static class MappedSyncCoordinator
 {
     /// <summary>
     /// Pulls changes from remote and applies them with mapping transformations.
-    /// Per spec Section 12.2 - Nimblesite.Sync.Core Session Protocol.
+    /// Per spec Section 12.2 - Sync Session Protocol.
     /// </summary>
     /// <param name="myOriginId">This replica's origin ID.</param>
     /// <param name="lastSyncedVersion">Last synced version.</param>

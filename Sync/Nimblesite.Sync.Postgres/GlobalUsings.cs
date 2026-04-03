@@ -1,3 +1,4 @@
+global using Nimblesite.Sync.Core;
 global using Microsoft.Extensions.Logging;
 global using Npgsql;
 // Type aliases for Result types - matching Nimblesite.Sync.SQLite patterns using Outcome package

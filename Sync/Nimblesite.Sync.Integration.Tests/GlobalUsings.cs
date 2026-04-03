@@ -7,7 +7,7 @@ global using Nimblesite.Sync.Postgres;
 global using Nimblesite.Sync.SQLite;
 global using Testcontainers.PostgreSql;
 global using Xunit;
-// Type aliases for Result types - matching Nimblesite.Sync.Core patterns using Outcome package
+// Type aliases for Result types - matching Sync patterns using Outcome package
 global using BoolSyncOk = Outcome.Result<bool, Nimblesite.Sync.Core.SyncError>.Ok<bool, Nimblesite.Sync.Core.SyncError>;
 global using SyncLogListOk = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<Nimblesite.Sync.Core.SyncLogEntry>,

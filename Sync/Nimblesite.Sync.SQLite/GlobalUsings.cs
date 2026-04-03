@@ -1,3 +1,4 @@
+global using Nimblesite.Sync.Core;
 // Type aliases for Result types to reduce verbosity in Nimblesite.Sync.SQLite
 global using BoolSyncError = Outcome.Result<bool, Nimblesite.Sync.Core.SyncError>.Error<bool, Nimblesite.Sync.Core.SyncError>;
 global using BoolSyncOk = Outcome.Result<bool, Nimblesite.Sync.Core.SyncError>.Ok<bool, Nimblesite.Sync.Core.SyncError>;

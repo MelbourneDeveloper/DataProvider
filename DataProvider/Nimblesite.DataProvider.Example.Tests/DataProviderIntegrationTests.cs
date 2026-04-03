@@ -9,7 +9,7 @@ namespace Nimblesite.DataProvider.Example.Tests;
 #pragma warning disable CS1591
 
 /// <summary>
-/// Integration tests for Nimblesite.DataProvider.Core code generation
+/// Integration tests for DataProvider code generation
 /// </summary>
 public sealed class DataProviderIntegrationTests : IDisposable
 {

@@ -44,7 +44,7 @@ public sealed record PushResult(int ChangesPushed, long FromVersion, long ToVers
 ///     Pull: new PullResult(ChangesApplied: 42, FromVersion: 100, ToVersion: 142),
 ///     Push: new PushResult(ChangesPushed: 15, FromVersion: 50, ToVersion: 65)
 /// );
-/// Console.WriteLine($"Nimblesite.Sync.Core complete: pulled {syncResult.Pull.ChangesApplied}, pushed {syncResult.Push.ChangesPushed}");
+/// Console.WriteLine($"Sync complete: pulled {syncResult.Pull.ChangesApplied}, pushed {syncResult.Push.ChangesPushed}");
 /// </code>
 /// </example>
 public sealed record SyncResult(PullResult Pull, PushResult Push);
@@ -52,7 +52,7 @@ public sealed record SyncResult(PullResult Pull, PushResult Push);
 /// <summary>
 /// Coordinates sync operations between replicas.
 /// Main entry point for pull/push sync operations.
-/// Implements spec Section 11 (Bi-Directional Nimblesite.Sync.Core Protocol).
+/// Implements spec Section 11 (Bi-Directional Sync Protocol).
 /// </summary>
 /// <example>
 /// <code>
@@ -337,8 +337,8 @@ public static class SyncCoordinator
     /// <param name="sendToRemote">Function to send changes to remote.</param>
     /// <param name="updateLastPushVersion">Action to update last push version.</param>
     /// <param name="logger">Logger for sync operations.</param>
-    /// <returns>Nimblesite.Sync.Core result or sync error.</returns>
-    public static SyncResultResult Nimblesite.Sync.Core(
+    /// <returns>Sync result or sync error.</returns>
+    public static SyncResultResult Sync(
         string myOriginId,
         long lastServerVersion,
         long lastPushVersion,

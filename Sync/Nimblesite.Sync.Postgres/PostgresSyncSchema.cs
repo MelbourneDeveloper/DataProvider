@@ -17,13 +17,13 @@ public static class PostgresSyncSchema
         {
             using var cmd = connection.CreateCommand();
             cmd.CommandText = """
-                -- Nimblesite.Sync.Core state (persistent)
+                -- Sync state (persistent)
                 CREATE TABLE IF NOT EXISTS _sync_state (
                     key TEXT PRIMARY KEY,
                     value TEXT NOT NULL
                 );
 
-                -- Nimblesite.Sync.Core session (ephemeral flag)
+                -- Sync session (ephemeral flag)
                 CREATE TABLE IF NOT EXISTS _sync_session (
                     sync_active INTEGER DEFAULT 0
                 );

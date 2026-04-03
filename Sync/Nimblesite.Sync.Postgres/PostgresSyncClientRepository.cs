@@ -52,7 +52,7 @@ public static class PostgresSyncClientRepository
     /// </summary>
     /// <param name="connection">PostgreSQL connection.</param>
     /// <param name="originId">Origin ID to look up.</param>
-    /// <returns>Nimblesite.Sync.Core client if found, null if not found, or database error.</returns>
+    /// <returns>Sync client if found, null if not found, or database error.</returns>
     public static SyncClientResult GetByOrigin(NpgsqlConnection connection, string originId)
     {
         try

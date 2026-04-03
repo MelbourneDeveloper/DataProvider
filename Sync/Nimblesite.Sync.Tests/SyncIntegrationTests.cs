@@ -37,7 +37,7 @@ public sealed class SyncIntegrationTests : IDisposable
         InsertPerson(_serverDb, "p1", "Alice");
         InsertPerson(_serverDb, "p2", "Bob");
 
-        // Nimblesite.Sync.Core: Pull from server to client
+        // Sync: Pull from server to client
         var pullResult = PullChanges(_serverDb, _clientDb, ClientOrigin);
 
         Assert.True(pullResult > 0);
@@ -55,7 +55,7 @@ public sealed class SyncIntegrationTests : IDisposable
         // Server updates
         UpdatePerson(_serverDb, "p1", "Alice Updated");
 
-        // Nimblesite.Sync.Core again
+        // Sync again
         var pullResult = PullChanges(_serverDb, _clientDb, ClientOrigin);
 
         Assert.True(pullResult > 0);
@@ -73,7 +73,7 @@ public sealed class SyncIntegrationTests : IDisposable
         // Server deletes
         DeletePerson(_serverDb, "p1");
 
-        // Nimblesite.Sync.Core again
+        // Sync again
         var pullResult = PullChanges(_serverDb, _clientDb, ClientOrigin);
 
         Assert.True(pullResult > 0);
@@ -179,7 +179,7 @@ public sealed class SyncIntegrationTests : IDisposable
         InsertPerson(_serverDb, "p1", "Alice");
         InsertPerson(_serverDb, "p2", "Bob");
 
-        // Nimblesite.Sync.Core to client
+        // Sync to client
         PullChanges(_serverDb, _clientDb, ClientOrigin);
 
         // Compute hashes
@@ -241,7 +241,7 @@ public sealed class SyncIntegrationTests : IDisposable
                 Name TEXT NOT NULL
             );
 
-            -- Nimblesite.Sync.Core triggers for Person
+            -- Sync triggers for Person
             CREATE TRIGGER Person_sync_insert AFTER INSERT ON Person
             WHEN (SELECT sync_active FROM _sync_session) = 0
             BEGIN
@@ -271,7 +271,7 @@ public sealed class SyncIntegrationTests : IDisposable
                         strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
             END;
 
-            -- Nimblesite.Sync.Core triggers for Parent
+            -- Sync triggers for Parent
             CREATE TRIGGER Parent_sync_insert AFTER INSERT ON Parent
             WHEN (SELECT sync_active FROM _sync_session) = 0
             BEGIN
@@ -282,7 +282,7 @@ public sealed class SyncIntegrationTests : IDisposable
                         strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
             END;
 
-            -- Nimblesite.Sync.Core triggers for Child
+            -- Sync triggers for Child
             CREATE TRIGGER Child_sync_insert AFTER INSERT ON Child
             WHEN (SELECT sync_active FROM _sync_session) = 0
             BEGIN

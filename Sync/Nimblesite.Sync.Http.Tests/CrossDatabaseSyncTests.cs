@@ -229,7 +229,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        // Nimblesite.Sync.Core SQLite -> Postgres
+        // Sync SQLite -> Postgres
         var sqliteChanges = SyncLogRepository.FetchChanges(sqlite, 0, 100);
         var sqliteChangesList = ((SyncLogListOk)sqliteChanges).Value;
 
@@ -240,7 +240,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         }
         PostgresSyncSession.DisableSuppression(postgres);
 
-        // Nimblesite.Sync.Core Postgres -> SQLite (skip echo)
+        // Sync Postgres -> SQLite (skip echo)
         var postgresChanges = PostgresSyncLogRepository.FetchChanges(postgres, 0, 100);
         var postgresChangesList = ((SyncLogListOk)postgresChanges).Value;
 
@@ -290,7 +290,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        // Nimblesite.Sync.Core to Postgres
+        // Sync to Postgres
         var insertChanges = SyncLogRepository.FetchChanges(sqlite, 0, 100);
         PostgresSyncSession.EnableSuppression(postgres);
         foreach (var entry in ((SyncLogListOk)insertChanges).Value)
@@ -309,7 +309,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        // Nimblesite.Sync.Core update to Postgres
+        // Sync update to Postgres
         var updateChanges = SyncLogRepository.FetchChanges(sqlite, versionAfterInsert, 100);
         Assert.True(updateChanges is SyncLogListOk);
         var updateList = ((SyncLogListOk)updateChanges).Value;
@@ -372,7 +372,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         Assert.Single(deleteList);
         Assert.Equal(SyncOperation.Delete, deleteList[0].Operation);
 
-        // Nimblesite.Sync.Core tombstone to Postgres
+        // Sync tombstone to Postgres
         PostgresSyncSession.EnableSuppression(postgres);
         var applyResult = PostgresChangeApplier.ApplyChange(postgres, deleteList[0], _logger);
         PostgresSyncSession.DisableSuppression(postgres);
@@ -445,7 +445,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
             cmd.ExecuteNonQuery();
         }
 
-        // Nimblesite.Sync.Core in batches
+        // Sync in batches
         var batchSize = 25;
         var fromVersion = 0L;
         var totalSynced = 0;

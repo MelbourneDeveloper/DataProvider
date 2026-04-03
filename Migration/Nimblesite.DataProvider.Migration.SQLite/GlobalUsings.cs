@@ -1,3 +1,4 @@
+global using Nimblesite.DataProvider.Migration.Core;
 global using System.Data;
 global using System.Text;
 global using Microsoft.Data.Sqlite;

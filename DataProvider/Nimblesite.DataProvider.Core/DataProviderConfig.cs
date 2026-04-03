@@ -1,7 +1,7 @@
 namespace Nimblesite.DataProvider.Core;
 
 /// <summary>
-/// Configuration for Nimblesite.DataProvider.Core code generation
+/// Configuration for DataProvider code generation
 /// </summary>
 /// <example>
 /// <code>

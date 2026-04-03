@@ -325,7 +325,7 @@ public sealed class SyncCoordinatorTests : IDisposable
 
     #endregion
 
-    #region Bidirectional Nimblesite.Sync.Core Tests
+    #region Bidirectional Sync Tests
 
     [Fact]
     public void Sync_PullThenPush_Both()
@@ -509,7 +509,7 @@ public sealed class SyncCoordinatorTests : IDisposable
                 Name TEXT NOT NULL
             );
 
-            -- Nimblesite.Sync.Core triggers
+            -- Sync triggers
             CREATE TRIGGER Person_sync_insert AFTER INSERT ON Person
             WHEN (SELECT sync_active FROM _sync_session) = 0
             BEGIN

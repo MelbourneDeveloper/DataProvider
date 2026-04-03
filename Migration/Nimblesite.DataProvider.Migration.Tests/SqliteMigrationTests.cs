@@ -920,10 +920,10 @@ public sealed class SqliteMigrationTests
                 _logger
             );
 
-            // Assert - Nimblesite.DataProvider.Migration.Core succeeded
+            // Assert - Migration succeeded
             Assert.True(
                 result is MigrationApplyResultOk,
-                $"Nimblesite.DataProvider.Migration.Core failed: {(result as MigrationApplyResultError)?.Value}"
+                $"Migration failed: {(result as MigrationApplyResultError)?.Value}"
             );
 
             // Verify index exists
@@ -1043,7 +1043,7 @@ public sealed class SqliteMigrationTests
             // Assert
             Assert.True(
                 result is MigrationApplyResultOk,
-                $"Nimblesite.DataProvider.Migration.Core failed: {(result as MigrationApplyResultError)?.Value}"
+                $"Migration failed: {(result as MigrationApplyResultError)?.Value}"
             );
 
             // Verify composite expression index exists
@@ -1102,7 +1102,7 @@ public sealed class SqliteMigrationTests
 
                 Assert.True(
                     result is MigrationApplyResultOk,
-                    $"Nimblesite.DataProvider.Migration.Core {i + 1} failed: {(result as MigrationApplyResultError)?.Value}"
+                    $"Migration {i + 1} failed: {(result as MigrationApplyResultError)?.Value}"
                 );
 
                 // Second run should have 0 operations (schema already matches)

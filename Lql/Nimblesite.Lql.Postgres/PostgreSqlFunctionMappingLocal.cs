@@ -4,7 +4,7 @@ using Nimblesite.Lql.Core.FunctionMapping;
 namespace Nimblesite.Lql.Postgres;
 
 /// <summary>
-/// Local PostgreSQL-specific function mapping implementation for the Nimblesite.Lql.Core project
+/// Local PostgreSQL-specific function mapping implementation for the Lql project
 /// </summary>
 public sealed class PostgreSqlFunctionMappingLocal : FunctionMappingProviderBase
 {

@@ -6,7 +6,7 @@ namespace Nimblesite.Sync.SQLite;
 
 /// <summary>
 /// Applies sync changes to SQLite database.
-/// Implements spec Section 11 (Bi-Directional Nimblesite.Sync.Core Protocol).
+/// Implements spec Section 11 (Bi-Directional Sync Protocol).
 /// </summary>
 public static class ChangeApplierSQLite
 {

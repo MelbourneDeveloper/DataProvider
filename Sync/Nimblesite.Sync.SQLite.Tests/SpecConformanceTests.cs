@@ -7,7 +7,7 @@ using Xunit;
 namespace Nimblesite.Sync.SQLite.Tests;
 
 /// <summary>
-/// Integration tests verifying conformance to the .NET Nimblesite.Sync.Core Framework Specification.
+/// Integration tests verifying conformance to the .NET Sync Framework Specification.
 /// Each test maps to specific spec sections to prove the implementation is correct.
 /// NO MOCKS - real SQLite databases only!
 /// </summary>
@@ -370,7 +370,7 @@ public sealed partial class SpecConformanceTests : IDisposable
 
     #endregion
 
-    #region Section 11: Bi-Directional Nimblesite.Sync.Core Protocol
+    #region Section 11: Bi-Directional Sync Protocol
 
     /// <summary>
     /// Spec 11.3: Changes are applied in global version order (ascending).

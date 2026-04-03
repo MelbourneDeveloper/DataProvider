@@ -26,7 +26,7 @@ public partial class LqlFileBasedTests
     private static void ExecuteFileBasedTest(string testCaseName, string dialect)
     {
         // Arrange
-        string lqlFile = Path.Combine(TestDataDirectory, "Nimblesite.Lql.Core", $"{testCaseName}.lql");
+        string lqlFile = Path.Combine(TestDataDirectory, "Lql", $"{testCaseName}.lql");
         string expectedSqlFile = Path.Combine(
             TestDataDirectory,
             "ExpectedSql",
@@ -81,7 +81,7 @@ public partial class LqlFileBasedTests
     public void GetAllFileBasedTests_ShouldHaveMatchingFiles()
     {
         // Arrange
-        string lqlDirectory = Path.Combine(TestDataDirectory, "Nimblesite.Lql.Core");
+        string lqlDirectory = Path.Combine(TestDataDirectory, "Lql");
         string postgreSqlDirectory = Path.Combine(TestDataDirectory, "ExpectedSql", "PostgreSql");
         string sqlServerDirectory = Path.Combine(TestDataDirectory, "ExpectedSql", "SqlServer");
 

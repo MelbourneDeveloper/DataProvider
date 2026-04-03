@@ -7,7 +7,7 @@ namespace Nimblesite.Sync.Postgres;
 
 /// <summary>
 /// Applies sync changes to PostgreSQL tables.
-/// Implements spec Section 11 (Bi-Directional Nimblesite.Sync.Core Protocol).
+/// Implements spec Section 11 (Bi-Directional Sync Protocol).
 /// </summary>
 public static class PostgresChangeApplier
 {
@@ -16,7 +16,7 @@ public static class PostgresChangeApplier
     /// Returns true on success, false on FK violation (to defer), error on other failures.
     /// </summary>
     /// <param name="connection">PostgreSQL connection.</param>
-    /// <param name="entry">Nimblesite.Sync.Core log entry to apply.</param>
+    /// <param name="entry">Sync log entry to apply.</param>
     /// <param name="logger">Logger for change application.</param>
     /// <returns>True on success, false on FK violation, error on failure.</returns>
     [SuppressMessage(

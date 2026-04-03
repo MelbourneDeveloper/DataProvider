@@ -4,7 +4,7 @@ using P = Nimblesite.DataProvider.Migration.Core.PortableTypes;
 namespace Nimblesite.Sync.Core;
 
 /// <summary>
-/// Database-agnostic sync schema definition using the Nimblesite.DataProvider.Migration.Core framework.
+/// Database-agnostic sync schema definition using the Migration framework.
 /// Implements spec Appendix A schema for all supported databases.
 /// </summary>
 public static class SyncSchemaDefinition
@@ -29,14 +29,14 @@ public static class SyncSchemaDefinition
                 t =>
                     t.Column("key", P.Text, c => c.PrimaryKey())
                         .Column("value", P.Text, c => c.NotNull())
-                        .Comment("Nimblesite.Sync.Core state (persistent). Stores origin ID and version tracking.")
+                        .Comment("Sync state (persistent). Stores origin ID and version tracking.")
             )
             .Table(
                 "_sync_session",
                 t =>
                     t.Column("sync_active", P.Int, c => c.NotNull().Default("0"))
                         .Comment(
-                            "Nimblesite.Sync.Core session (ephemeral flag). Single row with sync_active for trigger suppression."
+                            "Sync session (ephemeral flag). Single row with sync_active for trigger suppression."
                         )
             )
             .Table(

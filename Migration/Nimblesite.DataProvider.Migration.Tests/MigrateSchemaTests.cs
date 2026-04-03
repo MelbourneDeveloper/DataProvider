@@ -115,7 +115,7 @@ public sealed class MigrateSchemaTests : IAsyncLifetime
         // Assert
         Assert.True(
             result.Success,
-            $"Nimblesite.DataProvider.Migration.Core failed with errors: {string.Join(", ", result.Errors)}"
+            $"Migration failed with errors: {string.Join(", ", result.Errors)}"
         );
         Assert.Equal(4, result.TablesCreated);
         Assert.Empty(result.Errors);
@@ -193,7 +193,7 @@ public sealed class MigrateSchemaTests : IAsyncLifetime
         );
 
         // Assert
-        Assert.True(result.Success, $"Nimblesite.DataProvider.Migration.Core failed: {string.Join(", ", result.Errors)}");
+        Assert.True(result.Success, $"Migration failed: {string.Join(", ", result.Errors)}");
         Assert.Equal(4, result.TablesCreated); // All 4 reported (IF NOT EXISTS)
         Assert.Empty(result.Errors);
 

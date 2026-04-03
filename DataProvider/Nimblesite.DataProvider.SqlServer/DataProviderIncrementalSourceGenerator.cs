@@ -79,7 +79,7 @@ public class DataProviderIncrementalSourceGenerator : IIncrementalGenerator
                                 "DataProvider002",
                                 "Configuration parsing failed",
                                 "Failed to parse Nimblesite.DataProvider.Core.json: {0}",
-                                "Nimblesite.DataProvider.Core",
+                                "DataProvider",
                                 DiagnosticSeverity.Error,
                                 true
                             ),
@@ -100,7 +100,7 @@ public class DataProviderIncrementalSourceGenerator : IIncrementalGenerator
                         "DataProvider003",
                         "Configuration missing",
                         "Nimblesite.DataProvider.Core.json configuration file is required for code generation",
-                        "Nimblesite.DataProvider.Core",
+                        "DataProvider",
                         DiagnosticSeverity.Error,
                         true
                     ),
@@ -119,7 +119,7 @@ public class DataProviderIncrementalSourceGenerator : IIncrementalGenerator
                     "DataProvider005",
                     "Source generator delegated to CLI",
                     "Code generation is handled by CLI in MSBuild target, not by this incremental generator",
-                    "Nimblesite.DataProvider.Core",
+                    "DataProvider",
                     DiagnosticSeverity.Info,
                     true
                 ),

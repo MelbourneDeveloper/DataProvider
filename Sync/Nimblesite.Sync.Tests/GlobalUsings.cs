@@ -1,3 +1,4 @@
+global using Nimblesite.Sync.Core;
 global using Xunit;
 // Type aliases for Outcome Result types to simplify test assertions
 global using BatchApplyResultError = Outcome.Result<Nimblesite.Sync.Core.BatchApplyResult, Nimblesite.Sync.Core.SyncError>.Error<

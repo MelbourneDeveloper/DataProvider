@@ -169,7 +169,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
 
     #endregion
 
-    #region Spec Section 11: Bi-Directional Nimblesite.Sync.Core Protocol
+    #region Spec Section 11: Bi-Directional Sync Protocol
 
     [Fact]
     public void Spec_S11_SyncSQLiteToPostgres_InsertPropagates()
@@ -240,7 +240,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         InsertPerson(_sqliteConn, "bidirA", "SQLiteOnly", "sqlite@test.com");
         InsertPerson(_pgConn, "bidirB", "PostgresOnly", "postgres@test.com");
 
-        // Nimblesite.Sync.Core SQLite -> Postgres
+        // Sync SQLite -> Postgres
         var sqliteChanges = FetchChanges(_sqliteConn, 0);
         PostgresSyncSession.EnableSuppression(_pgConn);
         foreach (var entry in sqliteChanges)
@@ -249,7 +249,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         }
         PostgresSyncSession.DisableSuppression(_pgConn);
 
-        // Nimblesite.Sync.Core Postgres -> SQLite
+        // Sync Postgres -> SQLite
         var pgChanges = FetchChanges(_pgConn, 0);
         SyncSessionManager.EnableSuppression(_sqliteConn);
         foreach (var entry in pgChanges)
@@ -275,7 +275,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         // Insert in both, then update in SQLite
         InsertPerson(_sqliteConn, "upd1", "Original", "orig@test.com");
 
-        // Nimblesite.Sync.Core to Postgres first
+        // Sync to Postgres first
         var initialChanges = FetchChanges(_sqliteConn, 0);
         PostgresSyncSession.EnableSuppression(_pgConn);
         foreach (var entry in initialChanges)
@@ -287,7 +287,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         // Update in SQLite
         UpdatePerson(_sqliteConn, "upd1", "Updated");
 
-        // Nimblesite.Sync.Core update to Postgres
+        // Sync update to Postgres
         var updateChanges = FetchChanges(_sqliteConn, initialChanges[0].Version);
         PostgresSyncSession.EnableSuppression(_pgConn);
         foreach (var entry in updateChanges)
@@ -320,7 +320,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         // Delete in SQLite
         DeletePerson(_sqliteConn, "del1");
 
-        // Nimblesite.Sync.Core delete
+        // Sync delete
         var deleteChanges = FetchChanges(_sqliteConn, insertChanges[0].Version);
         PostgresSyncSession.EnableSuppression(_pgConn);
         foreach (var entry in deleteChanges)
@@ -347,7 +347,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
             InsertPerson(_sqliteConn, $"batch{i}", $"Person{i}", $"p{i}@test.com");
         }
 
-        // Nimblesite.Sync.Core in batches
+        // Sync in batches
         long lastVersion = 0;
         var totalSynced = 0;
         const int batchSize = 25;
@@ -431,7 +431,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         var changes = FetchChanges(_sqliteConn, 0);
         var hash = HashVerifier.ComputeBatchHash(changes);
 
-        // Nimblesite.Sync.Core to Postgres
+        // Sync to Postgres
         PostgresSyncSession.EnableSuppression(_pgConn);
         foreach (var entry in changes)
         {

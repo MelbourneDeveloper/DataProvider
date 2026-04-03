@@ -11,7 +11,7 @@ public sealed record MigrationOptions
     public static MigrationOptions Default => new();
 
     /// <summary>
-    /// Nimblesite.DataProvider.Migration.Core options that allow destructive operations.
+    /// Migration options that allow destructive operations.
     /// USE WITH CAUTION.
     /// </summary>
     public static MigrationOptions Destructive => new() { AllowDestructive = true };
