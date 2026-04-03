@@ -1,9 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Diagnostics;
+using Microsoft.Data.Sqlite;
 using Nimblesite.Lql.Browser.Models;
 using Nimblesite.Lql.SQLite;
-using Microsoft.Data.Sqlite;
 using Outcome;
 using Selecta;
 

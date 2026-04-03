@@ -10,81 +10,6 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
-  # ── Build LSP binaries for each platform ──────────────────────────────────
-  build-lsp:
-    timeout-minutes: 10
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            artifact: lql-lsp-linux-x64
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            artifact: lql-lsp-darwin-x64
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            artifact: lql-lsp-darwin-arm64
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            artifact: lql-lsp-windows-x64.exe
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - name: Build LSP binary
-        working-directory: Lql/lql-lsp-rust
-        run: cargo build --release --target ${{ matrix.target }} -p lql-lsp
-
-      - name: Rename binary (Unix)
-        if: runner.os != 'Windows'
-        run: cp Lql/lql-lsp-rust/target/${{ matrix.target }}/release/lql-lsp ${{ matrix.artifact }}
-
-      - name: Rename binary (Windows)
-        if: runner.os == 'Windows'
-        run: cp Lql/lql-lsp-rust/target/${{ matrix.target }}/release/lql-lsp.exe ${{ matrix.artifact }}
-
-      - name: Upload LSP artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact }}
-
-  # ── Build VSIX (no bundled binaries) ──────────────────────────────────────
-  build-vsix:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Extract version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Build VSIX
-        working-directory: Lql/LqlExtension
-        run: |
-          npm install --no-audit --no-fund
-          npm run compile
-          npx vsce package --no-git-tag-version --no-update-package-json "${{ steps.version.outputs.VERSION }}"
-
-      - name: Upload VSIX artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: lql-vsix
-          path: Lql/LqlExtension/*.vsix
-
-  # ── Publish NuGet packages ────────────────────────────────────────────────
   publish:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -96,98 +21,16 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Extract version from tag
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Build and Pack libraries
+      - name: Build and Pack
         run: |
-          # Build and pack only the release packages (excludes Samples which need DB setup)
-          dotnet build Other/Selecta/Selecta.csproj -c Release
-          dotnet build Migration/Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Core.csproj -c Release
-          dotnet build Migration/Nimblesite.DataProvider.Migration.SQLite/Nimblesite.DataProvider.Migration.SQLite.csproj -c Release
-          dotnet build Migration/Nimblesite.DataProvider.Migration.Postgres/Nimblesite.DataProvider.Migration.Postgres.csproj -c Release
-          dotnet build DataProvider/Nimblesite.DataProvider.Core/Nimblesite.DataProvider.Core.csproj -c Release
-          dotnet build DataProvider/Nimblesite.DataProvider.SQLite/Nimblesite.DataProvider.SQLite.csproj -c Release
-          dotnet build DataProvider/Nimblesite.DataProvider.Postgres.Cli/Nimblesite.DataProvider.Postgres.Cli.csproj -c Release
-          dotnet build DataProvider/Nimblesite.DataProvider.SQLite.Cli/Nimblesite.DataProvider.SQLite.Cli.csproj -c Release
-          dotnet build Migration/Nimblesite.DataProvider.Migration.Cli/Nimblesite.DataProvider.Migration.Cli.csproj -c Release
-          dotnet build Lql/Nimblesite.Lql.Core/Lql.csproj -c Release
-          dotnet build Lql/Nimblesite.Lql.Postgres/Nimblesite.Lql.Postgres.csproj -c Release
-          dotnet build Lql/Nimblesite.Lql.SQLite/Nimblesite.Lql.SQLite.csproj -c Release
-          dotnet build Lql/Nimblesite.Lql.SqlServer/Nimblesite.Lql.SqlServer.csproj -c Release
-          dotnet build Sync/Nimblesite.Sync.Core/Nimblesite.Sync.Core.csproj -c Release
-          dotnet build Sync/Nimblesite.Sync.Postgres/Nimblesite.Sync.Postgres.csproj -c Release
-          dotnet build Sync/Nimblesite.Sync.Http/Nimblesite.Sync.Http.csproj -c Release
-          dotnet build Gatekeeper/Gatekeeper.Api/Gatekeeper.Api.csproj -c Release
-
-      - name: Test core libraries
-        run: |
-          # Run tests for core libraries only (Samples require database infrastructure)
-          dotnet test DataProvider/Nimblesite.DataProvider.Tests/Nimblesite.DataProvider.Tests.csproj -c Release --no-build || true
-          dotnet test Migration/Nimblesite.DataProvider.Migration.Tests/Nimblesite.DataProvider.Migration.Tests.csproj -c Release --no-build || true
-
-      - name: Pack libraries
-        run: |
-          dotnet pack Other/Selecta/Selecta.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack Migration/Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Core.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack Migration/Nimblesite.DataProvider.Migration.SQLite/Nimblesite.DataProvider.Migration.SQLite.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack Migration/Nimblesite.DataProvider.Migration.Postgres/Nimblesite.DataProvider.Migration.Postgres.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack DataProvider/Nimblesite.DataProvider.Core/Nimblesite.DataProvider.Core.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack DataProvider/Nimblesite.DataProvider.SQLite/Nimblesite.DataProvider.SQLite.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack Lql/Nimblesite.Lql.Core/Lql.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack Lql/Nimblesite.Lql.Postgres/Nimblesite.Lql.Postgres.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack Lql/Nimblesite.Lql.SQLite/Nimblesite.Lql.SQLite.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack Lql/Nimblesite.Lql.SqlServer/Nimblesite.Lql.SqlServer.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack Sync/Nimblesite.Sync.Core/Nimblesite.Sync.Core.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack Sync/Nimblesite.Sync.Postgres/Nimblesite.Sync.Postgres.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack Sync/Nimblesite.Sync.Http/Nimblesite.Sync.Http.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack Gatekeeper/Gatekeeper.Api/Gatekeeper.Api.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-
-      - name: Pack CLI tools
-        run: |
-          dotnet pack DataProvider/Nimblesite.DataProvider.Postgres.Cli/Nimblesite.DataProvider.Postgres.Cli.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack DataProvider/Nimblesite.DataProvider.SQLite.Cli/Nimblesite.DataProvider.SQLite.Cli.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack Migration/Nimblesite.DataProvider.Migration.Cli/Nimblesite.DataProvider.Migration.Cli.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
+          dotnet build -c Release
+          dotnet pack -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
 
       - name: Push to NuGet
         run: dotnet nuget push "./nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-
-      - name: Upload NuGet artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: nupkgs
-          path: ./nupkgs/*.nupkg
-
-  # ── Create GitHub Release with all artifacts ──────────────────────────────
-  release:
-    needs: [publish, build-lsp, build-vsix]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Collect release assets
-        run: |
-          mkdir -p release-assets
-          cp artifacts/nupkgs/*.nupkg release-assets/
-          cp artifacts/lql-lsp-linux-x64/lql-lsp-linux-x64 release-assets/
-          cp artifacts/lql-lsp-darwin-x64/lql-lsp-darwin-x64 release-assets/
-          cp artifacts/lql-lsp-darwin-arm64/lql-lsp-darwin-arm64 release-assets/
-          cp artifacts/lql-lsp-windows-x64.exe/lql-lsp-windows-x64.exe release-assets/
-          cp artifacts/lql-vsix/*.vsix release-assets/
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: release-assets/*
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

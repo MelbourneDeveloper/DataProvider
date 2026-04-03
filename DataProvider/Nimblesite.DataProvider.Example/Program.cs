@@ -1,5 +1,5 @@
-using Nimblesite.Lql.SQLite;
 using Microsoft.Data.Sqlite;
+using Nimblesite.Lql.SQLite;
 using static Nimblesite.DataProvider.Example.MapFunctions;
 
 namespace Nimblesite.DataProvider.Example;

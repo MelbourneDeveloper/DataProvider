@@ -4,9 +4,9 @@ using System.Diagnostics;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Data.Sqlite;
 using Nimblesite.Lql.Browser.Models;
 using Nimblesite.Lql.SQLite;
-using Microsoft.Data.Sqlite;
 using Outcome;
 using Selecta;
 

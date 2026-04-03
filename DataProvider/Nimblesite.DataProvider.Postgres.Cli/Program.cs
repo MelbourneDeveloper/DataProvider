@@ -34,7 +34,10 @@ internal static class Program
         {
             IsRequired = true,
         };
-        var config = new Option<FileInfo>("--config", description: "Path to Nimblesite.DataProvider.Core.json")
+        var config = new Option<FileInfo>(
+            "--config",
+            description: "Path to Nimblesite.DataProvider.Core.json"
+        )
         {
             IsRequired = true,
         };
@@ -86,7 +89,9 @@ internal static class Program
             var cfg = JsonSerializer.Deserialize<PostgresDataProviderConfig>(cfgText, JsonOptions);
             if (cfg is null || string.IsNullOrWhiteSpace(cfg.ConnectionString))
             {
-                Console.WriteLine("❌ Nimblesite.DataProvider.Core.json ConnectionString is required");
+                Console.WriteLine(
+                    "❌ Nimblesite.DataProvider.Core.json ConnectionString is required"
+                );
                 return 1;
             }
 

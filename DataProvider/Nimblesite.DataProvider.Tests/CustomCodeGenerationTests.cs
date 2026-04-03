@@ -1,5 +1,4 @@
 using System.Collections.Frozen;
-
 using Nimblesite.DataProvider.SQLite;
 using Outcome;
 using Selecta;

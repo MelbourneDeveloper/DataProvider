@@ -1,5 +1,5 @@
-global using Nimblesite.DataProvider.Core;
 global using Generated;
+global using Nimblesite.DataProvider.Core;
 // Type aliases for Result types to reduce verbosity in Nimblesite.DataProvider.Example.Tests
 global using CustomerListError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.Customer>,

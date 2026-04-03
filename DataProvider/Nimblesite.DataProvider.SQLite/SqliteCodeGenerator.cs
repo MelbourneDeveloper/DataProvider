@@ -1,10 +1,10 @@
 using System.Collections.Immutable;
 using System.Text;
 using System.Text.Json;
-using Nimblesite.DataProvider.Core.CodeGeneration;
-using Nimblesite.DataProvider.SQLite.CodeGeneration;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
+using Nimblesite.DataProvider.Core.CodeGeneration;
+using Nimblesite.DataProvider.SQLite.CodeGeneration;
 using Outcome;
 using Selecta;
 
@@ -342,7 +342,10 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
             && at.Path.EndsWith(".sql", StringComparison.OrdinalIgnoreCase)
         );
         var configFiles = additional.Where(at =>
-            at.Path.EndsWith("Nimblesite.DataProvider.Core.json", StringComparison.OrdinalIgnoreCase)
+            at.Path.EndsWith(
+                "Nimblesite.DataProvider.Core.json",
+                StringComparison.OrdinalIgnoreCase
+            )
         );
         var groupingFiles = additional.Where(at =>
             at.Path.EndsWith(".grouping.json", StringComparison.OrdinalIgnoreCase)

@@ -46,7 +46,7 @@
 
   <!-- Create database from YAML using Nimblesite.DataProvider.Migration.Cli before build -->
   <Target Name="CreateTestDatabase" BeforeTargets="BeforeCompile">
-    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Cli/Nimblesite.DataProvider.Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/typeprovider-test-schema.yaml" --output "$(MSBuildProjectDirectory)/typeprovider-test.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
+    <Exec Command='dotnet run --project "$(MSBuildThisFileDirectory)../../Migration/Nimblesite.DataProvider.Migration.Cli/Nimblesite.DataProvider.Migration.Cli.csproj" -- --schema "$(MSBuildProjectDirectory)/typeprovider-test-schema.yaml" --output "$(MSBuildProjectDirectory)/typeprovider-test.db" --provider sqlite' WorkingDirectory='$(MSBuildProjectDirectory)' StandardOutputImportance='High' StandardErrorImportance='High' />
   </Target>
 
 </Project>

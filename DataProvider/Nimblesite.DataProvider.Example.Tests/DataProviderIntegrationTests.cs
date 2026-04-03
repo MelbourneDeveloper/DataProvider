@@ -1,5 +1,5 @@
-using Nimblesite.Lql.SQLite;
 using Microsoft.Data.Sqlite;
+using Nimblesite.Lql.SQLite;
 using Selecta;
 using Xunit;
 using static Nimblesite.DataProvider.Example.MapFunctions;

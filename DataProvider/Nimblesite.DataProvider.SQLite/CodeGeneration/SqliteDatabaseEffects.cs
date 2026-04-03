@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
-using Nimblesite.DataProvider.Core.CodeGeneration;
 using Microsoft.Data.Sqlite;
+using Nimblesite.DataProvider.Core.CodeGeneration;
 using Outcome;
 using Selecta;
 

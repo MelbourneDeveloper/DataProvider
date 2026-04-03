@@ -27,7 +27,10 @@ public class DataProviderIncrementalSourceGenerator : IIncrementalGenerator
 
         var configFiles = context
             .AdditionalTextsProvider.Where(file =>
-                file.Path.EndsWith("Nimblesite.DataProvider.Core.json", StringComparison.OrdinalIgnoreCase)
+                file.Path.EndsWith(
+                    "Nimblesite.DataProvider.Core.json",
+                    StringComparison.OrdinalIgnoreCase
+                )
             )
             .Collect();
 
