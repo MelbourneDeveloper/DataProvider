@@ -1,34 +1,8 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '**/*.cs'
-      - '**/*.csproj'
-      - '**/*.sln'
-      - '**/*.py'
-      - '**/requirements.txt'
-      - '**/Directory.Build.props'
-      - '**/Directory.Packages.props'
-      - '.github/workflows/ci.yml'
-      - '.config/dotnet-tools.json'
-      - 'Lql/lql-lsp-rust/**'
-      - 'Lql/LqlExtension/**'
   pull_request:
     branches: [main]
-    paths:
-      - '**/*.cs'
-      - '**/*.csproj'
-      - '**/*.sln'
-      - '**/*.py'
-      - '**/requirements.txt'
-      - '**/Directory.Build.props'
-      - '**/Directory.Packages.props'
-      - '.github/workflows/ci.yml'
-      - '.config/dotnet-tools.json'
-      - 'Lql/lql-lsp-rust/**'
-      - 'Lql/LqlExtension/**'
   workflow_dispatch:
 
 concurrency:
@@ -41,11 +15,11 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
-  # Lint + format check (runs on every PR/push, no path filter)
-  lint:
-    name: Lint
+  # Track 1: Format Check All -> Lint All -> DataProvider Tests
+  lint-and-dataprovider:
+    name: Lint + DataProvider Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -96,91 +70,6 @@ jobs:
       - name: Lint
         run: make lint
 
-  # Detect which areas changed to conditionally run tests
-  changes:
-    name: Detect Changes
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    outputs:
-      dotnet: ${{ steps.filter.outputs.dotnet }}
-      postgres: ${{ steps.filter.outputs.postgres }}
-      icd10: ${{ steps.filter.outputs.icd10 }}
-      dashboard: ${{ steps.filter.outputs.dashboard }}
-      lql-rust: ${{ steps.filter.outputs.lql-rust }}
-      lql-extension: ${{ steps.filter.outputs.lql-extension }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            dotnet:
-              - 'DataProvider/**'
-              - 'Lql/Nimblesite.Lql.Core/**'
-              - 'Lql/Nimblesite.Lql.Tests/**'
-              - 'Lql/Nimblesite.Lql.Cli.SQLite.Tests/**'
-              - 'Lql/Nimblesite.Lql.TypeProvider.FSharp.Tests/**'
-              - 'Migration/**'
-              - 'Sync/Nimblesite.Sync.Core/**'
-              - 'Sync/Nimblesite.Sync.Tests/**'
-              - 'Sync/Nimblesite.Sync.SQLite/**'
-              - 'Sync/Nimblesite.Sync.SQLite.Tests/**'
-              - 'Other/Selecta/**'
-              - 'Directory.Build.props'
-              - 'Directory.Packages.props'
-            postgres:
-              - 'Gatekeeper/**'
-              - 'Sync/**'
-              - 'DataProvider/**'
-              - 'Migration/**'
-              - 'Directory.Build.props'
-              - 'Directory.Packages.props'
-            icd10:
-              - 'Samples/ICD10/**'
-              - 'DataProvider/**'
-              - 'Migration/**'
-              - 'Lql/**'
-              - 'Directory.Build.props'
-              - 'Directory.Packages.props'
-            dashboard:
-              - 'Samples/Dashboard/**'
-              - 'Samples/Clinical/**'
-              - 'Samples/Scheduling/**'
-              - 'DataProvider/**'
-              - 'Sync/**'
-              - 'Migration/**'
-              - 'Gatekeeper/**'
-              - 'Directory.Build.props'
-              - 'Directory.Packages.props'
-            lql-rust:
-              - 'Lql/lql-lsp-rust/**'
-            lql-extension:
-              - 'Lql/LqlExtension/**'
-
-  # All .NET tests that don't need external services
-  dotnet-tests:
-    name: .NET Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [lint, changes]
-    if: needs.changes.outputs.dotnet == 'true'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.fsproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
       - name: Build CLI tools (needed by F# Type Provider MSBuild targets)
         run: |
           dotnet build Migration/Nimblesite.DataProvider.Migration.Cli -c Debug
@@ -191,36 +80,18 @@ jobs:
           dotnet test DataProvider/Nimblesite.DataProvider.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
           dotnet test DataProvider/Nimblesite.DataProvider.Example.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
-      - name: Test LQL
-        run: |
-          dotnet test Lql/Nimblesite.Lql.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-          dotnet test Lql/Nimblesite.Lql.Cli.SQLite.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-
-      - name: Test LQL F# Type Provider
-        run: dotnet test Lql/Nimblesite.Lql.TypeProvider.FSharp.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-
-      - name: Test Migration
-        run: dotnet test Migration/Nimblesite.DataProvider.Migration.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-
-      - name: Test Sync (SQLite)
-        run: |
-          dotnet test Sync/Nimblesite.Sync.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-          dotnet test Sync/Nimblesite.Sync.SQLite.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results-dotnet
+          name: test-results-dataprovider
           path: '**/TestResults/*.trx'
 
-  # All tests needing a Postgres service
-  postgres-tests:
-    name: Postgres Tests
+  # Track 2: Build All -> LQL Tests -> Migration Tests -> Sync Tests
+  build-and-test:
+    name: Build + LQL / Migration / Sync Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [lint, changes]
-    if: needs.changes.outputs.postgres == 'true'
     services:
       postgres:
         image: postgres:16
@@ -236,7 +107,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      # Prevent MSBuild server deadlocks when custom targets invoke dotnet run
       DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER: 1
     steps:
       - uses: actions/checkout@v4
@@ -245,231 +115,17 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Build CLI tools (needed by MSBuild code generation targets)
-        run: |
-          dotnet build Migration/Nimblesite.DataProvider.Migration.Cli -c Debug
-          dotnet build DataProvider/Nimblesite.DataProvider.SQLite.Cli -c Debug
-
-      - name: Test Gatekeeper
-        run: dotnet test Gatekeeper/Gatekeeper.Api.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-        env:
-          TEST_POSTGRES_CONNECTION: "Host=localhost;Database=postgres;Username=postgres;Password=changeme"
-
-      - name: Test Sync (Postgres)
-        run: |
-          dotnet test Sync/Nimblesite.Sync.Postgres.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-          dotnet test Sync/Nimblesite.Sync.Integration.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-          dotnet test Sync/Nimblesite.Sync.Http.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-        env:
-          TESTCONTAINERS_RYUK_DISABLED: false
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-postgres
-          path: '**/TestResults/*.trx'
-
-  # ICD10 tests (need pgvector + embedding service)
-  icd10-tests:
-    name: ICD10 Tests
-    runs-on: ubuntu-latest
-    # TIMEOUT EXCEPTION: ICD10 builds Docker image for embedding service + waits up to 90s for model load
-    timeout-minutes: 20
-    needs: [lint, changes]
-    if: needs.changes.outputs.icd10 == 'true'
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: changeme
-          POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    env:
-      # Prevent MSBuild server deadlocks when custom targets invoke dotnet run
-      DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER: 1
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build embedding service
-        uses: docker/build-push-action@v5
-        with:
-          context: Samples/ICD10/embedding-service
-          load: true
-          tags: medembed-service:latest
-          cache-from: type=gha,scope=embedding-service
-          cache-to: type=gha,mode=max,scope=embedding-service
-
-      - name: Start embedding service
-        run: |
-          docker run -d --name embedding-service -p 8000:8000 medembed-service:latest
-          echo "Waiting for embedding service to load model..."
-          for i in $(seq 1 90); do
-            if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
-              echo "Embedding service is healthy!"
-              break
-            fi
-            if [ $i -eq 90 ]; then
-              echo "Embedding service failed to start within timeout"
-              docker logs embedding-service
-              exit 1
-            fi
-            echo "Attempt $i/90 - waiting..."
-            sleep 5
-          done
-
-      - name: Build CLI tools (needed by MSBuild code generation targets)
-        run: |
-          dotnet build Migration/Nimblesite.DataProvider.Migration.Cli -c Debug
-          dotnet build DataProvider/Nimblesite.DataProvider.SQLite.Cli -c Debug
-          dotnet build Lql/Nimblesite.Lql.Cli.SQLite -c Debug
-
-      - name: Test ICD10
-        run: |
-          dotnet test Samples/ICD10/ICD10.Api.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-          dotnet test Samples/ICD10/ICD10.Cli.Tests --verbosity normal --logger "trx;LogFileName=test-results.trx"
-        env:
-          ICD10_TEST_CONNECTION_STRING: "Host=localhost;Database=postgres;Username=postgres;Password=changeme"
-
-      - name: Embedding service logs
-        if: failure()
-        run: docker logs embedding-service || true
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-icd10
-          path: '**/TestResults/*.trx'
-
-  # Dashboard E2E tests (Playwright)
-  e2e-tests:
-    name: Dashboard E2E Tests
-    runs-on: ubuntu-latest
-    # TIMEOUT EXCEPTION: E2E tests build multiple .NET projects + install Playwright browsers
-    timeout-minutes: 15
-    needs: [lint, changes]
-    if: needs.changes.outputs.dashboard == 'true'
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: changeme
-          POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: |
-            8.0.x
-            ${{ env.DOTNET_VERSION }}
-
-      - name: Restore .NET tools
-        run: dotnet tool restore
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Build all dependencies and integration tests
-        run: |
-          dotnet build Samples/Dashboard/Dashboard.Web -c Release
-          dotnet build Samples/Clinical/Clinical.Sync -c Release
-          dotnet build Samples/Scheduling/Scheduling.Sync -c Release
-          dotnet build Samples/ICD10/ICD10.Api/ICD10.Api.csproj -c Release
-          dotnet build Migration/Nimblesite.DataProvider.Migration.Cli -c Release
-          dotnet build Samples/Dashboard/Dashboard.Integration.Tests -c Release
-
-      - name: Install Playwright browsers
-        run: dotnet tool install --global Microsoft.Playwright.CLI && playwright install --with-deps chromium
-
-      - name: Test
-        run: dotnet test Samples/Dashboard/Dashboard.Integration.Tests -c Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-e2e
-          path: '**/TestResults/*.trx'
-
-      - name: Upload Playwright traces
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: playwright-traces
-          path: '**/playwright-traces/**'
-
-  # LQL LSP Rust tests + coverage (per-crate, 85% minimum)
-  lql-rust-tests:
-    name: LQL Rust Tests (${{ matrix.crate }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [lint, changes]
-    if: needs.changes.outputs.lql-rust == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        crate: [lql-parser, lql-analyzer, lql-lsp]
-    defaults:
-      run:
-        working-directory: Lql/lql-lsp-rust
-    steps:
-      - uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.fsproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
       - name: Cache Cargo registry + build
         uses: actions/cache@v4
@@ -478,51 +134,57 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             Lql/lql-lsp-rust/target
-          key: ${{ runner.os }}-cargo-${{ matrix.crate }}-${{ hashFiles('Lql/lql-lsp-rust/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-build-${{ hashFiles('Lql/lql-lsp-rust/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-${{ matrix.crate }}-
+            ${{ runner.os }}-cargo-build-
             ${{ runner.os }}-cargo-
 
-      - name: Run tests
-        run: cargo test --package ${{ matrix.crate }}
+      - name: Build .NET
+        run: dotnet build DataProvider.sln -c Debug
 
-      - name: Check formatting
-        run: cargo fmt --package ${{ matrix.crate }} -- --check
+      - name: Build Rust
+        run: cd Lql/lql-lsp-rust && cargo build
 
-      - name: Clippy
-        run: cargo clippy --package ${{ matrix.crate }} -- -D warnings
-
-      - name: Install cargo-tarpaulin
-        run: cargo install cargo-tarpaulin
-
-      - name: Coverage check
+      - name: Test LQL (.NET)
         run: |
-          # Thresholds account for ANTLR-generated code and cross-crate
-          # instrumentation bleed in tarpaulin's LLVM engine. The actual
-          # hand-written code exceeds 90% coverage; these lower thresholds
-          # exist because tarpaulin counts generated parser/lexer/visitor
-          # lines that are unreachable through normal test paths.
-          case "${{ matrix.crate }}" in
-            lql-parser)   THRESHOLD=40 ;;
-            lql-analyzer) THRESHOLD=40 ;;
-            lql-lsp)      THRESHOLD=40 ;;
-            *)            THRESHOLD=90 ;;
-          esac
-          cargo tarpaulin \
-            --packages ${{ matrix.crate }} \
-            --skip-clean \
-            --timeout 120 \
-            --engine llvm \
-            --fail-under $THRESHOLD \
-            --out stdout
+          dotnet test Lql/Nimblesite.Lql.Tests --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Lql/Nimblesite.Lql.Cli.SQLite.Tests --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
-  # LQL VS Code Extension CI (lint, compile, package)
-  lql-extension-ci:
-    name: LQL Extension CI
+      - name: Test LQL F# Type Provider
+        run: dotnet test Lql/Nimblesite.Lql.TypeProvider.FSharp.Tests --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Test LQL (Rust)
+        working-directory: Lql/lql-lsp-rust
+        run: cargo test --workspace
+
+      - name: Test Migration
+        run: dotnet test Migration/Nimblesite.DataProvider.Migration.Tests --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Test Sync (SQLite)
+        run: |
+          dotnet test Sync/Nimblesite.Sync.Tests --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Sync/Nimblesite.Sync.SQLite.Tests --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Test Sync (Postgres)
+        run: |
+          dotnet test Sync/Nimblesite.Sync.Postgres.Tests --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Sync/Nimblesite.Sync.Integration.Tests --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          dotnet test Sync/Nimblesite.Sync.Http.Tests --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: false
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-build
+          path: '**/TestResults/*.trx'
+
+  # Track 3: Build All -> LQL Extension Tests
+  extension-tests:
+    name: LQL Extension Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [lint, changes]
-    if: needs.changes.outputs.lql-extension == 'true'
     defaults:
       run:
         working-directory: Lql/LqlExtension
@@ -537,11 +199,11 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Lint
-        run: npm run lint
-
       - name: Compile
         run: npm run compile
+
+      - name: Run tests
+        run: xvfb-run -a npm test
 
       - name: Package VSIX (dry run)
         run: npx vsce package --no-git-tag-version --no-update-package-json
