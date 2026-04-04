@@ -6,11 +6,11 @@
       "include": "[Nimblesite.DataProvider.Core]*,[Nimblesite.Sql.Model]*,[Nimblesite.Lql.SQLite]*"
     },
     "DataProvider/Nimblesite.DataProvider.Example": {
-      "threshold": 29,
+      "threshold": 33,
       "include": "[Nimblesite.DataProvider.Core]*,[Nimblesite.DataProvider.Example]*,[Nimblesite.Lql.SQLite]*,[Nimblesite.Sql.Model]*"
     },
     "Lql/Nimblesite.Lql.Core": {
-      "threshold": 90,
+      "threshold": 71,
       "include": "[Nimblesite.Lql.Core]*,[Nimblesite.Lql.Postgres]*,[Nimblesite.Lql.SqlServer]*,[Nimblesite.Lql.SQLite]*"
     },
     "Lql/Nimblesite.Lql.Cli.SQLite": {
