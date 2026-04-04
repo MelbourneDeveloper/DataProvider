@@ -49,7 +49,7 @@ jobs:
       id-token: write
 
   deploy-website:
-    needs: publish
+    needs: deploy-lql-website
     uses: ./.github/workflows/deploy-website.yml
     secrets: inherit
     permissions:
