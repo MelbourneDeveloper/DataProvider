@@ -43,3 +43,10 @@ global using StringSqlOk = Outcome.Result<string, Nimblesite.Sql.Model.SqlError>
     string,
     Nimblesite.Sql.Model.SqlError
 >;
+global using BasicOrderListOk = Outcome.Result<
+    System.Collections.Generic.IReadOnlyList<Nimblesite.DataProvider.Example.Model.BasicOrder>,
+    Nimblesite.Sql.Model.SqlError
+>.Ok<
+    System.Collections.Generic.IReadOnlyList<Nimblesite.DataProvider.Example.Model.BasicOrder>,
+    Nimblesite.Sql.Model.SqlError
+>;

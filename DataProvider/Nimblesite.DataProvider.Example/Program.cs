@@ -26,7 +26,7 @@ internal static class Program
     /// Tests generated query methods - demonstrates basic code-generated query execution
     /// </summary>
     /// <param name="connection">Database connection</param>
-    private static async Task TestGeneratedQueriesAsync(SqliteConnection connection)
+    internal static async Task TestGeneratedQueriesAsync(SqliteConnection connection)
     {
         await TestInvoiceQueryAsync(connection).ConfigureAwait(false);
         await TestCustomerQueryAsync(connection).ConfigureAwait(false);
@@ -37,7 +37,7 @@ internal static class Program
     /// Demonstrates generated invoice query execution with parameter binding
     /// </summary>
     /// <param name="connection">Database connection</param>
-    private static async Task TestInvoiceQueryAsync(SqliteConnection connection)
+    internal static async Task TestInvoiceQueryAsync(SqliteConnection connection)
     {
         Console.WriteLine("\n=== Testing GetInvoicesAsync ===");
         var invoiceResult = await connection
@@ -66,7 +66,7 @@ internal static class Program
     /// Demonstrates generated customer query with LQL syntax parsing
     /// </summary>
     /// <param name="connection">Database connection</param>
-    private static async Task TestCustomerQueryAsync(SqliteConnection connection)
+    internal static async Task TestCustomerQueryAsync(SqliteConnection connection)
     {
         Console.WriteLine("\n=== Testing GetCustomersLqlAsync ===");
         var customerResult = await connection.GetCustomersLqlAsync(null).ConfigureAwait(false);
@@ -91,7 +91,7 @@ internal static class Program
     /// Demonstrates generated order query with multiple parameters and filtering
     /// </summary>
     /// <param name="connection">Database connection</param>
-    private static async Task TestOrderQueryAsync(SqliteConnection connection)
+    internal static async Task TestOrderQueryAsync(SqliteConnection connection)
     {
         Console.WriteLine("\n=== Testing GetOrdersAsync ===");
         var orderResult = await connection
@@ -120,7 +120,7 @@ internal static class Program
     /// Demonstrates advanced dynamic query building capabilities
     /// </summary>
     /// <param name="connection">Database connection</param>
-    private static void DemonstrateAdvancedQueryBuilding(SqliteConnection connection)
+    internal static void DemonstrateAdvancedQueryBuilding(SqliteConnection connection)
     {
         Console.WriteLine(
             $"""
@@ -140,7 +140,7 @@ internal static class Program
     /// Demonstrates LINQ query syntax with SelectStatement.From&lt;T&gt;() for type-safe queries
     /// </summary>
     /// <param name="connection">Database connection</param>
-    private static void DemoLinqQuerySyntax(SqliteConnection connection)
+    internal static void DemoLinqQuerySyntax(SqliteConnection connection)
     {
         Console.WriteLine("\n💥 LINQ Query Syntax - Dynamic Customer Query:");
 
@@ -171,7 +171,7 @@ internal static class Program
     /// Demonstrates fluent query builder with joins, filtering, and ordering
     /// </summary>
     /// <param name="connection">Database connection</param>
-    private static void DemoFluentQueryBuilder(SqliteConnection connection)
+    internal static void DemoFluentQueryBuilder(SqliteConnection connection)
     {
         Console.WriteLine("\n💥 Fluent Query Builder - Dynamic High Value Orders:");
 
@@ -215,7 +215,7 @@ internal static class Program
     /// Demonstrates LINQ method syntax with lambda expressions for type-safe filtering
     /// </summary>
     /// <param name="connection">Database connection</param>
-    private static void DemoLinqMethodSyntax(SqliteConnection connection)
+    internal static void DemoLinqMethodSyntax(SqliteConnection connection)
     {
         Console.WriteLine("\n💥 LINQ Method Syntax - Dynamic Recent Orders:");
 
@@ -252,7 +252,7 @@ internal static class Program
     /// <summary>
     /// Demonstrates complex aggregation with GROUP BY, COUNT, and SUM functions
     /// </summary>
-    private static void DemoComplexAggregation()
+    internal static void DemoComplexAggregation()
     {
         Console.WriteLine("\n💥 Complex Aggregation Builder - Dynamic Customer Spending:");
 
@@ -265,7 +265,7 @@ internal static class Program
     /// Demonstrates complex filtering with parentheses grouping, AND/OR logic, and multiple conditions
     /// </summary>
     /// <param name="connection">Database connection</param>
-    private static void DemoComplexFiltering(SqliteConnection connection)
+    internal static void DemoComplexFiltering(SqliteConnection connection)
     {
         Console.WriteLine("\n💥 Complex Filtering Builder - Dynamic Premium Orders:");
         var premiumResult = connection.GetRecords(
@@ -320,7 +320,7 @@ internal static class Program
     /// Demonstrates PredicateBuilder for maximum code reuse with dynamic predicate construction
     /// </summary>
     /// <param name="connection">Database connection</param>
-    private static void DemonstratePredicateBuilder(SqliteConnection connection)
+    internal static void DemonstratePredicateBuilder(SqliteConnection connection)
     {
         Console.WriteLine(
             $"""
@@ -382,7 +382,7 @@ internal static class Program
     /// <summary>
     /// Shows summary of all demonstrated query generation capabilities
     /// </summary>
-    private static void ShowcaseSummary() =>
+    internal static void ShowcaseSummary() =>
         Console.WriteLine(
             $"""
 

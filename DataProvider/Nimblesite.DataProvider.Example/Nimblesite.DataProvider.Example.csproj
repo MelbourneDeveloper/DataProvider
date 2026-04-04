@@ -8,6 +8,10 @@
     <EnableLqlTranspile>true</EnableLqlTranspile>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Nimblesite.DataProvider.Example.Tests" />
+  </ItemGroup>
+
   <!-- Exclude Generated folder from default globbing - we include it explicitly in the target -->
   <ItemGroup>
     <Compile Remove="Generated/**" />

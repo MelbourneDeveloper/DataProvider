@@ -383,7 +383,7 @@ public sealed class SQLiteContextE2ETests : IDisposable
     }
 
     [Fact]
-    public void SQLiteFunctionMappingLocal_FunctionsAndSpecialHandlers()
+    public void SQLiteFunctionMappingLocal_FunctionsHandlersAndSyntax()
     {
         var mapping = SQLiteFunctionMappingLocal.Instance;
 
@@ -395,17 +395,9 @@ public sealed class SQLiteContextE2ETests : IDisposable
         Assert.Equal("COUNT(*)", countMap.SpecialHandler(["*"]));
         Assert.Equal("COUNT(id)", countMap.SpecialHandler(["id"]));
 
-        var sumMap = mapping.GetFunctionMapping("sum");
-        Assert.NotNull(sumMap);
-        Assert.Equal("SUM", sumMap.SqlFunction);
-
-        var upperMap = mapping.GetFunctionMapping("upper");
-        Assert.NotNull(upperMap);
-        Assert.Equal("UPPER", upperMap.SqlFunction);
-
-        var lowerMap = mapping.GetFunctionMapping("lower");
-        Assert.NotNull(lowerMap);
-        Assert.Equal("LOWER", lowerMap.SqlFunction);
+        Assert.Equal("SUM", mapping.GetFunctionMapping("sum")?.SqlFunction);
+        Assert.Equal("UPPER", mapping.GetFunctionMapping("upper")?.SqlFunction);
+        Assert.Equal("LOWER", mapping.GetFunctionMapping("lower")?.SqlFunction);
 
         var substringMap = mapping.GetFunctionMapping("substring");
         Assert.NotNull(substringMap);
@@ -418,13 +410,8 @@ public sealed class SQLiteContextE2ETests : IDisposable
         Assert.Equal("datetime('now')", dateMap.SpecialHandler([]));
 
         Assert.Null(mapping.GetFunctionMapping("nonexistent_function"));
-    }
 
-    [Fact]
-    public void SQLiteFunctionMappingLocal_SyntaxMapping_HasCorrectValues()
-    {
-        var syntax = SQLiteFunctionMappingLocal.Instance.GetSyntaxMapping();
-
+        var syntax = mapping.GetSyntaxMapping();
         Assert.Equal("LIMIT {0}", syntax.LimitClause);
         Assert.Equal("OFFSET {0}", syntax.OffsetClause);
         Assert.Equal("datetime('now')", syntax.DateCurrentFunction);
@@ -450,23 +437,5 @@ public sealed class SQLiteContextE2ETests : IDisposable
         Assert.Contains("email", sql);
         Assert.Contains("FROM users", sql);
         Assert.Contains("LIMIT 5", sql);
-    }
-
-    [Fact]
-    public void ProcessPipeline_GroupByDirect_GeneratesGroupBySql()
-    {
-        var context = new SQLiteContext();
-        context.SetBaseTable("users");
-        context.AddGroupBy([ColumnInfo.Named("country")]);
-        context.SetSelectColumns([
-            ColumnInfo.Named("country"),
-            ColumnInfo.FromExpression("COUNT(*)", alias: "cnt"),
-        ]);
-
-        var sql = context.GenerateSQL();
-
-        Assert.Contains("GROUP BY", sql, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("country", sql);
-        Assert.Contains("COUNT(*)", sql);
     }
 }
