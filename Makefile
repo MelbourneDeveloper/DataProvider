@@ -123,19 +123,29 @@ _build_dotnet:
 	dotnet build DataProvider.sln --configuration Release
 
 _test_dotnet:
-	@FAIL=0; \
-	for proj in $(DOTNET_TEST_PROJECTS); do \
+	@for proj in $(DOTNET_TEST_PROJECTS); do \
 	  echo ""; \
 	  echo "============================================================"; \
-	  THRESHOLD=$$(jq -r ".projects[\"$$proj\"] // .default_threshold" coverage-thresholds.json); \
+	  THRESHOLD=$$(jq -r ".projects[\"$$proj\"].threshold // .default_threshold" coverage-thresholds.json); \
+	  INCLUDE=$$(jq -r ".projects[\"$$proj\"].include // empty" coverage-thresholds.json); \
 	  echo "==> Testing $$proj (threshold: $$THRESHOLD%)"; \
+	  if [ -n "$$INCLUDE" ]; then echo "  Include filter: $$INCLUDE"; fi; \
 	  echo "============================================================"; \
 	  rm -rf "$$proj/TestResults"; \
-	  dotnet test "$$proj" --configuration Release \
-	    --settings coverlet.runsettings \
-	    --collect:"XPlat Code Coverage" \
-	    --results-directory "$$proj/TestResults" \
-	    --verbosity normal; \
+	  if [ -n "$$INCLUDE" ]; then \
+	    dotnet test "$$proj" --configuration Release \
+	      --settings coverlet.runsettings \
+	      --collect:"XPlat Code Coverage" \
+	      --results-directory "$$proj/TestResults" \
+	      --verbosity normal \
+	      -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="$$INCLUDE"; \
+	  else \
+	    dotnet test "$$proj" --configuration Release \
+	      --settings coverlet.runsettings \
+	      --collect:"XPlat Code Coverage" \
+	      --results-directory "$$proj/TestResults" \
+	      --verbosity normal; \
+	  fi; \
 	  if [ $$? -ne 0 ]; then \
 	    echo "FAIL: Tests failed for $$proj"; \
 	    exit 1; \
@@ -163,7 +173,7 @@ _test_dotnet:
 	  if [ "$$ABOVE" = "1" ]; then \
 	    NEW=$$(echo "$$COVERAGE" | awk '{print int($$1)}'); \
 	    echo "  Ratcheting threshold: $$THRESHOLD% -> $$NEW%"; \
-	    jq ".projects[\"$$proj\"] = $$NEW" coverage-thresholds.json > coverage-thresholds.json.tmp && mv coverage-thresholds.json.tmp coverage-thresholds.json; \
+	    jq ".projects[\"$$proj\"].threshold = $$NEW" coverage-thresholds.json > coverage-thresholds.json.tmp && mv coverage-thresholds.json.tmp coverage-thresholds.json; \
 	  fi; \
 	  echo "  PASS"; \
 	done; \
@@ -210,7 +220,7 @@ _build_rust:
 	cd Lql/lql-lsp-rust && cargo build --release
 
 _test_rust:
-	@THRESHOLD=$$(jq -r '.projects["Lql/lql-lsp-rust"] // .default_threshold' coverage-thresholds.json); \
+	@THRESHOLD=$$(jq -r '.projects["Lql/lql-lsp-rust"].threshold // .default_threshold' coverage-thresholds.json); \
 	echo ""; \
 	echo "============================================================"; \
 	echo "==> Testing Lql/lql-lsp-rust (threshold: $$THRESHOLD%)"; \
@@ -237,7 +247,7 @@ _test_rust:
 	if [ "$$ABOVE" = "1" ]; then \
 	  NEW=$$(echo "$$COVERAGE" | awk '{print int($$1)}'); \
 	  echo "  Ratcheting threshold: $$THRESHOLD% -> $$NEW%"; \
-	  cd "$(CURDIR)" && jq '.projects["Lql/lql-lsp-rust"] = '"$$NEW" coverage-thresholds.json > coverage-thresholds.json.tmp && mv coverage-thresholds.json.tmp coverage-thresholds.json; \
+	  cd "$(CURDIR)" && jq '.projects["Lql/lql-lsp-rust"].threshold = '"$$NEW" coverage-thresholds.json > coverage-thresholds.json.tmp && mv coverage-thresholds.json.tmp coverage-thresholds.json; \
 	fi; \
 	echo "  PASS"
 
@@ -259,7 +269,7 @@ _build_ts:
 	cd Lql/LqlExtension && npm install --no-audit --no-fund && npm run compile
 
 _test_ts:
-	@THRESHOLD=$$(jq -r '.projects["Lql/LqlExtension"] // .default_threshold' coverage-thresholds.json); \
+	@THRESHOLD=$$(jq -r '.projects["Lql/LqlExtension"].threshold // .default_threshold' coverage-thresholds.json); \
 	echo ""; \
 	echo "============================================================"; \
 	echo "==> Testing Lql/LqlExtension (threshold: $$THRESHOLD%)"; \
@@ -289,7 +299,7 @@ _test_ts:
 	if [ "$$ABOVE" = "1" ]; then \
 	  NEW=$$(echo "$$COVERAGE" | awk '{print int($$1)}'); \
 	  echo "  Ratcheting threshold: $$THRESHOLD% -> $$NEW%"; \
-	  jq '.projects["Lql/LqlExtension"] = '"$$NEW" coverage-thresholds.json > coverage-thresholds.json.tmp && mv coverage-thresholds.json.tmp coverage-thresholds.json; \
+	  jq '.projects["Lql/LqlExtension"].threshold = '"$$NEW" coverage-thresholds.json > coverage-thresholds.json.tmp && mv coverage-thresholds.json.tmp coverage-thresholds.json; \
 	fi; \
 	echo "  PASS"
 

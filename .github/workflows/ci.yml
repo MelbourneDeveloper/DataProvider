@@ -78,14 +78,24 @@ jobs:
       - name: Test DataProvider (with coverage enforcement)
         run: |
           for proj in DataProvider/Nimblesite.DataProvider.Tests DataProvider/Nimblesite.DataProvider.Example.Tests; do
-            THRESHOLD=$(jq -r ".projects[\"$proj\"] // .default_threshold" coverage-thresholds.json)
+            THRESHOLD=$(jq -r ".projects[\"$proj\"].threshold // .default_threshold" coverage-thresholds.json)
+            INCLUDE=$(jq -r ".projects[\"$proj\"].include // empty" coverage-thresholds.json)
             echo "==> Testing $proj (threshold: ${THRESHOLD}%)"
             rm -rf "$proj/TestResults"
-            dotnet test "$proj" --configuration Release \
-              --settings coverlet.runsettings \
-              --collect:"XPlat Code Coverage" \
-              --results-directory "$proj/TestResults" \
-              --verbosity normal
+            if [ -n "$INCLUDE" ]; then
+              dotnet test "$proj" --configuration Release \
+                --settings coverlet.runsettings \
+                --collect:"XPlat Code Coverage" \
+                --results-directory "$proj/TestResults" \
+                --verbosity normal \
+                -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="$INCLUDE"
+            else
+              dotnet test "$proj" --configuration Release \
+                --settings coverlet.runsettings \
+                --collect:"XPlat Code Coverage" \
+                --results-directory "$proj/TestResults" \
+                --verbosity normal
+            fi
             COBERTURA=$(find "$proj/TestResults" -name "coverage.cobertura.xml" -type f | head -1)
             if [ -z "$COBERTURA" ]; then echo "FAIL: No coverage file for $proj"; exit 1; fi
             LINE_RATE=$(sed -n 's/.*line-rate="\([0-9.]*\)".*/\1/p' "$COBERTURA" | head -1)
@@ -171,14 +181,24 @@ jobs:
       - name: Test LQL .NET (with coverage enforcement)
         run: |
           for proj in Lql/Nimblesite.Lql.Tests Lql/Nimblesite.Lql.Cli.SQLite.Tests; do
-            THRESHOLD=$(jq -r ".projects[\"$proj\"] // .default_threshold" coverage-thresholds.json)
+            THRESHOLD=$(jq -r ".projects[\"$proj\"].threshold // .default_threshold" coverage-thresholds.json)
+            INCLUDE=$(jq -r ".projects[\"$proj\"].include // empty" coverage-thresholds.json)
             echo "==> Testing $proj (threshold: ${THRESHOLD}%)"
             rm -rf "$proj/TestResults"
-            dotnet test "$proj" --configuration Release \
-              --settings coverlet.runsettings \
-              --collect:"XPlat Code Coverage" \
-              --results-directory "$proj/TestResults" \
-              --verbosity normal
+            if [ -n "$INCLUDE" ]; then
+              dotnet test "$proj" --configuration Release \
+                --settings coverlet.runsettings \
+                --collect:"XPlat Code Coverage" \
+                --results-directory "$proj/TestResults" \
+                --verbosity normal \
+                -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="$INCLUDE"
+            else
+              dotnet test "$proj" --configuration Release \
+                --settings coverlet.runsettings \
+                --collect:"XPlat Code Coverage" \
+                --results-directory "$proj/TestResults" \
+                --verbosity normal
+            fi
             COBERTURA=$(find "$proj/TestResults" -name "coverage.cobertura.xml" -type f | head -1)
             if [ -z "$COBERTURA" ]; then echo "FAIL: No coverage file for $proj"; exit 1; fi
             LINE_RATE=$(sed -n 's/.*line-rate="\([0-9.]*\)".*/\1/p' "$COBERTURA" | head -1)
@@ -196,14 +216,24 @@ jobs:
       - name: Test LQL F# Type Provider (with coverage enforcement)
         run: |
           proj="Lql/Nimblesite.Lql.TypeProvider.FSharp.Tests"
-          THRESHOLD=$(jq -r ".projects[\"$proj\"] // .default_threshold" coverage-thresholds.json)
+          THRESHOLD=$(jq -r ".projects[\"$proj\"].threshold // .default_threshold" coverage-thresholds.json)
+          INCLUDE=$(jq -r ".projects[\"$proj\"].include // empty" coverage-thresholds.json)
           echo "==> Testing $proj (threshold: ${THRESHOLD}%)"
           rm -rf "$proj/TestResults"
-          dotnet test "$proj" --configuration Release \
-            --settings coverlet.runsettings \
-            --collect:"XPlat Code Coverage" \
-            --results-directory "$proj/TestResults" \
-            --verbosity normal
+          if [ -n "$INCLUDE" ]; then
+            dotnet test "$proj" --configuration Release \
+              --settings coverlet.runsettings \
+              --collect:"XPlat Code Coverage" \
+              --results-directory "$proj/TestResults" \
+              --verbosity normal \
+              -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="$INCLUDE"
+          else
+            dotnet test "$proj" --configuration Release \
+              --settings coverlet.runsettings \
+              --collect:"XPlat Code Coverage" \
+              --results-directory "$proj/TestResults" \
+              --verbosity normal
+          fi
           COBERTURA=$(find "$proj/TestResults" -name "coverage.cobertura.xml" -type f | head -1)
           if [ -z "$COBERTURA" ]; then echo "FAIL: No coverage file for $proj"; exit 1; fi
           LINE_RATE=$(sed -n 's/.*line-rate="\([0-9.]*\)".*/\1/p' "$COBERTURA" | head -1)
@@ -219,7 +249,7 @@ jobs:
 
       - name: Test LQL Rust (with coverage enforcement)
         run: |
-          THRESHOLD=$(jq -r '.projects["Lql/lql-lsp-rust"] // .default_threshold' coverage-thresholds.json)
+          THRESHOLD=$(jq -r '.projects["Lql/lql-lsp-rust"].threshold // .default_threshold' coverage-thresholds.json)
           echo "==> Testing Lql/lql-lsp-rust (threshold: ${THRESHOLD}%)"
           cd Lql/lql-lsp-rust && cargo tarpaulin --workspace --skip-clean 2>&1 | tee /tmp/_dp_tarpaulin_out.txt
           COVERAGE=$(grep -oE '[0-9]+\.[0-9]+% coverage' /tmp/_dp_tarpaulin_out.txt | tail -1 | grep -oE '[0-9]+\.[0-9]+')
@@ -235,14 +265,24 @@ jobs:
       - name: Test Migration (with coverage enforcement)
         run: |
           proj="Migration/Nimblesite.DataProvider.Migration.Tests"
-          THRESHOLD=$(jq -r ".projects[\"$proj\"] // .default_threshold" coverage-thresholds.json)
+          THRESHOLD=$(jq -r ".projects[\"$proj\"].threshold // .default_threshold" coverage-thresholds.json)
+          INCLUDE=$(jq -r ".projects[\"$proj\"].include // empty" coverage-thresholds.json)
           echo "==> Testing $proj (threshold: ${THRESHOLD}%)"
           rm -rf "$proj/TestResults"
-          dotnet test "$proj" --configuration Release \
-            --settings coverlet.runsettings \
-            --collect:"XPlat Code Coverage" \
-            --results-directory "$proj/TestResults" \
-            --verbosity normal
+          if [ -n "$INCLUDE" ]; then
+            dotnet test "$proj" --configuration Release \
+              --settings coverlet.runsettings \
+              --collect:"XPlat Code Coverage" \
+              --results-directory "$proj/TestResults" \
+              --verbosity normal \
+              -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="$INCLUDE"
+          else
+            dotnet test "$proj" --configuration Release \
+              --settings coverlet.runsettings \
+              --collect:"XPlat Code Coverage" \
+              --results-directory "$proj/TestResults" \
+              --verbosity normal
+          fi
           COBERTURA=$(find "$proj/TestResults" -name "coverage.cobertura.xml" -type f | head -1)
           if [ -z "$COBERTURA" ]; then echo "FAIL: No coverage file for $proj"; exit 1; fi
           LINE_RATE=$(sed -n 's/.*line-rate="\([0-9.]*\)".*/\1/p' "$COBERTURA" | head -1)
@@ -259,14 +299,24 @@ jobs:
       - name: Test Sync SQLite (with coverage enforcement)
         run: |
           for proj in Sync/Nimblesite.Sync.Tests Sync/Nimblesite.Sync.SQLite.Tests; do
-            THRESHOLD=$(jq -r ".projects[\"$proj\"] // .default_threshold" coverage-thresholds.json)
+            THRESHOLD=$(jq -r ".projects[\"$proj\"].threshold // .default_threshold" coverage-thresholds.json)
+            INCLUDE=$(jq -r ".projects[\"$proj\"].include // empty" coverage-thresholds.json)
             echo "==> Testing $proj (threshold: ${THRESHOLD}%)"
             rm -rf "$proj/TestResults"
-            dotnet test "$proj" --configuration Release \
-              --settings coverlet.runsettings \
-              --collect:"XPlat Code Coverage" \
-              --results-directory "$proj/TestResults" \
-              --verbosity normal
+            if [ -n "$INCLUDE" ]; then
+              dotnet test "$proj" --configuration Release \
+                --settings coverlet.runsettings \
+                --collect:"XPlat Code Coverage" \
+                --results-directory "$proj/TestResults" \
+                --verbosity normal \
+                -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="$INCLUDE"
+            else
+              dotnet test "$proj" --configuration Release \
+                --settings coverlet.runsettings \
+                --collect:"XPlat Code Coverage" \
+                --results-directory "$proj/TestResults" \
+                --verbosity normal
+            fi
             COBERTURA=$(find "$proj/TestResults" -name "coverage.cobertura.xml" -type f | head -1)
             if [ -z "$COBERTURA" ]; then echo "FAIL: No coverage file for $proj"; exit 1; fi
             LINE_RATE=$(sed -n 's/.*line-rate="\([0-9.]*\)".*/\1/p' "$COBERTURA" | head -1)
@@ -284,14 +334,24 @@ jobs:
       - name: Test Sync Postgres (with coverage enforcement)
         run: |
           for proj in Sync/Nimblesite.Sync.Postgres.Tests Sync/Nimblesite.Sync.Integration.Tests Sync/Nimblesite.Sync.Http.Tests; do
-            THRESHOLD=$(jq -r ".projects[\"$proj\"] // .default_threshold" coverage-thresholds.json)
+            THRESHOLD=$(jq -r ".projects[\"$proj\"].threshold // .default_threshold" coverage-thresholds.json)
+            INCLUDE=$(jq -r ".projects[\"$proj\"].include // empty" coverage-thresholds.json)
             echo "==> Testing $proj (threshold: ${THRESHOLD}%)"
             rm -rf "$proj/TestResults"
-            dotnet test "$proj" --configuration Release \
-              --settings coverlet.runsettings \
-              --collect:"XPlat Code Coverage" \
-              --results-directory "$proj/TestResults" \
-              --verbosity normal
+            if [ -n "$INCLUDE" ]; then
+              dotnet test "$proj" --configuration Release \
+                --settings coverlet.runsettings \
+                --collect:"XPlat Code Coverage" \
+                --results-directory "$proj/TestResults" \
+                --verbosity normal \
+                -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="$INCLUDE"
+            else
+              dotnet test "$proj" --configuration Release \
+                --settings coverlet.runsettings \
+                --collect:"XPlat Code Coverage" \
+                --results-directory "$proj/TestResults" \
+                --verbosity normal
+            fi
             COBERTURA=$(find "$proj/TestResults" -name "coverage.cobertura.xml" -type f | head -1)
             if [ -z "$COBERTURA" ]; then echo "FAIL: No coverage file for $proj"; exit 1; fi
             LINE_RATE=$(sed -n 's/.*line-rate="\([0-9.]*\)".*/\1/p' "$COBERTURA" | head -1)
@@ -344,7 +404,7 @@ jobs:
       - name: Enforce coverage threshold
         working-directory: .
         run: |
-          THRESHOLD=$(jq -r '.projects["Lql/LqlExtension"] // .default_threshold' coverage-thresholds.json)
+          THRESHOLD=$(jq -r '.projects["Lql/LqlExtension"].threshold // .default_threshold' coverage-thresholds.json)
           SUMMARY="Lql/LqlExtension/coverage/coverage-summary.json"
           if [ ! -f "$SUMMARY" ]; then
             SUMMARY="Lql/LqlExtension/.nyc_output/coverage-summary.json"
