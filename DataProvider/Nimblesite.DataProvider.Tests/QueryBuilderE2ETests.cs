@@ -115,30 +115,26 @@ public sealed class QueryBuilderE2ETests : IDisposable
 
         // Convert to SQLite
         var sqlResult = statement.ToSQLite();
-        Assert.True(sqlResult is StringOk);
-        Assert.True(sqlResult is StringOk sqlOk);
+        var sqlOk = Assert.IsType<StringOk>(sqlResult);
         var sql = sqlOk.Value;
         Assert.Contains("SELECT", sql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Products", sql);
         Assert.Contains("LIMIT", sql, StringComparison.OrdinalIgnoreCase);
 
         // Execute against real DB
-        var queryResult = _connection.Query<(string, double)>(
+        var queryResult = _connection.Query<(string Name, double Price)>(
             sql: sql,
             mapper: r => (r.GetString(0), r.GetDouble(1))
         );
-        Assert.True(
-            queryResult
-                is Result<IReadOnlyList<(string, double)>, SqlError>.Ok<
-                    IReadOnlyList<(string, double)>,
-                    SqlError
-                > rows
-        );
+        var rows = Assert.IsType<Result<IReadOnlyList<(string Name, double Price)>, SqlError>.Ok<
+            IReadOnlyList<(string Name, double Price)>,
+            SqlError
+        >>(queryResult);
         Assert.Equal(2, rows.Value.Count);
-        Assert.Equal("Tool Gamma", rows.Value[0].Item1);
-        Assert.Equal(15.00, rows.Value[0].Item2);
-        Assert.Equal("Tool Alpha", rows.Value[1].Item1);
-        Assert.Equal(35.00, rows.Value[1].Item2);
+        Assert.Equal("Tool Gamma", rows.Value[0].Name);
+        Assert.Equal(15.00, rows.Value[0].Price);
+        Assert.Equal("Tool Alpha", rows.Value[1].Name);
+        Assert.Equal(35.00, rows.Value[1].Price);
     }
 
     [Fact]
@@ -152,21 +148,17 @@ public sealed class QueryBuilderE2ETests : IDisposable
             .OrderBy(columnName: "Category")
             .ToSqlStatement();
 
-        var distinctSqlResult = distinctStmt.ToSQLite();
-        Assert.True(distinctSqlResult is StringOk distinctSqlOk);
+        var distinctSqlOk = Assert.IsType<StringOk>(distinctStmt.ToSQLite());
         var distinctSql = distinctSqlOk.Value;
 
         var distinctResult = _connection.Query<string>(
             sql: distinctSql,
             mapper: r => r.GetString(0)
         );
-        Assert.True(
-            distinctResult
-                is Result<IReadOnlyList<string>, SqlError>.Ok<
-                    IReadOnlyList<string>,
-                    SqlError
-                > categories
-        );
+        var categories = Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Ok<
+            IReadOnlyList<string>,
+            SqlError
+        >>(distinctResult);
         Assert.Equal(3, categories.Value.Count);
         Assert.Equal("Electronics", categories.Value[0]);
         Assert.Equal("Gadgets", categories.Value[1]);
@@ -185,7 +177,8 @@ public sealed class QueryBuilderE2ETests : IDisposable
             .Take(count: 3)
             .ToSqlStatement();
 
-        var pagedSql = ((StringOk)pagedStmt.ToSQLite()).Value;
+        var pagedSqlOk = Assert.IsType<StringOk>(pagedStmt.ToSQLite());
+        var pagedSql = pagedSqlOk.Value;
         Assert.Contains("OFFSET", pagedSql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("LIMIT", pagedSql, StringComparison.OrdinalIgnoreCase);
 
@@ -193,10 +186,11 @@ public sealed class QueryBuilderE2ETests : IDisposable
             sql: pagedSql,
             mapper: r => r.GetString(1) // Name is column index 1
         );
-        var page = (
-            (Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>)pagedResult
-        ).Value;
-        Assert.Equal(3, page.Count);
+        var page = Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Ok<
+            IReadOnlyList<string>,
+            SqlError
+        >>(pagedResult);
+        Assert.Equal(3, page.Value.Count);
     }
 
     [Fact]
@@ -217,25 +211,20 @@ public sealed class QueryBuilderE2ETests : IDisposable
             .OrderBy(columnName: "Products.Name")
             .ToSqlStatement();
 
-        var joinSql = ((StringOk)joinStmt.ToSQLite()).Value;
+        var joinSqlOk = Assert.IsType<StringOk>(joinStmt.ToSQLite());
+        var joinSql = joinSqlOk.Value;
         Assert.Contains("JOIN", joinSql, StringComparison.OrdinalIgnoreCase);
 
-        var joinResult = _connection.Query<(string ProductName, string CatDesc)>(
+        var joinResult = _connection.Query<(string, string)>(
             sql: joinSql,
             mapper: r => (r.GetString(0), r.GetString(1))
         );
-        Assert.IsType<Result<IReadOnlyList<(string ProductName, string CatDesc)>, SqlError>.Ok<
-            IReadOnlyList<(string ProductName, string CatDesc)>,
+        var joined = Assert.IsType<Result<IReadOnlyList<(string, string)>, SqlError>.Ok<
+            IReadOnlyList<(string, string)>,
             SqlError
         >>(joinResult);
-        var joined = (
-            (Result<IReadOnlyList<(string ProductName, string CatDesc)>, SqlError>.Ok<
-                IReadOnlyList<(string ProductName, string CatDesc)>,
-                SqlError
-            >)joinResult
-        ).Value;
-        Assert.Equal(3, joined.Count);
-        Assert.All(joined, j => Assert.Equal("Electronic devices and components", j.CatDesc));
+        Assert.Equal(3, joined.Value.Count);
+        Assert.All(joined.Value, j => Assert.Equal("Electronic devices and components", j.Item2));
     }
 
     [Fact]
@@ -249,28 +238,22 @@ public sealed class QueryBuilderE2ETests : IDisposable
             .OrderBy(columnName: "Price")
             .ToSqlStatement();
 
-        // Use GetRecords with the SQLite generator
-        var result = _connection.GetRecords(
+        // Use GetRecords with the SQLite generator using tuples
+        var result = _connection.GetRecords<(string, string, double)>(
             statement: statement,
             sqlGenerator: stmt => stmt.ToSQLite(),
-            mapper: r => (Id: r.GetString(0), Name: r.GetString(1), Price: r.GetDouble(2))
+            mapper: r => (r.GetString(0), r.GetString(1), r.GetDouble(2))
         );
 
-        Assert.IsType<Result<IReadOnlyList<(string Id, string Name, double Price)>, SqlError>.Ok<
-            IReadOnlyList<(string Id, string Name, double Price)>,
+        var recordsOk = Assert.IsType<Result<IReadOnlyList<(string, string, double)>, SqlError>.Ok<
+            IReadOnlyList<(string, string, double)>,
             SqlError
         >>(result);
-        var records = (
-            (Result<IReadOnlyList<(string Id, string Name, double Price)>, SqlError>.Ok<
-                IReadOnlyList<(string Id, string Name, double Price)>,
-                SqlError
-            >)result
-        ).Value;
-        Assert.Equal(4, records.Count);
-        Assert.Equal("Tool Beta", records[0].Name);
-        Assert.Equal(45.00, records[0].Price);
-        Assert.Equal("Premium Widget", records[3].Name);
-        Assert.Equal(500.00, records[3].Price);
+        Assert.Equal(4, recordsOk.Value.Count);
+        Assert.Equal("Tool Beta", recordsOk.Value[0].Item2);
+        Assert.Equal(45.00, recordsOk.Value[0].Item3);
+        Assert.Equal("Premium Widget", recordsOk.Value[3].Item2);
+        Assert.Equal(500.00, recordsOk.Value[3].Item3);
     }
 
     [Fact]
@@ -285,10 +268,10 @@ public sealed class QueryBuilderE2ETests : IDisposable
             sqlGenerator: s => s.ToSQLite(),
             mapper: r => r.GetString(0)
         );
-        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Error<
-            IReadOnlyList<string>,
-            SqlError
-        >>(nullConn);
+        Assert.True(
+            nullConn
+                is Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>
+        );
 
         // Null statement
         var nullStmt = _connection.GetRecords<string>(
@@ -296,10 +279,10 @@ public sealed class QueryBuilderE2ETests : IDisposable
             sqlGenerator: s => s.ToSQLite(),
             mapper: r => r.GetString(0)
         );
-        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Error<
-            IReadOnlyList<string>,
-            SqlError
-        >>(nullStmt);
+        Assert.True(
+            nullStmt
+                is Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>
+        );
 
         // Null generator
         var nullGen = _connection.GetRecords<string>(
@@ -307,10 +290,10 @@ public sealed class QueryBuilderE2ETests : IDisposable
             sqlGenerator: null!,
             mapper: r => r.GetString(0)
         );
-        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Error<
-            IReadOnlyList<string>,
-            SqlError
-        >>(nullGen);
+        Assert.True(
+            nullGen
+                is Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>
+        );
 
         // Null mapper
         var nullMapper = _connection.GetRecords<string>(
@@ -318,10 +301,10 @@ public sealed class QueryBuilderE2ETests : IDisposable
             sqlGenerator: s => s.ToSQLite(),
             mapper: null!
         );
-        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Error<
-            IReadOnlyList<string>,
-            SqlError
-        >>(nullMapper);
+        Assert.True(
+            nullMapper
+                is Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>
+        );
     }
 
     [Fact]

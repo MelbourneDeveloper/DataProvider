@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Outcome;
 
@@ -31,9 +30,16 @@ public sealed class SqliteTransactionE2ETests : IDisposable
         {
             File.Delete(_dbPath);
         }
+#pragma warning disable CA1031 // Cleanup is best-effort
         catch (IOException)
-        { /* cleanup best-effort */
+        {
+            // File may be locked by another process
         }
+        catch (UnauthorizedAccessException)
+        {
+            // May not have permission
+        }
+#pragma warning restore CA1031
     }
 
     private void CreateSchema()
@@ -71,6 +77,20 @@ public sealed class SqliteTransactionE2ETests : IDisposable
         seedCmd.ExecuteNonQuery();
     }
 
+    private static void AssertLongQueryValue(
+        Result<IReadOnlyList<long>, SqlError> result,
+        long expected
+    )
+    {
+        Assert.True(
+            result is Result<IReadOnlyList<long>, SqlError>.Ok<IReadOnlyList<long>, SqlError>
+        );
+        if (result is Result<IReadOnlyList<long>, SqlError>.Ok<IReadOnlyList<long>, SqlError> ok)
+        {
+            Assert.Equal(expected, ok.Value[0]);
+        }
+    }
+
     [Fact]
     public void TransactionCommit_MultiTableInsert_AllDataPersisted()
     {
@@ -88,8 +108,11 @@ public sealed class SqliteTransactionE2ETests : IDisposable
                 new SqliteParameter("@status", "confirmed"),
             ]
         );
-        Assert.IsType<IntOk>(orderInsert);
-        Assert.Equal(1, ((IntOk)orderInsert).Value);
+        Assert.True(orderInsert is IntOk);
+        if (orderInsert is IntOk insertOk)
+        {
+            Assert.Equal(1, insertOk.Value);
+        }
 
         // Insert order items within same transaction
         var item1Id = Guid.NewGuid().ToString();
@@ -127,40 +150,56 @@ public sealed class SqliteTransactionE2ETests : IDisposable
             parameters: [new SqliteParameter("@qty", 2), new SqliteParameter("@name", "Gadget")]
         );
 
-        // Query within transaction to verify
-        var itemCount = tx.Scalar<long>(
+        // Query within transaction to verify item count
+        var itemCount = tx.Query<long>(
             sql: "SELECT COUNT(*) FROM OrderItems WHERE OrderId = @oid",
-            parameters: [new SqliteParameter("@oid", orderId)]
+            parameters: [new SqliteParameter("@oid", orderId)],
+            mapper: r => r.GetInt64(0)
         );
-        Assert.Equal(2L, ((Result<long, SqlError>.Ok<long, SqlError>)itemCount).Value);
+        AssertLongQueryValue(itemCount, expected: 2L);
 
         // Commit
         tx.Commit();
 
         // Verify data persisted after commit
-        var orderCheck = _connection.Scalar<long>(sql: "SELECT COUNT(*) FROM Orders");
-        Assert.Equal(1L, ((Result<long, SqlError>.Ok<long, SqlError>)orderCheck).Value);
-
-        var itemCheck = _connection.Scalar<long>(sql: "SELECT COUNT(*) FROM OrderItems");
-        Assert.Equal(2L, ((Result<long, SqlError>.Ok<long, SqlError>)itemCheck).Value);
-
-        var widgetStock = _connection.Scalar<long>(
-            sql: "SELECT StockCount FROM Inventory WHERE ProductName = 'Widget'"
+        AssertLongQueryValue(
+            _connection.Query<long>(sql: "SELECT COUNT(*) FROM Orders", mapper: r => r.GetInt64(0)),
+            expected: 1L
         );
-        Assert.Equal(97L, ((Result<long, SqlError>.Ok<long, SqlError>)widgetStock).Value);
 
-        var gadgetStock = _connection.Scalar<long>(
-            sql: "SELECT StockCount FROM Inventory WHERE ProductName = 'Gadget'"
+        AssertLongQueryValue(
+            _connection.Query<long>(
+                sql: "SELECT COUNT(*) FROM OrderItems",
+                mapper: r => r.GetInt64(0)
+            ),
+            expected: 2L
         );
-        Assert.Equal(48L, ((Result<long, SqlError>.Ok<long, SqlError>)gadgetStock).Value);
+
+        AssertLongQueryValue(
+            _connection.Query<long>(
+                sql: "SELECT StockCount FROM Inventory WHERE ProductName = 'Widget'",
+                mapper: r => r.GetInt64(0)
+            ),
+            expected: 97L
+        );
+
+        AssertLongQueryValue(
+            _connection.Query<long>(
+                sql: "SELECT StockCount FROM Inventory WHERE ProductName = 'Gadget'",
+                mapper: r => r.GetInt64(0)
+            ),
+            expected: 48L
+        );
     }
 
     [Fact]
     public void TransactionRollback_FailedOperation_NoDataPersisted()
     {
         // Verify initial state
-        var initialOrders = _connection.Scalar<long>(sql: "SELECT COUNT(*) FROM Orders");
-        Assert.Equal(0L, ((Result<long, SqlError>.Ok<long, SqlError>)initialOrders).Value);
+        AssertLongQueryValue(
+            _connection.Query<long>(sql: "SELECT COUNT(*) FROM Orders", mapper: r => r.GetInt64(0)),
+            expected: 0L
+        );
 
         using var tx = _connection.BeginTransaction();
 
@@ -190,24 +229,36 @@ public sealed class SqliteTransactionE2ETests : IDisposable
         );
 
         // Verify data exists within transaction
-        var txCount = tx.Scalar<long>(sql: "SELECT COUNT(*) FROM Orders");
-        Assert.Equal(1L, ((Result<long, SqlError>.Ok<long, SqlError>)txCount).Value);
+        AssertLongQueryValue(
+            tx.Query<long>(sql: "SELECT COUNT(*) FROM Orders", mapper: r => r.GetInt64(0)),
+            expected: 1L
+        );
 
         // Rollback
         tx.Rollback();
 
         // Verify NO data persisted
-        var afterRollback = _connection.Scalar<long>(sql: "SELECT COUNT(*) FROM Orders");
-        Assert.Equal(0L, ((Result<long, SqlError>.Ok<long, SqlError>)afterRollback).Value);
+        AssertLongQueryValue(
+            _connection.Query<long>(sql: "SELECT COUNT(*) FROM Orders", mapper: r => r.GetInt64(0)),
+            expected: 0L
+        );
 
-        var itemsAfterRollback = _connection.Scalar<long>(sql: "SELECT COUNT(*) FROM OrderItems");
-        Assert.Equal(0L, ((Result<long, SqlError>.Ok<long, SqlError>)itemsAfterRollback).Value);
+        AssertLongQueryValue(
+            _connection.Query<long>(
+                sql: "SELECT COUNT(*) FROM OrderItems",
+                mapper: r => r.GetInt64(0)
+            ),
+            expected: 0L
+        );
 
         // Verify inventory unchanged
-        var widgetStock = _connection.Scalar<long>(
-            sql: "SELECT StockCount FROM Inventory WHERE ProductName = 'Widget'"
+        AssertLongQueryValue(
+            _connection.Query<long>(
+                sql: "SELECT StockCount FROM Inventory WHERE ProductName = 'Widget'",
+                mapper: r => r.GetInt64(0)
+            ),
+            expected: 100L
         );
-        Assert.Equal(100L, ((Result<long, SqlError>.Ok<long, SqlError>)widgetStock).Value);
     }
 
     [Fact]
@@ -234,49 +285,77 @@ public sealed class SqliteTransactionE2ETests : IDisposable
         var pendingOrders = tx.Query<(string Id, string CustomerId, double Total)>(
             sql: "SELECT Id, CustomerId, Total FROM Orders WHERE Status = @status ORDER BY Total",
             parameters: [new SqliteParameter("@status", "pending")],
-            mapper: r => (Id: r.GetString(0), CustomerId: r.GetString(1), Total: r.GetDouble(2))
+            mapper: r => (r.GetString(0), r.GetString(1), r.GetDouble(2))
         );
-        Assert.IsType<Result<
-            IReadOnlyList<(string Id, string CustomerId, double Total)>,
-            SqlError
-        >.Ok<IReadOnlyList<(string Id, string CustomerId, double Total)>, SqlError>>(pendingOrders);
-        var pending = (
-            (Result<IReadOnlyList<(string Id, string CustomerId, double Total)>, SqlError>.Ok<
+        Assert.True(
+            pendingOrders
+                is Result<IReadOnlyList<(string Id, string CustomerId, double Total)>, SqlError>.Ok<
+                    IReadOnlyList<(string Id, string CustomerId, double Total)>,
+                    SqlError
+                >
+        );
+        if (
+            pendingOrders
+            is Result<IReadOnlyList<(string Id, string CustomerId, double Total)>, SqlError>.Ok<
                 IReadOnlyList<(string Id, string CustomerId, double Total)>,
                 SqlError
-            >)pendingOrders
-        ).Value;
-        Assert.Equal(3, pending.Count);
-        Assert.Equal(50.0, pending[0].Total);
-        Assert.Equal(100.0, pending[1].Total);
-        Assert.Equal(150.0, pending[2].Total);
+            > pendingOk
+        )
+        {
+            var pending = pendingOk.Value;
+            Assert.Equal(3, pending.Count);
+            Assert.Equal(50.0, pending[0].Item3);
+            Assert.Equal(100.0, pending[1].Item3);
+            Assert.Equal(150.0, pending[2].Item3);
+        }
 
         // Update all pending to confirmed
         var updateResult = tx.Execute(
             sql: "UPDATE Orders SET Status = 'confirmed' WHERE Status = @status",
             parameters: [new SqliteParameter("@status", "pending")]
         );
-        Assert.Equal(3, ((IntOk)updateResult).Value);
+        Assert.True(updateResult is IntOk);
+        if (updateResult is IntOk updateOk)
+        {
+            Assert.Equal(3, updateOk.Value);
+        }
 
         // Verify within transaction
-        var confirmedCount = tx.Scalar<long>(
-            sql: "SELECT COUNT(*) FROM Orders WHERE Status = 'confirmed'"
+        AssertLongQueryValue(
+            tx.Query<long>(
+                sql: "SELECT COUNT(*) FROM Orders WHERE Status = 'confirmed'",
+                mapper: r => r.GetInt64(0)
+            ),
+            expected: 3L
         );
-        Assert.Equal(3L, ((Result<long, SqlError>.Ok<long, SqlError>)confirmedCount).Value);
 
         // Aggregate within transaction
-        var totalValue = tx.Scalar<double>(
-            sql: "SELECT SUM(Total) FROM Orders WHERE Status = 'confirmed'"
+        var totalValue = tx.Query<double>(
+            sql: "SELECT SUM(Total) FROM Orders WHERE Status = 'confirmed'",
+            mapper: r => r.GetDouble(0)
         );
-        Assert.Equal(300.0, ((Result<double, SqlError>.Ok<double, SqlError>)totalValue).Value);
+        Assert.True(
+            totalValue
+                is Result<IReadOnlyList<double>, SqlError>.Ok<IReadOnlyList<double>, SqlError>
+        );
+        if (
+            totalValue
+            is Result<IReadOnlyList<double>, SqlError>.Ok<IReadOnlyList<double>, SqlError> totalOk
+        )
+        {
+            Assert.Equal(300.0, totalOk.Value[0]);
+        }
 
         tx.Commit();
 
         // Verify after commit
-        var finalPending = _connection.Scalar<long>(
-            sql: "SELECT COUNT(*) FROM Orders WHERE Status = 'pending'"
+        AssertLongQueryValue(
+            _connection.Query<long>(
+                sql: "SELECT COUNT(*) FROM Orders WHERE Status = 'pending'",
+                mapper: r => r.GetInt64(0)
+            ),
+            expected: 0L
         );
-        Assert.Equal(0L, ((Result<long, SqlError>.Ok<long, SqlError>)finalPending).Value);
     }
 
     [Fact]
@@ -300,10 +379,13 @@ public sealed class SqliteTransactionE2ETests : IDisposable
             .ConfigureAwait(false);
 
         // Verify committed
-        var count = _connection.Scalar<long>(
-            sql: "SELECT COUNT(*) FROM Orders WHERE CustomerId = 'CUST-TX-001'"
+        AssertLongQueryValue(
+            _connection.Query<long>(
+                sql: "SELECT COUNT(*) FROM Orders WHERE CustomerId = 'CUST-TX-001'",
+                mapper: r => r.GetInt64(0)
+            ),
+            expected: 1L
         );
-        Assert.Equal(1L, ((Result<long, SqlError>.Ok<long, SqlError>)count).Value);
 
         // Use DbTransact with return value
         var result = await _connection
@@ -315,7 +397,7 @@ public sealed class SqliteTransactionE2ETests : IDisposable
                 cmd.Transaction = sqliteTx;
                 cmd.CommandText = "SELECT Total FROM Orders WHERE CustomerId = 'CUST-TX-001'";
                 var value = await cmd.ExecuteScalarAsync().ConfigureAwait(false);
-                return Convert.ToDouble(value, CultureInfo.InvariantCulture);
+                return Convert.ToDouble(value, System.Globalization.CultureInfo.InvariantCulture);
             })
             .ConfigureAwait(false);
         Assert.Equal(200.0, result);
@@ -348,10 +430,13 @@ public sealed class SqliteTransactionE2ETests : IDisposable
         Assert.Equal("Simulated failure", exception.Message);
 
         // Verify rolled back
-        var failCount = _connection.Scalar<long>(
-            sql: "SELECT COUNT(*) FROM Orders WHERE CustomerId = 'CUST-TX-FAIL'"
+        AssertLongQueryValue(
+            _connection.Query<long>(
+                sql: "SELECT COUNT(*) FROM Orders WHERE CustomerId = 'CUST-TX-FAIL'",
+                mapper: r => r.GetInt64(0)
+            ),
+            expected: 0L
         );
-        Assert.Equal(0L, ((Result<long, SqlError>.Ok<long, SqlError>)failCount).Value);
     }
 
     [Fact]
@@ -361,34 +446,45 @@ public sealed class SqliteTransactionE2ETests : IDisposable
 
         // Invalid SQL within transaction
         var badQuery = tx.Query<string>(sql: "SELECT FROM BAD SYNTAX", mapper: r => r.GetString(0));
-        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Error<
-            IReadOnlyList<string>,
-            SqlError
-        >>(badQuery);
-        var queryError = (
-            (Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>)badQuery
-        ).Value;
-        Assert.NotEmpty(queryError.Message);
+        Assert.True(
+            badQuery
+                is Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>
+        );
+        if (
+            badQuery
+            is Result<IReadOnlyList<string>, SqlError>.Error<
+                IReadOnlyList<string>,
+                SqlError
+            > queryError
+        )
+        {
+            Assert.NotEmpty(queryError.Value.Message);
+        }
 
         // Invalid execute within transaction
         var badExec = tx.Execute(sql: "INSERT INTO NONEXISTENT VALUES ('x')");
-        Assert.IsType<IntError>(badExec);
+        Assert.True(badExec is IntError);
 
-        // Invalid scalar within transaction
-        var badScalar = tx.Scalar<long>(sql: "COMPLETELY INVALID SQL");
-        Assert.IsType<Result<long, SqlError>.Error<long, SqlError>>(badScalar);
+        // Invalid query within transaction (replacing Scalar)
+        var badScalar = tx.Query<long>(sql: "COMPLETELY INVALID SQL", mapper: r => r.GetInt64(0));
+        Assert.True(
+            badScalar is Result<IReadOnlyList<long>, SqlError>.Error<IReadOnlyList<long>, SqlError>
+        );
 
         // Null/empty SQL within transaction
         var emptyQuery = tx.Query<string>(sql: "", mapper: r => r.GetString(0));
-        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Error<
-            IReadOnlyList<string>,
-            SqlError
-        >>(emptyQuery);
+        Assert.True(
+            emptyQuery
+                is Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>
+        );
 
         var emptyExec = tx.Execute(sql: "  ");
-        Assert.IsType<IntError>(emptyExec);
+        Assert.True(emptyExec is IntError);
 
-        var emptyScalar = tx.Scalar<long>(sql: "");
-        Assert.IsType<Result<long, SqlError>.Error<long, SqlError>>(emptyScalar);
+        var emptyScalar = tx.Query<long>(sql: "", mapper: r => r.GetInt64(0));
+        Assert.True(
+            emptyScalar
+                is Result<IReadOnlyList<long>, SqlError>.Error<IReadOnlyList<long>, SqlError>
+        );
     }
 }

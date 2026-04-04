@@ -104,11 +104,11 @@ public sealed class SqliteCrudE2ETests : IDisposable
         );
 
         // Verify inserts succeeded
-        Assert.True(insert1 is IntOk ok1);
+        var ok1 = Assert.IsType<IntOk>(insert1);
         Assert.Equal(1, ok1.Value);
-        Assert.True(insert2 is IntOk ok2);
+        var ok2 = Assert.IsType<IntOk>(insert2);
         Assert.Equal(1, ok2.Value);
-        Assert.True(insert3 is IntOk ok3);
+        var ok3 = Assert.IsType<IntOk>(insert3);
         Assert.Equal(1, ok3.Value);
 
         // Query all patients
@@ -116,13 +116,10 @@ public sealed class SqliteCrudE2ETests : IDisposable
             sql: "SELECT Id, Name, Age FROM Patients ORDER BY Name",
             mapper: r => (r.GetString(0), r.GetString(1), r.GetInt32(2))
         );
-        Assert.True(
-            allPatients
-                is Result<IReadOnlyList<(string, string, int)>, SqlError>.Ok<
-                    IReadOnlyList<(string, string, int)>,
-                    SqlError
-                > patientsOk
-        );
+        var patientsOk = Assert.IsType<Result<IReadOnlyList<(string, string, int)>, SqlError>.Ok<
+            IReadOnlyList<(string, string, int)>,
+            SqlError
+        >>(allPatients);
         Assert.Equal(3, patientsOk.Value.Count);
         Assert.Equal("Alice Smith", patientsOk.Value[0].Item2);
         Assert.Equal("Bob Jones", patientsOk.Value[1].Item2);
@@ -133,13 +130,10 @@ public sealed class SqliteCrudE2ETests : IDisposable
             sql: "SELECT Name FROM Patients WHERE IsActive = 1 ORDER BY Name",
             mapper: r => r.GetString(0)
         );
-        Assert.True(
-            activePatients
-                is Result<IReadOnlyList<string>, SqlError>.Ok<
-                    IReadOnlyList<string>,
-                    SqlError
-                > activeOk
-        );
+        var activeOk = Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Ok<
+            IReadOnlyList<string>,
+            SqlError
+        >>(activePatients);
         Assert.Equal(2, activeOk.Value.Count);
         Assert.Contains("Alice Smith", activeOk.Value);
         Assert.Contains("Bob Jones", activeOk.Value);
@@ -150,10 +144,10 @@ public sealed class SqliteCrudE2ETests : IDisposable
             parameters: [new SqliteParameter("@minAge", 35)],
             mapper: r => r.GetInt64(0)
         );
-        Assert.True(
-            countResult
-                is Result<IReadOnlyList<long>, SqlError>.Ok<IReadOnlyList<long>, SqlError> countOk
-        );
+        var countOk = Assert.IsType<Result<IReadOnlyList<long>, SqlError>.Ok<
+            IReadOnlyList<long>,
+            SqlError
+        >>(countResult);
         Assert.Equal(2L, countOk.Value[0]);
 
         // Update a patient
@@ -166,7 +160,7 @@ public sealed class SqliteCrudE2ETests : IDisposable
                 new SqliteParameter("@id", patient1Id),
             ]
         );
-        Assert.True(updateResult is IntOk updateOk);
+        var updateOk = Assert.IsType<IntOk>(updateResult);
         Assert.Equal(1, updateOk.Value);
 
         // Verify update
@@ -175,13 +169,10 @@ public sealed class SqliteCrudE2ETests : IDisposable
             parameters: [new SqliteParameter("@id", patient1Id)],
             mapper: r => r.GetInt64(0)
         );
-        Assert.True(
-            updatedAge
-                is Result<IReadOnlyList<long>, SqlError>.Ok<
-                    IReadOnlyList<long>,
-                    SqlError
-                > updatedAgeOk
-        );
+        var updatedAgeOk = Assert.IsType<Result<IReadOnlyList<long>, SqlError>.Ok<
+            IReadOnlyList<long>,
+            SqlError
+        >>(updatedAge);
         Assert.Equal(31L, updatedAgeOk.Value[0]);
 
         // Delete a patient
@@ -189,7 +180,7 @@ public sealed class SqliteCrudE2ETests : IDisposable
             sql: "DELETE FROM Patients WHERE Id = @id",
             parameters: [new SqliteParameter("@id", patient3Id)]
         );
-        Assert.True(deleteResult is IntOk deleteOk);
+        var deleteOk = Assert.IsType<IntOk>(deleteResult);
         Assert.Equal(1, deleteOk.Value);
 
         // Verify delete
@@ -197,13 +188,10 @@ public sealed class SqliteCrudE2ETests : IDisposable
             sql: "SELECT COUNT(*) FROM Patients",
             mapper: r => r.GetInt64(0)
         );
-        Assert.True(
-            finalCount
-                is Result<IReadOnlyList<long>, SqlError>.Ok<
-                    IReadOnlyList<long>,
-                    SqlError
-                > finalCountOk
-        );
+        var finalCountOk = Assert.IsType<Result<IReadOnlyList<long>, SqlError>.Ok<
+            IReadOnlyList<long>,
+            SqlError
+        >>(finalCount);
         Assert.Equal(2L, finalCountOk.Value[0]);
     }
 
@@ -283,72 +271,70 @@ public sealed class SqliteCrudE2ETests : IDisposable
         );
 
         // Query with JOIN: patient + appointments
-        var joinResult = _connection.Query<(string Name, string Date, string Notes)>(
+        var joinResult = _connection.Query<(string, string, string)>(
             sql: """
             SELECT p.Name, a.AppointmentDate, a.Notes
             FROM Patients p
             INNER JOIN Appointments a ON p.Id = a.PatientId
             ORDER BY a.AppointmentDate
             """,
-            mapper: r => (Name: r.GetString(0), Date: r.GetString(1), Notes: r.GetString(2))
+            mapper: r => (r.GetString(0), r.GetString(1), r.GetString(2))
         );
-        Assert.IsType<Result<IReadOnlyList<(string Name, string Date, string Notes)>, SqlError>.Ok<
-            IReadOnlyList<(string Name, string Date, string Notes)>,
+        var appointmentsOk = Assert.IsType<Result<
+            IReadOnlyList<(string, string, string)>,
             SqlError
-        >>(joinResult);
-        var appointments = (
-            (Result<IReadOnlyList<(string Name, string Date, string Notes)>, SqlError>.Ok<
-                IReadOnlyList<(string Name, string Date, string Notes)>,
-                SqlError
-            >)joinResult
-        ).Value;
-        Assert.Equal(3, appointments.Count);
-        Assert.All(appointments, a => Assert.Equal("Diana Prince", a.Name));
-        Assert.Equal("2026-01-15", appointments[0].Date);
-        Assert.Equal("Annual checkup", appointments[0].Notes);
-        Assert.Equal("2026-03-10", appointments[2].Date);
+        >.Ok<IReadOnlyList<(string, string, string)>, SqlError>>(joinResult);
+        Assert.Equal(3, appointmentsOk.Value.Count);
+        Assert.All(appointmentsOk.Value, a => Assert.Equal("Diana Prince", a.Item1));
+        Assert.Equal("2026-01-15", appointmentsOk.Value[0].Item2);
+        Assert.Equal("Annual checkup", appointmentsOk.Value[0].Item3);
+        Assert.Equal("2026-03-10", appointmentsOk.Value[2].Item2);
 
         // Query with JOIN: patient + medications
-        var medResult = _connection.Query<(string Name, string Drug, string Dosage)>(
+        var medResult = _connection.Query<(string, string, string)>(
             sql: """
             SELECT p.Name, m.DrugName, m.Dosage
             FROM Patients p
             INNER JOIN Medications m ON p.Id = m.PatientId
             ORDER BY m.DrugName
             """,
-            mapper: r => (Name: r.GetString(0), Drug: r.GetString(1), Dosage: r.GetString(2))
+            mapper: r => (r.GetString(0), r.GetString(1), r.GetString(2))
         );
-        Assert.IsType<Result<IReadOnlyList<(string Name, string Drug, string Dosage)>, SqlError>.Ok<
-            IReadOnlyList<(string Name, string Drug, string Dosage)>,
+        var medsOk = Assert.IsType<Result<IReadOnlyList<(string, string, string)>, SqlError>.Ok<
+            IReadOnlyList<(string, string, string)>,
             SqlError
         >>(medResult);
-        var meds = (
-            (Result<IReadOnlyList<(string Name, string Drug, string Dosage)>, SqlError>.Ok<
-                IReadOnlyList<(string Name, string Drug, string Dosage)>,
-                SqlError
-            >)medResult
-        ).Value;
-        Assert.Equal(2, meds.Count);
-        Assert.Equal("Aspirin", meds[0].Drug);
-        Assert.Equal("Metformin", meds[1].Drug);
+        Assert.Equal(2, medsOk.Value.Count);
+        Assert.Equal("Aspirin", medsOk.Value[0].Item2);
+        Assert.Equal("Metformin", medsOk.Value[1].Item2);
 
-        // Aggregate: count appointments per patient
-        var aptCount = _connection.Scalar<long>(
+        // Aggregate: count appointments per patient using Query
+        var aptCount = _connection.Query<long>(
             sql: "SELECT COUNT(*) FROM Appointments WHERE PatientId = @pid",
-            parameters: [new SqliteParameter("@pid", patientId)]
+            parameters: [new SqliteParameter("@pid", patientId)],
+            mapper: r => r.GetInt64(0)
         );
-        Assert.Equal(3L, ((Result<long, SqlError>.Ok<long, SqlError>)aptCount).Value);
+        var aptCountOk = Assert.IsType<Result<IReadOnlyList<long>, SqlError>.Ok<
+            IReadOnlyList<long>,
+            SqlError
+        >>(aptCount);
+        Assert.Equal(3L, aptCountOk.Value[0]);
 
         // Delete appointment and verify cascade-like behavior
         _connection.Execute(
             sql: "DELETE FROM Appointments WHERE Id = @id",
             parameters: [new SqliteParameter("@id", apt1Id)]
         );
-        var remainingApts = _connection.Scalar<long>(
+        var remainingApts = _connection.Query<long>(
             sql: "SELECT COUNT(*) FROM Appointments WHERE PatientId = @pid",
-            parameters: [new SqliteParameter("@pid", patientId)]
+            parameters: [new SqliteParameter("@pid", patientId)],
+            mapper: r => r.GetInt64(0)
         );
-        Assert.Equal(2L, ((Result<long, SqlError>.Ok<long, SqlError>)remainingApts).Value);
+        var remainingOk = Assert.IsType<Result<IReadOnlyList<long>, SqlError>.Ok<
+            IReadOnlyList<long>,
+            SqlError
+        >>(remainingApts);
+        Assert.Equal(2L, remainingOk.Value[0]);
     }
 
     [Fact]
@@ -374,14 +360,12 @@ public sealed class SqliteCrudE2ETests : IDisposable
             parameters: [new SqliteParameter("@name", "Test O'Brien")],
             mapper: r => r.GetString(0)
         );
-        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>>(
-            result
-        );
-        var names = (
-            (Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>)result
-        ).Value;
-        Assert.Single(names);
-        Assert.Equal("Test O'Brien", names[0]);
+        var namesOk = Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Ok<
+            IReadOnlyList<string>,
+            SqlError
+        >>(result);
+        Assert.Single(namesOk.Value);
+        Assert.Equal("Test O'Brien", namesOk.Value[0]);
 
         // Query with integer parameter
         var ageResult = _connection.Query<int>(
@@ -389,12 +373,11 @@ public sealed class SqliteCrudE2ETests : IDisposable
             parameters: [new SqliteParameter("@minAge", 20), new SqliteParameter("@maxAge", 30)],
             mapper: r => r.GetInt32(0)
         );
-        Assert.IsType<Result<IReadOnlyList<int>, SqlError>.Ok<IReadOnlyList<int>, SqlError>>(
-            ageResult
-        );
-        Assert.Single(
-            ((Result<IReadOnlyList<int>, SqlError>.Ok<IReadOnlyList<int>, SqlError>)ageResult).Value
-        );
+        var ageOk = Assert.IsType<Result<IReadOnlyList<int>, SqlError>.Ok<
+            IReadOnlyList<int>,
+            SqlError
+        >>(ageResult);
+        Assert.Single(ageOk.Value);
 
         // Query with LIKE parameter
         var likeResult = _connection.Query<string>(
@@ -402,25 +385,23 @@ public sealed class SqliteCrudE2ETests : IDisposable
             parameters: [new SqliteParameter("@pattern", "%O'Brien%")],
             mapper: r => r.GetString(0)
         );
-        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>>(
-            likeResult
-        );
-        Assert.Single(
-            (
-                (Result<IReadOnlyList<string>, SqlError>.Ok<
-                    IReadOnlyList<string>,
-                    SqlError
-                >)likeResult
-            ).Value
-        );
+        var likeOk = Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Ok<
+            IReadOnlyList<string>,
+            SqlError
+        >>(likeResult);
+        Assert.Single(likeOk.Value);
 
-        // Scalar with aggregate and parameter
-        var avgAge = _connection.Scalar<double>(
+        // Average age using Query instead of Scalar
+        var avgAge = _connection.Query<double>(
             sql: "SELECT AVG(CAST(Age AS REAL)) FROM Patients WHERE IsActive = @active",
-            parameters: [new SqliteParameter("@active", 1)]
+            parameters: [new SqliteParameter("@active", 1)],
+            mapper: r => r.GetDouble(0)
         );
-        Assert.IsType<Result<double, SqlError>.Ok<double, SqlError>>(avgAge);
-        Assert.Equal(25.0, ((Result<double, SqlError>.Ok<double, SqlError>)avgAge).Value);
+        var avgOk = Assert.IsType<Result<IReadOnlyList<double>, SqlError>.Ok<
+            IReadOnlyList<double>,
+            SqlError
+        >>(avgAge);
+        Assert.Equal(25.0, avgOk.Value[0]);
     }
 
     [Fact]
@@ -431,10 +412,10 @@ public sealed class SqliteCrudE2ETests : IDisposable
             sql: "SELECT FROM NONEXISTENT_TABLE WHERE",
             mapper: r => r.GetString(0)
         );
-        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Error<
-            IReadOnlyList<string>,
-            SqlError
-        >>(badQuery);
+        Assert.True(
+            badQuery
+                is Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>
+        );
 
         // Constraint violation: duplicate primary key
         var id = Guid.NewGuid().ToString();
@@ -446,17 +427,21 @@ public sealed class SqliteCrudE2ETests : IDisposable
             sql: "INSERT INTO Patients (Id, Name, Age) VALUES (@id, 'Second', 40)",
             parameters: [new SqliteParameter("@id", id)]
         );
-        Assert.IsType<IntError>(duplicate);
-        var error = ((IntError)duplicate).Value;
-        Assert.NotNull(error.Message);
-        Assert.NotEmpty(error.Message);
+        var err = Assert.IsType<IntError>(duplicate);
+        Assert.NotNull(err.Value.Message);
+        Assert.NotEmpty(err.Value.Message);
 
-        // Invalid scalar returns error
-        var badScalar = _connection.Scalar<long>(sql: "SELECT * FROM NOWHERE");
-        Assert.IsType<Result<long, SqlError>.Error<long, SqlError>>(badScalar);
+        // Invalid query returns error
+        var badScalar = _connection.Query<long>(
+            sql: "SELECT * FROM NOWHERE",
+            mapper: r => r.GetInt64(0)
+        );
+        Assert.True(
+            badScalar is Result<IReadOnlyList<long>, SqlError>.Error<IReadOnlyList<long>, SqlError>
+        );
 
         // Invalid execute returns error
         var badExec = _connection.Execute(sql: "DROP TABLE IMAGINARY_TABLE");
-        Assert.IsType<IntError>(badExec);
+        Assert.True(badExec is IntError);
     }
 }

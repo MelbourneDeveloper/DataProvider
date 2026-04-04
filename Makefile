@@ -123,36 +123,42 @@ _build_dotnet:
 	dotnet build DataProvider.sln --configuration Release
 
 _test_dotnet:
-	@for proj in $(DOTNET_TEST_PROJECTS); do \
+	@for test_proj in $(DOTNET_TEST_PROJECTS); do \
+	  SRC_KEY=$$(echo "$$test_proj" | sed 's/\.Tests$$//'); \
+	  case "$$SRC_KEY" in \
+	    "DataProvider/Nimblesite.DataProvider") SRC_KEY="DataProvider/Nimblesite.DataProvider.Core" ;; \
+	    "Lql/Nimblesite.Lql") SRC_KEY="Lql/Nimblesite.Lql.Core" ;; \
+	    "Migration/Nimblesite.DataProvider.Migration") SRC_KEY="Migration/Nimblesite.DataProvider.Migration.Core" ;; \
+	  esac; \
+	  THRESHOLD=$$(jq -r ".projects[\"$$SRC_KEY\"].threshold // .default_threshold" coverage-thresholds.json); \
+	  INCLUDE=$$(jq -r ".projects[\"$$SRC_KEY\"].include // empty" coverage-thresholds.json); \
 	  echo ""; \
 	  echo "============================================================"; \
-	  THRESHOLD=$$(jq -r ".projects[\"$$proj\"].threshold // .default_threshold" coverage-thresholds.json); \
-	  INCLUDE=$$(jq -r ".projects[\"$$proj\"].include // empty" coverage-thresholds.json); \
-	  echo "==> Testing $$proj (threshold: $$THRESHOLD%)"; \
+	  echo "==> Testing $$SRC_KEY (via $$test_proj, threshold: $$THRESHOLD%)"; \
 	  if [ -n "$$INCLUDE" ]; then echo "  Include filter: $$INCLUDE"; fi; \
 	  echo "============================================================"; \
-	  rm -rf "$$proj/TestResults"; \
+	  rm -rf "$$test_proj/TestResults"; \
 	  if [ -n "$$INCLUDE" ]; then \
-	    dotnet test "$$proj" --configuration Release \
+	    dotnet test "$$test_proj" --configuration Release \
 	      --settings coverlet.runsettings \
 	      --collect:"XPlat Code Coverage" \
-	      --results-directory "$$proj/TestResults" \
+	      --results-directory "$$test_proj/TestResults" \
 	      --verbosity normal \
 	      -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="$$INCLUDE"; \
 	  else \
-	    dotnet test "$$proj" --configuration Release \
+	    dotnet test "$$test_proj" --configuration Release \
 	      --settings coverlet.runsettings \
 	      --collect:"XPlat Code Coverage" \
-	      --results-directory "$$proj/TestResults" \
+	      --results-directory "$$test_proj/TestResults" \
 	      --verbosity normal; \
 	  fi; \
 	  if [ $$? -ne 0 ]; then \
-	    echo "FAIL: Tests failed for $$proj"; \
+	    echo "FAIL: Tests failed for $$SRC_KEY ($$test_proj)"; \
 	    exit 1; \
 	  fi; \
-	  COBERTURA=$$(find "$$proj/TestResults" -name "coverage.cobertura.xml" -type f 2>/dev/null | head -1); \
+	  COBERTURA=$$(find "$$test_proj/TestResults" -name "coverage.cobertura.xml" -type f 2>/dev/null | head -1); \
 	  if [ -z "$$COBERTURA" ]; then \
-	    echo "FAIL: No coverage file produced for $$proj"; \
+	    echo "FAIL: No coverage file produced for $$SRC_KEY ($$test_proj)"; \
 	    exit 1; \
 	  fi; \
 	  LINE_RATE=$$(sed -n 's/.*line-rate="\([0-9.]*\)".*/\1/p' "$$COBERTURA" | head -1); \
@@ -173,7 +179,7 @@ _test_dotnet:
 	  if [ "$$ABOVE" = "1" ]; then \
 	    NEW=$$(echo "$$COVERAGE" | awk '{print int($$1)}'); \
 	    echo "  Ratcheting threshold: $$THRESHOLD% -> $$NEW%"; \
-	    jq ".projects[\"$$proj\"].threshold = $$NEW" coverage-thresholds.json > coverage-thresholds.json.tmp && mv coverage-thresholds.json.tmp coverage-thresholds.json; \
+	    jq ".projects[\"$$SRC_KEY\"].threshold = $$NEW" coverage-thresholds.json > coverage-thresholds.json.tmp && mv coverage-thresholds.json.tmp coverage-thresholds.json; \
 	  fi; \
 	  echo "  PASS"; \
 	done; \
