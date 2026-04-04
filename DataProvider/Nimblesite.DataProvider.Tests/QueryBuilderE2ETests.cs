@@ -12,8 +12,10 @@ namespace Nimblesite.DataProvider.Tests;
 /// </summary>
 public sealed class QueryBuilderE2ETests : IDisposable
 {
-    private readonly string _dbPath =
-        Path.Combine(Path.GetTempPath(), $"qb_e2e_{Guid.NewGuid()}.db");
+    private readonly string _dbPath = Path.Combine(
+        Path.GetTempPath(),
+        $"qb_e2e_{Guid.NewGuid()}.db"
+    );
 
     private readonly SqliteConnection _connection;
 
@@ -27,8 +29,13 @@ public sealed class QueryBuilderE2ETests : IDisposable
     public void Dispose()
     {
         _connection.Dispose();
-        try { File.Delete(_dbPath); }
-        catch (IOException) { /* cleanup best-effort */ }
+        try
+        {
+            File.Delete(_dbPath);
+        }
+        catch (IOException)
+        { /* cleanup best-effort */
+        }
     }
 
     private void CreateSchemaAndSeed()
@@ -59,24 +66,19 @@ public sealed class QueryBuilderE2ETests : IDisposable
             """;
         cmd.ExecuteNonQuery();
 
-        // Seed products
-        string[] products =
-        [
-            "('p1', 'Widget A', 10.00, 100, 'Electronics')",
-            "('p2', 'Widget B', 25.50, 50, 'Electronics')",
-            "('p3', 'Gadget X', 99.99, 10, 'Gadgets')",
-            "('p4', 'Gadget Y', 149.99, 5, 'Gadgets')",
-            "('p5', 'Tool Alpha', 35.00, 75, 'Tools')",
-            "('p6', 'Tool Beta', 45.00, 30, 'Tools')",
-            "('p7', 'Tool Gamma', 15.00, 200, 'Tools')",
-            "('p8', 'Premium Widget', 500.00, 2, 'Electronics')",
-        ];
-        foreach (var p in products)
-        {
-            using var insertCmd = _connection.CreateCommand();
-            insertCmd.CommandText = $"INSERT INTO Products VALUES {p}";
-            insertCmd.ExecuteNonQuery();
-        }
+        // Seed products (test-only constant SQL, not user input)
+        using var seedProductsCmd = _connection.CreateCommand();
+        seedProductsCmd.CommandText = """
+            INSERT INTO Products VALUES ('p1', 'Widget A', 10.00, 100, 'Electronics');
+            INSERT INTO Products VALUES ('p2', 'Widget B', 25.50, 50, 'Electronics');
+            INSERT INTO Products VALUES ('p3', 'Gadget X', 99.99, 10, 'Gadgets');
+            INSERT INTO Products VALUES ('p4', 'Gadget Y', 149.99, 5, 'Gadgets');
+            INSERT INTO Products VALUES ('p5', 'Tool Alpha', 35.00, 75, 'Tools');
+            INSERT INTO Products VALUES ('p6', 'Tool Beta', 45.00, 30, 'Tools');
+            INSERT INTO Products VALUES ('p7', 'Tool Gamma', 15.00, 200, 'Tools');
+            INSERT INTO Products VALUES ('p8', 'Premium Widget', 500.00, 2, 'Electronics');
+            """;
+        seedProductsCmd.ExecuteNonQuery();
 
         // Seed categories
         using var catCmd = _connection.CreateCommand();
@@ -103,7 +105,8 @@ public sealed class QueryBuilderE2ETests : IDisposable
     public void SelectStatementBuilder_WhereOrderByLimit_ExecutesCorrectly()
     {
         // Build query: SELECT Name, Price FROM Products WHERE Category = 'Tools' ORDER BY Price ASC LIMIT 2
-        var statement = "Products".From()
+        var statement = "Products"
+            .From()
             .Select(columns: [(null, "Name"), (null, "Price")])
             .Where(columnName: "Category", value: "Tools")
             .OrderBy(columnName: "Price")
@@ -112,53 +115,70 @@ public sealed class QueryBuilderE2ETests : IDisposable
 
         // Convert to SQLite
         var sqlResult = statement.ToSQLite();
-        Assert.IsType<StringOk>(sqlResult);
-        var sql = ((StringOk)sqlResult).Value;
+        Assert.True(sqlResult is StringOk);
+        Assert.True(sqlResult is StringOk sqlOk);
+        var sql = sqlOk.Value;
         Assert.Contains("SELECT", sql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Products", sql);
         Assert.Contains("LIMIT", sql, StringComparison.OrdinalIgnoreCase);
 
         // Execute against real DB
-        var queryResult = _connection.Query<(string Name, double Price)>(
+        var queryResult = _connection.Query<(string, double)>(
             sql: sql,
             mapper: r => (r.GetString(0), r.GetDouble(1))
         );
-        Assert.IsType<Result<IReadOnlyList<(string Name, double Price)>, SqlError>.Ok<IReadOnlyList<(string Name, double Price)>, SqlError>>(queryResult);
-        var rows = ((Result<IReadOnlyList<(string Name, double Price)>, SqlError>.Ok<IReadOnlyList<(string Name, double Price)>, SqlError>)queryResult).Value;
-        Assert.Equal(2, rows.Count);
-        Assert.Equal("Tool Gamma", rows[0].Name);
-        Assert.Equal(15.00, rows[0].Price);
-        Assert.Equal("Tool Alpha", rows[1].Name);
-        Assert.Equal(35.00, rows[1].Price);
+        Assert.True(
+            queryResult
+                is Result<IReadOnlyList<(string, double)>, SqlError>.Ok<
+                    IReadOnlyList<(string, double)>,
+                    SqlError
+                > rows
+        );
+        Assert.Equal(2, rows.Value.Count);
+        Assert.Equal("Tool Gamma", rows.Value[0].Item1);
+        Assert.Equal(15.00, rows.Value[0].Item2);
+        Assert.Equal("Tool Alpha", rows.Value[1].Item1);
+        Assert.Equal(35.00, rows.Value[1].Item2);
     }
 
     [Fact]
     public void SelectStatementBuilder_DistinctAndGroupBy_ExecutesCorrectly()
     {
         // DISTINCT categories
-        var distinctStmt = "Products".From()
+        var distinctStmt = "Products"
+            .From()
             .Select(columns: [(null, "Category")])
             .Distinct()
             .OrderBy(columnName: "Category")
             .ToSqlStatement();
 
-        var distinctSql = ((StringOk)distinctStmt.ToSQLite()).Value;
+        var distinctSqlResult = distinctStmt.ToSQLite();
+        Assert.True(distinctSqlResult is StringOk distinctSqlOk);
+        var distinctSql = distinctSqlOk.Value;
+
         var distinctResult = _connection.Query<string>(
             sql: distinctSql,
             mapper: r => r.GetString(0)
         );
-        var categories = ((Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>)distinctResult).Value;
-        Assert.Equal(3, categories.Count);
-        Assert.Equal("Electronics", categories[0]);
-        Assert.Equal("Gadgets", categories[1]);
-        Assert.Equal("Tools", categories[2]);
+        Assert.True(
+            distinctResult
+                is Result<IReadOnlyList<string>, SqlError>.Ok<
+                    IReadOnlyList<string>,
+                    SqlError
+                > categories
+        );
+        Assert.Equal(3, categories.Value.Count);
+        Assert.Equal("Electronics", categories.Value[0]);
+        Assert.Equal("Gadgets", categories.Value[1]);
+        Assert.Equal("Tools", categories.Value[2]);
     }
 
     [Fact]
     public void SelectStatementBuilder_WithPagination_ExecutesCorrectly()
     {
         // Page 2 (skip 3, take 3) ordered by name
-        var pagedStmt = "Products".From()
+        var pagedStmt = "Products"
+            .From()
             .SelectAll()
             .OrderBy(columnName: "Name")
             .Skip(count: 3)
@@ -173,7 +193,9 @@ public sealed class QueryBuilderE2ETests : IDisposable
             sql: pagedSql,
             mapper: r => r.GetString(1) // Name is column index 1
         );
-        var page = ((Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>)pagedResult).Value;
+        var page = (
+            (Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>)pagedResult
+        ).Value;
         Assert.Equal(3, page.Count);
     }
 
@@ -181,7 +203,8 @@ public sealed class QueryBuilderE2ETests : IDisposable
     public void SelectStatementBuilder_Join_ExecutesCorrectly()
     {
         // JOIN Products with Categories
-        var joinStmt = "Products".From()
+        var joinStmt = "Products"
+            .From()
             .Select(columns: [("Products", "Name"), ("Categories", "Description")])
             .InnerJoin(
                 rightTable: "Categories",
@@ -201,8 +224,16 @@ public sealed class QueryBuilderE2ETests : IDisposable
             sql: joinSql,
             mapper: r => (r.GetString(0), r.GetString(1))
         );
-        Assert.IsType<Result<IReadOnlyList<(string ProductName, string CatDesc)>, SqlError>.Ok<IReadOnlyList<(string ProductName, string CatDesc)>, SqlError>>(joinResult);
-        var joined = ((Result<IReadOnlyList<(string ProductName, string CatDesc)>, SqlError>.Ok<IReadOnlyList<(string ProductName, string CatDesc)>, SqlError>)joinResult).Value;
+        Assert.IsType<Result<IReadOnlyList<(string ProductName, string CatDesc)>, SqlError>.Ok<
+            IReadOnlyList<(string ProductName, string CatDesc)>,
+            SqlError
+        >>(joinResult);
+        var joined = (
+            (Result<IReadOnlyList<(string ProductName, string CatDesc)>, SqlError>.Ok<
+                IReadOnlyList<(string ProductName, string CatDesc)>,
+                SqlError
+            >)joinResult
+        ).Value;
         Assert.Equal(3, joined.Count);
         Assert.All(joined, j => Assert.Equal("Electronic devices and components", j.CatDesc));
     }
@@ -211,7 +242,8 @@ public sealed class QueryBuilderE2ETests : IDisposable
     public void GetRecords_WithSelectStatementAndSQLiteGenerator_MapsResultsCorrectly()
     {
         // Build a SelectStatement
-        var statement = "Products".From()
+        var statement = "Products"
+            .From()
             .Select(columns: [(null, "Id"), (null, "Name"), (null, "Price")])
             .Where(columnName: "Price", ComparisonOperator.GreaterThan, 40.0)
             .OrderBy(columnName: "Price")
@@ -224,8 +256,16 @@ public sealed class QueryBuilderE2ETests : IDisposable
             mapper: r => (Id: r.GetString(0), Name: r.GetString(1), Price: r.GetDouble(2))
         );
 
-        Assert.IsType<Result<IReadOnlyList<(string Id, string Name, double Price)>, SqlError>.Ok<IReadOnlyList<(string Id, string Name, double Price)>, SqlError>>(result);
-        var records = ((Result<IReadOnlyList<(string Id, string Name, double Price)>, SqlError>.Ok<IReadOnlyList<(string Id, string Name, double Price)>, SqlError>)result).Value;
+        Assert.IsType<Result<IReadOnlyList<(string Id, string Name, double Price)>, SqlError>.Ok<
+            IReadOnlyList<(string Id, string Name, double Price)>,
+            SqlError
+        >>(result);
+        var records = (
+            (Result<IReadOnlyList<(string Id, string Name, double Price)>, SqlError>.Ok<
+                IReadOnlyList<(string Id, string Name, double Price)>,
+                SqlError
+            >)result
+        ).Value;
         Assert.Equal(4, records.Count);
         Assert.Equal("Tool Beta", records[0].Name);
         Assert.Equal(45.00, records[0].Price);
@@ -245,7 +285,10 @@ public sealed class QueryBuilderE2ETests : IDisposable
             sqlGenerator: s => s.ToSQLite(),
             mapper: r => r.GetString(0)
         );
-        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>>(nullConn);
+        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Error<
+            IReadOnlyList<string>,
+            SqlError
+        >>(nullConn);
 
         // Null statement
         var nullStmt = _connection.GetRecords<string>(
@@ -253,7 +296,10 @@ public sealed class QueryBuilderE2ETests : IDisposable
             sqlGenerator: s => s.ToSQLite(),
             mapper: r => r.GetString(0)
         );
-        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>>(nullStmt);
+        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Error<
+            IReadOnlyList<string>,
+            SqlError
+        >>(nullStmt);
 
         // Null generator
         var nullGen = _connection.GetRecords<string>(
@@ -261,7 +307,10 @@ public sealed class QueryBuilderE2ETests : IDisposable
             sqlGenerator: null!,
             mapper: r => r.GetString(0)
         );
-        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>>(nullGen);
+        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Error<
+            IReadOnlyList<string>,
+            SqlError
+        >>(nullGen);
 
         // Null mapper
         var nullMapper = _connection.GetRecords<string>(
@@ -269,7 +318,10 @@ public sealed class QueryBuilderE2ETests : IDisposable
             sqlGenerator: s => s.ToSQLite(),
             mapper: null!
         );
-        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>>(nullMapper);
+        Assert.IsType<Result<IReadOnlyList<string>, SqlError>.Error<
+            IReadOnlyList<string>,
+            SqlError
+        >>(nullMapper);
     }
 
     [Fact]
@@ -282,7 +334,8 @@ public sealed class QueryBuilderE2ETests : IDisposable
         Assert.Contains("FROM Products", simpleSql);
 
         // With specific columns
-        var cols = "Products".From()
+        var cols = "Products"
+            .From()
             .Select(columns: [(null, "Name"), (null, "Price")])
             .ToSqlStatement();
         var colsSql = ((StringOk)cols.ToSQLite()).Value;
@@ -291,7 +344,8 @@ public sealed class QueryBuilderE2ETests : IDisposable
         Assert.DoesNotContain("*", colsSql);
 
         // With WHERE + AND
-        var filtered = "Products".From()
+        var filtered = "Products"
+            .From()
             .SelectAll()
             .Where(columnName: "Category", value: "Tools")
             .And(columnName: "Price", value: 35.0)
@@ -304,7 +358,10 @@ public sealed class QueryBuilderE2ETests : IDisposable
         foreach (var sql in new[] { simpleSql, colsSql, filteredSql })
         {
             var result = _connection.Query<string>(sql: sql, mapper: r => r.GetString(0));
-            Assert.IsNotType<Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>>(result);
+            Assert.IsNotType<Result<IReadOnlyList<string>, SqlError>.Error<
+                IReadOnlyList<string>,
+                SqlError
+            >>(result);
         }
     }
 
@@ -312,7 +369,8 @@ public sealed class QueryBuilderE2ETests : IDisposable
     public void SelectStatementBuilder_MultipleWhereConditions_GeneratesCorrectResults()
     {
         // OR condition: Electronics or Gadgets
-        var orStmt = "Products".From()
+        var orStmt = "Products"
+            .From()
             .Select(columns: [(null, "Name"), (null, "Category")])
             .Where(columnName: "Category", value: "Electronics")
             .Or(columnName: "Category", value: "Gadgets")
@@ -326,7 +384,12 @@ public sealed class QueryBuilderE2ETests : IDisposable
             sql: orSql,
             mapper: r => (r.GetString(0), r.GetString(1))
         );
-        var orRows = ((Result<IReadOnlyList<(string, string)>, SqlError>.Ok<IReadOnlyList<(string, string)>, SqlError>)orResult).Value;
+        var orRows = (
+            (Result<IReadOnlyList<(string Name, string Category)>, SqlError>.Ok<
+                IReadOnlyList<(string Name, string Category)>,
+                SqlError
+            >)orResult
+        ).Value;
         Assert.Equal(5, orRows.Count);
         Assert.All(orRows, r => Assert.True(r.Category is "Electronics" or "Gadgets"));
     }
@@ -338,10 +401,9 @@ public sealed class QueryBuilderE2ETests : IDisposable
         var builder = new SelectStatementBuilder();
         builder.AddTable(name: "Products");
         builder.AddSelectColumn(name: "Name");
-        builder.AddSelectColumn(ColumnInfo.FromExpression(
-            expression: "Price * Quantity",
-            alias: "TotalValue"
-        ));
+        builder.AddSelectColumn(
+            ColumnInfo.FromExpression(expression: "Price * Quantity", alias: "TotalValue")
+        );
         builder.AddOrderBy(column: "Name", direction: "ASC");
         var stmt = builder.Build();
 
@@ -353,7 +415,12 @@ public sealed class QueryBuilderE2ETests : IDisposable
             sql: sql,
             mapper: r => (r.GetString(0), r.GetDouble(1))
         );
-        var rows = ((Result<IReadOnlyList<(string, double)>, SqlError>.Ok<IReadOnlyList<(string, double)>, SqlError>)result).Value;
+        var rows = (
+            (Result<IReadOnlyList<(string Name, double TotalValue)>, SqlError>.Ok<
+                IReadOnlyList<(string Name, double TotalValue)>,
+                SqlError
+            >)result
+        ).Value;
         Assert.Equal(8, rows.Count);
 
         // Verify computed values

@@ -181,8 +181,7 @@ public sealed class SqlModelE2ETests : IDisposable
         var ltResult = _connection.Query<string>(sql: ltSql, mapper: r => r.GetString(0));
         Assert.True(
             ltResult
-                is Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>
-                    ltOk
+                is Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError> ltOk
         );
         var ltRows = ltOk.Value;
         Assert.Equal(2, ltRows.Count); // Charlie (75k), Eve (70k)
@@ -203,8 +202,7 @@ public sealed class SqlModelE2ETests : IDisposable
         var geResult = _connection.Query<string>(sql: geSql, mapper: r => r.GetString(0));
         Assert.True(
             geResult
-                is Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>
-                    geOk
+                is Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError> geOk
         );
         var geRows = geOk.Value;
         Assert.Equal(3, geRows.Count); // Alice (95k), Bob (105k), Frank (120k)
@@ -225,8 +223,10 @@ public sealed class SqlModelE2ETests : IDisposable
         var likeResult = _connection.Query<string>(sql: likeSql, mapper: r => r.GetString(0));
         Assert.True(
             likeResult
-                is Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>
-                    likeOk
+                is Result<IReadOnlyList<string>, SqlError>.Ok<
+                    IReadOnlyList<string>,
+                    SqlError
+                > likeOk
         );
         var likeRows = likeOk.Value;
         // Grace, Diana, Frank, Charlie, Hank all contain 'a'

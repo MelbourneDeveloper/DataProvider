@@ -234,15 +234,15 @@ public sealed class SqliteTransactionE2ETests : IDisposable
         var pendingOrders = tx.Query<(string Id, string CustomerId, double Total)>(
             sql: "SELECT Id, CustomerId, Total FROM Orders WHERE Status = @status ORDER BY Total",
             parameters: [new SqliteParameter("@status", "pending")],
-            mapper: r => (r.GetString(0), r.GetString(1), r.GetDouble(2))
+            mapper: r => (Id: r.GetString(0), CustomerId: r.GetString(1), Total: r.GetDouble(2))
         );
-        Assert.IsType<Result<IReadOnlyList<(string, string, double)>, SqlError>.Ok<
-            IReadOnlyList<(string, string, double)>,
+        Assert.IsType<Result<
+            IReadOnlyList<(string Id, string CustomerId, double Total)>,
             SqlError
-        >>(pendingOrders);
+        >.Ok<IReadOnlyList<(string Id, string CustomerId, double Total)>, SqlError>>(pendingOrders);
         var pending = (
-            (Result<IReadOnlyList<(string, string, double)>, SqlError>.Ok<
-                IReadOnlyList<(string, string, double)>,
+            (Result<IReadOnlyList<(string Id, string CustomerId, double Total)>, SqlError>.Ok<
+                IReadOnlyList<(string Id, string CustomerId, double Total)>,
                 SqlError
             >)pendingOrders
         ).Value;
@@ -283,17 +283,21 @@ public sealed class SqliteTransactionE2ETests : IDisposable
     public async Task DbTransactHelper_CommitAndRollbackWorkflows_WorkCorrectly()
     {
         // Use DbTransact helper for successful commit
-        await _connection.Transact(async tx =>
-        {
-            var cmd = ((SqliteTransaction)tx).Connection!.CreateCommand();
-            cmd.Transaction = (SqliteTransaction)tx;
-            cmd.CommandText =
-                "INSERT INTO Orders (Id, CustomerId, Total) VALUES (@id, @cid, @total)";
-            cmd.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
-            cmd.Parameters.AddWithValue("@cid", "CUST-TX-001");
-            cmd.Parameters.AddWithValue("@total", 200.0);
-            await cmd.ExecuteNonQueryAsync();
-        });
+        await _connection
+            .Transact(async tx =>
+            {
+                if (tx is not SqliteTransaction sqliteTx || sqliteTx.Connection is not { } conn)
+                    return;
+                var cmd = conn.CreateCommand();
+                cmd.Transaction = sqliteTx;
+                cmd.CommandText =
+                    "INSERT INTO Orders (Id, CustomerId, Total) VALUES (@id, @cid, @total)";
+                cmd.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
+                cmd.Parameters.AddWithValue("@cid", "CUST-TX-001");
+                cmd.Parameters.AddWithValue("@total", 200.0);
+                await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+            })
+            .ConfigureAwait(false);
 
         // Verify committed
         var count = _connection.Scalar<long>(
@@ -302,32 +306,45 @@ public sealed class SqliteTransactionE2ETests : IDisposable
         Assert.Equal(1L, ((Result<long, SqlError>.Ok<long, SqlError>)count).Value);
 
         // Use DbTransact with return value
-        var result = await _connection.Transact(async tx =>
-        {
-            var cmd = ((SqliteTransaction)tx).Connection!.CreateCommand();
-            cmd.Transaction = (SqliteTransaction)tx;
-            cmd.CommandText = "SELECT Total FROM Orders WHERE CustomerId = 'CUST-TX-001'";
-            var value = await cmd.ExecuteScalarAsync();
-            return Convert.ToDouble(value);
-        });
+        var result = await _connection
+            .Transact(async tx =>
+            {
+                if (tx is not SqliteTransaction sqliteTx || sqliteTx.Connection is not { } conn)
+                    return 0.0;
+                var cmd = conn.CreateCommand();
+                cmd.Transaction = sqliteTx;
+                cmd.CommandText = "SELECT Total FROM Orders WHERE CustomerId = 'CUST-TX-001'";
+                var value = await cmd.ExecuteScalarAsync().ConfigureAwait(false);
+                return Convert.ToDouble(value, CultureInfo.InvariantCulture);
+            })
+            .ConfigureAwait(false);
         Assert.Equal(200.0, result);
 
         // Use DbTransact with rollback on exception
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-        {
-            await _connection.Transact(async tx =>
+        var exception = await Assert
+            .ThrowsAsync<InvalidOperationException>(async () =>
             {
-                var cmd = ((SqliteTransaction)tx).Connection!.CreateCommand();
-                cmd.Transaction = (SqliteTransaction)tx;
-                cmd.CommandText =
-                    "INSERT INTO Orders (Id, CustomerId, Total) VALUES (@id, @cid, @total)";
-                cmd.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
-                cmd.Parameters.AddWithValue("@cid", "CUST-TX-FAIL");
-                cmd.Parameters.AddWithValue("@total", 999.0);
-                await cmd.ExecuteNonQueryAsync();
-                throw new InvalidOperationException("Simulated failure");
-            });
-        });
+                await _connection
+                    .Transact(async tx =>
+                    {
+                        if (
+                            tx is not SqliteTransaction sqliteTx
+                            || sqliteTx.Connection is not { } conn
+                        )
+                            return;
+                        var cmd = conn.CreateCommand();
+                        cmd.Transaction = sqliteTx;
+                        cmd.CommandText =
+                            "INSERT INTO Orders (Id, CustomerId, Total) VALUES (@id, @cid, @total)";
+                        cmd.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
+                        cmd.Parameters.AddWithValue("@cid", "CUST-TX-FAIL");
+                        cmd.Parameters.AddWithValue("@total", 999.0);
+                        await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+                        throw new InvalidOperationException("Simulated failure");
+                    })
+                    .ConfigureAwait(false);
+            })
+            .ConfigureAwait(false);
         Assert.Equal("Simulated failure", exception.Message);
 
         // Verify rolled back

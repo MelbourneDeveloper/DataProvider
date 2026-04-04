@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Nimblesite.Sql.Model;
 
 namespace Nimblesite.DataProvider.Tests;
@@ -63,8 +64,10 @@ public sealed class CodeGenerationE2ETests
             connectionType: "SqliteConnection"
         );
 
-        Assert.IsType<StringOk>(result);
-        var code = ((StringOk)result).Value;
+        Assert.True(result is StringOk);
+        if (result is not StringOk ok)
+            return;
+        var code = ok.Value;
 
         // Verify class structure
         Assert.Contains("public static partial class PatientQueries", code);
@@ -98,12 +101,15 @@ public sealed class CodeGenerationE2ETests
             parameters: [],
             columns: PatientColumns
         );
-        Assert.IsType<StringError>(emptyClass);
-        Assert.Contains(
-            "className",
-            ((StringError)emptyClass).Value.Message,
-            StringComparison.OrdinalIgnoreCase
-        );
+        Assert.True(emptyClass is StringError);
+        if (emptyClass is StringError classErr)
+        {
+            Assert.Contains(
+                "className",
+                classErr.Value.Message,
+                StringComparison.OrdinalIgnoreCase
+            );
+        }
 
         // Empty method name
         var emptyMethod = DataAccessGenerator.GenerateQueryMethod(
@@ -114,7 +120,7 @@ public sealed class CodeGenerationE2ETests
             parameters: [],
             columns: PatientColumns
         );
-        Assert.IsType<StringError>(emptyMethod);
+        Assert.True(emptyMethod is StringError);
 
         // Empty return type
         var emptyReturn = DataAccessGenerator.GenerateQueryMethod(
@@ -125,7 +131,7 @@ public sealed class CodeGenerationE2ETests
             parameters: [],
             columns: PatientColumns
         );
-        Assert.IsType<StringError>(emptyReturn);
+        Assert.True(emptyReturn is StringError);
 
         // Empty SQL
         var emptySql = DataAccessGenerator.GenerateQueryMethod(
@@ -136,7 +142,7 @@ public sealed class CodeGenerationE2ETests
             parameters: [],
             columns: PatientColumns
         );
-        Assert.IsType<StringError>(emptySql);
+        Assert.True(emptySql is StringError);
 
         // Empty columns
         var emptyColumns = DataAccessGenerator.GenerateQueryMethod(
@@ -147,7 +153,7 @@ public sealed class CodeGenerationE2ETests
             parameters: [],
             columns: []
         );
-        Assert.IsType<StringError>(emptyColumns);
+        Assert.True(emptyColumns is StringError);
     }
 
     [Fact]
@@ -161,8 +167,10 @@ public sealed class CodeGenerationE2ETests
             connectionType: "SqliteConnection"
         );
 
-        Assert.IsType<StringOk>(result);
-        var code = ((StringOk)result).Value;
+        Assert.True(result is StringOk);
+        if (result is not StringOk ok)
+            return;
+        var code = ok.Value;
 
         // Verify it generates non-query method
         Assert.Contains("PatientCommands", code);
@@ -187,8 +195,10 @@ public sealed class CodeGenerationE2ETests
             connectionType: "SqliteConnection"
         );
 
-        Assert.IsType<StringOk>(result);
-        var code = ((StringOk)result).Value;
+        Assert.True(result is StringOk);
+        if (result is not StringOk ok)
+            return;
+        var code = ok.Value;
 
         // Verify INSERT statement
         Assert.Contains("INSERT", code, StringComparison.OrdinalIgnoreCase);
@@ -246,8 +256,10 @@ public sealed class CodeGenerationE2ETests
             ]
         );
 
-        Assert.IsType<StringOk>(result);
-        var code = ((StringOk)result).Value;
+        Assert.True(result is StringOk);
+        if (result is not StringOk ok)
+            return;
+        var code = ok.Value;
         // Reserved keywords should be escaped with @
         Assert.Contains("@class", code);
         Assert.Contains("@int", code);
@@ -265,8 +277,10 @@ public sealed class CodeGenerationE2ETests
 
         var result = DataAccessGenerator.GenerateBulkInsertMethod(table: table, batchSize: 100);
 
-        Assert.IsType<StringOk>(result);
-        var code = ((StringOk)result).Value;
+        Assert.True(result is StringOk);
+        if (result is not StringOk ok)
+            return;
+        var code = ok.Value;
 
         // Verify bulk insert structure
         Assert.Contains("Patients", code);
@@ -292,8 +306,10 @@ public sealed class CodeGenerationE2ETests
             connectionType: "SqliteConnection"
         );
 
-        Assert.IsType<StringOk>(result);
-        var code = ((StringOk)result).Value;
+        Assert.True(result is StringOk);
+        if (result is not StringOk ok)
+            return;
+        var code = ok.Value;
 
         Assert.Contains("Patients", code);
         // SQLite upsert uses INSERT OR REPLACE or ON CONFLICT
@@ -308,25 +324,22 @@ public sealed class CodeGenerationE2ETests
     [Fact]
     public void GenerateQueryMethod_MultipleColumns_MapsAllColumns()
     {
-        var manyColumns = new List<DatabaseColumn>();
-        for (int i = 0; i < 15; i++)
-        {
-            manyColumns.Add(
-                new DatabaseColumn
-                {
-                    Name = $"Column{i}",
-                    CSharpType =
-                        i % 3 == 0 ? "int"
-                        : i % 3 == 1 ? "string"
-                        : "bool",
-                    SqlType =
-                        i % 3 == 0 ? "INTEGER"
-                        : i % 3 == 1 ? "TEXT"
-                        : "BOOLEAN",
-                    IsNullable = i % 4 == 0,
-                }
-            );
-        }
+        var manyColumns = Enumerable
+            .Range(0, 15)
+            .Select(i => new DatabaseColumn
+            {
+                Name = $"Column{i}",
+                CSharpType =
+                    i % 3 == 0 ? "int"
+                    : i % 3 == 1 ? "string"
+                    : "bool",
+                SqlType =
+                    i % 3 == 0 ? "INTEGER"
+                    : i % 3 == 1 ? "TEXT"
+                    : "BOOLEAN",
+                IsNullable = i % 4 == 0,
+            })
+            .ToImmutableArray();
 
         var result = DataAccessGenerator.GenerateQueryMethod(
             className: "WideTableQueries",
@@ -337,11 +350,13 @@ public sealed class CodeGenerationE2ETests
             columns: manyColumns
         );
 
-        Assert.IsType<StringOk>(result);
-        var code = ((StringOk)result).Value;
+        Assert.True(result is StringOk);
+        if (result is not StringOk ok)
+            return;
+        var code = ok.Value;
 
         // Every column should appear in the generated code
-        for (int i = 0; i < 15; i++)
+        for (var i = 0; i < 15; i++)
         {
             Assert.Contains($"Column{i}", code);
         }
@@ -356,7 +371,7 @@ public sealed class CodeGenerationE2ETests
             sql: "DELETE FROM T",
             parameters: []
         );
-        Assert.IsType<StringError>(emptyClass);
+        Assert.True(emptyClass is StringError);
 
         var emptyMethod = DataAccessGenerator.GenerateNonQueryMethod(
             className: "TestClass",
@@ -364,7 +379,7 @@ public sealed class CodeGenerationE2ETests
             sql: "DELETE FROM T",
             parameters: []
         );
-        Assert.IsType<StringError>(emptyMethod);
+        Assert.True(emptyMethod is StringError);
 
         var emptySql = DataAccessGenerator.GenerateNonQueryMethod(
             className: "TestClass",
@@ -372,6 +387,6 @@ public sealed class CodeGenerationE2ETests
             sql: "",
             parameters: []
         );
-        Assert.IsType<StringError>(emptySql);
+        Assert.True(emptySql is StringError);
     }
 }
