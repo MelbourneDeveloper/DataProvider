@@ -7,7 +7,7 @@ function writeCoverageData(): void {
   const coverageData = (
     global as unknown as Record<string, unknown>
   ).__coverage__;
-  if (!coverageData) {
+  if (coverageData === undefined || coverageData === null) {
     return;
   }
   const nycOutputDir = path.resolve(__dirname, "../../../.nyc_output");

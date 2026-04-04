@@ -88,9 +88,9 @@ public sealed class LqlSqliteE2ETests : IDisposable
     private static LqlStatement AssertParseOk(string lqlCode)
     {
         var parseResult = LqlStatementConverter.ToStatement(lqlCode);
-        var parseOk = Assert.IsType<
-            Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>
-        >(parseResult);
+        var parseOk = Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(
+            parseResult
+        );
         return parseOk.Value;
     }
 

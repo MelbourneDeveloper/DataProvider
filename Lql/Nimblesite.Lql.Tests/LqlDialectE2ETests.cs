@@ -20,7 +20,9 @@ public sealed class LqlDialectE2ETests
         var result = LqlStatementConverter.ToStatement(lqlCode);
         if (result is not Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> parseOk)
         {
-            Assert.Fail($"Parse failed: {((Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result).Value.DetailedMessage}");
+            Assert.Fail(
+                $"Parse failed: {((Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError>)result).Value.DetailedMessage}"
+            );
             return default;
         }
 

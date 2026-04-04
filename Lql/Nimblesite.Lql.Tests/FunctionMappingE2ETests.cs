@@ -131,9 +131,7 @@ public sealed class FunctionMappingE2ETests
     {
         foreach (var provider in AllProviders)
         {
-            Assert.Throws<ArgumentNullException>(
-                () => provider.TranspileFunction(null!, "arg")
-            );
+            Assert.Throws<ArgumentNullException>(() => provider.TranspileFunction(null!, "arg"));
         }
     }
 
@@ -147,8 +145,9 @@ public sealed class FunctionMappingE2ETests
         var result = pgMapping.SpecialHandler([]);
         Assert.Equal("CURRENT_DATE", result);
 
-        var pgLocalMapping =
-            PostgreSqlFunctionMappingLocal.Instance.GetFunctionMapping("current_date");
+        var pgLocalMapping = PostgreSqlFunctionMappingLocal.Instance.GetFunctionMapping(
+            "current_date"
+        );
         Assert.NotNull(pgLocalMapping);
         Assert.True(pgLocalMapping.RequiresSpecialHandling);
     }
