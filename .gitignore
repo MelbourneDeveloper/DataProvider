@@ -165,7 +165,8 @@ BenchmarkDotNet.Artifacts/
 coverage/
 coverage-report/
 coverage-results/
-coverage*.json
+coverage-*.json
+!coverage-thresholds.json
 coverage*.xml
 coverage*.info
 lcov.info

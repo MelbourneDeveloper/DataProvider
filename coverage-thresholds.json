@@ -1,0 +1,18 @@
+{
+  "default_threshold": 90,
+  "projects": {
+    "DataProvider/Nimblesite.DataProvider.Tests": 90,
+    "DataProvider/Nimblesite.DataProvider.Example.Tests": 90,
+    "Lql/Nimblesite.Lql.Tests": 90,
+    "Lql/Nimblesite.Lql.Cli.SQLite.Tests": 90,
+    "Lql/Nimblesite.Lql.TypeProvider.FSharp.Tests": 90,
+    "Migration/Nimblesite.DataProvider.Migration.Tests": 90,
+    "Sync/Nimblesite.Sync.Tests": 90,
+    "Sync/Nimblesite.Sync.SQLite.Tests": 90,
+    "Sync/Nimblesite.Sync.Postgres.Tests": 90,
+    "Sync/Nimblesite.Sync.Integration.Tests": 90,
+    "Sync/Nimblesite.Sync.Http.Tests": 90,
+    "Lql/lql-lsp-rust": 90,
+    "Lql/LqlExtension": 90
+  }
+}
