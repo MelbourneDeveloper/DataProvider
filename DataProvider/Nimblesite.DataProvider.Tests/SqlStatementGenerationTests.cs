@@ -1,6 +1,5 @@
 using Nimblesite.Lql.SQLite;
 using Nimblesite.Sql.Model;
-using Xunit;
 
 namespace Nimblesite.DataProvider.Tests;
 

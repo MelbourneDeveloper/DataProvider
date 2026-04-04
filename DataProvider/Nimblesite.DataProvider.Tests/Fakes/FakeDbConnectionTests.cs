@@ -1,5 +1,3 @@
-using Xunit;
-
 #pragma warning disable CA1861 // Prefer static readonly fields
 #pragma warning disable CA2000 // Dispose objects before losing scope
 #pragma warning disable CA1849 // Synchronous blocking calls

@@ -1,6 +1,5 @@
-using System.Data;
+using System.Globalization;
 using Microsoft.Data.Sqlite;
-using Nimblesite.Sql.Model;
 using Outcome;
 
 namespace Nimblesite.DataProvider.Tests;
@@ -32,7 +31,7 @@ public sealed class SqliteTransactionE2ETests : IDisposable
         {
             File.Delete(_dbPath);
         }
-        catch
+        catch (IOException)
         { /* cleanup best-effort */
         }
     }
@@ -133,27 +132,27 @@ public sealed class SqliteTransactionE2ETests : IDisposable
             sql: "SELECT COUNT(*) FROM OrderItems WHERE OrderId = @oid",
             parameters: [new SqliteParameter("@oid", orderId)]
         );
-        Assert.Equal(2L, ((Result<long?, SqlError>.Ok<long?, SqlError>)itemCount).Value);
+        Assert.Equal(2L, ((Result<long, SqlError>.Ok<long, SqlError>)itemCount).Value);
 
         // Commit
         tx.Commit();
 
         // Verify data persisted after commit
         var orderCheck = _connection.Scalar<long>(sql: "SELECT COUNT(*) FROM Orders");
-        Assert.Equal(1L, ((Result<long?, SqlError>.Ok<long?, SqlError>)orderCheck).Value);
+        Assert.Equal(1L, ((Result<long, SqlError>.Ok<long, SqlError>)orderCheck).Value);
 
         var itemCheck = _connection.Scalar<long>(sql: "SELECT COUNT(*) FROM OrderItems");
-        Assert.Equal(2L, ((Result<long?, SqlError>.Ok<long?, SqlError>)itemCheck).Value);
+        Assert.Equal(2L, ((Result<long, SqlError>.Ok<long, SqlError>)itemCheck).Value);
 
         var widgetStock = _connection.Scalar<long>(
             sql: "SELECT StockCount FROM Inventory WHERE ProductName = 'Widget'"
         );
-        Assert.Equal(97L, ((Result<long?, SqlError>.Ok<long?, SqlError>)widgetStock).Value);
+        Assert.Equal(97L, ((Result<long, SqlError>.Ok<long, SqlError>)widgetStock).Value);
 
         var gadgetStock = _connection.Scalar<long>(
             sql: "SELECT StockCount FROM Inventory WHERE ProductName = 'Gadget'"
         );
-        Assert.Equal(48L, ((Result<long?, SqlError>.Ok<long?, SqlError>)gadgetStock).Value);
+        Assert.Equal(48L, ((Result<long, SqlError>.Ok<long, SqlError>)gadgetStock).Value);
     }
 
     [Fact]
@@ -161,7 +160,7 @@ public sealed class SqliteTransactionE2ETests : IDisposable
     {
         // Verify initial state
         var initialOrders = _connection.Scalar<long>(sql: "SELECT COUNT(*) FROM Orders");
-        Assert.Equal(0L, ((Result<long?, SqlError>.Ok<long?, SqlError>)initialOrders).Value);
+        Assert.Equal(0L, ((Result<long, SqlError>.Ok<long, SqlError>)initialOrders).Value);
 
         using var tx = _connection.BeginTransaction();
 
@@ -192,23 +191,23 @@ public sealed class SqliteTransactionE2ETests : IDisposable
 
         // Verify data exists within transaction
         var txCount = tx.Scalar<long>(sql: "SELECT COUNT(*) FROM Orders");
-        Assert.Equal(1L, ((Result<long?, SqlError>.Ok<long?, SqlError>)txCount).Value);
+        Assert.Equal(1L, ((Result<long, SqlError>.Ok<long, SqlError>)txCount).Value);
 
         // Rollback
         tx.Rollback();
 
         // Verify NO data persisted
         var afterRollback = _connection.Scalar<long>(sql: "SELECT COUNT(*) FROM Orders");
-        Assert.Equal(0L, ((Result<long?, SqlError>.Ok<long?, SqlError>)afterRollback).Value);
+        Assert.Equal(0L, ((Result<long, SqlError>.Ok<long, SqlError>)afterRollback).Value);
 
         var itemsAfterRollback = _connection.Scalar<long>(sql: "SELECT COUNT(*) FROM OrderItems");
-        Assert.Equal(0L, ((Result<long?, SqlError>.Ok<long?, SqlError>)itemsAfterRollback).Value);
+        Assert.Equal(0L, ((Result<long, SqlError>.Ok<long, SqlError>)itemsAfterRollback).Value);
 
         // Verify inventory unchanged
         var widgetStock = _connection.Scalar<long>(
             sql: "SELECT StockCount FROM Inventory WHERE ProductName = 'Widget'"
         );
-        Assert.Equal(100L, ((Result<long?, SqlError>.Ok<long?, SqlError>)widgetStock).Value);
+        Assert.Equal(100L, ((Result<long, SqlError>.Ok<long, SqlError>)widgetStock).Value);
     }
 
     [Fact]
@@ -263,13 +262,13 @@ public sealed class SqliteTransactionE2ETests : IDisposable
         var confirmedCount = tx.Scalar<long>(
             sql: "SELECT COUNT(*) FROM Orders WHERE Status = 'confirmed'"
         );
-        Assert.Equal(3L, ((Result<long?, SqlError>.Ok<long?, SqlError>)confirmedCount).Value);
+        Assert.Equal(3L, ((Result<long, SqlError>.Ok<long, SqlError>)confirmedCount).Value);
 
         // Aggregate within transaction
         var totalValue = tx.Scalar<double>(
             sql: "SELECT SUM(Total) FROM Orders WHERE Status = 'confirmed'"
         );
-        Assert.Equal(300.0, ((Result<double?, SqlError>.Ok<double?, SqlError>)totalValue).Value);
+        Assert.Equal(300.0, ((Result<double, SqlError>.Ok<double, SqlError>)totalValue).Value);
 
         tx.Commit();
 
@@ -277,7 +276,7 @@ public sealed class SqliteTransactionE2ETests : IDisposable
         var finalPending = _connection.Scalar<long>(
             sql: "SELECT COUNT(*) FROM Orders WHERE Status = 'pending'"
         );
-        Assert.Equal(0L, ((Result<long?, SqlError>.Ok<long?, SqlError>)finalPending).Value);
+        Assert.Equal(0L, ((Result<long, SqlError>.Ok<long, SqlError>)finalPending).Value);
     }
 
     [Fact]
@@ -300,7 +299,7 @@ public sealed class SqliteTransactionE2ETests : IDisposable
         var count = _connection.Scalar<long>(
             sql: "SELECT COUNT(*) FROM Orders WHERE CustomerId = 'CUST-TX-001'"
         );
-        Assert.Equal(1L, ((Result<long?, SqlError>.Ok<long?, SqlError>)count).Value);
+        Assert.Equal(1L, ((Result<long, SqlError>.Ok<long, SqlError>)count).Value);
 
         // Use DbTransact with return value
         var result = await _connection.Transact(async tx =>
@@ -335,7 +334,7 @@ public sealed class SqliteTransactionE2ETests : IDisposable
         var failCount = _connection.Scalar<long>(
             sql: "SELECT COUNT(*) FROM Orders WHERE CustomerId = 'CUST-TX-FAIL'"
         );
-        Assert.Equal(0L, ((Result<long?, SqlError>.Ok<long?, SqlError>)failCount).Value);
+        Assert.Equal(0L, ((Result<long, SqlError>.Ok<long, SqlError>)failCount).Value);
     }
 
     [Fact]
@@ -360,7 +359,7 @@ public sealed class SqliteTransactionE2ETests : IDisposable
 
         // Invalid scalar within transaction
         var badScalar = tx.Scalar<long>(sql: "COMPLETELY INVALID SQL");
-        Assert.IsType<Result<long?, SqlError>.Error<long?, SqlError>>(badScalar);
+        Assert.IsType<Result<long, SqlError>.Error<long, SqlError>>(badScalar);
 
         // Null/empty SQL within transaction
         var emptyQuery = tx.Query<string>(sql: "", mapper: r => r.GetString(0));
@@ -373,6 +372,6 @@ public sealed class SqliteTransactionE2ETests : IDisposable
         Assert.IsType<IntError>(emptyExec);
 
         var emptyScalar = tx.Scalar<long>(sql: "");
-        Assert.IsType<Result<long?, SqlError>.Error<long?, SqlError>>(emptyScalar);
+        Assert.IsType<Result<long, SqlError>.Error<long, SqlError>>(emptyScalar);
     }
 }

@@ -1,4 +1,3 @@
-using System.Data;
 using Microsoft.Data.Sqlite;
 using Nimblesite.Lql.Core;
 using Nimblesite.Lql.SQLite;
@@ -34,7 +33,7 @@ public sealed class LqlSqliteE2ETests : IDisposable
         {
             File.Delete(_dbPath);
         }
-        catch
+        catch (IOException)
         { /* cleanup best-effort */
         }
     }
@@ -92,40 +91,39 @@ public sealed class LqlSqliteE2ETests : IDisposable
         // Parse LQL
         var lqlCode = "users |> select(users.id, users.name, users.email)";
         var parseResult = LqlStatementConverter.ToStatement(lqlCode);
-        Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(parseResult);
-        var statement = (
-            (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)parseResult
-        ).Value;
+        Assert.True(
+            parseResult
+                is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> parseOk
+        );
+        var statement = parseOk.Value;
         Assert.NotNull(statement);
         Assert.NotNull(statement.AstNode);
         Assert.Null(statement.ParseError);
 
         // Convert to SQLite
         var sqlResult = statement.ToSQLite();
-        Assert.IsType<StringOk>(sqlResult);
-        var sql = ((StringOk)sqlResult).Value;
+        Assert.True(sqlResult is StringOk sqlOk);
+        var sql = sqlOk.Value;
         Assert.Contains("SELECT", sql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("users", sql, StringComparison.OrdinalIgnoreCase);
 
         // Execute against real DB
-        var queryResult = _connection.Query<(string Id, string Name, string Email)>(
+        var queryResult = _connection.Query<(string, string, string)>(
             sql: sql,
             mapper: r => (r.GetString(0), r.GetString(1), r.GetString(2))
         );
-        Assert.IsType<Result<IReadOnlyList<(string, string, string)>, SqlError>.Ok<
-            IReadOnlyList<(string, string, string)>,
-            SqlError
-        >>(queryResult);
-        var rows = (
-            (Result<IReadOnlyList<(string, string, string)>, SqlError>.Ok<
-                IReadOnlyList<(string, string, string)>,
-                SqlError
-            >)queryResult
-        ).Value;
+        Assert.True(
+            queryResult
+                is Result<
+                    IReadOnlyList<(string, string, string)>,
+                    SqlError
+                >.Ok<IReadOnlyList<(string, string, string)>, SqlError> ok
+        );
+        var rows = ok.Value;
         Assert.Equal(5, rows.Count);
-        Assert.Contains(rows, r => r.Name == "Alice");
-        Assert.Contains(rows, r => r.Name == "Bob");
-        Assert.Contains(rows, r => r.Email == "diana@test.com");
+        Assert.Contains(rows, r => r.Item2 == "Alice");
+        Assert.Contains(rows, r => r.Item2 == "Bob");
+        Assert.Contains(rows, r => r.Item3 == "diana@test.com");
     }
 
     [Fact]
@@ -134,33 +132,36 @@ public sealed class LqlSqliteE2ETests : IDisposable
         var lqlCode =
             "users |> filter(fn(row) => row.users.age > 25) |> select(users.name, users.age)";
         var parseResult = LqlStatementConverter.ToStatement(lqlCode);
-        Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(parseResult);
+        Assert.True(
+            parseResult
+                is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> parseOk
+        );
 
-        var statement = (
-            (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)parseResult
-        ).Value;
+        var statement = parseOk.Value;
         var sqlResult = statement.ToSQLite();
-        Assert.IsType<StringOk>(sqlResult);
-        var sql = ((StringOk)sqlResult).Value;
+        Assert.True(sqlResult is StringOk sqlOk);
+        var sql = sqlOk.Value;
         Assert.Contains("WHERE", sql, StringComparison.OrdinalIgnoreCase);
 
-        var queryResult = _connection.Query<(string Name, long Age)>(
+        var queryResult = _connection.Query<(string, long)>(
             sql: sql,
             mapper: r => (r.GetString(0), r.GetInt64(1))
         );
-        var rows = (
-            (Result<IReadOnlyList<(string, long)>, SqlError>.Ok<
-                IReadOnlyList<(string, long)>,
-                SqlError
-            >)queryResult
-        ).Value;
+        Assert.True(
+            queryResult
+                is Result<IReadOnlyList<(string, long)>, SqlError>.Ok<
+                    IReadOnlyList<(string, long)>,
+                    SqlError
+                > ok
+        );
+        var rows = ok.Value;
 
         // Alice (30), Charlie (45), Diana (35) are > 25
         Assert.Equal(3, rows.Count);
-        Assert.All(rows, r => Assert.True(r.Age > 25));
-        Assert.Contains(rows, r => r.Name == "Alice");
-        Assert.Contains(rows, r => r.Name == "Charlie");
-        Assert.Contains(rows, r => r.Name == "Diana");
+        Assert.All(rows, r => Assert.True(r.Item2 > 25));
+        Assert.Contains(rows, r => r.Item1 == "Alice");
+        Assert.Contains(rows, r => r.Item1 == "Charlie");
+        Assert.Contains(rows, r => r.Item1 == "Diana");
     }
 
     [Fact]
@@ -169,36 +170,39 @@ public sealed class LqlSqliteE2ETests : IDisposable
         var lqlCode =
             "users |> order_by(users.age asc) |> limit(3) |> select(users.name, users.age)";
         var parseResult = LqlStatementConverter.ToStatement(lqlCode);
-        Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(parseResult);
+        Assert.True(
+            parseResult
+                is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> parseOk
+        );
 
-        var statement = (
-            (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)parseResult
-        ).Value;
+        var statement = parseOk.Value;
         var sqlResult = statement.ToSQLite();
-        Assert.IsType<StringOk>(sqlResult);
-        var sql = ((StringOk)sqlResult).Value;
+        Assert.True(sqlResult is StringOk sqlOk);
+        var sql = sqlOk.Value;
         Assert.Contains("ORDER BY", sql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("LIMIT", sql, StringComparison.OrdinalIgnoreCase);
 
-        var queryResult = _connection.Query<(string Name, long Age)>(
+        var queryResult = _connection.Query<(string, long)>(
             sql: sql,
             mapper: r => (r.GetString(0), r.GetInt64(1))
         );
-        var rows = (
-            (Result<IReadOnlyList<(string, long)>, SqlError>.Ok<
-                IReadOnlyList<(string, long)>,
-                SqlError
-            >)queryResult
-        ).Value;
+        Assert.True(
+            queryResult
+                is Result<IReadOnlyList<(string, long)>, SqlError>.Ok<
+                    IReadOnlyList<(string, long)>,
+                    SqlError
+                > ok
+        );
+        var rows = ok.Value;
 
         Assert.Equal(3, rows.Count);
         // Should be youngest 3: Eve (22), Bob (25), Alice (30)
-        Assert.Equal("Eve", rows[0].Name);
-        Assert.Equal(22L, rows[0].Age);
-        Assert.Equal("Bob", rows[1].Name);
-        Assert.Equal(25L, rows[1].Age);
-        Assert.Equal("Alice", rows[2].Name);
-        Assert.Equal(30L, rows[2].Age);
+        Assert.Equal("Eve", rows[0].Item1);
+        Assert.Equal(22L, rows[0].Item2);
+        Assert.Equal("Bob", rows[1].Item1);
+        Assert.Equal(25L, rows[1].Item2);
+        Assert.Equal("Alice", rows[2].Item1);
+        Assert.Equal(30L, rows[2].Item2);
     }
 
     [Fact]
@@ -207,34 +211,37 @@ public sealed class LqlSqliteE2ETests : IDisposable
         var lqlCode =
             "users |> join(orders, on = users.id = orders.user_id) |> select(users.name, orders.total)";
         var parseResult = LqlStatementConverter.ToStatement(lqlCode);
-        Assert.IsType<Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>>(parseResult);
+        Assert.True(
+            parseResult
+                is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> parseOk
+        );
 
-        var statement = (
-            (Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)parseResult
-        ).Value;
+        var statement = parseOk.Value;
         var sqlResult = statement.ToSQLite();
-        Assert.IsType<StringOk>(sqlResult);
-        var sql = ((StringOk)sqlResult).Value;
+        Assert.True(sqlResult is StringOk sqlOk);
+        var sql = sqlOk.Value;
         Assert.Contains("JOIN", sql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("users.id = orders.user_id", sql, StringComparison.OrdinalIgnoreCase);
 
-        var queryResult = _connection.Query<(string Name, double Total)>(
+        var queryResult = _connection.Query<(string, double)>(
             sql: sql,
             mapper: r => (r.GetString(0), r.GetDouble(1))
         );
-        var rows = (
-            (Result<IReadOnlyList<(string, double)>, SqlError>.Ok<
-                IReadOnlyList<(string, double)>,
-                SqlError
-            >)queryResult
-        ).Value;
+        Assert.True(
+            queryResult
+                is Result<IReadOnlyList<(string, double)>, SqlError>.Ok<
+                    IReadOnlyList<(string, double)>,
+                    SqlError
+                > ok
+        );
+        var rows = ok.Value;
 
         // 7 orders across users with matching IDs
         Assert.Equal(7, rows.Count);
-        Assert.Contains(rows, r => r.Name == "Alice" && r.Total == 150.00);
-        Assert.Contains(rows, r => r.Name == "Alice" && r.Total == 75.50);
-        Assert.Contains(rows, r => r.Name == "Bob" && r.Total == 200.00);
-        Assert.Contains(rows, r => r.Name == "Diana" && r.Total == 300.00);
+        Assert.Contains(rows, r => r.Item1 == "Alice" && r.Item2 == 150.00);
+        Assert.Contains(rows, r => r.Item1 == "Alice" && r.Item2 == 75.50);
+        Assert.Contains(rows, r => r.Item1 == "Bob" && r.Item2 == 200.00);
+        Assert.Contains(rows, r => r.Item1 == "Diana" && r.Item2 == 300.00);
     }
 
     [Fact]
@@ -245,13 +252,19 @@ public sealed class LqlSqliteE2ETests : IDisposable
         var result = LqlStatementConverter.ToStatement(badLql);
 
         // Should either be an error result or a statement with a parse error
-        if (result is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> error)
+        if (
+            result
+                is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> error
+        )
         {
             Assert.NotEmpty(error.Value.Message);
         }
-        else
+        else if (
+            result
+                is Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> ok
+        )
         {
-            var stmt = ((Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError>)result).Value;
+            var stmt = ok.Value;
             Assert.NotNull(stmt.ParseError);
             Assert.NotEmpty(stmt.ParseError.Message);
         }
@@ -261,11 +274,14 @@ public sealed class LqlSqliteE2ETests : IDisposable
     public void LqlStatementToSQLite_WithParseError_ReturnsError()
     {
         // Create a statement with a parse error directly
-        var errorStatement = new LqlStatement { ParseError = SqlError.Create("Test parse error") };
+        var errorStatement = new LqlStatement
+        {
+            ParseError = SqlError.Create("Test parse error"),
+        };
 
         var sqlResult = errorStatement.ToSQLite();
-        Assert.IsType<StringError>(sqlResult);
-        var error = ((StringError)sqlResult).Value;
+        Assert.True(sqlResult is StringError errorResult);
+        var error = errorResult.Value;
         Assert.Contains("Test parse error", error.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -274,18 +290,21 @@ public sealed class LqlSqliteE2ETests : IDisposable
     {
         var emptyStatement = new LqlStatement { AstNode = null };
         var sqlResult = emptyStatement.ToSQLite();
-        Assert.IsType<StringError>(sqlResult);
+        Assert.True(sqlResult is StringError);
     }
 
     [Fact]
     public void LqlStatementToSQLite_WithIdentifierNode_ReturnsSelectAll()
     {
         // An Identifier node should produce SELECT * FROM tableName
-        var identifierStatement = new LqlStatement { AstNode = new Identifier("customers") };
+        var identifierStatement = new LqlStatement
+        {
+            AstNode = new Identifier("customers"),
+        };
 
         var sqlResult = identifierStatement.ToSQLite();
-        Assert.IsType<StringOk>(sqlResult);
-        var sql = ((StringOk)sqlResult).Value;
+        Assert.True(sqlResult is StringOk sqlOk);
+        var sql = sqlOk.Value;
         Assert.Contains("SELECT *", sql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("customers", sql);
     }
@@ -296,7 +315,9 @@ public sealed class LqlSqliteE2ETests : IDisposable
         // Use SQLiteContext directly to build a query
         var context = new SQLiteContext();
         context.SetBaseTable("users");
-        context.SetSelectColumns([ColumnInfo.Named(name: "name"), ColumnInfo.Named(name: "email")]);
+        context.SetSelectColumns(
+            [ColumnInfo.Named(name: "name"), ColumnInfo.Named(name: "email")]
+        );
         context.AddWhereCondition(
             WhereCondition.Comparison(
                 left: ColumnInfo.Named(name: "status"),
@@ -316,18 +337,20 @@ public sealed class LqlSqliteE2ETests : IDisposable
         Assert.Contains("LIMIT", sql, StringComparison.OrdinalIgnoreCase);
 
         // Execute it
-        var result = _connection.Query<(string Name, string Email)>(
+        var result = _connection.Query<(string, string)>(
             sql: sql,
             mapper: r => (r.GetString(0), r.GetString(1))
         );
-        var rows = (
-            (Result<IReadOnlyList<(string, string)>, SqlError>.Ok<
-                IReadOnlyList<(string, string)>,
-                SqlError
-            >)result
-        ).Value;
+        Assert.True(
+            result
+                is Result<IReadOnlyList<(string, string)>, SqlError>.Ok<
+                    IReadOnlyList<(string, string)>,
+                    SqlError
+                > ok
+        );
+        var rows = ok.Value;
         Assert.Equal(4, rows.Count); // 4 active users
-        Assert.Equal("Alice", rows[0].Name); // First alphabetically
+        Assert.Equal("Alice", rows[0].Item1); // First alphabetically
     }
 
     [Fact]
@@ -340,26 +363,30 @@ public sealed class LqlSqliteE2ETests : IDisposable
             tableName: "orders",
             condition: "users.id = orders.user_id"
         );
-        context.SetSelectColumns([
-            ColumnInfo.Named(name: "name", tableAlias: "users"),
-            ColumnInfo.Named(name: "total", tableAlias: "orders"),
-        ]);
+        context.SetSelectColumns(
+            [
+                ColumnInfo.Named(name: "name", tableAlias: "users"),
+                ColumnInfo.Named(name: "total", tableAlias: "orders"),
+            ]
+        );
 
         var sql = context.GenerateSQL();
         Assert.Contains("INNER JOIN", sql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("orders", sql);
         Assert.Contains("users.id = orders.user_id", sql);
 
-        var result = _connection.Query<(string Name, double Total)>(
+        var result = _connection.Query<(string, double)>(
             sql: sql,
             mapper: r => (r.GetString(0), r.GetDouble(1))
         );
-        var rows = (
-            (Result<IReadOnlyList<(string, double)>, SqlError>.Ok<
-                IReadOnlyList<(string, double)>,
-                SqlError
-            >)result
-        ).Value;
+        Assert.True(
+            result
+                is Result<IReadOnlyList<(string, double)>, SqlError>.Ok<
+                    IReadOnlyList<(string, double)>,
+                    SqlError
+                > ok
+        );
+        var rows = ok.Value;
         Assert.Equal(7, rows.Count);
     }
 }

@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Xunit;
 
 #pragma warning disable CA1869 // Cache and reuse JsonSerializerOptions instances
 

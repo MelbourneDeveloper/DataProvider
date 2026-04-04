@@ -1,5 +1,4 @@
 using Outcome;
-using Xunit;
 
 namespace Nimblesite.DataProvider.Tests;
 

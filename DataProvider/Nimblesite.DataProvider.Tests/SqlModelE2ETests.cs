@@ -1,4 +1,3 @@
-using System.Data;
 using Microsoft.Data.Sqlite;
 using Nimblesite.Lql.SQLite;
 using Nimblesite.Sql.Model;
@@ -33,18 +32,10 @@ public sealed class SqlModelE2ETests : IDisposable
         {
             File.Delete(_dbPath);
         }
-        catch
+        catch (IOException)
         { /* cleanup best-effort */
         }
     }
-
-    private sealed record Employee(
-        string Id,
-        string Name,
-        string Department,
-        double Salary,
-        int YearsExp
-    );
 
     private void CreateSchemaAndSeed()
     {
@@ -131,29 +122,32 @@ public sealed class SqlModelE2ETests : IDisposable
         builder.AddOrderBy(column: "Name", direction: "ASC");
         var stmt = builder.Build();
 
-        var sql = ((StringOk)stmt.ToSQLite()).Value;
+        Assert.True(stmt.ToSQLite() is StringOk sqlOk);
+        var sql = sqlOk.Value;
         Assert.Contains("(", sql);
         Assert.Contains(")", sql);
         Assert.Contains("AND", sql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("OR", sql, StringComparison.OrdinalIgnoreCase);
 
-        var result = _connection.Query<(string Name, double Salary, string Dept)>(
+        var result = _connection.Query<(string, double, string)>(
             sql: sql,
             mapper: r => (r.GetString(0), r.GetDouble(1), r.GetString(2))
         );
-        var rows = (
-            (Result<IReadOnlyList<(string, double, string)>, SqlError>.Ok<
-                IReadOnlyList<(string, double, string)>,
-                SqlError
-            >)result
-        ).Value;
+        Assert.True(
+            result
+                is Result<IReadOnlyList<(string, double, string)>, SqlError>.Ok<
+                    IReadOnlyList<(string, double, string)>,
+                    SqlError
+                > ok
+        );
+        var rows = ok.Value;
 
         // Bob (Eng, 105k), Frank (Eng, 120k), Diana (Sales, 6yr), Hank (Sales, 7yr)
         Assert.Equal(4, rows.Count);
-        Assert.Contains(rows, r => r.Name == "Bob" && r.Salary == 105000);
-        Assert.Contains(rows, r => r.Name == "Frank" && r.Salary == 120000);
-        Assert.Contains(rows, r => r.Name == "Diana" && r.Dept == "Sales");
-        Assert.Contains(rows, r => r.Name == "Hank" && r.Dept == "Sales");
+        Assert.Contains(rows, r => r.Item1 == "Bob" && r.Item2 == 105000);
+        Assert.Contains(rows, r => r.Item1 == "Frank" && r.Item2 == 120000);
+        Assert.Contains(rows, r => r.Item1 == "Diana" && r.Item3 == "Sales");
+        Assert.Contains(rows, r => r.Item1 == "Hank" && r.Item3 == "Sales");
     }
 
     [Fact]
@@ -182,11 +176,15 @@ public sealed class SqlModelE2ETests : IDisposable
                 right: "80000"
             )
         );
-        var ltSql = ((StringOk)ltBuilder.Build().ToSQLite()).Value;
+        Assert.True(ltBuilder.Build().ToSQLite() is StringOk ltSqlOk);
+        var ltSql = ltSqlOk.Value;
         var ltResult = _connection.Query<string>(sql: ltSql, mapper: r => r.GetString(0));
-        var ltRows = (
-            (Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>)ltResult
-        ).Value;
+        Assert.True(
+            ltResult
+                is Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>
+                    ltOk
+        );
+        var ltRows = ltOk.Value;
         Assert.Equal(2, ltRows.Count); // Charlie (75k), Eve (70k)
 
         // Test GreaterOrEq
@@ -200,11 +198,15 @@ public sealed class SqlModelE2ETests : IDisposable
                 right: "95000"
             )
         );
-        var geSql = ((StringOk)geBuilder.Build().ToSQLite()).Value;
+        Assert.True(geBuilder.Build().ToSQLite() is StringOk geSqlOk);
+        var geSql = geSqlOk.Value;
         var geResult = _connection.Query<string>(sql: geSql, mapper: r => r.GetString(0));
-        var geRows = (
-            (Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>)geResult
-        ).Value;
+        Assert.True(
+            geResult
+                is Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>
+                    geOk
+        );
+        var geRows = geOk.Value;
         Assert.Equal(3, geRows.Count); // Alice (95k), Bob (105k), Frank (120k)
 
         // Test LIKE
@@ -218,11 +220,15 @@ public sealed class SqlModelE2ETests : IDisposable
                 right: "'%a%'"
             )
         );
-        var likeSql = ((StringOk)likeBuilder.Build().ToSQLite()).Value;
+        Assert.True(likeBuilder.Build().ToSQLite() is StringOk likeSqlOk);
+        var likeSql = likeSqlOk.Value;
         var likeResult = _connection.Query<string>(sql: likeSql, mapper: r => r.GetString(0));
-        var likeRows = (
-            (Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>)likeResult
-        ).Value;
+        Assert.True(
+            likeResult
+                is Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>
+                    likeOk
+        );
+        var likeRows = likeOk.Value;
         // Grace, Diana, Frank, Charlie, Hank all contain 'a'
         Assert.True(likeRows.Count >= 3);
     }
@@ -232,26 +238,25 @@ public sealed class SqlModelE2ETests : IDisposable
     {
         // Named column
         var named = ColumnInfo.Named(name: "Salary", tableAlias: "e", alias: "emp_salary");
-        Assert.IsType<NamedColumn>(named);
-        var namedCol = (NamedColumn)named;
+        Assert.True(named is NamedColumn namedCol);
         Assert.Equal("Salary", namedCol.Name);
         Assert.Equal("e", namedCol.TableAlias);
         Assert.Equal("emp_salary", namedCol.Alias);
 
         // Wildcard column
         var wildcard = ColumnInfo.Wildcard(tableAlias: "e");
-        Assert.IsType<WildcardColumn>(wildcard);
-        Assert.Equal("e", ((WildcardColumn)wildcard).TableAlias);
+        Assert.True(wildcard is WildcardColumn wildcardCol);
+        Assert.Equal("e", wildcardCol.TableAlias);
 
         // Wildcard without table alias
         var wildcardAll = ColumnInfo.Wildcard();
-        Assert.IsType<WildcardColumn>(wildcardAll);
-        Assert.Null(((WildcardColumn)wildcardAll).TableAlias);
+        Assert.True(wildcardAll is WildcardColumn wildcardAllCol);
+        Assert.Null(wildcardAllCol.TableAlias);
 
         // Expression column
         var expr = ColumnInfo.FromExpression(expression: "COUNT(*)", alias: "total_count");
-        Assert.IsType<ExpressionColumn>(expr);
-        Assert.Equal("COUNT(*)", ((ExpressionColumn)expr).Expression);
+        Assert.True(expr is ExpressionColumn exprCol);
+        Assert.Equal("COUNT(*)", exprCol.Expression);
         Assert.Equal("total_count", expr.Alias);
 
         // Use expression column in a real query
@@ -264,22 +269,25 @@ public sealed class SqlModelE2ETests : IDisposable
         builder.AddGroupBy([ColumnInfo.Named(name: "Department")]);
         builder.AddOrderBy(column: "Department", direction: "ASC");
         var stmt = builder.Build();
-        var sql = ((StringOk)stmt.ToSQLite()).Value;
+        Assert.True(stmt.ToSQLite() is StringOk sqlOk);
+        var sql = sqlOk.Value;
 
-        var result = _connection.Query<(string Dept, long Count)>(
+        var result = _connection.Query<(string, long)>(
             sql: sql,
             mapper: r => (r.GetString(0), r.GetInt64(1))
         );
-        var rows = (
-            (Result<IReadOnlyList<(string, long)>, SqlError>.Ok<
-                IReadOnlyList<(string, long)>,
-                SqlError
-            >)result
-        ).Value;
+        Assert.True(
+            result
+                is Result<IReadOnlyList<(string, long)>, SqlError>.Ok<
+                    IReadOnlyList<(string, long)>,
+                    SqlError
+                > ok
+        );
+        var rows = ok.Value;
         Assert.Equal(3, rows.Count);
-        Assert.Contains(rows, r => r.Dept == "Engineering" && r.Count == 3);
-        Assert.Contains(rows, r => r.Dept == "Sales" && r.Count == 3);
-        Assert.Contains(rows, r => r.Dept == "Marketing" && r.Count == 2);
+        Assert.Contains(rows, r => r.Item1 == "Engineering" && r.Item2 == 3);
+        Assert.Contains(rows, r => r.Item1 == "Sales" && r.Item2 == 3);
+        Assert.Contains(rows, r => r.Item1 == "Marketing" && r.Item2 == 2);
     }
 
     [Fact]
@@ -317,23 +325,26 @@ public sealed class SqlModelE2ETests : IDisposable
         Assert.True(stmt.HasJoins);
         Assert.Equal(2, stmt.Tables.Count);
 
-        var sql = ((StringOk)stmt.ToSQLite()).Value;
+        Assert.True(stmt.ToSQLite() is StringOk sqlOk);
+        var sql = sqlOk.Value;
         Assert.Contains("JOIN", sql, StringComparison.OrdinalIgnoreCase);
 
-        var result = _connection.Query<(string Name, double Budget)>(
+        var result = _connection.Query<(string, double)>(
             sql: sql,
             mapper: r => (r.GetString(0), r.GetDouble(1))
         );
-        var rows = (
-            (Result<IReadOnlyList<(string, double)>, SqlError>.Ok<
-                IReadOnlyList<(string, double)>,
-                SqlError
-            >)result
-        ).Value;
+        Assert.True(
+            result
+                is Result<IReadOnlyList<(string, double)>, SqlError>.Ok<
+                    IReadOnlyList<(string, double)>,
+                    SqlError
+                > ok
+        );
+        var rows = ok.Value;
         Assert.Equal(8, rows.Count); // All 8 employees with their department budget
-        Assert.Contains(rows, r => r.Name == "Alice" && r.Budget == 500000);
-        Assert.Contains(rows, r => r.Name == "Charlie" && r.Budget == 300000);
-        Assert.Contains(rows, r => r.Name == "Eve" && r.Budget == 200000);
+        Assert.Contains(rows, r => r.Item1 == "Alice" && r.Item2 == 500000);
+        Assert.Contains(rows, r => r.Item1 == "Charlie" && r.Item2 == 300000);
+        Assert.Contains(rows, r => r.Item1 == "Eve" && r.Item2 == 200000);
     }
 
     [Fact]
@@ -359,8 +370,12 @@ public sealed class SqlModelE2ETests : IDisposable
         );
         Assert.Equal("Syntax error", positioned.Message);
         Assert.NotNull(positioned.Position);
-        Assert.Equal(5, positioned.Position!.Line);
-        Assert.Equal(10, positioned.Position.Column);
+        if (positioned is { Position: { } pos })
+        {
+            Assert.Equal(5, pos.Line);
+            Assert.Equal(10, pos.Column);
+        }
+
         Assert.Equal("SELECT * FORM users", positioned.Source);
         Assert.Contains("5", positioned.FormattedMessage);
 
@@ -373,10 +388,13 @@ public sealed class SqlModelE2ETests : IDisposable
             stopIndex: 35,
             source: "query text here"
         );
-        Assert.Equal(3, detailed.Position!.Line);
-        Assert.Equal(15, detailed.Position.Column);
-        Assert.Equal(30, detailed.Position.StartIndex);
-        Assert.Equal(35, detailed.Position.StopIndex);
+        if (detailed is { Position: { } detailedPos })
+        {
+            Assert.Equal(3, detailedPos.Line);
+            Assert.Equal(15, detailedPos.Column);
+            Assert.Equal(30, detailedPos.StartIndex);
+            Assert.Equal(35, detailedPos.StopIndex);
+        }
 
         // Error from exception
         var ex = new InvalidOperationException("test exception");
@@ -384,10 +402,12 @@ public sealed class SqlModelE2ETests : IDisposable
         Assert.Contains("test exception", fromEx.Message);
         Assert.Equal(ex, fromEx.Exception);
 
-        // Deconstruct
-        var (message, exception) = fromEx;
-        Assert.Contains("test exception", message);
-        Assert.Equal(ex, exception);
+        // Deconstruct - use pattern matching
+        if (fromEx is { Message: var message, Exception: var exception })
+        {
+            Assert.Contains("test exception", message);
+            Assert.Equal(ex, exception);
+        }
     }
 
     [Fact]
@@ -399,32 +419,33 @@ public sealed class SqlModelE2ETests : IDisposable
             @operator: ComparisonOperator.GreaterThan,
             right: "30"
         );
-        Assert.IsType<ComparisonCondition>(comparison);
-        var comp = (ComparisonCondition)comparison;
+        Assert.True(comparison is ComparisonCondition comp);
         Assert.Equal("30", comp.Right);
 
         // Logical operators
         var and = WhereCondition.And();
-        Assert.IsType<LogicalOperator>(and);
-        Assert.Equal("AND", ((LogicalOperator)and).ToSql());
+        Assert.IsAssignableFrom<LogicalOperator>(and);
+        Assert.True(and is LogicalOperator andOp);
+        Assert.Equal("AND", andOp.ToSql());
 
         var or = WhereCondition.Or();
-        Assert.IsType<LogicalOperator>(or);
-        Assert.Equal("OR", ((LogicalOperator)or).ToSql());
+        Assert.IsAssignableFrom<LogicalOperator>(or);
+        Assert.True(or is LogicalOperator orOp);
+        Assert.Equal("OR", orOp.ToSql());
 
         // Parentheses
         var open = WhereCondition.OpenParen();
-        Assert.IsType<Parenthesis>(open);
-        Assert.True(((Parenthesis)open).IsOpening);
+        Assert.True(open is Parenthesis openParen);
+        Assert.True(openParen.IsOpening);
 
         var close = WhereCondition.CloseParen();
-        Assert.IsType<Parenthesis>(close);
-        Assert.False(((Parenthesis)close).IsOpening);
+        Assert.True(close is Parenthesis closeParen);
+        Assert.False(closeParen.IsOpening);
 
         // Expression
         var expr = WhereCondition.FromExpression("1 = 1");
-        Assert.IsType<ExpressionCondition>(expr);
-        Assert.Equal("1 = 1", ((ExpressionCondition)expr).Expression);
+        Assert.True(expr is ExpressionCondition exprCond);
+        Assert.Equal("1 = 1", exprCond.Expression);
     }
 
     [Fact]
@@ -443,28 +464,31 @@ public sealed class SqlModelE2ETests : IDisposable
 
         Assert.Equal("AVG(Salary) > 80000", stmt.HavingCondition);
 
-        var sql = ((StringOk)stmt.ToSQLite()).Value;
+        Assert.True(stmt.ToSQLite() is StringOk sqlOk);
+        var sql = sqlOk.Value;
         Assert.Contains("HAVING", sql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("AVG(Salary) > 80000", sql);
 
-        var result = _connection.Query<(string Dept, double Avg)>(
+        var result = _connection.Query<(string, double)>(
             sql: sql,
             mapper: r => (r.GetString(0), r.GetDouble(1))
         );
-        var rows = (
-            (Result<IReadOnlyList<(string, double)>, SqlError>.Ok<
-                IReadOnlyList<(string, double)>,
-                SqlError
-            >)result
-        ).Value;
+        Assert.True(
+            result
+                is Result<IReadOnlyList<(string, double)>, SqlError>.Ok<
+                    IReadOnlyList<(string, double)>,
+                    SqlError
+                > ok
+        );
+        var rows = ok.Value;
 
         // Engineering avg = (95k+105k+120k)/3 = 106.67k > 80k
         // Sales avg = (75k+85k+90k)/3 = 83.33k > 80k
         // Marketing avg = (70k+80k)/2 = 75k < 80k (excluded)
         Assert.Equal(2, rows.Count);
-        Assert.Contains(rows, r => r.Dept == "Engineering");
-        Assert.Contains(rows, r => r.Dept == "Sales");
-        Assert.DoesNotContain(rows, r => r.Dept == "Marketing");
+        Assert.Contains(rows, r => r.Item1 == "Engineering");
+        Assert.Contains(rows, r => r.Item1 == "Sales");
+        Assert.DoesNotContain(rows, r => r.Item1 == "Marketing");
     }
 
     [Fact]

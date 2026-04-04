@@ -1,5 +1,4 @@
 using Microsoft.Data.Sqlite;
-using Xunit;
 using TestRecordListError = Outcome.Result<
     System.Collections.Generic.IReadOnlyList<Nimblesite.DataProvider.Tests.DbTransactionExtensionsTests.TestRecord>,
     Nimblesite.Sql.Model.SqlError

@@ -1,5 +1,4 @@
 using Microsoft.Data.Sqlite;
-using Xunit;
 
 #pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously
 

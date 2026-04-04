@@ -1,6 +1,4 @@
-using System.Data;
 using Microsoft.Data.Sqlite;
-using Nimblesite.Sql.Model;
 using Outcome;
 
 namespace Nimblesite.DataProvider.Tests;
@@ -32,7 +30,7 @@ public sealed class SqliteCrudE2ETests : IDisposable
         {
             File.Delete(_dbPath);
         }
-        catch
+        catch (IOException)
         { /* cleanup best-effort */
         }
     }
@@ -116,15 +114,15 @@ public sealed class SqliteCrudE2ETests : IDisposable
         // Query all patients
         var allPatients = _connection.Query<(string Id, string Name, int Age)>(
             sql: "SELECT Id, Name, Age FROM Patients ORDER BY Name",
-            mapper: r => (r.GetString(0), r.GetString(1), r.GetInt32(2))
+            mapper: r => (Id: r.GetString(0), Name: r.GetString(1), Age: r.GetInt32(2))
         );
-        Assert.IsType<Result<IReadOnlyList<(string, string, int)>, SqlError>.Ok<
-            IReadOnlyList<(string, string, int)>,
+        Assert.IsType<Result<IReadOnlyList<(string Id, string Name, int Age)>, SqlError>.Ok<
+            IReadOnlyList<(string Id, string Name, int Age)>,
             SqlError
         >>(allPatients);
         var patients = (
-            (Result<IReadOnlyList<(string, string, int)>, SqlError>.Ok<
-                IReadOnlyList<(string, string, int)>,
+            (Result<IReadOnlyList<(string Id, string Name, int Age)>, SqlError>.Ok<
+                IReadOnlyList<(string Id, string Name, int Age)>,
                 SqlError
             >)allPatients
         ).Value;

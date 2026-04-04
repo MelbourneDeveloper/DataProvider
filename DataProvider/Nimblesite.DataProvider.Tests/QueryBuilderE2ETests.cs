@@ -28,10 +28,8 @@ public sealed class QueryBuilderE2ETests : IDisposable
     {
         _connection.Dispose();
         try { File.Delete(_dbPath); }
-        catch { /* cleanup best-effort */ }
+        catch (IOException) { /* cleanup best-effort */ }
     }
-
-    private sealed record Product(string Id, string Name, double Price, int Quantity, string Category);
 
     private void CreateSchemaAndSeed()
     {
@@ -125,8 +123,8 @@ public sealed class QueryBuilderE2ETests : IDisposable
             sql: sql,
             mapper: r => (r.GetString(0), r.GetDouble(1))
         );
-        Assert.IsType<Result<IReadOnlyList<(string, double)>, SqlError>.Ok<IReadOnlyList<(string, double)>, SqlError>>(queryResult);
-        var rows = ((Result<IReadOnlyList<(string, double)>, SqlError>.Ok<IReadOnlyList<(string, double)>, SqlError>)queryResult).Value;
+        Assert.IsType<Result<IReadOnlyList<(string Name, double Price)>, SqlError>.Ok<IReadOnlyList<(string Name, double Price)>, SqlError>>(queryResult);
+        var rows = ((Result<IReadOnlyList<(string Name, double Price)>, SqlError>.Ok<IReadOnlyList<(string Name, double Price)>, SqlError>)queryResult).Value;
         Assert.Equal(2, rows.Count);
         Assert.Equal("Tool Gamma", rows[0].Name);
         Assert.Equal(15.00, rows[0].Price);
@@ -203,8 +201,8 @@ public sealed class QueryBuilderE2ETests : IDisposable
             sql: joinSql,
             mapper: r => (r.GetString(0), r.GetString(1))
         );
-        Assert.IsType<Result<IReadOnlyList<(string, string)>, SqlError>.Ok<IReadOnlyList<(string, string)>, SqlError>>(joinResult);
-        var joined = ((Result<IReadOnlyList<(string, string)>, SqlError>.Ok<IReadOnlyList<(string, string)>, SqlError>)joinResult).Value;
+        Assert.IsType<Result<IReadOnlyList<(string ProductName, string CatDesc)>, SqlError>.Ok<IReadOnlyList<(string ProductName, string CatDesc)>, SqlError>>(joinResult);
+        var joined = ((Result<IReadOnlyList<(string ProductName, string CatDesc)>, SqlError>.Ok<IReadOnlyList<(string ProductName, string CatDesc)>, SqlError>)joinResult).Value;
         Assert.Equal(3, joined.Count);
         Assert.All(joined, j => Assert.Equal("Electronic devices and components", j.CatDesc));
     }
@@ -223,16 +221,16 @@ public sealed class QueryBuilderE2ETests : IDisposable
         var result = _connection.GetRecords(
             statement: statement,
             sqlGenerator: stmt => stmt.ToSQLite(),
-            mapper: r => new { Id = r.GetString(0), Name = r.GetString(1), Price = r.GetDouble(2) }
+            mapper: r => (Id: r.GetString(0), Name: r.GetString(1), Price: r.GetDouble(2))
         );
 
-        Assert.IsType<Result<IReadOnlyList<dynamic>, SqlError>.Ok<IReadOnlyList<dynamic>, SqlError>>(result);
-        var records = ((Result<IReadOnlyList<dynamic>, SqlError>.Ok<IReadOnlyList<dynamic>, SqlError>)result).Value;
+        Assert.IsType<Result<IReadOnlyList<(string Id, string Name, double Price)>, SqlError>.Ok<IReadOnlyList<(string Id, string Name, double Price)>, SqlError>>(result);
+        var records = ((Result<IReadOnlyList<(string Id, string Name, double Price)>, SqlError>.Ok<IReadOnlyList<(string Id, string Name, double Price)>, SqlError>)result).Value;
         Assert.Equal(4, records.Count);
-        Assert.Equal("Tool Beta", (string)records[0].Name);
-        Assert.Equal(45.00, (double)records[0].Price);
-        Assert.Equal("Premium Widget", (string)records[3].Name);
-        Assert.Equal(500.00, (double)records[3].Price);
+        Assert.Equal("Tool Beta", records[0].Name);
+        Assert.Equal(45.00, records[0].Price);
+        Assert.Equal("Premium Widget", records[3].Name);
+        Assert.Equal(500.00, records[3].Price);
     }
 
     [Fact]

@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace Nimblesite.DataProvider.Tests;
 
 /// <summary>

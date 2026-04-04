@@ -1,6 +1,5 @@
 using Microsoft.Data.Sqlite;
 using Outcome;
-using Xunit;
 
 namespace Nimblesite.DataProvider.Tests;
 
@@ -20,6 +19,7 @@ public sealed class DbConnectionExtensionsTests : IDisposable
         CreateSchema();
     }
 
+    //TODO: this is illegal because this should be using migrations
     private void CreateSchema()
     {
         using var command = new SqliteCommand(
