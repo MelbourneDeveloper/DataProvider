@@ -1,5 +1,12 @@
 global using Generated;
 global using Nimblesite.DataProvider.Core;
+global using BasicOrderListOk = Outcome.Result<
+    System.Collections.Generic.IReadOnlyList<Nimblesite.DataProvider.Example.Model.BasicOrder>,
+    Nimblesite.Sql.Model.SqlError
+>.Ok<
+    System.Collections.Generic.IReadOnlyList<Nimblesite.DataProvider.Example.Model.BasicOrder>,
+    Nimblesite.Sql.Model.SqlError
+>;
 // Type aliases for Result types to reduce verbosity in Nimblesite.DataProvider.Example.Tests
 global using CustomerListError = Outcome.Result<
     System.Collections.Immutable.ImmutableList<Generated.Customer>,
@@ -41,12 +48,5 @@ global using StringSqlError = Outcome.Result<string, Nimblesite.Sql.Model.SqlErr
 >;
 global using StringSqlOk = Outcome.Result<string, Nimblesite.Sql.Model.SqlError>.Ok<
     string,
-    Nimblesite.Sql.Model.SqlError
->;
-global using BasicOrderListOk = Outcome.Result<
-    System.Collections.Generic.IReadOnlyList<Nimblesite.DataProvider.Example.Model.BasicOrder>,
-    Nimblesite.Sql.Model.SqlError
->.Ok<
-    System.Collections.Generic.IReadOnlyList<Nimblesite.DataProvider.Example.Model.BasicOrder>,
     Nimblesite.Sql.Model.SqlError
 >;

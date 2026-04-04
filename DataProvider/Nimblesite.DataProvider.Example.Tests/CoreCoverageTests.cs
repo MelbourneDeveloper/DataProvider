@@ -19,10 +19,7 @@ public sealed class CoreCoverageTests : IDisposable
 
     public CoreCoverageTests()
     {
-        _dbPath = Path.Combine(
-            Path.GetTempPath(),
-            $"core_coverage_tests_{Guid.NewGuid()}.db"
-        );
+        _dbPath = Path.Combine(Path.GetTempPath(), $"core_coverage_tests_{Guid.NewGuid()}.db");
         _connection = new SqliteConnection($"Data Source={_dbPath}");
     }
 
@@ -35,27 +32,21 @@ public sealed class CoreCoverageTests : IDisposable
 
         var result = _connection.Query(
             sql: "SELECT Id, CustomerName, Email FROM Customer",
-            mapper: reader => (
-                Id: reader.GetString(0),
-                Name: reader.GetString(1),
-                Email: reader.GetString(2)
-            )
+            mapper: reader =>
+                (Id: reader.GetString(0), Name: reader.GetString(1), Email: reader.GetString(2))
         );
 
         Assert.True(
             result
-                is Result<
+                is Result<IReadOnlyList<(string Id, string Name, string Email)>, SqlError>.Ok<
                     IReadOnlyList<(string Id, string Name, string Email)>,
                     SqlError
-                >.Ok<IReadOnlyList<(string Id, string Name, string Email)>, SqlError>
+                >
         );
-        var ok =
-            (
-                Result<
-                    IReadOnlyList<(string Id, string Name, string Email)>,
-                    SqlError
-                >.Ok<IReadOnlyList<(string Id, string Name, string Email)>, SqlError>
-            )result;
+        var ok = (Result<IReadOnlyList<(string Id, string Name, string Email)>, SqlError>.Ok<
+            IReadOnlyList<(string Id, string Name, string Email)>,
+            SqlError
+        >)result;
         Assert.Equal(2, ok.Value.Count);
     }
 
@@ -71,11 +62,12 @@ public sealed class CoreCoverageTests : IDisposable
         );
 
         Assert.True(
-            result
-                is Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>
+            result is Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>
         );
-        var ok =
-            (Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>)result;
+        var ok = (Result<IReadOnlyList<string>, SqlError>.Ok<
+            IReadOnlyList<string>,
+            SqlError
+        >)result;
         Assert.Single(ok.Value);
         Assert.Equal("Acme Corp", ok.Value[0]);
     }
@@ -88,11 +80,7 @@ public sealed class CoreCoverageTests : IDisposable
         var result = nullConnection!.Query<string>(sql: "SELECT 1");
 
         Assert.True(
-            result
-                is Result<IReadOnlyList<string>, SqlError>.Error<
-                    IReadOnlyList<string>,
-                    SqlError
-                >
+            result is Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>
         );
     }
 
@@ -104,11 +92,7 @@ public sealed class CoreCoverageTests : IDisposable
         var result = _connection.Query<string>(sql: "");
 
         Assert.True(
-            result
-                is Result<IReadOnlyList<string>, SqlError>.Error<
-                    IReadOnlyList<string>,
-                    SqlError
-                >
+            result is Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>
         );
     }
 
@@ -123,11 +107,7 @@ public sealed class CoreCoverageTests : IDisposable
         );
 
         Assert.True(
-            result
-                is Result<IReadOnlyList<string>, SqlError>.Error<
-                    IReadOnlyList<string>,
-                    SqlError
-                >
+            result is Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>
         );
     }
 
@@ -136,17 +116,15 @@ public sealed class CoreCoverageTests : IDisposable
     {
         await SetupDatabase().ConfigureAwait(false);
 
-        var result = _connection.Query<string>(
-            sql: "SELECT Id FROM Customer",
-            mapper: null
-        );
+        var result = _connection.Query<string>(sql: "SELECT Id FROM Customer", mapper: null);
 
         Assert.True(
-            result
-                is Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>
+            result is Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>
         );
-        var ok =
-            (Result<IReadOnlyList<string>, SqlError>.Ok<IReadOnlyList<string>, SqlError>)result;
+        var ok = (Result<IReadOnlyList<string>, SqlError>.Ok<
+            IReadOnlyList<string>,
+            SqlError
+        >)result;
         Assert.Empty(ok.Value);
     }
 
@@ -293,11 +271,7 @@ public sealed class CoreCoverageTests : IDisposable
         );
 
         Assert.True(
-            result
-                is Result<IReadOnlyList<string>, SqlError>.Error<
-                    IReadOnlyList<string>,
-                    SqlError
-                >
+            result is Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>
         );
     }
 
@@ -313,11 +287,7 @@ public sealed class CoreCoverageTests : IDisposable
         );
 
         Assert.True(
-            result
-                is Result<IReadOnlyList<string>, SqlError>.Error<
-                    IReadOnlyList<string>,
-                    SqlError
-                >
+            result is Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>
         );
     }
 
@@ -334,11 +304,7 @@ public sealed class CoreCoverageTests : IDisposable
         );
 
         Assert.True(
-            result
-                is Result<IReadOnlyList<string>, SqlError>.Error<
-                    IReadOnlyList<string>,
-                    SqlError
-                >
+            result is Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>
         );
     }
 
@@ -348,18 +314,10 @@ public sealed class CoreCoverageTests : IDisposable
         await SetupDatabase().ConfigureAwait(false);
         var statement = "Customer".From().SelectAll().ToSqlStatement();
 
-        var result = _connection.GetRecords<string>(
-            statement,
-            stmt => stmt.ToSQLite(),
-            null!
-        );
+        var result = _connection.GetRecords<string>(statement, stmt => stmt.ToSQLite(), null!);
 
         Assert.True(
-            result
-                is Result<IReadOnlyList<string>, SqlError>.Error<
-                    IReadOnlyList<string>,
-                    SqlError
-                >
+            result is Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>
         );
     }
 
@@ -413,8 +371,10 @@ public sealed class CoreCoverageTests : IDisposable
             sql: "SELECT COUNT(*) FROM Customer",
             mapper: reader => reader.GetInt64(0)
         );
-        var ok =
-            (Result<IReadOnlyList<long>, SqlError>.Ok<IReadOnlyList<long>, SqlError>)countResult;
+        var ok = (Result<IReadOnlyList<long>, SqlError>.Ok<
+            IReadOnlyList<long>,
+            SqlError
+        >)countResult;
         Assert.Equal(3L, ok.Value[0]);
     }
 
@@ -443,8 +403,10 @@ public sealed class CoreCoverageTests : IDisposable
             sql: "SELECT COUNT(*) FROM Customer",
             mapper: reader => reader.GetInt64(0)
         );
-        var ok =
-            (Result<IReadOnlyList<long>, SqlError>.Ok<IReadOnlyList<long>, SqlError>)countResult;
+        var ok = (Result<IReadOnlyList<long>, SqlError>.Ok<
+            IReadOnlyList<long>,
+            SqlError
+        >)countResult;
         Assert.Equal(2L, ok.Value[0]);
     }
 
@@ -473,8 +435,10 @@ public sealed class CoreCoverageTests : IDisposable
             sql: "SELECT COUNT(*) FROM Customer",
             mapper: reader => reader.GetInt64(0)
         );
-        var ok =
-            (Result<IReadOnlyList<long>, SqlError>.Ok<IReadOnlyList<long>, SqlError>)countResult;
+        var ok = (Result<IReadOnlyList<long>, SqlError>.Ok<
+            IReadOnlyList<long>,
+            SqlError
+        >)countResult;
         Assert.Equal(2L, ok.Value[0]);
     }
 
@@ -502,13 +466,10 @@ public sealed class CoreCoverageTests : IDisposable
                             SqlError
                         >
                 );
-                var ok =
-                    (
-                        Result<IReadOnlyList<string>, SqlError>.Ok<
-                            IReadOnlyList<string>,
-                            SqlError
-                        >
-                    )result;
+                var ok = (Result<IReadOnlyList<string>, SqlError>.Ok<
+                    IReadOnlyList<string>,
+                    SqlError
+                >)result;
                 Assert.Equal(2, ok.Value.Count);
                 Assert.Equal("Acme Corp", ok.Value[0]);
                 await Task.CompletedTask.ConfigureAwait(false);
@@ -537,13 +498,10 @@ public sealed class CoreCoverageTests : IDisposable
                             SqlError
                         >
                 );
-                var ok =
-                    (
-                        Result<IReadOnlyList<string>, SqlError>.Ok<
-                            IReadOnlyList<string>,
-                            SqlError
-                        >
-                    )result;
+                var ok = (Result<IReadOnlyList<string>, SqlError>.Ok<
+                    IReadOnlyList<string>,
+                    SqlError
+                >)result;
                 Assert.Single(ok.Value);
                 await Task.CompletedTask.ConfigureAwait(false);
             })
@@ -558,11 +516,7 @@ public sealed class CoreCoverageTests : IDisposable
         var result = nullTx!.Query<string>(sql: "SELECT 1");
 
         Assert.True(
-            result
-                is Result<IReadOnlyList<string>, SqlError>.Error<
-                    IReadOnlyList<string>,
-                    SqlError
-                >
+            result is Result<IReadOnlyList<string>, SqlError>.Error<IReadOnlyList<string>, SqlError>
         );
     }
 
@@ -713,6 +667,200 @@ public sealed class CoreCoverageTests : IDisposable
                 await Task.CompletedTask.ConfigureAwait(false);
             })
             .ConfigureAwait(false);
+    }
+
+    #endregion
+
+    #region Config Types Coverage
+
+    [Fact]
+    public void DataProviderConfig_CanBeCreated()
+    {
+        var config = new Nimblesite.DataProvider.Core.DataProviderConfig
+        {
+            ConnectionString = "Data Source=test.db",
+            Tables = new List<Nimblesite.DataProvider.Core.TableConfig>
+            {
+                new()
+                {
+                    Schema = "main",
+                    Name = "users",
+                    GenerateInsert = true,
+                    GenerateUpdate = true,
+                    GenerateDelete = true,
+                    ExcludeColumns = new List<string> { "computed" }.AsReadOnly(),
+                    PrimaryKeyColumns = new List<string> { "Id" }.AsReadOnly(),
+                },
+            }.AsReadOnly(),
+        };
+
+        Assert.NotNull(config.ConnectionString);
+        Assert.Single(config.Tables);
+        Assert.Equal("main", config.Tables[0].Schema);
+        Assert.Equal("users", config.Tables[0].Name);
+        Assert.True(config.Tables[0].GenerateInsert);
+        Assert.True(config.Tables[0].GenerateUpdate);
+        Assert.True(config.Tables[0].GenerateDelete);
+        Assert.Single(config.Tables[0].ExcludeColumns);
+        Assert.Single(config.Tables[0].PrimaryKeyColumns);
+    }
+
+    [Fact]
+    public void DatabaseColumn_CanBeCreated()
+    {
+        var column = new Nimblesite.DataProvider.Core.DatabaseColumn
+        {
+            Name = "Id",
+            SqlType = "TEXT",
+            CSharpType = "string",
+            IsNullable = false,
+            IsPrimaryKey = true,
+            IsIdentity = false,
+            IsComputed = false,
+            MaxLength = 50,
+            Precision = 10,
+            Scale = 2,
+        };
+        Assert.Equal("Id", column.Name);
+        Assert.True(column.IsPrimaryKey);
+        Assert.Equal(50, column.MaxLength);
+    }
+
+    [Fact]
+    public void DatabaseTable_ComputedProperties_Work()
+    {
+        var table = new Nimblesite.DataProvider.Core.DatabaseTable
+        {
+            Schema = "main",
+            Name = "TestTable",
+            Columns = new List<Nimblesite.DataProvider.Core.DatabaseColumn>
+            {
+                new()
+                {
+                    Name = "Id",
+                    SqlType = "TEXT",
+                    CSharpType = "string",
+                    IsPrimaryKey = true,
+                },
+                new()
+                {
+                    Name = "Name",
+                    SqlType = "TEXT",
+                    CSharpType = "string",
+                },
+                new()
+                {
+                    Name = "AutoId",
+                    SqlType = "INTEGER",
+                    CSharpType = "int",
+                    IsIdentity = true,
+                },
+                new()
+                {
+                    Name = "Computed",
+                    SqlType = "TEXT",
+                    CSharpType = "string",
+                    IsComputed = true,
+                },
+            }.AsReadOnly(),
+        };
+
+        Assert.Equal("main", table.Schema);
+        Assert.Equal("TestTable", table.Name);
+        Assert.Single(table.PrimaryKeyColumns);
+        Assert.Equal("Id", table.PrimaryKeyColumns[0].Name);
+        Assert.Equal(2, table.InsertableColumns.Count); // Id, Name (not AutoId, not Computed)
+        Assert.Single(table.UpdateableColumns); // Name only (not PK, not Identity, not Computed)
+    }
+
+    [Fact]
+    public void SqlQueryMetadata_CanBeCreated()
+    {
+        var metadata = new Nimblesite.DataProvider.Core.SqlQueryMetadata
+        {
+            SqlText = "SELECT * FROM Test",
+            Columns = new List<Nimblesite.DataProvider.Core.DatabaseColumn>
+            {
+                new()
+                {
+                    Name = "Id",
+                    SqlType = "TEXT",
+                    CSharpType = "string",
+                },
+            }.AsReadOnly(),
+        };
+
+        Assert.Equal("SELECT * FROM Test", metadata.SqlText);
+        Assert.Single(metadata.Columns);
+    }
+
+    [Fact]
+    public void GroupingConfig_CanBeCreated()
+    {
+        var parent = new Nimblesite.DataProvider.Core.EntityConfig(
+            Name: "Invoice",
+            KeyColumns: new List<string> { "Id" }.AsReadOnly(),
+            Columns: new List<string> { "Id", "InvoiceNumber" }.AsReadOnly()
+        );
+        var child = new Nimblesite.DataProvider.Core.EntityConfig(
+            Name: "InvoiceLine",
+            KeyColumns: new List<string> { "Id" }.AsReadOnly(),
+            Columns: new List<string> { "Id", "InvoiceId" }.AsReadOnly(),
+            ParentKeyColumns: new List<string> { "InvoiceId" }.AsReadOnly()
+        );
+        var config = new Nimblesite.DataProvider.Core.GroupingConfig(
+            QueryName: "GetInvoices",
+            GroupingStrategy: "ParentChild",
+            ParentEntity: parent,
+            ChildEntity: child
+        );
+
+        Assert.Equal("Invoice", config.ParentEntity.Name);
+        Assert.Equal("GetInvoices", config.QueryName);
+        Assert.NotNull(child.ParentKeyColumns);
+    }
+
+    [Fact]
+    public void QueryConfigItem_CanBeCreated()
+    {
+        var item = new Nimblesite.DataProvider.Core.QueryConfigItem
+        {
+            Name = "GetInvoices",
+            SqlFile = "GetInvoices.sql",
+            GroupingFile = "GetInvoices.grouping.json",
+        };
+        Assert.Equal("GetInvoices", item.Name);
+        Assert.Equal("GetInvoices.sql", item.SqlFile);
+        Assert.Equal("GetInvoices.grouping.json", item.GroupingFile);
+    }
+
+    [Fact]
+    public void TableConfigItem_CanBeCreated()
+    {
+        var item = new Nimblesite.DataProvider.Core.TableConfigItem
+        {
+            Name = "Invoice",
+            Schema = "main",
+            GenerateInsert = true,
+            GenerateUpdate = true,
+            GenerateDelete = false,
+            ExcludeColumns = ["computed"],
+            PrimaryKeyColumns = ["Id"],
+        };
+        Assert.Equal("Invoice", item.Name);
+        Assert.Equal("main", item.Schema);
+        Assert.True(item.GenerateInsert);
+        Assert.Single(item.ExcludeColumns);
+    }
+
+    [Fact]
+    public void SourceGeneratorConfig_CanBeCreated()
+    {
+        var config = new Nimblesite.DataProvider.Core.SourceGeneratorDataProviderConfiguration
+        {
+            ConnectionString = "test",
+        };
+        Assert.Equal("test", config.ConnectionString);
     }
 
     #endregion

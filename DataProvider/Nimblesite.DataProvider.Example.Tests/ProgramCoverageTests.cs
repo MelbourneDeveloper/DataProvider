@@ -18,10 +18,7 @@ public sealed class ProgramCoverageTests : IDisposable
 
     public ProgramCoverageTests()
     {
-        _dbPath = Path.Combine(
-            Path.GetTempPath(),
-            $"program_coverage_tests_{Guid.NewGuid()}.db"
-        );
+        _dbPath = Path.Combine(Path.GetTempPath(), $"program_coverage_tests_{Guid.NewGuid()}.db");
         _connection = new SqliteConnection($"Data Source={_dbPath}");
     }
 
@@ -295,6 +292,187 @@ public sealed class ProgramCoverageTests : IDisposable
             Assert.False(string.IsNullOrEmpty(order.OrderNumber));
             Assert.False(string.IsNullOrEmpty(order.CustomerName));
         }
+    }
+
+    [Fact]
+    public async Task ProgramMain_RunsSuccessfully()
+    {
+        var originalDir = Environment.CurrentDirectory;
+        var tempDir = Path.Combine(Path.GetTempPath(), $"program_main_test_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            Environment.CurrentDirectory = tempDir;
+            await Program.Main([]).ConfigureAwait(false);
+        }
+        finally
+        {
+            Environment.CurrentDirectory = originalDir;
+            try
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+#pragma warning disable CA1031
+            catch (IOException)
+            { /* best effort */
+            }
+#pragma warning restore CA1031
+        }
+    }
+
+    [Fact]
+    public void ModelTypes_CanBeConstructed()
+    {
+        // Cover Example.Model record constructors
+        var order = new Nimblesite.DataProvider.Example.Model.Order(
+            Id: 1,
+            OrderNumber: "ORD-001",
+            OrderDate: "2024-01-01",
+            CustomerId: 1,
+            TotalAmount: 100.0,
+            Status: "Completed",
+            Items:
+            [
+                new Nimblesite.DataProvider.Example.Model.OrderItem(
+                    Id: 1,
+                    OrderId: 1,
+                    ProductName: "Widget",
+                    Quantity: 2.0,
+                    Price: 50.0,
+                    Subtotal: 100.0
+                ),
+            ]
+        );
+
+        Assert.Equal("ORD-001", order.OrderNumber);
+        Assert.Single(order.Items);
+        Assert.Equal("Widget", order.Items[0].ProductName);
+
+        var customer = new Nimblesite.DataProvider.Example.Model.Customer(
+            Id: 1,
+            CustomerName: "Test Corp",
+            Email: "test@test.com",
+            Phone: "555-1234",
+            CreatedDate: "2024-01-01",
+            Addresses:
+            [
+                new Nimblesite.DataProvider.Example.Model.Address(
+                    Id: 1,
+                    CustomerId: 1,
+                    Street: "123 Main St",
+                    City: "TestCity",
+                    State: "TS",
+                    ZipCode: "12345",
+                    Country: "USA"
+                ),
+            ]
+        );
+
+        Assert.Equal("Test Corp", customer.CustomerName);
+        Assert.Single(customer.Addresses);
+        Assert.Equal("TestCity", customer.Addresses[0].City);
+    }
+
+    [Fact]
+    public void ModelRecords_EqualityWorks()
+    {
+        var order1 = new Nimblesite.DataProvider.Example.Model.Order(
+            Id: 1,
+            OrderNumber: "ORD-001",
+            OrderDate: "2024-01-01",
+            CustomerId: 1,
+            TotalAmount: 100.0,
+            Status: "Completed",
+            Items: []
+        );
+        var order2 = new Nimblesite.DataProvider.Example.Model.Order(
+            Id: 1,
+            OrderNumber: "ORD-001",
+            OrderDate: "2024-01-01",
+            CustomerId: 1,
+            TotalAmount: 100.0,
+            Status: "Completed",
+            Items: []
+        );
+        Assert.Equal(order1, order2);
+        Assert.Equal(order1.GetHashCode(), order2.GetHashCode());
+        Assert.Equal(order1.ToString(), order2.ToString());
+
+        var item1 = new Nimblesite.DataProvider.Example.Model.OrderItem(
+            Id: 1,
+            OrderId: 1,
+            ProductName: "W",
+            Quantity: 1.0,
+            Price: 10.0,
+            Subtotal: 10.0
+        );
+        var item2 = new Nimblesite.DataProvider.Example.Model.OrderItem(
+            Id: 1,
+            OrderId: 1,
+            ProductName: "W",
+            Quantity: 1.0,
+            Price: 10.0,
+            Subtotal: 10.0
+        );
+        Assert.Equal(item1, item2);
+        Assert.Equal(item1.GetHashCode(), item2.GetHashCode());
+
+        var addr1 = new Nimblesite.DataProvider.Example.Model.Address(
+            Id: 1,
+            CustomerId: 1,
+            Street: "St",
+            City: "C",
+            State: "S",
+            ZipCode: "Z",
+            Country: "US"
+        );
+        var addr2 = new Nimblesite.DataProvider.Example.Model.Address(
+            Id: 1,
+            CustomerId: 1,
+            Street: "St",
+            City: "C",
+            State: "S",
+            ZipCode: "Z",
+            Country: "US"
+        );
+        Assert.Equal(addr1, addr2);
+        Assert.Equal(addr1.GetHashCode(), addr2.GetHashCode());
+
+        var cust1 = new Nimblesite.DataProvider.Example.Model.Customer(
+            Id: 1,
+            CustomerName: "Test",
+            Email: null,
+            Phone: null,
+            CreatedDate: "2024-01-01",
+            Addresses: []
+        );
+        var cust2 = new Nimblesite.DataProvider.Example.Model.Customer(
+            Id: 1,
+            CustomerName: "Test",
+            Email: null,
+            Phone: null,
+            CreatedDate: "2024-01-01",
+            Addresses: []
+        );
+        Assert.Equal(cust1, cust2);
+        Assert.Equal(cust1.GetHashCode(), cust2.GetHashCode());
+
+        var basic1 = new Nimblesite.DataProvider.Example.Model.BasicOrder(
+            "ORD-001",
+            100.0,
+            "Completed",
+            "Corp",
+            "email@test.com"
+        );
+        var basic2 = new Nimblesite.DataProvider.Example.Model.BasicOrder(
+            "ORD-001",
+            100.0,
+            "Completed",
+            "Corp",
+            "email@test.com"
+        );
+        Assert.Equal(basic1, basic2);
+        Assert.Equal(basic1.GetHashCode(), basic2.GetHashCode());
     }
 
     private async Task SetupTestDatabase()
