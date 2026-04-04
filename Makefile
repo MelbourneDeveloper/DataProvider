@@ -264,19 +264,34 @@ _test_ts:
 	echo "============================================================"; \
 	echo "==> Testing Lql/LqlExtension (threshold: $$THRESHOLD%)"; \
 	echo "============================================================"; \
-	cd Lql/LqlExtension && npm run compile && npm test; \
+	cd Lql/LqlExtension && npm run test:coverage; \
 	if [ $$? -ne 0 ]; then \
 	  echo "FAIL: TypeScript extension tests failed"; \
 	  exit 1; \
 	fi; \
-	if [ "$$THRESHOLD" = "0" ]; then \
-	  echo "  Coverage enforcement skipped (threshold: 0%)"; \
-	  echo "  PASS"; \
-	else \
-	  echo "  WARNING: VS Code extension coverage collection requires additional tooling."; \
-	  echo "  Set threshold to 0 in coverage-thresholds.json to skip, or add c8/nyc instrumentation."; \
+	SUMMARY="Lql/LqlExtension/coverage/coverage-summary.json"; \
+	if [ ! -f "$$SUMMARY" ]; then \
+	  SUMMARY="Lql/LqlExtension/.nyc_output/coverage-summary.json"; \
+	fi; \
+	if [ ! -f "$$SUMMARY" ]; then \
+	  echo "FAIL: No coverage summary produced for Lql/LqlExtension"; \
 	  exit 1; \
-	fi
+	fi; \
+	COVERAGE=$$(jq -r '.total.lines.pct' "$$SUMMARY"); \
+	echo ""; \
+	echo "  Coverage: $$COVERAGE% | Threshold: $$THRESHOLD%"; \
+	BELOW=$$(echo "$$COVERAGE < $$THRESHOLD" | bc -l); \
+	if [ "$$BELOW" = "1" ]; then \
+	  echo "  FAIL: $$COVERAGE% is BELOW threshold $$THRESHOLD%"; \
+	  exit 1; \
+	fi; \
+	ABOVE=$$(echo "$$COVERAGE > $$THRESHOLD" | bc -l); \
+	if [ "$$ABOVE" = "1" ]; then \
+	  NEW=$$(echo "$$COVERAGE" | awk '{print int($$1)}'); \
+	  echo "  Ratcheting threshold: $$THRESHOLD% -> $$NEW%"; \
+	  jq '.projects["Lql/LqlExtension"] = '"$$NEW" coverage-thresholds.json > coverage-thresholds.json.tmp && mv coverage-thresholds.json.tmp coverage-thresholds.json; \
+	fi; \
+	echo "  PASS"
 
 _lint_ts:
 	cd Lql/LqlExtension && npm run lint
