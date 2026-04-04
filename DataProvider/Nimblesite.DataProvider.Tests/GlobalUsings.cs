@@ -1,5 +1,6 @@
 global using Nimblesite.DataProvider.Core;
 global using Nimblesite.DataProvider.Core.CodeGeneration;
+global using Xunit;
 // Global usings for Nimblesite.DataProvider.Tests
 global using IntError = Outcome.Result<int, Nimblesite.Sql.Model.SqlError>.Error<
     int,
