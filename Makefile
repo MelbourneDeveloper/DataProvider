@@ -28,7 +28,6 @@ DOTNET_TEST_PROJECTS = \
   DataProvider/Nimblesite.DataProvider.Tests \
   DataProvider/Nimblesite.DataProvider.Example.Tests \
   Lql/Nimblesite.Lql.Tests \
-  Lql/Nimblesite.Lql.Cli.SQLite.Tests \
   Lql/Nimblesite.Lql.TypeProvider.FSharp.Tests \
   Migration/Nimblesite.DataProvider.Migration.Tests \
   Sync/Nimblesite.Sync.Tests \

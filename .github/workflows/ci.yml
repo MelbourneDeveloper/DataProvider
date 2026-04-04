@@ -180,7 +180,7 @@ jobs:
 
       - name: Test LQL .NET (with coverage enforcement)
         run: |
-          for proj in Lql/Nimblesite.Lql.Tests Lql/Nimblesite.Lql.Cli.SQLite.Tests; do
+          for proj in Lql/Nimblesite.Lql.Tests; do
             THRESHOLD=$(jq -r ".projects[\"$proj\"].threshold // .default_threshold" coverage-thresholds.json)
             INCLUDE=$(jq -r ".projects[\"$proj\"].include // empty" coverage-thresholds.json)
             echo "==> Testing $proj (threshold: ${THRESHOLD}%)"

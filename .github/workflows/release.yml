@@ -34,3 +34,25 @@ jobs:
 
       - name: Push to NuGet
         run: dotnet nuget push "./nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "${{ github.ref_name }}" --generate-notes
+
+  deploy-lql-website:
+    needs: publish
+    uses: ./.github/workflows/deploy-lql-website.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+  deploy-website:
+    needs: publish
+    uses: ./.github/workflows/deploy-website.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

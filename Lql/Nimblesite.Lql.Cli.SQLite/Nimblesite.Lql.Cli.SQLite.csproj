@@ -4,6 +4,7 @@
     <PublishAot>false</PublishAot>
     <InvariantGlobalization>true</InvariantGlobalization>
     <AssemblyName>lql-sqlite</AssemblyName>
+    <IsPackable>false</IsPackable>
     <!-- Suppress analyzer rules that are inappropriate for CLI applications -->
     <NoWarn>$(NoWarn);RS1035</NoWarn>
   </PropertyGroup>

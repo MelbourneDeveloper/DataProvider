@@ -1,12 +1,7 @@
 name: Deploy LQL Website to GitHub Pages
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'Lql/**'
-      - '.github/workflows/deploy-lql-website.yml'
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read

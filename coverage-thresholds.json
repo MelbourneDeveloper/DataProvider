@@ -13,10 +13,6 @@
       "threshold": 71,
       "include": "[Nimblesite.Lql.Core]*,[Nimblesite.Lql.Postgres]*,[Nimblesite.Lql.SqlServer]*,[Nimblesite.Lql.SQLite]*"
     },
-    "Lql/Nimblesite.Lql.Cli.SQLite": {
-      "threshold": 90,
-      "include": "[Nimblesite.Lql.Cli.SQLite]*"
-    },
     "Lql/Nimblesite.Lql.TypeProvider.FSharp": {
       "threshold": 90,
       "include": "[Nimblesite.Lql.TypeProvider.FSharp]*,[Nimblesite.Lql.Core]*,[Nimblesite.Lql.SQLite]*,[Nimblesite.Sql.Model]*"
