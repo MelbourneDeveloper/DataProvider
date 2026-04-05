@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="../Nimblesite.DataProvider.Core/Nimblesite.DataProvider.Core.csproj" />
     <ProjectReference Include="../../Other/Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj" />
+    <ProjectReference Include="../../Migration/Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />

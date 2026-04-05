@@ -2,6 +2,8 @@ using System.CommandLine;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using Nimblesite.DataProvider.Migration.Core;
 using Nimblesite.Sql.Model;
 using Npgsql;
 using Outcome;
@@ -48,21 +50,39 @@ internal static class Program
         {
             IsRequired = true,
         };
+        var offline = new Option<bool>(
+            "--offline",
+            description: "Run in offline mode without database connection (uses schema.yaml for metadata)"
+        )
+        {
+            IsRequired = false,
+        };
+        var schemaFile = new Option<FileInfo?>(
+            "--schema",
+            description: "Path to schema.yaml file (required for offline mode)"
+        )
+        {
+            IsRequired = false,
+        };
         var root = new RootCommand("Nimblesite.DataProvider.Core.Postgres codegen CLI")
         {
             projectDir,
             config,
             outDir,
+            offline,
+            schemaFile,
         };
         root.SetHandler(
-            async (DirectoryInfo proj, FileInfo cfg, DirectoryInfo output) =>
+            async (DirectoryInfo proj, FileInfo cfg, DirectoryInfo output, bool off, FileInfo? schema) =>
             {
-                var exit = await RunAsync(proj, cfg, output).ConfigureAwait(false);
+                var exit = await RunAsync(proj, cfg, output, off, schema).ConfigureAwait(false);
                 Environment.Exit(exit);
             },
             projectDir,
             config,
-            outDir
+            outDir,
+            offline,
+            schemaFile
         );
 
         return await root.InvokeAsync(args).ConfigureAwait(false);
@@ -71,7 +91,9 @@ internal static class Program
     private static async Task<int> RunAsync(
         DirectoryInfo projectDir,
         FileInfo configFile,
-        DirectoryInfo outDir
+        DirectoryInfo outDir,
+        bool offline,
+        FileInfo? schemaFile
     )
     {
         try
@@ -87,24 +109,53 @@ internal static class Program
 
             var cfgText = await File.ReadAllTextAsync(configFile.FullName).ConfigureAwait(false);
             var cfg = JsonSerializer.Deserialize<PostgresDataProviderConfig>(cfgText, JsonOptions);
-            if (cfg is null || string.IsNullOrWhiteSpace(cfg.ConnectionString))
+            if (cfg is null)
             {
                 Console.WriteLine(
-                    "❌ Nimblesite.DataProvider.Core.json ConnectionString is required"
+                    "❌ Nimblesite.DataProvider.Core.json is invalid"
                 );
                 return 1;
             }
 
-            // Verify DB connection
-            try
+            // Load schema if provided (required for offline mode)
+            SchemaDefinition? schema = null;
+            if (schemaFile?.Exists == true)
             {
-                await using var conn = new NpgsqlConnection(cfg.ConnectionString);
-                await conn.OpenAsync().ConfigureAwait(false);
+                var schemaYaml = await File.ReadAllTextAsync(schemaFile.FullName).ConfigureAwait(false);
+                schema = SchemaSerializer.FromYaml(schemaYaml);
+                Console.WriteLine($"📋 Loaded schema from {schemaFile.FullName}");
             }
-            catch (Exception ex)
+            else if (offline)
             {
-                Console.WriteLine($"❌ Failed to connect to database: {ex.Message}");
+                Console.WriteLine("❌ --schema is required when using --offline mode");
                 return 1;
+            }
+
+            if (!offline)
+            {
+                // Verify DB connection
+                if (string.IsNullOrWhiteSpace(cfg.ConnectionString))
+                {
+                    Console.WriteLine(
+                        "❌ Nimblesite.DataProvider.Core.json ConnectionString is required for online mode"
+                    );
+                    return 1;
+                }
+
+                try
+                {
+                    await using var conn = new NpgsqlConnection(cfg.ConnectionString);
+                    await conn.OpenAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Failed to connect to database: {ex.Message}");
+                    return 1;
+                }
+            }
+            else
+            {
+                Console.WriteLine("🔌 Running in OFFLINE mode (no database connection)");
             }
 
             // Gather SQL files
@@ -140,13 +191,22 @@ internal static class Program
                     // Parse SQL to extract parameters
                     var parameters = ExtractParameters(sql);
 
-                    // Get column metadata from PostgreSQL
-                    var colsResult = await GetColumnMetadataAsync(
-                            cfg.ConnectionString,
-                            sql,
-                            parameters
-                        )
-                        .ConfigureAwait(false);
+                    // Get column metadata
+                    Result<IReadOnlyList<DatabaseColumn>, SqlError> colsResult;
+                    if (offline)
+                    {
+                        colsResult = InferColumnTypesFromSql(sql, schema);
+                    }
+                    else
+                    {
+                        colsResult = await GetColumnMetadataAsync(
+                                cfg.ConnectionString!,
+                                sql,
+                                parameters
+                            )
+                            .ConfigureAwait(false);
+                    }
+
                     if (
                         colsResult
                         is Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error<
@@ -219,12 +279,25 @@ internal static class Program
                 {
                     try
                     {
-                        var tableCode = await GenerateTableOperationsAsync(
-                                cfg.ConnectionString,
-                                table,
-                                outDir.FullName
-                            )
-                            .ConfigureAwait(false);
+                        Result<string, SqlError> tableCode;
+                        if (offline)
+                        {
+                            tableCode = await GenerateTableOperationsOfflineAsync(
+                                    table,
+                                    schema,
+                                    outDir.FullName
+                                )
+                                .ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            tableCode = await GenerateTableOperationsAsync(
+                                    cfg.ConnectionString!,
+                                    table,
+                                    outDir.FullName
+                                )
+                                .ConfigureAwait(false);
+                        }
 
                         if (tableCode is Result<string, SqlError>.Error<string, SqlError> err)
                         {
@@ -247,6 +320,314 @@ internal static class Program
             Console.WriteLine($"❌ Unexpected error: {ex}");
             return 1;
         }
+    }
+
+    private static Result<IReadOnlyList<DatabaseColumn>, SqlError> InferColumnTypesFromSql(
+        string sql,
+        SchemaDefinition? schema
+    )
+    {
+        try
+        {
+            var columns = new List<DatabaseColumn>();
+
+            // Extract column aliases from SELECT clause
+            // Pattern: SELECT col1, col2 AS alias, func(col) AS alias2, ...
+            var selectMatch = Regex.Match(
+                sql,
+                @"SELECT\s+(.*?)\s+FROM",
+                RegexOptions.IgnoreCase | RegexOptions.Singleline
+            );
+
+            if (!selectMatch.Success)
+            {
+                return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error<
+                    IReadOnlyList<DatabaseColumn>,
+                    SqlError
+                >(new SqlError("Could not parse SELECT clause from SQL"));
+            }
+
+            var selectClause = selectMatch.Groups[1].Value;
+
+            // Split by comma, but be careful with nested parentheses
+            var columnDefs = ParseSelectColumns(selectClause);
+
+            foreach (var colDef in columnDefs)
+            {
+                var (name, sqlType) = ParseColumnDefinition(colDef, schema);
+                var csharpType = MapPostgresTypeToCSharp(sqlType, true);
+                var isNullable = !sqlType.Contains("serial", StringComparison.OrdinalIgnoreCase)
+                    && !sqlType.Contains("not null", StringComparison.OrdinalIgnoreCase);
+
+                columns.Add(
+                    new DatabaseColumn
+                    {
+                        Name = name,
+                        SqlType = sqlType,
+                        CSharpType = csharpType,
+                        IsNullable = isNullable,
+                        IsPrimaryKey = false,
+                        IsIdentity = sqlType.Contains("serial", StringComparison.OrdinalIgnoreCase),
+                        IsComputed = false,
+                    }
+                );
+            }
+
+            if (columns.Count == 0)
+            {
+                return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error<
+                    IReadOnlyList<DatabaseColumn>,
+                    SqlError
+                >(new SqlError("No columns found in SELECT clause"));
+            }
+
+            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Ok<
+                IReadOnlyList<DatabaseColumn>,
+                SqlError
+            >(columns.AsReadOnly());
+        }
+        catch (Exception ex)
+        {
+            return new Result<IReadOnlyList<DatabaseColumn>, SqlError>.Error<
+                IReadOnlyList<DatabaseColumn>,
+                SqlError
+            >(SqlError.FromException(ex));
+        }
+    }
+
+    private static List<string> ParseSelectColumns(string selectClause)
+    {
+        var columns = new List<string>();
+        var depth = 0;
+        var current = new StringBuilder();
+
+        foreach (var c in selectClause)
+        {
+            if (c == '(')
+            {
+                depth++;
+                current.Append(c);
+            }
+            else if (c == ')')
+            {
+                depth--;
+                current.Append(c);
+            }
+            else if (c == ',' && depth == 0)
+            {
+                columns.Add(current.ToString().Trim());
+                current.Clear();
+            }
+            else
+            {
+                current.Append(c);
+            }
+        }
+
+        if (current.Length > 0)
+            columns.Add(current.ToString().Trim());
+
+        return columns;
+    }
+
+    private static (string name, string sqlType) ParseColumnDefinition(
+        string colDef,
+        SchemaDefinition? schema
+    )
+    {
+        // Check for AS alias
+        var asMatch = Regex.Match(
+            colDef,
+            @"(.+?)\s+AS\s+(\w+)",
+            RegexOptions.IgnoreCase
+        );
+
+        if (asMatch.Success)
+        {
+            var expr = asMatch.Groups[1].Value.Trim();
+            var alias = asMatch.Groups[2].Value.Trim();
+            var type = InferTypeFromExpression(expr, schema);
+            return (alias, type);
+        }
+
+        // Simple column reference: table.column or just column
+        var colRef = colDef.Trim();
+        if (colRef.Contains('.'))
+        {
+            var parts = colRef.Split('.');
+            colRef = parts[^1];
+        }
+
+        // Try to get type from schema
+        if (schema != null)
+        {
+            foreach (var table in schema.Tables)
+            {
+                var col = table.Columns.FirstOrDefault(c =>
+                    c.Name.Equals(colRef, StringComparison.OrdinalIgnoreCase)
+                );
+                if (col != null)
+                {
+                    return (colRef, col.Type.ToString());
+                }
+            }
+        }
+
+        // Default to text
+        return (colRef, "text");
+    }
+
+    private static string InferTypeFromExpression(string expr, SchemaDefinition? schema)
+    {
+        var lower = expr.ToLowerInvariant().Trim();
+
+        // Check for function calls
+        if (lower.Contains("count(") || lower.Contains("sum(") || lower.Contains("avg("))
+            return "bigint";
+        if (lower.Contains("now(") || lower.Contains("current_timestamp"))
+            return "timestamp with time zone";
+        if (lower.Contains("uuid") || lower.Contains("gen_random_uuid"))
+            return "uuid";
+        if (lower.Contains("lower(") || lower.Contains("upper("))
+            return "text";
+
+        // Check for table.column reference in schema
+        var dotIdx = lower.LastIndexOf('.');
+        if (dotIdx > 0 && schema != null)
+        {
+            var colName = expr[(dotIdx + 1)..].Trim();
+            foreach (var table in schema.Tables)
+            {
+                var col = table.Columns.FirstOrDefault(c =>
+                    c.Name.Equals(colName, StringComparison.OrdinalIgnoreCase)
+                );
+                if (col != null)
+                    return col.Type.ToString();
+            }
+        }
+
+        return "text";
+    }
+
+    private static async Task<Result<string, SqlError>> GenerateTableOperationsOfflineAsync(
+        TableConfigItem table,
+        SchemaDefinition? schema,
+        string outDir
+    )
+    {
+        if (schema == null)
+        {
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError("Schema is required for offline table operations")
+            );
+        }
+
+        var tableDef = schema.Tables.FirstOrDefault(t =>
+            t.Name.Equals(table.Name, StringComparison.OrdinalIgnoreCase)
+            && t.Schema.Equals(table.Schema, StringComparison.OrdinalIgnoreCase)
+        );
+
+        if (tableDef == null)
+        {
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError($"Table {table.Schema}.{table.Name} not found in schema")
+            );
+        }
+
+        var columns = new List<DatabaseColumn>();
+
+        foreach (var col in tableDef.Columns)
+        {
+            // Skip excluded columns
+            if (table.ExcludeColumns.Contains(col.Name, StringComparer.OrdinalIgnoreCase))
+                continue;
+
+            var isPk = tableDef.PrimaryKey?.Columns.Contains(col.Name, StringComparer.OrdinalIgnoreCase) == true
+                || table.PrimaryKeyColumns.Contains(col.Name, StringComparer.OrdinalIgnoreCase);
+
+            columns.Add(
+                new DatabaseColumn
+                {
+                    Name = col.Name,
+                    SqlType = col.Type.ToString(),
+                    CSharpType = MapPostgresTypeToCSharp(col.Type.ToString(), col.IsNullable),
+                    IsNullable = col.IsNullable,
+                    IsPrimaryKey = isPk,
+                    IsIdentity = col.IsIdentity,
+                    IsComputed = col.DefaultValue?.StartsWith("nextval", StringComparison.OrdinalIgnoreCase) == true,
+                }
+            );
+        }
+
+        if (columns.Count == 0)
+        {
+            return new Result<string, SqlError>.Error<string, SqlError>(
+                new SqlError($"No columns found for table {table.Schema}.{table.Name}")
+            );
+        }
+
+        var sb = new StringBuilder();
+        var pascalName = ToPascalCase(table.Name);
+
+        // Header
+        _ = sb.AppendLine("// <auto-generated />");
+        _ = sb.AppendLine("#nullable enable");
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("using Npgsql;");
+        _ = sb.AppendLine("using Outcome;");
+        _ = sb.AppendLine("using Nimblesite.Sql.Model;");
+        _ = sb.AppendLine();
+
+        // Extension class
+        _ = sb.AppendLine("/// <summary>");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"/// Generated CRUD operations for {table.Name} table."
+        );
+        _ = sb.AppendLine("/// </summary>");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"public static class {pascalName}Extensions"
+        );
+        _ = sb.AppendLine("{");
+
+        // Generate INSERT method
+        if (table.GenerateInsert)
+        {
+            GenerateInsertMethod(sb, table, columns, pascalName);
+        }
+
+        // Generate UPDATE method
+        if (table.GenerateUpdate)
+        {
+            GenerateUpdateMethod(sb, table, columns, pascalName);
+        }
+
+        // Generate DELETE method
+        if (table.GenerateDelete)
+        {
+            GenerateDeleteMethod(sb, table, columns, pascalName);
+        }
+
+        // Generate bulk INSERT method
+        if (table.GenerateBulkInsert)
+        {
+            GenerateBulkInsertMethod(sb, table, columns, pascalName);
+        }
+
+        // Generate bulk UPSERT method
+        if (table.GenerateBulkUpsert)
+        {
+            GenerateBulkUpsertMethod(sb, table, columns, pascalName);
+        }
+
+        _ = sb.AppendLine("}");
+
+        var target = Path.Combine(outDir, $"{pascalName}Operations.g.cs");
+        await File.WriteAllTextAsync(target, sb.ToString()).ConfigureAwait(false);
+        Console.WriteLine($"✅ Generated {target}");
+
+        return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
     }
 
     private static async Task<Result<string, SqlError>> GenerateTableOperationsAsync(
@@ -719,7 +1100,7 @@ internal static class Program
         );
         _ = sb.AppendLine("                    return finalErr;");
         _ = sb.AppendLine(
-            "                totalInserted += ((Result<int, SqlError>.Ok<int, SqlError>)finalResult).Value;"
+            "                    totalInserted += ((Result<int, SqlError>.Ok<int, SqlError>)finalResult).Value;"
         );
         _ = sb.AppendLine("            }");
         _ = sb.AppendLine();
@@ -902,7 +1283,7 @@ internal static class Program
         );
         _ = sb.AppendLine("                    return finalErr;");
         _ = sb.AppendLine(
-            "                totalAffected += ((Result<int, SqlError>.Ok<int, SqlError>)finalResult).Value;"
+            "                    totalAffected += ((Result<int, SqlError>.Ok<int, SqlError>)finalResult).Value;"
         );
         _ = sb.AppendLine("            }");
         _ = sb.AppendLine();

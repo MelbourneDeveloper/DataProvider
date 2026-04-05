@@ -55,12 +55,12 @@ public static class SchemaDiff
 
             // Use table name only for matching (schema-agnostic comparison)
             // This handles differences between SQLite (main) and Postgres (public) default schemas
-            var currentTables = current.Tables.ToDictionary(t => t.Name.ToUpperInvariant());
+            var currentTables = current.Tables.ToDictionary(t => t.Name.ToLowerInvariant());
 
             // Find tables to create or update
             foreach (var desiredTable in desired.Tables)
             {
-                var key = desiredTable.Name.ToUpperInvariant();
+                var key = desiredTable.Name.ToLowerInvariant();
 
                 if (!currentTables.TryGetValue(key, out var currentTable))
                 {
@@ -122,12 +122,12 @@ public static class SchemaDiff
             {
                 // Use table name only for matching (schema-agnostic)
                 var desiredTableNames = desired
-                    .Tables.Select(t => t.Name.ToUpperInvariant())
+                    .Tables.Select(t => t.Name.ToLowerInvariant())
                     .ToHashSet();
 
                 foreach (var currentTable in current.Tables)
                 {
-                    var exists = desiredTableNames.Contains(currentTable.Name.ToUpperInvariant());
+                    var exists = desiredTableNames.Contains(currentTable.Name.ToLowerInvariant());
 
                     if (!exists)
                     {

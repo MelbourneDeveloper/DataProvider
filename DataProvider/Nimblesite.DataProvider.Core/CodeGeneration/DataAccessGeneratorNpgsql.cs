@@ -23,7 +23,7 @@ public static partial class DataAccessGenerator
     }
 
     internal static string MapSqlTypeToNpgsqlDbType(string sqlType) =>
-        sqlType.ToUpperInvariant() switch
+        sqlType.ToLowerInvariant() switch
         {
             "INTEGER" or "INT" => "Integer",
             "BIGINT" => "Bigint",

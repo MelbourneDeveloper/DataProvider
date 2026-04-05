@@ -18,7 +18,7 @@ public static partial class LqlDefaultTranslator
     {
         ArgumentNullException.ThrowIfNull(lqlExpression);
 
-        var normalized = lqlExpression.Trim().ToUpperInvariant();
+        var normalized = lqlExpression.Trim().ToLowerInvariant();
 
         // Handle common LQL functions
         return normalized switch
@@ -58,7 +58,7 @@ public static partial class LqlDefaultTranslator
     {
         ArgumentNullException.ThrowIfNull(lqlExpression);
 
-        var normalized = lqlExpression.Trim().ToUpperInvariant();
+        var normalized = lqlExpression.Trim().ToLowerInvariant();
 
         // Handle common LQL functions
         return normalized switch
@@ -109,7 +109,7 @@ public static partial class LqlDefaultTranslator
             return expression;
         }
 
-        var functionName = match.Groups["func"].Value.ToUpperInvariant();
+        var functionName = match.Groups["func"].Value.ToLowerInvariant();
         var argsString = match.Groups["args"].Value;
 
         // Parse arguments (simple split, doesn't handle nested functions with commas)
