@@ -158,7 +158,7 @@ internal sealed class PortableTypeYamlConverter : IYamlTypeConverter
             var typeName = trimmed[..parenIndex];
             var paramsStr = trimmed[(parenIndex + 1)..^1];
 
-            return typeName.ToLowerInvariant() switch
+            return typeName.ToUpperInvariant() switch
             {
                 "DECIMAL" => ParseDecimal(paramsStr),
                 "CHAR" => new CharType(int.Parse(paramsStr, CultureInfo.InvariantCulture)),
@@ -179,7 +179,7 @@ internal sealed class PortableTypeYamlConverter : IYamlTypeConverter
         }
 
         // Handle simple types
-        return trimmed.ToLowerInvariant() switch
+        return trimmed.ToUpperInvariant() switch
         {
             "TINYINT" => new TinyIntType(),
             "SMALLINT" => new SmallIntType(),
@@ -248,7 +248,7 @@ internal sealed class ForeignKeyActionYamlConverter : IYamlTypeConverter
     public object? ReadYaml(IParser parser, Type type, ObjectDeserializer rootDeserializer)
     {
         var scalar = parser.Consume<Scalar>();
-        return scalar.Value.ToLowerInvariant() switch
+        return scalar.Value.ToUpperInvariant() switch
         {
             "NOACTION" or "NO_ACTION" or "NO ACTION" => ForeignKeyAction.NoAction,
             "CASCADE" => ForeignKeyAction.Cascade,
