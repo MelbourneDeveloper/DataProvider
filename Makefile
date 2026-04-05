@@ -110,11 +110,14 @@ _setup: _setup_dotnet _setup_ts
 # =============================================================================
 # COVERAGE ENFORCEMENT (shared shell logic)
 # =============================================================================
-# Each test target collects coverage, compares against coverage-thresholds.json thresholds,
-# fails hard if below, and ratchets up coverage-thresholds.json if above.
+# Each test target collects coverage, compares against coverage-thresholds.json,
+# fails hard if below, and ratchets up if above.
 #
-# coverage-thresholds.json format:
-#   { "default_threshold": 90, "projects": { "Path/To/Project": 90, ... } }
+# coverage-thresholds.json keys are SOURCE project paths, e.g.:
+#   "DataProvider/Nimblesite.DataProvider.Core": { "threshold": 88, "include": "..." }
+#
+# The SRC_KEY mapping converts test project paths -> source project keys.
+# CI calls these same make targets — no duplication.
 # =============================================================================
 
 # --- C#/.NET ---
@@ -126,8 +129,15 @@ _test_dotnet:
 	  SRC_KEY=$$(echo "$$test_proj" | sed 's/\.Tests$$//'); \
 	  case "$$SRC_KEY" in \
 	    "DataProvider/Nimblesite.DataProvider") SRC_KEY="DataProvider/Nimblesite.DataProvider.Core" ;; \
+	    "DataProvider/Nimblesite.DataProvider.Example") ;; \
 	    "Lql/Nimblesite.Lql") SRC_KEY="Lql/Nimblesite.Lql.Core" ;; \
+	    "Lql/Nimblesite.Lql.TypeProvider.FSharp") ;; \
 	    "Migration/Nimblesite.DataProvider.Migration") SRC_KEY="Migration/Nimblesite.DataProvider.Migration.Core" ;; \
+	    "Sync/Nimblesite.Sync") SRC_KEY="Sync/Nimblesite.Sync.Core" ;; \
+	    "Sync/Nimblesite.Sync.SQLite") ;; \
+	    "Sync/Nimblesite.Sync.Postgres") ;; \
+	    "Sync/Nimblesite.Sync.Integration") ;; \
+	    "Sync/Nimblesite.Sync.Http") ;; \
 	  esac; \
 	  THRESHOLD=$$(jq -r ".projects[\"$$SRC_KEY\"].threshold // .default_threshold" coverage-thresholds.json); \
 	  INCLUDE=$$(jq -r ".projects[\"$$SRC_KEY\"].include // empty" coverage-thresholds.json); \
@@ -152,26 +162,26 @@ _test_dotnet:
 	      --verbosity normal; \
 	  fi; \
 	  if [ $$? -ne 0 ]; then \
-	    echo "FAIL: Tests failed for $$SRC_KEY ($$test_proj)"; \
+	    echo "FAIL [$$SRC_KEY]: Tests failed ($$test_proj)"; \
 	    exit 1; \
 	  fi; \
 	  COBERTURA=$$(find "$$test_proj/TestResults" -name "coverage.cobertura.xml" -type f 2>/dev/null | head -1); \
 	  if [ -z "$$COBERTURA" ]; then \
-	    echo "FAIL: No coverage file produced for $$SRC_KEY ($$test_proj)"; \
+	    echo "FAIL [$$SRC_KEY]: No coverage file produced ($$test_proj)"; \
 	    exit 1; \
 	  fi; \
 	  LINE_RATE=$$(sed -n 's/.*line-rate="\([0-9.]*\)".*/\1/p' "$$COBERTURA" | head -1); \
 	  if [ -z "$$LINE_RATE" ]; then \
-	    echo "FAIL: Could not parse line-rate from $$COBERTURA"; \
+	    echo "FAIL [$$SRC_KEY]: Could not parse line-rate from $$COBERTURA"; \
 	    exit 1; \
 	  fi; \
 	  COVERAGE=$$(echo "$$LINE_RATE * 100" | bc -l); \
 	  COVERAGE_FMT=$$(printf "%.2f" $$COVERAGE); \
 	  echo ""; \
-	  echo "  Coverage: $$COVERAGE_FMT% | Threshold: $$THRESHOLD%"; \
+	  echo "  [$$SRC_KEY] Coverage: $$COVERAGE_FMT% | Threshold: $$THRESHOLD%"; \
 	  BELOW=$$(echo "$$COVERAGE < $$THRESHOLD" | bc -l); \
 	  if [ "$$BELOW" = "1" ]; then \
-	    echo "  FAIL: $$COVERAGE_FMT% is BELOW threshold $$THRESHOLD%"; \
+	    echo "  FAIL [$$SRC_KEY]: $$COVERAGE_FMT% is BELOW threshold $$THRESHOLD%"; \
 	    exit 1; \
 	  fi; \
 	  ABOVE=$$(echo "$$COVERAGE > $$THRESHOLD" | bc -l); \
@@ -180,7 +190,7 @@ _test_dotnet:
 	    echo "  Ratcheting threshold: $$THRESHOLD% -> $$NEW%"; \
 	    jq ".projects[\"$$SRC_KEY\"].threshold = $$NEW" coverage-thresholds.json > coverage-thresholds.json.tmp && mv coverage-thresholds.json.tmp coverage-thresholds.json; \
 	  fi; \
-	  echo "  PASS"; \
+	  echo "  PASS [$$SRC_KEY]"; \
 	done; \
 	echo ""; \
 	echo "==> All .NET test projects passed coverage thresholds."
@@ -233,19 +243,19 @@ _test_rust:
 	cd Lql/lql-lsp-rust && cargo tarpaulin --workspace --skip-clean 2>&1 | tee /tmp/_dp_tarpaulin_out.txt; \
 	TARP_EXIT=$${PIPESTATUS[0]}; \
 	if [ $$TARP_EXIT -ne 0 ]; then \
-	  echo "FAIL: cargo tarpaulin failed"; \
+	  echo "FAIL [Lql/lql-lsp-rust]: cargo tarpaulin failed"; \
 	  exit 1; \
 	fi; \
 	COVERAGE=$$(grep -oE '[0-9]+\.[0-9]+% coverage' /tmp/_dp_tarpaulin_out.txt | tail -1 | grep -oE '[0-9]+\.[0-9]+'); \
 	if [ -z "$$COVERAGE" ]; then \
-	  echo "FAIL: Could not parse coverage from tarpaulin output"; \
+	  echo "FAIL [Lql/lql-lsp-rust]: Could not parse coverage from tarpaulin output"; \
 	  exit 1; \
 	fi; \
 	echo ""; \
-	echo "  Coverage: $$COVERAGE% | Threshold: $$THRESHOLD%"; \
+	echo "  [Lql/lql-lsp-rust] Coverage: $$COVERAGE% | Threshold: $$THRESHOLD%"; \
 	BELOW=$$(echo "$$COVERAGE < $$THRESHOLD" | bc -l); \
 	if [ "$$BELOW" = "1" ]; then \
-	  echo "  FAIL: $$COVERAGE% is BELOW threshold $$THRESHOLD%"; \
+	  echo "  FAIL [Lql/lql-lsp-rust]: $$COVERAGE% is BELOW threshold $$THRESHOLD%"; \
 	  exit 1; \
 	fi; \
 	ABOVE=$$(echo "$$COVERAGE > $$THRESHOLD" | bc -l); \
@@ -254,7 +264,7 @@ _test_rust:
 	  echo "  Ratcheting threshold: $$THRESHOLD% -> $$NEW%"; \
 	  cd "$(CURDIR)" && jq '.projects["Lql/lql-lsp-rust"].threshold = '"$$NEW" coverage-thresholds.json > coverage-thresholds.json.tmp && mv coverage-thresholds.json.tmp coverage-thresholds.json; \
 	fi; \
-	echo "  PASS"
+	echo "  PASS [Lql/lql-lsp-rust]"
 
 _lint_rust:
 	cd Lql/lql-lsp-rust && cargo fmt --all --check
@@ -279,9 +289,16 @@ _test_ts:
 	echo "============================================================"; \
 	echo "==> Testing Lql/LqlExtension (threshold: $$THRESHOLD%)"; \
 	echo "============================================================"; \
-	cd Lql/LqlExtension && npm run test:coverage; \
+	cd Lql/LqlExtension && npm run compile && \
+	  rm -rf out-cov && npx nyc instrument out out-cov && rm -rf out && mv out-cov out && \
+	  if command -v xvfb-run >/dev/null 2>&1; then \
+	    xvfb-run -a node ./out/test/runTest.js; \
+	  else \
+	    node ./out/test/runTest.js; \
+	  fi && \
+	  npx nyc report --reporter=json-summary --reporter=text; \
 	if [ $$? -ne 0 ]; then \
-	  echo "FAIL: TypeScript extension tests failed"; \
+	  echo "FAIL [Lql/LqlExtension]: Extension tests failed"; \
 	  exit 1; \
 	fi; \
 	SUMMARY="Lql/LqlExtension/coverage/coverage-summary.json"; \
@@ -289,15 +306,15 @@ _test_ts:
 	  SUMMARY="Lql/LqlExtension/.nyc_output/coverage-summary.json"; \
 	fi; \
 	if [ ! -f "$$SUMMARY" ]; then \
-	  echo "FAIL: No coverage summary produced for Lql/LqlExtension"; \
+	  echo "FAIL [Lql/LqlExtension]: No coverage summary produced"; \
 	  exit 1; \
 	fi; \
 	COVERAGE=$$(jq -r '.total.lines.pct' "$$SUMMARY"); \
 	echo ""; \
-	echo "  Coverage: $$COVERAGE% | Threshold: $$THRESHOLD%"; \
+	echo "  [Lql/LqlExtension] Coverage: $$COVERAGE% | Threshold: $$THRESHOLD%"; \
 	BELOW=$$(echo "$$COVERAGE < $$THRESHOLD" | bc -l); \
 	if [ "$$BELOW" = "1" ]; then \
-	  echo "  FAIL: $$COVERAGE% is BELOW threshold $$THRESHOLD%"; \
+	  echo "  FAIL [Lql/LqlExtension]: $$COVERAGE% is BELOW threshold $$THRESHOLD%"; \
 	  exit 1; \
 	fi; \
 	ABOVE=$$(echo "$$COVERAGE > $$THRESHOLD" | bc -l); \
@@ -306,7 +323,7 @@ _test_ts:
 	  echo "  Ratcheting threshold: $$THRESHOLD% -> $$NEW%"; \
 	  jq '.projects["Lql/LqlExtension"].threshold = '"$$NEW" coverage-thresholds.json > coverage-thresholds.json.tmp && mv coverage-thresholds.json.tmp coverage-thresholds.json; \
 	fi; \
-	echo "  PASS"
+	echo "  PASS [Lql/LqlExtension]"
 
 _lint_ts:
 	cd Lql/LqlExtension && npm run lint
