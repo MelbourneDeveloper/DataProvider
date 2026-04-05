@@ -73,13 +73,13 @@ public static class PostgresDdlGenerator
             AddCheckConstraintOperation op => GenerateAddCheckConstraint(op),
             AddUniqueConstraintOperation op => GenerateAddUniqueConstraint(op),
             DropTableOperation op =>
-                $"DROP TABLE IF EXISTS \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" CASCADE",
+                $"DROP TABLE IF EXISTS \"{op.Schema.ToUpperInvariant()}\".\"{op.TableName.ToUpperInvariant()}\" CASCADE",
             DropColumnOperation op =>
-                $"ALTER TABLE \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" DROP COLUMN \"{op.ColumnName}\"",
+                $"ALTER TABLE \"{op.Schema.ToUpperInvariant()}\".\"{op.TableName.ToUpperInvariant()}\" DROP COLUMN \"{op.ColumnName}\"",
             DropIndexOperation op =>
-                $"DROP INDEX IF EXISTS \"{op.Schema.ToLowerInvariant()}\".\"{op.IndexName.ToLowerInvariant()}\"",
+                $"DROP INDEX IF EXISTS \"{op.Schema.ToUpperInvariant()}\".\"{op.IndexName.ToUpperInvariant()}\"",
             DropForeignKeyOperation op =>
-                $"ALTER TABLE \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" DROP CONSTRAINT \"{op.ConstraintName.ToLowerInvariant()}\"",
+                $"ALTER TABLE \"{op.Schema.ToUpperInvariant()}\".\"{op.TableName.ToUpperInvariant()}\" DROP CONSTRAINT \"{op.ConstraintName.ToUpperInvariant()}\"",
             _ => throw new NotSupportedException(
                 $"Unknown operation type: {operation.GetType().Name}"
             ),
@@ -88,8 +88,8 @@ public static class PostgresDdlGenerator
     private static string GenerateCreateTable(TableDefinition table)
     {
         var sb = new StringBuilder();
-        var tableName = table.Name.ToLowerInvariant();
-        var schemaName = table.Schema.ToLowerInvariant();
+        var tableName = table.Name.ToUpperInvariant();
+        var schemaName = table.Schema.ToUpperInvariant();
         sb.Append(
             CultureInfo.InvariantCulture,
             $"CREATE TABLE IF NOT EXISTS \"{schemaName}\".\"{tableName}\" ("
@@ -105,10 +105,10 @@ public static class PostgresDdlGenerator
         // Add primary key constraint
         if (table.PrimaryKey is not null && table.PrimaryKey.Columns.Count > 0)
         {
-            var pkName = (table.PrimaryKey.Name ?? $"PK_{table.Name}").ToLowerInvariant();
+            var pkName = (table.PrimaryKey.Name ?? $"PK_{table.Name}").ToUpperInvariant();
             var pkCols = string.Join(
                 ", ",
-                table.PrimaryKey.Columns.Select(c => $"\"{c.ToLowerInvariant()}\"")
+                table.PrimaryKey.Columns.Select(c => $"\"{c.ToUpperInvariant()}\"")
             );
             columnDefs.Add($"CONSTRAINT \"{pkName}\" PRIMARY KEY ({pkCols})");
         }
@@ -118,16 +118,16 @@ public static class PostgresDdlGenerator
         {
             var fkName = (
                 fk.Name ?? $"FK_{table.Name}_{string.Join("_", fk.Columns)}"
-            ).ToLowerInvariant();
-            var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
+            ).ToUpperInvariant();
+            var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c.ToUpperInvariant()}\""));
             var refCols = string.Join(
                 ", ",
-                fk.ReferencedColumns.Select(c => $"\"{c.ToLowerInvariant()}\"")
+                fk.ReferencedColumns.Select(c => $"\"{c.ToUpperInvariant()}\"")
             );
             var onDelete = ForeignKeyActionToSql(fk.OnDelete);
             var onUpdate = ForeignKeyActionToSql(fk.OnUpdate);
-            var refTable = fk.ReferencedTable.ToLowerInvariant();
-            var refSchema = fk.ReferencedSchema.ToLowerInvariant();
+            var refTable = fk.ReferencedTable.ToUpperInvariant();
+            var refSchema = fk.ReferencedSchema.ToUpperInvariant();
 
             columnDefs.Add(
                 $"CONSTRAINT \"{fkName}\" FOREIGN KEY ({fkCols}) REFERENCES \"{refSchema}\".\"{refTable}\" ({refCols}) ON DELETE {onDelete} ON UPDATE {onUpdate}"
@@ -139,15 +139,15 @@ public static class PostgresDdlGenerator
         {
             var ucName = (
                 uc.Name ?? $"UQ_{table.Name}_{string.Join("_", uc.Columns)}"
-            ).ToLowerInvariant();
-            var ucCols = string.Join(", ", uc.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
+            ).ToUpperInvariant();
+            var ucCols = string.Join(", ", uc.Columns.Select(c => $"\"{c.ToUpperInvariant()}\""));
             columnDefs.Add($"CONSTRAINT \"{ucName}\" UNIQUE ({ucCols})");
         }
 
         // Add check constraints
         foreach (var cc in table.CheckConstraints)
         {
-            columnDefs.Add($"CONSTRAINT \"{cc.Name.ToLowerInvariant()}\" CHECK ({cc.Expression})");
+            columnDefs.Add($"CONSTRAINT \"{cc.Name.ToUpperInvariant()}\" CHECK ({cc.Expression})");
         }
 
         sb.Append(string.Join(", ", columnDefs));
@@ -162,9 +162,9 @@ public static class PostgresDdlGenerator
             var indexItems =
                 index.Expressions.Count > 0
                     ? string.Join(", ", index.Expressions)
-                    : string.Join(", ", index.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
+                    : string.Join(", ", index.Columns.Select(c => $"\"{c.ToUpperInvariant()}\""));
             var filter = index.Filter is not null ? $" WHERE {index.Filter}" : "";
-            var indexName = index.Name.ToLowerInvariant();
+            var indexName = index.Name.ToUpperInvariant();
             sb.Append(
                 CultureInfo.InvariantCulture,
                 $"CREATE {unique}INDEX IF NOT EXISTS \"{indexName}\" ON \"{schemaName}\".\"{tableName}\" ({indexItems}){filter}"
@@ -177,7 +177,7 @@ public static class PostgresDdlGenerator
     private static string GenerateColumnDef(ColumnDefinition column)
     {
         var sb = new StringBuilder();
-        sb.Append(CultureInfo.InvariantCulture, $"\"{column.Name.ToLowerInvariant()}\" ");
+        sb.Append(CultureInfo.InvariantCulture, $"\"{column.Name.ToUpperInvariant()}\" ");
 
         // Handle identity columns
         if (column.IsIdentity)
@@ -224,7 +224,7 @@ public static class PostgresDdlGenerator
     private static string GenerateAddColumn(AddColumnOperation op)
     {
         var colDef = GenerateColumnDef(op.Column);
-        return $"ALTER TABLE \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" ADD COLUMN {colDef}";
+        return $"ALTER TABLE \"{op.Schema.ToUpperInvariant()}\".\"{op.TableName.ToUpperInvariant()}\" ADD COLUMN {colDef}";
     }
 
     private static string GenerateCreateIndex(CreateIndexOperation op)
@@ -234,10 +234,10 @@ public static class PostgresDdlGenerator
         var indexItems =
             op.Index.Expressions.Count > 0
                 ? string.Join(", ", op.Index.Expressions)
-                : string.Join(", ", op.Index.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
+                : string.Join(", ", op.Index.Columns.Select(c => $"\"{c.ToUpperInvariant()}\""));
         var filter = op.Index.Filter is not null ? $" WHERE {op.Index.Filter}" : "";
 
-        return $"CREATE {unique}INDEX IF NOT EXISTS \"{op.Index.Name.ToLowerInvariant()}\" ON \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" ({indexItems}){filter}";
+        return $"CREATE {unique}INDEX IF NOT EXISTS \"{op.Index.Name.ToUpperInvariant()}\" ON \"{op.Schema.ToUpperInvariant()}\".\"{op.TableName.ToUpperInvariant()}\" ({indexItems}){filter}";
     }
 
     private static string GenerateAddForeignKey(AddForeignKeyOperation op)
@@ -245,29 +245,29 @@ public static class PostgresDdlGenerator
         var fk = op.ForeignKey;
         var fkName = (
             fk.Name ?? $"FK_{op.TableName}_{string.Join("_", fk.Columns)}"
-        ).ToLowerInvariant();
-        var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
+        ).ToUpperInvariant();
+        var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c.ToUpperInvariant()}\""));
         var refCols = string.Join(
             ", ",
-            fk.ReferencedColumns.Select(c => $"\"{c.ToLowerInvariant()}\"")
+            fk.ReferencedColumns.Select(c => $"\"{c.ToUpperInvariant()}\"")
         );
         var onDelete = ForeignKeyActionToSql(fk.OnDelete);
         var onUpdate = ForeignKeyActionToSql(fk.OnUpdate);
 
-        return $"ALTER TABLE \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" ADD CONSTRAINT \"{fkName}\" FOREIGN KEY ({fkCols}) REFERENCES \"{fk.ReferencedSchema.ToLowerInvariant()}\".\"{fk.ReferencedTable.ToLowerInvariant()}\" ({refCols}) ON DELETE {onDelete} ON UPDATE {onUpdate}";
+        return $"ALTER TABLE \"{op.Schema.ToUpperInvariant()}\".\"{op.TableName.ToUpperInvariant()}\" ADD CONSTRAINT \"{fkName}\" FOREIGN KEY ({fkCols}) REFERENCES \"{fk.ReferencedSchema.ToUpperInvariant()}\".\"{fk.ReferencedTable.ToUpperInvariant()}\" ({refCols}) ON DELETE {onDelete} ON UPDATE {onUpdate}";
     }
 
     private static string GenerateAddCheckConstraint(AddCheckConstraintOperation op) =>
-        $"ALTER TABLE \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" ADD CONSTRAINT \"{op.CheckConstraint.Name.ToLowerInvariant()}\" CHECK ({op.CheckConstraint.Expression})";
+        $"ALTER TABLE \"{op.Schema.ToUpperInvariant()}\".\"{op.TableName.ToUpperInvariant()}\" ADD CONSTRAINT \"{op.CheckConstraint.Name.ToUpperInvariant()}\" CHECK ({op.CheckConstraint.Expression})";
 
     private static string GenerateAddUniqueConstraint(AddUniqueConstraintOperation op)
     {
         var uc = op.UniqueConstraint;
         var ucName = (
             uc.Name ?? $"UQ_{op.TableName}_{string.Join("_", uc.Columns)}"
-        ).ToLowerInvariant();
-        var ucCols = string.Join(", ", uc.Columns.Select(c => $"\"{c.ToLowerInvariant()}\""));
-        return $"ALTER TABLE \"{op.Schema.ToLowerInvariant()}\".\"{op.TableName.ToLowerInvariant()}\" ADD CONSTRAINT \"{ucName}\" UNIQUE ({ucCols})";
+        ).ToUpperInvariant();
+        var ucCols = string.Join(", ", uc.Columns.Select(c => $"\"{c.ToUpperInvariant()}\""));
+        return $"ALTER TABLE \"{op.Schema.ToUpperInvariant()}\".\"{op.TableName.ToUpperInvariant()}\" ADD CONSTRAINT \"{ucName}\" UNIQUE ({ucCols})";
     }
 
     /// <summary>

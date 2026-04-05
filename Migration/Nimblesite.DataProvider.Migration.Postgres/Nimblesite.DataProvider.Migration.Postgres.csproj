@@ -4,7 +4,7 @@
     <RootNamespace>Nimblesite.DataProvider.Migration.Postgres</RootNamespace>
     <PackageId>Nimblesite.DataProvider.Migration.Postgres</PackageId>
     <Description>PostgreSQL DDL generator for Nimblesite.DataProvider.Migration.Core</Description>
-    <NoWarn>$(NoWarn);CA2254;CA2100</NoWarn>
+    <NoWarn>$(NoWarn);CA2254;CA2100;CA1308</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
