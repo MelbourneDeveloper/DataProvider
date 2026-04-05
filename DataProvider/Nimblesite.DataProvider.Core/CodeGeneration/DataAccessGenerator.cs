@@ -103,10 +103,10 @@ public static partial class DataAccessGenerator
     /// <returns>The escaped identifier if it's a reserved keyword, otherwise the original</returns>
     private static string EscapeReservedKeyword(string identifier)
     {
-        var lowerIdentifier = identifier.ToLowerInvariant();
-        return CSharpReservedKeywords.Contains(lowerIdentifier)
-            ? $"@{lowerIdentifier}"
-            : lowerIdentifier;
+        var upperIdentifier = identifier.ToUpperInvariant();
+        return CSharpReservedKeywords.Contains(upperIdentifier)
+            ? $"@{upperIdentifier}"
+            : upperIdentifier;
     }
 
     /// <summary>

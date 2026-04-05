@@ -18,7 +18,7 @@ public static partial class LqlDefaultTranslator
     {
         ArgumentNullException.ThrowIfNull(lqlExpression);
 
-        var normalized = lqlExpression.Trim().ToLowerInvariant();
+        var normalized = lqlExpression.Trim().ToUpperInvariant();
 
         // Handle common LQL functions
         return normalized switch
@@ -58,24 +58,24 @@ public static partial class LqlDefaultTranslator
     {
         ArgumentNullException.ThrowIfNull(lqlExpression);
 
-        var normalized = lqlExpression.Trim().ToLowerInvariant();
+        var normalized = lqlExpression.Trim().ToUpperInvariant();
 
         // Handle common LQL functions
         return normalized switch
         {
             // Timestamp functions - SQLite uses datetime/date/time functions
-            "now()" => "(datetime('now'))",
-            "current_timestamp()" => "CURRENT_TIMESTAMP",
-            "current_date()" => "(date('now'))",
-            "current_time()" => "(time('now'))",
+            "NOW()" => "(datetime('now'))",
+            "CURRENT_TIMESTAMP()" => "CURRENT_TIMESTAMP",
+            "CURRENT_DATE()" => "(date('now'))",
+            "CURRENT_TIME()" => "(time('now'))",
 
             // UUID generation - SQLite needs manual UUID v4 construction
             "gen_uuid()" => UuidV4SqliteExpression,
             "uuid()" => UuidV4SqliteExpression,
 
             // Boolean literals - SQLite uses 0/1
-            "true" => "1",
-            "false" => "0",
+            "TRUE" => "1",
+            "FALSE" => "0",
 
             // Numeric literals (pass through)
             var n when int.TryParse(n, out _) => n,
@@ -109,7 +109,7 @@ public static partial class LqlDefaultTranslator
             return expression;
         }
 
-        var functionName = match.Groups["func"].Value.ToLowerInvariant();
+        var functionName = match.Groups["func"].Value.ToUpperInvariant();
         var argsString = match.Groups["args"].Value;
 
         // Parse arguments (simple split, doesn't handle nested functions with commas)
