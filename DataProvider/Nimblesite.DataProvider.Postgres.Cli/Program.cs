@@ -550,7 +550,7 @@ internal static class Program
                 {
                     Name = col.Name,
                     SqlType = col.Type.ToString(),
-                    CSharpType = MapPostgresTypeToCSharp(col.Type.ToString(), col.IsNullable),
+                    CSharpType = MapPortableTypeToCSharp(col.Type, col.IsNullable),
                     IsNullable = col.IsNullable,
                     IsPrimaryKey = isPk,
                     IsIdentity = col.IsIdentity,
@@ -1708,6 +1708,47 @@ internal static class Program
         _ = sb.AppendLine("}");
 
         return new Result<string, SqlError>.Ok<string, SqlError>(sb.ToString());
+    }
+
+    private static string MapPortableTypeToCSharp(PortableType type, bool isNullable)
+    {
+        var baseType = type switch
+        {
+            UuidType => "Guid",
+            BooleanType => "bool",
+            SmallIntType => "short",
+            IntType => "int",
+            BigIntType => "long",
+            FloatType => "float",
+            DoubleType => "double",
+            DecimalType => "decimal",
+            MoneyType => "decimal",
+            SmallMoneyType => "decimal",
+            DateType => "DateOnly",
+            TimeType => "TimeOnly",
+            DateTimeType => "DateTime",
+            DateTimeOffsetType => "DateTimeOffset",
+            TextType => "string",
+            CharType => "string",
+            VarCharType => "string",
+            NCharType => "string",
+            NVarCharType => "string",
+            JsonType => "string",
+            XmlType => "string",
+            BinaryType => "byte[]",
+            VarBinaryType => "byte[]",
+            BlobType => "byte[]",
+            RowVersionType => "byte[]",
+            _ => "string",
+        };
+
+        // Add nullable suffix for nullable types (including strings but not arrays)
+        if (isNullable && !baseType.EndsWith("[]", StringComparison.Ordinal))
+        {
+            return baseType + "?";
+        }
+
+        return baseType;
     }
 
     private static string GetReaderExpression(DatabaseColumn col, int ordinal)
