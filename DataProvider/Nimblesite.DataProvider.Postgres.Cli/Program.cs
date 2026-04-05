@@ -1488,6 +1488,7 @@ internal static class Program
     {
         var baseType = pgType.ToLowerInvariant() switch
         {
+            // PostgreSQL native types
             "uuid" => "Guid",
             "boolean" or "bool" => "bool",
             "smallint" or "int2" => "short",
@@ -1507,6 +1508,34 @@ internal static class Program
                 "string",
             "json" or "jsonb" => "string",
             var t when t.EndsWith("[]", StringComparison.Ordinal) => "string[]",
+            
+            // PortableType names (from schema.yaml)
+            "uuidtype" => "Guid",
+            "booleantype" => "bool",
+            "smallinttype" => "short",
+            "inttype" => "int",
+            "biginttype" => "long",
+            "floattype" => "float",
+            "doubletype" => "double",
+            "decimaltype" => "decimal",
+            "moneytype" => "decimal",
+            "smallmoneytype" => "decimal",
+            "datetype" => "DateOnly",
+            "timetype" => "TimeOnly",
+            "datetimetype" => "DateTime",
+            "datetimeoffsettype" => "DateTimeOffset",
+            "texttype" => "string",
+            "chartype" => "string",
+            "varchartype" => "string",
+            "nchartype" => "string",
+            "nvarchartype" => "string",
+            "jsontype" => "string",
+            "xmltype" => "string",
+            "binarytype" => "byte[]",
+            "varbinarytype" => "byte[]",
+            "blobtype" => "byte[]",
+            "rowversiontype" => "byte[]",
+            
             _ => "string",
         };
 
