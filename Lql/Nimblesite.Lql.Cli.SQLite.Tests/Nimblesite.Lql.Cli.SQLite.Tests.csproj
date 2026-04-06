@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
     <CodeAnalysisRuleSet>TestingRuleset.ruleset</CodeAnalysisRuleSet>
     <NoWarn>CA1707,CA1515,CA1307,CA2007</NoWarn>
   </PropertyGroup>

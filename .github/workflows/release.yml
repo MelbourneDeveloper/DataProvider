@@ -21,19 +21,52 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: '9.0.x'
 
       - name: Extract version from tag
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Build and Pack
+      - name: Pack and Push libraries in dependency order
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
-          dotnet build -c Release
-          dotnet pack -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
+          set -euo pipefail
 
-      - name: Push to NuGet
-        run: dotnet nuget push "./nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+          PACKAGES=(
+            # Tier 0
+            "Other/Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj"
+            # Tier 1
+            "DataProvider/Nimblesite.DataProvider.Core/Nimblesite.DataProvider.Core.csproj"
+            "Lql/Nimblesite.Lql.Core/Nimblesite.Lql.Core.csproj"
+            "Migration/Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Core.csproj"
+            # Tier 2
+            "DataProvider/Nimblesite.DataProvider.SQLite/Nimblesite.DataProvider.SQLite.csproj"
+            "DataProvider/Nimblesite.DataProvider.SqlServer/Nimblesite.DataProvider.SqlServer.csproj"
+            "Lql/Nimblesite.Lql.SQLite/Nimblesite.Lql.SQLite.csproj"
+            "Lql/Nimblesite.Lql.Postgres/Nimblesite.Lql.Postgres.csproj"
+            "Lql/Nimblesite.Lql.SqlServer/Nimblesite.Lql.SqlServer.csproj"
+            "Migration/Nimblesite.DataProvider.Migration.SQLite/Nimblesite.DataProvider.Migration.SQLite.csproj"
+            "Migration/Nimblesite.DataProvider.Migration.Postgres/Nimblesite.DataProvider.Migration.Postgres.csproj"
+            "Sync/Nimblesite.Sync.Core/Nimblesite.Sync.Core.csproj"
+            # Tier 3
+            "Sync/Nimblesite.Sync.SQLite/Nimblesite.Sync.SQLite.csproj"
+            "Sync/Nimblesite.Sync.Postgres/Nimblesite.Sync.Postgres.csproj"
+            # Tier 4
+            "Sync/Nimblesite.Sync.Http/Nimblesite.Sync.Http.csproj"
+          )
+
+          for proj in "${PACKAGES[@]}"; do
+            name=$(basename "$proj" .csproj)
+            echo "::group::Pack and push $name"
+            dotnet pack "$proj" -c Release -p:Version="$VERSION" -o ./nupkgs
+            dotnet nuget push "./nupkgs/${name}.${VERSION}.nupkg" \
+              --api-key "$NUGET_API_KEY" \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+            echo "::endgroup::"
+          done
 
       - name: Create GitHub Release
         env:
