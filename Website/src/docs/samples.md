@@ -6,6 +6,8 @@ description: Three FHIR-compliant .NET microservices with bidirectional sync, IC
 
 A complete demonstration of the DataProvider suite: three FHIR-compliant microservices with bidirectional sync, semantic search, and a React dashboard.
 
+The Healthcare Samples live in their own repository: [MelbourneDeveloper/HealthcareSamples](https://github.com/MelbourneDeveloper/HealthcareSamples).
+
 ## What It Demonstrates
 
 - **DataProvider** - Compile-time safe SQL queries for all database operations
@@ -40,6 +42,20 @@ Dashboard.Web (React/H5)
 | Scheduling API | http://localhost:5001 | Practitioner, Appointment management |
 | ICD10 API | http://localhost:5090 | Medical code search with RAG |
 | Dashboard | http://localhost:8080 | React UI (H5 transpiler) |
+
+## NuGet Packages Used
+
+The Healthcare Samples consume DataProvider toolkit packages from NuGet:
+
+| Package | Purpose |
+|---------|---------|
+| `MelbourneDev.DataProvider` | Source-generated SQL extension methods |
+| `MelbourneDev.Lql.Postgres` | LQL transpilation to PostgreSQL |
+| `MelbourneDev.Sync` | Core sync framework |
+| `MelbourneDev.Sync.Postgres` | PostgreSQL sync provider |
+| `MelbourneDev.Migration` | YAML schema migrations |
+| `MelbourneDev.Migration.Postgres` | PostgreSQL DDL generation |
+| `MelbourneDev.Selecta` | SQL result formatting |
 
 ## ICD-10 Microservice
 
@@ -88,20 +104,6 @@ Response:
 }
 ```
 
-### Embedding Pipeline
-
-The embedding service runs as a Docker container with FastAPI + sentence-transformers + MedEmbed:
-
-```
-icd10.Api (C#) --> POST /embed --> Docker Container (FastAPI + MedEmbed)
-                                        |
-                                   embedding vector
-                                        |
-                              cosine similarity vs stored embeddings
-                                        |
-                                   ranked results
-```
-
 ### ICD-10 API Endpoints
 
 | Endpoint | Description |
@@ -113,16 +115,6 @@ icd10.Api (C#) --> POST /embed --> Docker Container (FastAPI + MedEmbed)
 | `POST /api/search` | RAG semantic search |
 | `GET /api/achi/codes/{code}` | ACHI procedure code lookup |
 
-### Import Pipeline
-
-```bash
-# Import 74,260+ ICD-10 codes from CMS.gov (FREE)
-python scripts/import_icd10cm.py --db-path icd10.db
-
-# Generate embeddings (takes ~30-60 minutes)
-python scripts/generate_embeddings.py --db-path icd10.db
-```
-
 ## Data Ownership
 
 | Domain | Owns | Receives via Sync |
@@ -133,17 +125,11 @@ python scripts/generate_embeddings.py --db-path icd10.db
 
 ## Quick Start
 
-```bash
-# Run all APIs locally against Docker Postgres
-./scripts/start-local.sh
-
-# Run everything in Docker containers
-./scripts/start.sh
-```
+See the [HealthcareSamples repository](https://github.com/MelbourneDeveloper/HealthcareSamples) for full setup instructions.
 
 ## Tech Stack
 
-- .NET 9, ASP.NET Core Minimal API
+- .NET 10, ASP.NET Core Minimal API
 - PostgreSQL with pgvector (semantic search)
 - DataProvider (SQL to extension methods)
 - Sync Framework (bidirectional sync)

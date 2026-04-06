@@ -6,7 +6,7 @@
 
 ## Project Overview
 
-DataProvider is a comprehensive .NET database access toolkit: source generation for SQL extension methods, the Lambda Query Language (LQL) transpiler, bidirectional offline-first sync, WebAuthn + RBAC auth, and healthcare sample applications. The LQL LSP is implemented in Rust with a VS Code extension in TypeScript.
+DataProvider is a comprehensive .NET database access toolkit: source generation for SQL extension methods, the Lambda Query Language (LQL) transpiler, bidirectional offline-first sync, WebAuthn + RBAC auth, and an embeddable reporting platform. The LQL LSP is implemented in Rust with a VS Code extension in TypeScript. Healthcare sample applications live in a separate repo: [MelbourneDeveloper/HealthcareSamples](https://github.com/MelbourneDeveloper/HealthcareSamples).
 
 **Primary language(s):** C# (.NET 10.0), Rust, TypeScript, F#
 **Build command:** `make ci`

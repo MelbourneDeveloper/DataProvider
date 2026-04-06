@@ -1,12 +1,7 @@
 name: Deploy LQL Website to GitHub Pages
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'Lql/**'
-      - '.github/workflows/deploy-lql-website.yml'
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -40,13 +35,13 @@ jobs:
         run: dotnet workload install wasm-tools
 
       - name: Restore dependencies
-        run: dotnet restore ./Lql/LqlWebsite/LqlWebsite.csproj
+        run: dotnet restore ./Lql/Nimblesite.Lql.Website/Nimblesite.Lql.Website.csproj
 
       - name: Build
-        run: dotnet build ./Lql/LqlWebsite/LqlWebsite.csproj -c Release --no-restore
+        run: dotnet build ./Lql/Nimblesite.Lql.Website/Nimblesite.Lql.Website.csproj -c Release --no-restore
 
       - name: Publish Blazor WebAssembly project
-        run: dotnet publish ./Lql/LqlWebsite/LqlWebsite.csproj -c Release -o release --nologo
+        run: dotnet publish ./Lql/Nimblesite.Lql.Website/Nimblesite.Lql.Website.csproj -c Release -o release --nologo
 
       - name: Update base href for custom domain
         run: |

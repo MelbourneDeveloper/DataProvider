@@ -6,7 +6,6 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./Samples/docker/init-db:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     healthcheck:

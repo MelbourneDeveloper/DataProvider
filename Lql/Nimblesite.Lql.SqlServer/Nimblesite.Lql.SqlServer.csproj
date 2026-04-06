@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Nimblesite.Lql.SqlServer</PackageId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Nimblesite.Lql.Core/Nimblesite.Lql.Core.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,5 +1,0 @@
--- Check for scheduling conflicts
--- Parameters: @practitionerRef, @proposedStart, @proposedEnd
-fhir_Appointment
-|> filter(fn(row) => row.fhir_Appointment.PractitionerReference = @practitionerRef and row.fhir_Appointment.Status != 'cancelled' and row.fhir_Appointment.StartTime < @proposedEnd and row.fhir_Appointment.EndTime > @proposedStart)
-|> select(fhir_Appointment.Id, fhir_Appointment.StartTime, fhir_Appointment.EndTime, fhir_Appointment.Status)

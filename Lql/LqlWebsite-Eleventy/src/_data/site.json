@@ -3,8 +3,8 @@
   "title": "Lambda Query Language - Functional Data Querying",
   "description": "Functional programming meets data querying. Write elegant, composable queries with pipeline operators and lambda expressions.",
   "url": "https://lql.dev",
-  "author": "DataProvider team",
+  "author": "Nimblesite.DataProvider.Core team",
   "language": "en",
   "themeColor": "#FF4500",
-  "github": "https://github.com/MelbourneDeveloper/DataProvider"
+  "github": "https://github.com/MelbourneDeveloper/Nimblesite.DataProvider.Core"
 }

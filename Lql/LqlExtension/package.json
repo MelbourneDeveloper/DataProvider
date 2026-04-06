@@ -91,7 +91,11 @@
         },
         "lql.ai.provider": {
           "type": "string",
-          "enum": ["", "ollama", "test"],
+          "enum": [
+            "",
+            "ollama",
+            "test"
+          ],
           "default": "",
           "description": "AI completion provider. 'ollama' for local Ollama, 'test' for deterministic test completions."
         },
@@ -182,6 +186,7 @@
     "fmt": "npx prettier --write .",
     "fmt:check": "npx prettier --check .",
     "test": "node ./out/test/runTest.js",
+    "test:coverage": "npm run compile && rm -rf out-cov && nyc instrument out out-cov && rm -rf out && mv out-cov out && node ./out/test/runTest.js; STATUS=$?; nyc report --reporter=json-summary --reporter=text; exit $STATUS",
     "test:lsp": "npm run compile && mocha ./out/test/suite/lsp-protocol.test.js --timeout 30000",
     "test:vsix": "npm run compile && npm run package && mocha ./out/test/suite/vsix-packaging.test.js --ui tdd --timeout 30000",
     "package": "vsce package",
@@ -192,13 +197,14 @@
     "@types/mocha": "^10.0.0",
     "@types/node": "16.x",
     "@types/vscode": "^1.74.0",
-    "typescript-eslint": "^8.0.0",
     "@vscode/test-electron": "^2.2.0",
     "eslint": "^9.0.0",
-    "prettier": "^3.0.0",
     "glob": "^8.0.3",
     "mocha": "^10.2.0",
+    "nyc": "^18.0.0",
+    "prettier": "^3.0.0",
     "typescript": "^4.9.4",
+    "typescript-eslint": "^8.0.0",
     "vsce": "^2.15.0"
   },
   "dependencies": {

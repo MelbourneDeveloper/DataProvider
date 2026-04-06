@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RuleSet Name="DataProvider Rules" Description="Comprehensive code analysis rules for DataProvider projects" ToolsVersion="17.0">
+<RuleSet Name="Nimblesite.DataProvider.Core Rules" Description="Comprehensive code analysis rules for Nimblesite.DataProvider.Core projects" ToolsVersion="17.0">
     <IncludeAll Action="Error" />
     <!-- IDE Analyzers = IDE0042 etc-->
     <Rules AnalyzerId="Microsoft.CodeAnalysis.CSharp.CodeStyle" RuleNamespace="Microsoft.CodeAnalysis.CSharp.CodeStyle">

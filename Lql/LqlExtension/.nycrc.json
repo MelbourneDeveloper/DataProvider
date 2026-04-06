@@ -1,0 +1,7 @@
+{
+  "all": true,
+  "include": ["out/**/*.js"],
+  "exclude": ["out/test/**"],
+  "reporter": ["json-summary", "text"],
+  "temp-dir": ".nyc_output"
+}

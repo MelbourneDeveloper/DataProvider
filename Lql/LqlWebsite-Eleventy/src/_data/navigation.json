@@ -2,7 +2,7 @@
   "main": [
     { "text": "Docs", "url": "/docs/" },
     { "text": "Playground", "url": "/playground/" },
-    { "text": "GitHub", "url": "https://github.com/MelbourneDeveloper/DataProvider", "external": true }
+    { "text": "GitHub", "url": "https://github.com/MelbourneDeveloper/Nimblesite.DataProvider.Core", "external": true }
   ],
   "docs": [
     {
@@ -38,7 +38,7 @@
       "title": "Reference",
       "items": [
         { "text": "SQL Dialects", "url": "/docs/sql-dialects/" },
-        { "text": "DataProvider", "url": "https://dataprovider.dev", "external": true }
+        { "text": "Nimblesite.DataProvider.Core", "url": "https://dataprovider.dev", "external": true }
       ]
     }
   ],
@@ -54,9 +54,9 @@
     {
       "title": "Ecosystem",
       "items": [
-        { "text": "DataProvider", "url": "https://dataprovider.dev" },
-        { "text": "GitHub", "url": "https://github.com/MelbourneDeveloper/DataProvider" },
-        { "text": "NuGet", "url": "https://www.nuget.org/packages/Lql" }
+        { "text": "Nimblesite.DataProvider.Core", "url": "https://dataprovider.dev" },
+        { "text": "GitHub", "url": "https://github.com/MelbourneDeveloper/Nimblesite.DataProvider.Core" },
+        { "text": "NuGet", "url": "https://www.nuget.org/packages/Nimblesite.Lql.Core" }
       ]
     },
     {
