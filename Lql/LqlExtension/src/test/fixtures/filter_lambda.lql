@@ -1,0 +1,1 @@
+users |> filter(fn(row) => row.users.age > 18 and row.users.status = 'active') |> select(users.name, users.email)

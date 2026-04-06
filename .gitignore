@@ -1,4 +1,59 @@
 # ═══════════════════════════════════════════════════════════════════════════════
+# Universal (portfolio-wide)
+# ═══════════════════════════════════════════════════════════════════════════════
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+coordination/
+logs/
+nohup.out
+*.profraw
+*.profdata
+htmlcov/
+.coverage
+coverage.xml
+coverage.out
+coverage-summary.json
+mutants.out/
+.env
+.env.local
+.env.*.local
+*.local
+*.secret
+*.pem
+*.key
+!*.pub.key
+tmp/
+temp/
+scratch/
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Rust
+# ═══════════════════════════════════════════════════════════════════════════════
+/target/
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TypeScript/Node (additional)
+# ═══════════════════════════════════════════════════════════════════════════════
+dist/
+build/
+*.tgz
+.npm/
+.cache/
+.vscode-test/
+.vscode-test-web/
+.nyc_output/
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # .NET Build Output
 # ═══════════════════════════════════════════════════════════════════════════════
 bin/
@@ -110,9 +165,11 @@ BenchmarkDotNet.Artifacts/
 coverage/
 coverage-report/
 coverage-results/
-coverage*.json
+coverage-*.json
+!coverage-thresholds.json
 coverage*.xml
 coverage*.info
+lcov.info
 *.coverage
 *.coveragexml
 *.dotCover
@@ -346,6 +403,7 @@ __pycache__/
 *.tmp
 *.bak
 *.swp
+*.swo
 *~
 ~$*
 ClientBin/
@@ -418,3 +476,15 @@ Lql/Lql.TypeProvider.FSharp.Tests.Data/Generated/
 Samples/ICD10CM/.venv
 
 .playwright-mcp/
+
+.too_many_cooks/
+
+.commandtree/
+
+Lql/LqlWebsite-Eleventy/_site/
+
+*.vsix
+
+
+
+.claude/skills/website-audit/SKILL.md

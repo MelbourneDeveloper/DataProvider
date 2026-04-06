@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Nimblesite.DataProvider.Migration.SQLite</RootNamespace>
+    <PackageId>Nimblesite.DataProvider.Migration.SQLite</PackageId>
+    <Description>SQLite DDL generator for Nimblesite.DataProvider.Migration.Core</Description>
+    <NoWarn>$(NoWarn);CA2254;CA2100</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Nimblesite.DataProvider.Migration.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Core.csproj" />
+  </ItemGroup>
+</Project>

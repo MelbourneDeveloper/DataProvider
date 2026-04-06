@@ -112,7 +112,7 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text-primary);
 }
 h1 { font-size: var(--text-4xl); font-weight: 700; }
-h2 { font-size: var(--text-3xl); }
+h2 { font-size: var(--text-3xl); font-weight: 700; }
 h3 { font-size: var(--text-2xl); }
 h4 { font-size: var(--text-xl); }
 
@@ -218,7 +218,11 @@ pre code { padding: 0; background: none; border: none; color: inherit; }
   display: none;
   flex-direction: column;
   gap: 4px;
-  padding: var(--space-2);
+  padding: var(--space-3);
+  min-width: 48px;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -256,10 +260,10 @@ pre code { padding: 0; background: none; border: none; color: inherit; }
 
 .btn-secondary {
   background: transparent;
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  color: var(--signal-blue);
+  border: 1px solid var(--signal-blue);
 }
-.btn-secondary:hover { background: var(--bg-tertiary); }
+.btn-secondary:hover { background: var(--bg-tertiary); color: var(--text-primary); }
 
 .btn-large { padding: var(--space-4) var(--space-8); font-size: var(--text-lg); }
 

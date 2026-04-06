@@ -1,7 +1,7 @@
 ---
 layout: layouts/docs.njk
-title: Quick Start
-description: Get up and running with DataProvider in minutes.
+title: Quick Start - Your First DataProvider Query
+description: Write your first type-safe SQL query with DataProvider in under 5 minutes. Create a SQL file, run the source generator, and call generated extension methods.
 ---
 
 ## Create a Connection

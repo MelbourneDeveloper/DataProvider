@@ -1,0 +1,257 @@
+---
+layout: layouts/base.njk
+title: "Lambda Query Language - Functional Data Querying"
+description: "Functional programming meets data querying. Write elegant, composable queries with pipeline operators and lambda expressions."
+---
+
+<section class="hero">
+  <div class="container">
+    <h1>Lambda Query Language</h1>
+    <p class="hero-subtitle">
+      Functional programming meets data querying. Write elegant, composable queries with the power of lambda expressions and pipeline operators.
+    </p>
+    <div class="hero-buttons">
+      <a href="/docs/quick-start/" class="btn btn-primary btn-large">Get Started</a>
+      <a href="/playground/" class="btn btn-secondary btn-large">Try Playground</a>
+    </div>
+
+    <div class="hero-code">
+      <div class="code-window">
+        <div class="code-header">
+          <div class="code-dot"></div>
+          <div class="code-dot"></div>
+          <div class="code-dot"></div>
+          <span class="code-title">complex_analytics.lql</span>
+        </div>
+        <div class="code-block"><span class="comment">-- Join users + orders, filter only completed orders</span>
+<span class="keyword">let</span> <span class="identifier">joined</span> <span class="operator">=</span>
+    <span class="identifier">users</span>
+    <span class="operator">|></span> <span class="function">join</span>(<span class="identifier">orders</span>, <span class="identifier">on</span> <span class="operator">=</span> <span class="identifier">users</span>.<span class="identifier">id</span> <span class="operator">=</span> <span class="identifier">orders</span>.<span class="identifier">user_id</span>)
+    <span class="operator">|></span> <span class="function">filter</span>(<span class="keyword">fn</span>(<span class="identifier">row</span>) <span class="operator">=></span> <span class="identifier">row</span>.<span class="identifier">orders</span>.<span class="identifier">status</span> <span class="operator">=</span> <span class="string">'completed'</span>)
+
+<span class="comment">-- Aggregate and analyze</span>
+<span class="identifier">joined</span>
+<span class="operator">|></span> <span class="function">group_by</span>(<span class="identifier">users</span>.<span class="identifier">id</span>)
+<span class="operator">|></span> <span class="function">select</span>(
+    <span class="identifier">users</span>.<span class="identifier">name</span>,
+    <span class="function">count</span>(*) <span class="keyword">as</span> <span class="identifier">total_orders</span>,
+    <span class="function">sum</span>(<span class="identifier">orders</span>.<span class="identifier">total</span>) <span class="keyword">as</span> <span class="identifier">revenue</span>
+)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features" class="features-alt">
+  <div class="container">
+    <div class="section-header">
+      <h2>Why LQL?</h2>
+      <p>Functional programming principles applied to data querying for cleaner, more maintainable code.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="card">
+        <div class="card-icon" style="font-size: var(--text-2xl);">&lambda;</div>
+        <h3>Functional First</h3>
+        <p>Built on pure functional programming principles. Immutable data transformations, lambda expressions, and composable operations make your queries predictable and testable.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">|></div>
+        <h3>Pipeline Operators</h3>
+        <p>Chain operations naturally with pipeline operators. Data flows from left to right, making complex transformations easy to read and understand.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon" style="background: linear-gradient(135deg, var(--forest) 0%, #3CB371 100%);">TS</div>
+        <h3>Type Safe</h3>
+        <p>Strong typing ensures your queries are correct at compile time. No more runtime surprises from typos or schema mismatches.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon" style="background: linear-gradient(135deg, var(--violet) 0%, #9B59B6 100%);">fn</div>
+        <h3>Composable</h3>
+        <p>Build complex queries from simple, reusable components. Define once, use everywhere with let bindings and function composition.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon" style="background: linear-gradient(135deg, #4DA3FF 0%, #2196F3 100%);">SQL</div>
+        <h3>SQL Compatible</h3>
+        <p>Compiles to optimized SQL for your target database. Get the performance of SQL with the elegance of functional programming.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon" style="background: linear-gradient(135deg, #FF9F43 0%, #F39C12 100%);">DX</div>
+        <h3>Developer Focused</h3>
+        <p>Designed by developers, for developers. Excellent tooling support with VS Code extension, LSP, and clear error messages.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="examples" class="examples">
+  <div class="container">
+    <div class="section-header">
+      <h2>See LQL in Action</h2>
+      <p>Real examples showing the power and elegance of functional data querying.</p>
+    </div>
+
+    <div class="examples-grid">
+      <div class="example">
+        <div class="example-content">
+          <h3>Simple Selection</h3>
+          <p>Clean, readable syntax for basic data selection. No verbose SELECT statements or complex syntax.</p>
+          <ul class="example-features">
+            <li>Pipeline operator for natural flow</li>
+            <li>Clear column specification</li>
+            <li>Type-safe field access</li>
+          </ul>
+        </div>
+        <div class="example-code">
+          <div class="code-block"><span class="identifier">users</span> <span class="operator">|></span> <span class="function">select</span>(
+    <span class="identifier">users</span>.<span class="identifier">id</span>,
+    <span class="identifier">users</span>.<span class="identifier">name</span>,
+    <span class="identifier">users</span>.<span class="identifier">email</span>
+)</div>
+        </div>
+      </div>
+
+      <div class="example">
+        <div class="example-content">
+          <h3>Advanced Filtering</h3>
+          <p>Lambda expressions provide powerful, type-safe filtering with full access to row data.</p>
+          <ul class="example-features">
+            <li>Lambda function syntax</li>
+            <li>Logical operators (and, or)</li>
+            <li>Range filtering</li>
+          </ul>
+        </div>
+        <div class="example-code">
+          <div class="code-block"><span class="identifier">employees</span>
+<span class="operator">|></span> <span class="function">select</span>(
+    <span class="identifier">employees</span>.<span class="identifier">id</span>,
+    <span class="identifier">employees</span>.<span class="identifier">name</span>,
+    <span class="identifier">employees</span>.<span class="identifier">salary</span>
+)
+<span class="operator">|></span> <span class="function">filter</span>(<span class="keyword">fn</span>(<span class="identifier">row</span>) <span class="operator">=></span>
+    <span class="identifier">row</span>.<span class="identifier">employees</span>.<span class="identifier">salary</span> &gt; <span class="string">50000</span> <span class="keyword">and</span>
+    <span class="identifier">row</span>.<span class="identifier">employees</span>.<span class="identifier">salary</span> &lt; <span class="string">100000</span>
+)</div>
+        </div>
+      </div>
+
+      <div class="example">
+        <div class="example-content">
+          <h3>Arithmetic & Functions</h3>
+          <p>Rich expression support with mathematical operations and built-in functions for complex calculations.</p>
+          <ul class="example-features">
+            <li>Mathematical expressions</li>
+            <li>Column aliases with 'as'</li>
+            <li>Function composition</li>
+          </ul>
+        </div>
+        <div class="example-code">
+          <div class="code-block"><span class="identifier">products</span>
+<span class="operator">|></span> <span class="function">select</span>(
+    <span class="identifier">products</span>.<span class="identifier">name</span>,
+    <span class="identifier">products</span>.<span class="identifier">price</span> <span class="operator">*</span> <span class="identifier">products</span>.<span class="identifier">quantity</span> <span class="keyword">as</span> <span class="identifier">total_value</span>,
+    <span class="identifier">products</span>.<span class="identifier">price</span> <span class="operator">+</span> <span class="string">10</span> <span class="keyword">as</span> <span class="identifier">price_plus_ten</span>,
+    <span class="function">round</span>(<span class="identifier">products</span>.<span class="identifier">price</span> <span class="operator">/</span> <span class="string">2</span>, <span class="string">2</span>) <span class="keyword">as</span> <span class="identifier">half_price</span>
+)
+<span class="operator">|></span> <span class="function">filter</span>(<span class="keyword">fn</span>(<span class="identifier">row</span>) <span class="operator">=></span>
+    <span class="identifier">row</span>.<span class="identifier">products</span>.<span class="identifier">price</span> &gt; <span class="string">0</span>
+)</div>
+        </div>
+      </div>
+
+      <div class="example">
+        <div class="example-content">
+          <h3>Aggregation & Grouping</h3>
+          <p>Powerful aggregation functions with group by operations and having clauses for complex analytics.</p>
+          <ul class="example-features">
+            <li>Group by multiple columns</li>
+            <li>Aggregate functions (count, sum, avg)</li>
+            <li>Having clause with lambda filters</li>
+          </ul>
+        </div>
+        <div class="example-code">
+          <div class="code-block"><span class="identifier">orders</span>
+<span class="operator">|></span> <span class="function">group_by</span>(<span class="identifier">orders</span>.<span class="identifier">user_id</span>, <span class="identifier">orders</span>.<span class="identifier">status</span>)
+<span class="operator">|></span> <span class="function">select</span>(
+    <span class="identifier">orders</span>.<span class="identifier">user_id</span>,
+    <span class="identifier">orders</span>.<span class="identifier">status</span>,
+    <span class="function">count</span>(*) <span class="keyword">as</span> <span class="identifier">order_count</span>,
+    <span class="function">sum</span>(<span class="identifier">orders</span>.<span class="identifier">total</span>) <span class="keyword">as</span> <span class="identifier">total_amount</span>,
+    <span class="function">avg</span>(<span class="identifier">orders</span>.<span class="identifier">total</span>) <span class="keyword">as</span> <span class="identifier">avg_amount</span>
+)
+<span class="operator">|></span> <span class="function">having</span>(<span class="keyword">fn</span>(<span class="identifier">group</span>) <span class="operator">=></span> <span class="function">count</span>(*) &gt; <span class="string">2</span>)
+<span class="operator">|></span> <span class="function">order_by</span>(<span class="identifier">total_amount</span> <span class="keyword">desc</span>)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="fsharp" class="fsharp">
+  <div class="container">
+    <div class="section-header">
+      <h2>F# Type Provider</h2>
+      <p>Use LQL with full type safety in F# through our native type provider.</p>
+    </div>
+
+    <div class="fsharp-content">
+      <div class="fsharp-info">
+        <h3>Type-Safe LQL in F#</h3>
+        <p>The LQL Type Provider brings compile-time type checking to your LQL queries in F#. Write queries with IntelliSense support, catch errors before runtime, and enjoy seamless integration with your F# codebase.</p>
+        <ul class="fsharp-features">
+          <li>Compile-time query validation</li>
+          <li>Full IntelliSense support for table and column names</li>
+          <li>Automatic SQL generation for PostgreSQL and SQL Server</li>
+          <li>Strongly-typed result sets</li>
+        </ul>
+      </div>
+      <div class="fsharp-code">
+        <div class="code-header">
+          <div class="code-dot"></div>
+          <div class="code-dot"></div>
+          <div class="code-dot"></div>
+          <span class="code-title">Program.fs</span>
+        </div>
+        <div class="code-block"><span class="keyword">open</span> <span class="identifier">Lql</span>
+
+<span class="comment">// Define types with validated LQL</span>
+<span class="keyword">type</span> <span class="identifier">GetUsers</span> <span class="operator">=</span>
+    <span class="identifier">LqlCommand</span><span class="operator">&lt;</span><span class="string">"Users |> select(*)"</span><span class="operator">&gt;</span>
+
+<span class="comment">// Access generated SQL</span>
+<span class="keyword">let</span> <span class="identifier">sql</span> <span class="operator">=</span> <span class="identifier">GetUsers</span>.<span class="identifier">Sql</span>
+<span class="keyword">let</span> <span class="identifier">query</span> <span class="operator">=</span> <span class="identifier">GetUsers</span>.<span class="identifier">Query</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="container">
+    <div class="section-header">
+      <h2>Get Started in Minutes</h2>
+    </div>
+
+    <div style="max-width: 700px; margin: 0 auto;">
+{% highlight "bash" %}
+# Install the LQL NuGet package
+dotnet add package Lql
+
+# Write your first LQL query
+users |> select(users.id, users.name, users.email)
+
+# Transpiles to SQL:
+# SELECT users.id, users.name, users.email FROM users
+{% endhighlight %}
+    </div>
+
+    <div class="text-center mt-8">
+      <a href="/playground/" class="btn btn-primary btn-large">Try the Playground</a>
+    </div>
+  </div>
+</section>

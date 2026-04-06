@@ -3,6 +3,7 @@ layout: layouts/blog.njk
 title: Getting Started with the DataProvider Toolkit
 description: An introduction to using the DataProvider toolkit in .NET
 date: 2024-04-20
+dateModified: 2024-04-20
 author: DataProvider Team
 tags:
   - .NET

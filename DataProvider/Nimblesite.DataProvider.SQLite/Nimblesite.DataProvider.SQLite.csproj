@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Package Information -->
+    <PackageId>Nimblesite.DataProvider.SQLite</PackageId>
+    <Authors>ChristianFindlay</Authors>
+    <Description>SQLite source generator for Nimblesite.DataProvider.Core. Provides compile-time safe database access with automatic code generation from SQL files for SQLite databases.</Description>
+    <PackageTags>source-generator;sql;sqlite;database;compile-time-safety;code-generation</PackageTags>
+    <PackageProjectUrl>https://github.com/MelbourneDeveloper/Nimblesite.DataProvider.Core</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/MelbourneDeveloper/Nimblesite.DataProvider.Core</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageReleaseNotes>Initial release of Nimblesite.DataProvider.SQLite source generator.</PackageReleaseNotes>
+
+    <!-- Source Generator Properties -->
+    <IncludeBuildOutput>true</IncludeBuildOutput>
+    <!-- Exclude from Directory.Build.props analyzer packages -->
+    <!-- Temporarily disable strict rules for source generator to build -->
+    <NoWarn>CA1849;CA2100;EPC13;CA1307;CS3021;CS0108</NoWarn>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- ANTLR runtime (generated parser files are checked into git in Parsing/) -->
+    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.3" />
+  </ItemGroup>
+  <!-- Copy dependencies to output directory for source generator -->
+  <Target Name="CopyDependenciesToOutputDirectory" BeforeTargets="Build">
+    <ItemGroup>
+      <DependencyFiles Include="$(OutputPath)*.dll" />
+    </ItemGroup>
+  </Target>
+  <!-- Ensure analyzer dependencies are copied next to the generator assembly so Roslyn can load them -->
+  <Target Name="CopyAnalyzerDependencies" AfterTargets="Build">
+    <ItemGroup>
+      <AnalyzerDeps Include="@(ReferenceCopyLocalPaths)" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(AnalyzerDeps)"
+      DestinationFolder="$(TargetDir)"
+      SkipUnchangedFiles="true"
+    />
+  </Target>
+  <ItemGroup>
+    <ProjectReference Include="../Nimblesite.DataProvider.Core/Nimblesite.DataProvider.Core.csproj" />
+    <ProjectReference Include="../../Other/Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj" />
+  </ItemGroup>
+
+  <!-- Package Content - README.md included via Directory.Build.props -->
+
+  <!-- Release Configuration -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <Optimize>true</Optimize>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+</Project>
