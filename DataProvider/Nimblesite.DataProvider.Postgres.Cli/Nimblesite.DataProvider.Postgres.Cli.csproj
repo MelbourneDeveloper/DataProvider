@@ -14,8 +14,8 @@
     <PackageId>Nimblesite.DataProvider.Postgres.Cli</PackageId>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dataprovider-postgres</ToolCommandName>
-    <PackageVersion>0.2.2-beta</PackageVersion>
-    <Version>0.2.2-beta</Version>
+    <PackageVersion>0.2.3-beta</PackageVersion>
+    <Version>0.2.3-beta</Version>
     <Description>CLI tool for generating type-safe PostgreSQL data access code</Description>
     <Authors>ChristianFindlay</Authors>
     <Company>MelbourneDeveloper</Company>

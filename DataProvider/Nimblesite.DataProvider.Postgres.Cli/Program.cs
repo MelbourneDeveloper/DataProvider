@@ -1170,7 +1170,10 @@ internal static class Program
         for (int i = 0; i < insertable.Count; i++)
         {
             var col = insertable[i];
-            var propName = ToPascalCase(col.Name);
+            // Preserve the column name verbatim so generated record fields
+            // match the SQLite CLI output (which kept snake_case literally),
+            // and so consumers that reference `rec.user_id` etc. keep working.
+            var propName = col.Name;
             if (col.IsNullable)
             {
                 _ = sb.AppendLine(
@@ -1374,7 +1377,10 @@ internal static class Program
         for (int i = 0; i < insertable.Count; i++)
         {
             var col = insertable[i];
-            var propName = ToPascalCase(col.Name);
+            // Preserve the column name verbatim so generated record fields
+            // match the SQLite CLI output (which kept snake_case literally),
+            // and so consumers that reference `rec.user_id` etc. keep working.
+            var propName = col.Name;
             if (col.IsNullable)
             {
                 _ = sb.AppendLine(
@@ -1620,7 +1626,10 @@ internal static class Program
                 _ = sb.Append(", ");
             first = false;
 
-            var propName = ToPascalCase(col.Name);
+            // Preserve the column name verbatim so generated record fields
+            // match the SQLite CLI output (which kept snake_case literally),
+            // and so consumers that reference `rec.user_id` etc. keep working.
+            var propName = col.Name;
             _ = sb.Append(CultureInfo.InvariantCulture, $"{col.CSharpType} {propName}");
         }
         _ = sb.AppendLine(");");
@@ -1656,7 +1665,7 @@ internal static class Program
 
         foreach (var param in parameters)
         {
-            var paramType = InferParameterType(param);
+            var paramType = InferParameterType(param, columns);
             _ = sb.Append(CultureInfo.InvariantCulture, $", {paramType} {ToCamelCase(param)}");
         }
         _ = sb.AppendLine(")");
@@ -1719,7 +1728,10 @@ internal static class Program
                 _ = sb.Append(", ");
             first = false;
 
-            var propName = ToPascalCase(col.Name);
+            // Preserve the column name verbatim so generated record fields
+            // match the SQLite CLI output (which kept snake_case literally),
+            // and so consumers that reference `rec.user_id` etc. keep working.
+            var propName = col.Name;
             var readExpr = GetReaderExpression(col, ordinal);
             _ = sb.Append(CultureInfo.InvariantCulture, $"{propName}: {readExpr}");
             ordinal++;
@@ -1797,11 +1809,38 @@ internal static class Program
         };
     }
 
-    private static string InferParameterType(string paramName)
+    private static string InferParameterType(
+        string paramName,
+        IReadOnlyList<DatabaseColumn>? columns = null
+    )
     {
+        // 1. If we have schema columns and one matches the param name
+        // (case-insensitive), use the actual column C# type. Strip the
+        // nullable suffix because parameters are non-nullable in method
+        // signatures (callers pass concrete values).
+        if (columns is not null)
+        {
+            foreach (var col in columns)
+            {
+                if (string.Equals(col.Name, paramName, StringComparison.OrdinalIgnoreCase))
+                {
+                    var t = col.CSharpType;
+                    if (t.EndsWith("?", StringComparison.Ordinal))
+                    {
+                        t = t[..^1];
+                    }
+                    return t;
+                }
+            }
+        }
+
+        // 2. Fall back to name-based heuristics. Default `*id` -> string
+        // because Postgres `text` ids are common and a `string` argument
+        // round-trips correctly to both `text` and `uuid` columns (Npgsql
+        // handles the cast for the latter when the column type is uuid).
         var lower = paramName.ToLowerInvariant();
         if (lower.EndsWith("id", StringComparison.Ordinal))
-            return "Guid";
+            return "string";
         if (
             lower.Contains("limit", StringComparison.Ordinal)
             || lower.Contains("offset", StringComparison.Ordinal)
