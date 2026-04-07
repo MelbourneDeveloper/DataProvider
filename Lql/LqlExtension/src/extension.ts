@@ -122,6 +122,35 @@ function findOnPathMatchingVersion(expectedVersion: string): string | undefined 
   return undefined;
 }
 
+/**
+ * Look for a locally-built `lql-lsp` in the Rust cargo target folder
+ * adjacent to the extension install path. Used by dev / test / CI runs
+ * where the binary is built but not installed onto PATH (or where the
+ * test harness strips PATH from the spawned VS Code process).
+ */
+function findLocalCargoBuild(
+  context: vscode.ExtensionContext,
+  expectedVersion: string,
+): string | undefined {
+  const binaryName = process.platform === "win32" ? "lql-lsp.exe" : "lql-lsp";
+  const extPath = context.extensionPath;
+  const candidates = [
+    path.join(extPath, "..", "lql-lsp-rust", "target", "release", binaryName),
+    path.join(extPath, "..", "lql-lsp-rust", "target", "debug", binaryName),
+    path.join(extPath, "bin", binaryName),
+  ];
+  for (const candidate of candidates) {
+    if (!fs.existsSync(candidate)) {
+      continue;
+    }
+    const version = getBinaryVersion(candidate);
+    if (version === expectedVersion) {
+      return candidate;
+    }
+  }
+  return undefined;
+}
+
 /** Download the LSP binary from the GitHub release matching the extension version. */
 async function downloadLspBinary(
   context: vscode.ExtensionContext,
@@ -201,17 +230,26 @@ export async function activate(
       serverBinary = onPath;
       log(`LSP binary (PATH, version ${expectedVersion}): ${serverBinary}`);
     } else {
-      // 2. Otherwise download the matching release into globalStorage.
-      try {
-        serverBinary = await downloadLspBinary(context);
-        log(`LSP binary (downloaded): ${serverBinary}`);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        log(`ERROR: ${message}`);
-        vscode.window.showErrorMessage(
-          `LQL: Failed to download language server: ${message}`,
-        );
-        return;
+      // 2. Fall back to a locally-built cargo target adjacent to the
+      // extension (used by dev / test / CI runs where the binary isn't
+      // on PATH inside the spawned VS Code process).
+      const localBuild = findLocalCargoBuild(context, expectedVersion);
+      if (localBuild !== undefined) {
+        serverBinary = localBuild;
+        log(`LSP binary (local cargo build, version ${expectedVersion}): ${serverBinary}`);
+      } else {
+        // 3. Otherwise download the matching release into globalStorage.
+        try {
+          serverBinary = await downloadLspBinary(context);
+          log(`LSP binary (downloaded): ${serverBinary}`);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          log(`ERROR: ${message}`);
+          vscode.window.showErrorMessage(
+            `LQL: Failed to download language server: ${message}`,
+          );
+          return;
+        }
       }
     }
   }
@@ -249,7 +287,10 @@ export async function activate(
   }
 
   const clientOptions: LanguageClientOptions = {
-    documentSelector: [{ scheme: "file", language: "lql" }],
+    documentSelector: [
+      { scheme: "file", language: "lql" },
+      { scheme: "untitled", language: "lql" },
+    ],
     synchronize: {
       fileEvents: vscode.workspace.createFileSystemWatcher("**/*.lql"),
     },
