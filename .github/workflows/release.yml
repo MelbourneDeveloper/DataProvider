@@ -27,41 +27,27 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Pack and Push libraries in dependency order
+      - name: Pack solution
         env:
           VERSION: ${{ steps.version.outputs.VERSION }}
+        run: |
+          set -euo pipefail
+          dotnet pack DataProvider.sln -c Release -p:Version="$VERSION" -o ./nupkgs
+
+      - name: Push packages to NuGet
+        env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
           set -euo pipefail
-
-          PACKAGES=(
-            # Tier 0
-            "Other/Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj"
-            # Tier 1
-            "DataProvider/Nimblesite.DataProvider.Core/Nimblesite.DataProvider.Core.csproj"
-            "Lql/Nimblesite.Lql.Core/Nimblesite.Lql.Core.csproj"
-            "Migration/Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Core.csproj"
-            # Tier 2
-            "DataProvider/Nimblesite.DataProvider.SQLite/Nimblesite.DataProvider.SQLite.csproj"
-            "DataProvider/Nimblesite.DataProvider.SqlServer/Nimblesite.DataProvider.SqlServer.csproj"
-            "Lql/Nimblesite.Lql.SQLite/Nimblesite.Lql.SQLite.csproj"
-            "Lql/Nimblesite.Lql.Postgres/Nimblesite.Lql.Postgres.csproj"
-            "Lql/Nimblesite.Lql.SqlServer/Nimblesite.Lql.SqlServer.csproj"
-            "Migration/Nimblesite.DataProvider.Migration.SQLite/Nimblesite.DataProvider.Migration.SQLite.csproj"
-            "Migration/Nimblesite.DataProvider.Migration.Postgres/Nimblesite.DataProvider.Migration.Postgres.csproj"
-            "Sync/Nimblesite.Sync.Core/Nimblesite.Sync.Core.csproj"
-            # Tier 3
-            "Sync/Nimblesite.Sync.SQLite/Nimblesite.Sync.SQLite.csproj"
-            "Sync/Nimblesite.Sync.Postgres/Nimblesite.Sync.Postgres.csproj"
-            # Tier 4
-            "Sync/Nimblesite.Sync.Http/Nimblesite.Sync.Http.csproj"
-          )
-
-          for proj in "${PACKAGES[@]}"; do
-            name=$(basename "$proj" .csproj)
-            echo "::group::Pack and push $name"
-            dotnet pack "$proj" -c Release -p:Version="$VERSION" -o ./nupkgs
-            dotnet nuget push "./nupkgs/${name}.${VERSION}.nupkg" \
+          shopt -s nullglob
+          packages=(./nupkgs/*.nupkg)
+          if [ ${#packages[@]} -eq 0 ]; then
+            echo "No packages produced — failing." >&2
+            exit 1
+          fi
+          for pkg in "${packages[@]}"; do
+            echo "::group::Push $pkg"
+            dotnet nuget push "$pkg" \
               --api-key "$NUGET_API_KEY" \
               --source https://api.nuget.org/v3/index.json \
               --skip-duplicate

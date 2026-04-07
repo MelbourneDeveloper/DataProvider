@@ -8,6 +8,8 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Nimblesite.Sync.Http</RootNamespace>
     <PackageId>Nimblesite.Sync.Http</PackageId>
+    <!-- Override Microsoft.NET.Sdk.Web default of IsPackable=false -->
+    <IsPackable>true</IsPackable>
     <NoWarn>$(NoWarn);CA1515;CA1307;CA2007;EPC13;CS1591</NoWarn>
   </PropertyGroup>
 
