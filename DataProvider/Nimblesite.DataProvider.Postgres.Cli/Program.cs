@@ -1445,8 +1445,21 @@ internal static class Program
                 metaSql = metaSql.Replace($"@{param}", "NULL", StringComparison.OrdinalIgnoreCase);
             }
 
-            // Wrap in a CTE to get metadata without executing
-            var wrappedSql = $"SELECT * FROM ({metaSql}) AS _meta WHERE 1=0";
+            // Strip optional trailing semicolons + whitespace so the inner
+            // statement parses cleanly inside a CTE wrapper. Postgres rejects
+            // a `;` followed by `)` inside a subquery / CTE body.
+            metaSql = metaSql.TrimEnd();
+            while (metaSql.EndsWith(";", StringComparison.Ordinal))
+            {
+                metaSql = metaSql[..^1].TrimEnd();
+            }
+
+            // Wrap in a CTE to get metadata without executing. CTE form
+            // (instead of `SELECT * FROM (<sql>) AS _meta`) is required so
+            // that UPDATE/INSERT/DELETE ... RETURNING statements also work,
+            // since Postgres only allows DML inside a `WITH` clause, not
+            // inside a `FROM (...)` subquery.
+            var wrappedSql = $"WITH _meta AS ({metaSql}) SELECT * FROM _meta WHERE 1=0";
 
             await using var cmd = new NpgsqlCommand(wrappedSql, conn);
             await using var reader = await cmd.ExecuteReaderAsync(
