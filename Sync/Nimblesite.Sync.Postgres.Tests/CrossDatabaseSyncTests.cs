@@ -5,16 +5,16 @@ namespace Nimblesite.Sync.Postgres.Tests;
 /// <summary>
 /// E2E integration tests for bi-directional sync between SQLite and PostgreSQL.
 /// Tests the full sync protocol per docs/specs/sync-spec.md Sections 7-15.
-/// Uses Testcontainers for real PostgreSQL instance.
+/// Uses the shared postgres container; each test gets its own database.
 /// </summary>
+[Collection(PostgresTestSuite.Name)]
 [SuppressMessage(
     "Security",
     "CA2100:Review SQL queries for security vulnerabilities",
     Justification = "Test code"
 )]
-public sealed class CrossDatabaseSyncTests : IAsyncLifetime
+public sealed class CrossDatabaseSyncTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
-    private PostgreSqlContainer _postgres = null!;
     private NpgsqlConnection _pgConn = null!;
     private SqliteConnection _sqliteConn = null!;
     private string _sqliteDbPath = null!;
@@ -24,19 +24,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        // Start Postgres container
-        _postgres = new PostgreSqlBuilder()
-            .WithImage("postgres:16-alpine")
-            .WithDatabase("synctest")
-            .WithUsername("test")
-            .WithPassword("test")
-            .Build();
-
-        await _postgres.StartAsync();
-
-        // Create Postgres connection
-        _pgConn = new NpgsqlConnection(_postgres.GetConnectionString());
-        await _pgConn.OpenAsync().ConfigureAwait(false);
+        _pgConn = await fixture.CreateDatabaseAsync("synctest").ConfigureAwait(false);
 
         // Create SQLite file database
         _sqliteDbPath = Path.Combine(Path.GetTempPath(), $"cross_db_sync_{Guid.NewGuid()}.db");
@@ -64,7 +52,6 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
         _sqliteConn.Dispose();
         await _pgConn.CloseAsync().ConfigureAwait(false);
         await _pgConn.DisposeAsync().ConfigureAwait(false);
-        await _postgres.DisposeAsync();
 
         if (File.Exists(_sqliteDbPath))
         {

@@ -6,31 +6,24 @@ namespace Nimblesite.Sync.Integration.Tests;
 /// The key proof: Source table "User" with columns (Id, FullName, EmailAddress)
 /// maps to Target table "Customer" with columns (CustomerId, Name, Email).
 /// THIS IS REAL MAPPING, NOT JUST COPY!
+/// Uses the shared postgres container; each test gets its own database.
 /// </summary>
-public sealed class HttpMappingSyncTests : IAsyncLifetime
+[Collection(PostgresTestSuite.Name)]
+public sealed class HttpMappingSyncTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
-    private PostgreSqlContainer _postgresContainer = null!;
     private string _postgresConnectionString = null!;
     private readonly ILogger _logger = NullLogger.Instance;
     private readonly List<string> _sqliteDbPaths = [];
 
     public async Task InitializeAsync()
     {
-        _postgresContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:16-alpine")
-            .WithDatabase("mapping_test")
-            .WithUsername("test")
-            .WithPassword("test")
-            .Build();
-
-        await _postgresContainer.StartAsync().ConfigureAwait(false);
-        _postgresConnectionString = _postgresContainer.GetConnectionString();
+        _postgresConnectionString = await fixture
+            .CreateDatabaseConnectionStringAsync("mapping_test")
+            .ConfigureAwait(false);
     }
 
-    public async Task DisposeAsync()
+    public Task DisposeAsync()
     {
-        await _postgresContainer.DisposeAsync().ConfigureAwait(false);
-
         foreach (var dbPath in _sqliteDbPaths)
         {
             if (File.Exists(dbPath))
@@ -44,6 +37,7 @@ public sealed class HttpMappingSyncTests : IAsyncLifetime
                 }
             }
         }
+        return Task.CompletedTask;
     }
 
     /// <summary>

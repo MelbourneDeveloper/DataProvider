@@ -35,4 +35,9 @@
     <ProjectReference Include="../Nimblesite.Sync.Postgres/Nimblesite.Sync.Postgres.csproj" />
     <ProjectReference Include="../Nimblesite.Sync.Http/Nimblesite.Sync.Http.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Tests.Shared\PostgresContainerFixture.cs" Link="Shared\PostgresContainerFixture.cs" />
+    <Compile Include="..\..\Tests.Shared\PostgresCollection.cs" Link="Shared\PostgresCollection.cs" />
+  </ItemGroup>
 </Project>

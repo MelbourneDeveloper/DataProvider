@@ -3,34 +3,25 @@ namespace Nimblesite.Sync.Http.Tests;
 /// <summary>
 /// E2E integration tests for cross-database sync between SQLite and PostgreSQL.
 /// These tests PROVE the spec is fully implemented across different database backends.
-/// Uses Testcontainers for real PostgreSQL instances.
-/// Requires Docker: run with --filter "Category!=Docker" to skip.
+/// Uses the shared postgres container; each test gets its own database.
 /// </summary>
+[Collection(PostgresTestSuite.Name)]
 [Trait("Category", "Docker")]
-public sealed class CrossDatabaseSyncTests : IAsyncLifetime
+public sealed class CrossDatabaseSyncTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
-    private PostgreSqlContainer _postgresContainer = null!;
     private string _postgresConnectionString = null!;
     private readonly ILogger _logger = NullLogger.Instance;
     private readonly List<string> _sqliteDbPaths = [];
 
     public async Task InitializeAsync()
     {
-        _postgresContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:16-alpine")
-            .WithDatabase("syncdb")
-            .WithUsername("test")
-            .WithPassword("test")
-            .Build();
-
-        await _postgresContainer.StartAsync().ConfigureAwait(false);
-        _postgresConnectionString = _postgresContainer.GetConnectionString();
+        _postgresConnectionString = await fixture
+            .CreateDatabaseConnectionStringAsync("syncdb")
+            .ConfigureAwait(false);
     }
 
-    public async Task DisposeAsync()
+    public Task DisposeAsync()
     {
-        await _postgresContainer.DisposeAsync().ConfigureAwait(false);
-
         foreach (var dbPath in _sqliteDbPaths)
         {
             if (File.Exists(dbPath))
@@ -44,6 +35,7 @@ public sealed class CrossDatabaseSyncTests : IAsyncLifetime
                 }
             }
         }
+        return Task.CompletedTask;
     }
 
     /// <summary>

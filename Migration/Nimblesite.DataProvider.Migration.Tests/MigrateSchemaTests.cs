@@ -3,36 +3,26 @@ namespace Nimblesite.DataProvider.Migration.Tests;
 /// <summary>
 /// Tests for PostgresDdlGenerator.MigrateSchema() method.
 /// Covers: drop schema, fresh migration, partial upgrade scenarios.
+/// Uses the shared postgres container; each test gets its own database.
 /// </summary>
+[Collection(PostgresTestSuite.Name)]
 [System.Diagnostics.CodeAnalysis.SuppressMessage(
     "Usage",
     "CA1001:Types that own disposable fields should be disposable",
     Justification = "Disposed via IAsyncLifetime.DisposeAsync"
 )]
-public sealed class MigrateSchemaTests : IAsyncLifetime
+public sealed class MigrateSchemaTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
-    private PostgreSqlContainer _postgres = null!;
     private NpgsqlConnection _connection = null!;
 
     public async Task InitializeAsync()
     {
-        _postgres = new PostgreSqlBuilder()
-            .WithImage("postgres:16-alpine")
-            .WithDatabase("migrate_schema_test")
-            .WithUsername("test")
-            .WithPassword("test")
-            .Build();
-
-        await _postgres.StartAsync().ConfigureAwait(false);
-
-        _connection = new NpgsqlConnection(_postgres.GetConnectionString());
-        await _connection.OpenAsync().ConfigureAwait(false);
+        _connection = await fixture.CreateDatabaseAsync("migrate_schema_test").ConfigureAwait(false);
     }
 
     public async Task DisposeAsync()
     {
         await _connection.DisposeAsync().ConfigureAwait(false);
-        await _postgres.DisposeAsync().ConfigureAwait(false);
     }
 
     /// <summary>

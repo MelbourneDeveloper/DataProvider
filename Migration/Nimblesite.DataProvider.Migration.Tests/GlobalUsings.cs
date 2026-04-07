@@ -4,8 +4,8 @@ global using Microsoft.Extensions.Logging.Abstractions;
 global using Nimblesite.DataProvider.Migration.Core;
 global using Nimblesite.DataProvider.Migration.Postgres;
 global using Nimblesite.DataProvider.Migration.SQLite;
+global using Nimblesite.TestSupport;
 global using Npgsql;
-global using Testcontainers.PostgreSql;
 global using Xunit;
 global using MigrationApplyResultError = Outcome.Result<
     bool,
