@@ -501,12 +501,35 @@ public sealed class PostgreSqlContext : ISqlContext
         {
             NamedColumn n => string.IsNullOrEmpty(n.TableAlias)
                 ? QuoteIdentifier(n.Name)
-                : $"{n.TableAlias}.{QuoteIdentifier(n.Name)}",
-            WildcardColumn w => string.IsNullOrEmpty(w.TableAlias) ? "*" : $"{w.TableAlias}.*",
+                // Bug #24: also quote the TableAlias if it needs it.
+                // When the FROM clause uses a quoted mixed-case table name
+                // (e.g. `FROM "fhir_Patient"`), the column qualifier must
+                // also be quoted to look up the same table.
+                : $"{QuoteBareIdentifier(n.TableAlias)}.{QuoteIdentifier(n.Name)}",
+            WildcardColumn w => string.IsNullOrEmpty(w.TableAlias)
+                ? "*"
+                : $"{QuoteBareIdentifier(w.TableAlias)}.*",
             ExpressionColumn e => QuoteIdentifier(e.Expression),
             SubQueryColumn s => $"({s.SubQuery})",
             _ => "/*UNKNOWN_COLUMN*/",
         };
+
+    /// <summary>
+    /// Quotes a bare identifier (no dots) when its case requires it.
+    /// Identifiers that are already quoted are passed through.
+    /// </summary>
+    private static string QuoteBareIdentifier(string identifier)
+    {
+        if (string.IsNullOrEmpty(identifier))
+        {
+            return identifier;
+        }
+        if (identifier.StartsWith('"'))
+        {
+            return identifier;
+        }
+        return NeedsQuoting(identifier) ? $"\"{identifier}\"" : identifier;
+    }
 
     /// <summary>
     /// Generates SQL for a ColumnInfo with alias if present
@@ -590,11 +613,18 @@ public sealed class PostgreSqlContext : ISqlContext
         // are bare idents.
         if (IsSimpleQualifiedIdent(identifier, out var prefix, out var tail))
         {
-            if (tail == "*")
+            // Quote either side that needs it. Bug #24: PG folds unquoted
+            // table-name qualifiers, so a quoted FROM table requires the
+            // qualifier on the column ref to also be quoted.
+            var prefixNeeds = NeedsQuoting(prefix);
+            var tailNeeds = tail != "*" && NeedsQuoting(tail);
+            if (!prefixNeeds && !tailNeeds)
             {
                 return identifier;
             }
-            return NeedsQuoting(tail) ? $"{prefix}.\"{tail}\"" : identifier;
+            var quotedPrefix = prefixNeeds ? $"\"{prefix}\"" : prefix;
+            var quotedTail = tail == "*" ? "*" : (tailNeeds ? $"\"{tail}\"" : tail);
+            return $"{quotedPrefix}.{quotedTail}";
         }
 
         // Complex expression: walk and quote inline `alias.Ident`
@@ -748,7 +778,22 @@ public sealed class PostgreSqlContext : ISqlContext
                             tailEnd++;
                         }
                         var tailIdent = expression[tailStart..tailEnd];
-                        sb.Append(firstIdent).Append('.');
+
+                        // Bug #24: also quote the prefix when it needs
+                        // quoting (e.g. `fhir_Patient.Id` ->
+                        // `"fhir_Patient"."Id"`). PG folds the unquoted
+                        // table-name qualifier to lower case otherwise
+                        // and the lookup against a quoted FROM table
+                        // ("fhir_Patient") fails.
+                        if (NeedsQuoting(firstIdent))
+                        {
+                            sb.Append('"').Append(firstIdent).Append('"');
+                        }
+                        else
+                        {
+                            sb.Append(firstIdent);
+                        }
+                        sb.Append('.');
                         if (NeedsQuoting(tailIdent))
                         {
                             sb.Append('"').Append(tailIdent).Append('"');
