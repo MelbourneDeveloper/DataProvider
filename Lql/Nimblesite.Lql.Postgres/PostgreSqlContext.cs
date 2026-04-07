@@ -232,7 +232,13 @@ public sealed class PostgreSqlContext : ISqlContext
             );
         }
 
-        return sql.ToString();
+        // Final pass: walk the entire generated SQL and quote any inline
+        // `alias.Ident` substring whose tail contains uppercase. This
+        // catches WHERE / JOIN ON / GROUP BY / HAVING / ORDER BY paths
+        // where the raw expression text was emitted verbatim. The walker
+        // skips characters inside string literals and already-quoted
+        // identifiers so it's safe to apply once at the end.
+        return QuoteInlineQualifiedIdents(sql.ToString());
     }
 
     /// <summary>
