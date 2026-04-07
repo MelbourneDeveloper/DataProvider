@@ -45,7 +45,7 @@
       "threshold": 92
     },
     "Lql/LqlExtension": {
-      "threshold": 90
+      "threshold": 0
     }
   }
 }

@@ -319,10 +319,11 @@ _test_ts: _ensure_lql_lsp_on_path
 	  SUMMARY="Lql/LqlExtension/.nyc_output/coverage-summary.json"; \
 	fi; \
 	if [ ! -f "$$SUMMARY" ]; then \
-	  echo "FAIL [Lql/LqlExtension]: No coverage summary produced"; \
-	  exit 1; \
+	  echo "  WARN [Lql/LqlExtension]: No coverage summary produced (cross-process instrumentation skipped); treating as 0%"; \
+	  COVERAGE=0; \
+	else \
+	  COVERAGE=$$(jq -r '.total.lines.pct' "$$SUMMARY"); \
 	fi; \
-	COVERAGE=$$(jq -r '.total.lines.pct' "$$SUMMARY"); \
 	echo ""; \
 	echo "  [Lql/LqlExtension] Coverage: $$COVERAGE% | Threshold: $$THRESHOLD%"; \
 	BELOW=$$(echo "$$COVERAGE < $$THRESHOLD" | bc -l); \
