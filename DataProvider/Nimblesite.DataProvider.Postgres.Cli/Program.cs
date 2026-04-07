@@ -176,9 +176,17 @@ internal static class Program
             {
                 try
                 {
-                    var sql = await File.ReadAllTextAsync(sqlPath).ConfigureAwait(false);
-                    if (string.IsNullOrWhiteSpace(sql))
+                    var rawSql = await File.ReadAllTextAsync(sqlPath).ConfigureAwait(false);
+                    if (string.IsNullOrWhiteSpace(rawSql))
                         continue;
+
+                    // Bug #23: any `AS <bareIdent>` that contains uppercase
+                    // gets double-quoted so Postgres preserves the case in
+                    // the column name returned by GetColumnSchema, which
+                    // becomes the C# record field name. Without this,
+                    // `AS CategoryTitle` is folded to `categorytitle` and
+                    // multiple aliased Title columns collide.
+                    var sql = QuoteAsAliases(rawSql);
 
                     var baseName = Path.GetFileNameWithoutExtension(sqlPath);
                     if (baseName.EndsWith(".generated", StringComparison.OrdinalIgnoreCase))
@@ -1588,6 +1596,129 @@ internal static class Program
         );
         _ = sb.AppendLine("        return new Result<int, SqlError>.Ok<int, SqlError>(rows);");
         _ = sb.AppendLine("    }");
+    }
+
+    /// <summary>
+    /// Walks the input SQL and double-quotes any `AS &lt;bareIdent&gt;`
+    /// alias that contains uppercase letters, so PostgreSQL preserves
+    /// the case in the column name returned by reader.GetColumnSchema().
+    /// Skips characters inside single-quoted string literals and
+    /// already-quoted aliases. Bug #23.
+    /// </summary>
+    private static string QuoteAsAliases(string sql)
+    {
+        if (string.IsNullOrEmpty(sql))
+        {
+            return sql;
+        }
+
+        var sb = new StringBuilder(sql.Length + 16);
+        var i = 0;
+        while (i < sql.Length)
+        {
+            var c = sql[i];
+
+            // Pass through single-quoted string literals.
+            if (c == '\'')
+            {
+                sb.Append(c);
+                i++;
+                while (i < sql.Length)
+                {
+                    sb.Append(sql[i]);
+                    if (sql[i] == '\'')
+                    {
+                        if (i + 1 < sql.Length && sql[i + 1] == '\'')
+                        {
+                            sb.Append(sql[i + 1]);
+                            i += 2;
+                            continue;
+                        }
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+                continue;
+            }
+
+            // Pass through already-quoted identifiers.
+            if (c == '"')
+            {
+                sb.Append(c);
+                i++;
+                while (i < sql.Length)
+                {
+                    sb.Append(sql[i]);
+                    if (sql[i] == '"')
+                    {
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+                continue;
+            }
+
+            // Look for AS keyword (case-insensitive) at a word boundary.
+            if (
+                (c == 'A' || c == 'a')
+                && i + 1 < sql.Length
+                && (sql[i + 1] == 'S' || sql[i + 1] == 's')
+                && (i == 0 || !char.IsLetterOrDigit(sql[i - 1]) && sql[i - 1] != '_')
+                && i + 2 < sql.Length
+                && !char.IsLetterOrDigit(sql[i + 2])
+                && sql[i + 2] != '_'
+            )
+            {
+                // Emit "AS"
+                sb.Append(sql[i]).Append(sql[i + 1]);
+                i += 2;
+                // Skip whitespace.
+                while (i < sql.Length && char.IsWhiteSpace(sql[i]))
+                {
+                    sb.Append(sql[i]);
+                    i++;
+                }
+                // Read alias identifier.
+                if (i < sql.Length && (char.IsLetter(sql[i]) || sql[i] == '_'))
+                {
+                    var aliasStart = i;
+                    i++;
+                    while (i < sql.Length && (char.IsLetterOrDigit(sql[i]) || sql[i] == '_'))
+                    {
+                        i++;
+                    }
+                    var alias = sql[aliasStart..i];
+                    if (HasUppercaseAscii(alias))
+                    {
+                        sb.Append('"').Append(alias).Append('"');
+                    }
+                    else
+                    {
+                        sb.Append(alias);
+                    }
+                }
+                continue;
+            }
+
+            sb.Append(c);
+            i++;
+        }
+        return sb.ToString();
+    }
+
+    private static bool HasUppercaseAscii(string s)
+    {
+        for (var i = 0; i < s.Length; i++)
+        {
+            var ch = s[i];
+            if (ch >= 'A' && ch <= 'Z')
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static List<string> ExtractParameters(string sql)
