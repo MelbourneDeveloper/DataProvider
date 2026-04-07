@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using Outcome;
 using Nimblesite.Sql.Model;
+using Outcome;
 
 namespace Reporting.Engine;
 

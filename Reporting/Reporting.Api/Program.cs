@@ -6,10 +6,10 @@ using Nimblesite.Lql.Core;
 using Nimblesite.Lql.SQLite;
 using Nimblesite.Sql.Model;
 using Reporting.Engine;
-using ConnError = Outcome.Result<
+using ConnError = Outcome.Result<System.Data.IDbConnection, Nimblesite.Sql.Model.SqlError>.Error<
     System.Data.IDbConnection,
     Nimblesite.Sql.Model.SqlError
->.Error<System.Data.IDbConnection, Nimblesite.Sql.Model.SqlError>;
+>;
 using ConnOk = Outcome.Result<System.Data.IDbConnection, Nimblesite.Sql.Model.SqlError>.Ok<
     System.Data.IDbConnection,
     Nimblesite.Sql.Model.SqlError

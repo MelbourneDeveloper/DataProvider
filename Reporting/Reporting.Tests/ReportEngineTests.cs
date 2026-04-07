@@ -8,10 +8,10 @@ using Nimblesite.Sql.Model;
 using Outcome;
 using Reporting.Engine;
 using Xunit;
-using ConnError = Outcome.Result<
+using ConnError = Outcome.Result<System.Data.IDbConnection, Nimblesite.Sql.Model.SqlError>.Error<
     System.Data.IDbConnection,
     Nimblesite.Sql.Model.SqlError
->.Error<System.Data.IDbConnection, Nimblesite.Sql.Model.SqlError>;
+>;
 using ConnOk = Outcome.Result<System.Data.IDbConnection, Nimblesite.Sql.Model.SqlError>.Ok<
     System.Data.IDbConnection,
     Nimblesite.Sql.Model.SqlError
@@ -569,12 +569,10 @@ public sealed class ReportEngineTests : IDisposable
         }
 
         var statement = (
-            (
-                Result<Nimblesite.Lql.Core.LqlStatement, SqlError>.Ok<
-                    Nimblesite.Lql.Core.LqlStatement,
-                    SqlError
-                >
-            )statementResult
+            (Result<Nimblesite.Lql.Core.LqlStatement, SqlError>.Ok<
+                Nimblesite.Lql.Core.LqlStatement,
+                SqlError
+            >)statementResult
         ).Value;
         return Nimblesite.Lql.SQLite.SqlStatementExtensionsSQLite.ToSQLite(statement);
     }

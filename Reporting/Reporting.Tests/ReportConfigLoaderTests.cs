@@ -5,10 +5,10 @@ using LoadError = Outcome.Result<
     Reporting.Engine.ReportDefinition,
     Nimblesite.Sql.Model.SqlError
 >.Error<Reporting.Engine.ReportDefinition, Nimblesite.Sql.Model.SqlError>;
-using LoadOk = Outcome.Result<
+using LoadOk = Outcome.Result<Reporting.Engine.ReportDefinition, Nimblesite.Sql.Model.SqlError>.Ok<
     Reporting.Engine.ReportDefinition,
     Nimblesite.Sql.Model.SqlError
->.Ok<Reporting.Engine.ReportDefinition, Nimblesite.Sql.Model.SqlError>;
+>;
 
 namespace Reporting.Tests;
 

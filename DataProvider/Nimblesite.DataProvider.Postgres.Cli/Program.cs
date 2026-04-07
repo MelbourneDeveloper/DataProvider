@@ -73,7 +73,13 @@ internal static class Program
             schemaFile,
         };
         root.SetHandler(
-            async (DirectoryInfo proj, FileInfo cfg, DirectoryInfo output, bool off, FileInfo? schema) =>
+            async (
+                DirectoryInfo proj,
+                FileInfo cfg,
+                DirectoryInfo output,
+                bool off,
+                FileInfo? schema
+            ) =>
             {
                 var exit = await RunAsync(proj, cfg, output, off, schema).ConfigureAwait(false);
                 Environment.Exit(exit);
@@ -111,9 +117,7 @@ internal static class Program
             var cfg = JsonSerializer.Deserialize<PostgresDataProviderConfig>(cfgText, JsonOptions);
             if (cfg is null)
             {
-                Console.WriteLine(
-                    "❌ Nimblesite.DataProvider.Core.json is invalid"
-                );
+                Console.WriteLine("❌ Nimblesite.DataProvider.Core.json is invalid");
                 return 1;
             }
 
@@ -121,7 +125,8 @@ internal static class Program
             SchemaDefinition? schema = null;
             if (schemaFile?.Exists == true)
             {
-                var schemaYaml = await File.ReadAllTextAsync(schemaFile.FullName).ConfigureAwait(false);
+                var schemaYaml = await File.ReadAllTextAsync(schemaFile.FullName)
+                    .ConfigureAwait(false);
                 schema = SchemaSerializer.FromYaml(schemaYaml);
                 Console.WriteLine($"📋 Loaded schema from {schemaFile.FullName}");
             }
@@ -356,7 +361,8 @@ internal static class Program
             {
                 var (name, sqlType) = ParseColumnDefinition(colDef, schema);
                 var csharpType = MapPostgresTypeToCSharp(sqlType, true);
-                var isNullable = !sqlType.Contains("serial", StringComparison.OrdinalIgnoreCase)
+                var isNullable =
+                    !sqlType.Contains("serial", StringComparison.OrdinalIgnoreCase)
                     && !sqlType.Contains("not null", StringComparison.OrdinalIgnoreCase);
 
                 columns.Add(
@@ -436,11 +442,7 @@ internal static class Program
     )
     {
         // Check for AS alias
-        var asMatch = Regex.Match(
-            colDef,
-            @"(.+?)\s+AS\s+(\w+)",
-            RegexOptions.IgnoreCase
-        );
+        var asMatch = Regex.Match(colDef, @"(.+?)\s+AS\s+(\w+)", RegexOptions.IgnoreCase);
 
         if (asMatch.Success)
         {
@@ -542,7 +544,9 @@ internal static class Program
             if (table.ExcludeColumns.Contains(col.Name, StringComparer.OrdinalIgnoreCase))
                 continue;
 
-            var isPk = tableDef.PrimaryKey?.Columns.Contains(col.Name, StringComparer.OrdinalIgnoreCase) == true
+            var isPk =
+                tableDef.PrimaryKey?.Columns.Contains(col.Name, StringComparer.OrdinalIgnoreCase)
+                    == true
                 || table.PrimaryKeyColumns.Contains(col.Name, StringComparer.OrdinalIgnoreCase);
 
             columns.Add(
@@ -554,7 +558,9 @@ internal static class Program
                     IsNullable = col.IsNullable,
                     IsPrimaryKey = isPk,
                     IsIdentity = col.IsIdentity,
-                    IsComputed = col.DefaultValue?.StartsWith("nextval", StringComparison.OrdinalIgnoreCase) == true,
+                    IsComputed =
+                        col.DefaultValue?.StartsWith("nextval", StringComparison.OrdinalIgnoreCase)
+                        == true,
                 }
             );
         }
@@ -1508,7 +1514,7 @@ internal static class Program
                 "string",
             "json" or "jsonb" => "string",
             var t when t.EndsWith("[]", StringComparison.Ordinal) => "string[]",
-            
+
             // PortableType names (from schema.yaml)
             "uuidtype" => "Guid",
             "booleantype" => "bool",
@@ -1535,7 +1541,7 @@ internal static class Program
             "varbinarytype" => "byte[]",
             "blobtype" => "byte[]",
             "rowversiontype" => "byte[]",
-            
+
             _ => "string",
         };
 
