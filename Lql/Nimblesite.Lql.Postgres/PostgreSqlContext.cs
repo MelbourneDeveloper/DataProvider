@@ -310,6 +310,33 @@ public sealed class PostgreSqlContext : ISqlContext
                 continue;
             }
 
+            // Quoted identifier `"foo"`. If followed by `.` it's a
+            // `"fhir_Slot".` qualifier and can be rewritten to its alias.
+            // Otherwise (followed by whitespace/end) it's the FROM/JOIN
+            // declaration form `"fhir_Slot" f` and must be left alone.
+            if (c == '"')
+            {
+                var quoteStart = i;
+                i++;
+                while (i < sql.Length && sql[i] != '"')
+                {
+                    i++;
+                }
+                if (i < sql.Length)
+                {
+                    i++; // consume closing quote
+                }
+                var quotedIdent = sql[quoteStart..i];
+                var inner = quotedIdent.Length >= 2 ? quotedIdent[1..^1] : string.Empty;
+                if (aliasMap.TryGetValue(inner, out var qAlias) && i < sql.Length && sql[i] == '.')
+                {
+                    sb.Append(qAlias);
+                    continue;
+                }
+                sb.Append(quotedIdent);
+                continue;
+            }
+
             // Identifier candidate.
             if (char.IsLetter(c) || c == '_')
             {
