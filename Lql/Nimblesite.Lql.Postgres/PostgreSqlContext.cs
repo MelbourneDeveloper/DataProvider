@@ -238,7 +238,115 @@ public sealed class PostgreSqlContext : ISqlContext
         // where the raw expression text was emitted verbatim. The walker
         // skips characters inside string literals and already-quoted
         // identifiers so it's safe to apply once at the end.
-        return QuoteInlineQualifiedIdents(sql.ToString());
+        var result = QuoteInlineQualifiedIdents(sql.ToString());
+
+        // Bug #22: when joins are present, the FROM/JOIN clauses emit
+        // table aliases (`FROM users u INNER JOIN orders o ON ...`) but
+        // the column refs in SELECT/WHERE/etc use the full table name
+        // (`users.name`). Postgres rejects this — once you alias a
+        // table, the original name is no longer a valid qualifier.
+        // Build a map of table -> alias from the FROM/JOIN portion of
+        // the generated SQL, then rewrite the rest of the body to use
+        // aliases consistently.
+        if (statement.HasJoins)
+        {
+            result = RewriteFullTableRefsToAliases(result, statement);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Walks the generated SQL and replaces any `tableName."Col"` or
+    /// `tableName.col` reference with the corresponding aliased form
+    /// using the alias declared in the FROM/JOIN clauses. Skips
+    /// string literals and the FROM/JOIN-clause text itself (the
+    /// declaration `FROM tableName alias` and `JOIN tableName alias`
+    /// must keep the table name).
+    /// </summary>
+    private static string RewriteFullTableRefsToAliases(string sql, SelectStatement statement)
+    {
+        // Build name -> alias map from the statement's table list.
+        var aliasMap = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var t in statement.Tables)
+        {
+            if (!string.IsNullOrEmpty(t.Alias) && !string.IsNullOrEmpty(t.Name))
+            {
+                aliasMap[t.Name] = t.Alias;
+            }
+        }
+        if (aliasMap.Count == 0)
+        {
+            return sql;
+        }
+
+        var sb = new StringBuilder(sql.Length);
+        var i = 0;
+        while (i < sql.Length)
+        {
+            var c = sql[i];
+
+            // Skip string literals.
+            if (c == '\'')
+            {
+                sb.Append(c);
+                i++;
+                while (i < sql.Length)
+                {
+                    sb.Append(sql[i]);
+                    if (sql[i] == '\'')
+                    {
+                        if (i + 1 < sql.Length && sql[i + 1] == '\'')
+                        {
+                            sb.Append(sql[i + 1]);
+                            i += 2;
+                            continue;
+                        }
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+                continue;
+            }
+
+            // Identifier candidate.
+            if (char.IsLetter(c) || c == '_')
+            {
+                var start = i;
+                i++;
+                while (i < sql.Length && (char.IsLetterOrDigit(sql[i]) || sql[i] == '_'))
+                {
+                    i++;
+                }
+                var ident = sql[start..i];
+
+                // Skip if this identifier is the FROM/JOIN declaration of
+                // the same table. We detect this by looking back for
+                // FROM/JOIN keyword and checking that what follows is
+                // <table> <alias>. Easier heuristic: if the next non-
+                // whitespace token after this ident is the alias literal
+                // (a single word matching the alias map value), AND the
+                // previous keyword was FROM/JOIN, treat as declaration.
+                if (
+                    aliasMap.TryGetValue(ident, out var alias)
+                    && i < sql.Length
+                    && sql[i] == '.'
+                )
+                {
+                    // It's a `tableName.` reference — rewrite to alias.
+                    sb.Append(alias);
+                    continue;
+                }
+
+                sb.Append(ident);
+                continue;
+            }
+
+            sb.Append(c);
+            i++;
+        }
+        return sb.ToString();
     }
 
     /// <summary>
