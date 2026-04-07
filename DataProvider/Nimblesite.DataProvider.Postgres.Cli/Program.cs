@@ -790,11 +790,17 @@ internal static class Program
         string pascalName
     )
     {
-        // Get insertable columns (exclude auto-generated ones)
-        var insertable = columns.Where(c => !c.IsIdentity && !c.IsComputed).ToList();
+        // Bug #17: include ALL columns as insertable params (including id /
+        // identity / computed). Consumers want to be able to pass an id
+        // value explicitly. The previous filter excluded identity cols which
+        // forced consumers to refactor their call sites to drop the id arg.
+        // Insertable columns are written verbatim using col.Name (Bug #8 /
+        // #13: keep snake_case parameter names so consumer named-argument
+        // calls work).
+        var insertable = columns.Where(c => !c.IsComputed).ToList();
         var parameters = string.Join(
             ", ",
-            insertable.Select(c => $"{c.CSharpType} {ToCamelCase(c.Name)}")
+            insertable.Select(c => $"{c.CSharpType} {c.Name}")
         );
 
         _ = sb.AppendLine();
@@ -813,7 +819,7 @@ internal static class Program
         _ = sb.AppendLine("    {");
 
         var colNames = string.Join(", ", insertable.Select(c => c.Name));
-        var paramNames = string.Join(", ", insertable.Select(c => $"@{ToCamelCase(c.Name)}"));
+        var paramNames = string.Join(", ", insertable.Select(c => $"@{c.Name}"));
 
         _ = sb.AppendLine("        const string sql = @\"");
         _ = sb.AppendLine(
@@ -830,12 +836,12 @@ internal static class Program
 
         foreach (var col in insertable)
         {
-            var paramName = ToCamelCase(col.Name);
+            var paramName = col.Name;
             if (col.IsNullable)
             {
                 _ = sb.AppendLine(
                     CultureInfo.InvariantCulture,
-                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName} ?? (object)DBNull.Value);"
+                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", (object?){paramName} ?? DBNull.Value);"
                 );
             }
             else
@@ -847,6 +853,100 @@ internal static class Program
             }
         }
 
+        _ = sb.AppendLine();
+        _ = sb.AppendLine(
+            "            var result = await cmd.ExecuteScalarAsync().ConfigureAwait(false);"
+        );
+        _ = sb.AppendLine(
+            "            return new Result<Guid?, SqlError>.Ok<Guid?, SqlError>(result is Guid g ? g : null);"
+        );
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine("        catch (Exception ex)");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            return new Result<Guid?, SqlError>.Error<Guid?, SqlError>(SqlError.FromException(ex));"
+        );
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine("    }");
+
+        // Bug #16: also emit an IDbTransaction overload that delegates to
+        // the same SQL via a NpgsqlCommand bound to the transaction's
+        // connection. Matches the old SQLite.Cli shape so consumer code
+        // calling tx.Insert{T}Async(...) keeps compiling.
+        GenerateInsertTransactionOverload(sb, table, insertable, pascalName);
+    }
+
+    /// <summary>
+    /// Emits an `IDbTransaction` overload of an Insert method that
+    /// matches the old SQLite.Cli shape. Bug #16.
+    /// </summary>
+    private static void GenerateInsertTransactionOverload(
+        StringBuilder sb,
+        TableConfigItem table,
+        List<DatabaseColumn> insertable,
+        string pascalName
+    )
+    {
+        var parameters = string.Join(
+            ", ",
+            insertable.Select(c => $"{c.CSharpType} {c.Name}")
+        );
+        var colNames = string.Join(", ", insertable.Select(c => c.Name));
+        var paramNames = string.Join(", ", insertable.Select(c => $"@{c.Name}"));
+
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("    /// <summary>");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// IDbTransaction overload of Insert{pascalName}Async."
+        );
+        _ = sb.AppendLine("    /// </summary>");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    public static async Task<Result<Guid?, SqlError>> Insert{pascalName}Async("
+        );
+        _ = sb.AppendLine("        this System.Data.IDbTransaction transaction,");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
+        _ = sb.AppendLine("    {");
+        _ = sb.AppendLine("        const string sql = @\"");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            INSERT INTO {table.Schema}.{table.Name} ({colNames})"
+        );
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            VALUES ({paramNames})");
+        _ = sb.AppendLine("            ON CONFLICT DO NOTHING");
+        _ = sb.AppendLine("            RETURNING id\";");
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("        if (transaction.Connection is not NpgsqlConnection conn)");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            return new Result<Guid?, SqlError>.Error<Guid?, SqlError>(new SqlError(\"Transaction.Connection must be NpgsqlConnection\"));"
+        );
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("        try");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            await using var cmd = new NpgsqlCommand(sql, conn, (NpgsqlTransaction)transaction);"
+        );
+        foreach (var col in insertable)
+        {
+            var paramName = col.Name;
+            if (col.IsNullable)
+            {
+                _ = sb.AppendLine(
+                    CultureInfo.InvariantCulture,
+                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", (object?){paramName} ?? DBNull.Value);"
+                );
+            }
+            else
+            {
+                _ = sb.AppendLine(
+                    CultureInfo.InvariantCulture,
+                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName});"
+                );
+            }
+        }
         _ = sb.AppendLine();
         _ = sb.AppendLine(
             "            var result = await cmd.ExecuteScalarAsync().ConfigureAwait(false);"
@@ -882,9 +982,19 @@ internal static class Program
         var allParams = pkCols.Concat(updateable).ToList();
         var parameters = string.Join(
             ", ",
-            allParams.Select(c => $"{c.CSharpType} {ToCamelCase(c.Name)}")
+            allParams.Select(c => $"{c.CSharpType} {c.Name}")
         );
 
+        var setClauses = string.Join(
+            ", ",
+            updateable.Select(c => $"{c.Name} = @{c.Name}")
+        );
+        var whereClauses = string.Join(
+            " AND ",
+            pkCols.Select(c => $"{c.Name} = @{c.Name}")
+        );
+
+        // NpgsqlConnection overload
         _ = sb.AppendLine();
         _ = sb.AppendLine("    /// <summary>");
         _ = sb.AppendLine(
@@ -899,16 +1009,6 @@ internal static class Program
         _ = sb.AppendLine("        this NpgsqlConnection conn,");
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
         _ = sb.AppendLine("    {");
-
-        var setClauses = string.Join(
-            ", ",
-            updateable.Select(c => $"{c.Name} = @{ToCamelCase(c.Name)}")
-        );
-        var whereClauses = string.Join(
-            " AND ",
-            pkCols.Select(c => $"{c.Name} = @{ToCamelCase(c.Name)}")
-        );
-
         _ = sb.AppendLine("        const string sql = @\"");
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
@@ -920,26 +1020,57 @@ internal static class Program
         _ = sb.AppendLine("        try");
         _ = sb.AppendLine("        {");
         _ = sb.AppendLine("            await using var cmd = new NpgsqlCommand(sql, conn);");
+        EmitParameterBindings(sb, allParams);
+        _ = sb.AppendLine();
+        _ = sb.AppendLine(
+            "            var rows = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);"
+        );
+        _ = sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(rows);");
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine("        catch (Exception ex)");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.FromException(ex));"
+        );
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine("    }");
 
-        foreach (var col in allParams)
-        {
-            var paramName = ToCamelCase(col.Name);
-            if (col.IsNullable)
-            {
-                _ = sb.AppendLine(
-                    CultureInfo.InvariantCulture,
-                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName} ?? (object)DBNull.Value);"
-                );
-            }
-            else
-            {
-                _ = sb.AppendLine(
-                    CultureInfo.InvariantCulture,
-                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName});"
-                );
-            }
-        }
-
+        // Bug #16: IDbTransaction overload, matching old SQLite.Cli shape.
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("    /// <summary>");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// IDbTransaction overload of Update{pascalName}Async."
+        );
+        _ = sb.AppendLine("    /// </summary>");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    public static async Task<Result<int, SqlError>> Update{pascalName}Async("
+        );
+        _ = sb.AppendLine("        this System.Data.IDbTransaction transaction,");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
+        _ = sb.AppendLine("    {");
+        _ = sb.AppendLine("        const string sql = @\"");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            UPDATE {table.Schema}.{table.Name}"
+        );
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            SET {setClauses}");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            WHERE {whereClauses}\";");
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("        if (transaction.Connection is not NpgsqlConnection conn)");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Transaction.Connection must be NpgsqlConnection\"));"
+        );
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("        try");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            await using var cmd = new NpgsqlCommand(sql, conn, (NpgsqlTransaction)transaction);"
+        );
+        EmitParameterBindings(sb, allParams);
         _ = sb.AppendLine();
         _ = sb.AppendLine(
             "            var rows = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);"
@@ -955,6 +1086,33 @@ internal static class Program
         _ = sb.AppendLine("    }");
     }
 
+    /// <summary>
+    /// Emits the standard `cmd.Parameters.AddWithValue(...)` lines for a
+    /// list of columns. Used by both NpgsqlConnection and IDbTransaction
+    /// overloads of Insert/Update/Delete to avoid duplication.
+    /// </summary>
+    private static void EmitParameterBindings(StringBuilder sb, List<DatabaseColumn> cols)
+    {
+        foreach (var col in cols)
+        {
+            var paramName = col.Name;
+            if (col.IsNullable)
+            {
+                _ = sb.AppendLine(
+                    CultureInfo.InvariantCulture,
+                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", (object?){paramName} ?? DBNull.Value);"
+                );
+            }
+            else
+            {
+                _ = sb.AppendLine(
+                    CultureInfo.InvariantCulture,
+                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName});"
+                );
+            }
+        }
+    }
+
     private static void GenerateDeleteMethod(
         StringBuilder sb,
         TableConfigItem table,
@@ -968,9 +1126,15 @@ internal static class Program
 
         var parameters = string.Join(
             ", ",
-            pkCols.Select(c => $"{c.CSharpType} {ToCamelCase(c.Name)}")
+            pkCols.Select(c => $"{c.CSharpType} {c.Name}")
         );
+        var whereClauses = string.Join(
+            " AND ",
+            pkCols.Select(c => $"{c.Name} = @{c.Name}")
+        );
+        var sqlLine = $"DELETE FROM {table.Schema}.{table.Name} WHERE {whereClauses}";
 
+        // NpgsqlConnection overload
         _ = sb.AppendLine();
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    /// <summary>");
         _ = sb.AppendLine(
@@ -985,29 +1149,62 @@ internal static class Program
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        this NpgsqlConnection conn,");
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
         _ = sb.AppendLine("    {");
-
-        var whereClauses = string.Join(
-            " AND ",
-            pkCols.Select(c => $"{c.Name} = @{ToCamelCase(c.Name)}")
-        );
-
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"        const string sql = @\"DELETE FROM {table.Schema}.{table.Name} WHERE {whereClauses}\";"
+            $"        const string sql = @\"{sqlLine}\";"
         );
         _ = sb.AppendLine();
         _ = sb.AppendLine("        try");
         _ = sb.AppendLine("        {");
         _ = sb.AppendLine("            await using var cmd = new NpgsqlCommand(sql, conn);");
+        EmitParameterBindings(sb, pkCols);
+        _ = sb.AppendLine();
+        _ = sb.AppendLine(
+            "            var rows = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);"
+        );
+        _ = sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(rows);");
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine("        catch (Exception ex)");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.FromException(ex));"
+        );
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine("    }");
 
-        foreach (var col in pkCols)
-        {
-            _ = sb.AppendLine(
-                CultureInfo.InvariantCulture,
-                $"            cmd.Parameters.AddWithValue(\"{ToCamelCase(col.Name)}\", {ToCamelCase(col.Name)});"
-            );
-        }
-
+        // Bug #16: IDbTransaction overload, matching old SQLite.Cli shape.
+        _ = sb.AppendLine();
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    /// <summary>");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// IDbTransaction overload of Delete{pascalName}Async."
+        );
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    /// </summary>");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    public static async Task<Result<int, SqlError>> Delete{pascalName}Async("
+        );
+        _ = sb.AppendLine("        this System.Data.IDbTransaction transaction,");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
+        _ = sb.AppendLine("    {");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"        const string sql = @\"{sqlLine}\";"
+        );
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("        if (transaction.Connection is not NpgsqlConnection conn)");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Transaction.Connection must be NpgsqlConnection\"));"
+        );
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("        try");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            await using var cmd = new NpgsqlCommand(sql, conn, (NpgsqlTransaction)transaction);"
+        );
+        EmitParameterBindings(sb, pkCols);
         _ = sb.AppendLine();
         _ = sb.AppendLine(
             "            var rows = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);"
