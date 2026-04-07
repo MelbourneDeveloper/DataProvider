@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <PackageId>Reporting.Engine</PackageId>
-    <Description>Reporting engine: config parsing, data source execution, format adapters</Description>
+    <PackageId>Nimblesite.Reporting.Engine</PackageId>
+    <Description>Embeddable reporting engine for Nimblesite.DataProvider.Core: JSON-defined report configs, SQL/LQL data source execution, and CSV/JSON format adapters.</Description>
     <NoWarn>CA1515;CA1720</NoWarn>
     <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
   </PropertyGroup>
