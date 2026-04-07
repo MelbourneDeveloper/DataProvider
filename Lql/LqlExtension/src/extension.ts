@@ -2,6 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 import * as https from "https";
 import * as http from "http";
+import { spawnSync } from "child_process";
 import * as vscode from "vscode";
 import {
   LanguageClient,
@@ -74,6 +75,53 @@ function downloadFile(url: string, dest: string): Promise<void> {
   });
 }
 
+/**
+ * Run `<binary> --version` and return the parsed semver string, or undefined
+ * if the binary couldn't be invoked or didn't print a recognisable version.
+ */
+function getBinaryVersion(binary: string): string | undefined {
+  try {
+    const result = spawnSync(binary, ["--version"], {
+      encoding: "utf8",
+      timeout: 5000,
+    });
+    if (result.status !== 0) {
+      return undefined;
+    }
+    const output = `${result.stdout}\n${result.stderr}`;
+    const match = /(\d+\.\d+\.\d+)/.exec(output);
+    return match === null ? undefined : match[1];
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Look for `lql-lsp` on the system PATH and return its location if its
+ * --version matches the extension version. Used so dev / test / CI can
+ * install the binary into PATH (e.g. via cargo install or copying the
+ * cargo build output) and have the extension use it without downloading.
+ */
+function findOnPathMatchingVersion(expectedVersion: string): string | undefined {
+  const binaryName = process.platform === "win32" ? "lql-lsp.exe" : "lql-lsp";
+  const pathEnv = process.env.PATH ?? "";
+  const sep = process.platform === "win32" ? ";" : ":";
+  for (const dir of pathEnv.split(sep)) {
+    if (dir === "") {
+      continue;
+    }
+    const candidate = path.join(dir, binaryName);
+    if (!fs.existsSync(candidate)) {
+      continue;
+    }
+    const version = getBinaryVersion(candidate);
+    if (version === expectedVersion) {
+      return candidate;
+    }
+  }
+  return undefined;
+}
+
 /** Download the LSP binary from the GitHub release matching the extension version. */
 async function downloadLspBinary(
   context: vscode.ExtensionContext,
@@ -131,6 +179,9 @@ export async function activate(
     return;
   }
 
+  const expectedVersion = getExtensionVersion(context);
+  log(`Extension version: ${expectedVersion}`);
+
   let serverBinary: string;
   const customPath = config.get<string>("languageServer.path") ?? "";
   if (customPath !== "") {
@@ -144,16 +195,24 @@ export async function activate(
     serverBinary = customPath;
     log(`LSP binary (custom): ${serverBinary}`);
   } else {
-    try {
-      serverBinary = await downloadLspBinary(context);
-      log(`LSP binary: ${serverBinary}`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      log(`ERROR: ${message}`);
-      vscode.window.showErrorMessage(
-        `LQL: Failed to download language server: ${message}`,
-      );
-      return;
+    // 1. Prefer a binary on PATH whose --version matches the extension.
+    const onPath = findOnPathMatchingVersion(expectedVersion);
+    if (onPath !== undefined) {
+      serverBinary = onPath;
+      log(`LSP binary (PATH, version ${expectedVersion}): ${serverBinary}`);
+    } else {
+      // 2. Otherwise download the matching release into globalStorage.
+      try {
+        serverBinary = await downloadLspBinary(context);
+        log(`LSP binary (downloaded): ${serverBinary}`);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        log(`ERROR: ${message}`);
+        vscode.window.showErrorMessage(
+          `LQL: Failed to download language server: ${message}`,
+        );
+        return;
+      }
     }
   }
 

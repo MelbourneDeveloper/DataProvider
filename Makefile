@@ -283,12 +283,25 @@ _clean_rust:
 _build_ts:
 	cd Lql/LqlExtension && npm install --no-audit --no-fund && npm run compile
 
-_test_ts:
+# Ensure the lql-lsp binary exists before running VSIX tests, so the
+# extension can find a matching --version on PATH and start the LSP
+# without trying to download a release from GitHub.
+_ensure_lql_lsp_on_path:
+	@if [ ! -x "$(CURDIR)/Lql/lql-lsp-rust/target/release/lql-lsp" ] && \
+	    [ ! -x "$(CURDIR)/Lql/lql-lsp-rust/target/debug/lql-lsp" ]; then \
+	  echo "==> Building lql-lsp (release) for VSIX tests"; \
+	  cd Lql/lql-lsp-rust && cargo build --release -p lql-lsp; \
+	fi
+
+_test_ts: _ensure_lql_lsp_on_path
 	@THRESHOLD=$$(jq -r '.projects["Lql/LqlExtension"].threshold // .default_threshold' coverage-thresholds.json); \
 	echo ""; \
 	echo "============================================================"; \
 	echo "==> Testing Lql/LqlExtension (threshold: $$THRESHOLD%)"; \
 	echo "============================================================"; \
+	export PATH="$(CURDIR)/Lql/lql-lsp-rust/target/release:$(CURDIR)/Lql/lql-lsp-rust/target/debug:$$PATH"; \
+	echo "  lql-lsp on PATH: $$(command -v lql-lsp || echo 'NOT FOUND')"; \
+	echo "  lql-lsp --version: $$(lql-lsp --version 2>&1 || echo 'failed')"; \
 	cd Lql/LqlExtension && npm run compile && \
 	  rm -rf out-cov && npx nyc instrument out out-cov && cp -R out-cov/. out/ && rm -rf out-cov && \
 	  if command -v xvfb-run >/dev/null 2>&1; then \
