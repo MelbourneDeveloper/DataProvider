@@ -7,8 +7,8 @@
     <PackageId>Nimblesite.DataProvider.Migration.Cli</PackageId>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>migration-cli</ToolCommandName>
-    <PackageVersion>0.2.1-beta</PackageVersion>
-    <Version>0.2.1-beta</Version>
+    <PackageVersion>0.2.2-beta</PackageVersion>
+    <Version>0.2.2-beta</Version>
     <Description>CLI tool for database schema migrations</Description>
     <Authors>ChristianFindlay</Authors>
     <Company>MelbourneDeveloper</Company>

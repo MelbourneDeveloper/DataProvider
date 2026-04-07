@@ -144,10 +144,15 @@ public static class PostgresDdlGenerator
             columnDefs.Add($"CONSTRAINT \"{ucName}\" UNIQUE ({ucCols})");
         }
 
-        // Add check constraints
+        // Add check constraints. Auto-quote bare identifiers in the
+        // expression that match a column name on this table, so a
+        // mixed-case column like "Status" survives the round-trip
+        // (Postgres folds unquoted identifiers to lower case otherwise).
+        var columnNames = table.Columns.Select(c => c.Name).ToHashSet(StringComparer.Ordinal);
         foreach (var cc in table.CheckConstraints)
         {
-            columnDefs.Add($"CONSTRAINT \"{cc.Name}\" CHECK ({cc.Expression})");
+            var quotedExpr = QuoteIdentifiersInExpression(cc.Expression, columnNames);
+            columnDefs.Add($"CONSTRAINT \"{cc.Name}\" CHECK ({quotedExpr})");
         }
 
         sb.Append(string.Join(", ", columnDefs));
@@ -215,7 +220,11 @@ public static class PostgresDdlGenerator
 
         if (column.CheckConstraint is not null)
         {
-            sb.Append(CultureInfo.InvariantCulture, $" CHECK ({column.CheckConstraint})");
+            // Auto-quote the column's own name in its CHECK expression so
+            // mixed-case columns survive without manual quoting in YAML.
+            var ownNames = new HashSet<string>(StringComparer.Ordinal) { column.Name };
+            var quotedExpr = QuoteIdentifiersInExpression(column.CheckConstraint, ownNames);
+            sb.Append(CultureInfo.InvariantCulture, $" CHECK ({quotedExpr})");
         }
 
         return sb.ToString();
@@ -331,4 +340,112 @@ public static class PostgresDdlGenerator
             ForeignKeyAction.Restrict => "RESTRICT",
             _ => "NO ACTION",
         };
+
+    /// <summary>
+    /// Wraps any bare identifier in <paramref name="expression"/> that exactly
+    /// matches a name in <paramref name="columnNames"/> with double-quotes,
+    /// so PostgreSQL preserves case (unquoted identifiers are folded to
+    /// lower case). Skips identifiers that are already quoted, inside
+    /// single-quoted string literals, or that are prefixed by a `.` (which
+    /// indicates they're already qualified, e.g. table.column).
+    /// </summary>
+    /// <remarks>
+    /// Hand-rolled tokenizer (not regex) so we can correctly skip string
+    /// literals and existing quoted identifiers.
+    /// </remarks>
+    internal static string QuoteIdentifiersInExpression(
+        string expression,
+        ISet<string> columnNames
+    )
+    {
+        if (string.IsNullOrEmpty(expression) || columnNames.Count == 0)
+        {
+            return expression;
+        }
+
+        var sb = new StringBuilder(expression.Length + 16);
+        var i = 0;
+        while (i < expression.Length)
+        {
+            var c = expression[i];
+
+            // Single-quoted string literal — copy verbatim until closing quote.
+            if (c == '\'')
+            {
+                sb.Append(c);
+                i++;
+                while (i < expression.Length)
+                {
+                    sb.Append(expression[i]);
+                    if (expression[i] == '\'')
+                    {
+                        // Postgres '' is an escaped single quote inside a literal.
+                        if (i + 1 < expression.Length && expression[i + 1] == '\'')
+                        {
+                            sb.Append(expression[i + 1]);
+                            i += 2;
+                            continue;
+                        }
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+                continue;
+            }
+
+            // Double-quoted identifier — copy verbatim, already quoted.
+            if (c == '"')
+            {
+                sb.Append(c);
+                i++;
+                while (i < expression.Length)
+                {
+                    sb.Append(expression[i]);
+                    if (expression[i] == '"')
+                    {
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+                continue;
+            }
+
+            // Identifier candidate (letter or underscore start, then [a-zA-Z0-9_]).
+            if (char.IsLetter(c) || c == '_')
+            {
+                var start = i;
+                i++;
+                while (i < expression.Length && (char.IsLetterOrDigit(expression[i]) || expression[i] == '_'))
+                {
+                    i++;
+                }
+                var word = expression[start..i];
+
+                // Don't quote if the previous non-whitespace char is `.` —
+                // it's already a qualified reference like `tbl.col`.
+                var prevIdx = start - 1;
+                while (prevIdx >= 0 && char.IsWhiteSpace(expression[prevIdx]))
+                {
+                    prevIdx--;
+                }
+                var qualified = prevIdx >= 0 && expression[prevIdx] == '.';
+
+                if (!qualified && columnNames.Contains(word))
+                {
+                    sb.Append('"').Append(word).Append('"');
+                }
+                else
+                {
+                    sb.Append(word);
+                }
+                continue;
+            }
+
+            sb.Append(c);
+            i++;
+        }
+        return sb.ToString();
+    }
 }

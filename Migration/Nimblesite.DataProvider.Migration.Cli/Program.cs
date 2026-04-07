@@ -175,7 +175,11 @@ public static class Program
                 Console.WriteLine($"  {error}");
             }
 
-            return result.TablesCreated > 0 ? 0 : 1;
+            // Bug #11: ANY failed table is a hard failure for CI / make.
+            // Previously this returned 0 if at least one table succeeded,
+            // which let downstream targets (like codegen) run against an
+            // incomplete schema and produce confusing follow-on errors.
+            return 1;
         }
         catch (Exception ex)
         {
