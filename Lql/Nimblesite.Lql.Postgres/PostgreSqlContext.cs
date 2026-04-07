@@ -455,8 +455,10 @@ public sealed class PostgreSqlContext : ISqlContext
     /// <summary>
     /// Quotes a bare identifier (column name) when it contains characters
     /// that PostgreSQL would fold (uppercase letters). Skips identifiers
-    /// that are already quoted, contain a `.` (qualified table.col), or
-    /// look like SQL functions (contain `(`).
+    /// that are already quoted or look like SQL functions (contain `(`).
+    /// Qualified identifiers (`table.col`, `alias.col`) are split on the
+    /// last dot and only the trailing identifier component is quoted —
+    /// the prefix is left alone (it's typically a single-letter alias).
     /// </summary>
     private static string QuoteIdentifier(string identifier)
     {
@@ -466,12 +468,29 @@ public sealed class PostgreSqlContext : ISqlContext
         }
         if (
             identifier.StartsWith('"')
-            || identifier.Contains('.', StringComparison.Ordinal)
             || identifier.Contains('(', StringComparison.Ordinal)
         )
         {
             return identifier;
         }
+
+        // Qualified reference: split on the LAST dot and quote the tail.
+        var lastDot = identifier.LastIndexOf('.');
+        if (lastDot >= 0)
+        {
+            var prefix = identifier[..lastDot];
+            var tail = identifier[(lastDot + 1)..];
+            if (
+                tail.Length == 0
+                || tail.StartsWith('"')
+                || tail == "*"
+            )
+            {
+                return identifier;
+            }
+            return NeedsQuoting(tail) ? $"{prefix}.\"{tail}\"" : identifier;
+        }
+
         return NeedsQuoting(identifier) ? $"\"{identifier}\"" : identifier;
     }
 
