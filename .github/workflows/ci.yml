@@ -142,6 +142,9 @@ jobs:
             ${{ runner.os }}-cargo-build-
             ${{ runner.os }}-cargo-
 
+      - name: Restore .NET tools (h5, csharpier, ilspycmd)
+        run: dotnet tool restore
+
       - name: Build .NET
         run: dotnet build DataProvider.sln -c Debug
 
