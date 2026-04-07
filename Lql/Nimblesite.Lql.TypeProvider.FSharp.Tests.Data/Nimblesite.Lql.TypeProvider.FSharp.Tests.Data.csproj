@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <!-- Exclude Generated folder from default globbing - we include it explicitly in the target -->

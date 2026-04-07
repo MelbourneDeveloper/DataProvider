@@ -85,6 +85,12 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nimblesite.Lql.TypeProvider
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.TypeProvider.FSharp.Tests.Data", "Lql\Nimblesite.Lql.TypeProvider.FSharp.Tests.Data\Nimblesite.Lql.TypeProvider.FSharp.Tests.Data.csproj", "{0D6A831B-4759-46F2-8527-51C8A9CB6F6F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DataProvider", "DataProvider", "{43BAF0A3-C050-BE83-B489-7FC6F9FDE235}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.SqlServer", "DataProvider\Nimblesite.DataProvider.SqlServer\Nimblesite.DataProvider.SqlServer.csproj", "{238A9928-E501-46AD-963B-BB529A983D3E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Other", "Other", "{A36FAAB1-3B70-FACF-6B1E-E7138A3CFC44}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -527,6 +533,18 @@ Global
 		{0D6A831B-4759-46F2-8527-51C8A9CB6F6F}.Release|x64.Build.0 = Release|Any CPU
 		{0D6A831B-4759-46F2-8527-51C8A9CB6F6F}.Release|x86.ActiveCfg = Release|Any CPU
 		{0D6A831B-4759-46F2-8527-51C8A9CB6F6F}.Release|x86.Build.0 = Release|Any CPU
+		{238A9928-E501-46AD-963B-BB529A983D3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{238A9928-E501-46AD-963B-BB529A983D3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{238A9928-E501-46AD-963B-BB529A983D3E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{238A9928-E501-46AD-963B-BB529A983D3E}.Debug|x64.Build.0 = Debug|Any CPU
+		{238A9928-E501-46AD-963B-BB529A983D3E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{238A9928-E501-46AD-963B-BB529A983D3E}.Debug|x86.Build.0 = Debug|Any CPU
+		{238A9928-E501-46AD-963B-BB529A983D3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{238A9928-E501-46AD-963B-BB529A983D3E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{238A9928-E501-46AD-963B-BB529A983D3E}.Release|x64.ActiveCfg = Release|Any CPU
+		{238A9928-E501-46AD-963B-BB529A983D3E}.Release|x64.Build.0 = Release|Any CPU
+		{238A9928-E501-46AD-963B-BB529A983D3E}.Release|x86.ActiveCfg = Release|Any CPU
+		{238A9928-E501-46AD-963B-BB529A983D3E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -568,6 +586,7 @@ Global
 		{6AB2EA96-4A75-49DB-AC65-B247BBFAE9A3} = {54B846BA-A27D-B76F-8730-402A5742FF43}
 		{B0104C42-1B46-4CA5-9E91-A5F09D7E5B92} = {54B846BA-A27D-B76F-8730-402A5742FF43}
 		{0D6A831B-4759-46F2-8527-51C8A9CB6F6F} = {54B846BA-A27D-B76F-8730-402A5742FF43}
+		{238A9928-E501-46AD-963B-BB529A983D3E} = {43BAF0A3-C050-BE83-B489-7FC6F9FDE235}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {53128A75-E7B6-4B83-B079-A309FCC2AD9C}

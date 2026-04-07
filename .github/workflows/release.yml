@@ -21,19 +21,42 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: '9.0.x'
 
       - name: Extract version from tag
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Build and Pack
+      - name: Pack solution
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
-          dotnet build -c Release
-          dotnet pack -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
+          set -euo pipefail
+          dotnet pack DataProvider.sln -c Release -p:Version="$VERSION" -o ./nupkgs
 
-      - name: Push to NuGet
-        run: dotnet nuget push "./nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      - name: Push packages to NuGet
+        env:
+          NIMBLESITE_NUGET_KEY: ${{ secrets.NIMBLESITE_NUGET_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NIMBLESITE_NUGET_KEY:-}" ]; then
+            echo "NIMBLESITE_NUGET_KEY secret is not set." >&2
+            exit 1
+          fi
+          shopt -s nullglob
+          packages=(./nupkgs/*.nupkg)
+          if [ ${#packages[@]} -eq 0 ]; then
+            echo "No packages produced — failing." >&2
+            exit 1
+          fi
+          for pkg in "${packages[@]}"; do
+            echo "::group::Push $pkg"
+            dotnet nuget push "$pkg" \
+              --api-key "$NIMBLESITE_NUGET_KEY" \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+            echo "::endgroup::"
+          done
 
       - name: Create GitHub Release
         env:

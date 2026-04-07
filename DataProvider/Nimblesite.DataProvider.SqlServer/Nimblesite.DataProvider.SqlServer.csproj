@@ -2,7 +2,6 @@
   <PropertyGroup>
     <!-- Package Information -->
     <PackageId>Nimblesite.DataProvider.SqlServer</PackageId>
-    <Version>0.1.0-beta</Version>
     <Authors>ChristianFindlay</Authors>
     <Description>SQL Server source generator for Nimblesite.DataProvider.Core. Provides compile-time safe database access with automatic code generation from SQL files for SQL Server databases.</Description>
     <PackageTags>source-generator;sql;sqlserver;database;compile-time-safety;code-generation</PackageTags>
