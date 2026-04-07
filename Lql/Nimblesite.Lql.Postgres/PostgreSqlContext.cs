@@ -377,7 +377,9 @@ public sealed class PostgreSqlContext : ISqlContext
         };
 
     /// <summary>
-    /// Generates SQL for a ColumnInfo
+    /// Generates SQL for a ColumnInfo. Bare column names get double-quoted
+    /// so PostgreSQL preserves their case (matches the FormatTableName
+    /// behaviour above).
     /// </summary>
     /// <param name="columnInfo">The column info</param>
     /// <returns>The SQL string for the column</returns>
@@ -385,8 +387,8 @@ public sealed class PostgreSqlContext : ISqlContext
         columnInfo switch
         {
             NamedColumn n => string.IsNullOrEmpty(n.TableAlias)
-                ? n.Name
-                : $"{n.TableAlias}.{n.Name}",
+                ? QuoteIdentifier(n.Name)
+                : $"{n.TableAlias}.{QuoteIdentifier(n.Name)}",
             WildcardColumn w => string.IsNullOrEmpty(w.TableAlias) ? "*" : $"{w.TableAlias}.*",
             ExpressionColumn e => e.Expression,
             SubQueryColumn s => $"({s.SubQuery})",
@@ -417,9 +419,59 @@ public sealed class PostgreSqlContext : ISqlContext
     }
 
     /// <summary>
-    /// Formats a table name for PostgreSQL by lowercasing.
+    /// Formats a table name for PostgreSQL. PostgreSQL folds unquoted
+    /// identifiers to lower case, so any identifier that contains an
+    /// uppercase character (e.g. `fhir_Patient`) MUST be double-quoted
+    /// to survive a round-trip. Identifiers that are already lowercase
+    /// (the previous behaviour) are emitted unquoted to preserve the
+    /// existing test fixture output.
     /// </summary>
-    private static string FormatTableName(string tableName) => tableName.ToLowerInvariant();
+    private static string FormatTableName(string tableName) =>
+        NeedsQuoting(tableName) ? $"\"{tableName}\"" : tableName;
+
+    /// <summary>
+    /// Quotes a bare identifier (column name) when it contains characters
+    /// that PostgreSQL would fold (uppercase letters). Skips identifiers
+    /// that are already quoted, contain a `.` (qualified table.col), or
+    /// look like SQL functions (contain `(`).
+    /// </summary>
+    private static string QuoteIdentifier(string identifier)
+    {
+        if (string.IsNullOrEmpty(identifier))
+        {
+            return identifier;
+        }
+        if (
+            identifier.StartsWith('"')
+            || identifier.Contains('.', StringComparison.Ordinal)
+            || identifier.Contains('(', StringComparison.Ordinal)
+        )
+        {
+            return identifier;
+        }
+        return NeedsQuoting(identifier) ? $"\"{identifier}\"" : identifier;
+    }
+
+    /// <summary>
+    /// Returns true when an identifier contains an uppercase ASCII letter,
+    /// meaning Postgres would fold it to lower case if left unquoted.
+    /// </summary>
+    private static bool NeedsQuoting(string identifier)
+    {
+        if (string.IsNullOrEmpty(identifier))
+        {
+            return false;
+        }
+        for (var i = 0; i < identifier.Length; i++)
+        {
+            var c = identifier[i];
+            if (c >= 'A' && c <= 'Z')
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /// <summary>
     /// Generates the GROUP BY clause
