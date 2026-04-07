@@ -13,6 +13,7 @@ public sealed class PostgreSqlContext : ISqlContext
     private readonly IFunctionMappingProvider _functionMappingProvider;
 #pragma warning restore IDE0052 // Remove unread private members
     private readonly SelectStatementBuilder _builder = new();
+    private readonly HashSet<string> _usedAliases = new(StringComparer.Ordinal);
     private string? _baseTable;
     private string? _baseAlias;
 
@@ -79,7 +80,7 @@ public sealed class PostgreSqlContext : ISqlContext
     /// </summary>
     /// <param name="subquerySql">The subquery SQL</param>
     /// <returns>The generated alias</returns>
-    private static string ExtractSubqueryAlias(string subquerySql)
+    private string ExtractSubqueryAlias(string subquerySql)
     {
         // Try to find the FROM clause and extract the table name
         var upperSql = subquerySql.ToUpperInvariant();
@@ -407,15 +408,37 @@ public sealed class PostgreSqlContext : ISqlContext
     }
 
     /// <summary>
-    /// Generates a table alias from a table name
+    /// Generates a table alias from a table name. Bug #20: tracks used
+    /// aliases per-context and appends a digit suffix on collision so
+    /// two tables starting with the same letter (e.g. account + address)
+    /// don't end up with the same alias.
     /// </summary>
     /// <param name="tableName">The table name</param>
     /// <returns>The generated alias</returns>
-    private static string GenerateTableAlias(string tableName)
+    private string GenerateTableAlias(string tableName)
     {
         ArgumentNullException.ThrowIfNull(tableName);
-        // Use first letter of the table name (to match expected test output)
-        return tableName.Length > 0 ? tableName[0].ToString().ToLowerInvariant() : "t";
+        var baseAlias = tableName.Length > 0
+            ? tableName[0].ToString().ToLowerInvariant()
+            : "t";
+
+        if (_usedAliases.Add(baseAlias))
+        {
+            return baseAlias;
+        }
+
+        // Collision: append a numeric suffix until we find a free slot.
+        var suffix = 2;
+        while (true)
+        {
+            var candidate =
+                baseAlias + suffix.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (_usedAliases.Add(candidate))
+            {
+                return candidate;
+            }
+            suffix++;
+        }
     }
 
     /// <summary>

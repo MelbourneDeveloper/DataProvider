@@ -1843,6 +1843,12 @@ internal static class Program
             // match the SQLite CLI output (which kept snake_case literally),
             // and so consumers that reference `rec.user_id` etc. keep working.
             var propName = col.Name;
+            // Bug #19: emit per-property XML doc so consumers with
+            // GenerateDocumentationFile=true don't get CS1591 warnings.
+            _ = sb.AppendLine(
+                CultureInfo.InvariantCulture,
+                $"    /// <summary>Column '{col.Name}'.</summary>"
+            );
             _ = sb.AppendLine(
                 CultureInfo.InvariantCulture,
                 $"    public {col.CSharpType} {propName} {{ get; init; }}"

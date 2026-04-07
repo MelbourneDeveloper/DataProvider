@@ -8,8 +8,8 @@
     <PackageId>Nimblesite.Lql.Cli.Postgres</PackageId>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>lql-postgres</ToolCommandName>
-    <PackageVersion>0.1.1-beta</PackageVersion>
-    <Version>0.1.1-beta</Version>
+    <PackageVersion>0.1.2-beta</PackageVersion>
+    <Version>0.1.2-beta</Version>
     <Description>LQL to PostgreSQL transpiler CLI tool</Description>
     <Authors>ChristianFindlay</Authors>
     <Company>MelbourneDeveloper</Company>
