@@ -10,11 +10,6 @@ namespace Nimblesite.TestSupport;
 /// <c>[Collection(PostgresTestSuite.Name)]</c>.
 /// </summary>
 [CollectionDefinition(Name)]
-[System.Diagnostics.CodeAnalysis.SuppressMessage(
-    "Naming",
-    "CA1711:Identifiers should not have incorrect suffix",
-    Justification = "xUnit collection definitions conventionally end in 'Suite' or 'Collection'; this name is descriptive."
-)]
 public sealed class PostgresTestSuite : ICollectionFixture<PostgresContainerFixture>
 {
     /// <summary>
