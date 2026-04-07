@@ -151,7 +151,16 @@ jobs:
       - name: Build Rust
         run: cd Lql/lql-lsp-rust && cargo build
 
-      - name: Test LQL + Migration + Sync (with coverage enforcement)
+      - name: Install Playwright browsers (Reporting.Integration.Tests)
+        run: |
+          dotnet build Reporting/Nimblesite.Reporting.Integration.Tests -c Debug
+          PWSCRIPT=$(find Reporting/Nimblesite.Reporting.Integration.Tests/bin -name 'playwright.ps1' | head -1)
+          if [ -z "$PWSCRIPT" ]; then
+            echo "playwright.ps1 not found under Reporting.Integration.Tests bin"; exit 1
+          fi
+          pwsh "$PWSCRIPT" install --with-deps chromium
+
+      - name: Test LQL + Migration + Sync + Reporting (with coverage enforcement)
         run: >-
           make _test_dotnet DOTNET_TEST_PROJECTS="Lql/Nimblesite.Lql.Tests
           Lql/Nimblesite.Lql.TypeProvider.FSharp.Tests
@@ -160,7 +169,9 @@ jobs:
           Sync/Nimblesite.Sync.SQLite.Tests
           Sync/Nimblesite.Sync.Postgres.Tests
           Sync/Nimblesite.Sync.Integration.Tests
-          Sync/Nimblesite.Sync.Http.Tests"
+          Sync/Nimblesite.Sync.Http.Tests
+          Reporting/Nimblesite.Reporting.Tests
+          Reporting/Nimblesite.Reporting.Integration.Tests"
         env:
           TESTCONTAINERS_RYUK_DISABLED: false
 

@@ -34,7 +34,9 @@ DOTNET_TEST_PROJECTS = \
   Sync/Nimblesite.Sync.SQLite.Tests \
   Sync/Nimblesite.Sync.Postgres.Tests \
   Sync/Nimblesite.Sync.Integration.Tests \
-  Sync/Nimblesite.Sync.Http.Tests
+  Sync/Nimblesite.Sync.Http.Tests \
+  Reporting/Nimblesite.Reporting.Tests \
+  Reporting/Nimblesite.Reporting.Integration.Tests
 
 # =============================================================================
 # PRIMARY TARGETS (uniform interface — do not rename)
@@ -138,6 +140,8 @@ _test_dotnet:
 	    "Sync/Nimblesite.Sync.Postgres") ;; \
 	    "Sync/Nimblesite.Sync.Integration") ;; \
 	    "Sync/Nimblesite.Sync.Http") ;; \
+	    "Reporting/Nimblesite.Reporting") ;; \
+	    "Reporting/Nimblesite.Reporting.Integration") ;; \
 	  esac; \
 	  THRESHOLD=$$(jq -r ".projects[\"$$SRC_KEY\"].threshold // .default_threshold" coverage-thresholds.json); \
 	  INCLUDE=$$(jq -r ".projects[\"$$SRC_KEY\"].include // empty" coverage-thresholds.json); \
