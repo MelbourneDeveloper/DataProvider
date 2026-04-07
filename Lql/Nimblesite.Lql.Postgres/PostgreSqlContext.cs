@@ -380,7 +380,9 @@ public sealed class PostgreSqlContext : ISqlContext
     /// <summary>
     /// Generates SQL for a ColumnInfo. Bare column names get double-quoted
     /// so PostgreSQL preserves their case (matches the FormatTableName
-    /// behaviour above).
+    /// behaviour above). ExpressionColumn values pass through
+    /// QuoteIdentifier as well so qualified references like
+    /// `icd10_chapter.Id` get the trailing component quoted.
     /// </summary>
     /// <param name="columnInfo">The column info</param>
     /// <returns>The SQL string for the column</returns>
@@ -391,7 +393,7 @@ public sealed class PostgreSqlContext : ISqlContext
                 ? QuoteIdentifier(n.Name)
                 : $"{n.TableAlias}.{QuoteIdentifier(n.Name)}",
             WildcardColumn w => string.IsNullOrEmpty(w.TableAlias) ? "*" : $"{w.TableAlias}.*",
-            ExpressionColumn e => e.Expression,
+            ExpressionColumn e => QuoteIdentifier(e.Expression),
             SubQueryColumn s => $"({s.SubQuery})",
             _ => "/*UNKNOWN_COLUMN*/",
         };
@@ -454,11 +456,10 @@ public sealed class PostgreSqlContext : ISqlContext
 
     /// <summary>
     /// Quotes a bare identifier (column name) when it contains characters
-    /// that PostgreSQL would fold (uppercase letters). Skips identifiers
-    /// that are already quoted or look like SQL functions (contain `(`).
-    /// Qualified identifiers (`table.col`, `alias.col`) are split on the
-    /// last dot and only the trailing identifier component is quoted —
-    /// the prefix is left alone (it's typically a single-letter alias).
+    /// that PostgreSQL would fold (uppercase letters). For complex
+    /// expressions (anything with whitespace, parentheses, operators
+    /// or keywords) we walk the string and quote each `prefix.Tail`
+    /// substring where the tail is a bare ident containing uppercase.
     /// </summary>
     private static string QuoteIdentifier(string identifier)
     {
@@ -466,32 +467,201 @@ public sealed class PostgreSqlContext : ISqlContext
         {
             return identifier;
         }
-        if (
-            identifier.StartsWith('"')
-            || identifier.Contains('(', StringComparison.Ordinal)
-        )
+        if (identifier.StartsWith('"'))
         {
             return identifier;
         }
 
-        // Qualified reference: split on the LAST dot and quote the tail.
-        var lastDot = identifier.LastIndexOf('.');
-        if (lastDot >= 0)
+        // Simple bare identifier (no `.`, no whitespace, no operators).
+        if (IsSimpleBareIdent(identifier))
         {
-            var prefix = identifier[..lastDot];
-            var tail = identifier[(lastDot + 1)..];
-            if (
-                tail.Length == 0
-                || tail.StartsWith('"')
-                || tail == "*"
-            )
+            return NeedsQuoting(identifier) ? $"\"{identifier}\"" : identifier;
+        }
+
+        // Simple qualified reference `prefix.tail` where both halves
+        // are bare idents.
+        if (IsSimpleQualifiedIdent(identifier, out var prefix, out var tail))
+        {
+            if (tail == "*")
             {
                 return identifier;
             }
             return NeedsQuoting(tail) ? $"{prefix}.\"{tail}\"" : identifier;
         }
 
-        return NeedsQuoting(identifier) ? $"\"{identifier}\"" : identifier;
+        // Complex expression: walk and quote inline `alias.Ident`
+        // substrings where Ident contains uppercase.
+        return QuoteInlineQualifiedIdents(identifier);
+    }
+
+    /// <summary>
+    /// True when <paramref name="s"/> is a single bare identifier:
+    /// only ASCII letters, digits, and underscore, starting with a letter
+    /// or underscore.
+    /// </summary>
+    private static bool IsSimpleBareIdent(string s)
+    {
+        if (string.IsNullOrEmpty(s))
+        {
+            return false;
+        }
+        var first = s[0];
+        if (!(char.IsLetter(first) || first == '_'))
+        {
+            return false;
+        }
+        for (var i = 1; i < s.Length; i++)
+        {
+            var c = s[i];
+            if (!(char.IsLetterOrDigit(c) || c == '_'))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// True when <paramref name="s"/> is exactly `prefix.tail` with both
+    /// halves being bare identifiers (or `*` as the tail).
+    /// </summary>
+    private static bool IsSimpleQualifiedIdent(string s, out string prefix, out string tail)
+    {
+        prefix = string.Empty;
+        tail = string.Empty;
+        var dot = s.IndexOf('.', StringComparison.Ordinal);
+        if (dot <= 0 || dot == s.Length - 1)
+        {
+            return false;
+        }
+        var first = s[..dot];
+        var second = s[(dot + 1)..];
+        if (second.Contains('.', StringComparison.Ordinal))
+        {
+            return false;
+        }
+        if (!IsSimpleBareIdent(first))
+        {
+            return false;
+        }
+        if (second != "*" && !IsSimpleBareIdent(second))
+        {
+            return false;
+        }
+        prefix = first;
+        tail = second;
+        return true;
+    }
+
+    /// <summary>
+    /// Walks an arbitrary expression string and rewrites any inline
+    /// substring matching `alias.Ident` (where Ident contains an
+    /// uppercase letter) into `alias."Ident"`. Skips characters inside
+    /// single-quoted string literals or already-quoted identifiers.
+    /// </summary>
+    private static string QuoteInlineQualifiedIdents(string expression)
+    {
+        var sb = new StringBuilder(expression.Length + 8);
+        var i = 0;
+        while (i < expression.Length)
+        {
+            var c = expression[i];
+
+            if (c == '\'')
+            {
+                sb.Append(c);
+                i++;
+                while (i < expression.Length)
+                {
+                    sb.Append(expression[i]);
+                    if (expression[i] == '\'')
+                    {
+                        if (i + 1 < expression.Length && expression[i + 1] == '\'')
+                        {
+                            sb.Append(expression[i + 1]);
+                            i += 2;
+                            continue;
+                        }
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+                continue;
+            }
+
+            if (c == '"')
+            {
+                sb.Append(c);
+                i++;
+                while (i < expression.Length)
+                {
+                    sb.Append(expression[i]);
+                    if (expression[i] == '"')
+                    {
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+                continue;
+            }
+
+            if (char.IsLetter(c) || c == '_')
+            {
+                var start = i;
+                i++;
+                while (
+                    i < expression.Length
+                    && (char.IsLetterOrDigit(expression[i]) || expression[i] == '_')
+                )
+                {
+                    i++;
+                }
+                var firstIdent = expression[start..i];
+
+                if (i < expression.Length && expression[i] == '.')
+                {
+                    var tailStart = i + 1;
+                    if (
+                        tailStart < expression.Length
+                        && (char.IsLetter(expression[tailStart]) || expression[tailStart] == '_')
+                    )
+                    {
+                        var tailEnd = tailStart + 1;
+                        while (
+                            tailEnd < expression.Length
+                            && (
+                                char.IsLetterOrDigit(expression[tailEnd])
+                                || expression[tailEnd] == '_'
+                            )
+                        )
+                        {
+                            tailEnd++;
+                        }
+                        var tailIdent = expression[tailStart..tailEnd];
+                        sb.Append(firstIdent).Append('.');
+                        if (NeedsQuoting(tailIdent))
+                        {
+                            sb.Append('"').Append(tailIdent).Append('"');
+                        }
+                        else
+                        {
+                            sb.Append(tailIdent);
+                        }
+                        i = tailEnd;
+                        continue;
+                    }
+                }
+
+                sb.Append(firstIdent);
+                continue;
+            }
+
+            sb.Append(c);
+            i++;
+        }
+        return sb.ToString();
     }
 
     /// <summary>
