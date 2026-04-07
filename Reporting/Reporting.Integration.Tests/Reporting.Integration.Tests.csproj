@@ -24,11 +24,11 @@
   <ItemGroup>
     <ProjectReference Include="..\Reporting.Api\Reporting.Api.csproj" />
     <ProjectReference Include="..\Reporting.Engine\Reporting.Engine.csproj" />
-    <ProjectReference Include="..\..\Migration\Migration\Migration.csproj" />
-    <ProjectReference Include="..\..\Migration\Migration.SQLite\Migration.SQLite.csproj" />
-    <ProjectReference Include="..\..\Lql\Lql\Lql.csproj" />
-    <ProjectReference Include="..\..\Lql\Lql.SQLite\Lql.SQLite.csproj" />
-    <ProjectReference Include="..\..\Other\Selecta\Selecta.csproj" />
+    <ProjectReference Include="..\..\Migration\Nimblesite.DataProvider.Migration.Core\Nimblesite.DataProvider.Migration.Core.csproj" />
+    <ProjectReference Include="..\..\Migration\Nimblesite.DataProvider.Migration.SQLite\Nimblesite.DataProvider.Migration.SQLite.csproj" />
+    <ProjectReference Include="..\..\Lql\Nimblesite.Lql.Core\Nimblesite.Lql.Core.csproj" />
+    <ProjectReference Include="..\..\Lql\Nimblesite.Lql.SQLite\Nimblesite.Lql.SQLite.csproj" />
+    <ProjectReference Include="..\..\Other\Nimblesite.Sql.Model\Nimblesite.Sql.Model.csproj" />
   </ItemGroup>
 
   <!-- Copy React renderer wwwroot for Playwright tests -->

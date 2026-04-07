@@ -2,7 +2,7 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <NoWarn>CA1515;CA2100;xUnit1030</NoWarn>
+    <NoWarn>CA1515;CA2100;CA1707;CA2000;CA1720;xUnit1030</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,10 +23,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Reporting.Engine\Reporting.Engine.csproj" />
-    <ProjectReference Include="..\..\Lql\Lql.SQLite\Lql.SQLite.csproj" />
-    <ProjectReference Include="..\..\Other\Selecta\Selecta.csproj" />
-    <ProjectReference Include="..\..\Migration\Migration\Migration.csproj" />
-    <ProjectReference Include="..\..\Migration\Migration.SQLite\Migration.SQLite.csproj" />
+    <ProjectReference Include="..\..\Lql\Nimblesite.Lql.SQLite\Nimblesite.Lql.SQLite.csproj" />
+    <ProjectReference Include="..\..\Other\Nimblesite.Sql.Model\Nimblesite.Sql.Model.csproj" />
+    <ProjectReference Include="..\..\Migration\Nimblesite.DataProvider.Migration.Core\Nimblesite.DataProvider.Migration.Core.csproj" />
+    <ProjectReference Include="..\..\Migration\Nimblesite.DataProvider.Migration.SQLite\Nimblesite.DataProvider.Migration.SQLite.csproj" />
   </ItemGroup>
 
   <ItemGroup>

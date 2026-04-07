@@ -3,7 +3,7 @@
     <OutputType>Library</OutputType>
     <PackageId>Reporting.Engine</PackageId>
     <Description>Reporting engine: config parsing, data source execution, format adapters</Description>
-    <NoWarn>CA1515</NoWarn>
+    <NoWarn>CA1515;CA1720</NoWarn>
     <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
   </PropertyGroup>
 
@@ -12,10 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\DataProvider\DataProvider\DataProvider.csproj" />
-    <ProjectReference Include="..\..\Lql\Lql\Lql.csproj" />
-    <ProjectReference Include="..\..\Lql\Lql.SQLite\Lql.SQLite.csproj" />
-    <ProjectReference Include="..\..\Lql\Lql.Postgres\Lql.Postgres.csproj" />
-    <ProjectReference Include="..\..\Other\Selecta\Selecta.csproj" />
+    <ProjectReference Include="..\..\DataProvider\Nimblesite.DataProvider.Core\Nimblesite.DataProvider.Core.csproj" />
+    <ProjectReference Include="..\..\Lql\Nimblesite.Lql.Core\Nimblesite.Lql.Core.csproj" />
+    <ProjectReference Include="..\..\Lql\Nimblesite.Lql.SQLite\Nimblesite.Lql.SQLite.csproj" />
+    <ProjectReference Include="..\..\Lql\Nimblesite.Lql.Postgres\Nimblesite.Lql.Postgres.csproj" />
+    <ProjectReference Include="..\..\Other\Nimblesite.Sql.Model\Nimblesite.Sql.Model.csproj" />
   </ItemGroup>
 </Project>

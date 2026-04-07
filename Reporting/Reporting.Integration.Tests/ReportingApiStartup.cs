@@ -1,7 +1,5 @@
 using System.Collections.Immutable;
 using System.Data;
-using Lql;
-using Lql.SQLite;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Json;
@@ -10,49 +8,54 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Nimblesite.Lql.Core;
+using Nimblesite.Lql.SQLite;
+using Nimblesite.Sql.Model;
 using Reporting.Engine;
-using Selecta;
-using ConnError = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>.Error<
+using ConnError = Outcome.Result<
     System.Data.IDbConnection,
-    Selecta.SqlError
->;
-using ConnOk = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>.Ok<
+    Nimblesite.Sql.Model.SqlError
+>.Error<System.Data.IDbConnection, Nimblesite.Sql.Model.SqlError>;
+using ConnOk = Outcome.Result<System.Data.IDbConnection, Nimblesite.Sql.Model.SqlError>.Ok<
     System.Data.IDbConnection,
-    Selecta.SqlError
+    Nimblesite.Sql.Model.SqlError
 >;
-using ConnResult = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>;
-using EngineError = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Error<
+using ConnResult = Outcome.Result<System.Data.IDbConnection, Nimblesite.Sql.Model.SqlError>;
+using EngineError = Outcome.Result<
     Reporting.Engine.ReportExecutionResult,
-    Selecta.SqlError
->;
-using EngineOk = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Ok<
+    Nimblesite.Sql.Model.SqlError
+>.Error<Reporting.Engine.ReportExecutionResult, Nimblesite.Sql.Model.SqlError>;
+using EngineOk = Outcome.Result<
     Reporting.Engine.ReportExecutionResult,
-    Selecta.SqlError
->;
+    Nimblesite.Sql.Model.SqlError
+>.Ok<Reporting.Engine.ReportExecutionResult, Nimblesite.Sql.Model.SqlError>;
 using LoadDirError = Outcome.Result<
     System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
-    Selecta.SqlError
+    Nimblesite.Sql.Model.SqlError
 >.Error<
     System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
-    Selecta.SqlError
+    Nimblesite.Sql.Model.SqlError
 >;
 using LoadDirOk = Outcome.Result<
     System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
-    Selecta.SqlError
+    Nimblesite.Sql.Model.SqlError
 >.Ok<
     System.Collections.Immutable.ImmutableArray<Reporting.Engine.ReportDefinition>,
-    Selecta.SqlError
+    Nimblesite.Sql.Model.SqlError
 >;
-using LqlParseError = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Error<
-    Lql.LqlStatement,
-    Selecta.SqlError
+using LqlParseError = Outcome.Result<
+    Nimblesite.Lql.Core.LqlStatement,
+    Nimblesite.Sql.Model.SqlError
+>.Error<Nimblesite.Lql.Core.LqlStatement, Nimblesite.Sql.Model.SqlError>;
+using LqlParseOk = Outcome.Result<
+    Nimblesite.Lql.Core.LqlStatement,
+    Nimblesite.Sql.Model.SqlError
+>.Ok<Nimblesite.Lql.Core.LqlStatement, Nimblesite.Sql.Model.SqlError>;
+using TranspileError = Outcome.Result<string, Nimblesite.Sql.Model.SqlError>.Error<
+    string,
+    Nimblesite.Sql.Model.SqlError
 >;
-using LqlParseOk = Outcome.Result<Lql.LqlStatement, Selecta.SqlError>.Ok<
-    Lql.LqlStatement,
-    Selecta.SqlError
->;
-using TranspileError = Outcome.Result<string, Selecta.SqlError>.Error<string, Selecta.SqlError>;
-using TranspileResult = Outcome.Result<string, Selecta.SqlError>;
+using TranspileResult = Outcome.Result<string, Nimblesite.Sql.Model.SqlError>;
 
 namespace Reporting.Integration.Tests;
 

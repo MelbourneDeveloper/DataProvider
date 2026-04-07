@@ -8,8 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Playwright;
-using Migration;
-using Migration.SQLite;
+using Nimblesite.DataProvider.Migration.Core;
+using Nimblesite.DataProvider.Migration.SQLite;
 using Xunit;
 
 namespace Reporting.Integration.Tests;

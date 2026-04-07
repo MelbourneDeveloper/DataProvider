@@ -2,29 +2,29 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
-using Migration;
-using Migration.SQLite;
+using Nimblesite.DataProvider.Migration.Core;
+using Nimblesite.DataProvider.Migration.SQLite;
+using Nimblesite.Sql.Model;
 using Outcome;
 using Reporting.Engine;
-using Selecta;
 using Xunit;
-using ConnError = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>.Error<
+using ConnError = Outcome.Result<
     System.Data.IDbConnection,
-    Selecta.SqlError
->;
-using ConnOk = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>.Ok<
+    Nimblesite.Sql.Model.SqlError
+>.Error<System.Data.IDbConnection, Nimblesite.Sql.Model.SqlError>;
+using ConnOk = Outcome.Result<System.Data.IDbConnection, Nimblesite.Sql.Model.SqlError>.Ok<
     System.Data.IDbConnection,
-    Selecta.SqlError
+    Nimblesite.Sql.Model.SqlError
 >;
-using ConnResult = Outcome.Result<System.Data.IDbConnection, Selecta.SqlError>;
-using EngineError = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Error<
+using ConnResult = Outcome.Result<System.Data.IDbConnection, Nimblesite.Sql.Model.SqlError>;
+using EngineError = Outcome.Result<
     Reporting.Engine.ReportExecutionResult,
-    Selecta.SqlError
->;
-using EngineOk = Outcome.Result<Reporting.Engine.ReportExecutionResult, Selecta.SqlError>.Ok<
+    Nimblesite.Sql.Model.SqlError
+>.Error<Reporting.Engine.ReportExecutionResult, Nimblesite.Sql.Model.SqlError>;
+using EngineOk = Outcome.Result<
     Reporting.Engine.ReportExecutionResult,
-    Selecta.SqlError
->;
+    Nimblesite.Sql.Model.SqlError
+>.Ok<Reporting.Engine.ReportExecutionResult, Nimblesite.Sql.Model.SqlError>;
 
 namespace Reporting.Tests;
 
@@ -556,19 +556,27 @@ public sealed class ReportEngineTests : IDisposable
 
     private static Result<string, SqlError> TranspileLql(string lqlCode)
     {
-        var statementResult = Lql.LqlStatementConverter.ToStatement(lqlCode);
+        var statementResult = Nimblesite.Lql.Core.LqlStatementConverter.ToStatement(lqlCode);
         if (
             statementResult
-            is Result<Lql.LqlStatement, SqlError>.Error<Lql.LqlStatement, SqlError> stmtErr
+            is Result<Nimblesite.Lql.Core.LqlStatement, SqlError>.Error<
+                Nimblesite.Lql.Core.LqlStatement,
+                SqlError
+            > stmtErr
         )
         {
             return new Result<string, SqlError>.Error<string, SqlError>(stmtErr.Value);
         }
 
         var statement = (
-            (Result<Lql.LqlStatement, SqlError>.Ok<Lql.LqlStatement, SqlError>)statementResult
+            (
+                Result<Nimblesite.Lql.Core.LqlStatement, SqlError>.Ok<
+                    Nimblesite.Lql.Core.LqlStatement,
+                    SqlError
+                >
+            )statementResult
         ).Value;
-        return Lql.SQLite.SqlStatementExtensionsSQLite.ToSQLite(statement);
+        return Nimblesite.Lql.SQLite.SqlStatementExtensionsSQLite.ToSQLite(statement);
     }
 
     private void SetupDatabase()

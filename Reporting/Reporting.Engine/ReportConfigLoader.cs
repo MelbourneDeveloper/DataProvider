@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Outcome;
-using Selecta;
+using Nimblesite.Sql.Model;
 
 namespace Reporting.Engine;
 

@@ -1,14 +1,14 @@
 using Microsoft.Extensions.Logging;
 using Reporting.Engine;
 using Xunit;
-using LoadError = Outcome.Result<Reporting.Engine.ReportDefinition, Selecta.SqlError>.Error<
+using LoadError = Outcome.Result<
     Reporting.Engine.ReportDefinition,
-    Selecta.SqlError
->;
-using LoadOk = Outcome.Result<Reporting.Engine.ReportDefinition, Selecta.SqlError>.Ok<
+    Nimblesite.Sql.Model.SqlError
+>.Error<Reporting.Engine.ReportDefinition, Nimblesite.Sql.Model.SqlError>;
+using LoadOk = Outcome.Result<
     Reporting.Engine.ReportDefinition,
-    Selecta.SqlError
->;
+    Nimblesite.Sql.Model.SqlError
+>.Ok<Reporting.Engine.ReportDefinition, Nimblesite.Sql.Model.SqlError>;
 
 namespace Reporting.Tests;
 
