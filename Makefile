@@ -290,7 +290,7 @@ _test_ts:
 	echo "==> Testing Lql/LqlExtension (threshold: $$THRESHOLD%)"; \
 	echo "============================================================"; \
 	cd Lql/LqlExtension && npm run compile && \
-	  rm -rf out-cov && npx nyc instrument out out-cov && rm -rf out && mv out-cov out && \
+	  rm -rf out-cov && npx nyc instrument out out-cov && cp -R out-cov/. out/ && rm -rf out-cov && \
 	  if command -v xvfb-run >/dev/null 2>&1; then \
 	    xvfb-run -a node ./out/test/runTest.js; \
 	  else \
