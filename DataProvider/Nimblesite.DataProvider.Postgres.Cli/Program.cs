@@ -798,10 +798,7 @@ internal static class Program
         // #13: keep snake_case parameter names so consumer named-argument
         // calls work).
         var insertable = columns.Where(c => !c.IsComputed).ToList();
-        var parameters = string.Join(
-            ", ",
-            insertable.Select(c => $"{c.CSharpType} {c.Name}")
-        );
+        var parameters = string.Join(", ", insertable.Select(c => $"{c.CSharpType} {c.Name}"));
 
         _ = sb.AppendLine();
         _ = sb.AppendLine("    /// <summary>");
@@ -887,10 +884,7 @@ internal static class Program
         string pascalName
     )
     {
-        var parameters = string.Join(
-            ", ",
-            insertable.Select(c => $"{c.CSharpType} {c.Name}")
-        );
+        var parameters = string.Join(", ", insertable.Select(c => $"{c.CSharpType} {c.Name}"));
         var colNames = string.Join(", ", insertable.Select(c => c.Name));
         var paramNames = string.Join(", ", insertable.Select(c => $"@{c.Name}"));
 
@@ -980,19 +974,10 @@ internal static class Program
             return;
 
         var allParams = pkCols.Concat(updateable).ToList();
-        var parameters = string.Join(
-            ", ",
-            allParams.Select(c => $"{c.CSharpType} {c.Name}")
-        );
+        var parameters = string.Join(", ", allParams.Select(c => $"{c.CSharpType} {c.Name}"));
 
-        var setClauses = string.Join(
-            ", ",
-            updateable.Select(c => $"{c.Name} = @{c.Name}")
-        );
-        var whereClauses = string.Join(
-            " AND ",
-            pkCols.Select(c => $"{c.Name} = @{c.Name}")
-        );
+        var setClauses = string.Join(", ", updateable.Select(c => $"{c.Name} = @{c.Name}"));
+        var whereClauses = string.Join(" AND ", pkCols.Select(c => $"{c.Name} = @{c.Name}"));
 
         // NpgsqlConnection overload
         _ = sb.AppendLine();
@@ -1124,14 +1109,8 @@ internal static class Program
         if (pkCols.Count == 0)
             return;
 
-        var parameters = string.Join(
-            ", ",
-            pkCols.Select(c => $"{c.CSharpType} {c.Name}")
-        );
-        var whereClauses = string.Join(
-            " AND ",
-            pkCols.Select(c => $"{c.Name} = @{c.Name}")
-        );
+        var parameters = string.Join(", ", pkCols.Select(c => $"{c.CSharpType} {c.Name}"));
+        var whereClauses = string.Join(" AND ", pkCols.Select(c => $"{c.Name} = @{c.Name}"));
         var sqlLine = $"DELETE FROM {table.Schema}.{table.Name} WHERE {whereClauses}";
 
         // NpgsqlConnection overload
@@ -1955,7 +1934,10 @@ internal static class Program
             // and so consumers that reference `rec.user_id` etc. keep working.
             var propName = col.Name;
             var readExpr = GetReaderExpression(col, ordinal);
-            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            {propName} = {readExpr},");
+            _ = sb.AppendLine(
+                CultureInfo.InvariantCulture,
+                $"            {propName} = {readExpr},"
+            );
             ordinal++;
         }
         _ = sb.AppendLine("        };");

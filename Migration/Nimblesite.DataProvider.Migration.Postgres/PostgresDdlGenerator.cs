@@ -76,8 +76,7 @@ public static class PostgresDdlGenerator
                 $"DROP TABLE IF EXISTS \"{op.Schema}\".\"{op.TableName}\" CASCADE",
             DropColumnOperation op =>
                 $"ALTER TABLE \"{op.Schema}\".\"{op.TableName}\" DROP COLUMN \"{op.ColumnName}\"",
-            DropIndexOperation op =>
-                $"DROP INDEX IF EXISTS \"{op.Schema}\".\"{op.IndexName}\"",
+            DropIndexOperation op => $"DROP INDEX IF EXISTS \"{op.Schema}\".\"{op.IndexName}\"",
             DropForeignKeyOperation op =>
                 $"ALTER TABLE \"{op.Schema}\".\"{op.TableName}\" DROP CONSTRAINT \"{op.ConstraintName}\"",
             _ => throw new NotSupportedException(
@@ -106,24 +105,16 @@ public static class PostgresDdlGenerator
         if (table.PrimaryKey is not null && table.PrimaryKey.Columns.Count > 0)
         {
             var pkName = (table.PrimaryKey.Name ?? $"PK_{table.Name}");
-            var pkCols = string.Join(
-                ", ",
-                table.PrimaryKey.Columns.Select(c => $"\"{c}\"")
-            );
+            var pkCols = string.Join(", ", table.PrimaryKey.Columns.Select(c => $"\"{c}\""));
             columnDefs.Add($"CONSTRAINT \"{pkName}\" PRIMARY KEY ({pkCols})");
         }
 
         // Add foreign key constraints
         foreach (var fk in table.ForeignKeys)
         {
-            var fkName = (
-                fk.Name ?? $"FK_{table.Name}_{string.Join("_", fk.Columns)}"
-            );
+            var fkName = (fk.Name ?? $"FK_{table.Name}_{string.Join("_", fk.Columns)}");
             var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c}\""));
-            var refCols = string.Join(
-                ", ",
-                fk.ReferencedColumns.Select(c => $"\"{c}\"")
-            );
+            var refCols = string.Join(", ", fk.ReferencedColumns.Select(c => $"\"{c}\""));
             var onDelete = ForeignKeyActionToSql(fk.OnDelete);
             var onUpdate = ForeignKeyActionToSql(fk.OnUpdate);
             var refTable = fk.ReferencedTable;
@@ -137,9 +128,7 @@ public static class PostgresDdlGenerator
         // Add unique constraints
         foreach (var uc in table.UniqueConstraints)
         {
-            var ucName = (
-                uc.Name ?? $"UQ_{table.Name}_{string.Join("_", uc.Columns)}"
-            );
+            var ucName = (uc.Name ?? $"UQ_{table.Name}_{string.Join("_", uc.Columns)}");
             var ucCols = string.Join(", ", uc.Columns.Select(c => $"\"{c}\""));
             columnDefs.Add($"CONSTRAINT \"{ucName}\" UNIQUE ({ucCols})");
         }
@@ -252,14 +241,9 @@ public static class PostgresDdlGenerator
     private static string GenerateAddForeignKey(AddForeignKeyOperation op)
     {
         var fk = op.ForeignKey;
-        var fkName = (
-            fk.Name ?? $"FK_{op.TableName}_{string.Join("_", fk.Columns)}"
-        );
+        var fkName = (fk.Name ?? $"FK_{op.TableName}_{string.Join("_", fk.Columns)}");
         var fkCols = string.Join(", ", fk.Columns.Select(c => $"\"{c}\""));
-        var refCols = string.Join(
-            ", ",
-            fk.ReferencedColumns.Select(c => $"\"{c}\"")
-        );
+        var refCols = string.Join(", ", fk.ReferencedColumns.Select(c => $"\"{c}\""));
         var onDelete = ForeignKeyActionToSql(fk.OnDelete);
         var onUpdate = ForeignKeyActionToSql(fk.OnUpdate);
 
@@ -272,9 +256,7 @@ public static class PostgresDdlGenerator
     private static string GenerateAddUniqueConstraint(AddUniqueConstraintOperation op)
     {
         var uc = op.UniqueConstraint;
-        var ucName = (
-            uc.Name ?? $"UQ_{op.TableName}_{string.Join("_", uc.Columns)}"
-        );
+        var ucName = (uc.Name ?? $"UQ_{op.TableName}_{string.Join("_", uc.Columns)}");
         var ucCols = string.Join(", ", uc.Columns.Select(c => $"\"{c}\""));
         return $"ALTER TABLE \"{op.Schema}\".\"{op.TableName}\" ADD CONSTRAINT \"{ucName}\" UNIQUE ({ucCols})";
     }
@@ -353,10 +335,7 @@ public static class PostgresDdlGenerator
     /// Hand-rolled tokenizer (not regex) so we can correctly skip string
     /// literals and existing quoted identifiers.
     /// </remarks>
-    internal static string QuoteIdentifiersInExpression(
-        string expression,
-        ISet<string> columnNames
-    )
+    internal static string QuoteIdentifiersInExpression(string expression, ISet<string> columnNames)
     {
         if (string.IsNullOrEmpty(expression) || columnNames.Count == 0)
         {
@@ -417,7 +396,10 @@ public static class PostgresDdlGenerator
             {
                 var start = i;
                 i++;
-                while (i < expression.Length && (char.IsLetterOrDigit(expression[i]) || expression[i] == '_'))
+                while (
+                    i < expression.Length
+                    && (char.IsLetterOrDigit(expression[i]) || expression[i] == '_')
+                )
                 {
                     i++;
                 }

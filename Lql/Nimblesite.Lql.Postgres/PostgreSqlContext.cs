@@ -328,11 +328,7 @@ public sealed class PostgreSqlContext : ISqlContext
                 // whitespace token after this ident is the alias literal
                 // (a single word matching the alias map value), AND the
                 // previous keyword was FROM/JOIN, treat as declaration.
-                if (
-                    aliasMap.TryGetValue(ident, out var alias)
-                    && i < sql.Length
-                    && sql[i] == '.'
-                )
+                if (aliasMap.TryGetValue(ident, out var alias) && i < sql.Length && sql[i] == '.')
                 {
                     // It's a `tableName.` reference — rewrite to alias.
                     sb.Append(alias);
@@ -534,9 +530,7 @@ public sealed class PostgreSqlContext : ISqlContext
     private string GenerateTableAlias(string tableName)
     {
         ArgumentNullException.ThrowIfNull(tableName);
-        var baseAlias = tableName.Length > 0
-            ? tableName[0].ToString().ToLowerInvariant()
-            : "t";
+        var baseAlias = tableName.Length > 0 ? tableName[0].ToString().ToLowerInvariant() : "t";
 
         if (_usedAliases.Add(baseAlias))
         {
