@@ -30,9 +30,13 @@ Release DataProvider packages to NuGet.org so apps can consume them without git 
 
 | Tool | Command | Install |
 |------|---------|---------|
-| `DataProvider.SQLite.Cli` | `dataprovider-sqlite` | `dotnet tool install DataProvider.SQLite.Cli -g` |
-| `DataProvider.Postgres.Cli` | `dataprovider-postgres` | `dotnet tool install DataProvider.Postgres.Cli -g` |
 | `DataProviderMigrate` | `DataProviderMigrate` | `dotnet tool install DataProviderMigrate -g` |
+
+> `DataProvider.Postgres.Cli` and `DataProvider.SQLite.Cli` are **no longer the
+> consumer integration point** for code generation. The source-generator path
+> defined in [`../specs/codegen-source-generator.md`](../specs/codegen-source-generator.md)
+> supersedes them. The CLI projects remain in the tree as standalone
+> debugging utilities only and are not published to nuget.org as tools.
 
 ---
 
@@ -48,8 +52,6 @@ Release DataProvider packages to NuGet.org so apps can consume them without git 
 | `Migration/Migration.Cli/Migration.Cli.csproj` | Add PackAsTool, ToolCommandName |
 | `DataProvider/DataProvider/DataProvider.csproj` | Add PackageId, Description |
 | `DataProvider/DataProvider.SQLite/DataProvider.SQLite.csproj` | Add PackageId, Description |
-| `DataProvider/DataProvider.Postgres.Cli/DataProvider.Postgres.Cli.csproj` | Add PackAsTool, ToolCommandName |
-| `DataProvider/DataProvider.SQLite.Cli/DataProvider.SQLite.Cli.csproj` | Add PackAsTool, ToolCommandName |
 | `.github/workflows/release.yml` | **CREATE** - Automated release workflow |
 
 ---
@@ -105,8 +107,6 @@ jobs:
 
       - name: Pack CLI tools
         run: |
-          dotnet pack DataProvider/DataProvider.Postgres.Cli/DataProvider.Postgres.Cli.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
-          dotnet pack DataProvider/DataProvider.SQLite.Cli/DataProvider.SQLite.Cli.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
           dotnet pack Migration/Migration.Cli/Migration.Cli.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
 
       - name: Push to NuGet

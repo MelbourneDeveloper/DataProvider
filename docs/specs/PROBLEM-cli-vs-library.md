@@ -1,5 +1,8 @@
 # PROBLEM: Codegen is shipped as out-of-process CLI tools instead of as library APIs
 
+> **Status: resolved.** The resolution is specified in
+> [`codegen-cli-tool.md`](./codegen-cli-tool.md).
+
 ## What this document is
 
 This document describes a **problem** with how DataProvider currently exposes its
