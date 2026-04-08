@@ -304,10 +304,11 @@ _test_ts: _ensure_lql_lsp_on_path
 	echo "==> Testing Lql/LqlExtension (threshold: $$THRESHOLD%)"; \
 	echo "============================================================"; \
 	export PATH="$(CURDIR)/Lql/lql-lsp-rust/target/release:$(CURDIR)/Lql/lql-lsp-rust/target/debug:$$PATH"; \
+	unset ELECTRON_RUN_AS_NODE; \
 	echo "  lql-lsp on PATH: $$(command -v lql-lsp || echo 'NOT FOUND')"; \
 	echo "  lql-lsp --version: $$(lql-lsp --version 2>&1 || echo 'failed')"; \
 	cd Lql/LqlExtension && npm run compile && \
-	  rm -rf out-cov && npx nyc instrument out out-cov && cp -R out-cov/. out/ && rm -rf out-cov && \
+	  rm -rf out-cov && npx nyc instrument --include='out/**/*.js' --exclude='out/test/**' --no-all out out-cov && cp -R out-cov/. out/ && rm -rf out-cov && \
 	  if command -v xvfb-run >/dev/null 2>&1; then \
 	    xvfb-run -a node ./out/test/runTest.js; \
 	  else \
@@ -318,9 +319,9 @@ _test_ts: _ensure_lql_lsp_on_path
 	  echo "FAIL [Lql/LqlExtension]: Extension tests failed"; \
 	  exit 1; \
 	fi; \
-	SUMMARY="Lql/LqlExtension/coverage/coverage-summary.json"; \
+	SUMMARY="$(CURDIR)/Lql/LqlExtension/coverage/coverage-summary.json"; \
 	if [ ! -f "$$SUMMARY" ]; then \
-	  SUMMARY="Lql/LqlExtension/.nyc_output/coverage-summary.json"; \
+	  SUMMARY="$(CURDIR)/Lql/LqlExtension/.nyc_output/coverage-summary.json"; \
 	fi; \
 	if [ ! -f "$$SUMMARY" ]; then \
 	  echo "  WARN [Lql/LqlExtension]: No coverage summary produced (cross-process instrumentation skipped); treating as 0%"; \
@@ -339,7 +340,7 @@ _test_ts: _ensure_lql_lsp_on_path
 	if [ "$$ABOVE" = "1" ]; then \
 	  NEW=$$(echo "$$COVERAGE" | awk '{print int($$1)}'); \
 	  echo "  Ratcheting threshold: $$THRESHOLD% -> $$NEW%"; \
-	  jq '.projects["Lql/LqlExtension"].threshold = '"$$NEW" coverage-thresholds.json > coverage-thresholds.json.tmp && mv coverage-thresholds.json.tmp coverage-thresholds.json; \
+	  jq '.projects["Lql/LqlExtension"].threshold = '"$$NEW" "$(CURDIR)/coverage-thresholds.json" > "$(CURDIR)/coverage-thresholds.json.tmp" && mv "$(CURDIR)/coverage-thresholds.json.tmp" "$(CURDIR)/coverage-thresholds.json"; \
 	fi; \
 	echo "  PASS [Lql/LqlExtension]"
 

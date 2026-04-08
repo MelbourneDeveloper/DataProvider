@@ -72,7 +72,7 @@ jobs:
 
       - name: Build CLI tools (needed by F# Type Provider MSBuild targets)
         run: |
-          dotnet build Migration/Nimblesite.DataProvider.Migration.Cli -c Debug
+          dotnet build Migration/DataProviderMigrate -c Debug
           dotnet build DataProvider/Nimblesite.DataProvider.SQLite.Cli -c Debug
 
       - name: Test DataProvider (with coverage enforcement)

@@ -1,20 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Nimblesite.DataProvider.Migration.Cli</RootNamespace>
+    <RootNamespace>DataProviderMigrate</RootNamespace>
     <NoWarn>$(NoWarn);CA2254;CA1515;RS1035;CA2100</NoWarn>
     <IsPackable>true</IsPackable>
-    <PackageId>Nimblesite.DataProvider.Migration.Cli</PackageId>
+    <PackageId>DataProviderMigrate</PackageId>
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>migration-cli</ToolCommandName>
-    <PackageVersion>0.2.2-beta</PackageVersion>
-    <Version>0.2.2-beta</Version>
-    <Description>CLI tool for database schema migrations</Description>
+    <ToolCommandName>DataProviderMigrate</ToolCommandName>
+    <Description>CLI tool for DataProvider database schema migrations from YAML (SQLite + PostgreSQL).</Description>
     <Authors>ChristianFindlay</Authors>
     <Company>MelbourneDeveloper</Company>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/MelbourneDeveloper/DataProvider</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <PackageTags>dataprovider;migration;schema;yaml;sqlite;postgres;dotnet-tool</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

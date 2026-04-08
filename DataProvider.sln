@@ -73,7 +73,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sql.Model", "Oth
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sync.Http", "Sync\Nimblesite.Sync.Http\Nimblesite.Sync.Http.csproj", "{392C12C2-ECBA-4728-9D8D-54BD2E10F7ED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Migration.Cli", "Migration\Nimblesite.DataProvider.Migration.Cli\Nimblesite.DataProvider.Migration.Cli.csproj", "{57572A45-33CD-4928-9C30-13480AEDB313}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataProviderMigrate", "Migration\DataProviderMigrate\DataProviderMigrate.csproj", "{57572A45-33CD-4928-9C30-13480AEDB313}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Postgres.Cli", "DataProvider\Nimblesite.DataProvider.Postgres.Cli\Nimblesite.DataProvider.Postgres.Cli.csproj", "{A8A70E6D-1D43-437F-9971-44A4FA1BDD74}"
 EndProject

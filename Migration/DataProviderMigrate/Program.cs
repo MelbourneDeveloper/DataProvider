@@ -5,7 +5,7 @@ using Nimblesite.DataProvider.Migration.Postgres;
 using Nimblesite.DataProvider.Migration.SQLite;
 using Npgsql;
 
-namespace Nimblesite.DataProvider.Migration.Cli;
+namespace DataProviderMigrate;
 
 /// <summary>
 /// CLI tool for database schema operations: migrate from YAML and export C# schemas to YAML.
@@ -68,7 +68,7 @@ public static class Program
     {
         Console.WriteLine(
             $"""
-            Nimblesite.DataProvider.Migration.Cli - Database Schema Tool
+            DataProviderMigrate - Database Schema Tool
               Schema:   {args.SchemaPath}
               Output:   {args.OutputPath}
               Provider: {args.Provider}
@@ -202,7 +202,7 @@ public static class Program
     {
         Console.WriteLine(
             $"""
-            Nimblesite.DataProvider.Migration.Cli - Export C# Schema to YAML
+            DataProviderMigrate - Export C# Schema to YAML
               Assembly: {args.AssemblyPath}
               Type:     {args.TypeName}
               Output:   {args.OutputPath}
@@ -287,17 +287,17 @@ public static class Program
     {
         Console.WriteLine(
             """
-            Nimblesite.DataProvider.Migration.Cli - Database Schema Tool
+            DataProviderMigrate - Database Schema Tool
 
             Commands:
               migrate   Create database from YAML schema definition
               export    Export C# schema class to YAML file
 
             Usage:
-              migration-cli migrate --schema schema.yaml --output database.db [--provider sqlite|postgres]
-              migration-cli export --assembly assembly.dll --type Namespace.SchemaClass --output schema.yaml
+              DataProviderMigrate migrate --schema schema.yaml --output database.db [--provider sqlite|postgres]
+              DataProviderMigrate export --assembly assembly.dll --type Namespace.SchemaClass --output schema.yaml
 
-            Run 'migration-cli <command> --help' for command-specific options.
+            Run 'DataProviderMigrate <command> --help' for command-specific options.
             """
         );
         return 1;
@@ -319,7 +319,7 @@ public static class Program
     {
         Console.WriteLine(
             """
-            Usage: migration-cli migrate [options]
+            Usage: DataProviderMigrate migrate [options]
 
             Options:
               --schema, -s    Path to YAML schema definition file (required)
@@ -327,8 +327,8 @@ public static class Program
               --provider, -p  Database provider: sqlite or postgres (default: sqlite)
 
             Examples:
-              migration-cli migrate --schema my-schema.yaml --output ./build.db --provider sqlite
-              migration-cli migrate --schema my-schema.yaml --output "Host=localhost;Database=mydb;Username=user;Password=pass" --provider postgres
+              DataProviderMigrate migrate --schema my-schema.yaml --output ./build.db --provider sqlite
+              DataProviderMigrate migrate --schema my-schema.yaml --output "Host=localhost;Database=mydb;Username=user;Password=pass" --provider postgres
             """
         );
         return 1;
@@ -344,7 +344,7 @@ public static class Program
     {
         Console.WriteLine(
             """
-            Usage: migration-cli export [options]
+            Usage: DataProviderMigrate export [options]
 
             Options:
               --assembly, -a  Path to compiled assembly containing schema class (required)
@@ -352,7 +352,7 @@ public static class Program
               --output, -o    Path to output YAML file (required)
 
             Examples:
-              migration-cli export -a bin/Debug/net10.0/MyProject.dll -t MyNamespace.MySchema -o schema.yaml
+              DataProviderMigrate export -a bin/Debug/net10.0/MyProject.dll -t MyNamespace.MySchema -o schema.yaml
 
             Schema Class Requirements:
               - Static property 'Definition' returning SchemaDefinition, OR

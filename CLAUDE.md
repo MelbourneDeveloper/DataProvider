@@ -5,6 +5,8 @@
 > Read this entire file before writing any code.
 > These rules are NON-NEGOTIABLE. Violations will be rejected in review.
 
+⚠️ NEVER KILL ANY VSCODE PROCESS ⚠️
+
 <!-- agent-pmo:d75d5c8 -->
 
 ## Project Overview
