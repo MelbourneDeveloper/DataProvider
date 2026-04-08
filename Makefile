@@ -313,7 +313,8 @@ _test_ts: _ensure_lql_lsp_on_path
 	unset ELECTRON_RUN_AS_NODE; \
 	echo "  lql-lsp on PATH: $$(command -v lql-lsp || echo 'NOT FOUND')"; \
 	echo "  lql-lsp --version: $$(lql-lsp --version 2>&1 || echo 'failed')"; \
-	cd Lql/LqlExtension && npm run compile && \
+	cd Lql/LqlExtension && \
+	  npx vsce package --no-git-tag-version --no-update-package-json && \
 	  rm -rf out-cov && npx nyc instrument --include='out/**/*.js' --exclude='out/test/**' --no-all out out-cov && cp -R out-cov/. out/ && rm -rf out-cov && \
 	  if command -v xvfb-run >/dev/null 2>&1; then \
 	    xvfb-run -a node ./out/test/runTest.js; \
