@@ -11,12 +11,14 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <NoWarn>EPC12;CA2100</NoWarn>
     <IsPackable>true</IsPackable>
-    <PackageId>Nimblesite.DataProvider.Postgres.Cli</PackageId>
+    <PackageId>DataProvider</PackageId>
+    <AssemblyName>DataProvider</AssemblyName>
+    <RootNamespace>DataProvider</RootNamespace>
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>dataprovider-postgres</ToolCommandName>
-    <PackageVersion>0.2.7-beta</PackageVersion>
-    <Version>0.2.7-beta</Version>
-    <Description>CLI tool for generating type-safe PostgreSQL data access code</Description>
+    <ToolCommandName>DataProvider</ToolCommandName>
+    <PackageVersion>0.5.0-beta</PackageVersion>
+    <Version>0.5.0-beta</Version>
+    <Description>Unified DataProvider codegen tool. Generates type-safe data access code for Postgres, SQLite, and SqlServer from live database schemas.</Description>
     <Authors>ChristianFindlay</Authors>
     <Company>Nimblesite</Company>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -25,12 +27,15 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Nimblesite.DataProvider.Core/Nimblesite.DataProvider.Core.csproj" />
+    <ProjectReference Include="../Nimblesite.DataProvider.SQLite/Nimblesite.DataProvider.SQLite.csproj" />
+    <ProjectReference Include="../Nimblesite.DataProvider.SqlServer/Nimblesite.DataProvider.SqlServer.csproj" />
     <ProjectReference Include="../../Other/Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj" />
     <ProjectReference Include="../../Migration/Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="Npgsql" Version="9.0.2" />
-    <!-- Uses SqlParserCS 0.6.5 from Directory.Build.props -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>
 </Project>
