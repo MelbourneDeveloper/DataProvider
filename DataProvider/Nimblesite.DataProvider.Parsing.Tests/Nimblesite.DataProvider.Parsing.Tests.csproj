@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Shared parser-contract test base. Concrete SQLite/Postgres test
+         projects reference this project and subclass SqlParserContractTests
+         to run every test against their own ISqlParser implementation. No
+         test project references another test project's tests. -->
+    <IsPackable>false</IsPackable>
+    <!-- IMPORTANT: NOT a test project itself. This library holds the
+         abstract contract; the concrete test projects provide the xUnit
+         runner. Setting IsTestProject=true here would cause the VS test
+         host to try running an abstract class and fail with "no tests
+         discovered". -->
+    <IsTestProject>false</IsTestProject>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <NoWarn>$(NoWarn);1591;CA1307;CA1707;CA1859;CA2201;xUnit1030</NoWarn>
+    <WarningsNotAsErrors>CA1307;CA1707;CA1859;CA2201;xUnit1030</WarningsNotAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- xunit is referenced as a library so the Fact attributes are
+         available on the abstract base. The concrete subclass test
+         projects bring the actual runner. -->
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Nimblesite.DataProvider.Core/Nimblesite.DataProvider.Core.csproj" />
+    <ProjectReference Include="../../Other/Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj" />
+  </ItemGroup>
+</Project>

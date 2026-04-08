@@ -19,6 +19,11 @@
   <!-- You are not allowed to reference database platform specific dependencies here -->
 
   <ItemGroup>
+    <!-- ANTLR runtime is shared across dialects via Core/Parsing/AntlrSqlParameterExtractor.cs per [CON-SHARED-CORE]. It is not platform-specific. -->
+    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="../../Other/Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj" />
   </ItemGroup>
 

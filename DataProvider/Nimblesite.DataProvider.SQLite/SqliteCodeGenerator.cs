@@ -23,11 +23,14 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
 
     /// <summary>
     /// Generates C# source for a SQL file using real database metadata.
+    /// Delegates to <see cref="SqlAntlrCodeGenerator.GenerateCodeWithMetadata"/>
+    /// per [CON-SHARED-CORE]; this method is now a thin SQLite-specific
+    /// adapter that supplies the default SQLite <see cref="CodeGenerationConfig"/>.
     /// </summary>
     /// <param name="fileName">The SQL file name.</param>
     /// <param name="sql">The SQL content.</param>
     /// <param name="statement">The parsed SQL statement metadata.</param>
-    /// <param name="connectionString">The database connection string.</param>
+    /// <param name="connectionString">The database connection string (unused; callers must have already resolved metadata).</param>
     /// <param name="columnMetadata">Real column metadata from the database.</param>
     /// <param name="hasCustomImplementation">Whether a custom implementation exists.</param>
     /// <param name="groupingConfig">Optional grouping configuration for parent-child relationships.</param>
@@ -44,72 +47,16 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
         CodeGenerationConfig? config = null
     )
     {
-        if (string.IsNullOrWhiteSpace(fileName))
-            return new Result<string, SqlError>.Error<string, SqlError>(
-                new SqlError("fileName cannot be null or empty")
-            );
-
-        if (string.IsNullOrWhiteSpace(sql))
-            return new Result<string, SqlError>.Error<string, SqlError>(
-                new SqlError("sql cannot be null or empty")
-            );
-
-        if (statement == null)
-            return new Result<string, SqlError>.Error<string, SqlError>(
-                new SqlError("statement cannot be null")
-            );
-
-        if (string.IsNullOrWhiteSpace(connectionString))
-            return new Result<string, SqlError>.Error<string, SqlError>(
-                new SqlError("connectionString cannot be null or empty")
-            );
-
-        if (columnMetadata == null)
-            return new Result<string, SqlError>.Error<string, SqlError>(
-                new SqlError("columnMetadata cannot be null")
-            );
-
+        _ = connectionString; // Metadata has already been resolved by the caller
         _ = hasCustomImplementation; // Suppress unused parameter warning
 
-        // Use provided config or create default SQLite config
-        var generationConfig = config ?? CreateDefaultSqliteConfig();
-
-        // If grouping is configured, generate grouped version
-        if (groupingConfig != null)
-        {
-            return GenerateGroupedVersionWithMetadata(
-                fileName,
-                sql,
-                statement,
-                columnMetadata,
-                groupingConfig,
-                generationConfig
-            );
-        }
-
-        // Generate model type
-        var modelResult = generationConfig.GenerateModelType(fileName, columnMetadata);
-        if (modelResult is Result<string, SqlError>.Error<string, SqlError> modelFailure)
-            return modelFailure;
-
-        // Generate data access method
-        var className = $"{fileName}Extensions";
-        var dataAccessResult = generationConfig.GenerateDataAccessMethod(
-            className,
+        return SqlAntlrCodeGenerator.GenerateCodeWithMetadata(
             fileName,
             sql,
-            statement.Parameters.ToList().AsReadOnly(),
+            statement,
             columnMetadata,
-            generationConfig.ConnectionType
-        );
-        if (dataAccessResult is Result<string, SqlError>.Error<string, SqlError> dataAccessFailure)
-            return dataAccessFailure;
-
-        // Generate complete source file
-        return generationConfig.GenerateSourceFile(
-            generationConfig.TargetNamespace,
-            (modelResult as Result<string, SqlError>.Ok<string, SqlError>)!.Value,
-            (dataAccessResult as Result<string, SqlError>.Ok<string, SqlError>)!.Value
+            config ?? CreateDefaultSqliteConfig(),
+            groupingConfig
         );
     }
 
@@ -118,7 +65,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
     /// </summary>
     private static CodeGenerationConfig CreateDefaultSqliteConfig()
     {
-        var databaseEffects = new SqliteDatabaseEffects();
+        var databaseEffects = SqliteDatabaseEffects.Create();
         var tableOperationGenerator = new DefaultTableOperationGenerator("SqliteConnection");
 
         return new CodeGenerationConfig(
@@ -160,7 +107,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
         IEnumerable<ParameterInfo> parameters
     )
     {
-        var databaseEffects = new SqliteDatabaseEffects();
+        var databaseEffects = SqliteDatabaseEffects.Create();
         return await databaseEffects
             .GetColumnMetadataFromSqlAsync(connectionString, sql, parameters)
             .ConfigureAwait(false);
@@ -268,56 +215,6 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
         }
 
         return baseType;
-    }
-
-    private static Result<string, SqlError> GenerateGroupedVersionWithMetadata(
-        string fileName,
-        string sql,
-        SelectStatement statement,
-        IReadOnlyList<DatabaseColumn> columnMetadata,
-        GroupingConfig groupingConfig,
-        CodeGenerationConfig config
-    )
-    {
-        // Generate raw record type
-        var rawRecordResult = config.GenerateRawRecordType($"{fileName}Raw", columnMetadata);
-        if (rawRecordResult is Result<string, SqlError>.Error<string, SqlError> rawFailure)
-            return rawFailure;
-
-        // Generate grouped query method
-        var groupedMethodResult = config.GenerateGroupedQueryMethod(
-            $"{fileName}Extensions",
-            fileName,
-            sql,
-            statement.Parameters.ToList().AsReadOnly(),
-            columnMetadata,
-            groupingConfig,
-            config.ConnectionType
-        );
-        if (groupedMethodResult is Result<string, SqlError>.Error<string, SqlError> methodFailure)
-            return methodFailure;
-
-        // Generate grouped model types
-        var groupedModelsResult = config.GenerateGroupedModels(
-            groupingConfig.ParentEntity.Name,
-            groupingConfig.ChildEntity.Name,
-            groupingConfig.ParentEntity.Columns,
-            groupingConfig.ChildEntity.Columns,
-            columnMetadata
-        );
-        if (groupedModelsResult is Result<string, SqlError>.Error<string, SqlError> modelsFailure)
-            return modelsFailure;
-
-        // Combine all parts
-        var rawRecord = (rawRecordResult as Result<string, SqlError>.Ok<string, SqlError>)!.Value;
-        var method = (groupedMethodResult as Result<string, SqlError>.Ok<string, SqlError>)!.Value;
-        var models = (groupedModelsResult as Result<string, SqlError>.Ok<string, SqlError>)!.Value;
-
-        return config.GenerateSourceFile(
-            config.TargetNamespace,
-            $"{rawRecord}\n\n{models}",
-            method
-        );
     }
 
     // =============================

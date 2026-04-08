@@ -2,6 +2,7 @@ using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
+using Nimblesite.DataProvider.Core.Parsing;
 using Nimblesite.Sql.Model;
 using Outcome;
 
@@ -30,9 +31,8 @@ public sealed class SqliteAntlrParser : ISqlParser
             // Parse the SQL
             var parseTree = parser.parse();
 
-            // Extract parameters using visitor
-            var parameterExtractor = new SqliteParameterExtractor();
-            var parameters = SqliteParameterExtractor.ExtractParameters(parseTree);
+            // Extract parameters via Core's shared ANTLR walker per [CON-SHARED-CORE]
+            var parameters = AntlrSqlParameterExtractor.ExtractParameters(parseTree);
             var parameterInfos = parameters.Select(p => new ParameterInfo(p)).ToList();
 
             // Determine query type

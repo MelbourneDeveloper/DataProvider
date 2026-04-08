@@ -28,6 +28,7 @@
   <ItemGroup>
     <ProjectReference Include="../Nimblesite.DataProvider.Core/Nimblesite.DataProvider.Core.csproj" />
     <ProjectReference Include="../Nimblesite.DataProvider.SQLite/Nimblesite.DataProvider.SQLite.csproj" />
+    <ProjectReference Include="../Nimblesite.DataProvider.Postgres/Nimblesite.DataProvider.Postgres.csproj" />
     <ProjectReference Include="../Nimblesite.DataProvider.SqlServer/Nimblesite.DataProvider.SqlServer.csproj" />
     <ProjectReference Include="../../Other/Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj" />
     <ProjectReference Include="../../Migration/Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Core.csproj" />
