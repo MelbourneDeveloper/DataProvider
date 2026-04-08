@@ -32,7 +32,7 @@ Release DataProvider packages to NuGet.org so apps can consume them without git 
 |------|---------|---------|
 | `DataProvider.SQLite.Cli` | `dataprovider-sqlite` | `dotnet tool install DataProvider.SQLite.Cli -g` |
 | `DataProvider.Postgres.Cli` | `dataprovider-postgres` | `dotnet tool install DataProvider.Postgres.Cli -g` |
-| `Migration.Cli` | `migration-cli` | `dotnet tool install Migration.Cli -g` |
+| `DataProviderMigrate` | `DataProviderMigrate` | `dotnet tool install DataProviderMigrate -g` |
 
 ---
 
@@ -110,7 +110,7 @@ jobs:
           dotnet pack Migration/Migration.Cli/Migration.Cli.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
 
       - name: Push to NuGet
-        run: dotnet nuget push "./nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push "./nupkgs/*.nupkg" --api-key ${{ secrets.NIMBLESITE_NUGET_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -124,7 +124,7 @@ jobs:
 ## Release Process
 
 1. Make all .csproj changes
-2. Add `NUGET_API_KEY` secret to GitHub repo settings
+2. Add `NIMBLESITE_NUGET_KEY` secret to GitHub repo settings
 3. Tag and push: `git tag v0.1.0 && git push origin v0.1.0`
 4. GitHub Actions runs automatically: build → test → pack → push to NuGet.org
 

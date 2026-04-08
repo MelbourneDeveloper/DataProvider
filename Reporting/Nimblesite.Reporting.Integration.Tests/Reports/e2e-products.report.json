@@ -1,0 +1,203 @@
+{
+  "id": "e2e-products",
+  "title": "E2E Product Report",
+  "parameters": [],
+  "customCss": ".metric-highlight { background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%); border-left: 4px solid #00BCD4; } .metric-currency { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-left: 4px solid #4CAF50; } .chart-dark-theme { background: #1a2332; border-radius: 12px; padding: 16px; } .chart-dark-theme .report-component-title { color: #e0e0e0; } .table-striped-accent .report-table-row:nth-child(odd) { background: #e0f7fa; } .table-compact .report-table-td { padding: 4px 8px; font-size: 0.8rem; } .text-banner { background: linear-gradient(90deg, #00BCD4 0%, #2E4450 100%); color: #ffffff; padding: 12px 20px; border-radius: 8px; }",
+  "dataSources": [
+    {
+      "id": "allProducts",
+      "type": "Lql",
+      "connectionRef": "reporting-db",
+      "query": "products |> order_by(products.Name asc) |> select(products.Id, products.Name, products.Category, products.Price, products.Stock)",
+      "parameters": []
+    },
+    {
+      "id": "categorySummary",
+      "type": "Lql",
+      "connectionRef": "reporting-db",
+      "query": "products |> group_by(products.Category) |> select(products.Category, count(*) as ProductCount, sum(products.Stock) as TotalStock, avg(products.Price) as AvgPrice) |> order_by(ProductCount desc)",
+      "parameters": []
+    },
+    {
+      "id": "totals",
+      "type": "Lql",
+      "connectionRef": "reporting-db",
+      "query": "products |> select(count(*) as TotalProducts, sum(products.Stock) as TotalStock, sum(products.Price * products.Stock) as TotalValue)",
+      "parameters": []
+    },
+    {
+      "id": "highValueProducts",
+      "type": "Lql",
+      "connectionRef": "reporting-db",
+      "query": "products |> filter(fn(row) => row.products.Price > 30) |> select(products.Name, products.Price, products.Stock, products.Price * products.Stock as InventoryValue) |> order_by(InventoryValue desc)",
+      "parameters": []
+    },
+    {
+      "id": "priceAnalysis",
+      "type": "Lql",
+      "connectionRef": "reporting-db",
+      "query": "products |> select(products.Name, products.Price, case when products.Price > 50 then 'Premium' when products.Price > 25 then 'Standard' else 'Budget' end as PriceTier, products.Price * products.Stock as InventoryValue) |> order_by(products.Price desc)",
+      "parameters": []
+    },
+    {
+      "id": "stockAnalysis",
+      "type": "Lql",
+      "connectionRef": "reporting-db",
+      "query": "products |> group_by(products.Category) |> having(fn(group) => count(*) > 1) |> select(products.Category, count(*) as Items, sum(products.Stock) as TotalStock, min(products.Price) as CheapestPrice, max(products.Price) as MostExpensive) |> order_by(TotalStock desc)",
+      "parameters": []
+    }
+  ],
+  "layout": {
+    "columns": 12,
+    "rows": [
+      {
+        "cells": [
+          {
+            "colSpan": 4,
+            "component": {
+              "type": "Metric",
+              "dataSource": "totals",
+              "title": "Total Products",
+              "value": "TotalProducts",
+              "format": "number",
+              "cssClass": "metric-highlight"
+            }
+          },
+          {
+            "colSpan": 4,
+            "component": {
+              "type": "Metric",
+              "dataSource": "totals",
+              "title": "Total Stock",
+              "value": "TotalStock",
+              "format": "number",
+              "cssClass": "metric-highlight"
+            }
+          },
+          {
+            "colSpan": 4,
+            "component": {
+              "type": "Metric",
+              "dataSource": "totals",
+              "title": "Total Value",
+              "value": "TotalValue",
+              "format": "currency",
+              "cssClass": "metric-currency",
+              "cssStyle": { "fontWeight": "bold" }
+            }
+          }
+        ]
+      },
+      {
+        "cells": [
+          {
+            "colSpan": 6,
+            "component": {
+              "type": "Chart",
+              "chartType": "Bar",
+              "dataSource": "categorySummary",
+              "title": "Products by Category",
+              "xAxis": { "field": "Category" },
+              "yAxis": { "field": "ProductCount", "label": "Count" },
+              "cssClass": "chart-dark-theme"
+            }
+          },
+          {
+            "colSpan": 6,
+            "component": {
+              "type": "Chart",
+              "chartType": "Bar",
+              "dataSource": "categorySummary",
+              "title": "Avg Price by Category",
+              "xAxis": { "field": "Category" },
+              "yAxis": { "field": "AvgPrice", "label": "Avg Price ($)" },
+              "cssStyle": { "borderTop": "3px solid #FF6B6B" }
+            }
+          }
+        ]
+      },
+      {
+        "cells": [
+          {
+            "colSpan": 6,
+            "cssClass": "custom-cell-padded",
+            "component": {
+              "type": "Chart",
+              "chartType": "Bar",
+              "dataSource": "stockAnalysis",
+              "title": "Stock Distribution by Category",
+              "xAxis": { "field": "Category" },
+              "yAxis": { "field": "TotalStock", "label": "Total Units" }
+            }
+          },
+          {
+            "colSpan": 6,
+            "component": {
+              "type": "Chart",
+              "chartType": "Bar",
+              "dataSource": "highValueProducts",
+              "title": "High-Value Product Inventory",
+              "xAxis": { "field": "Name" },
+              "yAxis": { "field": "InventoryValue", "label": "Value ($)" },
+              "cssClass": "chart-dark-theme"
+            }
+          }
+        ]
+      },
+      {
+        "cells": [
+          {
+            "colSpan": 12,
+            "component": {
+              "type": "Table",
+              "dataSource": "allProducts",
+              "title": "All Products",
+              "columns": [
+                { "field": "Name", "header": "Product" },
+                { "field": "Category", "header": "Category" },
+                { "field": "Price", "header": "Price" },
+                { "field": "Stock", "header": "Stock" }
+              ],
+              "pageSize": 20,
+              "cssClass": "table-striped-accent"
+            }
+          }
+        ]
+      },
+      {
+        "cells": [
+          {
+            "colSpan": 12,
+            "component": {
+              "type": "Table",
+              "dataSource": "priceAnalysis",
+              "title": "Price Tier Analysis (LQL CASE Expression)",
+              "columns": [
+                { "field": "Name", "header": "Product" },
+                { "field": "Price", "header": "Price" },
+                { "field": "PriceTier", "header": "Tier" },
+                { "field": "InventoryValue", "header": "Inventory Value" }
+              ],
+              "pageSize": 20,
+              "cssClass": "table-compact",
+              "cssStyle": { "border": "2px solid #2E4450", "borderRadius": "8px" }
+            }
+          }
+        ]
+      },
+      {
+        "cells": [
+          {
+            "colSpan": 12,
+            "component": {
+              "type": "Text",
+              "content": "E2E test report powered by LQL with custom CSS styling - validates full stack rendering: LQL transpilation -> SQLite execution -> API response -> React DOM. Components use cssClass, cssStyle, and report-level customCss for visual customization.",
+              "style": "caption",
+              "cssClass": "text-banner"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

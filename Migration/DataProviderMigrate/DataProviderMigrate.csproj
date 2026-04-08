@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>DataProviderMigrate</RootNamespace>
+    <NoWarn>$(NoWarn);CA2254;CA1515;RS1035;CA2100</NoWarn>
+    <IsPackable>true</IsPackable>
+    <PackageId>DataProviderMigrate</PackageId>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>DataProviderMigrate</ToolCommandName>
+    <Description>CLI tool for DataProvider database schema migrations from YAML (SQLite + PostgreSQL).</Description>
+    <Authors>ChristianFindlay</Authors>
+    <Company>MelbourneDeveloper</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/MelbourneDeveloper/DataProvider</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>dataprovider;migration;schema;yaml;sqlite;postgres;dotnet-tool</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.3" />
+    <PackageReference Include="Npgsql" Version="9.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nimblesite.DataProvider.Migration.Core\Nimblesite.DataProvider.Migration.Core.csproj" />
+    <ProjectReference Include="..\Nimblesite.DataProvider.Migration.SQLite\Nimblesite.DataProvider.Migration.SQLite.csproj" />
+    <ProjectReference Include="..\Nimblesite.DataProvider.Migration.Postgres\Nimblesite.DataProvider.Migration.Postgres.csproj" />
+  </ItemGroup>
+</Project>

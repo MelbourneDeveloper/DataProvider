@@ -1,8 +1,13 @@
-<!-- agent-pmo:d75d5c8 -->
 # DataProvider — Agent Instructions
+
+⚠️ CRITICAL: **Reduce token usage.** Check file size before loading. Write less. Delete fluff and dead code. Alert user when context is loaded with pointless files. ⚠️ 
 
 > Read this entire file before writing any code.
 > These rules are NON-NEGOTIABLE. Violations will be rejected in review.
+
+⚠️ NEVER KILL ANY VSCODE PROCESS ⚠️
+
+<!-- agent-pmo:d75d5c8 -->
 
 ## Project Overview
 
@@ -125,6 +130,9 @@ Always include these in `Directory.Build.props`:
 
 - LQL is database platform INDEPENDENT. It MUST work exactly the same on whatever platform it is transpiled to. Failure for this to happen must be logged as a GitHub issue
 
+## LQL 
+- LQL is database platform INDEPENDENT. It MUST work exactly the same on whatever platform it is transpiled to. Failure for this to happen must be logged as a GitHub issue
+
 ## CSS
 
 - **MINIMAL CSS** — Do not duplicate CSS classes
@@ -182,6 +190,7 @@ make setup          # post-create dev environment setup
 | Sync | `Sync/` | Offline-first bidirectional sync |
 | Gatekeeper | `Gatekeeper/` | WebAuthn + RBAC auth |
 | Samples | `Samples/` | Clinical, Scheduling, ICD10, Dashboard |
+| Reporting | `Reporting/` | Embeddable reporting platform (SQL/LQL data sources, JSON config, React renderer) |
 | Website | `Website/` | Documentation site (Eleventy + DocFX) |
 
 ## Repo Structure
@@ -199,6 +208,7 @@ DataProvider/
 ├── Sync/                  # Bidirectional sync engine
 ├── Gatekeeper/            # WebAuthn auth + RBAC
 ├── Samples/               # Healthcare samples
+├── Reporting/             # Embeddable reporting platform
 ├── Website/               # Documentation site
 ├── docs/
 │   ├── specs/             # Specification documents

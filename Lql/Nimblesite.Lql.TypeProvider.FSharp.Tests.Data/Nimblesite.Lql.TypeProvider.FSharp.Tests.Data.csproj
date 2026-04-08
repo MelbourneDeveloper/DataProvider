@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <!-- Exclude Generated folder from default globbing - we include it explicitly in the target -->
@@ -33,10 +34,10 @@
     </Content>
   </ItemGroup>
 
-  <!-- Create database from YAML using Nimblesite.DataProvider.Migration.Cli -->
+  <!-- Create database from YAML using DataProviderMigrate -->
   <Target Name="CreateDatabaseSchema" BeforeTargets="GenerateDataProvider">
     <Exec
-      Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)../../Migration/Nimblesite.DataProvider.Migration.Cli/Nimblesite.DataProvider.Migration.Cli.csproj&quot; -- --schema &quot;$(MSBuildThisFileDirectory)../Nimblesite.Lql.TypeProvider.FSharp.Tests/typeprovider-test-schema.yaml&quot; --output &quot;$(MSBuildThisFileDirectory)../Nimblesite.Lql.TypeProvider.FSharp.Tests/typeprovider-test.db&quot; --provider sqlite"
+      Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)../../Migration/DataProviderMigrate/DataProviderMigrate.csproj&quot; -- --schema &quot;$(MSBuildThisFileDirectory)../Nimblesite.Lql.TypeProvider.FSharp.Tests/typeprovider-test-schema.yaml&quot; --output &quot;$(MSBuildThisFileDirectory)../Nimblesite.Lql.TypeProvider.FSharp.Tests/typeprovider-test.db&quot; --provider sqlite"
       WorkingDirectory="$(MSBuildProjectDirectory)"
       StandardOutputImportance="High"
       StandardErrorImportance="High"

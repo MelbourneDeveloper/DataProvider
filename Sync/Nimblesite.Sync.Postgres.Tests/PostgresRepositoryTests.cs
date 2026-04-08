@@ -2,62 +2,27 @@ namespace Nimblesite.Sync.Postgres.Tests;
 
 /// <summary>
 /// Integration tests for Postgres repositories.
-/// Uses Testcontainers for real PostgreSQL instances.
+/// Uses the shared postgres container; each test gets its own database.
 /// </summary>
-public sealed class PostgresRepositoryTests : IAsyncLifetime
+[Collection(PostgresTestSuite.Name)]
+public sealed class PostgresRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
-        .WithImage("postgres:16-alpine")
-        .WithDatabase("testdb")
-        .WithUsername("test")
-        .WithPassword("test")
-        .Build();
-
     private NpgsqlConnection _conn = null!;
     private static readonly ILogger Logger = NullLogger.Instance;
 
     public async Task InitializeAsync()
     {
-        await _postgres.StartAsync().ConfigureAwait(false);
-
-        // Retry connection with exponential backoff - container may not be immediately ready
-        var maxRetries = 10;
-        Exception? lastException = null;
-
-        for (var i = 0; i < maxRetries; i++)
-        {
-            try
-            {
-                _conn = new NpgsqlConnection(_postgres.GetConnectionString());
-                await _conn.OpenAsync().ConfigureAwait(false);
-                lastException = null;
-                break;
-            }
-            catch (Exception ex) when (i < maxRetries - 1)
-            {
-                lastException = ex;
-                _conn?.Dispose();
-                await Task.Delay(500 * (i + 1)).ConfigureAwait(false);
-            }
-        }
-
-        if (lastException is not null || _conn is null)
-        {
-            throw new InvalidOperationException(
-                $"Failed to connect to PostgreSQL container after {maxRetries} retries",
-                lastException
-            );
-        }
+        _conn = await fixture.CreateDatabaseAsync("sync_repo_test").ConfigureAwait(false);
 
         // Create schema
         var schemaResult = PostgresSyncSchema.CreateSchema(_conn);
         Assert.IsType<BoolSyncOk>(schemaResult);
     }
 
-    public async Task DisposeAsync()
+    public Task DisposeAsync()
     {
         _conn.Dispose();
-        await _postgres.DisposeAsync();
+        return Task.CompletedTask;
     }
 
     #region PostgresSyncLogRepository Tests

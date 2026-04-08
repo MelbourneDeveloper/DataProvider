@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
     <NoWarn>EPC12;CA1303;CA1515</NoWarn>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)Example.ruleset</CodeAnalysisRuleSet>
@@ -44,10 +45,10 @@
     </Content>
   </ItemGroup>
 
-  <!-- Create database from YAML using Nimblesite.DataProvider.Migration.Cli (YAML stored in git) -->
+  <!-- Create database from YAML using DataProviderMigrate (YAML stored in git) -->
   <Target Name="CreateDatabaseSchema" BeforeTargets="TranspileLqlAndGenerateDataProvider">
     <Exec
-      Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)../../Migration/Nimblesite.DataProvider.Migration.Cli/Nimblesite.DataProvider.Migration.Cli.csproj&quot; -- --schema &quot;$(MSBuildProjectDirectory)/example-schema.yaml&quot; --output &quot;$(MSBuildProjectDirectory)/invoices.db&quot; --provider sqlite"
+      Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)../../Migration/DataProviderMigrate/DataProviderMigrate.csproj&quot; -- --schema &quot;$(MSBuildProjectDirectory)/example-schema.yaml&quot; --output &quot;$(MSBuildProjectDirectory)/invoices.db&quot; --provider sqlite"
       WorkingDirectory="$(MSBuildProjectDirectory)"
       StandardOutputImportance="High"
       StandardErrorImportance="High"

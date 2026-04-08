@@ -1,7 +1,7 @@
 {
   "all": true,
-  "include": ["out/**/*.js"],
-  "exclude": ["out/test/**"],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/test/**", "out/**"],
   "reporter": ["json-summary", "text"],
   "temp-dir": ".nyc_output"
 }

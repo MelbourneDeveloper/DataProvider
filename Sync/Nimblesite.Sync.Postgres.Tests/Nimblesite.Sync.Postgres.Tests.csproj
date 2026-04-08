@@ -29,4 +29,15 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile
+      Include="..\..\Tests.Shared\PostgresContainerFixture.cs"
+      Link="Shared\PostgresContainerFixture.cs"
+    />
+    <Compile
+      Include="..\..\Tests.Shared\PostgresCollection.cs"
+      Link="Shared\PostgresCollection.cs"
+    />
+  </ItemGroup>
 </Project>

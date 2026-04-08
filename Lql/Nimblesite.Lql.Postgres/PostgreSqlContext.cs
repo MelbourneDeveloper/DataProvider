@@ -13,6 +13,7 @@ public sealed class PostgreSqlContext : ISqlContext
     private readonly IFunctionMappingProvider _functionMappingProvider;
 #pragma warning restore IDE0052 // Remove unread private members
     private readonly SelectStatementBuilder _builder = new();
+    private readonly HashSet<string> _usedAliases = new(StringComparer.Ordinal);
     private string? _baseTable;
     private string? _baseAlias;
 
@@ -79,7 +80,7 @@ public sealed class PostgreSqlContext : ISqlContext
     /// </summary>
     /// <param name="subquerySql">The subquery SQL</param>
     /// <returns>The generated alias</returns>
-    private static string ExtractSubqueryAlias(string subquerySql)
+    private string ExtractSubqueryAlias(string subquerySql)
     {
         // Try to find the FROM clause and extract the table name
         var upperSql = subquerySql.ToUpperInvariant();
@@ -231,7 +232,144 @@ public sealed class PostgreSqlContext : ISqlContext
             );
         }
 
-        return sql.ToString();
+        // Final pass: walk the entire generated SQL and quote any inline
+        // `alias.Ident` substring whose tail contains uppercase. This
+        // catches WHERE / JOIN ON / GROUP BY / HAVING / ORDER BY paths
+        // where the raw expression text was emitted verbatim. The walker
+        // skips characters inside string literals and already-quoted
+        // identifiers so it's safe to apply once at the end.
+        var result = QuoteInlineQualifiedIdents(sql.ToString());
+
+        // Bug #22: when joins are present, the FROM/JOIN clauses emit
+        // table aliases (`FROM users u INNER JOIN orders o ON ...`) but
+        // the column refs in SELECT/WHERE/etc use the full table name
+        // (`users.name`). Postgres rejects this — once you alias a
+        // table, the original name is no longer a valid qualifier.
+        // Build a map of table -> alias from the FROM/JOIN portion of
+        // the generated SQL, then rewrite the rest of the body to use
+        // aliases consistently.
+        if (statement.HasJoins)
+        {
+            result = RewriteFullTableRefsToAliases(result, statement);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Walks the generated SQL and replaces any `tableName."Col"` or
+    /// `tableName.col` reference with the corresponding aliased form
+    /// using the alias declared in the FROM/JOIN clauses. Skips
+    /// string literals and the FROM/JOIN-clause text itself (the
+    /// declaration `FROM tableName alias` and `JOIN tableName alias`
+    /// must keep the table name).
+    /// </summary>
+    private static string RewriteFullTableRefsToAliases(string sql, SelectStatement statement)
+    {
+        // Build name -> alias map from the statement's table list.
+        var aliasMap = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var t in statement.Tables)
+        {
+            if (!string.IsNullOrEmpty(t.Alias) && !string.IsNullOrEmpty(t.Name))
+            {
+                aliasMap[t.Name] = t.Alias;
+            }
+        }
+        if (aliasMap.Count == 0)
+        {
+            return sql;
+        }
+
+        var sb = new StringBuilder(sql.Length);
+        var i = 0;
+        while (i < sql.Length)
+        {
+            var c = sql[i];
+
+            // Skip string literals.
+            if (c == '\'')
+            {
+                sb.Append(c);
+                i++;
+                while (i < sql.Length)
+                {
+                    sb.Append(sql[i]);
+                    if (sql[i] == '\'')
+                    {
+                        if (i + 1 < sql.Length && sql[i + 1] == '\'')
+                        {
+                            sb.Append(sql[i + 1]);
+                            i += 2;
+                            continue;
+                        }
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+                continue;
+            }
+
+            // Quoted identifier `"foo"`. If followed by `.` it's a
+            // `"fhir_Slot".` qualifier and can be rewritten to its alias.
+            // Otherwise (followed by whitespace/end) it's the FROM/JOIN
+            // declaration form `"fhir_Slot" f` and must be left alone.
+            if (c == '"')
+            {
+                var quoteStart = i;
+                i++;
+                while (i < sql.Length && sql[i] != '"')
+                {
+                    i++;
+                }
+                if (i < sql.Length)
+                {
+                    i++; // consume closing quote
+                }
+                var quotedIdent = sql[quoteStart..i];
+                var inner = quotedIdent.Length >= 2 ? quotedIdent[1..^1] : string.Empty;
+                if (aliasMap.TryGetValue(inner, out var qAlias) && i < sql.Length && sql[i] == '.')
+                {
+                    sb.Append(qAlias);
+                    continue;
+                }
+                sb.Append(quotedIdent);
+                continue;
+            }
+
+            // Identifier candidate.
+            if (char.IsLetter(c) || c == '_')
+            {
+                var start = i;
+                i++;
+                while (i < sql.Length && (char.IsLetterOrDigit(sql[i]) || sql[i] == '_'))
+                {
+                    i++;
+                }
+                var ident = sql[start..i];
+
+                // Skip if this identifier is the FROM/JOIN declaration of
+                // the same table. We detect this by looking back for
+                // FROM/JOIN keyword and checking that what follows is
+                // <table> <alias>. Easier heuristic: if the next non-
+                // whitespace token after this ident is the alias literal
+                // (a single word matching the alias map value), AND the
+                // previous keyword was FROM/JOIN, treat as declaration.
+                if (aliasMap.TryGetValue(ident, out var alias) && i < sql.Length && sql[i] == '.')
+                {
+                    // It's a `tableName.` reference — rewrite to alias.
+                    sb.Append(alias);
+                    continue;
+                }
+
+                sb.Append(ident);
+                continue;
+            }
+
+            sb.Append(c);
+            i++;
+        }
+        return sb.ToString();
     }
 
     /// <summary>
@@ -377,7 +515,11 @@ public sealed class PostgreSqlContext : ISqlContext
         };
 
     /// <summary>
-    /// Generates SQL for a ColumnInfo
+    /// Generates SQL for a ColumnInfo. Bare column names get double-quoted
+    /// so PostgreSQL preserves their case (matches the FormatTableName
+    /// behaviour above). ExpressionColumn values pass through
+    /// QuoteIdentifier as well so qualified references like
+    /// `icd10_chapter.Id` get the trailing component quoted.
     /// </summary>
     /// <param name="columnInfo">The column info</param>
     /// <returns>The SQL string for the column</returns>
@@ -385,13 +527,36 @@ public sealed class PostgreSqlContext : ISqlContext
         columnInfo switch
         {
             NamedColumn n => string.IsNullOrEmpty(n.TableAlias)
-                ? n.Name
-                : $"{n.TableAlias}.{n.Name}",
-            WildcardColumn w => string.IsNullOrEmpty(w.TableAlias) ? "*" : $"{w.TableAlias}.*",
-            ExpressionColumn e => e.Expression,
+                ? QuoteIdentifier(n.Name)
+                // Bug #24: also quote the TableAlias if it needs it.
+                // When the FROM clause uses a quoted mixed-case table name
+                // (e.g. `FROM "fhir_Patient"`), the column qualifier must
+                // also be quoted to look up the same table.
+                : $"{QuoteBareIdentifier(n.TableAlias)}.{QuoteIdentifier(n.Name)}",
+            WildcardColumn w => string.IsNullOrEmpty(w.TableAlias)
+                ? "*"
+                : $"{QuoteBareIdentifier(w.TableAlias)}.*",
+            ExpressionColumn e => QuoteIdentifier(e.Expression),
             SubQueryColumn s => $"({s.SubQuery})",
             _ => "/*UNKNOWN_COLUMN*/",
         };
+
+    /// <summary>
+    /// Quotes a bare identifier (no dots) when its case requires it.
+    /// Identifiers that are already quoted are passed through.
+    /// </summary>
+    private static string QuoteBareIdentifier(string identifier)
+    {
+        if (string.IsNullOrEmpty(identifier))
+        {
+            return identifier;
+        }
+        if (identifier.StartsWith('"'))
+        {
+            return identifier;
+        }
+        return NeedsQuoting(identifier) ? $"\"{identifier}\"" : identifier;
+    }
 
     /// <summary>
     /// Generates SQL for a ColumnInfo with alias if present
@@ -405,21 +570,300 @@ public sealed class PostgreSqlContext : ISqlContext
     }
 
     /// <summary>
-    /// Generates a table alias from a table name
+    /// Generates a table alias from a table name. Bug #20: tracks used
+    /// aliases per-context and appends a digit suffix on collision so
+    /// two tables starting with the same letter (e.g. account + address)
+    /// don't end up with the same alias.
     /// </summary>
     /// <param name="tableName">The table name</param>
     /// <returns>The generated alias</returns>
-    private static string GenerateTableAlias(string tableName)
+    private string GenerateTableAlias(string tableName)
     {
         ArgumentNullException.ThrowIfNull(tableName);
-        // Use first letter of the table name (to match expected test output)
-        return tableName.Length > 0 ? tableName[0].ToString().ToLowerInvariant() : "t";
+        var baseAlias = tableName.Length > 0 ? tableName[0].ToString().ToLowerInvariant() : "t";
+
+        if (_usedAliases.Add(baseAlias))
+        {
+            return baseAlias;
+        }
+
+        // Collision: append a numeric suffix until we find a free slot.
+        var suffix = 2;
+        while (true)
+        {
+            var candidate =
+                baseAlias + suffix.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (_usedAliases.Add(candidate))
+            {
+                return candidate;
+            }
+            suffix++;
+        }
     }
 
     /// <summary>
-    /// Formats a table name for PostgreSQL by lowercasing.
+    /// Formats a table name for PostgreSQL. PostgreSQL folds unquoted
+    /// identifiers to lower case, so any identifier that contains an
+    /// uppercase character (e.g. `fhir_Patient`) MUST be double-quoted
+    /// to survive a round-trip. Identifiers that are already lowercase
+    /// (the previous behaviour) are emitted unquoted to preserve the
+    /// existing test fixture output.
     /// </summary>
-    private static string FormatTableName(string tableName) => tableName.ToLowerInvariant();
+    private static string FormatTableName(string tableName) =>
+        NeedsQuoting(tableName) ? $"\"{tableName}\"" : tableName;
+
+    /// <summary>
+    /// Quotes a bare identifier (column name) when it contains characters
+    /// that PostgreSQL would fold (uppercase letters). For complex
+    /// expressions (anything with whitespace, parentheses, operators
+    /// or keywords) we walk the string and quote each `prefix.Tail`
+    /// substring where the tail is a bare ident containing uppercase.
+    /// </summary>
+    private static string QuoteIdentifier(string identifier)
+    {
+        if (string.IsNullOrEmpty(identifier))
+        {
+            return identifier;
+        }
+        if (identifier.StartsWith('"'))
+        {
+            return identifier;
+        }
+
+        // Simple bare identifier (no `.`, no whitespace, no operators).
+        if (IsSimpleBareIdent(identifier))
+        {
+            return NeedsQuoting(identifier) ? $"\"{identifier}\"" : identifier;
+        }
+
+        // Simple qualified reference `prefix.tail` where both halves
+        // are bare idents.
+        if (IsSimpleQualifiedIdent(identifier, out var prefix, out var tail))
+        {
+            // Quote either side that needs it. Bug #24: PG folds unquoted
+            // table-name qualifiers, so a quoted FROM table requires the
+            // qualifier on the column ref to also be quoted.
+            var prefixNeeds = NeedsQuoting(prefix);
+            var tailNeeds = tail != "*" && NeedsQuoting(tail);
+            if (!prefixNeeds && !tailNeeds)
+            {
+                return identifier;
+            }
+            var quotedPrefix = prefixNeeds ? $"\"{prefix}\"" : prefix;
+            var quotedTail = tail == "*" ? "*" : (tailNeeds ? $"\"{tail}\"" : tail);
+            return $"{quotedPrefix}.{quotedTail}";
+        }
+
+        // Complex expression: walk and quote inline `alias.Ident`
+        // substrings where Ident contains uppercase.
+        return QuoteInlineQualifiedIdents(identifier);
+    }
+
+    /// <summary>
+    /// True when <paramref name="s"/> is a single bare identifier:
+    /// only ASCII letters, digits, and underscore, starting with a letter
+    /// or underscore.
+    /// </summary>
+    private static bool IsSimpleBareIdent(string s)
+    {
+        if (string.IsNullOrEmpty(s))
+        {
+            return false;
+        }
+        var first = s[0];
+        if (!(char.IsLetter(first) || first == '_'))
+        {
+            return false;
+        }
+        for (var i = 1; i < s.Length; i++)
+        {
+            var c = s[i];
+            if (!(char.IsLetterOrDigit(c) || c == '_'))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// True when <paramref name="s"/> is exactly `prefix.tail` with both
+    /// halves being bare identifiers (or `*` as the tail).
+    /// </summary>
+    private static bool IsSimpleQualifiedIdent(string s, out string prefix, out string tail)
+    {
+        prefix = string.Empty;
+        tail = string.Empty;
+        var dot = s.IndexOf('.', StringComparison.Ordinal);
+        if (dot <= 0 || dot == s.Length - 1)
+        {
+            return false;
+        }
+        var first = s[..dot];
+        var second = s[(dot + 1)..];
+        if (second.Contains('.', StringComparison.Ordinal))
+        {
+            return false;
+        }
+        if (!IsSimpleBareIdent(first))
+        {
+            return false;
+        }
+        if (second != "*" && !IsSimpleBareIdent(second))
+        {
+            return false;
+        }
+        prefix = first;
+        tail = second;
+        return true;
+    }
+
+    /// <summary>
+    /// Walks an arbitrary expression string and rewrites any inline
+    /// substring matching `alias.Ident` (where Ident contains an
+    /// uppercase letter) into `alias."Ident"`. Skips characters inside
+    /// single-quoted string literals or already-quoted identifiers.
+    /// </summary>
+    private static string QuoteInlineQualifiedIdents(string expression)
+    {
+        var sb = new StringBuilder(expression.Length + 8);
+        var i = 0;
+        while (i < expression.Length)
+        {
+            var c = expression[i];
+
+            if (c == '\'')
+            {
+                sb.Append(c);
+                i++;
+                while (i < expression.Length)
+                {
+                    sb.Append(expression[i]);
+                    if (expression[i] == '\'')
+                    {
+                        if (i + 1 < expression.Length && expression[i + 1] == '\'')
+                        {
+                            sb.Append(expression[i + 1]);
+                            i += 2;
+                            continue;
+                        }
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+                continue;
+            }
+
+            if (c == '"')
+            {
+                sb.Append(c);
+                i++;
+                while (i < expression.Length)
+                {
+                    sb.Append(expression[i]);
+                    if (expression[i] == '"')
+                    {
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+                continue;
+            }
+
+            if (char.IsLetter(c) || c == '_')
+            {
+                var start = i;
+                i++;
+                while (
+                    i < expression.Length
+                    && (char.IsLetterOrDigit(expression[i]) || expression[i] == '_')
+                )
+                {
+                    i++;
+                }
+                var firstIdent = expression[start..i];
+
+                if (i < expression.Length && expression[i] == '.')
+                {
+                    var tailStart = i + 1;
+                    if (
+                        tailStart < expression.Length
+                        && (char.IsLetter(expression[tailStart]) || expression[tailStart] == '_')
+                    )
+                    {
+                        var tailEnd = tailStart + 1;
+                        while (
+                            tailEnd < expression.Length
+                            && (
+                                char.IsLetterOrDigit(expression[tailEnd])
+                                || expression[tailEnd] == '_'
+                            )
+                        )
+                        {
+                            tailEnd++;
+                        }
+                        var tailIdent = expression[tailStart..tailEnd];
+
+                        // Bug #24: also quote the prefix when it needs
+                        // quoting (e.g. `fhir_Patient.Id` ->
+                        // `"fhir_Patient"."Id"`). PG folds the unquoted
+                        // table-name qualifier to lower case otherwise
+                        // and the lookup against a quoted FROM table
+                        // ("fhir_Patient") fails.
+                        if (NeedsQuoting(firstIdent))
+                        {
+                            sb.Append('"').Append(firstIdent).Append('"');
+                        }
+                        else
+                        {
+                            sb.Append(firstIdent);
+                        }
+                        sb.Append('.');
+                        if (NeedsQuoting(tailIdent))
+                        {
+                            sb.Append('"').Append(tailIdent).Append('"');
+                        }
+                        else
+                        {
+                            sb.Append(tailIdent);
+                        }
+                        i = tailEnd;
+                        continue;
+                    }
+                }
+
+                sb.Append(firstIdent);
+                continue;
+            }
+
+            sb.Append(c);
+            i++;
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Returns true when an identifier contains an uppercase ASCII letter,
+    /// meaning Postgres would fold it to lower case if left unquoted.
+    /// </summary>
+    private static bool NeedsQuoting(string identifier)
+    {
+        if (string.IsNullOrEmpty(identifier))
+        {
+            return false;
+        }
+        for (var i = 0; i < identifier.Length; i++)
+        {
+            var c = identifier[i];
+            if (c >= 'A' && c <= 'Z')
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /// <summary>
     /// Generates the GROUP BY clause

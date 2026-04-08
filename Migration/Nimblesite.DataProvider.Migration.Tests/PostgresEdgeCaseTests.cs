@@ -3,37 +3,27 @@ namespace Nimblesite.DataProvider.Migration.Tests;
 /// <summary>
 /// PostgreSQL-specific edge case tests for migrations.
 /// Tests PostgreSQL-specific types, behaviors, and edge cases.
+/// Uses the shared postgres container; each test gets its own database.
 /// </summary>
+[Collection(PostgresTestSuite.Name)]
 [System.Diagnostics.CodeAnalysis.SuppressMessage(
     "Usage",
     "CA1001:Types that own disposable fields should be disposable",
     Justification = "Disposed via IAsyncLifetime.DisposeAsync"
 )]
-public sealed class PostgresEdgeCaseTests : IAsyncLifetime
+public sealed class PostgresEdgeCaseTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
-    private PostgreSqlContainer _postgres = null!;
     private NpgsqlConnection _connection = null!;
     private readonly ILogger _logger = NullLogger.Instance;
 
     public async Task InitializeAsync()
     {
-        _postgres = new PostgreSqlBuilder()
-            .WithImage("postgres:16-alpine")
-            .WithDatabase("edge_test")
-            .WithUsername("test")
-            .WithPassword("test")
-            .Build();
-
-        await _postgres.StartAsync().ConfigureAwait(false);
-
-        _connection = new NpgsqlConnection(_postgres.GetConnectionString());
-        await _connection.OpenAsync().ConfigureAwait(false);
+        _connection = await fixture.CreateDatabaseAsync("edge_test").ConfigureAwait(false);
     }
 
     public async Task DisposeAsync()
     {
         await _connection.DisposeAsync().ConfigureAwait(false);
-        await _postgres.DisposeAsync().ConfigureAwait(false);
     }
 
     #region Nullable Column Edge Cases

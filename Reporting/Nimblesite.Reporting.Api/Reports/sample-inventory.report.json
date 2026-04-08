@@ -1,0 +1,126 @@
+{
+  "id": "sample-inventory",
+  "title": "Product Inventory Report",
+  "parameters": [
+    { "name": "category", "type": "String", "label": "Category", "required": false, "default": "all" }
+  ],
+  "dataSources": [
+    {
+      "id": "products",
+      "type": "Sql",
+      "connectionRef": "reporting-db",
+      "query": "SELECT id, name, category, price, stock FROM products ORDER BY name",
+      "parameters": []
+    },
+    {
+      "id": "categorySummary",
+      "type": "Sql",
+      "connectionRef": "reporting-db",
+      "query": "SELECT category, COUNT(*) as product_count, SUM(stock) as total_stock, ROUND(AVG(price), 2) as avg_price FROM products GROUP BY category ORDER BY product_count DESC",
+      "parameters": []
+    },
+    {
+      "id": "totalValue",
+      "type": "Sql",
+      "connectionRef": "reporting-db",
+      "query": "SELECT COUNT(*) as total_products, SUM(stock) as total_stock, ROUND(SUM(price * stock), 2) as total_value FROM products",
+      "parameters": []
+    }
+  ],
+  "layout": {
+    "columns": 12,
+    "rows": [
+      {
+        "cells": [
+          {
+            "colSpan": 4,
+            "component": {
+              "type": "Metric",
+              "dataSource": "totalValue",
+              "title": "Total Products",
+              "value": "total_products",
+              "format": "number"
+            }
+          },
+          {
+            "colSpan": 4,
+            "component": {
+              "type": "Metric",
+              "dataSource": "totalValue",
+              "title": "Total Stock",
+              "value": "total_stock",
+              "format": "number"
+            }
+          },
+          {
+            "colSpan": 4,
+            "component": {
+              "type": "Metric",
+              "dataSource": "totalValue",
+              "title": "Total Inventory Value",
+              "value": "total_value",
+              "format": "currency"
+            }
+          }
+        ]
+      },
+      {
+        "cells": [
+          {
+            "colSpan": 6,
+            "component": {
+              "type": "Chart",
+              "chartType": "Bar",
+              "dataSource": "categorySummary",
+              "title": "Products by Category",
+              "xAxis": { "field": "category" },
+              "yAxis": { "field": "product_count", "label": "Count" }
+            }
+          },
+          {
+            "colSpan": 6,
+            "component": {
+              "type": "Chart",
+              "chartType": "Bar",
+              "dataSource": "categorySummary",
+              "title": "Average Price by Category",
+              "xAxis": { "field": "category" },
+              "yAxis": { "field": "avg_price", "label": "Avg Price ($)" }
+            }
+          }
+        ]
+      },
+      {
+        "cells": [
+          {
+            "colSpan": 12,
+            "component": {
+              "type": "Table",
+              "dataSource": "products",
+              "title": "Product Details",
+              "columns": [
+                { "field": "name", "header": "Product" },
+                { "field": "category", "header": "Category" },
+                { "field": "price", "header": "Price" },
+                { "field": "stock", "header": "Stock" }
+              ],
+              "pageSize": 10
+            }
+          }
+        ]
+      },
+      {
+        "cells": [
+          {
+            "colSpan": 12,
+            "component": {
+              "type": "Text",
+              "content": "Report generated from the sample inventory database. Filter by category to narrow results.",
+              "style": "caption"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

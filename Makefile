@@ -19,6 +19,9 @@ ifeq ($(OS),Windows_NT)
   MKDIR = New-Item -ItemType Directory -Force
   HOME ?= $(USERPROFILE)
 else
+  # Force bash for non-Windows. Some recipes use bash-only constructs
+  # (e.g. ${PIPESTATUS[0]}, [[ ... ]]), and Ubuntu's default /bin/sh is dash.
+  SHELL := /bin/bash
   RM = rm -rf
   MKDIR = mkdir -p
 endif
@@ -34,7 +37,9 @@ DOTNET_TEST_PROJECTS = \
   Sync/Nimblesite.Sync.SQLite.Tests \
   Sync/Nimblesite.Sync.Postgres.Tests \
   Sync/Nimblesite.Sync.Integration.Tests \
-  Sync/Nimblesite.Sync.Http.Tests
+  Sync/Nimblesite.Sync.Http.Tests \
+  Reporting/Nimblesite.Reporting.Tests \
+  Reporting/Nimblesite.Reporting.Integration.Tests
 
 # =============================================================================
 # PRIMARY TARGETS (uniform interface — do not rename)
@@ -138,6 +143,8 @@ _test_dotnet:
 	    "Sync/Nimblesite.Sync.Postgres") ;; \
 	    "Sync/Nimblesite.Sync.Integration") ;; \
 	    "Sync/Nimblesite.Sync.Http") ;; \
+	    "Reporting/Nimblesite.Reporting") ;; \
+	    "Reporting/Nimblesite.Reporting.Integration") ;; \
 	  esac; \
 	  THRESHOLD=$$(jq -r ".projects[\"$$SRC_KEY\"].threshold // .default_threshold" coverage-thresholds.json); \
 	  INCLUDE=$$(jq -r ".projects[\"$$SRC_KEY\"].include // empty" coverage-thresholds.json); \
@@ -240,7 +247,10 @@ _test_rust:
 	echo "============================================================"; \
 	echo "==> Testing Lql/lql-lsp-rust (threshold: $$THRESHOLD%)"; \
 	echo "============================================================"; \
-	cd Lql/lql-lsp-rust && cargo tarpaulin --workspace --skip-clean 2>&1 | tee /tmp/_dp_tarpaulin_out.txt; \
+	cd Lql/lql-lsp-rust && cargo tarpaulin --workspace --skip-clean \
+	  --exclude-files 'crates/lql-parser/src/generated/*' \
+	  --exclude-files 'crates/lql-lsp/tests/*' \
+	  2>&1 | tee /tmp/_dp_tarpaulin_out.txt; \
 	TARP_EXIT=$${PIPESTATUS[0]}; \
 	if [ $$TARP_EXIT -ne 0 ]; then \
 	  echo "FAIL [Lql/lql-lsp-rust]: cargo tarpaulin failed"; \
@@ -283,14 +293,29 @@ _clean_rust:
 _build_ts:
 	cd Lql/LqlExtension && npm install --no-audit --no-fund && npm run compile
 
-_test_ts:
+# Ensure the lql-lsp binary exists before running VSIX tests, so the
+# extension can find a matching --version on PATH and start the LSP
+# without trying to download a release from GitHub.
+_ensure_lql_lsp_on_path:
+	@if [ ! -x "$(CURDIR)/Lql/lql-lsp-rust/target/release/lql-lsp" ] && \
+	    [ ! -x "$(CURDIR)/Lql/lql-lsp-rust/target/debug/lql-lsp" ]; then \
+	  echo "==> Building lql-lsp (release) for VSIX tests"; \
+	  cd Lql/lql-lsp-rust && cargo build --release -p lql-lsp; \
+	fi
+
+_test_ts: _ensure_lql_lsp_on_path
 	@THRESHOLD=$$(jq -r '.projects["Lql/LqlExtension"].threshold // .default_threshold' coverage-thresholds.json); \
 	echo ""; \
 	echo "============================================================"; \
 	echo "==> Testing Lql/LqlExtension (threshold: $$THRESHOLD%)"; \
 	echo "============================================================"; \
-	cd Lql/LqlExtension && npm run compile && \
-	  rm -rf out-cov && npx nyc instrument out out-cov && rm -rf out && mv out-cov out && \
+	export PATH="$(CURDIR)/Lql/lql-lsp-rust/target/release:$(CURDIR)/Lql/lql-lsp-rust/target/debug:$$PATH"; \
+	unset ELECTRON_RUN_AS_NODE; \
+	echo "  lql-lsp on PATH: $$(command -v lql-lsp || echo 'NOT FOUND')"; \
+	echo "  lql-lsp --version: $$(lql-lsp --version 2>&1 || echo 'failed')"; \
+	cd Lql/LqlExtension && \
+	  npx vsce package --no-git-tag-version --no-update-package-json && \
+	  rm -rf out-cov && npx nyc instrument --include='out/**/*.js' --exclude='out/test/**' --no-all out out-cov && cp -R out-cov/. out/ && rm -rf out-cov && \
 	  if command -v xvfb-run >/dev/null 2>&1; then \
 	    xvfb-run -a node ./out/test/runTest.js; \
 	  else \
@@ -301,15 +326,16 @@ _test_ts:
 	  echo "FAIL [Lql/LqlExtension]: Extension tests failed"; \
 	  exit 1; \
 	fi; \
-	SUMMARY="Lql/LqlExtension/coverage/coverage-summary.json"; \
+	SUMMARY="$(CURDIR)/Lql/LqlExtension/coverage/coverage-summary.json"; \
 	if [ ! -f "$$SUMMARY" ]; then \
-	  SUMMARY="Lql/LqlExtension/.nyc_output/coverage-summary.json"; \
+	  SUMMARY="$(CURDIR)/Lql/LqlExtension/.nyc_output/coverage-summary.json"; \
 	fi; \
 	if [ ! -f "$$SUMMARY" ]; then \
-	  echo "FAIL [Lql/LqlExtension]: No coverage summary produced"; \
-	  exit 1; \
+	  echo "  WARN [Lql/LqlExtension]: No coverage summary produced (cross-process instrumentation skipped); treating as 0%"; \
+	  COVERAGE=0; \
+	else \
+	  COVERAGE=$$(jq -r '.total.lines.pct' "$$SUMMARY"); \
 	fi; \
-	COVERAGE=$$(jq -r '.total.lines.pct' "$$SUMMARY"); \
 	echo ""; \
 	echo "  [Lql/LqlExtension] Coverage: $$COVERAGE% | Threshold: $$THRESHOLD%"; \
 	BELOW=$$(echo "$$COVERAGE < $$THRESHOLD" | bc -l); \
@@ -321,7 +347,7 @@ _test_ts:
 	if [ "$$ABOVE" = "1" ]; then \
 	  NEW=$$(echo "$$COVERAGE" | awk '{print int($$1)}'); \
 	  echo "  Ratcheting threshold: $$THRESHOLD% -> $$NEW%"; \
-	  jq '.projects["Lql/LqlExtension"].threshold = '"$$NEW" coverage-thresholds.json > coverage-thresholds.json.tmp && mv coverage-thresholds.json.tmp coverage-thresholds.json; \
+	  jq '.projects["Lql/LqlExtension"].threshold = '"$$NEW" "$(CURDIR)/coverage-thresholds.json" > "$(CURDIR)/coverage-thresholds.json.tmp" && mv "$(CURDIR)/coverage-thresholds.json.tmp" "$(CURDIR)/coverage-thresholds.json"; \
 	fi; \
 	echo "  PASS [Lql/LqlExtension]"
 

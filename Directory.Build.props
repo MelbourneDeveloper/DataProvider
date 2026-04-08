@@ -51,11 +51,19 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
 
-    <!-- SqlParserCS for SQL parsing -->
-    <PackageReference Include="SqlParserCS" Version="0.6.5" />
+    <!-- SqlParserCS for SQL parsing (not compatible with netstandard) -->
+    <PackageReference
+      Include="SqlParserCS"
+      Version="0.6.5"
+      Condition="!$(TargetFramework.StartsWith('netstandard'))"
+    />
 
-    <!-- Result types for Railway Oriented Programming -->
-    <PackageReference Include="Outcome" Version="1.0.0" />
+    <!-- Result types for Railway Oriented Programming (not compatible with netstandard2.0) -->
+    <PackageReference
+      Include="Outcome"
+      Version="1.0.0"
+      Condition="!$(TargetFramework.StartsWith('netstandard'))"
+    />
 
     <!-- Exhaustive pattern matching analyzer -->
     <PackageReference Include="Exhaustion" Version="1.0.0">

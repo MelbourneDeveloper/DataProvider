@@ -73,7 +73,13 @@ internal static class Program
             schemaFile,
         };
         root.SetHandler(
-            async (DirectoryInfo proj, FileInfo cfg, DirectoryInfo output, bool off, FileInfo? schema) =>
+            async (
+                DirectoryInfo proj,
+                FileInfo cfg,
+                DirectoryInfo output,
+                bool off,
+                FileInfo? schema
+            ) =>
             {
                 var exit = await RunAsync(proj, cfg, output, off, schema).ConfigureAwait(false);
                 Environment.Exit(exit);
@@ -111,9 +117,7 @@ internal static class Program
             var cfg = JsonSerializer.Deserialize<PostgresDataProviderConfig>(cfgText, JsonOptions);
             if (cfg is null)
             {
-                Console.WriteLine(
-                    "❌ Nimblesite.DataProvider.Core.json is invalid"
-                );
+                Console.WriteLine("❌ Nimblesite.DataProvider.Core.json is invalid");
                 return 1;
             }
 
@@ -121,7 +125,8 @@ internal static class Program
             SchemaDefinition? schema = null;
             if (schemaFile?.Exists == true)
             {
-                var schemaYaml = await File.ReadAllTextAsync(schemaFile.FullName).ConfigureAwait(false);
+                var schemaYaml = await File.ReadAllTextAsync(schemaFile.FullName)
+                    .ConfigureAwait(false);
                 schema = SchemaSerializer.FromYaml(schemaYaml);
                 Console.WriteLine($"📋 Loaded schema from {schemaFile.FullName}");
             }
@@ -171,9 +176,17 @@ internal static class Program
             {
                 try
                 {
-                    var sql = await File.ReadAllTextAsync(sqlPath).ConfigureAwait(false);
-                    if (string.IsNullOrWhiteSpace(sql))
+                    var rawSql = await File.ReadAllTextAsync(sqlPath).ConfigureAwait(false);
+                    if (string.IsNullOrWhiteSpace(rawSql))
                         continue;
+
+                    // Bug #23: any `AS <bareIdent>` that contains uppercase
+                    // gets double-quoted so Postgres preserves the case in
+                    // the column name returned by GetColumnSchema, which
+                    // becomes the C# record field name. Without this,
+                    // `AS CategoryTitle` is folded to `categorytitle` and
+                    // multiple aliased Title columns collide.
+                    var sql = QuoteAsAliases(rawSql);
 
                     var baseName = Path.GetFileNameWithoutExtension(sqlPath);
                     if (baseName.EndsWith(".generated", StringComparison.OrdinalIgnoreCase))
@@ -356,7 +369,8 @@ internal static class Program
             {
                 var (name, sqlType) = ParseColumnDefinition(colDef, schema);
                 var csharpType = MapPostgresTypeToCSharp(sqlType, true);
-                var isNullable = !sqlType.Contains("serial", StringComparison.OrdinalIgnoreCase)
+                var isNullable =
+                    !sqlType.Contains("serial", StringComparison.OrdinalIgnoreCase)
                     && !sqlType.Contains("not null", StringComparison.OrdinalIgnoreCase);
 
                 columns.Add(
@@ -436,11 +450,7 @@ internal static class Program
     )
     {
         // Check for AS alias
-        var asMatch = Regex.Match(
-            colDef,
-            @"(.+?)\s+AS\s+(\w+)",
-            RegexOptions.IgnoreCase
-        );
+        var asMatch = Regex.Match(colDef, @"(.+?)\s+AS\s+(\w+)", RegexOptions.IgnoreCase);
 
         if (asMatch.Success)
         {
@@ -542,7 +552,9 @@ internal static class Program
             if (table.ExcludeColumns.Contains(col.Name, StringComparer.OrdinalIgnoreCase))
                 continue;
 
-            var isPk = tableDef.PrimaryKey?.Columns.Contains(col.Name, StringComparer.OrdinalIgnoreCase) == true
+            var isPk =
+                tableDef.PrimaryKey?.Columns.Contains(col.Name, StringComparer.OrdinalIgnoreCase)
+                    == true
                 || table.PrimaryKeyColumns.Contains(col.Name, StringComparer.OrdinalIgnoreCase);
 
             columns.Add(
@@ -554,7 +566,9 @@ internal static class Program
                     IsNullable = col.IsNullable,
                     IsPrimaryKey = isPk,
                     IsIdentity = col.IsIdentity,
-                    IsComputed = col.DefaultValue?.StartsWith("nextval", StringComparison.OrdinalIgnoreCase) == true,
+                    IsComputed =
+                        col.DefaultValue?.StartsWith("nextval", StringComparison.OrdinalIgnoreCase)
+                        == true,
                 }
             );
         }
@@ -567,7 +581,11 @@ internal static class Program
         }
 
         var sb = new StringBuilder();
-        var pascalName = ToPascalCase(table.Name);
+        // Use the literal table name (e.g. `gk_user`) instead of
+        // PascalCasing it. The SQLite.Cli emits methods like
+        // `Insertgk_userAsync`, and consumers reference them by that
+        // exact name. PascalCasing here breaks consumer call sites.
+        var pascalName = table.Name;
 
         // Header
         _ = sb.AppendLine("// <auto-generated />");
@@ -576,6 +594,8 @@ internal static class Program
         _ = sb.AppendLine("using Npgsql;");
         _ = sb.AppendLine("using Outcome;");
         _ = sb.AppendLine("using Nimblesite.Sql.Model;");
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("namespace Generated;");
         _ = sb.AppendLine();
 
         // Extension class
@@ -702,7 +722,11 @@ internal static class Program
         }
 
         var sb = new StringBuilder();
-        var pascalName = ToPascalCase(table.Name);
+        // Use the literal table name (e.g. `gk_user`) instead of
+        // PascalCasing it. The SQLite.Cli emits methods like
+        // `Insertgk_userAsync`, and consumers reference them by that
+        // exact name. PascalCasing here breaks consumer call sites.
+        var pascalName = table.Name;
 
         // Header
         _ = sb.AppendLine("// <auto-generated />");
@@ -711,6 +735,8 @@ internal static class Program
         _ = sb.AppendLine("using Npgsql;");
         _ = sb.AppendLine("using Outcome;");
         _ = sb.AppendLine("using Nimblesite.Sql.Model;");
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("namespace Generated;");
         _ = sb.AppendLine();
 
         // Extension class
@@ -772,12 +798,15 @@ internal static class Program
         string pascalName
     )
     {
-        // Get insertable columns (exclude auto-generated ones)
-        var insertable = columns.Where(c => !c.IsIdentity && !c.IsComputed).ToList();
-        var parameters = string.Join(
-            ", ",
-            insertable.Select(c => $"{c.CSharpType} {ToCamelCase(c.Name)}")
-        );
+        // Bug #17: include ALL columns as insertable params (including id /
+        // identity / computed). Consumers want to be able to pass an id
+        // value explicitly. The previous filter excluded identity cols which
+        // forced consumers to refactor their call sites to drop the id arg.
+        // Insertable columns are written verbatim using col.Name (Bug #8 /
+        // #13: keep snake_case parameter names so consumer named-argument
+        // calls work).
+        var insertable = columns.Where(c => !c.IsComputed).ToList();
+        var parameters = string.Join(", ", insertable.Select(c => $"{c.CSharpType} {c.Name}"));
 
         _ = sb.AppendLine();
         _ = sb.AppendLine("    /// <summary>");
@@ -795,7 +824,7 @@ internal static class Program
         _ = sb.AppendLine("    {");
 
         var colNames = string.Join(", ", insertable.Select(c => c.Name));
-        var paramNames = string.Join(", ", insertable.Select(c => $"@{ToCamelCase(c.Name)}"));
+        var paramNames = string.Join(", ", insertable.Select(c => $"@{c.Name}"));
 
         _ = sb.AppendLine("        const string sql = @\"");
         _ = sb.AppendLine(
@@ -812,12 +841,12 @@ internal static class Program
 
         foreach (var col in insertable)
         {
-            var paramName = ToCamelCase(col.Name);
+            var paramName = col.Name;
             if (col.IsNullable)
             {
                 _ = sb.AppendLine(
                     CultureInfo.InvariantCulture,
-                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName} ?? (object)DBNull.Value);"
+                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", (object?){paramName} ?? DBNull.Value);"
                 );
             }
             else
@@ -829,6 +858,97 @@ internal static class Program
             }
         }
 
+        _ = sb.AppendLine();
+        _ = sb.AppendLine(
+            "            var result = await cmd.ExecuteScalarAsync().ConfigureAwait(false);"
+        );
+        _ = sb.AppendLine(
+            "            return new Result<Guid?, SqlError>.Ok<Guid?, SqlError>(result is Guid g ? g : null);"
+        );
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine("        catch (Exception ex)");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            return new Result<Guid?, SqlError>.Error<Guid?, SqlError>(SqlError.FromException(ex));"
+        );
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine("    }");
+
+        // Bug #16: also emit an IDbTransaction overload that delegates to
+        // the same SQL via a NpgsqlCommand bound to the transaction's
+        // connection. Matches the old SQLite.Cli shape so consumer code
+        // calling tx.Insert{T}Async(...) keeps compiling.
+        GenerateInsertTransactionOverload(sb, table, insertable, pascalName);
+    }
+
+    /// <summary>
+    /// Emits an `IDbTransaction` overload of an Insert method that
+    /// matches the old SQLite.Cli shape. Bug #16.
+    /// </summary>
+    private static void GenerateInsertTransactionOverload(
+        StringBuilder sb,
+        TableConfigItem table,
+        List<DatabaseColumn> insertable,
+        string pascalName
+    )
+    {
+        var parameters = string.Join(", ", insertable.Select(c => $"{c.CSharpType} {c.Name}"));
+        var colNames = string.Join(", ", insertable.Select(c => c.Name));
+        var paramNames = string.Join(", ", insertable.Select(c => $"@{c.Name}"));
+
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("    /// <summary>");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// IDbTransaction overload of Insert{pascalName}Async."
+        );
+        _ = sb.AppendLine("    /// </summary>");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    public static async Task<Result<Guid?, SqlError>> Insert{pascalName}Async("
+        );
+        _ = sb.AppendLine("        this System.Data.IDbTransaction transaction,");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
+        _ = sb.AppendLine("    {");
+        _ = sb.AppendLine("        const string sql = @\"");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            INSERT INTO {table.Schema}.{table.Name} ({colNames})"
+        );
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            VALUES ({paramNames})");
+        _ = sb.AppendLine("            ON CONFLICT DO NOTHING");
+        _ = sb.AppendLine("            RETURNING id\";");
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("        if (transaction.Connection is not NpgsqlConnection conn)");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            return new Result<Guid?, SqlError>.Error<Guid?, SqlError>(new SqlError(\"Transaction.Connection must be NpgsqlConnection\"));"
+        );
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("        try");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            await using var cmd = new NpgsqlCommand(sql, conn, (NpgsqlTransaction)transaction);"
+        );
+        foreach (var col in insertable)
+        {
+            var paramName = col.Name;
+            if (col.IsNullable)
+            {
+                _ = sb.AppendLine(
+                    CultureInfo.InvariantCulture,
+                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", (object?){paramName} ?? DBNull.Value);"
+                );
+            }
+            else
+            {
+                _ = sb.AppendLine(
+                    CultureInfo.InvariantCulture,
+                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName});"
+                );
+            }
+        }
         _ = sb.AppendLine();
         _ = sb.AppendLine(
             "            var result = await cmd.ExecuteScalarAsync().ConfigureAwait(false);"
@@ -862,11 +982,12 @@ internal static class Program
             return;
 
         var allParams = pkCols.Concat(updateable).ToList();
-        var parameters = string.Join(
-            ", ",
-            allParams.Select(c => $"{c.CSharpType} {ToCamelCase(c.Name)}")
-        );
+        var parameters = string.Join(", ", allParams.Select(c => $"{c.CSharpType} {c.Name}"));
 
+        var setClauses = string.Join(", ", updateable.Select(c => $"{c.Name} = @{c.Name}"));
+        var whereClauses = string.Join(" AND ", pkCols.Select(c => $"{c.Name} = @{c.Name}"));
+
+        // NpgsqlConnection overload
         _ = sb.AppendLine();
         _ = sb.AppendLine("    /// <summary>");
         _ = sb.AppendLine(
@@ -881,16 +1002,6 @@ internal static class Program
         _ = sb.AppendLine("        this NpgsqlConnection conn,");
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
         _ = sb.AppendLine("    {");
-
-        var setClauses = string.Join(
-            ", ",
-            updateable.Select(c => $"{c.Name} = @{ToCamelCase(c.Name)}")
-        );
-        var whereClauses = string.Join(
-            " AND ",
-            pkCols.Select(c => $"{c.Name} = @{ToCamelCase(c.Name)}")
-        );
-
         _ = sb.AppendLine("        const string sql = @\"");
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
@@ -902,26 +1013,57 @@ internal static class Program
         _ = sb.AppendLine("        try");
         _ = sb.AppendLine("        {");
         _ = sb.AppendLine("            await using var cmd = new NpgsqlCommand(sql, conn);");
+        EmitParameterBindings(sb, allParams);
+        _ = sb.AppendLine();
+        _ = sb.AppendLine(
+            "            var rows = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);"
+        );
+        _ = sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(rows);");
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine("        catch (Exception ex)");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.FromException(ex));"
+        );
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine("    }");
 
-        foreach (var col in allParams)
-        {
-            var paramName = ToCamelCase(col.Name);
-            if (col.IsNullable)
-            {
-                _ = sb.AppendLine(
-                    CultureInfo.InvariantCulture,
-                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName} ?? (object)DBNull.Value);"
-                );
-            }
-            else
-            {
-                _ = sb.AppendLine(
-                    CultureInfo.InvariantCulture,
-                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName});"
-                );
-            }
-        }
-
+        // Bug #16: IDbTransaction overload, matching old SQLite.Cli shape.
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("    /// <summary>");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// IDbTransaction overload of Update{pascalName}Async."
+        );
+        _ = sb.AppendLine("    /// </summary>");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    public static async Task<Result<int, SqlError>> Update{pascalName}Async("
+        );
+        _ = sb.AppendLine("        this System.Data.IDbTransaction transaction,");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
+        _ = sb.AppendLine("    {");
+        _ = sb.AppendLine("        const string sql = @\"");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"            UPDATE {table.Schema}.{table.Name}"
+        );
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            SET {setClauses}");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            WHERE {whereClauses}\";");
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("        if (transaction.Connection is not NpgsqlConnection conn)");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Transaction.Connection must be NpgsqlConnection\"));"
+        );
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("        try");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            await using var cmd = new NpgsqlCommand(sql, conn, (NpgsqlTransaction)transaction);"
+        );
+        EmitParameterBindings(sb, allParams);
         _ = sb.AppendLine();
         _ = sb.AppendLine(
             "            var rows = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);"
@@ -937,6 +1079,33 @@ internal static class Program
         _ = sb.AppendLine("    }");
     }
 
+    /// <summary>
+    /// Emits the standard `cmd.Parameters.AddWithValue(...)` lines for a
+    /// list of columns. Used by both NpgsqlConnection and IDbTransaction
+    /// overloads of Insert/Update/Delete to avoid duplication.
+    /// </summary>
+    private static void EmitParameterBindings(StringBuilder sb, List<DatabaseColumn> cols)
+    {
+        foreach (var col in cols)
+        {
+            var paramName = col.Name;
+            if (col.IsNullable)
+            {
+                _ = sb.AppendLine(
+                    CultureInfo.InvariantCulture,
+                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", (object?){paramName} ?? DBNull.Value);"
+                );
+            }
+            else
+            {
+                _ = sb.AppendLine(
+                    CultureInfo.InvariantCulture,
+                    $"            cmd.Parameters.AddWithValue(\"{paramName}\", {paramName});"
+                );
+            }
+        }
+    }
+
     private static void GenerateDeleteMethod(
         StringBuilder sb,
         TableConfigItem table,
@@ -948,11 +1117,11 @@ internal static class Program
         if (pkCols.Count == 0)
             return;
 
-        var parameters = string.Join(
-            ", ",
-            pkCols.Select(c => $"{c.CSharpType} {ToCamelCase(c.Name)}")
-        );
+        var parameters = string.Join(", ", pkCols.Select(c => $"{c.CSharpType} {c.Name}"));
+        var whereClauses = string.Join(" AND ", pkCols.Select(c => $"{c.Name} = @{c.Name}"));
+        var sqlLine = $"DELETE FROM {table.Schema}.{table.Name} WHERE {whereClauses}";
 
+        // NpgsqlConnection overload
         _ = sb.AppendLine();
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    /// <summary>");
         _ = sb.AppendLine(
@@ -967,29 +1136,62 @@ internal static class Program
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        this NpgsqlConnection conn,");
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
         _ = sb.AppendLine("    {");
-
-        var whereClauses = string.Join(
-            " AND ",
-            pkCols.Select(c => $"{c.Name} = @{ToCamelCase(c.Name)}")
-        );
-
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"        const string sql = @\"DELETE FROM {table.Schema}.{table.Name} WHERE {whereClauses}\";"
+            $"        const string sql = @\"{sqlLine}\";"
         );
         _ = sb.AppendLine();
         _ = sb.AppendLine("        try");
         _ = sb.AppendLine("        {");
         _ = sb.AppendLine("            await using var cmd = new NpgsqlCommand(sql, conn);");
+        EmitParameterBindings(sb, pkCols);
+        _ = sb.AppendLine();
+        _ = sb.AppendLine(
+            "            var rows = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);"
+        );
+        _ = sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(rows);");
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine("        catch (Exception ex)");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(SqlError.FromException(ex));"
+        );
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine("    }");
 
-        foreach (var col in pkCols)
-        {
-            _ = sb.AppendLine(
-                CultureInfo.InvariantCulture,
-                $"            cmd.Parameters.AddWithValue(\"{ToCamelCase(col.Name)}\", {ToCamelCase(col.Name)});"
-            );
-        }
-
+        // Bug #16: IDbTransaction overload, matching old SQLite.Cli shape.
+        _ = sb.AppendLine();
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    /// <summary>");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    /// IDbTransaction overload of Delete{pascalName}Async."
+        );
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    /// </summary>");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"    public static async Task<Result<int, SqlError>> Delete{pascalName}Async("
+        );
+        _ = sb.AppendLine("        this System.Data.IDbTransaction transaction,");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
+        _ = sb.AppendLine("    {");
+        _ = sb.AppendLine(
+            CultureInfo.InvariantCulture,
+            $"        const string sql = @\"{sqlLine}\";"
+        );
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("        if (transaction.Connection is not NpgsqlConnection conn)");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            return new Result<int, SqlError>.Error<int, SqlError>(new SqlError(\"Transaction.Connection must be NpgsqlConnection\"));"
+        );
+        _ = sb.AppendLine("        }");
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("        try");
+        _ = sb.AppendLine("        {");
+        _ = sb.AppendLine(
+            "            await using var cmd = new NpgsqlCommand(sql, conn, (NpgsqlTransaction)transaction);"
+        );
+        EmitParameterBindings(sb, pkCols);
         _ = sb.AppendLine();
         _ = sb.AppendLine(
             "            var rows = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);"
@@ -1160,7 +1362,10 @@ internal static class Program
         for (int i = 0; i < insertable.Count; i++)
         {
             var col = insertable[i];
-            var propName = ToPascalCase(col.Name);
+            // Preserve the column name verbatim so generated record fields
+            // match the SQLite CLI output (which kept snake_case literally),
+            // and so consumers that reference `rec.user_id` etc. keep working.
+            var propName = col.Name;
             if (col.IsNullable)
             {
                 _ = sb.AppendLine(
@@ -1364,7 +1569,10 @@ internal static class Program
         for (int i = 0; i < insertable.Count; i++)
         {
             var col = insertable[i];
-            var propName = ToPascalCase(col.Name);
+            // Preserve the column name verbatim so generated record fields
+            // match the SQLite CLI output (which kept snake_case literally),
+            // and so consumers that reference `rec.user_id` etc. keep working.
+            var propName = col.Name;
             if (col.IsNullable)
             {
                 _ = sb.AppendLine(
@@ -1388,6 +1596,129 @@ internal static class Program
         );
         _ = sb.AppendLine("        return new Result<int, SqlError>.Ok<int, SqlError>(rows);");
         _ = sb.AppendLine("    }");
+    }
+
+    /// <summary>
+    /// Walks the input SQL and double-quotes any `AS &lt;bareIdent&gt;`
+    /// alias that contains uppercase letters, so PostgreSQL preserves
+    /// the case in the column name returned by reader.GetColumnSchema().
+    /// Skips characters inside single-quoted string literals and
+    /// already-quoted aliases. Bug #23.
+    /// </summary>
+    private static string QuoteAsAliases(string sql)
+    {
+        if (string.IsNullOrEmpty(sql))
+        {
+            return sql;
+        }
+
+        var sb = new StringBuilder(sql.Length + 16);
+        var i = 0;
+        while (i < sql.Length)
+        {
+            var c = sql[i];
+
+            // Pass through single-quoted string literals.
+            if (c == '\'')
+            {
+                sb.Append(c);
+                i++;
+                while (i < sql.Length)
+                {
+                    sb.Append(sql[i]);
+                    if (sql[i] == '\'')
+                    {
+                        if (i + 1 < sql.Length && sql[i + 1] == '\'')
+                        {
+                            sb.Append(sql[i + 1]);
+                            i += 2;
+                            continue;
+                        }
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+                continue;
+            }
+
+            // Pass through already-quoted identifiers.
+            if (c == '"')
+            {
+                sb.Append(c);
+                i++;
+                while (i < sql.Length)
+                {
+                    sb.Append(sql[i]);
+                    if (sql[i] == '"')
+                    {
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+                continue;
+            }
+
+            // Look for AS keyword (case-insensitive) at a word boundary.
+            if (
+                (c == 'A' || c == 'a')
+                && i + 1 < sql.Length
+                && (sql[i + 1] == 'S' || sql[i + 1] == 's')
+                && (i == 0 || !char.IsLetterOrDigit(sql[i - 1]) && sql[i - 1] != '_')
+                && i + 2 < sql.Length
+                && !char.IsLetterOrDigit(sql[i + 2])
+                && sql[i + 2] != '_'
+            )
+            {
+                // Emit "AS"
+                sb.Append(sql[i]).Append(sql[i + 1]);
+                i += 2;
+                // Skip whitespace.
+                while (i < sql.Length && char.IsWhiteSpace(sql[i]))
+                {
+                    sb.Append(sql[i]);
+                    i++;
+                }
+                // Read alias identifier.
+                if (i < sql.Length && (char.IsLetter(sql[i]) || sql[i] == '_'))
+                {
+                    var aliasStart = i;
+                    i++;
+                    while (i < sql.Length && (char.IsLetterOrDigit(sql[i]) || sql[i] == '_'))
+                    {
+                        i++;
+                    }
+                    var alias = sql[aliasStart..i];
+                    if (HasUppercaseAscii(alias))
+                    {
+                        sb.Append('"').Append(alias).Append('"');
+                    }
+                    else
+                    {
+                        sb.Append(alias);
+                    }
+                }
+                continue;
+            }
+
+            sb.Append(c);
+            i++;
+        }
+        return sb.ToString();
+    }
+
+    private static bool HasUppercaseAscii(string s)
+    {
+        for (var i = 0; i < s.Length; i++)
+        {
+            var ch = s[i];
+            if (ch >= 'A' && ch <= 'Z')
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static List<string> ExtractParameters(string sql)
@@ -1439,8 +1770,21 @@ internal static class Program
                 metaSql = metaSql.Replace($"@{param}", "NULL", StringComparison.OrdinalIgnoreCase);
             }
 
-            // Wrap in a CTE to get metadata without executing
-            var wrappedSql = $"SELECT * FROM ({metaSql}) AS _meta WHERE 1=0";
+            // Strip optional trailing semicolons + whitespace so the inner
+            // statement parses cleanly inside a CTE wrapper. Postgres rejects
+            // a `;` followed by `)` inside a subquery / CTE body.
+            metaSql = metaSql.TrimEnd();
+            while (metaSql.EndsWith(";", StringComparison.Ordinal))
+            {
+                metaSql = metaSql[..^1].TrimEnd();
+            }
+
+            // Wrap in a CTE to get metadata without executing. CTE form
+            // (instead of `SELECT * FROM (<sql>) AS _meta`) is required so
+            // that UPDATE/INSERT/DELETE ... RETURNING statements also work,
+            // since Postgres only allows DML inside a `WITH` clause, not
+            // inside a `FROM (...)` subquery.
+            var wrappedSql = $"WITH _meta AS ({metaSql}) SELECT * FROM _meta WHERE 1=0";
 
             await using var cmd = new NpgsqlCommand(wrappedSql, conn);
             await using var reader = await cmd.ExecuteReaderAsync(
@@ -1508,7 +1852,7 @@ internal static class Program
                 "string",
             "json" or "jsonb" => "string",
             var t when t.EndsWith("[]", StringComparison.Ordinal) => "string[]",
-            
+
             // PortableType names (from schema.yaml)
             "uuidtype" => "Guid",
             "booleantype" => "bool",
@@ -1535,9 +1879,18 @@ internal static class Program
             "varbinarytype" => "byte[]",
             "blobtype" => "byte[]",
             "rowversiontype" => "byte[]",
-            
+
             _ => "string",
         };
+
+        // Bug #14: byte[] columns can come back as null from the reader
+        // even when the schema marks them NOT NULL (Postgres bytea
+        // metadata is unreliable). Always treat byte[] as nullable so
+        // the generated reader expression compiles without CS8604.
+        if (baseType == "byte[]")
+        {
+            return "byte[]?";
+        }
 
         // Add nullable suffix for nullable types (including strings but not arrays)
         if (isNullable && !baseType.EndsWith("[]", StringComparison.Ordinal))
@@ -1558,7 +1911,18 @@ internal static class Program
         var sb = new StringBuilder();
         var recordName = fileName;
 
-        // Header with all using statements (including type aliases) at the top
+        // Fully qualified Result type strings used throughout the generated
+        // file. Inlining these avoids per-file `using XxxOk = ...` aliases
+        // that conflict (CS1537) with consumer-side global aliases.
+        var resultType =
+            $"Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Nimblesite.Sql.Model.SqlError>";
+        var okType =
+            $"Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Nimblesite.Sql.Model.SqlError>.Ok<System.Collections.Immutable.ImmutableList<{recordName}>, Nimblesite.Sql.Model.SqlError>";
+        var errorType =
+            $"Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Nimblesite.Sql.Model.SqlError>.Error<System.Collections.Immutable.ImmutableList<{recordName}>, Nimblesite.Sql.Model.SqlError>";
+
+        // Header with all using statements at the top, then a file-scoped
+        // `namespace Generated;` so consumers can `using Generated;`.
         _ = sb.AppendLine("// <auto-generated />");
         _ = sb.AppendLine("#nullable enable");
         _ = sb.AppendLine();
@@ -1567,42 +1931,40 @@ internal static class Program
         _ = sb.AppendLine("using Outcome;");
         _ = sb.AppendLine("using Nimblesite.Sql.Model;");
         _ = sb.AppendLine();
-        // Result type aliases must come after standard usings but before any type definitions
-        // Use fully qualified names since type aliases don't use namespace context
-        _ = sb.AppendLine(
-            CultureInfo.InvariantCulture,
-            $"using {fileName}Result = Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Nimblesite.Sql.Model.SqlError>;"
-        );
-        _ = sb.AppendLine(
-            CultureInfo.InvariantCulture,
-            $"using {fileName}Ok = Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Nimblesite.Sql.Model.SqlError>.Ok<System.Collections.Immutable.ImmutableList<{recordName}>, Nimblesite.Sql.Model.SqlError>;"
-        );
-        _ = sb.AppendLine(
-            CultureInfo.InvariantCulture,
-            $"using {fileName}Error = Outcome.Result<System.Collections.Immutable.ImmutableList<{recordName}>, Nimblesite.Sql.Model.SqlError>.Error<System.Collections.Immutable.ImmutableList<{recordName}>, Nimblesite.Sql.Model.SqlError>;"
-        );
+        _ = sb.AppendLine("namespace Generated;");
         _ = sb.AppendLine();
 
-        // Generate record type
+        // Generate record type. Bug #15: emit a non-positional record with
+        // per-property `{ get; init; }` declarations matching the old
+        // SQLite.Cli shape. Per-property nullability comes from the
+        // database column metadata (NOT NULL -> non-nullable type,
+        // nullable -> `T?`).
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"/// <summary>");
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
             $"/// Generated record for {fileName} query."
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"/// </summary>");
-        _ = sb.Append(CultureInfo.InvariantCulture, $"public sealed record {recordName}(");
-
-        var first = true;
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"public record {recordName}");
+        _ = sb.AppendLine("{");
         foreach (var col in columns)
         {
-            if (!first)
-                _ = sb.Append(", ");
-            first = false;
-
-            var propName = ToPascalCase(col.Name);
-            _ = sb.Append(CultureInfo.InvariantCulture, $"{col.CSharpType} {propName}");
+            // Preserve the column name verbatim so generated record fields
+            // match the SQLite CLI output (which kept snake_case literally),
+            // and so consumers that reference `rec.user_id` etc. keep working.
+            var propName = col.Name;
+            // Bug #19: emit per-property XML doc so consumers with
+            // GenerateDocumentationFile=true don't get CS1591 warnings.
+            _ = sb.AppendLine(
+                CultureInfo.InvariantCulture,
+                $"    /// <summary>Column '{col.Name}'.</summary>"
+            );
+            _ = sb.AppendLine(
+                CultureInfo.InvariantCulture,
+                $"    public {col.CSharpType} {propName} {{ get; init; }}"
+            );
         }
-        _ = sb.AppendLine(");");
+        _ = sb.AppendLine("}");
         _ = sb.AppendLine();
 
         // Generate extension method
@@ -1630,13 +1992,16 @@ internal static class Program
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    /// </summary>");
         _ = sb.Append(
             CultureInfo.InvariantCulture,
-            $"    public static async Task<{fileName}Result> {fileName}Async(this NpgsqlConnection conn"
+            $"    public static async Task<{resultType}> {fileName}Async(this NpgsqlConnection conn"
         );
 
         foreach (var param in parameters)
         {
-            var paramType = InferParameterType(param);
-            _ = sb.Append(CultureInfo.InvariantCulture, $", {paramType} {ToCamelCase(param)}");
+            var paramType = InferParameterType(param, columns);
+            // Bug #13: emit the parameter name verbatim (e.g. resource_id)
+            // so consumer call sites that use named arguments
+            // (CheckResourceGrantAsync(resource_id: ...)) keep working.
+            _ = sb.Append(CultureInfo.InvariantCulture, $", {paramType} {param}");
         }
         _ = sb.AppendLine(")");
         _ = sb.AppendLine("    {");
@@ -1652,7 +2017,7 @@ internal static class Program
         {
             _ = sb.AppendLine(
                 CultureInfo.InvariantCulture,
-                $"            cmd.Parameters.AddWithValue(\"{param}\", {ToCamelCase(param)});"
+                $"            cmd.Parameters.AddWithValue(\"{param}\", {param});"
             );
         }
 
@@ -1670,40 +2035,43 @@ internal static class Program
         _ = sb.AppendLine();
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            return new {fileName}Ok(results.ToImmutable());"
+            $"            return new {okType}(results.ToImmutable());"
         );
         _ = sb.AppendLine("        }");
         _ = sb.AppendLine("        catch (Exception ex)");
         _ = sb.AppendLine("        {");
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            return new {fileName}Error(SqlError.FromException(ex));"
+            $"            return new {errorType}(SqlError.FromException(ex));"
         );
         _ = sb.AppendLine("        }");
         _ = sb.AppendLine("    }");
         _ = sb.AppendLine();
 
-        // Reader method
+        // Reader method. Bug #15: use object initializer syntax to match
+        // the non-positional record shape declared above.
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
             $"    private static {recordName} Read{recordName}(NpgsqlDataReader reader) =>"
         );
-        _ = sb.Append(CultureInfo.InvariantCulture, $"        new(");
+        _ = sb.AppendLine("        new()");
+        _ = sb.AppendLine("        {");
 
-        first = true;
         var ordinal = 0;
         foreach (var col in columns)
         {
-            if (!first)
-                _ = sb.Append(", ");
-            first = false;
-
-            var propName = ToPascalCase(col.Name);
+            // Preserve the column name verbatim so generated record fields
+            // match the SQLite CLI output (which kept snake_case literally),
+            // and so consumers that reference `rec.user_id` etc. keep working.
+            var propName = col.Name;
             var readExpr = GetReaderExpression(col, ordinal);
-            _ = sb.Append(CultureInfo.InvariantCulture, $"{propName}: {readExpr}");
+            _ = sb.AppendLine(
+                CultureInfo.InvariantCulture,
+                $"            {propName} = {readExpr},"
+            );
             ordinal++;
         }
-        _ = sb.AppendLine(");");
+        _ = sb.AppendLine("        };");
 
         _ = sb.AppendLine("}");
 
@@ -1742,6 +2110,15 @@ internal static class Program
             _ => "string",
         };
 
+        // Bug #14: byte[] columns can come back as null from the reader
+        // even when the schema marks them NOT NULL (Postgres bytea
+        // metadata is unreliable). Always treat byte[] as nullable so
+        // the generated reader expression compiles without CS8604.
+        if (baseType == "byte[]")
+        {
+            return "byte[]?";
+        }
+
         // Add nullable suffix for nullable types (including strings but not arrays)
         if (isNullable && !baseType.EndsWith("[]", StringComparison.Ordinal))
         {
@@ -1776,11 +2153,38 @@ internal static class Program
         };
     }
 
-    private static string InferParameterType(string paramName)
+    private static string InferParameterType(
+        string paramName,
+        IReadOnlyList<DatabaseColumn>? columns = null
+    )
     {
+        // 1. If we have schema columns and one matches the param name
+        // (case-insensitive), use the actual column C# type. Strip the
+        // nullable suffix because parameters are non-nullable in method
+        // signatures (callers pass concrete values).
+        if (columns is not null)
+        {
+            foreach (var col in columns)
+            {
+                if (string.Equals(col.Name, paramName, StringComparison.OrdinalIgnoreCase))
+                {
+                    var t = col.CSharpType;
+                    if (t.EndsWith("?", StringComparison.Ordinal))
+                    {
+                        t = t[..^1];
+                    }
+                    return t;
+                }
+            }
+        }
+
+        // 2. Fall back to name-based heuristics. Default `*id` -> string
+        // because Postgres `text` ids are common and a `string` argument
+        // round-trips correctly to both `text` and `uuid` columns (Npgsql
+        // handles the cast for the latter when the column type is uuid).
         var lower = paramName.ToLowerInvariant();
         if (lower.EndsWith("id", StringComparison.Ordinal))
-            return "Guid";
+            return "string";
         if (
             lower.Contains("limit", StringComparison.Ordinal)
             || lower.Contains("offset", StringComparison.Ordinal)
@@ -1795,6 +2199,16 @@ internal static class Program
         if (string.IsNullOrEmpty(name))
             return name;
 
+        // If the name is already mixed case (no underscores), preserve the
+        // existing case and just uppercase the first letter. This keeps
+        // identifiers like `givenName` -> `GivenName` and `GivenName` ->
+        // `GivenName`, instead of destructively lowercasing the tail.
+        if (!name.Contains('_', StringComparison.Ordinal))
+        {
+            return char.ToUpperInvariant(name[0]) + name[1..];
+        }
+
+        // snake_case input: split on underscore and Pascal-case each chunk.
         var parts = name.Split('_');
         var sb = new StringBuilder();
         foreach (var part in parts)
@@ -1803,7 +2217,7 @@ internal static class Program
             {
                 _ = sb.Append(char.ToUpperInvariant(part[0]));
                 if (part.Length > 1)
-                    _ = sb.Append(part[1..].ToLowerInvariant());
+                    _ = sb.Append(part[1..]);
             }
         }
         return sb.ToString();
@@ -1811,6 +2225,17 @@ internal static class Program
 
     private static string ToCamelCase(string name)
     {
+        if (string.IsNullOrEmpty(name))
+            return name;
+
+        // Preserve existing camel/Pascal input, just lowercase the first
+        // letter. For snake_case input, fall through to PascalCase then
+        // lowercase the leading letter.
+        if (!name.Contains('_', StringComparison.Ordinal))
+        {
+            return char.ToLowerInvariant(name[0]) + name[1..];
+        }
+
         var pascal = ToPascalCase(name);
         if (string.IsNullOrEmpty(pascal))
             return pascal;
