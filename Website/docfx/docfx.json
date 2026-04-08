@@ -3,20 +3,29 @@
     {
       "src": [
         {
-          "files": ["DataProvider/DataProvider.csproj", "DataProvider.SQLite/DataProvider.SQLite.csproj", "DataProvider.SqlServer/DataProvider.SqlServer.csproj"],
+          "files": [
+            "Nimblesite.DataProvider.Core/Nimblesite.DataProvider.Core.csproj",
+            "Nimblesite.DataProvider.SQLite/Nimblesite.DataProvider.SQLite.csproj",
+            "Nimblesite.DataProvider.SqlServer/Nimblesite.DataProvider.SqlServer.csproj"
+          ],
           "src": "../../DataProvider"
         },
         {
-          "files": ["Sync/Sync.csproj", "Sync.SQLite/Sync.SQLite.csproj", "Sync.Postgres/Sync.Postgres.csproj", "Sync.Http/Sync.Http.csproj"],
+          "files": [
+            "Nimblesite.Sync.Core/Nimblesite.Sync.Core.csproj",
+            "Nimblesite.Sync.SQLite/Nimblesite.Sync.SQLite.csproj",
+            "Nimblesite.Sync.Postgres/Nimblesite.Sync.Postgres.csproj",
+            "Nimblesite.Sync.Http/Nimblesite.Sync.Http.csproj"
+          ],
           "src": "../../Sync"
         },
         {
-          "files": ["Migration/Migration.csproj", "Migration.SQLite/Migration.SQLite.csproj", "Migration.Postgres/Migration.Postgres.csproj"],
+          "files": [
+            "Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Core.csproj",
+            "Nimblesite.DataProvider.Migration.SQLite/Nimblesite.DataProvider.Migration.SQLite.csproj",
+            "Nimblesite.DataProvider.Migration.Postgres/Nimblesite.DataProvider.Migration.Postgres.csproj"
+          ],
           "src": "../../Migration"
-        },
-        {
-          "files": ["Gatekeeper.Api/Gatekeeper.Api.csproj"],
-          "src": "../../Gatekeeper"
         }
       ],
       "dest": "api",
