@@ -19,6 +19,9 @@ ifeq ($(OS),Windows_NT)
   MKDIR = New-Item -ItemType Directory -Force
   HOME ?= $(USERPROFILE)
 else
+  # Force bash for non-Windows. Some recipes use bash-only constructs
+  # (e.g. ${PIPESTATUS[0]}, [[ ... ]]), and Ubuntu's default /bin/sh is dash.
+  SHELL := /bin/bash
   RM = rm -rf
   MKDIR = mkdir -p
 endif
@@ -244,7 +247,10 @@ _test_rust:
 	echo "============================================================"; \
 	echo "==> Testing Lql/lql-lsp-rust (threshold: $$THRESHOLD%)"; \
 	echo "============================================================"; \
-	cd Lql/lql-lsp-rust && cargo tarpaulin --workspace --skip-clean 2>&1 | tee /tmp/_dp_tarpaulin_out.txt; \
+	cd Lql/lql-lsp-rust && cargo tarpaulin --workspace --skip-clean \
+	  --exclude-files 'crates/lql-parser/src/generated/*' \
+	  --exclude-files 'crates/lql-lsp/tests/*' \
+	  2>&1 | tee /tmp/_dp_tarpaulin_out.txt; \
 	TARP_EXIT=$${PIPESTATUS[0]}; \
 	if [ $$TARP_EXIT -ne 0 ]; then \
 	  echo "FAIL [Lql/lql-lsp-rust]: cargo tarpaulin failed"; \
