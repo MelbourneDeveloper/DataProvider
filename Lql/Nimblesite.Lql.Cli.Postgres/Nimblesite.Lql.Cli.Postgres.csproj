@@ -12,9 +12,9 @@
     <Version>0.1.8-beta</Version>
     <Description>LQL to PostgreSQL transpiler CLI tool</Description>
     <Authors>ChristianFindlay</Authors>
-    <Company>MelbourneDeveloper</Company>
+    <Company>Nimblesite</Company>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/MelbourneDeveloper/DataProvider</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Nimblesite/DataProvider</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <!-- Suppress analyzer rules that are inappropriate for CLI applications -->
     <NoWarn>$(NoWarn);RS1035</NoWarn>

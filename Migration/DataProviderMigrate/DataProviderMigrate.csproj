@@ -4,14 +4,14 @@
     <RootNamespace>DataProviderMigrate</RootNamespace>
     <NoWarn>$(NoWarn);CA2254;CA1515;RS1035;CA2100</NoWarn>
     <IsPackable>true</IsPackable>
-    <PackageId>DataProviderMigrate</PackageId>
+    <PackageId>Nimblesite.DataProviderMigrate</PackageId>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>DataProviderMigrate</ToolCommandName>
     <Description>CLI tool for DataProvider database schema migrations from YAML (SQLite + PostgreSQL).</Description>
     <Authors>ChristianFindlay</Authors>
-    <Company>MelbourneDeveloper</Company>
+    <Company>Nimblesite</Company>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/MelbourneDeveloper/DataProvider</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Nimblesite/DataProvider</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>dataprovider;migration;schema;yaml;sqlite;postgres;dotnet-tool</PackageTags>
   </PropertyGroup>
