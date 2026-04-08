@@ -7,10 +7,11 @@ namespace Nimblesite.DataProvider.Migration.Tests;
 /// 1. The same schema definition works on both platforms
 /// 2. Default values are properly applied when inserting without explicit values
 /// 3. The resulting data is semantically equivalent across platforms
+/// Uses the shared postgres container; each test gets its own database.
 /// </summary>
-public sealed class LqlDefaultsTests : IAsyncLifetime
+[Collection(PostgresTestSuite.Name)]
+public sealed class LqlDefaultsTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
-    private PostgreSqlContainer _postgres = null!;
     private NpgsqlConnection _pgConnection = null!;
     private SqliteConnection _sqliteConnection = null!;
     private string _sqliteDbPath = null!;
@@ -18,18 +19,7 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        // Setup PostgreSQL
-        _postgres = new PostgreSqlBuilder()
-            .WithImage("postgres:16-alpine")
-            .WithDatabase("lql_test")
-            .WithUsername("test")
-            .WithPassword("test")
-            .Build();
-
-        await _postgres.StartAsync().ConfigureAwait(false);
-
-        _pgConnection = new NpgsqlConnection(_postgres.GetConnectionString());
-        await _pgConnection.OpenAsync().ConfigureAwait(false);
+        _pgConnection = await fixture.CreateDatabaseAsync("lql_test").ConfigureAwait(false);
 
         // Setup SQLite with file-based database
         _sqliteDbPath = Path.Combine(Path.GetTempPath(), $"lql_defaults_{Guid.NewGuid():N}.db");
@@ -40,7 +30,6 @@ public sealed class LqlDefaultsTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _pgConnection.DisposeAsync().ConfigureAwait(false);
-        await _postgres.DisposeAsync().ConfigureAwait(false);
         _sqliteConnection.Dispose();
         if (File.Exists(_sqliteDbPath))
         {

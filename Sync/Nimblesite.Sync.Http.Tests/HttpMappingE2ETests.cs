@@ -14,12 +14,12 @@ namespace Nimblesite.Sync.Http.Tests;
 /// - Constant values (Source = "mobile-app")
 /// - Excluded columns (PasswordHash, SecurityStamp)
 /// This is the REAL PROOF that LQL mapping works over HTTP!
-/// Requires Docker: run with --filter "Category!=Docker" to skip.
+/// Uses the shared postgres container; each test gets its own database.
 /// </summary>
+[Collection(PostgresTestSuite.Name)]
 [Trait("Category", "Docker")]
-public sealed class HttpMappingE2ETests : IAsyncLifetime
+public sealed class HttpMappingE2ETests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
-    private PostgreSqlContainer _postgresContainer = null!;
     private string _postgresConnectionString = null!;
     private string _sqliteDbPath = null!;
     private SqliteConnection _sqliteConn = null!;
@@ -28,16 +28,9 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        // Start PostgreSQL container
-        _postgresContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:16-alpine")
-            .WithDatabase("mappingdb")
-            .WithUsername("test")
-            .WithPassword("test")
-            .Build();
-
-        await _postgresContainer.StartAsync().ConfigureAwait(false);
-        _postgresConnectionString = _postgresContainer.GetConnectionString();
+        _postgresConnectionString = await fixture
+            .CreateDatabaseConnectionStringAsync("mappingdb")
+            .ConfigureAwait(false);
 
         // Create SQLite database
         _sqliteDbPath = Path.Combine(Path.GetTempPath(), $"mapping_test_{Guid.NewGuid()}.db");
@@ -49,7 +42,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
         _postgresConn.Open();
     }
 
-    public async Task DisposeAsync()
+    public Task DisposeAsync()
     {
         _sqliteConn.Close();
         _sqliteConn.Dispose();
@@ -61,7 +54,7 @@ public sealed class HttpMappingE2ETests : IAsyncLifetime
             File.Delete(_sqliteDbPath);
         }
 
-        await _postgresContainer.DisposeAsync().ConfigureAwait(false);
+        return Task.CompletedTask;
     }
 
     /// <summary>

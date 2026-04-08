@@ -72,7 +72,7 @@ jobs:
 
       - name: Build CLI tools (needed by F# Type Provider MSBuild targets)
         run: |
-          dotnet build Migration/Nimblesite.DataProvider.Migration.Cli -c Debug
+          dotnet build Migration/DataProviderMigrate -c Debug
           dotnet build DataProvider/Nimblesite.DataProvider.SQLite.Cli -c Debug
 
       - name: Test DataProvider (with coverage enforcement)
@@ -142,13 +142,25 @@ jobs:
             ${{ runner.os }}-cargo-build-
             ${{ runner.os }}-cargo-
 
+      - name: Restore .NET tools (h5, csharpier, ilspycmd)
+        run: dotnet tool restore
+
       - name: Build .NET
         run: dotnet build DataProvider.sln -c Debug
 
       - name: Build Rust
         run: cd Lql/lql-lsp-rust && cargo build
 
-      - name: Test LQL + Migration + Sync (with coverage enforcement)
+      - name: Install Playwright browsers (Reporting.Integration.Tests)
+        run: |
+          dotnet build Reporting/Nimblesite.Reporting.Integration.Tests -c Debug
+          PWSCRIPT=$(find Reporting/Nimblesite.Reporting.Integration.Tests/bin -name 'playwright.ps1' | head -1)
+          if [ -z "$PWSCRIPT" ]; then
+            echo "playwright.ps1 not found under Reporting.Integration.Tests bin"; exit 1
+          fi
+          pwsh "$PWSCRIPT" install --with-deps chromium
+
+      - name: Test LQL + Migration + Sync + Reporting (with coverage enforcement)
         run: >-
           make _test_dotnet DOTNET_TEST_PROJECTS="Lql/Nimblesite.Lql.Tests
           Lql/Nimblesite.Lql.TypeProvider.FSharp.Tests
@@ -157,7 +169,9 @@ jobs:
           Sync/Nimblesite.Sync.SQLite.Tests
           Sync/Nimblesite.Sync.Postgres.Tests
           Sync/Nimblesite.Sync.Integration.Tests
-          Sync/Nimblesite.Sync.Http.Tests"
+          Sync/Nimblesite.Sync.Http.Tests
+          Reporting/Nimblesite.Reporting.Tests
+          Reporting/Nimblesite.Reporting.Integration.Tests"
         env:
           TESTCONTAINERS_RYUK_DISABLED: false
 
@@ -175,7 +189,21 @@ jobs:
   extension-tests:
     name: LQL Extension Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: changeme
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -184,11 +212,67 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry + build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            Lql/lql-lsp-rust/target
+          key: ${{ runner.os }}-cargo-extension-${{ hashFiles('Lql/lql-lsp-rust/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-extension-
+            ${{ runner.os }}-cargo-
+
+      - name: Install VSCode runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            xvfb \
+            libnss3 \
+            libgbm1 \
+            libdrm2 \
+            libxkbcommon-x11-0 \
+            libgtk-3-0 \
+            libasound2t64 \
+            libsecret-1-0 \
+            libsndio7.0 || \
+          sudo apt-get install -y --no-install-recommends \
+            xvfb \
+            libnss3 \
+            libgbm1 \
+            libdrm2 \
+            libxkbcommon-x11-0 \
+            libgtk-3-0
+
+      - name: Build lql-lsp binary (release)
+        run: cd Lql/lql-lsp-rust && cargo build --release -p lql-lsp
+
+      - name: Verify lql-lsp --version
+        run: |
+          ./Lql/lql-lsp-rust/target/release/lql-lsp --version
+          # Confirm the printed version matches the VSIX package.json version
+          BIN_VERSION=$(./Lql/lql-lsp-rust/target/release/lql-lsp --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          VSIX_VERSION=$(jq -r '.version' Lql/LqlExtension/package.json)
+          echo "Binary version: $BIN_VERSION"
+          echo "VSIX version:   $VSIX_VERSION"
+          if [ "$BIN_VERSION" != "$VSIX_VERSION" ]; then
+            echo "ERROR: lql-lsp --version ($BIN_VERSION) does not match VSIX version ($VSIX_VERSION)"
+            exit 1
+          fi
+
       - name: Install dependencies
         run: cd Lql/LqlExtension && npm install --no-audit --no-fund
 
       - name: Test Extension (with coverage enforcement)
-        run: make _test_ts
+        env:
+          POSTGRES_CONNECTION_STRING: "Host=localhost;Port=5432;Username=postgres;Password=changeme;Database=postgres"
+        run: |
+          export PATH="$PWD/Lql/lql-lsp-rust/target/release:$PATH"
+          make _test_ts
 
       - name: Package VSIX (dry run)
         run: cd Lql/LqlExtension && npm run compile && npx vsce package --no-git-tag-version --no-update-package-json

@@ -1,7 +1,7 @@
 SELECT
-    users.name,
-    orders.total,
-    products.name
+    u.name,
+    o.total,
+    p.name
 FROM users u
-INNER JOIN orders o ON users.id = orders.user_id
-INNER JOIN products p ON orders.product_id = products.id
+INNER JOIN orders o ON u.id = o.user_id
+INNER JOIN products p ON o.product_id = p.id

@@ -38,7 +38,7 @@ public static class SqlStatementExtensionsPostgreSQL
             }
 
             var unknownSql = statement.AstNode is Identifier identifier
-                ? $"SELECT *\nFROM {identifier.Name}"
+                ? $"SELECT *\nFROM {FormatBareIdentifier(identifier.Name)}"
                 : "-- Unknown AST node type";
             return new Result<string, SqlError>.Ok<string, SqlError>(unknownSql);
         }
@@ -57,6 +57,29 @@ public static class SqlStatementExtensionsPostgreSQL
     {
         var context = new PostgreSqlContext();
         return PipelineProcessor.ConvertPipelineToSql(pipeline, context, ProcessColumnReferences);
+    }
+
+    /// <summary>
+    /// Wraps a bare identifier in double quotes only when it contains
+    /// uppercase ASCII (which Postgres would otherwise fold). Lower-case
+    /// identifiers are passed through to preserve existing test fixture
+    /// output and SQL readability.
+    /// </summary>
+    private static string FormatBareIdentifier(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return name;
+        }
+        for (var i = 0; i < name.Length; i++)
+        {
+            var c = name[i];
+            if (c >= 'A' && c <= 'Z')
+            {
+                return $"\"{name}\"";
+            }
+        }
+        return name;
     }
 
     /// <summary>

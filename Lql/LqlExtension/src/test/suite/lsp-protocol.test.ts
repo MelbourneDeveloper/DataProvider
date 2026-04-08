@@ -389,13 +389,13 @@ function readFixture(name: string): string {
   throw new Error(`Fixture not found: ${name}`);
 }
 
-describe("LSP Protocol E2E Tests", function () {
+suite("LSP Protocol E2E Tests", function () {
   this.timeout(30000);
 
   let client: LspClient;
   let lspBinary: string;
 
-  before(function () {
+  suiteSetup(function () {
     try {
       lspBinary = findLspBinary();
     } catch {
@@ -403,11 +403,11 @@ describe("LSP Protocol E2E Tests", function () {
     }
   });
 
-  beforeEach(function () {
+  setup(function () {
     client = new LspClient(lspBinary);
   });
 
-  afterEach(function () {
+  teardown(function () {
     client.kill();
   });
 
@@ -443,7 +443,7 @@ describe("LSP Protocol E2E Tests", function () {
   // INITIALIZATION
   // ═══════════════════════════════════════════════════════════════
 
-  it("should initialize with correct capabilities", async function () {
+  test("should initialize with correct capabilities", async function () {
     const result = await initServer();
 
     assert.notStrictEqual(result, undefined, "Initialize result should not be null");
@@ -502,7 +502,7 @@ describe("LSP Protocol E2E Tests", function () {
   // COMPLETIONS (IntelliSense)
   // ═══════════════════════════════════════════════════════════════
 
-  it("should provide pipeline completions after |>", async function () {
+  test("should provide pipeline completions after |>", async function () {
     await initServer();
     await openDocument("file:///test/completion.lql", "users |> ");
 
@@ -531,7 +531,7 @@ describe("LSP Protocol E2E Tests", function () {
     assert.ok(selectItem.kind !== undefined, "select must have a kind");
   });
 
-  it("should provide aggregate function completions", async function () {
+  test("should provide aggregate function completions", async function () {
     await initServer();
     await openDocument("file:///test/agg.lql", "orders |> select(c");
 
@@ -548,7 +548,7 @@ describe("LSP Protocol E2E Tests", function () {
     assert.ok(labels.includes("coalesce"), "Must suggest 'coalesce'");
   });
 
-  it("should provide keyword completions", async function () {
+  test("should provide keyword completions", async function () {
     await initServer();
     await openDocument("file:///test/kw.lql", "l");
 
@@ -568,7 +568,7 @@ describe("LSP Protocol E2E Tests", function () {
   // HOVER (IntelliPrompt)
   // ═══════════════════════════════════════════════════════════════
 
-  it("should provide hover info for filter keyword", async function () {
+  test("should provide hover info for filter keyword", async function () {
     await initServer();
     const content =
       "users |> filter(fn(row) => row.users.age > 18) |> select(users.name) |> limit(10)";
@@ -594,7 +594,7 @@ describe("LSP Protocol E2E Tests", function () {
     );
   });
 
-  it("should provide hover info for select keyword", async function () {
+  test("should provide hover info for select keyword", async function () {
     await initServer();
     const content =
       "users |> filter(fn(row) => row.users.age > 18) |> select(users.name) |> limit(10)";
@@ -619,7 +619,7 @@ describe("LSP Protocol E2E Tests", function () {
     );
   });
 
-  it("should provide hover for aggregate functions", async function () {
+  test("should provide hover for aggregate functions", async function () {
     await initServer();
     await openDocument(
       "file:///test/agg_hover.lql",
@@ -656,7 +656,7 @@ describe("LSP Protocol E2E Tests", function () {
     );
   });
 
-  it("should return null hover for unknown identifiers", async function () {
+  test("should return null hover for unknown identifiers", async function () {
     await initServer();
     await openDocument(
       "file:///test/no_hover.lql",
@@ -679,7 +679,7 @@ describe("LSP Protocol E2E Tests", function () {
   // DIAGNOSTICS
   // ═══════════════════════════════════════════════════════════════
 
-  it("should publish diagnostics for syntax errors", async function () {
+  test("should publish diagnostics for syntax errors", async function () {
     await initServer();
     const invalidContent = readFixture("invalid_syntax.lql");
     const notifications = await openDocument(
@@ -704,7 +704,7 @@ describe("LSP Protocol E2E Tests", function () {
     assert.ok(firstDiag.severity !== undefined, "Diagnostic must have severity");
   });
 
-  it("should publish clean diagnostics for valid files", async function () {
+  test("should publish clean diagnostics for valid files", async function () {
     await initServer();
     const validContent = readFixture("simple_select.lql");
     const notifications = await openDocument(
@@ -722,7 +722,7 @@ describe("LSP Protocol E2E Tests", function () {
     );
   });
 
-  it("should update diagnostics on document change", async function () {
+  test("should update diagnostics on document change", async function () {
     await initServer();
     await openDocument(
       "file:///test/change.lql",
@@ -752,7 +752,7 @@ describe("LSP Protocol E2E Tests", function () {
   // DOCUMENT SYMBOLS
   // ═══════════════════════════════════════════════════════════════
 
-  it("should return document symbols for let bindings", async function () {
+  test("should return document symbols for let bindings", async function () {
     await initServer();
     const content = readFixture("complex_pipeline.lql");
     await openDocument("file:///test/symbols.lql", content);
@@ -788,7 +788,7 @@ describe("LSP Protocol E2E Tests", function () {
   // FORMATTING
   // ═══════════════════════════════════════════════════════════════
 
-  it("should format LQL documents", async function () {
+  test("should format LQL documents", async function () {
     await initServer();
     const uglyContent = "  users   |>   select(  users.id  ,  users.name  )  ";
     await openDocument("file:///test/format.lql", uglyContent);
@@ -814,7 +814,7 @@ describe("LSP Protocol E2E Tests", function () {
   // COMPLEX REAL-WORLD SCENARIOS
   // ═══════════════════════════════════════════════════════════════
 
-  it("should handle complex pipeline with all features", async function () {
+  test("should handle complex pipeline with all features", async function () {
     await initServer();
     const content = readFixture("complex_pipeline.lql");
     const notifications = await openDocument(
@@ -840,7 +840,7 @@ describe("LSP Protocol E2E Tests", function () {
     assert.ok(result !== null && result !== undefined, "Should provide completions in complex document");
   });
 
-  it("should handle window function documents cleanly", async function () {
+  test("should handle window function documents cleanly", async function () {
     await initServer();
     const content = readFixture("window_functions.lql");
     const notifications = await openDocument(
@@ -854,7 +854,7 @@ describe("LSP Protocol E2E Tests", function () {
     assert.strictEqual(errors.length, 0, "Window function file should parse without errors");
   });
 
-  it("should handle case expression documents cleanly", async function () {
+  test("should handle case expression documents cleanly", async function () {
     await initServer();
     const content = readFixture("case_expression.lql");
     const notifications = await openDocument(
@@ -867,7 +867,7 @@ describe("LSP Protocol E2E Tests", function () {
     assert.strictEqual(errors.length, 0, "Case expression should parse cleanly");
   });
 
-  it("should handle exists subquery documents cleanly", async function () {
+  test("should handle exists subquery documents cleanly", async function () {
     await initServer();
     const content = readFixture("subquery_exists.lql");
     const notifications = await openDocument(
@@ -884,14 +884,14 @@ describe("LSP Protocol E2E Tests", function () {
   // LIFECYCLE
   // ═══════════════════════════════════════════════════════════════
 
-  it("should handle shutdown gracefully", async function () {
+  test("should handle shutdown gracefully", async function () {
     await initServer();
     const result = await client.request("shutdown");
     assert.strictEqual(result, null, "Shutdown should return null");
     client.notify("exit", null);
   });
 
-  it("should handle multiple documents simultaneously", async function () {
+  test("should handle multiple documents simultaneously", async function () {
     await initServer();
     await openDocument(
       "file:///test/doc1.lql",
@@ -915,7 +915,7 @@ describe("LSP Protocol E2E Tests", function () {
     assert.ok(result2 !== null && result2 !== undefined, "Doc2 should return completions");
   });
 
-  it("should handle document close and reopen", async function () {
+  test("should handle document close and reopen", async function () {
     await initServer();
     await openDocument(
       "file:///test/reopen.lql",
@@ -945,7 +945,7 @@ describe("LSP Protocol E2E Tests", function () {
   // INTELLISENSE PROOF — Deep completions testing (ZERO MOCKING)
   // ═══════════════════════════════════════════════════════════════
 
-  it("PROOF: IntelliSense delivers context-aware completions after pipe in real multiline pipeline", async function () {
+  test("PROOF: IntelliSense delivers context-aware completions after pipe in real multiline pipeline", async function () {
     await initServer();
     const content = `let active_users = users
 |> filter(fn(row) => row.users.status = 'active')
@@ -985,7 +985,7 @@ describe("LSP Protocol E2E Tests", function () {
     }
   });
 
-  it("PROOF: IntelliSense delivers function completions inside select() arguments", async function () {
+  test("PROOF: IntelliSense delivers function completions inside select() arguments", async function () {
     await initServer();
     const content = "orders |> select(";
     await openDocument("file:///test/intellisense_proof2.lql", content);
@@ -1024,7 +1024,7 @@ describe("LSP Protocol E2E Tests", function () {
     assert.ok(labels.includes("dense_rank"), "Must suggest 'dense_rank' window function");
   });
 
-  it("PROOF: IntelliSense completions have correct LSP completion item kinds", async function () {
+  test("PROOF: IntelliSense completions have correct LSP completion item kinds", async function () {
     await initServer();
     await openDocument("file:///test/intellisense_kinds.lql", "orders |> ");
 
@@ -1057,7 +1057,7 @@ describe("LSP Protocol E2E Tests", function () {
     );
   });
 
-  it("PROOF: IntelliSense delivers prefix-filtered completions after pipe", async function () {
+  test("PROOF: IntelliSense delivers prefix-filtered completions after pipe", async function () {
     await initServer();
     // Place cursor right after "|> s" — the word prefix is "s", after_pipe detected
     await openDocument("file:///test/prefix_filter.lql", "orders |> s");
@@ -1085,7 +1085,7 @@ describe("LSP Protocol E2E Tests", function () {
   // INTELLIPROMPT PROOF — Deep hover testing (ZERO MOCKING)
   // ═══════════════════════════════════════════════════════════════
 
-  it("PROOF: IntelliPrompt delivers rich Markdown hover with signature for ALL pipeline ops", async function () {
+  test("PROOF: IntelliPrompt delivers rich Markdown hover with signature for ALL pipeline ops", async function () {
     await initServer();
     // Build a document with all pipeline operations for hover testing
     const content = `users
@@ -1198,7 +1198,7 @@ describe("LSP Protocol E2E Tests", function () {
     assert.ok(offsetText.toLowerCase().includes("skip"), "Offset hover must mention skipping rows");
   });
 
-  it("PROOF: IntelliPrompt delivers hover for aggregate functions in real context", async function () {
+  test("PROOF: IntelliPrompt delivers hover for aggregate functions in real context", async function () {
     await initServer();
     const content = "orders |> select(count(*) as cnt, sum(orders.total) as total_sum, avg(orders.total) as avg_total, max(orders.total) as high, min(orders.total) as low)";
     await openDocument("file:///test/intelliprompt_agg.lql", content);
@@ -1264,7 +1264,7 @@ describe("LSP Protocol E2E Tests", function () {
     assert.ok(extractHoverText(minHover).toLowerCase().includes("min"), "Min hover must describe min");
   });
 
-  it("PROOF: IntelliPrompt delivers hover for string functions", async function () {
+  test("PROOF: IntelliPrompt delivers hover for string functions", async function () {
     await initServer();
     const content = "users |> select(concat(users.first, users.last) as name, upper(users.email) as email_upper, trim(users.bio) as bio, length(users.bio) as bio_len)";
     await openDocument("file:///test/intelliprompt_string.lql", content);
@@ -1326,7 +1326,7 @@ describe("LSP Protocol E2E Tests", function () {
     );
   });
 
-  it("PROOF: IntelliPrompt returns null for non-LQL identifiers", async function () {
+  test("PROOF: IntelliPrompt returns null for non-LQL identifiers", async function () {
     await initServer();
     await openDocument(
       "file:///test/intelliprompt_null.lql",
@@ -1360,7 +1360,7 @@ describe("LSP Protocol E2E Tests", function () {
   // DIAGNOSTICS PROOF — Real error detection (ZERO MOCKING)
   // ═══════════════════════════════════════════════════════════════
 
-  it("PROOF: LSP detects real syntax errors and provides actionable range info", async function () {
+  test("PROOF: LSP detects real syntax errors and provides actionable range info", async function () {
     await initServer();
     // Unclosed parenthesis
     const notifications = await openDocument(
@@ -1383,7 +1383,7 @@ describe("LSP Protocol E2E Tests", function () {
     assert.ok(error.source === "lql", "Error source must be 'lql'");
   });
 
-  it("PROOF: LSP reports zero errors on valid complex multiline LQL", async function () {
+  test("PROOF: LSP reports zero errors on valid complex multiline LQL", async function () {
     await initServer();
     const validContent = `let completed_orders = orders
 |> filter(fn(row) => row.orders.status = 'completed')
@@ -1411,7 +1411,7 @@ let summary = completed_orders
     );
   });
 
-  it("PROOF: LSP detects errors and then clears them when content is fixed", async function () {
+  test("PROOF: LSP detects errors and then clears them when content is fixed", async function () {
     await initServer();
     // Open with invalid content
     const badNotifications = await openDocument(
@@ -1448,7 +1448,7 @@ let summary = completed_orders
   // DOCUMENT SYMBOLS PROOF (ZERO MOCKING)
   // ═══════════════════════════════════════════════════════════════
 
-  it("PROOF: LSP extracts document symbols from let bindings with correct locations", async function () {
+  test("PROOF: LSP extracts document symbols from let bindings with correct locations", async function () {
     await initServer();
     const content = `let users_active = users
 |> filter(fn(row) => row.users.active = true)
@@ -1496,7 +1496,7 @@ let final_report = users_active
   // FORMATTING PROOF (ZERO MOCKING)
   // ═══════════════════════════════════════════════════════════════
 
-  it("PROOF: LSP formats messy multiline LQL into properly indented output", async function () {
+  test("PROOF: LSP formats messy multiline LQL into properly indented output", async function () {
     await initServer();
     // Multiline with bad indentation — formatter normalizes leading whitespace per line
     const messy = `       users
@@ -1546,7 +1546,7 @@ let final_report = users_active
   // REAL-WORLD COMPLEX SCENARIO PROOF (ZERO MOCKING)
   // ═══════════════════════════════════════════════════════════════
 
-  it("PROOF: Full E2E workflow — open, complete, hover, diagnose, format in sequence", async function () {
+  test("PROOF: Full E2E workflow — open, complete, hover, diagnose, format in sequence", async function () {
     await initServer();
 
     // Step 1: Open a real document
@@ -1616,7 +1616,7 @@ let final_report = users_active
     assert.ok(newErrors.length > 0, "Broken content must produce errors");
   });
 
-  it("PROOF: IntelliSense works for LQL keywords in empty doc and lambda context", async function () {
+  test("PROOF: IntelliSense works for LQL keywords in empty doc and lambda context", async function () {
     await initServer();
 
     // In empty document: keywords like 'let', 'fn', 'case' should be available
@@ -1664,7 +1664,7 @@ let final_report = users_active
     assert.ok(lambdaLabels.includes("like"), "Must suggest 'like' in lambda context");
   });
 
-  it("PROOF: IntelliPrompt hover for 'let' and 'fn' keywords", async function () {
+  test("PROOF: IntelliPrompt hover for 'let' and 'fn' keywords", async function () {
     await initServer();
     const content = "let result = users |> filter(fn(row) => row.users.id > 0)";
     await openDocument("file:///test/kw_hover_proof.lql", content);
@@ -1700,7 +1700,7 @@ let final_report = users_active
     );
   });
 
-  it("PROOF: Window function completions available with correct prefix filtering", async function () {
+  test("PROOF: Window function completions available with correct prefix filtering", async function () {
     await initServer();
 
     // Prefix "ro" — should match row_number, round

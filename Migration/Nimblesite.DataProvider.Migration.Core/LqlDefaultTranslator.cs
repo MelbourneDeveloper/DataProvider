@@ -64,18 +64,18 @@ public static partial class LqlDefaultTranslator
         return normalized switch
         {
             // Timestamp functions - SQLite uses datetime/date/time functions
-            "NOW()" => "(datetime('now'))",
-            "CURRENT_TIMESTAMP()" => "CURRENT_TIMESTAMP",
-            "CURRENT_DATE()" => "(date('now'))",
-            "CURRENT_TIME()" => "(time('now'))",
+            "now()" => "(datetime('now'))",
+            "current_timestamp()" => "CURRENT_TIMESTAMP",
+            "current_date()" => "(date('now'))",
+            "current_time()" => "(time('now'))",
 
             // UUID generation - SQLite needs manual UUID v4 construction
             "gen_uuid()" => UuidV4SqliteExpression,
             "uuid()" => UuidV4SqliteExpression,
 
             // Boolean literals - SQLite uses 0/1
-            "TRUE" => "1",
-            "FALSE" => "0",
+            "true" => "1",
+            "false" => "0",
 
             // Numeric literals (pass through)
             var n when int.TryParse(n, out _) => n,

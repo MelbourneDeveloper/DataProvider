@@ -632,6 +632,15 @@ fn format_lql(source: &str) -> String {
 
 #[tokio::main]
 async fn main() {
+    // Handle `--version` (and `-V`) for the VS Code extension's pre-flight
+    // version check, so it can detect a matching binary on PATH without
+    // downloading from GitHub releases.
+    let args: Vec<String> = std::env::args().collect();
+    if args.iter().any(|a| a == "--version" || a == "-V") {
+        println!("lql-lsp {}", env!("CARGO_PKG_VERSION"));
+        return;
+    }
+
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
 

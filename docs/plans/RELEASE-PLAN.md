@@ -32,7 +32,7 @@ Release DataProvider packages to NuGet.org so apps can consume them without git 
 |------|---------|---------|
 | `DataProvider.SQLite.Cli` | `dataprovider-sqlite` | `dotnet tool install DataProvider.SQLite.Cli -g` |
 | `DataProvider.Postgres.Cli` | `dataprovider-postgres` | `dotnet tool install DataProvider.Postgres.Cli -g` |
-| `Migration.Cli` | `migration-cli` | `dotnet tool install Migration.Cli -g` |
+| `DataProviderMigrate` | `DataProviderMigrate` | `dotnet tool install DataProviderMigrate -g` |
 
 ---
 

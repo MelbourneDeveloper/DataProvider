@@ -1,0 +1,18 @@
+name: reporting_test
+tables:
+- name: products
+  columns:
+  - name: Id
+    type: Text
+  - name: Name
+    type: Text
+  - name: Category
+    type: Text
+  - name: Price
+    type: Double
+  - name: Stock
+    type: Int
+  primaryKey:
+    name: PK_Products
+    columns:
+    - Id
