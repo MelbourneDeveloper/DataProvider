@@ -490,3 +490,4 @@ Lql/LqlWebsite-Eleventy/_site/
 .claude/skills/website-audit/SKILL.md
 
 Lql/lql-lsp-rust/target/
+*.vsix
