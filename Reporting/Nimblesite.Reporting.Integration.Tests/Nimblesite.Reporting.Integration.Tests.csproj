@@ -62,9 +62,15 @@
   -->
   <Target Name="RemovePropagatedReportingApiSampleReports" AfterTargets="Build">
     <ItemGroup>
-      <_OwnedReportNames Include="@(Content->'%(Filename)%(Extension)')" Condition="'%(Extension)' == '.json'" />
+      <_OwnedReportNames
+        Include="@(Content->'%(Filename)%(Extension)')"
+        Condition="'%(Extension)' == '.json'"
+      />
       <_AllBinReports Include="$(OutDir)Reports\*.report.json" />
-      <_PropagatedReports Include="@(_AllBinReports)" Exclude="@(_OwnedReportNames->'$(OutDir)Reports\%(Identity)')" />
+      <_PropagatedReports
+        Include="@(_AllBinReports)"
+        Exclude="@(_OwnedReportNames->'$(OutDir)Reports\%(Identity)')"
+      />
     </ItemGroup>
     <Delete Files="@(_PropagatedReports)" />
   </Target>

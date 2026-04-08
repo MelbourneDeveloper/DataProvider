@@ -115,16 +115,16 @@ public sealed class PostgresContainerFixture : IAsyncLifetime
     }
 
     private string BuildConnectionString(string dbName) =>
-        new NpgsqlConnectionStringBuilder(_adminConnectionString) { Database = dbName }.ConnectionString;
+        new NpgsqlConnectionStringBuilder(_adminConnectionString)
+        {
+            Database = dbName,
+        }.ConnectionString;
 
     private string NextDatabaseName(string namePrefix)
     {
         var counter = Interlocked.Increment(ref _databaseCounter);
         return SanitizeDbName(
-            string.Create(
-                CultureInfo.InvariantCulture,
-                $"{namePrefix}_{counter:D5}"
-            )
+            string.Create(CultureInfo.InvariantCulture, $"{namePrefix}_{counter:D5}")
         );
     }
 

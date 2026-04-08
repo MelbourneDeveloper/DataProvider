@@ -17,7 +17,9 @@ public sealed class MigrateSchemaTests(PostgresContainerFixture fixture) : IAsyn
 
     public async Task InitializeAsync()
     {
-        _connection = await fixture.CreateDatabaseAsync("migrate_schema_test").ConfigureAwait(false);
+        _connection = await fixture
+            .CreateDatabaseAsync("migrate_schema_test")
+            .ConfigureAwait(false);
     }
 
     public async Task DisposeAsync()
