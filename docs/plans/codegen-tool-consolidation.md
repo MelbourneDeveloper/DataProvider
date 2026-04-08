@@ -175,19 +175,82 @@ That is the entire consumer-side delta. No tool manifest. No `<Target>`. No `Gen
 | RISK-NATIVE-DEPS | SQLite ships native `e_sqlite3` libs per RID. SqlServer ships `sni.dll`. The tool must include the right RIDs. | Use `RuntimeIdentifiers` in the tool csproj covering `win-x64`, `linux-x64`, `osx-x64`, `osx-arm64`, `linux-arm64`. CI runs on each. |
 | RISK-CON-MIG-FIRST | Tool runs at build time. If migrations didn't run first, introspection sees a stale schema. | [CON-MIG-FIRST] is consumer-side. Document loudly. The tool itself has no recourse — it reads what the DB says. |
 
-## Open Questions
+## Locked Decisions
 
-- **Tool TFM**: `net9.0` or `net10.0`? Migration tool currently targets one of these — match it for consistency.
-- **Platform detection**: required parameter (simple, loud) vs sniff-from-connstring (convenient, fragile)? Default to **required** for v0.
-- **Output path default**: `obj/DataProviderGenerated/` or `$(IntermediateOutputPath)DataProviderGenerated`? Pick the latter — works inside out-of-tree builds.
+| Decision | Value |
+|---|---|
+| Tool TFM | **`net9.0`** (matches `Directory.Build.props` default) |
+| Platform selection | **`--platform` is required**. No connection-string sniffing. |
+| Output path default | **`$(IntermediateOutputPath)DataProviderGenerated`** (works inside out-of-tree builds) |
+| SQL parsing | **ANTLR `.g4` grammars vendored from `antlr/grammars-v4/sql/{platform}` only**. Postgres = `antlr/grammars-v4/sql/postgresql` (derived from upstream `gram.y`). SQLite = existing vendored grammar. **Hand-rolled SQL string-walking is ⛔️ ILLEGAL** per [CON-PARSER-ONLY] in the spec. |
+| Code sharing | **Maximum**. Per-platform libraries are thin shells over `DataProvider.Core`. ≤ 5 files, ≤ 200 LOC each (excluding generated parser sources). Duplication between platforms is grounds for review rejection per [CON-SHARED-CORE]. |
+| Postgres library refactor | The new `Nimblesite.DataProvider.Postgres` library AND the SQLite library refactor land **in the same session**. The SQLite library gets rewritten to consume the lifted Core abstractions so neither library duplicates the other. |
 
 ---
 
 ## TODO
 
+> **Active work tracker.** Updated after every change. Items get checked off as code lands. Items at the top are the current Postgres-library / Program.cs split work. Items at the bottom are the older consolidation goals that are still on the roadmap but not in this session.
+
+### CURRENT SESSION — Postgres library + Program.cs split
+
+**Sub-section 1: vendor & generate Postgres parser** ✅
+
+- [x] **VALIDATE** — Confirm `antlr4` 4.13.1 generates clean C# from `antlr/grammars-v4` PostgreSQL grammar (validated with namespace fix on base classes).
+- [x] **STUB** — Create `DataProvider/Nimblesite.DataProvider.Postgres/Nimblesite.DataProvider.Postgres.csproj` referencing `Antlr4.Runtime.Standard 4.13.1`, `Npgsql 9.0.2`, Core, Sql.Model, Migration.Core.
+- [x] **VENDOR** — `PostgreSQLLexer.g4` + `PostgreSQLParser.g4` in `Parsing/`.
+- [x] **VENDOR** — `PostgreSQLLexerBase.cs` + `PostgreSQLParserBase.cs` + `LexerDispatchingErrorListener.cs` + `ParserDispatchingErrorListener.cs` namespaced to `Nimblesite.DataProvider.Postgres.Parsing` and dropped in `Parsing/`.
+- [x] **GENERATE** — Ran `antlr-4.13.1-complete.jar` against the lexer + parser grammars (lexer first, then parser with `-lib .` so the parser can resolve token references). 6 generated `.cs` files dropped in `Parsing/` totalling ~5 MB.
+- [x] **FIXUP** — The grammar has a parser rule named `event` (a Postgres reserved word). ANTLR's generated XML doc cref `<see cref="PostgreSQLParser.event"/>` doesn't compile because `event` is a C# keyword. Patched 4 files (`PostgreSQLParserListener.cs`, `PostgreSQLParserBaseListener.cs`, `PostgreSQLParserVisitor.cs`, `PostgreSQLParserBaseVisitor.cs`) to escape it as `@event`.
+- [x] **CSPROJ** — `<NoWarn>` covering CS1591/CS3021/CS0108/CS8600/CS8601/CS8602/CS8603/CS8604/CS8618/CS8625/CS8765/CS8767 + a long list of CA design-rule IDs + IDE0005. Disabled `EnforceCodeStyleInBuild`, `EnableNETAnalyzers`, `RunAnalyzersDuringBuild` for the project (the small bits of code we own are reviewed by hand; the rest is generated/vendored). Cleared `WarningsAsErrors`. The library's own thin shells will be policed by review, not by analyzer rules.
+- [x] **BUILD** — `dotnet build` of `Nimblesite.DataProvider.Postgres.csproj`: **0 warnings, 0 errors**.
+
+**Sub-section 2: shared Core abstractions**
+
+- [ ] **CORE** — Lift `Nimblesite.DataProvider.SQLite/Parsing/SqliteParameterExtractor.cs` → `Nimblesite.DataProvider.Core/Parsing/AntlrSqlParameterExtractor.cs`. Both libraries call into it. Delete the SQLite copy.
+- [ ] **CORE** — Lift `Nimblesite.DataProvider.SQLite/CodeGeneration/SqliteDatabaseEffects.GetDummyValueForParameter` → `Nimblesite.DataProvider.Core/CodeGeneration/DummyParameterValues.cs`.
+- [ ] **CORE** — Lift the bulk of `Nimblesite.DataProvider.SQLite/CodeGeneration/SqliteDatabaseEffects.cs` → `Nimblesite.DataProvider.Core/CodeGeneration/AdoNetDatabaseEffects.cs`. Generic `IDatabaseEffects` taking a `Func<string, DbConnection>` connection factory + a `Func<Type, string, bool, string>` type mapper. The SQLite-specific shell shrinks to ~30 LOC.
+- [ ] **CORE** — Lift the bulk of `Nimblesite.DataProvider.SQLite/SqliteCodeGenerator.cs` (currently 876 LOC of orchestration) → `Nimblesite.DataProvider.Core/CodeGeneration/SqlAntlrCodeGenerator.cs`. Both `SqliteCodeGenerator` and `PostgresCodeGenerator` reduce to ~30 LOC shells around it.
+- [ ] **SQLITE** — Refactor `SqliteDatabaseEffects.cs` to a thin shell that constructs `Core.AdoNetDatabaseEffects` with the SQLite connection factory + type mapper.
+- [ ] **SQLITE** — Refactor `SqliteCodeGenerator.cs` to a thin shell that constructs the SQLite `CodeGenerationConfig` and delegates to `Core.SqlAntlrCodeGenerator`.
+- [ ] **SQLITE** — Update `SqliteAntlrParser.cs` to call `Core.AntlrSqlParameterExtractor` instead of the deleted local extractor.
+- [ ] **VERIFY** — Run `Nimblesite.DataProvider.Tests` and confirm all SQLite tests still pass after the refactor.
+
+**Sub-section 3: Postgres library shells**
+
+- [ ] **POSTGRES** — Author `Parsing/PostgresAntlrParser.cs` that mirrors `SqliteAntlrParser.cs` exactly. ≤ 100 LOC. Returns `Result<SelectStatement, string>`.
+- [ ] **POSTGRES** — Author `Parsing/PostgresQueryTypeListener.cs` that mirrors `SqliteQueryTypeListener.cs`. Hooks the appropriate `EnterSelectstmt`/`EnterInsertstmt`/`EnterUpdatestmt`/`EnterDeletestmt` rules from the generated PostgreSQL listener.
+- [ ] **POSTGRES** — Author `CodeGeneration/PostgresDatabaseEffects.cs` shell that constructs `Core.AdoNetDatabaseEffects` with an `NpgsqlConnection` factory + the Postgres type mapper. ≤ 50 LOC.
+- [ ] **POSTGRES** — Author `PostgresCodeGenerator.cs` shell that constructs the Postgres `CodeGenerationConfig` and delegates to `Core.SqlAntlrCodeGenerator`. ≤ 100 LOC.
+- [ ] **POSTGRES** — Port the Postgres type mapper (`MapPostgresTypeToCSharp` + `MapPortableTypeToCSharp` + `GetReaderExpression` + `InferParameterType`) from the old `Program.cs` into a single `PostgresTypeMapper.cs` static class. ≤ 200 LOC.
+
+**Sub-section 4: Postgres tests**
+
+- [ ] **TESTS** — Create `DataProvider/Nimblesite.DataProvider.Postgres.Tests/Nimblesite.DataProvider.Postgres.Tests.csproj` (xUnit, references the new Postgres library).
+- [ ] **TESTS** — `PostgresAntlrParserTests.cs`: parse and assert on syntax tree shapes for: simple `SELECT`, `SELECT … FROM … WHERE`, `SELECT … FROM a JOIN b ON …`, `SELECT … FROM a LEFT JOIN b ON … WHERE …`, CTE `WITH x AS (…)`, `INSERT … RETURNING`, `UPDATE … RETURNING`, `DELETE … RETURNING`, `SELECT … WHERE x ILIKE @q`, `SELECT x::text FROM …`, `SELECT array_agg(x) …`, `SELECT … GROUP BY … HAVING …`, `SELECT … ORDER BY … LIMIT @n OFFSET @o`, qualified `t.col` references, mixed-case `AS UserName` aliases, `SELECT count(*) FROM …`, subquery in `FROM`, subquery in `WHERE`, `EXISTS (…)`, `NOT EXISTS (…)`. **Each test asserts on real syntax-tree contents (rule contexts, terminal nodes), not just "did it parse".**
+- [ ] **TESTS** — `PostgresParameterExtractionTests.cs`: assert correct parameter list for `@id`, `@user_id`, `@first_name`, `:id`, `$1`, mixed `@a AND $2`, `@notparam` inside `'@notparam'` string literal (must NOT be extracted), `@id AND @id` (deduped), repeated case `@Id` vs `@id`.
+- [ ] **TESTS** — `PostgresCodeGeneratorTests.cs`: feed real fixture SQL files, assert literal expected `.g.cs` output (record shape, extension method shape, reader expression shape, parameter binding shape).
+- [ ] **TESTS** — Add the test project to `DataProvider.sln`.
+
+**Sub-section 5: CLI split**
+
+- [ ] **CLI** — Create `DataProvider/DataProvider/PostgresCli.cs` mirroring `SqliteProgram.cs`/`SqliteCli`. Pure CLI host. Constructs `PostgresCodeGenerator`, loops over `.sql` files, writes outputs. **Zero parsing logic. Zero codegen logic.** ≤ 350 LOC.
+- [ ] **CLI** — Slim `DataProvider/DataProvider/Program.cs` from 2358 LOC → ≤ 50 LOC. Just `Main` building `RootCommand` containing `SqliteCli.BuildCommand()` + `PostgresCli.BuildCommand()`.
+- [ ] **CLI** — **DELETE** every hand-rolled SQL string-walker from the old `Program.cs`: `QuoteAsAliases`, `HasUppercaseAscii`, `ExtractParameters`, `ParseSelectColumns`, `ParseColumnDefinition`, `InferTypeFromExpression`, `InferColumnTypesFromSql`. **Including the regex calls** that violate `CLAUDE.md`'s `NO REGEX` rule.
+- [ ] **CLI** — Add `<ProjectReference Include="../Nimblesite.DataProvider.Postgres/Nimblesite.DataProvider.Postgres.csproj" />` to `DataProvider/DataProvider/DataProvider.csproj`.
+- [ ] **SLN** — Add `Nimblesite.DataProvider.Postgres` and `Nimblesite.DataProvider.Postgres.Tests` to `DataProvider.sln`.
+
+**Sub-section 6: build & verify**
+
+- [ ] **BUILD** — `dotnet build DataProvider.sln` cleanly across the whole solution.
+- [ ] **TEST** — `dotnet test DataProvider.sln` — every existing test still passes (including SQLite tests after the refactor) AND the new Postgres parser tests all pass.
+- [ ] **SMOKE** — Run the new `dotnet DataProvider postgres` CLI subcommand against a real fixture SQL file and verify it generates equivalent output to the pre-refactor CLI.
+
+### LATER — original consolidation work (still on roadmap, not in this session)
+
 - [ ] **DEPS** — Delete `SqlParserCS` `<PackageReference>` from `Directory.Build.props` per [DEPS-SQLPARSER].
 - [ ] **DEPS** — Verify `Outcome` ns2.0/ns2.1 multi-target is on nuget.org; bump version + drop conditional in `Directory.Build.props` per [DEPS-OUTCOME].
-- [ ] **EXTRACT** — Move codegen helpers from `Nimblesite.DataProvider.Postgres.Cli/Program.cs` into `Nimblesite.DataProvider.Core` (Postgres folder). One type per file, ≤450 LOC, ≤20 LOC per function. Returns `Result<GeneratedSource, CodegenError>`. No `Console`/`Environment.Exit`/`File.WriteAllText`/`System.CommandLine`.
+- [ ] **EXTRACT** — Move codegen helpers from `Nimblesite.DataProvider.Postgres.Cli/Program.cs` into `Nimblesite.DataProvider.Core` (Postgres folder). _(Superseded by current session — folded into the Postgres library work above.)_
 - [ ] **EXTRACT** — Same for `Nimblesite.DataProvider.SQLite.Cli/Program.cs` → `Nimblesite.DataProvider.Core` (SQLite folder).
 - [ ] **EXTRACT** — Run the existing CLI test suites against the now-thin shims; both must stay green as a regression gate.
 - [ ] **TOOL** — Create `DataProvider/Nimblesite.DataProvider/Nimblesite.DataProvider.csproj`: `PackAsTool=true`, `ToolCommandName=dataprovider`, references Core + every platform impl + bundled drivers.

@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.Globalization;
 using System.Text.Json;
 using Nimblesite.DataProvider.Core.CodeGeneration;
+using Nimblesite.DataProvider.SQLite;
 using Nimblesite.DataProvider.SQLite.Parsing;
 using Nimblesite.Sql.Model;
 using Outcome;
