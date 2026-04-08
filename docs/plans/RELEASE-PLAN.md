@@ -110,7 +110,7 @@ jobs:
           dotnet pack Migration/Migration.Cli/Migration.Cli.csproj -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
 
       - name: Push to NuGet
-        run: dotnet nuget push "./nupkgs/*.nupkg" --api-key ${{ secrets.NIMBLESITE_NUGET_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push "./nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1

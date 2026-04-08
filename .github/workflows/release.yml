@@ -36,11 +36,11 @@ jobs:
 
       - name: Push packages to NuGet
         env:
-          NIMBLESITE_NUGET_KEY: ${{ secrets.NIMBLESITE_NUGET_KEY }}
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
           set -euo pipefail
-          if [ -z "${NIMBLESITE_NUGET_KEY:-}" ]; then
-            echo "NIMBLESITE_NUGET_KEY secret is not set." >&2
+          if [ -z "${NUGET_API_KEY:-}" ]; then
+            echo "NUGET_API_KEY secret is not set." >&2
             exit 1
           fi
           shopt -s nullglob
@@ -52,7 +52,7 @@ jobs:
           for pkg in "${packages[@]}"; do
             echo "::group::Push $pkg"
             dotnet nuget push "$pkg" \
-              --api-key "$NIMBLESITE_NUGET_KEY" \
+              --api-key "$NUGET_API_KEY" \
               --source https://api.nuget.org/v3/index.json \
               --skip-duplicate
             echo "::endgroup::"
