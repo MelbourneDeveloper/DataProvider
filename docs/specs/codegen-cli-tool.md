@@ -41,6 +41,8 @@ The DataProvider codegen tool is a console executable shipped **inside** the `Da
 | CON-UNIVERSAL | The same single mechanism applies to **every** project consuming **any** platform of `DataProvider`. No consumer-specific names, paths, or domain models. |
 | CON-PLATFORM-AGNOSTIC | The same single mechanism applies to **every** database platform: Postgres, SQLite, and any future platform. Identical contract. |
 | CON-PROCESS-ISOLATION | Codegen runs in its **own** process, separate from `dotnet build` / MSBuild / the IDE. Process isolation is the only mechanism that loads any TFM driver, any native dependency, on any host, today and forever. |
+| CON-PARSER-ONLY | Every platform's codegen library parses input SQL with a **real parser**. Hand-rolled string scanning, regex matching against SQL tokens, character-by-character SQL walking, and any form of pseudo-lexer are ⛔️ ILLEGAL per `CLAUDE.md`. The only sanctioned parsing mechanism is the platform's vendored ANTLR `.g4` grammar (with the antlr4 tool generating the C# lexer/parser/listener/visitor sources, checked into `Parsing/` next to the `.g4` files). Postgres parses with the `antlr/grammars-v4` PostgreSQL grammar (which is itself derived from upstream `postgres/postgres/src/backend/parser/gram.y`). SQLite parses with the existing `antlr/grammars-v4` SQLite grammar. **No exceptions, no shortcuts, no "just this one regex".** |
+| CON-SHARED-CORE | Per-platform libraries are thin shells. Every piece of code that is not strictly platform-specific lives in `DataProvider.Core` and is consumed by every platform library. The only platform-specific code allowed in a `DataProvider.{Platform}` library is: (a) the vendored ANTLR `.g4` + generated parser sources, (b) a `{Platform}AntlrParser` shell that constructs the lexer/parser, (c) a `{Platform}DatabaseEffects` shell that supplies a connection factory + a SQL-type → C#-type mapping function, (d) a `{Platform}CodeGenerator` shell that constructs the appropriate `CodeGenerationConfig` for `Core.SqlAntlrCodeGenerator`. Total platform-library size goal: ≤ 5 files, ≤ 200 LOC each excluding generated parser sources. **Anything that can be shared MUST be shared.** Duplication between SQLite and Postgres libraries is grounds for review rejection. |
 
 ## PLATFORM
 
@@ -84,6 +86,51 @@ public static class SchemaIntrospector
 ```
 
 `DatabaseSchema`, `DatabaseTable`, `DatabaseColumn`, and `CodegenError` live in `DataProvider.Core` and are platform-agnostic. The platform-specific `SchemaIntrospector` is the only piece that opens a connection of the platform's driver type and runs platform-specific introspection queries.
+
+## PARSER
+
+Per [CON-PARSER-ONLY], every platform parses input SQL with a vendored ANTLR grammar. This section pins the grammar source for every platform.
+
+| Platform | Grammar source | Files vendored | Generated outputs |
+|---|---|---|---|
+| `Postgres` | [`antlr/grammars-v4/sql/postgresql`](https://github.com/antlr/grammars-v4/tree/master/sql/postgresql), derived from upstream [`postgres/postgres/src/backend/parser/gram.y`](https://github.com/postgres/postgres/blob/master/src/backend/parser/gram.y) | `PostgreSQLLexer.g4`, `PostgreSQLParser.g4`, `CSharp/PostgreSQLLexerBase.cs`, `CSharp/PostgreSQLParserBase.cs`, `CSharp/LexerDispatchingErrorListener.cs`, `CSharp/ParserDispatchingErrorListener.cs` | `PostgreSQLLexer.cs`, `PostgreSQLParser.cs`, `PostgreSQLParserListener.cs`, `PostgreSQLParserBaseListener.cs`, `PostgreSQLParserVisitor.cs`, `PostgreSQLParserBaseVisitor.cs` |
+| `SQLite` | [`antlr/grammars-v4/sql/sqlite`](https://github.com/antlr/grammars-v4/tree/master/sql/sqlite) | `SQLiteLexer.g4`, `SQLiteParser.g4` (already vendored under `Nimblesite.DataProvider.SQLite/Parsing/`) | `SQLiteLexer.cs`, `SQLiteParser.cs`, listener/visitor pairs (already checked in) |
+| `SqlServer` | TBD when introduced | TBD | TBD |
+
+### PARSER-LAYOUT
+
+Every `Nimblesite.DataProvider.{Platform}` library follows the same `Parsing/` folder layout:
+
+```
+DataProvider/Nimblesite.DataProvider.{Platform}/
+└── Parsing/
+    ├── {Platform}Lexer.g4                     # vendored grammar
+    ├── {Platform}Parser.g4                    # vendored grammar
+    ├── {Platform}LexerBase.cs                 # vendored C# helper (if grammar has @lexer::base)
+    ├── {Platform}ParserBase.cs                # vendored C# helper (if grammar has @parser::base)
+    ├── {Platform}Lexer.cs                     # antlr4-generated, checked in
+    ├── {Platform}Parser.cs                    # antlr4-generated, checked in
+    ├── {Platform}ParserListener.cs            # antlr4-generated, checked in
+    ├── {Platform}ParserBaseListener.cs        # antlr4-generated, checked in
+    ├── {Platform}ParserVisitor.cs             # antlr4-generated, checked in
+    ├── {Platform}ParserBaseVisitor.cs         # antlr4-generated, checked in
+    └── {Platform}AntlrParser.cs               # thin facade — owned by us, ≤ 100 LOC
+```
+
+The thin facade is the only file in `Parsing/` that we author directly. It constructs the lexer + parser, calls the entry rule, and returns a `Result<TParseTree, SqlError>`. The query-type listener and parameter extractor live in `DataProvider.Core` and operate on any `IParseTree`, so they are not duplicated per platform.
+
+### PARSER-REGEN
+
+To bump a grammar (e.g., to pick up a new Postgres release that adjusts `gram.y`):
+
+1. `curl` the latest `.g4` files from `antlr/grammars-v4/sql/{platform}` into `Parsing/`.
+2. `curl` the latest `CSharp/*.cs` helper base files into `Parsing/` (if any).
+3. Wrap each helper base file in `namespace Nimblesite.DataProvider.{Platform}.Parsing;` (the upstream files are global-namespace).
+4. Run `java -jar antlr-4.13.1-complete.jar -Dlanguage=CSharp -visitor -listener -o Parsing -package Nimblesite.DataProvider.{Platform}.Parsing Parsing/{Platform}Lexer.g4 Parsing/{Platform}Parser.g4`.
+5. Commit the regenerated `.cs` files alongside the updated `.g4` files in the same commit.
+6. Run the platform's parser test suite (`Nimblesite.DataProvider.{Platform}.Tests`) to confirm no regressions.
+
+The `antlr4` tool is **not** a build dependency — only a maintenance dependency for the rare regen step.
 
 ## TOOL
 
@@ -185,6 +232,7 @@ The consumer never sees this file. It is auto-imported by NuGet because it lives
 | DEPS-EXTRACT | For every platform, the existing `DataProvider/DataProvider.{Platform}.Cli/Program.cs` contains every platform-specific introspection and code-emission function inline. There is no `DataProvider.{Platform}` library today. The extraction creates one library per platform at `DataProvider/DataProvider.{Platform}/` targeting **net9.0** (single TFM). It moves every non-`Main` static method out of `Program.cs` into the new library, one type per file, ≤450 LOC per file, ≤20 LOC per function, per `CLAUDE.md`. Extraction rules: no `Console.WriteLine` (use `ILogger<T>`), no `Environment.Exit` (return `Result<T, CodegenError>`), no `File.WriteAllText` in the library (the library returns generated source as strings; the tool writes files). The legacy CLI's `Main` shrinks to a thin shim that constructs an `ILogger` and calls the library. Existing CLI tests continue to pass. **Sunk cost — required regardless of architecture.** |
 | DEPS-NS20 | Not needed. The tool is net9.0. The runtime extension dlls in `lib/net9.0/` are net9.0. There is no analyzer host, no MSBuild Task host, no netstandard2.0 chokepoint. `DataProvider.Core`, `Nimblesite.Lql.Core`, `Nimblesite.Lql.Postgres`, `Nimblesite.Lql.SQLite`, `Nimblesite.Sql.Model`, `Outcome` all stay net9.0. Zero retarget work. |
 | DEPS-SQLPARSER | `SqlParserCS` is dead weight in `Directory.Build.props`. Zero source imports across the entire repository (verified by audit). Removed via one-line deletion of the `<PackageReference Include="SqlParserCS" ...>` declaration. Zero compile/runtime impact. |
+| DEPS-ANTLR | Every platform library references `Antlr4.Runtime.Standard` (currently 4.13.1, matching the SQLite library). The `antlr4` JAR is **not** a build-time dependency — generated parser sources are checked into `Parsing/` alongside the `.g4` grammar so downstream builds need only the runtime. The grammar files (`.g4`) and the per-platform C# base classes from `antlr/grammars-v4/sql/{platform}/CSharp/` are vendored verbatim into `DataProvider/Nimblesite.DataProvider.{Platform}/Parsing/`, and the generated lexer/parser/listener/visitor `.cs` files are checked in next to them. Bumping a grammar = re-running `antlr4` locally and committing the new generated sources. **Pre-built generator output, no build-time Java dependency anywhere.** |
 
 ## DX
 
@@ -243,11 +291,3 @@ The following architectures were considered and rejected before this spec was wr
 | Pre-build `<Exec>` calling a separate CLI tool package | Same problems as `PackAsTool` plus splits the tool from the runtime library across two NuGet packages, reintroducing the version drift documented in [PROBLEM-cli-vs-library.md]. |
 
 The chosen architecture (this spec) is **a console exe shipped inside the runtime NuGet package, invoked from an auto-imported `.targets` file in the same package**. It has none of the above failure modes, requires zero consumer-side state, requires zero retarget work, and supports any database driver and any native dependency on any host.
-
-## AGREEMENT
-
-| Agent | Status |
-|---|---|
-| `DataProviderSamples` | ✅ AGREED |
-| `DataProvider` | (countersign here) |
-| Repo owner | Final approval. |

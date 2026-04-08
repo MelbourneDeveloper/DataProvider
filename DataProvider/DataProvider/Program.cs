@@ -12,10 +12,13 @@ using Outcome;
 #pragma warning disable CA1849 // Call async methods when in an async method
 #pragma warning disable CA2100 // Review SQL queries for security vulnerabilities
 
-namespace Nimblesite.DataProvider.Postgres.Cli;
+namespace DataProvider;
 
 /// <summary>
-/// PostgreSQL code generation CLI for Nimblesite.DataProvider.Core.
+/// Unified DataProvider codegen tool.
+/// Single Main builds a root command with one subcommand per supported platform
+/// (`postgres`, `sqlite`) and dispatches based on
+/// <c>dotnet DataProvider &lt;platform&gt; --project-dir ... --config ... --out ...</c>.
 /// </summary>
 internal static class Program
 {
@@ -25,21 +28,37 @@ internal static class Program
     };
 
     /// <summary>
-    /// Entry point.
+    /// Single entry point for the unified tool. Wires every platform's subcommand
+    /// onto a single <see cref="RootCommand"/> and dispatches.
     /// </summary>
     public static async Task<int> Main(string[] args)
     {
+        var root = new RootCommand(
+            "DataProvider codegen tool. Generates type-safe data access code from a live database. "
+                + "Pick a platform subcommand: postgres | sqlite."
+        )
+        {
+            BuildPostgresCommand(),
+            SqliteCli.BuildCommand(),
+        };
+
+        return await root.InvokeAsync(args).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Builds the <c>postgres</c> subcommand. Same options the legacy
+    /// <c>dataprovider-postgres</c> tool exposed; same handler.
+    /// </summary>
+    private static Command BuildPostgresCommand()
+    {
         var projectDir = new Option<DirectoryInfo>(
             "--project-dir",
-            description: "Project directory containing sql files and Nimblesite.DataProvider.Core.json"
+            description: "Project directory containing sql files and DataProvider.json"
         )
         {
             IsRequired = true,
         };
-        var config = new Option<FileInfo>(
-            "--config",
-            description: "Path to Nimblesite.DataProvider.Core.json"
-        )
+        var config = new Option<FileInfo>("--config", description: "Path to DataProvider.json")
         {
             IsRequired = true,
         };
@@ -64,7 +83,7 @@ internal static class Program
         {
             IsRequired = false,
         };
-        var root = new RootCommand("Nimblesite.DataProvider.Core.Postgres codegen CLI")
+        var cmd = new Command("postgres", "Generate type-safe PostgreSQL data access code")
         {
             projectDir,
             config,
@@ -72,7 +91,7 @@ internal static class Program
             offline,
             schemaFile,
         };
-        root.SetHandler(
+        cmd.SetHandler(
             async (
                 DirectoryInfo proj,
                 FileInfo cfg,
@@ -90,8 +109,7 @@ internal static class Program
             offline,
             schemaFile
         );
-
-        return await root.InvokeAsync(args).ConfigureAwait(false);
+        return cmd;
     }
 
     private static async Task<int> RunAsync(

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Nimblesite.DataProvider.Postgres</PackageId>
+    <Authors>ChristianFindlay</Authors>
+    <Description>PostgreSQL code generation library for Nimblesite.DataProvider.Core. Parses SQL with the official PostgreSQL parser (libpg_query, via the pgsqlparser wrapper) and emits compile-time-safe data access code.</Description>
+    <PackageTags>postgres;postgresql;code-generation;libpg_query;npgsql;datatypes</PackageTags>
+    <PackageProjectUrl>https://github.com/Nimblesite/DataProvider</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Nimblesite/DataProvider</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);CA1812;CA1849;CA2100;CA1308;EPC13</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="pgsqlparser" Version="1.0.0" />
+    <PackageReference Include="Npgsql" Version="9.0.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Nimblesite.DataProvider.Core/Nimblesite.DataProvider.Core.csproj" />
+    <ProjectReference Include="../../Other/Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj" />
+    <ProjectReference Include="../../Migration/Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Core.csproj" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <Optimize>true</Optimize>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+</Project>

@@ -23,8 +23,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Cor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Tests", "DataProvider\Nimblesite.DataProvider.Tests\Nimblesite.DataProvider.Tests.csproj", "{C1F8DBEE-EBA0-4C58-B7C1-F4BCC8E6674D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.SQLite.Cli", "DataProvider\Nimblesite.DataProvider.SQLite.Cli\Nimblesite.DataProvider.SQLite.Cli.csproj", "{2B1441F1-4429-487C-9D0A-FC65B64BF43E}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.SQLite", "DataProvider\Nimblesite.DataProvider.SQLite\Nimblesite.DataProvider.SQLite.csproj", "{A7EC2050-FE5E-4BBD-AF5F-7F07D3688118}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Example.Tests", "DataProvider\Nimblesite.DataProvider.Example.Tests\Nimblesite.DataProvider.Example.Tests.csproj", "{16FA9B36-CB2A-4B79-A3BE-937C94BF03F8}"
@@ -75,7 +73,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Sync.Http", "Syn
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataProviderMigrate", "Migration\DataProviderMigrate\DataProviderMigrate.csproj", "{57572A45-33CD-4928-9C30-13480AEDB313}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.DataProvider.Postgres.Cli", "DataProvider\Nimblesite.DataProvider.Postgres.Cli\Nimblesite.DataProvider.Postgres.Cli.csproj", "{A8A70E6D-1D43-437F-9971-44A4FA1BDD74}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataProvider", "DataProvider\DataProvider\DataProvider.csproj", "{A8A70E6D-1D43-437F-9971-44A4FA1BDD74}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nimblesite.Lql.Cli.SQLite", "Lql\Nimblesite.Lql.Cli.SQLite\Nimblesite.Lql.Cli.SQLite.csproj", "{1AE87774-E914-40BC-95BA-56FB45D78C0D}"
 EndProject
@@ -213,18 +211,6 @@ Global
 		{C1F8DBEE-EBA0-4C58-B7C1-F4BCC8E6674D}.Release|x64.Build.0 = Release|Any CPU
 		{C1F8DBEE-EBA0-4C58-B7C1-F4BCC8E6674D}.Release|x86.ActiveCfg = Release|Any CPU
 		{C1F8DBEE-EBA0-4C58-B7C1-F4BCC8E6674D}.Release|x86.Build.0 = Release|Any CPU
-		{2B1441F1-4429-487C-9D0A-FC65B64BF43E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2B1441F1-4429-487C-9D0A-FC65B64BF43E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2B1441F1-4429-487C-9D0A-FC65B64BF43E}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{2B1441F1-4429-487C-9D0A-FC65B64BF43E}.Debug|x64.Build.0 = Debug|Any CPU
-		{2B1441F1-4429-487C-9D0A-FC65B64BF43E}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{2B1441F1-4429-487C-9D0A-FC65B64BF43E}.Debug|x86.Build.0 = Debug|Any CPU
-		{2B1441F1-4429-487C-9D0A-FC65B64BF43E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2B1441F1-4429-487C-9D0A-FC65B64BF43E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2B1441F1-4429-487C-9D0A-FC65B64BF43E}.Release|x64.ActiveCfg = Release|Any CPU
-		{2B1441F1-4429-487C-9D0A-FC65B64BF43E}.Release|x64.Build.0 = Release|Any CPU
-		{2B1441F1-4429-487C-9D0A-FC65B64BF43E}.Release|x86.ActiveCfg = Release|Any CPU
-		{2B1441F1-4429-487C-9D0A-FC65B64BF43E}.Release|x86.Build.0 = Release|Any CPU
 		{A7EC2050-FE5E-4BBD-AF5F-7F07D3688118}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A7EC2050-FE5E-4BBD-AF5F-7F07D3688118}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7EC2050-FE5E-4BBD-AF5F-7F07D3688118}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -634,7 +620,6 @@ Global
 		{9DF737C9-6EE5-4255-85C9-65337350DFDD} = {54B846BA-A27D-B76F-8730-402A5742FF43}
 		{7D4F4EC0-C221-4BC9-8F8C-77BD4A3D39AA} = {43BAF0A3-C050-BE83-B489-7FC6F9FDE235}
 		{C1F8DBEE-EBA0-4C58-B7C1-F4BCC8E6674D} = {43BAF0A3-C050-BE83-B489-7FC6F9FDE235}
-		{2B1441F1-4429-487C-9D0A-FC65B64BF43E} = {43BAF0A3-C050-BE83-B489-7FC6F9FDE235}
 		{A7EC2050-FE5E-4BBD-AF5F-7F07D3688118} = {43BAF0A3-C050-BE83-B489-7FC6F9FDE235}
 		{16FA9B36-CB2A-4B79-A3BE-937C94BF03F8} = {43BAF0A3-C050-BE83-B489-7FC6F9FDE235}
 		{EA9A0385-249F-4141-AD03-D67649110A84} = {43BAF0A3-C050-BE83-B489-7FC6F9FDE235}
