@@ -4,7 +4,7 @@
     <RootNamespace>DataProviderMigrate</RootNamespace>
     <NoWarn>$(NoWarn);CA2254;CA1515;RS1035;CA2100</NoWarn>
     <IsPackable>true</IsPackable>
-    <PackageId>Nimblesite.DataProviderMigrate</PackageId>
+    <PackageId>DataProviderMigrate</PackageId>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>DataProviderMigrate</ToolCommandName>
     <Description>CLI tool for DataProvider database schema migrations from YAML (SQLite + PostgreSQL).</Description>
