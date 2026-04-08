@@ -1,8 +1,11 @@
-<!-- agent-pmo:d75d5c8 -->
 # DataProvider — Agent Instructions
+
+⚠️ CRITICAL: **Reduce token usage.** Check file size before loading. Write less. Delete fluff and dead code. Alert user when context is loaded with pointless files. ⚠️ 
 
 > Read this entire file before writing any code.
 > These rules are NON-NEGOTIABLE. Violations will be rejected in review.
+
+<!-- agent-pmo:d75d5c8 -->
 
 ## Project Overview
 

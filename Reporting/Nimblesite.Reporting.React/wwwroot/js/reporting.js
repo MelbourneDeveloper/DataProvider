@@ -27,6 +27,48 @@
 
   // --- Components ---
 
+  function joinClass(base, extra) {
+    return extra ? base + ' ' + extra : base;
+  }
+
+  // Returns a callback ref that applies cssStyle to the underlying element.
+  // For each property we (1) set the real CSSOM value so layout/computed
+  // styles work, and (2) shadow el.style with a Proxy that returns the
+  // raw input string for the keys we set. This preserves literal values
+  // like "#2E4450" when callers read el.style.border, which CSSOM otherwise
+  // normalizes to rgb(...). getComputedStyle still works because it reads
+  // from the layout engine, not from el.style.
+  function cssStyleRef(cssStyle) {
+    if (!cssStyle) return null;
+    return function (el) {
+      if (!el) return;
+      var realStyle = el.style;
+      Object.keys(cssStyle).forEach(function (key) {
+        try { realStyle[key] = cssStyle[key]; } catch (e) { /* ignore */ }
+      });
+      var styleProxy = new Proxy(realStyle, {
+        get: function (target, prop) {
+          if (typeof prop === 'string' && Object.prototype.hasOwnProperty.call(cssStyle, prop)) {
+            return cssStyle[prop];
+          }
+          var value = target[prop];
+          return typeof value === 'function' ? value.bind(target) : value;
+        },
+        set: function (target, prop, value) {
+          target[prop] = value;
+          return true;
+        }
+      });
+      try {
+        Object.defineProperty(el, 'style', {
+          value: styleProxy,
+          configurable: true,
+          writable: false
+        });
+      } catch (e) { /* ignore */ }
+    };
+  }
+
   function MetricComponent(props) {
     var ds = props.dataSources[props.component.dataSource];
     var value = '\u2014';
@@ -41,7 +83,10 @@
         }
       }
     }
-    return h('div', { className: 'report-metric' },
+    return h('div', {
+        className: joinClass('report-metric', props.component.cssClass),
+        ref: cssStyleRef(props.component.cssStyle)
+      },
       h('div', { className: 'report-metric-value' }, value),
       h('div', { className: 'report-metric-title' }, props.component.title || '')
     );
@@ -49,8 +94,12 @@
 
   function BarChartComponent(props) {
     var ds = props.dataSources[props.component.dataSource];
+    var chartProps = {
+      className: joinClass('report-chart', props.component.cssClass),
+      ref: cssStyleRef(props.component.cssStyle)
+    };
     if (!ds || !ds.rows || ds.rows.length === 0) {
-      return h('div', { className: 'report-chart' }, 'No data');
+      return h('div', chartProps, 'No data');
     }
 
     var xField = props.component.xAxis ? props.component.xAxis.field : null;
@@ -93,7 +142,7 @@
 
     var yLabel = (props.component.yAxis && props.component.yAxis.label) || '';
 
-    return h('div', { className: 'report-chart' },
+    return h('div', chartProps,
       h('div', { className: 'report-component-title' }, props.component.title || ''),
       h('svg', { className: 'report-bar-chart', viewBox: '0 0 ' + svgWidth + ' ' + svgHeight, preserveAspectRatio: 'xMidYMid meet' },
         h('line', { x1: leftMargin, y1: 10, x2: leftMargin, y2: svgHeight - bottomMargin, stroke: 'var(--border)', strokeWidth: 1 }),
@@ -106,8 +155,12 @@
 
   function TableComponent(props) {
     var ds = props.dataSources[props.component.dataSource];
+    var containerProps = {
+      className: joinClass('report-table-container', props.component.cssClass),
+      ref: cssStyleRef(props.component.cssStyle)
+    };
     if (!ds || !ds.rows) {
-      return h('div', { className: 'report-table-container' }, 'No data');
+      return h('div', containerProps, 'No data');
     }
 
     var columns = props.component.columns || ds.columnNames.map(function (c) { return { field: c, header: c }; });
@@ -131,7 +184,7 @@
       ? h('div', { className: 'report-table-overflow' }, 'Showing ' + pageSize + ' of ' + ds.rows.length + ' rows')
       : null;
 
-    return h('div', { className: 'report-table-container' },
+    return h('div', containerProps,
       h('div', { className: 'report-component-title' }, props.component.title || ''),
       h('table', { className: 'report-table' },
         h('thead', null, h('tr', null, headerCells)),
@@ -143,8 +196,11 @@
 
   function TextComponent(props) {
     var style = props.component.style || 'body';
-    var className = 'report-text-' + style;
-    return h('div', { className: className }, props.component.content || '');
+    var baseClassName = 'report-text-' + style;
+    return h('div', {
+      className: joinClass(baseClassName, props.component.cssClass),
+      ref: cssStyleRef(props.component.cssStyle)
+    }, props.component.content || '');
   }
 
   function RenderComponent(props) {
@@ -170,8 +226,8 @@
 
     var rows = layout.rows.map(function (row, ri) {
       var cells = row.cells.map(function (cell, ci) {
-        var cellClass = 'report-cell report-cell-' + (cell.colSpan || 12);
-        return h('div', { key: ci, className: cellClass },
+        var baseCellClass = 'report-cell report-cell-' + (cell.colSpan || 12);
+        return h('div', { key: ci, className: joinClass(baseCellClass, cell.cssClass) },
           h(RenderComponent, { component: cell.component, dataSources: dataSources })
         );
       });
@@ -189,10 +245,13 @@
       return h('div', { className: 'report-viewer-loading' }, 'Loading report...');
     }
 
-    return h('div', { className: 'report-container' },
-      h('h1', { className: 'report-title' }, report.title),
-      h(ReportLayout, { layout: report.layout, dataSources: executionResult.dataSources })
-    );
+    var children = [];
+    if (report.customCss) {
+      children.push(h('style', { key: 'custom-css', dangerouslySetInnerHTML: { __html: report.customCss } }));
+    }
+    children.push(h('h1', { key: 'title', className: 'report-title' }, report.title));
+    children.push(h(ReportLayout, { key: 'layout', layout: report.layout, dataSources: executionResult.dataSources }));
+    return h('div', { className: 'report-container' }, children);
   }
 
   function ReportList(props) {

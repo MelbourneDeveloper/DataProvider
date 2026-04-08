@@ -48,6 +48,23 @@
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!--
+    The Nimblesite.Reporting.Api project propagates its bin/Reports/*.report.json
+    content into this test project's bin via the project reference. The test
+    fixture loads from $(OutDir)Reports, so any propagated reports show up in
+    /api/reports and break tests that assert on report ordering or count.
+    After build, delete any *.report.json in bin/Reports that this test project
+    does NOT own in its own Reports/ source directory.
+  -->
+  <Target Name="RemovePropagatedReportingApiSampleReports" AfterTargets="Build">
+    <ItemGroup>
+      <_OwnedReportNames Include="@(Content->'%(Filename)%(Extension)')" Condition="'%(Extension)' == '.json'" />
+      <_AllBinReports Include="$(OutDir)Reports\*.report.json" />
+      <_PropagatedReports Include="@(_AllBinReports)" Exclude="@(_OwnedReportNames->'$(OutDir)Reports\%(Identity)')" />
+    </ItemGroup>
+    <Delete Files="@(_PropagatedReports)" />
+  </Target>
+
   <!-- Download React vendor files if Reporting.React has not been built yet -->
   <PropertyGroup>
     <ReactVendorDir>$(MSBuildProjectDirectory)\..\Nimblesite.Reporting.React\wwwroot\js\vendor</ReactVendorDir>
