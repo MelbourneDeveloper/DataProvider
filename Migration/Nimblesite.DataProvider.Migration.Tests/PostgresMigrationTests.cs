@@ -1515,8 +1515,7 @@ public sealed class PostgresMigrationTests(PostgresContainerFixture fixture) : I
         // Assert — pgvector extension is installed in the database
         using (var extCmd = _connection.CreateCommand())
         {
-            extCmd.CommandText =
-                "SELECT COUNT(*) FROM pg_extension WHERE extname = 'vector'";
+            extCmd.CommandText = "SELECT COUNT(*) FROM pg_extension WHERE extname = 'vector'";
             var extCount = Convert.ToInt32(
                 extCmd.ExecuteScalar(),
                 System.Globalization.CultureInfo.InvariantCulture
@@ -1543,10 +1542,13 @@ public sealed class PostgresMigrationTests(PostgresContainerFixture fixture) : I
         // Act — round-trip insert + select a known vector
         using (var insertCmd = _connection.CreateCommand())
         {
-            var vecLiteral = "[" + string.Join(",", Enumerable.Range(0, 384).Select(i => "0.5")) + "]";
+            var vecLiteral =
+                "[" + string.Join(",", Enumerable.Range(0, 384).Select(i => "0.5")) + "]";
             insertCmd.CommandText =
                 "INSERT INTO public.documents (id, body, embedding) "
-                + "VALUES (gen_random_uuid(), 'hello', '" + vecLiteral + "'::vector)";
+                + "VALUES (gen_random_uuid(), 'hello', '"
+                + vecLiteral
+                + "'::vector)";
             var rows = insertCmd.ExecuteNonQuery();
             Assert.Equal(1, rows);
         }
