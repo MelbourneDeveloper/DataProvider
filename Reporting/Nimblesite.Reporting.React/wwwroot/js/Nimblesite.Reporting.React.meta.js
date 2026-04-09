@@ -1,4 +1,4 @@
-H5.assemblyVersion("Nimblesite.Reporting.React","0.1.0.0");
+H5.assemblyVersion("Nimblesite.Reporting.React","0.9.0.0");
 H5.assembly("Nimblesite.Reporting.React", function ($asm, globals) {
     "use strict";
 
