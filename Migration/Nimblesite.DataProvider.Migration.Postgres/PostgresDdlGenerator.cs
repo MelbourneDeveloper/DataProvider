@@ -40,9 +40,7 @@ public static class PostgresDdlGenerator
         // emitting table DDL. pgvector is installed per-database; repeated calls
         // are a no-op, but the prelude is mandatory — without it the subsequent
         // CREATE TABLE fails with "type vector does not exist".
-        var hasVector = schema.Tables.Any(t =>
-            t.Columns.Any(c => c.Type is VectorType)
-        );
+        var hasVector = schema.Tables.Any(t => t.Columns.Any(c => c.Type is VectorType));
         if (hasVector)
         {
             try
@@ -124,6 +122,20 @@ public static class PostgresDdlGenerator
         var sb = new StringBuilder();
         var tableName = table.Name;
         var schemaName = table.Schema;
+
+        // [MIG-TYPES-VECTOR] §5.4.2: if this table contains any VectorType
+        // column, the pgvector extension MUST exist in the current database
+        // before the CREATE TABLE is issued, otherwise Postgres fails with
+        // "type vector does not exist". Emitting the idempotent prelude
+        // inline in the generated DDL means every call site gets it for
+        // free — both the schema-level MigrateSchema path and the
+        // operation-at-a-time MigrationRunner.Apply path used by the
+        // schema-diff migration pipeline.
+        if (table.Columns.Any(c => c.Type is VectorType))
+        {
+            sb.Append("CREATE EXTENSION IF NOT EXISTS vector; ");
+        }
+
         sb.Append(
             CultureInfo.InvariantCulture,
             $"CREATE TABLE IF NOT EXISTS \"{schemaName}\".\"{tableName}\" ("

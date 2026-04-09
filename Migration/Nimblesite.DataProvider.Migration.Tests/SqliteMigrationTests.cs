@@ -1822,11 +1822,7 @@ public sealed class SqliteMigrationTests
                     t =>
                         t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
                             .Column("Body", PortableTypes.Text, c => c.NotNull())
-                            .Column(
-                                "Embedding",
-                                PortableTypes.Vector(384),
-                                c => c.NotNull()
-                            )
+                            .Column("Embedding", PortableTypes.Vector(384), c => c.NotNull())
                 )
                 .Build();
 

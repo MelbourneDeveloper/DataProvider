@@ -824,13 +824,17 @@ internal static class PostgresCli
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
         _ = sb.AppendLine("    {");
 
-        var colNames = string.Join(", ", insertable.Select(c => c.Name));
+        // BUG3 fix: quote column + table identifiers. The sql string is a C#
+        // verbatim (@") literal, so "" represents a single " in the emitted
+        // SQL. Wrap every ident in "" so mixed-case tables/columns survive PG
+        // case-folding.
+        var colNames = string.Join(", ", insertable.Select(c => $"\"\"{c.Name}\"\""));
         var paramNames = string.Join(", ", insertable.Select(c => $"@{c.Name}"));
 
         _ = sb.AppendLine("        const string sql = @\"");
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            INSERT INTO {table.Schema}.{table.Name} ({colNames})"
+            $"            INSERT INTO \"\"{table.Schema}\"\".\"\"{table.Name}\"\" ({colNames})"
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            VALUES ({paramNames})");
         _ = sb.AppendLine("            ON CONFLICT DO NOTHING");
@@ -894,7 +898,9 @@ internal static class PostgresCli
     )
     {
         var parameters = string.Join(", ", insertable.Select(c => $"{c.CSharpType} {c.Name}"));
-        var colNames = string.Join(", ", insertable.Select(c => c.Name));
+        // BUG3 fix: quote idents in transaction overload INSERT, same reason
+        // as primary Insert method above.
+        var colNames = string.Join(", ", insertable.Select(c => $"\"\"{c.Name}\"\""));
         var paramNames = string.Join(", ", insertable.Select(c => $"@{c.Name}"));
 
         _ = sb.AppendLine();
@@ -914,7 +920,7 @@ internal static class PostgresCli
         _ = sb.AppendLine("        const string sql = @\"");
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            INSERT INTO {table.Schema}.{table.Name} ({colNames})"
+            $"            INSERT INTO \"\"{table.Schema}\"\".\"\"{table.Name}\"\" ({colNames})"
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            VALUES ({paramNames})");
         _ = sb.AppendLine("            ON CONFLICT DO NOTHING");
@@ -1119,8 +1125,11 @@ internal static class PostgresCli
             return;
 
         var parameters = string.Join(", ", pkCols.Select(c => $"{c.CSharpType} {c.Name}"));
-        var whereClauses = string.Join(" AND ", pkCols.Select(c => $"{c.Name} = @{c.Name}"));
-        var sqlLine = $"DELETE FROM {table.Schema}.{table.Name} WHERE {whereClauses}";
+        // BUG3 fix: quote WHERE-clause column idents + table name. sqlLine
+        // here is the raw SQL sent to PG (not embedded in a C# verbatim
+        // string), so write literal `"` characters directly.
+        var whereClauses = string.Join(" AND ", pkCols.Select(c => $"\"{c.Name}\" = @{c.Name}"));
+        var sqlLine = $"DELETE FROM \"{table.Schema}\".\"{table.Name}\" WHERE {whereClauses}";
 
         // NpgsqlConnection overload
         _ = sb.AppendLine();
@@ -1332,10 +1341,14 @@ internal static class PostgresCli
         _ = sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(0);");
         _ = sb.AppendLine();
 
-        var colNames = string.Join(", ", insertable.Select(c => c.Name));
+        // BUG3 fix: quote every identifier in emitted INSERT so mixed-case
+        // columns (Id, ChapterNumber) round-trip. Bare idents were folded to
+        // lowercase by PG and the statement failed with "column ... does not
+        // exist". Matches SELECT path which already quotes.
+        var colNames = string.Join(", ", insertable.Select(c => $"\\\"{c.Name}\\\""));
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"        var sql = new System.Text.StringBuilder(\"INSERT INTO {table.Schema}.{table.Name} ({colNames}) VALUES \");"
+            $"        var sql = new System.Text.StringBuilder(\"INSERT INTO \\\"{table.Schema}\\\".\\\"{table.Name}\\\" ({colNames}) VALUES \");"
         );
         _ = sb.AppendLine();
         _ = sb.AppendLine("        for (int i = 0; i < batch.Count; i++)");
@@ -1518,14 +1531,20 @@ internal static class PostgresCli
         _ = sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(0);");
         _ = sb.AppendLine();
 
-        var colNames = string.Join(", ", insertable.Select(c => c.Name));
-        var pkColNames = string.Join(", ", pkCols.Select(c => c.Name));
+        // BUG3 fix: quote every identifier in emitted bulk-upsert SQL. Same
+        // reasoning as bulk insert above. Applies to the ON CONFLICT pk list
+        // and the EXCLUDED set clause.
+        var colNames = string.Join(", ", insertable.Select(c => $"\\\"{c.Name}\\\""));
+        var pkColNames = string.Join(", ", pkCols.Select(c => $"\\\"{c.Name}\\\""));
         var updateCols = insertable.Where(c => !c.IsPrimaryKey).ToList();
-        var updateSet = string.Join(", ", updateCols.Select(c => $"{c.Name} = EXCLUDED.{c.Name}"));
+        var updateSet = string.Join(
+            ", ",
+            updateCols.Select(c => $"\\\"{c.Name}\\\" = EXCLUDED.\\\"{c.Name}\\\"")
+        );
 
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"        var sql = new System.Text.StringBuilder(\"INSERT INTO {table.Schema}.{table.Name} ({colNames}) VALUES \");"
+            $"        var sql = new System.Text.StringBuilder(\"INSERT INTO \\\"{table.Schema}\\\".\\\"{table.Name}\\\" ({colNames}) VALUES \");"
         );
         _ = sb.AppendLine();
         _ = sb.AppendLine("        for (int i = 0; i < batch.Count; i++)");
@@ -2158,8 +2177,7 @@ internal static class PostgresCli
             // [DP-CODEGEN-VECTOR] §5.4.5: pgvector columns come through as
             // Pgvector.Vector; call .ToArray() so the consumer-facing shape is
             // float[]. Nullable vector columns still use the same null check.
-            "float[]" =>
-                $"{nullCheck}reader.GetFieldValue<Pgvector.Vector>({ordinal}).ToArray()",
+            "float[]" => $"{nullCheck}reader.GetFieldValue<Pgvector.Vector>({ordinal}).ToArray()",
             _ => $"{nullCheck}reader.GetString({ordinal})",
         };
     }
