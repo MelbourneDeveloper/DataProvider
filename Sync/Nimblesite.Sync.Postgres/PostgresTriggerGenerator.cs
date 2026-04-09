@@ -281,6 +281,7 @@ public static class PostgresTriggerGenerator
     )
     {
         var lowerTable = tableName.ToLowerInvariant();
+        var pkLower = pkColumn.ToLowerInvariant();
         return string.Format(
             CultureInfo.InvariantCulture,
             """
@@ -290,7 +291,7 @@ public static class PostgresTriggerGenerator
                     INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
                     VALUES (
                         '{1}',
-                        jsonb_build_object('{2}', NEW."{2}")::text,
+                        jsonb_build_object('{4}', NEW."{2}")::text,
                         'insert',
                         {3}::text,
                         (SELECT value FROM _sync_state WHERE key = 'origin_id'),
@@ -309,7 +310,8 @@ public static class PostgresTriggerGenerator
             lowerTable,
             tableName,
             pkColumn,
-            BuildJsonbObject(columns, "NEW")
+            BuildJsonbObject(columns, "NEW"),
+            pkLower
         );
     }
 
@@ -320,6 +322,7 @@ public static class PostgresTriggerGenerator
     )
     {
         var lowerTable = tableName.ToLowerInvariant();
+        var pkLower = pkColumn.ToLowerInvariant();
         return string.Format(
             CultureInfo.InvariantCulture,
             """
@@ -329,7 +332,7 @@ public static class PostgresTriggerGenerator
                     INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
                     VALUES (
                         '{1}',
-                        jsonb_build_object('{2}', NEW."{2}")::text,
+                        jsonb_build_object('{4}', NEW."{2}")::text,
                         'update',
                         {3}::text,
                         (SELECT value FROM _sync_state WHERE key = 'origin_id'),
@@ -348,13 +351,15 @@ public static class PostgresTriggerGenerator
             lowerTable,
             tableName,
             pkColumn,
-            BuildJsonbObject(columns, "NEW")
+            BuildJsonbObject(columns, "NEW"),
+            pkLower
         );
     }
 
     private static string GenerateDeleteTrigger(string tableName, string pkColumn)
     {
         var lowerTable = tableName.ToLowerInvariant();
+        var pkLower = pkColumn.ToLowerInvariant();
         return string.Format(
             CultureInfo.InvariantCulture,
             """
@@ -364,7 +369,7 @@ public static class PostgresTriggerGenerator
                     INSERT INTO _sync_log (table_name, pk_value, operation, payload, origin, timestamp)
                     VALUES (
                         '{1}',
-                        jsonb_build_object('{2}', OLD."{2}")::text,
+                        jsonb_build_object('{3}', OLD."{2}")::text,
                         'delete',
                         NULL,
                         (SELECT value FROM _sync_state WHERE key = 'origin_id'),
@@ -382,7 +387,8 @@ public static class PostgresTriggerGenerator
             """,
             lowerTable,
             tableName,
-            pkColumn
+            pkColumn,
+            pkLower
         );
     }
 
@@ -390,9 +396,14 @@ public static class PostgresTriggerGenerator
     // work on tables with mixed-case column names (e.g. "GivenName"). Without
     // the surrounding " quotes, PG case-folds NEW.GivenName to NEW.givenname
     // and the trigger fires `record "new" has no field "givenname"`.
+    //
+    // The emitted JSON key is the column name lower-cased so downstream
+    // consumers see a single canonical casing regardless of how the schema
+    // declared the column. The PG identifier (NEW."ColName") preserves case
+    // so the trigger function compiles + executes against the real column.
     private static string BuildJsonbObject(IReadOnlyList<string> columns, string prefix)
     {
-        var pairs = columns.Select(c => $"'{c}', {prefix}.\"{c}\"");
+        var pairs = columns.Select(c => $"'{c.ToLowerInvariant()}', {prefix}.\"{c}\"");
         return $"jsonb_build_object({string.Join(", ", pairs)})";
     }
 }
