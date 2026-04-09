@@ -6,7 +6,7 @@
 2. [Goals & Non-Goals](#2-goals--non-goals)
 3. [Architecture Overview](#3-architecture-overview)
 4. [Schema Definition Model](#4-schema-definition-model)
-5. [Type System](#5-type-system)
+5. [Type System](#5-type-system) — includes [MIG-TYPES-VECTOR] in §5.4
 6. [Schema Operations](#6-schema-operations)
 7. [Migration Execution](#7-migration-execution)
 8. [Diff Engine](#8-diff-engine)
@@ -334,6 +334,126 @@ Identity columns are handled per-platform:
 | SQLite | `INTEGER PRIMARY KEY` (implicit ROWID alias) |
 | PostgreSQL | `SERIAL` / `BIGSERIAL` or `GENERATED ALWAYS AS IDENTITY` |
 | SQL Server | `IDENTITY(1,1)` |
+
+### 5.4 Vector / Embedding Columns [MIG-TYPES-VECTOR]
+
+Dense float embedding columns (e.g. OpenAI `text-embedding-3-small` at 1536 dims, BGE-small at 384 dims, BERT at 768 dims) are first-class via the `VectorType(int Dimensions)` portable type. The canonical backend is PostgreSQL + [pgvector](https://github.com/pgvector/pgvector).
+
+#### 5.4.1 YAML Syntax
+
+Vector columns use the **inline-parenthetical** convention to match `Decimal(p,s)`, `VarChar(n)`, `Geometry(srid)`:
+
+```yaml
+tables:
+  - name: Document
+    columns:
+      - name: Id
+        type: Uuid
+        nullable: false
+      - name: Embedding
+        type: Vector(384)
+        nullable: true
+```
+
+`Vector(N)` is **REQUIRED** to specify `N` as a positive integer literal. A bare `Vector` with no dimension is a parse error (`MIG-E-VECTOR-DIMS-MISSING`). Dimensions must be `1..16000` (pgvector hard limit); out of range is `MIG-E-VECTOR-DIMS-RANGE`.
+
+#### 5.4.2 PostgreSQL DDL
+
+For a Postgres target with **any** `VectorType` column anywhere in the schema, `PostgresDdlGenerator` prepends the extension statement to its output once per migration batch:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+Column emission uses the native pgvector type:
+
+```sql
+"Embedding" vector(384)
+```
+
+No data cast, no `text` fallback. The extension prologue runs in the same transaction as the rest of the migration; if the Postgres role lacks `CREATE EXTENSION` permission the migration fails with `MIG-E-VECTOR-EXT-PERM` and no partial state is committed.
+
+#### 5.4.3 Vector Indexes [MIG-TYPES-VECTOR-INDEX]
+
+pgvector ships two index types: **IVFFlat** (fast build, approximate) and **HNSW** (slower build, better recall). Schema YAML expresses them via an extended `indexes:` entry:
+
+```yaml
+indexes:
+  - name: IX_Document_Embedding_Cosine
+    columns: [Embedding]
+    index_type: ivfflat        # ivfflat | hnsw
+    vector_ops: cosine         # cosine | l2 | ip
+    options:
+      lists: 100               # ivfflat-only
+  - name: IX_Document_Embedding_HNSW
+    columns: [Embedding]
+    index_type: hnsw
+    vector_ops: l2
+    options:
+      m: 16                    # hnsw-only
+      ef_construction: 64      # hnsw-only
+```
+
+Mapping to pgvector DDL:
+
+| YAML `vector_ops` | pgvector operator class |
+|---|---|
+| `cosine` | `vector_cosine_ops` |
+| `l2` | `vector_l2_ops` |
+| `ip` | `vector_ip_ops` |
+
+Emitted DDL (example):
+
+```sql
+CREATE INDEX "IX_Document_Embedding_Cosine"
+  ON "public"."Document"
+  USING ivfflat ("Embedding" vector_cosine_ops)
+  WITH (lists = 100);
+```
+
+Index-type validation rules:
+
+- `index_type: ivfflat` requires `options.lists` (positive int, default `100` if omitted).
+- `index_type: hnsw` accepts optional `options.m` (default `16`) and `options.ef_construction` (default `64`).
+- Specifying `lists` under `hnsw` or `m`/`ef_construction` under `ivfflat` is a parse error (`MIG-E-VECTOR-IDX-OPTIONS`).
+- Using `index_type: ivfflat` / `hnsw` on a non-`VectorType` column is a parse error (`MIG-E-VECTOR-IDX-NONVECTOR`).
+
+#### 5.4.4 Schema Inspection
+
+`PostgresSchemaInspector` reverse-maps a pgvector column to `VectorType(N)` by reading `pg_attribute.atttypmod` for the `vector` type (the dimension is encoded directly in `atttypmod`). `information_schema.columns.data_type` reports `USER-DEFINED` for extension types, so the inspector must join `pg_type` / `pg_attribute` to resolve the backing type name and its modifier. An unrecognised `atttypmod` for `vector` is treated as `MIG-E-VECTOR-INTROSPECT` and the table is skipped with a logged warning, not a hard failure.
+
+#### 5.4.5 Codegen C# Type [DP-CODEGEN-VECTOR]
+
+DataProvider's Postgres codegen emits vector columns as **`float[]`** in record types, insert/update binders, and select readers. Use `ReadOnlyMemory<float>` only when requested via an explicit `--vector-repr=readonly-memory` flag (future; not in 0.9.0-beta).
+
+Binding to Npgsql uses [`Pgvector.Npgsql`](https://github.com/pgvector/pgvector-dotnet) via `NpgsqlDataSourceBuilder.UseVector()`. The DataProvider codegen tool adds `Pgvector.Npgsql` to its own dependencies so schema introspection can resolve the vector type. Consumers must also add the package to their runtime csproj so the generated code binds correctly.
+
+Reader path: `reader.GetFieldValue<Vector>(ordinal).ToArray()` → `float[]`.
+Writer path: `new NpgsqlParameter { Value = new Vector(floatArray) }`.
+
+Vector columns are **not** nullable in the default case. If the YAML marks `nullable: true`, the generated C# type is `float[]?` and the binder handles `DBNull`.
+
+#### 5.4.6 SQLite Fallback
+
+SQLite does **not** have a native vector type. For schemas that include `VectorType` columns on a SQLite target, the portable column is lowered to `BLOB` (precedent: `GeometryType` + `GeographyType`, spec section 5.2). No similarity search, no extension — purely storage. Round-trip through SQLite loses the dimension metadata at the DB layer; the portable `VectorType(N)` is preserved in `__schema_metadata` per spec section 5.2.
+
+This lets a single schema YAML drive both a production Postgres deployment (native vector) and an on-device SQLite replica (blob storage). It is the consumer's responsibility to not issue vector-similarity LQL queries against a SQLite target — the LQL transpiler will fail at transpile time (see [LQL-COSINE-DISTANCE] in `lql-spec.md`, pending in 0.10.0-beta).
+
+#### 5.4.7 SQL Server
+
+SQL Server does **not** support pgvector. `VectorType` on a SQL Server target is a hard error `MIG-E-VECTOR-SQLSERVER` at DDL generation time. Until Microsoft ships a native vector type (SQL Server 2025 preview `VECTOR(n)` is on the roadmap; adoption deferred).
+
+#### 5.4.8 Diagnostics
+
+| Code | Severity | Meaning |
+|---|---|---|
+| `MIG-E-VECTOR-DIMS-MISSING` | Error | `type: Vector` without `(N)` dimension |
+| `MIG-E-VECTOR-DIMS-RANGE` | Error | Dimension not in `1..16000` |
+| `MIG-E-VECTOR-EXT-PERM` | Error | `CREATE EXTENSION vector` failed (missing permission or extension not installed on Postgres host) |
+| `MIG-E-VECTOR-IDX-OPTIONS` | Error | Option mismatch between `ivfflat` / `hnsw` (e.g. `lists` on hnsw) |
+| `MIG-E-VECTOR-IDX-NONVECTOR` | Error | `index_type: ivfflat`/`hnsw` on a non-vector column |
+| `MIG-E-VECTOR-INTROSPECT` | Warn | `pg_attribute.atttypmod` could not be decoded; table skipped |
+| `MIG-E-VECTOR-SQLSERVER` | Error | SQL Server target does not support VectorType |
 
 ---
 
