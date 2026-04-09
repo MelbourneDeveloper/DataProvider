@@ -19,8 +19,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-using Antlr4.Runtime;
 using System.IO;
+using Antlr4.Runtime;
 
 namespace Nimblesite.DataProvider.Postgres.Parsing;
 
@@ -33,7 +33,15 @@ class LexerDispatchingErrorListener : IAntlrErrorListener<int>
         _parent = parent;
     }
 
-    public void SyntaxError(TextWriter output, IRecognizer recognizer, int offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException e)
+    public void SyntaxError(
+        TextWriter output,
+        IRecognizer recognizer,
+        int offendingSymbol,
+        int line,
+        int charPositionInLine,
+        string msg,
+        RecognitionException e
+    )
     {
         var foo = new ProxyErrorListener<int>(_parent.ErrorListeners);
         foo.SyntaxError(output, recognizer, offendingSymbol, line, charPositionInLine, msg, e);

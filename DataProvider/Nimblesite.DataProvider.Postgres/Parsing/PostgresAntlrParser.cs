@@ -52,10 +52,7 @@ public sealed class PostgresAntlrParser : ISqlParser
         }
     }
 
-    private static List<string> ExtractAllParameters(
-        CommonTokenStream tokens,
-        IParseTree parseTree
-    )
+    private static List<string> ExtractAllParameters(CommonTokenStream tokens, IParseTree parseTree)
     {
         // Start with anything the shared Core walker can see (covers $1-style
         // PARAM tokens and any :name / ? forms if a future grammar bump adds

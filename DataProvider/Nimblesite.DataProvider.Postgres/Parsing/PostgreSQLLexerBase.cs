@@ -20,10 +20,10 @@ THE SOFTWARE.
 */
 
 using System;
-using Antlr4.Runtime;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using Antlr4.Runtime;
 
 namespace Nimblesite.DataProvider.Postgres.Parsing;
 
@@ -32,14 +32,10 @@ public abstract class PostgreSQLLexerBase : Lexer
     protected Stack<string> tags = new Stack<string>();
 
     public PostgreSQLLexerBase(ICharStream input)
-        : base(input)
-    {
-    }
+        : base(input) { }
 
     public PostgreSQLLexerBase(ICharStream input, TextWriter output, TextWriter errorOutput)
-        : base(input, output, errorOutput)
-    {
-    }
+        : base(input, output, errorOutput) { }
 
     public void PushTag()
     {
@@ -58,7 +54,9 @@ public abstract class PostgreSQLLexerBase : Lexer
 
     public void UnterminatedBlockCommentDebugAssert()
     {
-        Debug.Assert(InputStream.LA(1) == -1 /*EOF*/);
+        Debug.Assert(
+            InputStream.LA(1) == -1 /*EOF*/
+        );
     }
 
     public bool CheckLaMinus()
@@ -84,17 +82,24 @@ public abstract class PostgreSQLLexerBase : Lexer
 
     public void HandleLessLessGreaterGreater()
     {
-        if (Text == "<<") Type = PostgreSQLLexer.LESS_LESS;
-        if (Text == ">>") Type = PostgreSQLLexer.GREATER_GREATER;
+        if (Text == "<<")
+            Type = PostgreSQLLexer.LESS_LESS;
+        if (Text == ">>")
+            Type = PostgreSQLLexer.GREATER_GREATER;
     }
 
     public bool CheckIfUtf32Letter()
     {
-        return Char.IsLetter(Char.ConvertFromUtf32(Char.ConvertToUtf32((char)InputStream.LA(-2), (char)InputStream.LA(-1))).Substring(0)[0]);
+        return Char.IsLetter(
+            Char.ConvertFromUtf32(
+                    Char.ConvertToUtf32((char)InputStream.LA(-2), (char)InputStream.LA(-1))
+                )
+                .Substring(0)[0]
+        );
     }
 
     public bool IsSemiColon()
     {
-        return  ';' == (char)InputStream.LA(1);
+        return ';' == (char)InputStream.LA(1);
     }
 }

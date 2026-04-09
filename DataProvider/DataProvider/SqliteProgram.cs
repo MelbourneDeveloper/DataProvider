@@ -27,10 +27,7 @@ internal static class SqliteCli
         {
             IsRequired = true,
         };
-        var config = new Option<FileInfo>(
-            "--config",
-            description: "Path to DataProvider.json"
-        )
+        var config = new Option<FileInfo>("--config", description: "Path to DataProvider.json")
         {
             IsRequired = true,
         };

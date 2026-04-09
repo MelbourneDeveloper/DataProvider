@@ -79,11 +79,7 @@ public abstract class SqlParserContractTests
         return count;
     }
 
-    private static void CountDescendantsRecursive(
-        IParseTree node,
-        string ruleSuffix,
-        ref int count
-    )
+    private static void CountDescendantsRecursive(IParseTree node, string ruleSuffix, ref int count)
     {
         if (
             node is Antlr4.Runtime.ParserRuleContext ctx
@@ -132,9 +128,7 @@ public abstract class SqlParserContractTests
     [Fact]
     public void Parses_select_with_where_clause()
     {
-        var stmt = AssertOk(
-            CreateParser().ParseSql("SELECT id, name FROM users WHERE id = @id")
-        );
+        var stmt = AssertOk(CreateParser().ParseSql("SELECT id, name FROM users WHERE id = @id"));
         Assert.Single(stmt.Parameters);
         Assert.Contains(stmt.Parameters, p => p.Name == "id");
     }
@@ -359,9 +353,7 @@ public abstract class SqlParserContractTests
     [Fact]
     public void At_user_id_with_underscore()
     {
-        var stmt = AssertOk(
-            CreateParser().ParseSql("SELECT * FROM users WHERE id = @user_id")
-        );
+        var stmt = AssertOk(CreateParser().ParseSql("SELECT * FROM users WHERE id = @user_id"));
         Assert.Contains(stmt.Parameters, p => p.Name == "user_id");
     }
 
@@ -389,8 +381,7 @@ public abstract class SqlParserContractTests
     public void Repeated_params_are_deduped()
     {
         var stmt = AssertOk(
-            CreateParser()
-                .ParseSql("SELECT * FROM users WHERE id = @id OR parent_id = @id")
+            CreateParser().ParseSql("SELECT * FROM users WHERE id = @id OR parent_id = @id")
         );
         Assert.Single(stmt.Parameters);
         Assert.Equal("id", stmt.Parameters.Single().Name);
@@ -400,8 +391,7 @@ public abstract class SqlParserContractTests
     public void Case_sensitive_params_are_distinct()
     {
         var stmt = AssertOk(
-            CreateParser()
-                .ParseSql("SELECT * FROM users WHERE id = @Id OR other = @id")
+            CreateParser().ParseSql("SELECT * FROM users WHERE id = @Id OR other = @id")
         );
         Assert.Contains(stmt.Parameters, p => p.Name == "Id");
         Assert.Contains(stmt.Parameters, p => p.Name == "id");

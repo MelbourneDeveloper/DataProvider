@@ -19,26 +19,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-using Antlr4.Runtime;
-using Antlr4.Runtime.Tree;
-using Antlr4.Runtime.Atn;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Antlr4.Runtime;
+using Antlr4.Runtime.Atn;
+using Antlr4.Runtime.Tree;
 
 namespace Nimblesite.DataProvider.Postgres.Parsing;
 
 public abstract class PostgreSQLParserBase : Parser
 {
     public PostgreSQLParserBase(ITokenStream input)
-        : base(input)
-    {
-    }
+        : base(input) { }
 
     public PostgreSQLParserBase(ITokenStream input, TextWriter output, TextWriter errorOutput)
-        : base(input, output, errorOutput)
-    {
-    }
+        : base(input, output, errorOutput) { }
 
     internal IParseTree GetParsedSqlTree(string script, int line = 0)
     {
@@ -49,15 +45,17 @@ public abstract class PostgreSQLParserBase : Parser
 
     internal void ParseRoutineBody()
     {
-        PostgreSQLParser.Createfunc_opt_listContext _localctx = this.Context as PostgreSQLParser.Createfunc_opt_listContext;
-        var lang =
-            _localctx
-                .createfunc_opt_item()
-                .FirstOrDefault(coi => coi.LANGUAGE() != null)
-                ?.nonreservedword_or_sconst()?.nonreservedword()?.identifier()?
-                .Identifier()?.GetText();
-        var func_as = _localctx.createfunc_opt_item()
-            .FirstOrDefault(coi => coi.func_as() != null);
+        PostgreSQLParser.Createfunc_opt_listContext _localctx =
+            this.Context as PostgreSQLParser.Createfunc_opt_listContext;
+        var lang = _localctx
+            .createfunc_opt_item()
+            .FirstOrDefault(coi => coi.LANGUAGE() != null)
+            ?.nonreservedword_or_sconst()
+            ?.nonreservedword()
+            ?.identifier()
+            ?.Identifier()
+            ?.GetText();
+        var func_as = _localctx.createfunc_opt_item().FirstOrDefault(coi => coi.func_as() != null);
         if (func_as != null)
         {
             var txt = GetRoutineBodyString(func_as.func_as().sconst(0));
@@ -94,7 +92,8 @@ public abstract class PostgreSQLParserBase : Parser
         {
             var c = s[i];
             r.Append(c);
-            if (c == '\'' && i < s.Length - 1 && (s[i + 1] == '\'')) i++;
+            if (c == '\'' && i < s.Length - 1 && (s[i + 1] == '\''))
+                i++;
             i++;
         }
         return r.ToString();
@@ -104,11 +103,14 @@ public abstract class PostgreSQLParserBase : Parser
     {
         var anysconst = rule.anysconst();
         var StringConstant = anysconst.StringConstant();
-        if (null != StringConstant) return unquote(TrimQuotes(StringConstant.GetText()));
+        if (null != StringConstant)
+            return unquote(TrimQuotes(StringConstant.GetText()));
         var UnicodeEscapeStringConstant = anysconst.UnicodeEscapeStringConstant();
-        if (null != UnicodeEscapeStringConstant) return TrimQuotes(UnicodeEscapeStringConstant.GetText());
+        if (null != UnicodeEscapeStringConstant)
+            return TrimQuotes(UnicodeEscapeStringConstant.GetText());
         var EscapeStringConstant = anysconst.EscapeStringConstant();
-        if (null != EscapeStringConstant) return TrimQuotes(EscapeStringConstant.GetText());
+        if (null != EscapeStringConstant)
+            return TrimQuotes(EscapeStringConstant.GetText());
         string result = "";
         var dollartext = anysconst.DollarText();
         foreach (var s in dollartext)
@@ -126,7 +128,9 @@ public abstract class PostgreSQLParserBase : Parser
         var parser = new PostgreSQLParser(tokens);
         lexer.RemoveErrorListeners();
         parser.RemoveErrorListeners();
-        var listener_lexer = new LexerDispatchingErrorListener((this.InputStream as CommonTokenStream).TokenSource as Lexer);
+        var listener_lexer = new LexerDispatchingErrorListener(
+            (this.InputStream as CommonTokenStream).TokenSource as Lexer
+        );
         var listener_parser = new ParserDispatchingErrorListener(this);
         lexer.AddErrorListener(listener_lexer);
         parser.AddErrorListener(listener_parser);
@@ -137,8 +141,10 @@ public abstract class PostgreSQLParserBase : Parser
     {
         var c = ((CommonTokenStream)this.InputStream).LT(1);
         var text = c.Text;
-        return text == "!" || text == "!!"
-            || text == "!=-" // Code for specific example.
-            ;
+        return text == "!"
+            || text == "!!"
+            || text
+                == "!=-" // Code for specific example.
+        ;
     }
 }

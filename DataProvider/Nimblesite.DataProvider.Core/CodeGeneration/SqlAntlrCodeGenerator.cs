@@ -79,10 +79,7 @@ public static class SqlAntlrCodeGenerator
             columnMetadata,
             config.ConnectionType
         );
-        if (
-            dataAccessResult
-            is Result<string, SqlError>.Error<string, SqlError> dataAccessFailure
-        )
+        if (dataAccessResult is Result<string, SqlError>.Error<string, SqlError> dataAccessFailure)
             return dataAccessFailure;
 
         return config.GenerateSourceFile(
@@ -114,10 +111,7 @@ public static class SqlAntlrCodeGenerator
             groupingConfig,
             config.ConnectionType
         );
-        if (
-            groupedMethodResult
-            is Result<string, SqlError>.Error<string, SqlError> methodFailure
-        )
+        if (groupedMethodResult is Result<string, SqlError>.Error<string, SqlError> methodFailure)
             return methodFailure;
 
         var groupedModelsResult = config.GenerateGroupedModels(
@@ -127,10 +121,7 @@ public static class SqlAntlrCodeGenerator
             groupingConfig.ChildEntity.Columns,
             columnMetadata
         );
-        if (
-            groupedModelsResult
-            is Result<string, SqlError>.Error<string, SqlError> modelsFailure
-        )
+        if (groupedModelsResult is Result<string, SqlError>.Error<string, SqlError> modelsFailure)
             return modelsFailure;
 
         var rawRecord = ((Result<string, SqlError>.Ok<string, SqlError>)rawRecordResult).Value;

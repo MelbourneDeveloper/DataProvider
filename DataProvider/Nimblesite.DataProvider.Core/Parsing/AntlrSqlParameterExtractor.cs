@@ -42,11 +42,7 @@ public static class AntlrSqlParameterExtractor
         }
     }
 
-    private static void TryAddParameter(
-        string text,
-        List<string> parameters,
-        HashSet<string> seen
-    )
+    private static void TryAddParameter(string text, List<string> parameters, HashSet<string> seen)
     {
         if (string.IsNullOrEmpty(text))
             return;

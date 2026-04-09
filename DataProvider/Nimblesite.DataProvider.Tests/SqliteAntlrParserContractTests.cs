@@ -39,6 +39,5 @@ public sealed class SqliteAntlrParserContractTests : SqlParserContractTests
     protected override string CaseInsensitiveLikeOperator => "LIKE";
 
     // SQLite uses SQL-standard CAST(x AS text), not Postgres's `x::text`.
-    protected override string TextCastExpression(string column) =>
-        $"CAST({column} AS text)";
+    protected override string TextCastExpression(string column) => $"CAST({column} AS text)";
 }
