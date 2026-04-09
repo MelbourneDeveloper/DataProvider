@@ -1017,10 +1017,7 @@ internal static class PostgresCli
         // Same reasoning as BUG3 INSERT/DELETE quoting. The strings are
         // embedded in a C# verbatim string `@"..."` so use the `""` escape
         // form (two double-quotes inside @"..." represent a single literal ").
-        var setClauses = string.Join(
-            ", ",
-            updateable.Select(c => $"\"\"{c.Name}\"\" = @{c.Name}")
-        );
+        var setClauses = string.Join(", ", updateable.Select(c => $"\"\"{c.Name}\"\" = @{c.Name}"));
         var whereClauses = string.Join(
             " AND ",
             pkCols.Select(c => $"\"\"{c.Name}\"\" = @{c.Name}")
