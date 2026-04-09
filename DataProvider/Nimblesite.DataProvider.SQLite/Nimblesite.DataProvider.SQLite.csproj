@@ -49,6 +49,13 @@
     <ProjectReference Include="../../Other/Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj" />
   </ItemGroup>
 
+  <!-- Expose internal types (generated SQLiteLexer / SQLiteParser) to the
+       SQLite test assembly so it can run the shared
+       SqlParserContractTests which need to walk the raw parse tree. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Nimblesite.DataProvider.Tests" />
+  </ItemGroup>
+
   <!-- Package Content - README.md included via Directory.Build.props -->
 
   <!-- Release Configuration -->

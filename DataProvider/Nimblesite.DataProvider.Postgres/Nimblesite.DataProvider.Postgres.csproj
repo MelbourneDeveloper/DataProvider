@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Nimblesite.DataProvider.Postgres</PackageId>
+    <Authors>ChristianFindlay</Authors>
+    <Description>PostgreSQL code generation library for Nimblesite.DataProvider.Core. Parses input SQL with the antlr/grammars-v4 PostgreSQL ANTLR grammar (derived from upstream postgres/postgres gram.y) and emits compile-time-safe data access code via the shared Core code generator.</Description>
+    <PackageTags>postgres;postgresql;code-generation;antlr;npgsql;datatypes</PackageTags>
+    <PackageProjectUrl>https://github.com/Nimblesite/DataProvider</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Nimblesite/DataProvider</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Generated ANTLR parser sources + vendored grammar helpers don't satisfy our strict CA / CS / IDE / EPS rules. We don't own them. The whole project is a thin parser facade + a few small shells; the ratio of "code we own" to "code we don't" is heavily in favour of "don't", so we relax analysis at the project level the same way the SQLite library does, and the small bits we own (PostgresAntlrParser, PostgresDatabaseEffects, PostgresCodeGenerator) are reviewed by hand. -->
+    <NoWarn>$(NoWarn);CA1001;CA1012;CA1051;CA1303;CA1304;CA1305;CA1307;CA1308;CA1309;CA1310;CA1707;CA1716;CA1720;CA1812;CA1822;CA1823;CA1825;CA1849;CA1851;CA1852;CA1859;CA1861;CA1862;CA2100;CS1591;CS3021;CS0108;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8625;CS8765;CS8767;EPC13;EPS06;EPS12;IDE0001;IDE0005;IDE0090;IDE0130</NoWarn>
+    <WarningsAsErrors></WarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- ANTLR runtime (generated parser files are checked into git in Parsing/) -->
+    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+    <PackageReference Include="Npgsql" Version="9.0.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Nimblesite.DataProvider.Core/Nimblesite.DataProvider.Core.csproj" />
+    <ProjectReference Include="../../Other/Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj" />
+    <ProjectReference Include="../../Migration/Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Vendored .g4 grammar files: not compiled, but kept under source control next to the generated parser per [DEPS-ANTLR] in docs/specs/codegen-cli-tool.md -->
+    <None Include="Parsing/PostgreSQLLexer.g4" />
+    <None Include="Parsing/PostgreSQLParser.g4" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <Optimize>true</Optimize>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+</Project>

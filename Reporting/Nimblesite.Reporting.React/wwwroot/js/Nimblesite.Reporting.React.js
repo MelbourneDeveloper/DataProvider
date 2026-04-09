@@ -1,7 +1,7 @@
 /**
  * @compiler H5 26.3.64893+945123d2bd7640b7bd10ff332868c3e7b2f4ec79
  */
-H5.assemblyVersion("Nimblesite.Reporting.React","0.1.0.0");
+H5.assemblyVersion("Nimblesite.Reporting.React","0.9.0.0");
 H5.assembly("Nimblesite.Reporting.React", function ($asm, globals) {
     "use strict";
 

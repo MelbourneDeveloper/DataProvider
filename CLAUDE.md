@@ -32,6 +32,7 @@ If the TMC server is available:
 
 ## Hard Rules — Universal (no exceptions)
 
+- **Parsing SQL with anything other than the ⭐️ OFFICIAL 👨🏼‍⚖️ ⭐️ platform specific parser = ⛔️ILLEGAL** - Use the actual .NET parser specified by the DB maintainer
 - **DO NOT use git or Docker commands.** No `git add`, `git commit`, `git push`, or any git/Docker command. CI and GitHub Actions handle these.
 - **ZERO DUPLICATION.** Before writing any code, search the codebase for existing implementations. Move code, don't copy it.
 - **NEVER THROW** — Return `Result<T,E>`. Wrap failures in try/catch

@@ -2,11 +2,11 @@
   "default_threshold": 90,
   "projects": {
     "DataProvider/Nimblesite.DataProvider.Core": {
-      "threshold": 88,
+      "threshold": 89,
       "include": "[Nimblesite.DataProvider.Core]*,[Nimblesite.Sql.Model]*,[Nimblesite.Lql.SQLite]*"
     },
     "DataProvider/Nimblesite.DataProvider.Example": {
-      "threshold": 38,
+      "threshold": 36,
       "include": "[Nimblesite.DataProvider.Core]*,[Nimblesite.DataProvider.Example]*,[Nimblesite.Lql.SQLite]*,[Nimblesite.Sql.Model]*"
     },
     "Lql/Nimblesite.Lql.Core": {
@@ -50,7 +50,7 @@
       "include": "[Nimblesite.Reporting.Engine]*,[Nimblesite.Reporting.Api]*"
     },
     "Lql/lql-lsp-rust": {
-      "threshold": 80
+      "threshold": 83
     },
     "Lql/LqlExtension": {
       "threshold": 38

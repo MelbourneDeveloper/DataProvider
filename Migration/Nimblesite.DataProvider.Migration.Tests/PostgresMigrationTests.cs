@@ -1446,4 +1446,168 @@ public sealed class PostgresMigrationTests(PostgresContainerFixture fixture) : I
         Assert.Equal(5, reader.GetInt32(5)); // priority
         Assert.Equal("active", reader.GetString(6)); // status
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // VECTOR COLUMN E2E TESTS — pgvector extension
+    //
+    // Requires the shared fixture to use pgvector/pgvector:pg16 (a
+    // drop-in superset of postgres:16 with the vector extension
+    // preinstalled). These tests prove the full pipeline — YAML schema
+    // -> VectorType -> PostgresDdlGenerator -> CREATE EXTENSION vector
+    // -> CREATE TABLE -> INSERT -> SELECT -> round-trip — works against
+    // a real database, which is the exact path HealthcareSamples needs
+    // to unblock its embeddings column.
+    // ═══════════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void CreateTableWithVectorColumn_MigratesAgainstPgvectorContainer_Success()
+    {
+        // Arrange — a Documents table with a 384-dim embedding, the
+        // sentence-transformers default.
+        var schema = Schema
+            .Define("Embeddings")
+            .Table(
+                "public",
+                "documents",
+                t =>
+                    t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey())
+                        .Column("body", PortableTypes.Text, c => c.NotNull())
+                        .Column("embedding", PortableTypes.Vector(384), c => c.NotNull())
+            )
+            .Build();
+
+        // The pgvector extension must exist in the database before any
+        // vector(N) column can be created. The migration pipeline is
+        // expected to emit `CREATE EXTENSION IF NOT EXISTS vector` as
+        // part of applying a schema that contains a VectorType column.
+        // If the source-side fix is still in progress, this test will
+        // fail loudly on CREATE TABLE, proving the gap.
+
+        var emptySchema = (
+            (SchemaResultOk)PostgresSchemaInspector.Inspect(_connection, "public", _logger)
+        ).Value;
+
+        var operations = (
+            (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
+        ).Value;
+
+        // Act
+        var result = MigrationRunner.Apply(
+            _connection,
+            operations,
+            PostgresDdlGenerator.Generate,
+            MigrationOptions.Default,
+            _logger
+        );
+
+        // Assert — migration succeeded
+        Assert.True(
+            result is MigrationApplyResultOk,
+            $"Vector migration failed: {(result as MigrationApplyResultError)?.Value}"
+        );
+
+        // Assert — documents table exists
+        var inspected = (
+            (SchemaResultOk)PostgresSchemaInspector.Inspect(_connection, "public", _logger)
+        ).Value;
+        Assert.Contains(inspected.Tables, t => t.Name == "documents");
+
+        // Assert — pgvector extension is installed in the database
+        using (var extCmd = _connection.CreateCommand())
+        {
+            extCmd.CommandText = "SELECT COUNT(*) FROM pg_extension WHERE extname = 'vector'";
+            var extCount = Convert.ToInt32(
+                extCmd.ExecuteScalar(),
+                System.Globalization.CultureInfo.InvariantCulture
+            );
+            Assert.Equal(1, extCount);
+        }
+
+        // Assert — embedding column has the real pgvector type with the
+        // correct dimension, not TEXT / BYTEA / anything else.
+        using (var typeCmd = _connection.CreateCommand())
+        {
+            typeCmd.CommandText =
+                "SELECT format_type(a.atttypid, a.atttypmod) "
+                + "FROM pg_attribute a "
+                + "JOIN pg_class c ON c.oid = a.attrelid "
+                + "JOIN pg_namespace n ON n.oid = c.relnamespace "
+                + "WHERE n.nspname = 'public' "
+                + "  AND c.relname = 'documents' "
+                + "  AND a.attname = 'embedding'";
+            var colType = (string?)typeCmd.ExecuteScalar();
+            Assert.Equal("vector(384)", colType);
+        }
+
+        // Act — round-trip insert + select a known vector
+        using (var insertCmd = _connection.CreateCommand())
+        {
+            var vecLiteral =
+                "[" + string.Join(",", Enumerable.Range(0, 384).Select(i => "0.5")) + "]";
+            insertCmd.CommandText =
+                "INSERT INTO public.documents (id, body, embedding) "
+                + "VALUES (gen_random_uuid(), 'hello', '"
+                + vecLiteral
+                + "'::vector)";
+            var rows = insertCmd.ExecuteNonQuery();
+            Assert.Equal(1, rows);
+        }
+
+        using (var selectCmd = _connection.CreateCommand())
+        {
+            selectCmd.CommandText = "SELECT body, vector_dims(embedding) FROM public.documents";
+            using var reader = selectCmd.ExecuteReader();
+            Assert.True(reader.Read());
+            Assert.Equal("hello", reader.GetString(0));
+            Assert.Equal(384, reader.GetInt32(1));
+        }
+    }
+
+    [Fact]
+    public void CreateTableWithVectorColumn_OpenAiLargeDim_Success()
+    {
+        // Arrange — the 3072-dim OpenAI text-embedding-3-large dimension,
+        // larger than the pgvector default ivfflat index limit, exercises
+        // the high end of the dimension range.
+        var schema = Schema
+            .Define("EmbeddingsLarge")
+            .Table(
+                "public",
+                "large_embeddings",
+                t =>
+                    t.Column("id", PortableTypes.Uuid, c => c.PrimaryKey())
+                        .Column("embedding", PortableTypes.Vector(3072), c => c.NotNull())
+            )
+            .Build();
+
+        var emptySchema = (
+            (SchemaResultOk)PostgresSchemaInspector.Inspect(_connection, "public", _logger)
+        ).Value;
+        var operations = (
+            (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
+        ).Value;
+
+        // Act
+        var result = MigrationRunner.Apply(
+            _connection,
+            operations,
+            PostgresDdlGenerator.Generate,
+            MigrationOptions.Default,
+            _logger
+        );
+
+        // Assert
+        Assert.True(
+            result is MigrationApplyResultOk,
+            $"Large-dim vector migration failed: {(result as MigrationApplyResultError)?.Value}"
+        );
+
+        using var typeCmd = _connection.CreateCommand();
+        typeCmd.CommandText =
+            "SELECT format_type(a.atttypid, a.atttypmod) "
+            + "FROM pg_attribute a "
+            + "JOIN pg_class c ON c.oid = a.attrelid "
+            + "WHERE c.relname = 'large_embeddings' AND a.attname = 'embedding'";
+        Assert.Equal("vector(3072)", (string?)typeCmd.ExecuteScalar());
+    }
 }

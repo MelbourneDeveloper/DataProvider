@@ -4,7 +4,7 @@
     <NuGetAudit>false</NuGetAudit>
     <NuGetAuditMode>disabled</NuGetAuditMode>
     <RestoreAuditProperties>false</RestoreAuditProperties>
-    <Version>0.1.0</Version>
+    <Version>0.9.5-beta</Version>
     <Authors>ChristianFindlay</Authors>
     <Company>MelbourneDeveloper</Company>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

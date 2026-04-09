@@ -2,34 +2,32 @@ using System.CommandLine;
 using System.Globalization;
 using System.Text.Json;
 using Nimblesite.DataProvider.Core.CodeGeneration;
+using Nimblesite.DataProvider.SQLite;
 using Nimblesite.DataProvider.SQLite.Parsing;
 using Nimblesite.Sql.Model;
 using Outcome;
 
 #pragma warning disable CA1849 // Call async methods when in an async method
 
-namespace Nimblesite.DataProvider.SQLite.Cli;
+namespace DataProvider;
 
-internal static class Program
+internal static class SqliteCli
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
     };
 
-    public static async Task<int> Main(string[] args)
+    public static Command BuildCommand()
     {
         var projectDir = new Option<DirectoryInfo>(
             "--project-dir",
-            description: "Project directory containing sql, grouping, and Nimblesite.DataProvider.Core.json"
+            description: "Project directory containing sql, grouping, and DataProvider.json"
         )
         {
             IsRequired = true,
         };
-        var config = new Option<FileInfo>(
-            "--config",
-            description: "Path to Nimblesite.DataProvider.Core.json"
-        )
+        var config = new Option<FileInfo>("--config", description: "Path to DataProvider.json")
         {
             IsRequired = true,
         };
@@ -45,14 +43,14 @@ internal static class Program
             getDefaultValue: () => "SqliteConnection",
             description: "Database connection type for generated code (e.g., SqliteConnection, NpgsqlConnection)"
         );
-        var root = new RootCommand("Nimblesite.DataProvider.SQLite codegen CLI")
+        var cmd = new Command("sqlite", "Generate type-safe SQLite data access code")
         {
             projectDir,
             config,
             outDir,
             connectionTypeOpt,
         };
-        root.SetHandler(
+        cmd.SetHandler(
             async (DirectoryInfo proj, FileInfo cfg, DirectoryInfo output, string connType) =>
             {
                 var exit = await RunAsync(proj, cfg, output, connectionType: connType)
@@ -64,11 +62,10 @@ internal static class Program
             outDir,
             connectionTypeOpt
         );
-
-        return await root.InvokeAsync(args).ConfigureAwait(false);
+        return cmd;
     }
 
-    private static async Task<int> RunAsync(
+    public static async Task<int> RunAsync(
         DirectoryInfo projectDir,
         FileInfo configFile,
         DirectoryInfo outDir,

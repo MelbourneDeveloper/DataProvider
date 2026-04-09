@@ -32,7 +32,10 @@ jobs:
           VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
           set -euo pipefail
-          dotnet pack DataProvider.sln -c Release -p:Version="$VERSION" -o ./nupkgs
+          dotnet pack DataProvider.sln -c Release \
+            -p:Version="$VERSION" \
+            -p:PackageVersion="$VERSION" \
+            -o ./nupkgs
 
       - name: Push packages to NuGet
         env:

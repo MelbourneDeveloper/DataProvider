@@ -12,6 +12,9 @@ namespace Nimblesite.Lql.Cli.SQLite.Tests;
 /// </summary>
 public sealed class CliEndToEndTests : IDisposable
 {
+    private static readonly string[] SubcommandOnly = ["sqlite"];
+    private static readonly string[] SubcommandHelp = ["sqlite", "--help"];
+
     private readonly string _tempDirectory;
     private readonly string _cliPath;
 
@@ -25,7 +28,7 @@ public sealed class CliEndToEndTests : IDisposable
 
         // Use the built executable directly from the test's bin directory
         // This avoids the slow and potentially hanging 'dotnet run --project' approach
-        _cliPath = Path.Combine(AppContext.BaseDirectory, "lql-sqlite");
+        _cliPath = Path.Combine(AppContext.BaseDirectory, "Lql");
     }
 
     /// <summary>
@@ -244,9 +247,16 @@ public sealed class CliEndToEndTests : IDisposable
     {
         using var process = new Process();
         process.StartInfo.FileName = _cliPath;
+        // All tests target the unified Lql tool's `sqlite` subcommand.
+        // --help and the no-args invocation are intentionally exercised
+        // against the subcommand, not the root, to preserve prior behavior.
+        var prefixed =
+            args.Length == 0 ? SubcommandOnly
+            : args is ["--help"] ? SubcommandHelp
+            : SubcommandOnly.Concat(args).ToArray();
         process.StartInfo.Arguments = string.Join(
             " ",
-            args.Select(arg => arg.Contains(' ') ? $"\"{arg}\"" : arg)
+            prefixed.Select(arg => arg.Contains(' ') ? $"\"{arg}\"" : arg)
         );
 
         process.StartInfo.UseShellExecute = false;

@@ -12,12 +12,16 @@ using Outcome;
 #pragma warning disable CA1849 // Call async methods when in an async method
 #pragma warning disable CA2100 // Review SQL queries for security vulnerabilities
 
-namespace Nimblesite.DataProvider.Postgres.Cli;
+namespace DataProvider;
 
 /// <summary>
-/// PostgreSQL code generation CLI for Nimblesite.DataProvider.Core.
+/// Postgres subcommand of the unified DataProvider tool. Hosts the
+/// <c>postgres</c> CLI surface + the Postgres-specific codegen pipeline
+/// that was formerly entangled with <c>Program</c>. Built via
+/// <see cref="BuildCommand"/> and attached to the root command by
+/// <c>Program.Main</c>.
 /// </summary>
-internal static class Program
+internal static class PostgresCli
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -25,21 +29,19 @@ internal static class Program
     };
 
     /// <summary>
-    /// Entry point.
+    /// Builds the <c>postgres</c> subcommand. Exposed so <c>Program</c>
+    /// can wire it onto the root command.
     /// </summary>
-    public static async Task<int> Main(string[] args)
+    public static Command BuildCommand()
     {
         var projectDir = new Option<DirectoryInfo>(
             "--project-dir",
-            description: "Project directory containing sql files and Nimblesite.DataProvider.Core.json"
+            description: "Project directory containing sql files and DataProvider.json"
         )
         {
             IsRequired = true,
         };
-        var config = new Option<FileInfo>(
-            "--config",
-            description: "Path to Nimblesite.DataProvider.Core.json"
-        )
+        var config = new Option<FileInfo>("--config", description: "Path to DataProvider.json")
         {
             IsRequired = true,
         };
@@ -64,7 +66,7 @@ internal static class Program
         {
             IsRequired = false,
         };
-        var root = new RootCommand("Nimblesite.DataProvider.Core.Postgres codegen CLI")
+        var cmd = new Command("postgres", "Generate type-safe PostgreSQL data access code")
         {
             projectDir,
             config,
@@ -72,7 +74,7 @@ internal static class Program
             offline,
             schemaFile,
         };
-        root.SetHandler(
+        cmd.SetHandler(
             async (
                 DirectoryInfo proj,
                 FileInfo cfg,
@@ -90,8 +92,7 @@ internal static class Program
             offline,
             schemaFile
         );
-
-        return await root.InvokeAsync(args).ConfigureAwait(false);
+        return cmd;
     }
 
     private static async Task<int> RunAsync(
@@ -455,7 +456,7 @@ internal static class Program
         if (asMatch.Success)
         {
             var expr = asMatch.Groups[1].Value.Trim();
-            var alias = asMatch.Groups[2].Value.Trim();
+            var alias = StripIdentifierQuotes(asMatch.Groups[2].Value.Trim());
             var type = InferTypeFromExpression(expr, schema);
             return (alias, type);
         }
@@ -464,9 +465,15 @@ internal static class Program
         var colRef = colDef.Trim();
         if (colRef.Contains('.'))
         {
+            // BUG4 fix: split on dot but only outside quoted segments. A
+            // qualified ref like "fhir_Patient"."Active" must split on the
+            // middle dot, not the dots inside quoted parts (there aren't
+            // any here, but the simple Split is fine). Then strip the
+            // surrounding `"` chars from the tail.
             var parts = colRef.Split('.');
             colRef = parts[^1];
         }
+        colRef = StripIdentifierQuotes(colRef);
 
         // Try to get type from schema
         if (schema != null)
@@ -485,6 +492,21 @@ internal static class Program
 
         // Default to text
         return (colRef, "text");
+    }
+
+    /// <summary>
+    /// BUG4 fix: removes a single pair of surrounding double-quote characters
+    /// from a Postgres identifier reference. The offline SQL parser must not
+    /// leak `"` characters into the C# property name — they're invalid in C#
+    /// identifiers and produce uncompilable .g.cs.
+    /// </summary>
+    private static string StripIdentifierQuotes(string identifier)
+    {
+        if (identifier.Length >= 2 && identifier[0] == '"' && identifier[^1] == '"')
+        {
+            return identifier[1..^1];
+        }
+        return identifier;
     }
 
     private static string InferTypeFromExpression(string expr, SchemaDefinition? schema)
@@ -823,17 +845,29 @@ internal static class Program
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
         _ = sb.AppendLine("    {");
 
-        var colNames = string.Join(", ", insertable.Select(c => c.Name));
+        // BUG3 fix: quote column + table identifiers. The sql string is a C#
+        // verbatim (@") literal, so "" represents a single " in the emitted
+        // SQL. Wrap every ident in "" so mixed-case tables/columns survive PG
+        // case-folding.
+        var colNames = string.Join(", ", insertable.Select(c => $"\"\"{c.Name}\"\""));
         var paramNames = string.Join(", ", insertable.Select(c => $"@{c.Name}"));
+        // BUG7 fix: RETURNING clause must reference the actual primary-key
+        // column name, quoted for case-folding survival. The previous hard-
+        // coded `RETURNING id` failed at runtime on tables whose PK column is
+        // PascalCase (e.g. "Id") with `column "id" does not exist`.
+        var returningClause =
+            table.PrimaryKeyColumns.Count > 0
+                ? $"RETURNING \"\"{table.PrimaryKeyColumns[0]}\"\""
+                : "RETURNING 1";
 
         _ = sb.AppendLine("        const string sql = @\"");
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            INSERT INTO {table.Schema}.{table.Name} ({colNames})"
+            $"            INSERT INTO \"\"{table.Schema}\"\".\"\"{table.Name}\"\" ({colNames})"
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            VALUES ({paramNames})");
         _ = sb.AppendLine("            ON CONFLICT DO NOTHING");
-        _ = sb.AppendLine("            RETURNING id\";");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            {returningClause}\";");
         _ = sb.AppendLine();
         _ = sb.AppendLine("        try");
         _ = sb.AppendLine("        {");
@@ -893,8 +927,15 @@ internal static class Program
     )
     {
         var parameters = string.Join(", ", insertable.Select(c => $"{c.CSharpType} {c.Name}"));
-        var colNames = string.Join(", ", insertable.Select(c => c.Name));
+        // BUG3 fix: quote idents in transaction overload INSERT, same reason
+        // as primary Insert method above.
+        var colNames = string.Join(", ", insertable.Select(c => $"\"\"{c.Name}\"\""));
         var paramNames = string.Join(", ", insertable.Select(c => $"@{c.Name}"));
+        // BUG7 fix: same RETURNING fix as the NpgsqlConnection overload.
+        var returningClause =
+            table.PrimaryKeyColumns.Count > 0
+                ? $"RETURNING \"\"{table.PrimaryKeyColumns[0]}\"\""
+                : "RETURNING 1";
 
         _ = sb.AppendLine();
         _ = sb.AppendLine("    /// <summary>");
@@ -913,11 +954,11 @@ internal static class Program
         _ = sb.AppendLine("        const string sql = @\"");
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            INSERT INTO {table.Schema}.{table.Name} ({colNames})"
+            $"            INSERT INTO \"\"{table.Schema}\"\".\"\"{table.Name}\"\" ({colNames})"
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            VALUES ({paramNames})");
         _ = sb.AppendLine("            ON CONFLICT DO NOTHING");
-        _ = sb.AppendLine("            RETURNING id\";");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            {returningClause}\";");
         _ = sb.AppendLine();
         _ = sb.AppendLine("        if (transaction.Connection is not NpgsqlConnection conn)");
         _ = sb.AppendLine("        {");
@@ -984,8 +1025,16 @@ internal static class Program
         var allParams = pkCols.Concat(updateable).ToList();
         var parameters = string.Join(", ", allParams.Select(c => $"{c.CSharpType} {c.Name}"));
 
-        var setClauses = string.Join(", ", updateable.Select(c => $"{c.Name} = @{c.Name}"));
-        var whereClauses = string.Join(" AND ", pkCols.Select(c => $"{c.Name} = @{c.Name}"));
+        // BUG6 fix: quote SET + WHERE column idents in UPDATE codegen so
+        // mixed-case columns (Active, ChapterNumber) survive PG case-folding.
+        // Same reasoning as BUG3 INSERT/DELETE quoting. The strings are
+        // embedded in a C# verbatim string `@"..."` so use the `""` escape
+        // form (two double-quotes inside @"..." represent a single literal ").
+        var setClauses = string.Join(", ", updateable.Select(c => $"\"\"{c.Name}\"\" = @{c.Name}"));
+        var whereClauses = string.Join(
+            " AND ",
+            pkCols.Select(c => $"\"\"{c.Name}\"\" = @{c.Name}")
+        );
 
         // NpgsqlConnection overload
         _ = sb.AppendLine();
@@ -1003,9 +1052,11 @@ internal static class Program
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
         _ = sb.AppendLine("    {");
         _ = sb.AppendLine("        const string sql = @\"");
+        // BUG6 fix: quote schema + table in UPDATE so mixed-case fhir_Patient
+        // round-trips through PG. Verbatim string -> use `""` escape form.
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            UPDATE {table.Schema}.{table.Name}"
+            $"            UPDATE \"\"{table.Schema}\"\".\"\"{table.Name}\"\""
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            SET {setClauses}");
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            WHERE {whereClauses}\";");
@@ -1044,9 +1095,10 @@ internal static class Program
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
         _ = sb.AppendLine("    {");
         _ = sb.AppendLine("        const string sql = @\"");
+        // BUG6 fix: same UPDATE quoting in transaction overload.
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            UPDATE {table.Schema}.{table.Name}"
+            $"            UPDATE \"\"{table.Schema}\"\".\"\"{table.Name}\"\""
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            SET {setClauses}");
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            WHERE {whereClauses}\";");
@@ -1118,8 +1170,16 @@ internal static class Program
             return;
 
         var parameters = string.Join(", ", pkCols.Select(c => $"{c.CSharpType} {c.Name}"));
-        var whereClauses = string.Join(" AND ", pkCols.Select(c => $"{c.Name} = @{c.Name}"));
-        var sqlLine = $"DELETE FROM {table.Schema}.{table.Name} WHERE {whereClauses}";
+        // BUG3 fix: quote WHERE-clause column idents + table name so mixed-case
+        // tables/columns survive PG case-folding.
+        var whereClauses = string.Join(" AND ", pkCols.Select(c => $"\"{c.Name}\" = @{c.Name}"));
+        var sqlLine = $"DELETE FROM \"{table.Schema}\".\"{table.Name}\" WHERE {whereClauses}";
+        // BUG5 fix: sqlLine now contains literal `"` characters from BUG3 fix
+        // and gets embedded in a C# verbatim string `@"..."`. Inside @"...",
+        // a single `"` closes the literal. Escape every `"` to `""` for the
+        // verbatim form, otherwise the generated .g.cs is uncompilable
+        // (CS1022 unexpected token / CS1003 syntax error / CS1010 newline).
+        var sqlLineVerbatim = sqlLine.Replace("\"", "\"\"", StringComparison.Ordinal);
 
         // NpgsqlConnection overload
         _ = sb.AppendLine();
@@ -1138,7 +1198,7 @@ internal static class Program
         _ = sb.AppendLine("    {");
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"        const string sql = @\"{sqlLine}\";"
+            $"        const string sql = @\"{sqlLineVerbatim}\";"
         );
         _ = sb.AppendLine();
         _ = sb.AppendLine("        try");
@@ -1176,7 +1236,7 @@ internal static class Program
         _ = sb.AppendLine("    {");
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"        const string sql = @\"{sqlLine}\";"
+            $"        const string sql = @\"{sqlLineVerbatim}\";"
         );
         _ = sb.AppendLine();
         _ = sb.AppendLine("        if (transaction.Connection is not NpgsqlConnection conn)");
@@ -1331,10 +1391,14 @@ internal static class Program
         _ = sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(0);");
         _ = sb.AppendLine();
 
-        var colNames = string.Join(", ", insertable.Select(c => c.Name));
+        // BUG3 fix: quote every identifier in emitted INSERT so mixed-case
+        // columns (Id, ChapterNumber) round-trip. Bare idents were folded to
+        // lowercase by PG and the statement failed with "column ... does not
+        // exist". Matches SELECT path which already quotes.
+        var colNames = string.Join(", ", insertable.Select(c => $"\\\"{c.Name}\\\""));
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"        var sql = new System.Text.StringBuilder(\"INSERT INTO {table.Schema}.{table.Name} ({colNames}) VALUES \");"
+            $"        var sql = new System.Text.StringBuilder(\"INSERT INTO \\\"{table.Schema}\\\".\\\"{table.Name}\\\" ({colNames}) VALUES \");"
         );
         _ = sb.AppendLine();
         _ = sb.AppendLine("        for (int i = 0; i < batch.Count; i++)");
@@ -1517,14 +1581,20 @@ internal static class Program
         _ = sb.AppendLine("            return new Result<int, SqlError>.Ok<int, SqlError>(0);");
         _ = sb.AppendLine();
 
-        var colNames = string.Join(", ", insertable.Select(c => c.Name));
-        var pkColNames = string.Join(", ", pkCols.Select(c => c.Name));
+        // BUG3 fix: quote every identifier in emitted bulk-upsert SQL. Same
+        // reasoning as bulk insert above. Applies to the ON CONFLICT pk list
+        // and the EXCLUDED set clause.
+        var colNames = string.Join(", ", insertable.Select(c => $"\\\"{c.Name}\\\""));
+        var pkColNames = string.Join(", ", pkCols.Select(c => $"\\\"{c.Name}\\\""));
         var updateCols = insertable.Where(c => !c.IsPrimaryKey).ToList();
-        var updateSet = string.Join(", ", updateCols.Select(c => $"{c.Name} = EXCLUDED.{c.Name}"));
+        var updateSet = string.Join(
+            ", ",
+            updateCols.Select(c => $"\\\"{c.Name}\\\" = EXCLUDED.\\\"{c.Name}\\\"")
+        );
 
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"        var sql = new System.Text.StringBuilder(\"INSERT INTO {table.Schema}.{table.Name} ({colNames}) VALUES \");"
+            $"        var sql = new System.Text.StringBuilder(\"INSERT INTO \\\"{table.Schema}\\\".\\\"{table.Name}\\\" ({colNames}) VALUES \");"
         );
         _ = sb.AppendLine();
         _ = sb.AppendLine("        for (int i = 0; i < batch.Count; i++)");
@@ -2107,6 +2177,11 @@ internal static class Program
             VarBinaryType => "byte[]",
             BlobType => "byte[]",
             RowVersionType => "byte[]",
+            // [DP-CODEGEN-VECTOR] §5.4.5: pgvector columns map to float[] in the
+            // generated C# surface. Binder goes through Pgvector.Vector; the
+            // public C# type is the raw float[] so consumers never see the
+            // Npgsql vendor type.
+            VectorType => "float[]",
             _ => "string",
         };
 
@@ -2149,6 +2224,10 @@ internal static class Program
             "TimeSpan" => $"{nullCheck}reader.GetTimeSpan({ordinal})",
             "byte[]" => $"{nullCheck}reader.GetFieldValue<byte[]>({ordinal})",
             "string[]" => $"reader.GetFieldValue<string[]>({ordinal})",
+            // [DP-CODEGEN-VECTOR] §5.4.5: pgvector columns come through as
+            // Pgvector.Vector; call .ToArray() so the consumer-facing shape is
+            // float[]. Nullable vector columns still use the same null check.
+            "float[]" => $"{nullCheck}reader.GetFieldValue<Pgvector.Vector>({ordinal}).ToArray()",
             _ => $"{nullCheck}reader.GetString({ordinal})",
         };
     }

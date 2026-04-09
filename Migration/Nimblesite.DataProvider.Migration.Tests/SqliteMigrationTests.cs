@@ -1799,4 +1799,102 @@ public sealed class SqliteMigrationTests
             CleanupTestDb(connection, dbPath);
         }
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // VECTOR COLUMN TEST — SQLite has no native pgvector, so the
+    // generator must fall back to BLOB storage. The user-space app is
+    // responsible for its own (de)serialisation — the migration
+    // pipeline's job is just to not blow up on VectorType and to
+    // produce a column wide enough for raw float bytes.
+    // ═══════════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void CreateTableWithVectorColumn_FallsBackToBlob_AndMigratesSuccessfully()
+    {
+        // Arrange
+        var (connection, dbPath) = CreateTestDb();
+        try
+        {
+            var schema = Schema
+                .Define("Embeddings")
+                .Table(
+                    "documents",
+                    t =>
+                        t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
+                            .Column("Body", PortableTypes.Text, c => c.NotNull())
+                            .Column("Embedding", PortableTypes.Vector(384), c => c.NotNull())
+                )
+                .Build();
+
+            var emptySchema = (
+                (SchemaResultOk)SqliteSchemaInspector.Inspect(connection, _logger)
+            ).Value;
+            var ops = (
+                (OperationsResultOk)SchemaDiff.Calculate(emptySchema, schema, logger: _logger)
+            ).Value;
+
+            // Act
+            var result = MigrationRunner.Apply(
+                connection,
+                ops,
+                SqliteDdlGenerator.Generate,
+                MigrationOptions.Default,
+                _logger
+            );
+
+            // Assert — migration succeeded
+            Assert.True(
+                result is MigrationApplyResultOk,
+                $"SQLite vector fallback migration failed: {(result as MigrationApplyResultError)?.Value}"
+            );
+
+            // Assert — embedding column exists with BLOB affinity
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "PRAGMA table_info('documents')";
+            using var reader = cmd.ExecuteReader();
+            string? embeddingType = null;
+            while (reader.Read())
+            {
+                if (reader.GetString(1) == "Embedding")
+                {
+                    embeddingType = reader.GetString(2);
+                    break;
+                }
+            }
+            Assert.Equal("BLOB", embeddingType);
+
+            // Act — round-trip insert: user-space writes float32[] bytes
+            var floats = new float[384];
+            for (var i = 0; i < floats.Length; i++)
+            {
+                floats[i] = 0.5f;
+            }
+            var bytes = new byte[floats.Length * sizeof(float)];
+            Buffer.BlockCopy(floats, 0, bytes, 0, bytes.Length);
+
+            using (var insertCmd = connection.CreateCommand())
+            {
+                insertCmd.CommandText =
+                    "INSERT INTO documents (Id, Body, Embedding) VALUES (@id, @body, @embedding)";
+                insertCmd.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
+                insertCmd.Parameters.AddWithValue("@body", "hello");
+                insertCmd.Parameters.AddWithValue("@embedding", bytes);
+                Assert.Equal(1, insertCmd.ExecuteNonQuery());
+            }
+
+            using (var selectCmd = connection.CreateCommand())
+            {
+                selectCmd.CommandText = "SELECT Body, length(Embedding) FROM documents";
+                using var r = selectCmd.ExecuteReader();
+                Assert.True(r.Read());
+                Assert.Equal("hello", r.GetString(0));
+                // 384 floats × 4 bytes = 1536 bytes
+                Assert.Equal(1536L, r.GetInt64(1));
+            }
+        }
+        finally
+        {
+            CleanupTestDb(connection, dbPath);
+        }
+    }
 }

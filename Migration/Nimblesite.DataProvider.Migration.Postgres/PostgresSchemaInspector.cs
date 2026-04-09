@@ -91,20 +91,33 @@ internal static class PostgresSchemaInspector
             var foreignKeys = new List<ForeignKeyDefinition>();
             PrimaryKeyDefinition? primaryKey = null;
 
-            // Get column info
+            // Get column info. Implements [MIG-TYPES-VECTOR] §5.4.4: LEFT JOIN
+            // pg_attribute so pgvector columns (data_type = USER-DEFINED,
+            // udt_name = vector) can expose their atttypmod to the reverse
+            // mapping. pgvector stores the dimension raw in atttypmod, no
+            // VARHDRSZ offset. Non-vector rows get atttypmod = NULL here and
+            // the switch ignores it.
             using var colCmd = connection.CreateCommand();
             colCmd.CommandText = """
-                SELECT 
-                    column_name,
-                    data_type,
-                    is_nullable,
-                    column_default,
-                    character_maximum_length,
-                    numeric_precision,
-                    numeric_scale
-                FROM information_schema.columns
-                WHERE table_schema = @schema AND table_name = @table
-                ORDER BY ordinal_position
+                SELECT
+                    c.column_name,
+                    c.data_type,
+                    c.is_nullable,
+                    c.column_default,
+                    c.character_maximum_length,
+                    c.numeric_precision,
+                    c.numeric_scale,
+                    c.udt_name,
+                    a.atttypmod
+                FROM information_schema.columns c
+                LEFT JOIN pg_catalog.pg_namespace n
+                    ON n.nspname = c.table_schema
+                LEFT JOIN pg_catalog.pg_class cls
+                    ON cls.relname = c.table_name AND cls.relnamespace = n.oid
+                LEFT JOIN pg_catalog.pg_attribute a
+                    ON a.attrelid = cls.oid AND a.attname = c.column_name AND a.attnum > 0
+                WHERE c.table_schema = @schema AND c.table_name = @table
+                ORDER BY c.ordinal_position
                 """;
             colCmd.Parameters.AddWithValue("@schema", schemaName);
             colCmd.Parameters.AddWithValue("@table", tableName);
@@ -120,6 +133,8 @@ internal static class PostgresSchemaInspector
                     var charMaxLen = reader.IsDBNull(4) ? null : (int?)reader.GetInt32(4);
                     var numPrecision = reader.IsDBNull(5) ? null : (int?)reader.GetInt32(5);
                     var numScale = reader.IsDBNull(6) ? null : (int?)reader.GetInt32(6);
+                    var udtName = reader.IsDBNull(7) ? null : reader.GetString(7);
+                    var attTypMod = reader.IsDBNull(8) ? null : (int?)reader.GetInt32(8);
 
                     var isIdentity =
                         defaultValue?.Contains("nextval", StringComparison.OrdinalIgnoreCase)
@@ -133,7 +148,9 @@ internal static class PostgresSchemaInspector
                                 dataType,
                                 charMaxLen,
                                 numPrecision,
-                                numScale
+                                numScale,
+                                udtName,
+                                attTypMod
                             ),
                             IsNullable = isNullable,
                             DefaultValue = isIdentity ? null : defaultValue,
@@ -314,16 +331,31 @@ internal static class PostgresSchemaInspector
     }
 
     /// <summary>
-    /// Convert PostgreSQL type to portable type.
+    /// Convert PostgreSQL type to portable type. Implements [MIG-TYPES-VECTOR] §5.4.4:
+    /// pgvector columns report data_type = "USER-DEFINED" and udt_name = "vector";
+    /// the dimension is stored directly in pg_attribute.atttypmod (no VARHDRSZ offset).
     /// </summary>
     public static PortableType PostgresTypeToPortable(
         string pgType,
         int? charMaxLen,
         int? numPrecision,
-        int? numScale
+        int? numScale,
+        string? udtName = null,
+        int? attTypMod = null
     )
     {
         var upper = pgType.ToUpperInvariant();
+
+        // [MIG-TYPES-VECTOR] §5.4.4: pgvector reverse-map. information_schema reports
+        // USER-DEFINED for extension types, so we lean on udt_name + atttypmod.
+        if (
+            string.Equals(udtName, "vector", StringComparison.OrdinalIgnoreCase)
+            && attTypMod.HasValue
+            && attTypMod.Value > 0
+        )
+        {
+            return new VectorType(attTypMod.Value);
+        }
 
         return upper switch
         {

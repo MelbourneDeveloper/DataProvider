@@ -183,6 +183,8 @@ public static class SqliteDdlGenerator
             BinaryType or VarBinaryType or BlobType => "BLOB",
             RowVersionType => "BLOB",
             GeometryType or GeographyType => "BLOB",
+            // SQLite has no native vector type; embeddings fall back to BLOB.
+            VectorType => "BLOB",
 
             // Date/time types -> TEXT (ISO 8601)
             DateType or TimeType or DateTimeType or DateTimeOffsetType => "TEXT",

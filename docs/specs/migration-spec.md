@@ -6,7 +6,7 @@
 2. [Goals & Non-Goals](#2-goals--non-goals)
 3. [Architecture Overview](#3-architecture-overview)
 4. [Schema Definition Model](#4-schema-definition-model)
-5. [Type System](#5-type-system)
+5. [Type System](#5-type-system) — includes [MIG-TYPES-VECTOR] in §5.4
 6. [Schema Operations](#6-schema-operations)
 7. [Migration Execution](#7-migration-execution)
 8. [Diff Engine](#8-diff-engine)
@@ -309,6 +309,7 @@ Complete mapping of all discriminated union types to platform-specific DDL:
 | `EnumType(name, vals)` | TEXT | {name} | NVARCHAR(100) | + CHECK constraint |
 | `GeometryType(srid)` | BLOB | GEOMETRY | GEOMETRY | Spatial data |
 | `GeographyType(srid)` | BLOB | GEOGRAPHY | GEOGRAPHY | Earth-surface GIS |
+| `VectorType(dims)` | vec0 virtual table (sqlite-vec) | vector(dims) (pgvector) | VECTOR(dims) (native, MSSQL 2025+) | Dense float embedding — see [MIG-TYPES-VECTOR]. **REQUIRED on every backend.** |
 
 #### SQLite Type Affinity Notes
 
@@ -333,6 +334,196 @@ Identity columns are handled per-platform:
 | SQLite | `INTEGER PRIMARY KEY` (implicit ROWID alias) |
 | PostgreSQL | `SERIAL` / `BIGSERIAL` or `GENERATED ALWAYS AS IDENTITY` |
 | SQL Server | `IDENTITY(1,1)` |
+
+### 5.4 Vector / Embedding Columns [MIG-TYPES-VECTOR]
+
+> **NORMATIVE / RIGID.** Vector support is a **first-class, cross-backend** feature. It MUST work identically — storage, retrieval, similarity search, index acceleration — on **every** supported backend: PostgreSQL, SQLite, SQL Server. There is no "fallback to opaque bytes" tier. A backend that cannot host vectors is not a supported backend.
+
+Dense float embedding columns (e.g. OpenAI `text-embedding-3-small` at 1536 dims, BGE-small at 384 dims, MedEmbed-Small at 384 dims, BERT at 768 dims) are modelled as `VectorType(int Dimensions)`.
+
+Per-backend implementation:
+
+| Backend | Storage | Extension/Version | Similarity |
+|---|---|---|---|
+| PostgreSQL | `vector(N)` column | [pgvector](https://github.com/pgvector/pgvector) extension (any supported PG version) | `<->` (L2), `<#>` (inner product), `<=>` (cosine) |
+| SQLite | `vec0` virtual table backing a `FLOAT[N]` column | [sqlite-vec](https://github.com/asg017/sqlite-vec) extension (loaded at connection open) | `vec_distance_L2`, `vec_distance_cosine`, `vec_distance_dot` scalar functions |
+| SQL Server | `VECTOR(N)` column | Native type, **requires SQL Server 2025 or Azure SQL Database** | `VECTOR_DISTANCE('cosine' \| 'euclidean' \| 'dot', col, @q)` scalar function |
+
+#### 5.4.1 YAML Syntax
+
+Vector columns use the **inline-parenthetical** convention to match `Decimal(p,s)`, `VarChar(n)`, `Geometry(srid)`:
+
+```yaml
+tables:
+  - name: Document
+    columns:
+      - name: Id
+        type: Uuid
+        nullable: false
+      - name: Embedding
+        type: Vector(384)
+        nullable: true
+```
+
+`Vector(N)` is **REQUIRED** to specify `N` as a positive integer literal. A bare `Vector` with no dimension is a parse error (`MIG-E-VECTOR-DIMS-MISSING`). Dimensions must be `1..16000` (pgvector hard limit); out of range is `MIG-E-VECTOR-DIMS-RANGE`.
+
+#### 5.4.2 PostgreSQL DDL
+
+For a Postgres target with **any** `VectorType` column anywhere in the schema, `PostgresDdlGenerator` prepends the extension statement to its output once per migration batch:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+Column emission uses the native pgvector type:
+
+```sql
+"Embedding" vector(384)
+```
+
+No data cast, no `text` fallback. The extension prologue runs in the same transaction as the rest of the migration; if the Postgres role lacks `CREATE EXTENSION` permission the migration fails with `MIG-E-VECTOR-EXT-PERM` and no partial state is committed.
+
+#### 5.4.3 Vector Indexes [MIG-TYPES-VECTOR-INDEX]
+
+pgvector ships two index types: **IVFFlat** (fast build, approximate) and **HNSW** (slower build, better recall). Schema YAML expresses them via an extended `indexes:` entry:
+
+```yaml
+indexes:
+  - name: IX_Document_Embedding_Cosine
+    columns: [Embedding]
+    index_type: ivfflat        # ivfflat | hnsw
+    vector_ops: cosine         # cosine | l2 | ip
+    options:
+      lists: 100               # ivfflat-only
+  - name: IX_Document_Embedding_HNSW
+    columns: [Embedding]
+    index_type: hnsw
+    vector_ops: l2
+    options:
+      m: 16                    # hnsw-only
+      ef_construction: 64      # hnsw-only
+```
+
+Mapping to pgvector DDL:
+
+| YAML `vector_ops` | pgvector operator class |
+|---|---|
+| `cosine` | `vector_cosine_ops` |
+| `l2` | `vector_l2_ops` |
+| `ip` | `vector_ip_ops` |
+
+Emitted DDL (example):
+
+```sql
+CREATE INDEX "IX_Document_Embedding_Cosine"
+  ON "public"."Document"
+  USING ivfflat ("Embedding" vector_cosine_ops)
+  WITH (lists = 100);
+```
+
+Index-type validation rules:
+
+- `index_type: ivfflat` requires `options.lists` (positive int, default `100` if omitted).
+- `index_type: hnsw` accepts optional `options.m` (default `16`) and `options.ef_construction` (default `64`).
+- Specifying `lists` under `hnsw` or `m`/`ef_construction` under `ivfflat` is a parse error (`MIG-E-VECTOR-IDX-OPTIONS`).
+- Using `index_type: ivfflat` / `hnsw` on a non-`VectorType` column is a parse error (`MIG-E-VECTOR-IDX-NONVECTOR`).
+
+#### 5.4.4 Schema Inspection
+
+`PostgresSchemaInspector` reverse-maps a pgvector column to `VectorType(N)` by reading `pg_attribute.atttypmod` for the `vector` type (the dimension is encoded directly in `atttypmod`). `information_schema.columns.data_type` reports `USER-DEFINED` for extension types, so the inspector must join `pg_type` / `pg_attribute` to resolve the backing type name and its modifier. An unrecognised `atttypmod` for `vector` is treated as `MIG-E-VECTOR-INTROSPECT` and the table is skipped with a logged warning, not a hard failure.
+
+#### 5.4.5 Codegen C# Type [DP-CODEGEN-VECTOR]
+
+DataProvider codegen emits vector columns as **`float[]`** in record types, insert/update binders, and select readers on **every backend**. The same C# shape compiles and runs against PostgreSQL, SQLite (via sqlite-vec), and SQL Server (native `VECTOR`). `ReadOnlyMemory<float>` is only emitted when requested via an explicit `--vector-repr=readonly-memory` flag (future; not in 0.9.0-beta).
+
+Per-backend binder:
+
+| Backend | Reader | Writer | Required runtime package |
+|---|---|---|---|
+| PostgreSQL | `reader.GetFieldValue<Pgvector.Vector>(i).ToArray()` | `new NpgsqlParameter { Value = new Pgvector.Vector(arr) }` via `NpgsqlDataSourceBuilder.UseVector()` | `Pgvector.Npgsql` |
+| SQLite | `reader.GetFieldValue<byte[]>(i)` → `MemoryMarshal.Cast<byte,float>(...).ToArray()` (sqlite-vec stores as little-endian `float32[]` blob within the virtual table; the codegen hides the marshalling) | `cmd.Parameters.AddWithValue("@e", MemoryMarshal.AsBytes(arr.AsSpan()).ToArray())` targeting `T__vec_{col}` | `Microsoft.Data.Sqlite` (already) + sqlite-vec native binaries shipped by DataProviderMigrate |
+| SQL Server | `reader.GetFieldValue<float[]>(i)` (native via `SqlDbType.Vector`) | `new SqlParameter { SqlDbType = SqlDbType.Vector, Value = arr }` | `Microsoft.Data.SqlClient` (version supporting `SqlDbType.Vector`) |
+
+**The DataProvider codegen tool's own dependencies** grow to include `Pgvector.Npgsql` (so Postgres schema introspection can resolve the vector type) and the RID-specific sqlite-vec native binaries (so SQLite introspection can open a connection with the extension loaded). SQL Server introspection needs no additional dependency beyond `Microsoft.Data.SqlClient` at a version that reports `VECTOR` in `sys.types`.
+
+**Consumer runtime csproj** must add the matching package:
+
+- Postgres consumers: `<PackageReference Include="Pgvector.Npgsql" Version="*" />`
+- SQLite consumers: nothing extra — sqlite-vec loads via the native binaries shipped by the DataProvider generated code at connection open. The generated code resolves the RID-appropriate binary from its own `runtimes/{rid}/native/` subtree.
+- SQL Server consumers: `Microsoft.Data.SqlClient` at a GA version that exposes `SqlDbType.Vector`.
+
+Vector columns are **not** nullable in the default case. If the YAML marks `nullable: true`, the generated C# type is `float[]?` and every binder handles `DBNull` / `NULL` correctly. Empty vectors (`new float[0]`) are rejected at bind time with `DPSG-VEC-EMPTY`; a null intent must use `null`, not an empty array.
+
+#### 5.4.6 SQLite via sqlite-vec [MIG-TYPES-VECTOR-SQLITE]
+
+SQLite has no native vector type. DataProviderMigrate integrates [sqlite-vec](https://github.com/asg017/sqlite-vec) (MIT, actively maintained, cross-platform) to deliver first-class vector storage and similarity search on SQLite, matching the Postgres contract.
+
+**Extension loading.** `SqliteDdlGenerator` and `SqliteSchemaInspector` both require the sqlite-vec extension loaded on the `SqliteConnection` before any DDL or introspection runs. DataProviderMigrate ships the native binaries (`vec0.dll` / `libsqlite_vec.so` / `libsqlite_vec.dylib`) for `win-x64`, `linux-x64`, `linux-arm64`, `osx-x64`, `osx-arm64` inside the `DataProviderMigrate` tool package under `runtimes/{rid}/native/`. The migration runner opens the connection with `EnableExtensions = true`, locates the RID-appropriate binary, and calls `connection.LoadExtension("vec0")`. Failure to load is `MIG-E-VECTOR-SQLITE-LOAD`.
+
+**Storage schema.** For a portable table `T` with one or more `VectorType` columns, the SQLite DDL splits into two objects:
+
+1. A regular SQLite `CREATE TABLE "T" (...)` for every **non-vector** column, with the table's primary key unchanged.
+2. One `CREATE VIRTUAL TABLE "T__vec_{col}" USING vec0(rowid INTEGER PRIMARY KEY, embedding FLOAT[{N}])` per vector column. Rows are keyed by the base table's integer rowid for 1:1 correspondence.
+
+The migration runner maintains referential integrity through triggers generated alongside the virtual table:
+
+- `INSERT ON "T"` → insert a zero-filled placeholder into `T__vec_{col}` at the new rowid (actual vector value flows through the generated INSERT path, which targets the virtual table directly — see [DP-CODEGEN-VECTOR-SQLITE]).
+- `DELETE ON "T"` → delete the matching rowid from `T__vec_{col}`.
+- `UPDATE` of the vector column → `UPDATE "T__vec_{col}" SET embedding = ? WHERE rowid = ?`.
+
+This layout is invisible to consumers: the codegen presents the vector column as if it were a first-class column on `T`.
+
+**Similarity search.** sqlite-vec exposes scalar functions that DataProvider's Postgres LQL transpile and codegen paths alias to the same LQL surface:
+
+| LQL builtin | pgvector operator | sqlite-vec function | MSSQL function |
+|---|---|---|---|
+| `cosine_distance(col, @q)` | `col <=> @q` | `vec_distance_cosine(embedding, @q)` | `VECTOR_DISTANCE('cosine', col, @q)` |
+| `l2_distance(col, @q)` | `col <-> @q` | `vec_distance_L2(embedding, @q)` | `VECTOR_DISTANCE('euclidean', col, @q)` |
+| `inner_product(col, @q)` | `col <#> @q` | `vec_distance_dot(embedding, @q)` | `VECTOR_DISTANCE('dot', col, @q)` |
+
+**Indexes.** `vec0` is itself an index. `index_type: ivfflat` and `index_type: hnsw` are **accepted but silently mapped to the default `vec0` ANN** on SQLite (vec0 uses brute-force by default and is evolving ANN support). `MIG-E-VECTOR-IDX-OPTIONS` still applies for mismatched options; the options are simply ignored on the SQLite backend. A future sqlite-vec release may honour `ivfflat.lists` / `hnsw.m` directly; until then consumers get correct results at lower speed, never wrong results.
+
+**Dimension round-trip.** `vec0`'s declared schema is `FLOAT[N]` — dimension is preserved in the virtual table's schema and read back by `SqliteSchemaInspector` via `PRAGMA table_xinfo("T__vec_{col}")` + parsing the `FLOAT[N]` decl. Fallback: `__schema_metadata` carries the canonical `VectorType(N)` when sqlite-vec changes its metadata shape.
+
+#### 5.4.7 SQL Server via native VECTOR [MIG-TYPES-VECTOR-MSSQL]
+
+SQL Server 2025 and Azure SQL Database ship a first-class `VECTOR(N)` column type and the `VECTOR_DISTANCE` scalar function. DataProviderMigrate targets this natively.
+
+**DDL.** `SqlServerDdlGenerator` maps `VectorType(N)` to:
+
+```sql
+[Embedding] VECTOR(384) NULL
+```
+
+No extension, no prelude. The runner probes `SELECT SERVERPROPERTY('ProductMajorVersion')` at migration start and fails with `MIG-E-VECTOR-MSSQL-VERSION` if the server is older than SQL Server 2025 / unsupported Azure SQL edition. There is no downgrade path — if you need vectors on older SQL Server you must upgrade the server. This matches the user directive: "MUST work on any database" means any supported database; unsupported versions of SQL Server are not supported for vector schemas, identically to how unsupported Postgres versions are not supported for `JSONB`.
+
+**Similarity search.** Emitted at codegen time:
+
+```sql
+SELECT TOP (@k) *
+FROM [Document]
+ORDER BY VECTOR_DISTANCE('cosine', [Embedding], @q);
+```
+
+**Indexes.** SQL Server 2025's native `VECTOR` ships without ANN index support at GA (columnstore + brute force). `index_type: ivfflat` / `hnsw` on SQL Server targets emit a warning `MIG-W-VECTOR-MSSQL-ANN` and create a standard B-Tree index on the vector column (useless for ANN but not wrong). This caveat is documented for consumers; it will lift when SQL Server adds ANN index types.
+
+**Parameter binding.** `Microsoft.Data.SqlClient` accepts `float[]` via `SqlDbType.Vector` (shipped alongside the GA `VECTOR(n)` type). DataProvider codegen emits the same `float[]` C# shape on all three backends — the per-backend binder handles the wire format.
+
+#### 5.4.8 Diagnostics
+
+| Code | Severity | Meaning |
+|---|---|---|
+| `MIG-E-VECTOR-DIMS-MISSING` | Error | `type: Vector` without `(N)` dimension |
+| `MIG-E-VECTOR-DIMS-RANGE` | Error | Dimension not in `1..16000` |
+| `MIG-E-VECTOR-IDX-OPTIONS` | Error | Option mismatch between `ivfflat` / `hnsw` (e.g. `lists` on hnsw) |
+| `MIG-E-VECTOR-IDX-NONVECTOR` | Error | `index_type: ivfflat`/`hnsw` on a non-vector column |
+| `MIG-E-VECTOR-PG-EXT-PERM` | Error | `CREATE EXTENSION vector` failed — missing permission or pgvector not installed on the Postgres host |
+| `MIG-E-VECTOR-PG-INTROSPECT` | Warn | `pg_attribute.atttypmod` could not be decoded for a `vector` column; table skipped |
+| `MIG-E-VECTOR-SQLITE-LOAD` | Error | `sqlite-vec` native binary could not be loaded (missing RID-specific asset, or `EnableExtensions=false` on the connection) |
+| `MIG-E-VECTOR-SQLITE-VEC0` | Error | `CREATE VIRTUAL TABLE ... USING vec0(...)` failed — sqlite-vec reports an invalid shape or dimension |
+| `MIG-E-VECTOR-MSSQL-VERSION` | Error | Target SQL Server is older than SQL Server 2025 / unsupported Azure SQL edition; native `VECTOR(N)` unavailable |
+| `MIG-W-VECTOR-MSSQL-ANN` | Warn | `index_type: ivfflat` / `hnsw` requested on SQL Server; emitted as B-Tree (no ANN in SQL Server 2025 GA) |
+| `DPSG-VEC-EMPTY` | Error | Writer bound an empty `float[]` to a vector parameter; use `null` for absent, never an empty array |
 
 ---
 
