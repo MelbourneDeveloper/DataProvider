@@ -309,6 +309,7 @@ Complete mapping of all discriminated union types to platform-specific DDL:
 | `EnumType(name, vals)` | TEXT | {name} | NVARCHAR(100) | + CHECK constraint |
 | `GeometryType(srid)` | BLOB | GEOMETRY | GEOMETRY | Spatial data |
 | `GeographyType(srid)` | BLOB | GEOGRAPHY | GEOGRAPHY | Earth-surface GIS |
+| `VectorType(dims)` | BLOB | vector(dims) | (unsupported) | pgvector embedding — see [MIG-TYPES-VECTOR] |
 
 #### SQLite Type Affinity Notes
 

@@ -142,6 +142,7 @@ internal sealed class PortableTypeYamlConverter : IYamlTypeConverter
             GeographyType g when g.Srid == 4326 => "Geography",
             GeographyType g => $"Geography({g.Srid})",
             EnumType e => $"Enum({e.Name}:{string.Join("|", e.Values)})",
+            VectorType v => $"Vector({v.Dimensions})",
             _ => "Text",
         };
         emitter.Emit(new Scalar(typeStr));
@@ -174,6 +175,7 @@ internal sealed class PortableTypeYamlConverter : IYamlTypeConverter
                     int.Parse(paramsStr, CultureInfo.InvariantCulture)
                 ),
                 "ENUM" => ParseEnum(paramsStr),
+                "VECTOR" => new VectorType(int.Parse(paramsStr, CultureInfo.InvariantCulture)),
                 _ => new TextType(),
             };
         }

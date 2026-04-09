@@ -308,6 +308,10 @@ public static class PostgresDdlGenerator
             UuidType => "UUID",
             GeometryType(var srid) => srid.HasValue ? $"GEOMETRY(Geometry,{srid})" : "GEOMETRY",
             GeographyType(var srid) => $"GEOGRAPHY(Geography,{srid})",
+            VectorType(var dim) => string.Create(
+                CultureInfo.InvariantCulture,
+                $"vector({dim})"
+            ),
 
             _ => "TEXT",
         };

@@ -651,4 +651,71 @@ public sealed class SchemaYamlSerializerTests
         Assert.DoesNotContain("isComputedPersisted: false", yaml);
         Assert.DoesNotContain("schema: public", yaml);
     }
+
+    [Fact]
+    public void VectorType_YamlRoundTrip_PreservesDimensions()
+    {
+        // Arrange - schema with a pgvector embeddings column
+        var schema = Schema
+            .Define("ai")
+            .Table(
+                "Documents",
+                t =>
+                    t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
+                        .Column("Embedding", PortableTypes.Vector(1536), c => c.NotNull())
+            )
+            .Build();
+
+        // Act
+        var yaml = SchemaYamlSerializer.ToYaml(schema);
+        var restored = SchemaYamlSerializer.FromYaml(yaml);
+
+        // Assert
+        Assert.Contains("Vector(1536)", yaml, StringComparison.Ordinal);
+        var col = restored.Tables.Single().Columns.Single(c => c.Name == "Embedding");
+        var vec = Assert.IsType<VectorType>(col.Type);
+        Assert.Equal(1536, vec.Dimensions);
+    }
+
+    [Fact]
+    public void VectorType_PostgresDdl_EmitsPgVectorType()
+    {
+        // Arrange
+        var schema = Schema
+            .Define("ai")
+            .Table(
+                "Documents",
+                t =>
+                    t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
+                        .Column("Embedding", PortableTypes.Vector(768), c => c.NotNull())
+            )
+            .Build();
+
+        // Act
+        var ddl = PostgresDdlGenerator.Generate(new CreateTableOperation(schema.Tables[0]));
+
+        // Assert
+        Assert.Contains("\"Embedding\" vector(768) NOT NULL", ddl, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void VectorType_SqliteDdl_FallsBackToBlob()
+    {
+        // Arrange
+        var schema = Schema
+            .Define("ai")
+            .Table(
+                "Documents",
+                t =>
+                    t.Column("Id", PortableTypes.Uuid, c => c.PrimaryKey())
+                        .Column("Embedding", PortableTypes.Vector(768), c => c.NotNull())
+            )
+            .Build();
+
+        // Act
+        var ddl = SqliteDdlGenerator.Generate(new CreateTableOperation(schema.Tables[0]));
+
+        // Assert - SQLite has no native vector; must fall back to BLOB
+        Assert.Contains("[Embedding] BLOB NOT NULL", ddl, StringComparison.Ordinal);
+    }
 }

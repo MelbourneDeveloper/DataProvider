@@ -29,8 +29,12 @@ public sealed class PostgresContainerFixture : IAsyncLifetime
     /// </summary>
     public async Task InitializeAsync()
     {
+        // pgvector/pgvector:pg16 is a drop-in superset of postgres:16 that
+        // ships with the pgvector extension preinstalled. Required for any
+        // test that needs vector columns (VectorType). Non-vector tests are
+        // unaffected.
         _container = new PostgreSqlBuilder()
-            .WithImage("postgres:16-alpine")
+            .WithImage("pgvector/pgvector:pg16")
             .WithDatabase("postgres")
             .WithUsername("test")
             .WithPassword("test")

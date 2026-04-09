@@ -198,6 +198,14 @@ public sealed record GeometryType(int? Srid) : PortableType;
 public sealed record GeographyType(int Srid = 4326) : PortableType;
 
 /// <summary>
+/// Fixed-dimension floating-point vector for embeddings / similarity search.
+/// Maps to the <c>pgvector</c> extension <c>vector(N)</c> type on Postgres.
+/// Platforms without native vector support fall back to a binary BLOB.
+/// </summary>
+/// <param name="Dimensions">Number of vector components (1-16000 on pgvector).</param>
+public sealed record VectorType(int Dimensions) : PortableType;
+
+/// <summary>
 /// Factory methods for portable types.
 /// </summary>
 public static class PortableTypes
@@ -285,6 +293,9 @@ public static class PortableTypes
 
     /// <summary>Enum type.</summary>
     public static EnumType Enum(string name, params string[] values) => new(name, values);
+
+    /// <summary>Fixed-dimension floating-point vector (pgvector).</summary>
+    public static VectorType Vector(int dimensions) => new(dimensions);
 
     // ═══════════════════════════════════════════════════════════════════
     // BACKWARD-COMPATIBLE ALIASES (for test convenience)
