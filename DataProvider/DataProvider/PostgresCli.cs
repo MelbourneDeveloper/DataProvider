@@ -456,7 +456,7 @@ internal static class PostgresCli
         if (asMatch.Success)
         {
             var expr = asMatch.Groups[1].Value.Trim();
-            var alias = asMatch.Groups[2].Value.Trim();
+            var alias = StripIdentifierQuotes(asMatch.Groups[2].Value.Trim());
             var type = InferTypeFromExpression(expr, schema);
             return (alias, type);
         }
@@ -465,9 +465,15 @@ internal static class PostgresCli
         var colRef = colDef.Trim();
         if (colRef.Contains('.'))
         {
+            // BUG4 fix: split on dot but only outside quoted segments. A
+            // qualified ref like "fhir_Patient"."Active" must split on the
+            // middle dot, not the dots inside quoted parts (there aren't
+            // any here, but the simple Split is fine). Then strip the
+            // surrounding `"` chars from the tail.
             var parts = colRef.Split('.');
             colRef = parts[^1];
         }
+        colRef = StripIdentifierQuotes(colRef);
 
         // Try to get type from schema
         if (schema != null)
@@ -486,6 +492,21 @@ internal static class PostgresCli
 
         // Default to text
         return (colRef, "text");
+    }
+
+    /// <summary>
+    /// BUG4 fix: removes a single pair of surrounding double-quote characters
+    /// from a Postgres identifier reference. The offline SQL parser must not
+    /// leak `"` characters into the C# property name — they're invalid in C#
+    /// identifiers and produce uncompilable .g.cs.
+    /// </summary>
+    private static string StripIdentifierQuotes(string identifier)
+    {
+        if (identifier.Length >= 2 && identifier[0] == '"' && identifier[^1] == '"')
+        {
+            return identifier[1..^1];
+        }
+        return identifier;
     }
 
     private static string InferTypeFromExpression(string expr, SchemaDefinition? schema)
