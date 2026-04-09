@@ -35,6 +35,41 @@ public static class PostgresDdlGenerator
         var errors = new List<string>();
         var tablesCreated = 0;
 
+        // [MIG-TYPES-VECTOR] §5.4.2: if any table in this schema has a VectorType
+        // column, run CREATE EXTENSION IF NOT EXISTS vector exactly once before
+        // emitting table DDL. pgvector is installed per-database; repeated calls
+        // are a no-op, but the prelude is mandatory — without it the subsequent
+        // CREATE TABLE fails with "type vector does not exist".
+        var hasVector = schema.Tables.Any(t =>
+            t.Columns.Any(c => c.Type is VectorType)
+        );
+        if (hasVector)
+        {
+            try
+            {
+                using var extCmd = connection.CreateCommand();
+                extCmd.CommandText = "CREATE EXTENSION IF NOT EXISTS vector";
+                extCmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                // MIG-E-VECTOR-PG-EXT-PERM: surface the failure as a schema-level
+                // error; every table that would use vector is doomed otherwise.
+                // Include the full exception (type + message + inner) so the
+                // caller can diagnose permission issues vs missing pgvector.
+                errors.Add(
+                    $"MIG-E-VECTOR-PG-EXT-PERM: {ex.GetType().Name}: {ex.Message}"
+                        + (ex.InnerException is null ? "" : $" -> {ex.InnerException}")
+                );
+                onTableFailed?.Invoke("__pgvector_extension__", ex);
+                return new MigrationResult(
+                    Success: false,
+                    TablesCreated: 0,
+                    Errors: errors.AsReadOnly()
+                );
+            }
+        }
+
         foreach (var table in schema.Tables)
         {
             try

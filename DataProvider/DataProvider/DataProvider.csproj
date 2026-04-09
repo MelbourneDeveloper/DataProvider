@@ -34,6 +34,11 @@
   <ItemGroup>
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="Npgsql" Version="9.0.2" />
+    <!-- [MIG-TYPES-VECTOR] §5.4.5: pgvector type mapping for Npgsql so schema
+         introspection recognises the vector extension type and generated code
+         can bind float[] via Pgvector.Vector. -->
+    <PackageReference Include="Pgvector" Version="0.3.2" />
+    <PackageReference Include="Pgvector.Npgsql" Version="0.3.2" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.3" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>

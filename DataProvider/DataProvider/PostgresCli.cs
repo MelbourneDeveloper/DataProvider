@@ -2108,6 +2108,11 @@ internal static class PostgresCli
             VarBinaryType => "byte[]",
             BlobType => "byte[]",
             RowVersionType => "byte[]",
+            // [DP-CODEGEN-VECTOR] §5.4.5: pgvector columns map to float[] in the
+            // generated C# surface. Binder goes through Pgvector.Vector; the
+            // public C# type is the raw float[] so consumers never see the
+            // Npgsql vendor type.
+            VectorType => "float[]",
             _ => "string",
         };
 
@@ -2150,6 +2155,11 @@ internal static class PostgresCli
             "TimeSpan" => $"{nullCheck}reader.GetTimeSpan({ordinal})",
             "byte[]" => $"{nullCheck}reader.GetFieldValue<byte[]>({ordinal})",
             "string[]" => $"reader.GetFieldValue<string[]>({ordinal})",
+            // [DP-CODEGEN-VECTOR] §5.4.5: pgvector columns come through as
+            // Pgvector.Vector; call .ToArray() so the consumer-facing shape is
+            // float[]. Nullable vector columns still use the same null check.
+            "float[]" =>
+                $"{nullCheck}reader.GetFieldValue<Pgvector.Vector>({ordinal}).ToArray()",
             _ => $"{nullCheck}reader.GetString({ordinal})",
         };
     }
