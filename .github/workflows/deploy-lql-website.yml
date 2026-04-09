@@ -2,6 +2,11 @@ name: Deploy LQL Website to GitHub Pages
 
 on:
   workflow_call:
+    inputs:
+      version:
+        description: 'Package version from the release tag'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -38,10 +43,24 @@ jobs:
         run: dotnet restore ./Lql/Nimblesite.Lql.Website/Nimblesite.Lql.Website.csproj
 
       - name: Build
-        run: dotnet build ./Lql/Nimblesite.Lql.Website/Nimblesite.Lql.Website.csproj -c Release --no-restore
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [ -n "${VERSION:-}" ]; then
+            dotnet build ./Lql/Nimblesite.Lql.Website/Nimblesite.Lql.Website.csproj -c Release --no-restore -p:Version="$VERSION" -p:AssemblyVersion="$VERSION"
+          else
+            dotnet build ./Lql/Nimblesite.Lql.Website/Nimblesite.Lql.Website.csproj -c Release --no-restore
+          fi
 
       - name: Publish Blazor WebAssembly project
-        run: dotnet publish ./Lql/Nimblesite.Lql.Website/Nimblesite.Lql.Website.csproj -c Release -o release --nologo
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [ -n "${VERSION:-}" ]; then
+            dotnet publish ./Lql/Nimblesite.Lql.Website/Nimblesite.Lql.Website.csproj -c Release -o release --nologo -p:Version="$VERSION" -p:AssemblyVersion="$VERSION"
+          else
+            dotnet publish ./Lql/Nimblesite.Lql.Website/Nimblesite.Lql.Website.csproj -c Release -o release --nologo
+          fi
 
       - name: Update base href for custom domain
         run: |

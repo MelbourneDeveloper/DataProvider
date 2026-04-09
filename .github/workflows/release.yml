@@ -15,8 +15,12 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -61,6 +65,18 @@ jobs:
             echo "::endgroup::"
           done
 
+      - name: Update version in Directory.Build.props
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: |
+          set -euo pipefail
+          sed -i 's|<Version>.*</Version>|<Version>'"$VERSION"'</Version>|' Directory.Build.props
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Directory.Build.props
+          git diff --cached --quiet || git commit -m "chore: bump version to $VERSION [skip ci]"
+          git push
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -69,14 +85,18 @@ jobs:
   deploy-lql-website:
     needs: publish
     uses: ./.github/workflows/deploy-lql-website.yml
+    with:
+      version: ${{ needs.publish.outputs.version }}
     permissions:
       contents: read
       pages: write
       id-token: write
 
   deploy-website:
-    needs: deploy-lql-website
+    needs: [publish, deploy-lql-website]
     uses: ./.github/workflows/deploy-website.yml
+    with:
+      version: ${{ needs.publish.outputs.version }}
     secrets: inherit
     permissions:
       contents: read
