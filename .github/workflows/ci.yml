@@ -91,7 +91,11 @@ jobs:
   build-and-test:
     name: Build + LQL / Migration / Sync Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # 15min was insufficient since the new ANTLR Postgres parser + vector
+    # support landed: pgvector image pull, cargo-tarpaulin install, full
+    # Sync test matrix, and the new Postgres E2E vector tests push the
+    # job past 15 min consistently. 30 min gives realistic headroom.
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:16
