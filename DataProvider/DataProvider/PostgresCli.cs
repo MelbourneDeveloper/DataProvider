@@ -1012,8 +1012,19 @@ internal static class PostgresCli
         var allParams = pkCols.Concat(updateable).ToList();
         var parameters = string.Join(", ", allParams.Select(c => $"{c.CSharpType} {c.Name}"));
 
-        var setClauses = string.Join(", ", updateable.Select(c => $"{c.Name} = @{c.Name}"));
-        var whereClauses = string.Join(" AND ", pkCols.Select(c => $"{c.Name} = @{c.Name}"));
+        // BUG6 fix: quote SET + WHERE column idents in UPDATE codegen so
+        // mixed-case columns (Active, ChapterNumber) survive PG case-folding.
+        // Same reasoning as BUG3 INSERT/DELETE quoting. The strings are
+        // embedded in a C# verbatim string `@"..."` so use the `""` escape
+        // form (two double-quotes inside @"..." represent a single literal ").
+        var setClauses = string.Join(
+            ", ",
+            updateable.Select(c => $"\"\"{c.Name}\"\" = @{c.Name}")
+        );
+        var whereClauses = string.Join(
+            " AND ",
+            pkCols.Select(c => $"\"\"{c.Name}\"\" = @{c.Name}")
+        );
 
         // NpgsqlConnection overload
         _ = sb.AppendLine();
@@ -1031,9 +1042,11 @@ internal static class PostgresCli
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
         _ = sb.AppendLine("    {");
         _ = sb.AppendLine("        const string sql = @\"");
+        // BUG6 fix: quote schema + table in UPDATE so mixed-case fhir_Patient
+        // round-trips through PG. Verbatim string -> use `""` escape form.
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            UPDATE {table.Schema}.{table.Name}"
+            $"            UPDATE \"\"{table.Schema}\"\".\"\"{table.Name}\"\""
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            SET {setClauses}");
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            WHERE {whereClauses}\";");
@@ -1072,9 +1085,10 @@ internal static class PostgresCli
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"        {parameters})");
         _ = sb.AppendLine("    {");
         _ = sb.AppendLine("        const string sql = @\"");
+        // BUG6 fix: same UPDATE quoting in transaction overload.
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"            UPDATE {table.Schema}.{table.Name}"
+            $"            UPDATE \"\"{table.Schema}\"\".\"\"{table.Name}\"\""
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            SET {setClauses}");
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            WHERE {whereClauses}\";");
@@ -1146,11 +1160,16 @@ internal static class PostgresCli
             return;
 
         var parameters = string.Join(", ", pkCols.Select(c => $"{c.CSharpType} {c.Name}"));
-        // BUG3 fix: quote WHERE-clause column idents + table name. sqlLine
-        // here is the raw SQL sent to PG (not embedded in a C# verbatim
-        // string), so write literal `"` characters directly.
+        // BUG3 fix: quote WHERE-clause column idents + table name so mixed-case
+        // tables/columns survive PG case-folding.
         var whereClauses = string.Join(" AND ", pkCols.Select(c => $"\"{c.Name}\" = @{c.Name}"));
         var sqlLine = $"DELETE FROM \"{table.Schema}\".\"{table.Name}\" WHERE {whereClauses}";
+        // BUG5 fix: sqlLine now contains literal `"` characters from BUG3 fix
+        // and gets embedded in a C# verbatim string `@"..."`. Inside @"...",
+        // a single `"` closes the literal. Escape every `"` to `""` for the
+        // verbatim form, otherwise the generated .g.cs is uncompilable
+        // (CS1022 unexpected token / CS1003 syntax error / CS1010 newline).
+        var sqlLineVerbatim = sqlLine.Replace("\"", "\"\"", StringComparison.Ordinal);
 
         // NpgsqlConnection overload
         _ = sb.AppendLine();
@@ -1169,7 +1188,7 @@ internal static class PostgresCli
         _ = sb.AppendLine("    {");
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"        const string sql = @\"{sqlLine}\";"
+            $"        const string sql = @\"{sqlLineVerbatim}\";"
         );
         _ = sb.AppendLine();
         _ = sb.AppendLine("        try");
@@ -1207,7 +1226,7 @@ internal static class PostgresCli
         _ = sb.AppendLine("    {");
         _ = sb.AppendLine(
             CultureInfo.InvariantCulture,
-            $"        const string sql = @\"{sqlLine}\";"
+            $"        const string sql = @\"{sqlLineVerbatim}\";"
         );
         _ = sb.AppendLine();
         _ = sb.AppendLine("        if (transaction.Connection is not NpgsqlConnection conn)");
