@@ -851,6 +851,14 @@ internal static class PostgresCli
         // case-folding.
         var colNames = string.Join(", ", insertable.Select(c => $"\"\"{c.Name}\"\""));
         var paramNames = string.Join(", ", insertable.Select(c => $"@{c.Name}"));
+        // BUG7 fix: RETURNING clause must reference the actual primary-key
+        // column name, quoted for case-folding survival. The previous hard-
+        // coded `RETURNING id` failed at runtime on tables whose PK column is
+        // PascalCase (e.g. "Id") with `column "id" does not exist`.
+        var returningClause =
+            table.PrimaryKeyColumns.Count > 0
+                ? $"RETURNING \"\"{table.PrimaryKeyColumns[0]}\"\""
+                : "RETURNING 1";
 
         _ = sb.AppendLine("        const string sql = @\"");
         _ = sb.AppendLine(
@@ -859,7 +867,7 @@ internal static class PostgresCli
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            VALUES ({paramNames})");
         _ = sb.AppendLine("            ON CONFLICT DO NOTHING");
-        _ = sb.AppendLine("            RETURNING id\";");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            {returningClause}\";");
         _ = sb.AppendLine();
         _ = sb.AppendLine("        try");
         _ = sb.AppendLine("        {");
@@ -923,6 +931,11 @@ internal static class PostgresCli
         // as primary Insert method above.
         var colNames = string.Join(", ", insertable.Select(c => $"\"\"{c.Name}\"\""));
         var paramNames = string.Join(", ", insertable.Select(c => $"@{c.Name}"));
+        // BUG7 fix: same RETURNING fix as the NpgsqlConnection overload.
+        var returningClause =
+            table.PrimaryKeyColumns.Count > 0
+                ? $"RETURNING \"\"{table.PrimaryKeyColumns[0]}\"\""
+                : "RETURNING 1";
 
         _ = sb.AppendLine();
         _ = sb.AppendLine("    /// <summary>");
@@ -945,7 +958,7 @@ internal static class PostgresCli
         );
         _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            VALUES ({paramNames})");
         _ = sb.AppendLine("            ON CONFLICT DO NOTHING");
-        _ = sb.AppendLine("            RETURNING id\";");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"            {returningClause}\";");
         _ = sb.AppendLine();
         _ = sb.AppendLine("        if (transaction.Connection is not NpgsqlConnection conn)");
         _ = sb.AppendLine("        {");
