@@ -16,8 +16,6 @@
     <RootNamespace>DataProvider</RootNamespace>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>DataProvider</ToolCommandName>
-    <PackageVersion>0.5.0-beta</PackageVersion>
-    <Version>0.5.0-beta</Version>
     <Description>Unified DataProvider codegen tool. Generates type-safe data access code for Postgres, SQLite, and SqlServer from live database schemas.</Description>
     <Authors>ChristianFindlay</Authors>
     <Company>Nimblesite</Company>
