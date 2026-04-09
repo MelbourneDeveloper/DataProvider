@@ -20,6 +20,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Nimblesite.Lql.Cli.SQLite/Nimblesite.Lql.Cli.SQLite.csproj" />
+    <ProjectReference Include="../Lql/Lql.csproj" />
   </ItemGroup>
 </Project>

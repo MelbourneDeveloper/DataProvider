@@ -14,7 +14,7 @@ Users
 | Project | Description |
 |---------|-------------|
 | `Nimblesite.Lql.Core` | Core transpiler library |
-| `Nimblesite.Lql.Cli.SQLite` | CLI transpiler tool |
+| `Lql` | Unified CLI transpiler tool (subcommands: `postgres`, `sqlite`) |
 | `LqlExtension` | VS Code extension (TypeScript) |
 | `lql-lsp-rust` | Language server (Rust) |
 | `Nimblesite.Lql.TypeProvider.FSharp` | F# type provider for compile-time validation |

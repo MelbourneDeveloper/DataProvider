@@ -71,7 +71,7 @@
     </ItemGroup>
     <Message Importance="High" Text="Transpiling LQL files (@(LqlFiles))" />
     <Exec
-      Command="dotnet run --project $(MSBuildProjectDirectory)/../../Lql/Nimblesite.Lql.Cli.SQLite/Nimblesite.Lql.Cli.SQLite.csproj -- --input &quot;%(LqlFiles.Identity)&quot; --output &quot;%(LqlFiles.RootDir)%(LqlFiles.Directory)%(LqlFiles.Filename).generated.sql&quot;"
+      Command="dotnet run --project $(MSBuildProjectDirectory)/../../Lql/Lql/Lql.csproj -- sqlite --input &quot;%(LqlFiles.Identity)&quot; --output &quot;%(LqlFiles.RootDir)%(LqlFiles.Directory)%(LqlFiles.Filename).generated.sql&quot;"
       Condition="'$(EnableLqlTranspile)' == 'true' and @(LqlFiles) != ''"
       WorkingDirectory="$(MSBuildProjectDirectory)"
       StandardOutputImportance="High"

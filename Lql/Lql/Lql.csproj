@@ -3,14 +3,15 @@
     <OutputType>Exe</OutputType>
     <PublishAot>false</PublishAot>
     <InvariantGlobalization>true</InvariantGlobalization>
-    <AssemblyName>lql-postgres</AssemblyName>
+    <AssemblyName>Lql</AssemblyName>
+    <RootNamespace>Lql</RootNamespace>
     <IsPackable>true</IsPackable>
-    <PackageId>Nimblesite.Lql.Cli.Postgres</PackageId>
+    <PackageId>Lql</PackageId>
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>lql-postgres</ToolCommandName>
-    <PackageVersion>0.1.8-beta</PackageVersion>
-    <Version>0.1.8-beta</Version>
-    <Description>LQL to PostgreSQL transpiler CLI tool</Description>
+    <ToolCommandName>Lql</ToolCommandName>
+    <PackageVersion>0.8.0-beta</PackageVersion>
+    <Version>0.8.0-beta</Version>
+    <Description>LQL (Lambda Query Language) transpiler CLI tool. Subcommands: postgres, sqlite.</Description>
     <Authors>ChristianFindlay</Authors>
     <Company>Nimblesite</Company>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -26,5 +27,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../Nimblesite.Lql.Postgres/Nimblesite.Lql.Postgres.csproj" />
+    <ProjectReference Include="../Nimblesite.Lql.SQLite/Nimblesite.Lql.SQLite.csproj" />
   </ItemGroup>
 </Project>
