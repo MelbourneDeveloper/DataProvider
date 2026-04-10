@@ -9,8 +9,6 @@
     <PackageId>Lql</PackageId>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>Lql</ToolCommandName>
-    <PackageVersion>0.8.0-beta</PackageVersion>
-    <Version>0.8.0-beta</Version>
     <Description>LQL (Lambda Query Language) transpiler CLI tool. Subcommands: postgres, sqlite.</Description>
     <Authors>ChristianFindlay</Authors>
     <Company>Nimblesite</Company>
