@@ -13,6 +13,8 @@ const FORBIDDEN_STRINGS = [
   "dotnet add package Lql.TypeProvider.FSharp",
   "HealthcareSamples",
   "Healthcare Samples",
+  "--version 0.4.0",
+  "version\": \"0.4.0",
 ];
 
 const DOC_PAGES = [
@@ -73,8 +75,8 @@ test.describe("Installation page", () => {
     expect(body).toContain("dotnet tool install DataProviderMigrate");
     expect(body).toContain("dotnet tool install Lql");
     expect(body).toContain("Nimblesite.DataProvider.SQLite");
-    expect(body).toContain("0.4.0");
     expect(body).toContain("0.9.6-beta");
+    expect(body).not.toContain("0.4.0");
 
     for (const forbidden of FORBIDDEN_STRINGS) {
       expect(body, `forbidden string "${forbidden}" on installation page`).not.toContain(forbidden);

@@ -4,7 +4,7 @@
 
 DataProvider has been through a major overhaul. All packages are now published to NuGet under two naming conventions:
 
-- **Top-level CLI tools / flagship packages**: `DataProvider` (v0.4.0), `DataProviderMigrate` (v0.9.6-beta), `Lql` (v0.9.6-beta)
+- **Top-level CLI tools / flagship packages**: `DataProvider` (v0.9.6-beta), `DataProviderMigrate` (v0.9.6-beta), `Lql` (v0.9.6-beta)
 - **Library packages**: `Nimblesite.DataProvider.*`, `Nimblesite.Lql.*`, `Nimblesite.Sync.*`, `Nimblesite.Reporting.Engine`, `Nimblesite.Sql.Model` — all at v0.9.6-beta
 
 The current website (`Website/src/docs/`) still advertises stale package names:
@@ -42,7 +42,7 @@ No Playwright tests exist for the Website yet. The user wants automated Playwrig
 
 | Tool package | Command | Version | Purpose |
 |---|---|---|---|
-| `DataProvider` | `DataProvider` | `0.4.0` | Source-generation CLI — reads `DataProvider.json` + `.sql`/`.lql` files, emits C# extension methods. Subcommands: `sqlite`, `postgres` |
+| `DataProvider` | `DataProvider` | `0.9.6-beta` | Source-generation CLI — reads `DataProvider.json` + `.sql`/`.lql` files, emits C# extension methods. Subcommands: `sqlite`, `postgres` |
 | `DataProviderMigrate` | `DataProviderMigrate` | `0.9.6-beta` | YAML-schema migration CLI. Subcommands: `migrate`, `export` |
 | `Lql` | `Lql` | `0.9.6-beta` | LQL → SQL transpiler CLI. Subcommands: `sqlite`, `postgres` |
 
@@ -53,7 +53,7 @@ No Playwright tests exist for the Website yet. The user wants automated Playwrig
   "version": 1,
   "isRoot": true,
   "tools": {
-    "dataprovider":        { "version": "0.4.0",     "commands": ["DataProvider"] },
+    "dataprovider":        { "version": "0.9.6-beta",     "commands": ["DataProvider"] },
     "dataprovidermigrate": { "version": "0.9.6-beta","commands": ["DataProviderMigrate"] },
     "lql":                 { "version": "0.9.6-beta","commands": ["Lql"] }
   }
@@ -97,7 +97,7 @@ Restructure into three clear sections matching real NuGet reality:
 1. **Install the CLI tools** (as a local tool manifest):
    ```bash
    dotnet new tool-manifest
-   dotnet tool install DataProvider --version 0.4.0
+   dotnet tool install DataProvider --version 0.9.6-beta
    dotnet tool install DataProviderMigrate --version 0.9.6-beta
    dotnet tool install Lql --version 0.9.6-beta
    ```
