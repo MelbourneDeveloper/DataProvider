@@ -206,14 +206,14 @@ function generateTypeMarkdown(doc, allItems) {
 function processYamlFiles() {
   if (!fs.existsSync(DOCFX_API_DIR)) {
     console.log('DocFX API directory not found at:', DOCFX_API_DIR);
-    console.log('Run "docfx metadata docfx.json" first.');
-    process.exit(1);
+    console.log('Skipping API generation. Run "npm run docfx" to refresh DocFX metadata, then re-run the build.');
+    return;
   }
 
   const files = fs.readdirSync(DOCFX_API_DIR).filter(f => f.endsWith('.yml') && f !== 'toc.yml');
   if (files.length === 0) {
-    console.log('No YAML files found.');
-    process.exit(1);
+    console.log('No YAML files found in DocFX API directory. Skipping API generation.');
+    return;
   }
 
   const allItems = [];

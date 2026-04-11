@@ -23,12 +23,11 @@ description: "DataProvider is an open-source .NET toolkit for type-safe database
 
     <h2>The Stack</h2>
     <ul>
-      <li><strong><a href="/docs/dataprovider/">DataProvider</a></strong> - Source generator: SQL files become type-safe extension methods</li>
-      <li><strong><a href="/docs/lql/">LQL</a></strong> - Lambda Query Language: Write once, transpile to any SQL dialect. Includes a native Rust LSP with AI-powered completions and a VS Code extension</li>
-      <li><strong><a href="/docs/migrations/">Migrations</a></strong> - YAML schemas: Database-agnostic, version-controlled schema definitions</li>
-      <li><strong><a href="/docs/sync/">Sync</a></strong> - Offline-first: Bidirectional synchronization with conflict resolution</li>
-      <li><strong><a href="/docs/gatekeeper/">Gatekeeper</a></strong> - Auth: WebAuthn authentication and role-based access control</li>
-      <li><strong><a href="/docs/samples/">Healthcare Samples</a></strong> - FHIR-compliant microservices with ICD-10 RAG search, demonstrating the full stack (<a href="https://github.com/MelbourneDeveloper/HealthcareSamples">separate repo</a>)</li>
+      <li><strong><a href="/docs/dataprovider/">DataProvider</a></strong> - CLI source generator: SQL and LQL files become type-safe extension methods</li>
+      <li><strong><a href="/docs/lql/">LQL</a></strong> - Lambda Query Language: write once, transpile to any SQL dialect. Ships with a native Rust LSP and a VS Code extension</li>
+      <li><strong><a href="/docs/migrations/">Migrations</a></strong> - YAML schemas applied via the <code>DataProviderMigrate</code> CLI tool</li>
+      <li><strong><a href="/docs/sync/">Sync</a></strong> - Offline-first bidirectional synchronisation with conflict resolution</li>
+      <li><strong><a href="/docs/samples/">Clinical Coding Platform</a></strong> - Reference implementation: FHIR R5 microservices, ICD-10 semantic search with pgvector, and a React dashboard (<a href="https://github.com/MelbourneDeveloper/ClinicalCoding">GitHub</a>)</li>
     </ul>
 
     <h2>Get Involved</h2>

@@ -1,104 +1,113 @@
 ---
 layout: layouts/docs.njk
-title: Quick Start - Your First DataProvider Query
-description: Write your first type-safe SQL query with DataProvider in under 5 minutes. Create a SQL file, run the source generator, and call generated extension methods.
+title: Quick Start — Your First Generated Query
+description: Write an LQL query, run the DataProvider CLI, and call the generated type-safe extension method in under five minutes.
 ---
 
-## Create a Connection
+This guide assumes you've already followed [Installation](/docs/installation/) and installed the three dotnet tools (`DataProvider`, `DataProviderMigrate`, `Lql`) plus `Nimblesite.DataProvider.SQLite`.
 
-```csharp
-using System.Data.SqlClient;
-using DataProvider;
+## 1. Write an LQL query
 
-var connectionString = "Server=localhost;Database=MyDb;...";
-using var connection = new SqlConnection(connectionString);
-connection.Open();
+Create `GetActiveOrders.lql`:
+
+```
+Order
+|> filter(fn(row) => Order.Status = @status)
+|> select(Order.Id, Order.CustomerName, Order.Total)
+|> order_by(Order.Id)
 ```
 
-## Execute Queries
+## 2. Transpile to SQL
 
-### Select
+```bash
+dotnet Lql sqlite --input GetActiveOrders.lql --output GetActiveOrders.generated.sql
+```
 
-```csharp
-var orders = connection.Query<Order>(
-    "SELECT * FROM Orders WHERE Status = @status",
-    new { status = "Active" }
-);
+Add the query to `DataProvider.json`:
 
-foreach (var order in orders)
+```json
 {
-    Console.WriteLine($"{order.Id}: {order.Name}");
+  "queries": [
+    { "name": "GetActiveOrders", "sqlFile": "GetActiveOrders.generated.sql" }
+  ],
+  "connectionString": "Data Source=app.db"
 }
 ```
 
-### Insert
+## 3. Generate the C# extension method
 
-```csharp
-var affectedRows = connection.Execute(
-    "INSERT INTO Orders (Name, Status) VALUES (@name, @status)",
-    new { name = "New Order", status = "Pending" }
-);
+```bash
+dotnet DataProvider sqlite --project-dir . --config DataProvider.json --out ./Generated
 ```
 
-### Update
+The generator emits a method with this signature:
 
 ```csharp
-connection.Execute(
-    "UPDATE Orders SET Status = @status WHERE Id = @id",
-    new { status = "Completed", id = 123 }
-);
+public static Task<Result<IReadOnlyList<GetActiveOrdersRow>, SqlError>> GetActiveOrdersAsync(
+    this SqliteConnection connection,
+    string status,
+    CancellationToken cancellationToken = default);
 ```
 
-### Delete
+It also emits `GetActiveOrdersRow` as an immutable record with `Id`, `CustomerName`, `Total` columns.
+
+## 4. Call it
 
 ```csharp
-connection.Execute(
-    "DELETE FROM Orders WHERE Id = @id",
-    new { id = 123 }
-);
-```
+using Microsoft.Data.Sqlite;
+using Nimblesite.DataProvider.Core;
+using MyApp.Generated;
 
-## Using Transactions
+await using var connection = new SqliteConnection("Data Source=app.db");
+await connection.OpenAsync();
 
-```csharp
-using var transaction = connection.BeginTransaction();
-try
+var result = await connection.GetActiveOrdersAsync(status: "Active");
+
+switch (result)
 {
-    transaction.Execute("INSERT INTO ...");
-    transaction.Execute("UPDATE ...");
-    transaction.Commit();
-}
-catch
-{
-    transaction.Rollback();
-    throw;
+    case Result<IReadOnlyList<GetActiveOrdersRow>, SqlError>.Ok ok:
+        foreach (var order in ok.Value)
+            Console.WriteLine($"{order.Id}: {order.CustomerName} — {order.Total:C}");
+        break;
+
+    case Result<IReadOnlyList<GetActiveOrdersRow>, SqlError>.Error err:
+        Console.Error.WriteLine($"Query failed: {err.Value.Message}");
+        break;
 }
 ```
 
-## Using LQL for Cross-Database Queries
+DataProvider **never throws** for expected database failures. The `Result<T, SqlError>` type forces you to handle both outcomes at compile time.
 
-Instead of writing raw SQL, use LQL to write queries that work across all databases:
+## Transpiling LQL at runtime
+
+If you prefer to transpile LQL in your app instead of at build time, reference `Nimblesite.Lql.Postgres` (or the SQLite/SQL Server variant) and call the extension method:
 
 ```csharp
-using Lql;
-using Lql.SQLite;
+using Nimblesite.Lql.Core;
+using Nimblesite.Lql.Postgres;
+using Nimblesite.Sql.Model;
 
-var lql = "Orders |> filter(fn(row) => row.Status = 'Active') |> select(Id, Name)";
-var sql = LqlCodeParser.Parse(lql).ToSql(new SQLiteContext());
+var lql = """
+Customer
+|> filter(fn(row) => Customer.Active = true)
+|> select(Customer.Id, Customer.Name)
+""";
+
+var statement = new LqlStatement(lql);
+Result<string, SqlError> sqlResult = statement.ToPostgreSql();
+
+var sql = sqlResult switch
+{
+    Result<string, SqlError>.Ok ok => ok.Value,
+    Result<string, SqlError>.Error err => throw new InvalidOperationException(err.Value.Message)
+};
 ```
 
-For F# projects, use the Type Provider for compile-time validation:
-
-```fsharp
-open Lql
-
-type ActiveOrders = LqlCommand<"Orders |> filter(fn(row) => row.Status = 'Active') |> select(*)">
-let sql = ActiveOrders.Sql  // SQL validated at compile time
-```
+`.ToSqlite()` and `.ToSqlServer()` are available from `Nimblesite.Lql.SQLite` and `Nimblesite.Lql.SqlServer`.
 
 ## Next Steps
 
-- [DataProvider Documentation](/docs/dataprovider/)
-- [LQL Query Language](/docs/lql/) - Cross-database query language
-- [F# Type Provider](/docs/lql/#f-type-provider) - Compile-time LQL validation
-- [API Reference](/api/)
+- [Getting Started](/docs/getting-started/) — full end-to-end walkthrough
+- [DataProvider](/docs/dataprovider/) — source generation reference
+- [LQL](/docs/lql/) — the Lambda Query Language
+- [Clinical Coding Platform](/docs/samples/) — reference implementation

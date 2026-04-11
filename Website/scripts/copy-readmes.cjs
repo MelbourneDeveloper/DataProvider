@@ -49,21 +49,12 @@ const README_MAPPINGS = [
     }
   },
   {
-    source: path.join(REPO_ROOT, 'Gatekeeper/README.md'),
-    output: path.join(DOCS_DIR, 'gatekeeper.md'),
-    frontmatter: {
-      layout: 'layouts/docs.njk',
-      title: 'Gatekeeper',
-      description: 'WebAuthn authentication and role-based access control.'
-    }
-  },
-  {
     source: path.join(REPO_ROOT, 'Migration/README.md'),
     output: path.join(DOCS_DIR, 'migrations.md'),
     frontmatter: {
       layout: 'layouts/docs.njk',
       title: 'Migrations',
-      description: 'Database-agnostic schema migration framework for .NET.'
+      description: 'Database-agnostic YAML schema migrations via the DataProviderMigrate CLI tool.'
     }
   }
 ];
