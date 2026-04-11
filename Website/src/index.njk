@@ -120,12 +120,12 @@ description: "A complete .NET 10 toolkit for compile-time safe database access: 
 {% highlight "bash" %}
 # Install the three CLI tools
 dotnet new tool-manifest
-dotnet tool install DataProvider --version 0.9.6-beta
-dotnet tool install DataProviderMigrate --version 0.9.6-beta
-dotnet tool install Lql --version 0.9.6-beta
+dotnet tool install DataProvider --version {{ versions.dataprovider }}
+dotnet tool install DataProviderMigrate --version {{ versions.dataproviderMigrate }}
+dotnet tool install Lql --version {{ versions.lql }}
 
 # Add the runtime package for your database
-dotnet add package Nimblesite.DataProvider.SQLite --version 0.9.6-beta
+dotnet add package Nimblesite.DataProvider.SQLite --version {{ versions.nimblesite }}
 {% endhighlight %}
     </div>
 

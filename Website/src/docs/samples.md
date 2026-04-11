@@ -91,9 +91,9 @@ The repo's `.config/dotnet-tools.json` pins the three DataProvider CLI tools:
   "version": 1,
   "isRoot": true,
   "tools": {
-    "dataprovider":        { "version": "0.9.6-beta", "commands": ["DataProvider"] },
-    "dataprovidermigrate": { "version": "0.9.6-beta", "commands": ["DataProviderMigrate"] },
-    "lql":                 { "version": "0.9.6-beta", "commands": ["Lql"] }
+    "dataprovider":        { "version": "{{ versions.dataprovider }}", "commands": ["DataProvider"] },
+    "dataprovidermigrate": { "version": "{{ versions.dataproviderMigrate }}", "commands": ["DataProviderMigrate"] },
+    "lql":                 { "version": "{{ versions.lql }}", "commands": ["Lql"] }
   }
 }
 ```

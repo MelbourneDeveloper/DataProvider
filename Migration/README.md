@@ -8,7 +8,7 @@ Raw `schema.sql` files are intentionally not supported. YAML schemas are the sin
 
 ```bash
 dotnet new tool-manifest
-dotnet tool install DataProviderMigrate --version 0.9.6-beta
+dotnet tool install DataProviderMigrate --version ${DATAPROVIDERMIGRATE_VERSION}
 ```
 
 This registers the `DataProviderMigrate` command via the local tool manifest (`.config/dotnet-tools.json`).
@@ -16,8 +16,8 @@ This registers the `DataProviderMigrate` command via the local tool manifest (`.
 Optional libraries — only needed if you embed migration logic inside your own application code:
 
 ```bash
-dotnet add package Nimblesite.DataProvider.Migration.Core   --version 0.9.6-beta
-dotnet add package Nimblesite.DataProvider.Migration.SQLite --version 0.9.6-beta
+dotnet add package Nimblesite.DataProvider.Migration.Core   --version ${NIMBLESITE_VERSION}
+dotnet add package Nimblesite.DataProvider.Migration.SQLite --version ${NIMBLESITE_VERSION}
 ```
 
 ## Commands

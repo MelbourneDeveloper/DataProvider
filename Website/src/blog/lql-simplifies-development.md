@@ -37,7 +37,7 @@ Users
 Transpile it to SQLite or PostgreSQL:
 
 ```bash
-dotnet tool install Lql --version 0.9.6-beta
+dotnet tool install Lql --version {{ versions.lql }}
 dotnet Lql sqlite   --input TopSpenders.lql --output TopSpenders.generated.sql
 dotnet Lql postgres --input TopSpenders.lql --output TopSpenders.generated.sql
 ```
@@ -47,7 +47,7 @@ dotnet Lql postgres --input TopSpenders.lql --output TopSpenders.generated.sql
 If you prefer to transpile LQL at runtime instead of build time, reference the dialect library:
 
 ```bash
-dotnet add package Nimblesite.Lql.Postgres --version 0.9.6-beta
+dotnet add package Nimblesite.Lql.Postgres --version {{ versions.nimblesite }}
 ```
 
 ```csharp

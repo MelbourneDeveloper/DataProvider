@@ -19,15 +19,15 @@ DataProvider ships as three **dotnet CLI tools** plus runtime libraries. Add a l
 
 ```bash
 dotnet new tool-manifest
-dotnet tool install DataProvider --version 0.9.6-beta
-dotnet tool install DataProviderMigrate --version 0.9.6-beta
-dotnet tool install Lql --version 0.9.6-beta
+dotnet tool install DataProvider --version {{ versions.dataprovider }}
+dotnet tool install DataProviderMigrate --version {{ versions.dataproviderMigrate }}
+dotnet tool install Lql --version {{ versions.lql }}
 ```
 
 Then add the runtime package for your database:
 
 ```bash
-dotnet add package Nimblesite.DataProvider.SQLite --version 0.9.6-beta
+dotnet add package Nimblesite.DataProvider.SQLite --version {{ versions.nimblesite }}
 ```
 
 ## Your First Query

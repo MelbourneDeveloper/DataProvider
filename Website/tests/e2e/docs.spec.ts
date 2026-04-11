@@ -1,4 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const FORBIDDEN_STRINGS = [
   "MelbourneDev.",
@@ -175,6 +181,94 @@ test.describe("No ASCII box-drawing diagrams remain", () => {
       }
       for (const arrow of ASCII_ARROWS) {
         expect(body, `ASCII arrow "${arrow}" found on ${path}`).not.toContain(arrow);
+      }
+    });
+  }
+});
+
+test.describe("Version is centralised, not hardcoded", () => {
+  test("installation page renders the current version from the variable", async ({ page }) => {
+    await page.goto("/docs/installation/");
+    const body = await getBodyText(page);
+    expect(body).toContain("0.9.6-beta");
+    expect(body).toContain("dotnet tool install DataProvider --version 0.9.6-beta");
+  });
+
+  test("no source file hardcodes 0.9.6-beta (must use a variable/token)", async () => {
+    const REPO_ROOT = path.resolve(__dirname, "../../..");
+    const SOURCE_PATHS = [
+      "Website/src/docs/installation.md",
+      "Website/src/docs/getting-started.md",
+      "Website/src/docs/quick-start.md",
+      "Website/src/docs/samples.md",
+      "Website/src/index.njk",
+      "Website/src/blog/getting-started-dataprovider.md",
+      "Website/src/blog/connecting-sql-server.md",
+      "Website/src/blog/lql-simplifies-development.md",
+      "README.md",
+      "DataProvider/README.md",
+      "Lql/README.md",
+      "Sync/README.md",
+      "Migration/README.md",
+    ];
+
+    const offenders: string[] = [];
+    for (const rel of SOURCE_PATHS) {
+      const abs = path.join(REPO_ROOT, rel);
+      if (!fs.existsSync(abs)) continue;
+      const src = fs.readFileSync(abs, "utf8");
+      if (/0\.9\.6-beta/.test(src)) {
+        offenders.push(rel);
+      }
+    }
+
+    expect(
+      offenders,
+      `These files hardcode "0.9.6-beta" instead of using {{ versions.xxx }} (Eleventy) or \${NIMBLESITE_VERSION}/\${DATAPROVIDER_VERSION}/\${LQL_VERSION}/\${DATAPROVIDERMIGRATE_VERSION} (READMEs): \n  ${offenders.join("\n  ")}`,
+    ).toEqual([]);
+  });
+});
+
+test.describe("DataProvider templating is documented", () => {
+  test("/docs/dataprovider/ explains how to customise generated code", async ({ page }) => {
+    const response = await page.goto("/docs/dataprovider/");
+    expect(response?.status()).toBe(200);
+
+    const body = await getBodyText(page);
+    expect(body).toContain("Customising generated code");
+    expect(body).toContain("CodeGenerationConfig");
+    expect(body).toContain("GenerateDataAccessMethod");
+  });
+});
+
+test.describe("No Result<T,E> marketing lead-ins", () => {
+  // Marketing/intro prose should not LEAD with Result<T,E>; code examples and
+  // customisation docs may still reference it as the default shape.
+  const FORBIDDEN_LEADS = [
+    "Every DataProvider operation returns `Result",
+    "DataProvider never throws",
+    "DataProvider **never throws**",
+  ];
+
+  const pagesToScan = [
+    "/",
+    "/docs/",
+    "/docs/installation/",
+    "/docs/getting-started/",
+    "/docs/quick-start/",
+    "/docs/samples/",
+    "/blog/getting-started-dataprovider/",
+    "/blog/connecting-sql-server/",
+    "/blog/lql-simplifies-development/",
+  ];
+
+  for (const path of pagesToScan) {
+    test(`${path} has no Result<T,E> marketing lead`, async ({ page }) => {
+      await page.goto(path);
+      const body = await getBodyText(page);
+
+      for (const lead of FORBIDDEN_LEADS) {
+        expect(body, `marketing lead "${lead}" on ${path}`).not.toContain(lead);
       }
     });
   }

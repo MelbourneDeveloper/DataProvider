@@ -11,10 +11,10 @@ Use cases:
 ## Install
 
 ```bash
-dotnet add package Nimblesite.Sync.Core     --version 0.9.6-beta
-dotnet add package Nimblesite.Sync.Http     --version 0.9.6-beta
-dotnet add package Nimblesite.Sync.Postgres --version 0.9.6-beta
-dotnet add package Nimblesite.Sync.SQLite   --version 0.9.6-beta
+dotnet add package Nimblesite.Sync.Core     --version ${NIMBLESITE_VERSION}
+dotnet add package Nimblesite.Sync.Http     --version ${NIMBLESITE_VERSION}
+dotnet add package Nimblesite.Sync.Postgres --version ${NIMBLESITE_VERSION}
+dotnet add package Nimblesite.Sync.SQLite   --version ${NIMBLESITE_VERSION}
 ```
 
 ## Projects

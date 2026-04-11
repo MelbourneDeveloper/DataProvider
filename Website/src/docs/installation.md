@@ -17,22 +17,22 @@ Create a local tool manifest in your repository root, then pin each tool:
 
 ```bash
 dotnet new tool-manifest
-dotnet tool install DataProvider --version 0.9.6-beta
-dotnet tool install DataProviderMigrate --version 0.9.6-beta
-dotnet tool install Lql --version 0.9.6-beta
+dotnet tool install DataProvider --version {{ versions.dataprovider }}
+dotnet tool install DataProviderMigrate --version {{ versions.dataproviderMigrate }}
+dotnet tool install Lql --version {{ versions.lql }}
 ```
 
 This writes `.config/dotnet-tools.json`. Commit it. Every developer and CI runner restores the same versions with `dotnet tool restore`.
 
 | Tool | Command | Version | What it does |
 |------|---------|---------|--------------|
-| `DataProvider` | `dotnet DataProvider` | `0.9.6-beta` | Source generation — reads `DataProvider.json` + `.sql`/`.lql` files, emits C# extension methods |
-| `DataProviderMigrate` | `dotnet DataProviderMigrate` | `0.9.6-beta` | YAML-schema migration CLI (`migrate`, `export`) |
-| `Lql` | `dotnet Lql` | `0.9.6-beta` | LQL → SQL transpiler (`sqlite`, `postgres`) |
+| `DataProvider` | `dotnet DataProvider` | `{{ versions.dataprovider }}` | Source generation — reads `DataProvider.json` + `.sql`/`.lql` files, emits C# extension methods |
+| `DataProviderMigrate` | `dotnet DataProviderMigrate` | `{{ versions.dataproviderMigrate }}` | YAML-schema migration CLI (`migrate`, `export`) |
+| `Lql` | `dotnet Lql` | `{{ versions.lql }}` | LQL → SQL transpiler (`sqlite`, `postgres`) |
 
 ## 2. Add the runtime library packages
 
-Pick the packages for your database and the features you use. All runtime packages are `0.9.6-beta`.
+Pick the packages for your database and the features you use. All runtime packages are `{{ versions.nimblesite }}`.
 
 ### DataProvider runtime
 

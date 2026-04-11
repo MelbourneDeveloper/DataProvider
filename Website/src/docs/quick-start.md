@@ -76,7 +76,7 @@ switch (result)
 }
 ```
 
-DataProvider **never throws** for expected database failures. The `Result<T, SqlError>` type forces you to handle both outcomes at compile time.
+This is the **default** code-generation template — it makes failures explicit in the return type so the compiler forces you to handle both outcomes. The template is pluggable; see [Customising generated code](/docs/dataprovider/#customising-generated-code) to emit a different shape.
 
 ## Transpiling LQL at runtime
 

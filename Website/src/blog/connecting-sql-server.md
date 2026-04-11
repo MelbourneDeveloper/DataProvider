@@ -19,10 +19,10 @@ DataProvider targets SQL Server as a first-class runtime. This guide shows you h
 Install the SQL Server runtime package plus the `DataProvider` CLI tool:
 
 ```bash
-dotnet add package Nimblesite.DataProvider.SqlServer --version 0.9.6-beta
+dotnet add package Nimblesite.DataProvider.SqlServer --version {{ versions.nimblesite }}
 
 dotnet new tool-manifest
-dotnet tool install DataProvider --version 0.9.6-beta
+dotnet tool install DataProvider --version {{ versions.dataprovider }}
 ```
 
 ## Generate from a query file
@@ -71,6 +71,6 @@ if (result is Result<IReadOnlyList<GetCustomersRow>, SqlError>.Ok ok)
 }
 ```
 
-DataProvider **never throws** on query failure. Pattern match on `Result<T, SqlError>` and handle both branches explicitly.
+This is the **default** generator output — the success and failure branches are both visible in the return type so nothing silently throws on the query path. The code template is pluggable if you want a different shape.
 
 Check out the [full documentation](/docs/getting-started/) for the end-to-end walkthrough.

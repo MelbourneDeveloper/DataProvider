@@ -21,8 +21,8 @@ flowchart LR
 
 ```bash
 dotnet new tool-manifest
-dotnet tool install DataProvider --version 0.9.6-beta
-dotnet add package Nimblesite.DataProvider.SQLite --version 0.9.6-beta
+dotnet tool install DataProvider --version ${DATAPROVIDER_VERSION}
+dotnet add package Nimblesite.DataProvider.SQLite --version ${NIMBLESITE_VERSION}
 ```
 
 Replace `SQLite` with `Postgres` or `SqlServer` as needed.
@@ -82,9 +82,9 @@ Or wire it into MSBuild so every build regenerates code:
 </Target>
 ```
 
-## Using generated methods
+## Using generated methods (default template)
 
-DataProvider **never throws**. Every method returns `Result<T, SqlError>`:
+Out of the box, the generator emits methods that make errors explicit in the return type — no thrown exceptions on the query path:
 
 ```csharp
 using Microsoft.Data.Sqlite;
@@ -109,7 +109,44 @@ switch (result)
 }
 ```
 
-Generated row types are immutable records. Generated insert/update/delete methods also return `Result<...>`.
+Generated row types are immutable records. Generated insert/update/delete methods follow the same default shape.
+
+## Customising generated code
+
+The default output shape is **fully pluggable**. The code generator is driven by a `CodeGenerationConfig` record that holds a set of `Func<>` delegates — one per piece of the emitted code. Swap any of them and the generator emits whatever you want: raw `Task<T>`, `Option<T>`, thrown exceptions, custom result types, bespoke naming conventions, you name it.
+
+Key extension points (see `Nimblesite.DataProvider.Core.CodeGeneration.CodeGenerationConfig`):
+
+| Delegate | What it controls |
+|---|---|
+| `GenerateDataAccessMethod` | The signature and body of each query method (this is where you change the return type) |
+| `GenerateModelType` | How row/parameter records are emitted |
+| `GenerateGroupedModels` | How nested grouping models (parent + child collections) are emitted |
+| `GenerateSourceFile` | The overall file layout (`using`s, namespace, class wrapper) |
+
+Minimal custom template (programmatic):
+
+```csharp
+using Nimblesite.DataProvider.Core.CodeGeneration;
+
+var config = new CodeGenerationConfig(getColumnMetadata, tableOpGenerator)
+{
+    // Emit methods that throw instead of returning Result<T, SqlError>
+    GenerateDataAccessMethod = (className, methodName, sql, parameters, columns, connType) =>
+        $$"""
+        public static async Task<IReadOnlyList<{{className}}Row>> {{methodName}}Async(
+            this {{connType}} connection /* … */)
+        {
+            // your bespoke body
+        }
+        """
+};
+
+// Pass the config to the platform-specific generator
+SqliteCodeGenerator.GenerateCodeWithMetadata(config: config, /* … */);
+```
+
+> **Today this hook is programmatic-only** — custom templates are wired up in code that drives the generator library directly. The `DataProvider` CLI does not yet accept a `--template` flag or a `template` field in `DataProvider.json`; support for CLI-level template selection is tracked as future work. If you need a custom template right now, reference `Nimblesite.DataProvider.Core` from a small generator project and call `GenerateCodeWithMetadata` yourself.
 
 ## Related
 

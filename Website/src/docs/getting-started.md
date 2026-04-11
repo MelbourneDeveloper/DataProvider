@@ -24,15 +24,15 @@ dotnet new tool-manifest
 ## 2. Install the CLI tools
 
 ```bash
-dotnet tool install DataProvider --version 0.9.6-beta
-dotnet tool install DataProviderMigrate --version 0.9.6-beta
-dotnet tool install Lql --version 0.9.6-beta
+dotnet tool install DataProvider --version {{ versions.dataprovider }}
+dotnet tool install DataProviderMigrate --version {{ versions.dataproviderMigrate }}
+dotnet tool install Lql --version {{ versions.lql }}
 ```
 
 ## 3. Add the runtime package
 
 ```bash
-dotnet add package Nimblesite.DataProvider.SQLite --version 0.9.6-beta
+dotnet add package Nimblesite.DataProvider.SQLite --version {{ versions.nimblesite }}
 ```
 
 Set the target framework in `MyApp.csproj`:
@@ -178,7 +178,7 @@ var message = result switch
 Console.WriteLine(message);
 ```
 
-DataProvider **never throws**. Every generated method returns `Result<T, SqlError>`. You pattern-match on `Ok` / `Error` — the compiler makes you handle both.
+This is the **default** generator output — errors are explicit in the return type, so the compiler makes you handle both the success and failure branches. Prefer a different shape (thrown exceptions, `Task<T>`, a custom result type)? See [Customising generated code](/docs/dataprovider/#customising-generated-code).
 
 ## Next Steps
 

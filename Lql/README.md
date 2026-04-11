@@ -19,7 +19,7 @@ LQL is **database platform independent**. The same `.lql` source must produce se
 
 ```bash
 dotnet new tool-manifest
-dotnet tool install Lql --version 0.9.6-beta
+dotnet tool install Lql --version ${LQL_VERSION}
 ```
 
 Then transpile during the build:
@@ -34,9 +34,9 @@ dotnet Lql postgres --input GetCustomers.lql --output GetCustomers.generated.sql
 Reference one of the library packages to transpile LQL in your application code:
 
 ```bash
-dotnet add package Nimblesite.Lql.SQLite   --version 0.9.6-beta
-dotnet add package Nimblesite.Lql.Postgres --version 0.9.6-beta
-dotnet add package Nimblesite.Lql.SqlServer --version 0.9.6-beta
+dotnet add package Nimblesite.Lql.SQLite   --version ${NIMBLESITE_VERSION}
+dotnet add package Nimblesite.Lql.Postgres --version ${NIMBLESITE_VERSION}
+dotnet add package Nimblesite.Lql.SqlServer --version ${NIMBLESITE_VERSION}
 ```
 
 ## Runtime API

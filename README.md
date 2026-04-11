@@ -8,7 +8,7 @@ DataProvider fixes issues that have plagued .NET data access for decades.
 
 **The simplicity and safety of an ORM without the downsides.** DataProvider generates extension methods directly from your SQL or LQL files. You write the queries. You see what executes. SQL errors become compilation errors. No magic, no reflection.
 
-**No exceptions.** Database operations fail. Networks drop. Constraints get violated. These are expected, not exceptional. Every DataProvider operation returns `Result<T, SqlError>` — pattern match and handle both outcomes explicitly.
+**Errors you can see.** Database operations fail. Networks drop. Constraints get violated. These are expected, not exceptional. DataProvider makes error handling explicit so failures surface in your types rather than hiding in catch blocks. The default output shape is fully customisable — swap the code template to fit your project's conventions.
 
 **SQL is the source of truth.** Define schemas in YAML, write queries in SQL or LQL, and generate strongly-typed code from both.
 
@@ -32,12 +32,12 @@ DataProvider ships in two halves — three **CLI tools** that generate code at b
 ```bash
 # 1. CLI tools (pinned in .config/dotnet-tools.json)
 dotnet new tool-manifest
-dotnet tool install DataProvider --version 0.9.6-beta
-dotnet tool install DataProviderMigrate --version 0.9.6-beta
-dotnet tool install Lql --version 0.9.6-beta
+dotnet tool install DataProvider --version ${DATAPROVIDER_VERSION}
+dotnet tool install DataProviderMigrate --version ${DATAPROVIDERMIGRATE_VERSION}
+dotnet tool install Lql --version ${LQL_VERSION}
 
 # 2. Runtime packages (pick your database)
-dotnet add package Nimblesite.DataProvider.SQLite --version 0.9.6-beta
+dotnet add package Nimblesite.DataProvider.SQLite --version ${NIMBLESITE_VERSION}
 # or: Nimblesite.DataProvider.Postgres / Nimblesite.DataProvider.SqlServer
 ```
 
@@ -62,7 +62,7 @@ dotnet Lql sqlite --input GetActiveCustomers.lql --output GetActiveCustomers.gen
 dotnet DataProvider sqlite --project-dir . --config DataProvider.json --out ./Generated
 ```
 
-Call the generated extension method with exhaustive `Result<T, SqlError>` handling:
+Call the generated extension method with exhaustive error handling:
 
 ```csharp
 var result = await connection.GetActiveCustomersAsync();
@@ -75,6 +75,8 @@ var message = result switch
         $"Failed: {err.Value.Message}"
 };
 ```
+
+The shape above is the **default** emitted template. Want `Task<T>`, a thrown exception, an `Option<T>`, or your own custom signature? Plug in a custom code template — see the [DataProvider docs](./DataProvider/README.md#customising-generated-code).
 
 ## Reference Implementation
 
