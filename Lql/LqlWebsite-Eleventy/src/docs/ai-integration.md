@@ -120,7 +120,7 @@ The AI provider is configured via `initializationOptions` during the LSP handsha
 
 ### Ollama (Local)
 
-Runs entirely on your machine. The LSP calls the Ollama `/api/generate` endpoint and injects the [LQL language reference](https://github.com/MelbourneDeveloper/DataProvider/blob/main/Lql/lql-lsp-rust/crates/lql-reference.md) as system context, giving the model knowledge of LQL syntax.
+Runs entirely on your machine. The LSP calls the Ollama `/api/generate` endpoint and injects the [LQL language reference](https://github.com/Nimblesite/DataProvider/blob/main/Lql/lql-lsp-rust/crates/lql-reference.md) as system context, giving the model knowledge of LQL syntax.
 
 ```json
 {

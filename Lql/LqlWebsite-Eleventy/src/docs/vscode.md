@@ -229,5 +229,5 @@ The extension bundles a native Rust language server (`lql-lsp`). On first activa
 1. Bundled `bin/lql-lsp` in the extension directory
 2. Local development build (`target/release/lql-lsp` or `target/debug/lql-lsp`)
 3. Previously cached binary in VS Code global storage
-4. Downloads from [GitHub Releases](https://github.com/MelbourneDeveloper/DataProvider/releases) matching the extension version
+4. Downloads from [GitHub Releases](https://github.com/Nimblesite/DataProvider/releases) matching the extension version
 5. Falls back to `lql-lsp` on your system PATH

@@ -80,7 +80,7 @@ The shape above is the **default** emitted template. Want `Task<T>`, a thrown ex
 
 ## Reference Implementation
 
-The **[Nimblesite Clinical Coding Platform](https://github.com/MelbourneDeveloper/ClinicalCoding)** is the canonical reference implementation — a full-stack healthcare app built on .NET 10, PostgreSQL + pgvector, FHIR R5, and every component of this toolkit. Not for production; technology demonstration only.
+The **[Nimblesite Clinical Coding Platform](https://github.com/Nimblesite/ClinicalCoding)** is the canonical reference implementation — a full-stack healthcare app built on .NET 10, PostgreSQL + pgvector, FHIR R5, and every component of this toolkit. Not for production; technology demonstration only.
 
 ## Prerequisites
 
@@ -90,7 +90,7 @@ The **[Nimblesite Clinical Coding Platform](https://github.com/MelbourneDevelope
 ## Build from Source
 
 ```bash
-git clone https://github.com/MelbourneDeveloper/DataProvider.git
+git clone https://github.com/Nimblesite/DataProvider.git
 cd DataProvider
 make ci            # lint + test + build
 ```

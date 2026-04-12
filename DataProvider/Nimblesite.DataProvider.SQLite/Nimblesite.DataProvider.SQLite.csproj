@@ -5,8 +5,8 @@
     <Authors>ChristianFindlay</Authors>
     <Description>SQLite source generator for Nimblesite.DataProvider.Core. Provides compile-time safe database access with automatic code generation from SQL files for SQLite databases.</Description>
     <PackageTags>source-generator;sql;sqlite;database;compile-time-safety;code-generation</PackageTags>
-    <PackageProjectUrl>https://github.com/MelbourneDeveloper/Nimblesite.DataProvider.Core</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/MelbourneDeveloper/Nimblesite.DataProvider.Core</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Nimblesite/DataProvider</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Nimblesite/DataProvider</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>

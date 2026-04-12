@@ -6,9 +6,9 @@ description: A full-stack healthcare reference implementation for the DataProvid
 
 The **Nimblesite Clinical Coding Platform** is the official reference implementation for the DataProvider toolkit. It shows every package and CLI tool working together in a realistic multi-service healthcare application.
 
-> **Technology demonstration only — not for production use.** No warranty, no clinical certification. See the [LICENSE](https://github.com/MelbourneDeveloper/ClinicalCoding/blob/main/LICENSE).
+> **Technology demonstration only — not for production use.** No warranty, no clinical certification. See the [LICENSE](https://github.com/Nimblesite/ClinicalCoding/blob/main/LICENSE).
 
-- **Repository**: [github.com/MelbourneDeveloper/ClinicalCoding](https://github.com/MelbourneDeveloper/ClinicalCoding)
+- **Repository**: [github.com/Nimblesite/ClinicalCoding](https://github.com/Nimblesite/ClinicalCoding)
 - **License**: MIT © 2026 Nimblesite Pty Ltd
 - **Platforms**: .NET 10, PostgreSQL + pgvector, Docker Compose
 
@@ -189,7 +189,7 @@ Sync flows are implemented with `Nimblesite.Sync.Core` + `Nimblesite.Sync.Http` 
 ## Running it locally
 
 ```bash
-git clone https://github.com/MelbourneDeveloper/ClinicalCoding.git
+git clone https://github.com/Nimblesite/ClinicalCoding.git
 cd ClinicalCoding
 
 # Everything in Docker (Postgres + 4 APIs + dashboard)

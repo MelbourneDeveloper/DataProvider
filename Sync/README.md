@@ -43,4 +43,4 @@ Each replica tracks per-row version vectors and tombstones. When a replica recon
 ## Related documentation
 
 - Full specification: [docs/specs/sync-spec.md](../docs/specs/sync-spec.md)
-- Reference implementation: the [Clinical Coding Platform](https://github.com/MelbourneDeveloper/ClinicalCoding) uses the sync framework to flow Patient/Practitioner records between the Clinical and Scheduling domains.
+- Reference implementation: the [Clinical Coding Platform](https://github.com/Nimblesite/ClinicalCoding) uses the sync framework to flow Patient/Practitioner records between the Clinical and Scheduling domains.

@@ -3,7 +3,7 @@
     { "text": "Docs", "url": "/docs/" },
     { "text": "API", "url": "/apidocs/" },
     { "text": "Blog", "url": "/blog/" },
-    { "text": "GitHub", "url": "https://github.com/MelbourneDeveloper/DataProvider", "external": true }
+    { "text": "GitHub", "url": "https://github.com/Nimblesite/DataProvider", "external": true }
   ],
   "docs": [
     {
@@ -49,9 +49,9 @@
     {
       "title": "Community",
       "items": [
-        { "text": "GitHub", "url": "https://github.com/MelbourneDeveloper/DataProvider" },
+        { "text": "GitHub", "url": "https://github.com/Nimblesite/DataProvider" },
         { "text": "NuGet", "url": "https://www.nuget.org/packages/DataProvider" },
-        { "text": "Clinical Coding", "url": "https://github.com/MelbourneDeveloper/ClinicalCoding" }
+        { "text": "Clinical Coding", "url": "https://github.com/Nimblesite/ClinicalCoding" }
       ]
     },
     {

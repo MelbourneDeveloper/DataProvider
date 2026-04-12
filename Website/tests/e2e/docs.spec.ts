@@ -149,7 +149,7 @@ test.describe("Clinical Coding Platform page", () => {
     expect(body).toContain("pgvector");
     expect(body).toContain("DataProviderMigrate");
 
-    const repoLink = page.locator('a[href*="github.com/MelbourneDeveloper/ClinicalCoding"]').first();
+    const repoLink = page.locator('a[href*="github.com/Nimblesite/ClinicalCoding"]').first();
     await expect(repoLink).toBeVisible();
 
     const screenshot = page.locator('img[src*="clinical-coding/login"]').first();

@@ -14,7 +14,7 @@ import {
 let client: LanguageClient | undefined;
 let outputChannel: vscode.OutputChannel;
 
-const GITHUB_REPO = "MelbourneDeveloper/DataProvider";
+const GITHUB_REPO = "Nimblesite/DataProvider";
 
 function log(msg: string): void {
   outputChannel.appendLine(`[LQL] ${msg}`);

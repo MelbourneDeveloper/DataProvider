@@ -76,6 +76,6 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           deploy_key: ${{ secrets.DATAPROVIDER_WEBSITE_DEPLOY_KEY }}
-          external_repository: MelbourneDeveloper/DataProviderWebsite
+          external_repository: Nimblesite/DataProviderWebsite
           publish_branch: gh-pages
           publish_dir: ./Website/_site

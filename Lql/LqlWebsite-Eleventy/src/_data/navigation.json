@@ -2,7 +2,7 @@
   "main": [
     { "text": "Docs", "url": "/docs/" },
     { "text": "Playground", "url": "/playground/" },
-    { "text": "GitHub", "url": "https://github.com/MelbourneDeveloper/Nimblesite.DataProvider.Core", "external": true }
+    { "text": "GitHub", "url": "https://github.com/Nimblesite/DataProvider", "external": true }
   ],
   "docs": [
     {
@@ -55,7 +55,7 @@
       "title": "Ecosystem",
       "items": [
         { "text": "Nimblesite.DataProvider.Core", "url": "https://dataprovider.dev" },
-        { "text": "GitHub", "url": "https://github.com/MelbourneDeveloper/Nimblesite.DataProvider.Core" },
+        { "text": "GitHub", "url": "https://github.com/Nimblesite/DataProvider" },
         { "text": "NuGet", "url": "https://www.nuget.org/packages/Nimblesite.Lql.Core" }
       ]
     },
