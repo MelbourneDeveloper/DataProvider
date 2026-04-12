@@ -1,9 +1,9 @@
 ---
 layout: layouts/blog.njk
 title: Connecting to SQL Server with DataProvider
-description: How to connect to SQL Server using the DataProvider toolkit.
+description: Install the SQL Server runtime package, generate extension methods from your queries, and call them with Result-based error handling.
 date: 2024-04-08
-dateModified: 2024-04-08
+dateModified: 2026-04-12
 author: DataProvider Team
 tags:
   - .NET
@@ -12,36 +12,65 @@ tags:
   - post
 ---
 
-Connecting to SQL Server with DataProvider is straightforward. This guide shows you how to set up your connection and start querying.
+DataProvider targets SQL Server as a first-class runtime. This guide shows you how to install the package, generate your first extension method, and call it safely.
 
 ## Setup
 
-First, install the SQL Server provider:
+Install the SQL Server runtime package plus the `DataProvider` CLI tool:
 
 ```bash
-dotnet add package DataProvider.SqlServer
+dotnet add package Nimblesite.DataProvider.SqlServer --version {{ versions.nimblesite }}
+
+dotnet new tool-manifest
+dotnet tool install DataProvider --version {{ versions.dataprovider }}
 ```
 
-## Connection
+## Generate from a query file
 
-Create your connection:
+Write `GetCustomers.sql`:
+
+```sql
+SELECT Id, Name, Email
+FROM Customers
+WHERE Active = @active
+```
+
+Add it to `DataProvider.json`:
+
+```json
+{
+  "connectionString": "Server=localhost;Database=MyDb;Trusted_Connection=true",
+  "queries": [
+    { "name": "GetCustomers", "sqlFile": "GetCustomers.sql" }
+  ]
+}
+```
+
+Generate the extension methods:
+
+```bash
+dotnet DataProvider sqlserver --project-dir . --config DataProvider.json --out ./Generated
+```
+
+## Call the generated method
 
 ```csharp
-using DataProvider.SqlServer;
+using Microsoft.Data.SqlClient;
+using Nimblesite.DataProvider.Core;
+using MyApp.Generated;
 
-var connectionString = "Server=localhost;Database=MyDb;...";
-using var connection = new SqlConnection(connectionString);
-var provider = new SqlServerProvider(connection);
+await using var connection = new SqlConnection("Server=localhost;Database=MyDb;Trusted_Connection=true");
+await connection.OpenAsync();
+
+var result = await connection.GetCustomersAsync(active: true);
+
+if (result is Result<IReadOnlyList<GetCustomersRow>, SqlError>.Ok ok)
+{
+    foreach (var customer in ok.Value)
+        Console.WriteLine($"{customer.Id}: {customer.Name}");
+}
 ```
 
-## Querying
+This is the **default** generator output — the success and failure branches are both visible in the return type so nothing silently throws on the query path. The code template is pluggable if you want a different shape.
 
-Now you can execute queries:
-
-```csharp
-var customers = provider.Query<Customer>(
-    "SELECT * FROM Customers WHERE Active = 1"
-);
-```
-
-Check out the [full documentation](/docs/getting-started/) for more details.
+Check out the [full documentation](/docs/getting-started/) for the end-to-end walkthrough.

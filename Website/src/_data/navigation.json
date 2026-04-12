@@ -20,11 +20,9 @@
       "items": [
         { "text": "DataProvider", "url": "/docs/dataprovider/" },
         { "text": "LQL", "url": "/docs/lql/" },
-        { "text": "F# Type Provider", "url": "https://lql.dev#fsharp", "external": true },
         { "text": "Sync", "url": "/docs/sync/" },
         { "text": "Migrations", "url": "/docs/migrations/" },
-        { "text": "Gatekeeper", "url": "/docs/gatekeeper/" },
-        { "text": "Healthcare Samples", "url": "/docs/samples/" }
+        { "text": "Clinical Coding Platform", "url": "/docs/samples/" }
       ]
     }
   ],
@@ -43,16 +41,17 @@
       "title": "Documentation",
       "items": [
         { "text": "Getting Started", "url": "/docs/getting-started/" },
-        { "text": "API Reference", "url": "/apidocs/" },
+        { "text": "Installation", "url": "/docs/installation/" },
         { "text": "LQL", "url": "/docs/lql/" },
-        { "text": "Healthcare Samples", "url": "/docs/samples/" }
+        { "text": "Clinical Coding Platform", "url": "/docs/samples/" }
       ]
     },
     {
       "title": "Community",
       "items": [
         { "text": "GitHub", "url": "https://github.com/MelbourneDeveloper/DataProvider" },
-        { "text": "NuGet", "url": "https://www.nuget.org/packages/DataProvider" }
+        { "text": "NuGet", "url": "https://www.nuget.org/packages/DataProvider" },
+        { "text": "Clinical Coding", "url": "https://github.com/MelbourneDeveloper/ClinicalCoding" }
       ]
     },
     {

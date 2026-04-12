@@ -206,14 +206,14 @@ function generateTypeMarkdown(doc, allItems) {
 function processYamlFiles() {
   if (!fs.existsSync(DOCFX_API_DIR)) {
     console.log('DocFX API directory not found at:', DOCFX_API_DIR);
-    console.log('Run "docfx metadata docfx.json" first.');
-    process.exit(1);
+    console.log('Skipping API generation. Run "npm run docfx" to refresh DocFX metadata, then re-run the build.');
+    return;
   }
 
   const files = fs.readdirSync(DOCFX_API_DIR).filter(f => f.endsWith('.yml') && f !== 'toc.yml');
   if (files.length === 0) {
-    console.log('No YAML files found.');
-    process.exit(1);
+    console.log('No YAML files found in DocFX API directory. Skipping API generation.');
+    return;
   }
 
   const allItems = [];
@@ -241,12 +241,46 @@ function processYamlFiles() {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
   const sortedNamespaces = Array.from(namespaces.values()).sort((a, b) => a.name.localeCompare(b.name));
-  let indexMd = '---\nlayout: layouts/api.njk\ntitle: "API Reference"\ndescription: "DataProvider API Reference"\ntype: "index"\n---\n\nAuto-generated API documentation from source code.\n\n## Namespaces\n\n| Namespace | Description |\n|-----------|-------------|\n';
 
-  for (const ns of sortedNamespaces) {
-    const summary = cleanMarkdown(ns.summary) || '';
-    const nsPath = ns.name.replace(/\./g, '/');
-    indexMd += '| [' + ns.name + '](' + nsPath + '/) | ' + summary.split('\n')[0] + ' |\n';
+  // Group namespaces by top-level family for a more readable index page.
+  const groups = {
+    'DataProvider': (n) => n.startsWith('Nimblesite.DataProvider.') && !n.startsWith('Nimblesite.DataProvider.Migration.'),
+    'Migrations': (n) => n.startsWith('Nimblesite.DataProvider.Migration.') || n === 'DataProviderMigrate',
+    'LQL': (n) => n.startsWith('Nimblesite.Lql.'),
+    'Sync': (n) => n.startsWith('Nimblesite.Sync.'),
+    'Reporting': (n) => n.startsWith('Nimblesite.Reporting.'),
+    'SQL Model': (n) => n.startsWith('Nimblesite.Sql.'),
+  };
+
+  let indexMd = '---\nlayout: layouts/api.njk\ntitle: "API Reference"\ndescription: "Auto-generated API reference for the DataProvider toolkit, covering DataProvider, LQL, Migrations, Sync, Reporting, and the shared SQL model."\ntype: "index"\n---\n\nAuto-generated API documentation from XML doc comments via DocFX. Every shipping NuGet package and CLI tool is covered below.\n\n> **Excluded:** `Nimblesite.Reporting.React` is an [H5](https://github.com/curiosity-ai/h5) C#-to-JavaScript transpiler project (`netstandard2.1`, `LangVersion 9.0`, not packaged to NuGet). DocFX\'s Roslyn-based metadata extraction does not support H5 projects, so its API surface is not part of this reference. The React renderer is consumed as compiled JavaScript via the `Nimblesite.Reporting.Engine` host.\n\n';
+
+  for (const [groupName, predicate] of Object.entries(groups)) {
+    const groupNs = sortedNamespaces.filter((ns) => predicate(ns.name));
+    if (groupNs.length === 0) continue;
+
+    indexMd += '## ' + groupName + '\n\n| Namespace | Description |\n|-----------|-------------|\n';
+    for (const ns of groupNs) {
+      const summary = cleanMarkdown(ns.summary) || '';
+      const nsPath = ns.name.replace(/\./g, '/');
+      indexMd += '| [' + ns.name + '](' + nsPath + '/) | ' + summary.split('\n')[0] + ' |\n';
+    }
+    indexMd += '\n';
+  }
+
+  // Catch any namespace not assigned to a group above.
+  const grouped = new Set();
+  for (const predicate of Object.values(groups)) {
+    for (const ns of sortedNamespaces) if (predicate(ns.name)) grouped.add(ns.name);
+  }
+  const ungrouped = sortedNamespaces.filter((ns) => !grouped.has(ns.name));
+  if (ungrouped.length > 0) {
+    indexMd += '## Other\n\n| Namespace | Description |\n|-----------|-------------|\n';
+    for (const ns of ungrouped) {
+      const summary = cleanMarkdown(ns.summary) || '';
+      const nsPath = ns.name.replace(/\./g, '/');
+      indexMd += '| [' + ns.name + '](' + nsPath + '/) | ' + summary.split('\n')[0] + ' |\n';
+    }
+    indexMd += '\n';
   }
 
   fs.writeFileSync(path.join(OUTPUT_DIR, 'index.md'), indexMd);

@@ -1,14 +1,14 @@
 ---
 layout: layouts/base.njk
 title: "DataProvider - Effortless .NET Data Access"
-description: "Simplifying Database Connectivity in .NET with source-generated SQL, LQL, and offline-first sync."
+description: "A complete .NET 10 toolkit for compile-time safe database access: CLI-driven source generation, the LQL query language, YAML schema migrations, and offline-first bidirectional sync."
 ---
 
 <section class="hero">
   <div class="container">
     <h1>Effortless .NET Data Access</h1>
     <p class="hero-subtitle">
-      Simplifying Database Connectivity in .NET
+      Compile-time safe SQL. Cross-database LQL. Offline-first sync. Zero runtime reflection.
     </p>
     <div class="hero-buttons">
       <a href="/docs/getting-started/" class="btn btn-primary btn-large">Get Started</a>
@@ -22,43 +22,43 @@ description: "Simplifying Database Connectivity in .NET with source-generated SQ
   <div class="container">
     <div class="section-title">
       <h2>The DataProvider Stack</h2>
-      <p>A complete toolkit for .NET database access.</p>
+      <p>A complete toolkit for .NET 10 database access.</p>
     </div>
 
     <div class="features-grid">
       <div class="card">
         <div class="card-icon">SG</div>
-        <h3>Source-Generated SQL</h3>
-        <p>Zero runtime reflection. Your database schema generates type-safe extension methods at compile time. No ORMs, no magic strings.</p>
+        <h3>CLI-Driven Code Generation</h3>
+        <p>The <code>DataProvider</code> tool runs at build time, reads your SQL/LQL files, and emits type-safe extension methods. Zero runtime reflection. Invalid queries become compilation errors.</p>
         <a href="/docs/dataprovider/">Learn more &rarr;</a>
       </div>
 
       <div class="card">
         <div class="card-icon" style="background: var(--signal-blue);">SY</div>
         <h3>Offline-First Sync</h3>
-        <p>Bidirectional synchronization built for mobile and web apps. Work offline, sync when connected. Conflict resolution included.</p>
+        <p>Bidirectional synchronisation built for mobile, web, and microservices. Work offline, sync when connected. Conflict resolution and tombstones included.</p>
         <a href="/docs/sync/">Learn more &rarr;</a>
       </div>
 
       <div class="card">
         <div class="card-icon" style="background: var(--query-orange);">YM</div>
         <h3>YAML Migrations</h3>
-        <p>Define your database schema in YAML. No raw SQL. Version-controlled, repeatable migrations with the Migration CLI.</p>
+        <p>Define your schema in YAML. Apply it to SQLite or PostgreSQL with the <code>DataProviderMigrate</code> CLI tool. No raw SQL files.</p>
         <a href="/docs/migrations/">Learn more &rarr;</a>
       </div>
 
       <div class="card">
         <div class="card-icon" style="background: var(--info);">LS</div>
         <h3>LQL Language Server</h3>
-        <p>Native Rust LSP with ANTLR parser, schema-aware IntelliSense, real-time diagnostics, and AI-powered completions via Ollama.</p>
-        <a href="/docs/lql/#vs-code-extension">Learn more &rarr;</a>
+        <p>Native Rust LSP with an ANTLR-generated parser. Schema-aware IntelliSense, real-time diagnostics, and transpilation to any supported dialect.</p>
+        <a href="/docs/lql/">Learn more &rarr;</a>
       </div>
 
       <div class="card">
-        <div class="card-icon" style="background: var(--error);">HC</div>
-        <h3>Healthcare Samples</h3>
-        <p>FHIR-compliant microservices with ICD-10 RAG search, bidirectional sync, and a React dashboard. The full stack in action.</p>
-        <a href="/docs/samples/">Learn more &rarr;</a>
+        <div class="card-icon" style="background: var(--error);">CC</div>
+        <h3>Clinical Coding Platform</h3>
+        <p>The full reference implementation: four .NET 10 microservices, FHIR R5, ICD-10 semantic search with pgvector, bidirectional sync, and WebAuthn auth.</p>
+        <a href="/docs/samples/">Explore the reference &rarr;</a>
       </div>
     </div>
   </div>
@@ -68,49 +68,42 @@ description: "Simplifying Database Connectivity in .NET with source-generated SQ
   <div class="container">
     <div class="section-title">
       <h2>Core Components</h2>
-      <p>Everything you need for modern .NET data access.</p>
+      <p>Everything you need for modern .NET data access — use them together or independently.</p>
     </div>
 
     <div class="features-grid">
       <div class="card">
         <div class="card-icon">DP</div>
         <h3>DataProvider</h3>
-        <p>Source generator for SQL that creates type-safe extension methods on IDbConnection.</p>
+        <p>Build-time CLI that generates type-safe extension methods on <code>IDbConnection</code> from your SQL/LQL files.</p>
         <a href="/docs/dataprovider/">Documentation &rarr;</a>
       </div>
 
       <div class="card">
         <div class="card-icon" style="background: var(--query-orange);">LQ</div>
         <h3>LQL</h3>
-        <p>Lambda Query Language - a type-safe query syntax that transpiles to SQL.</p>
+        <p>Lambda Query Language — a functional pipeline-style DSL that transpiles to SQLite, PostgreSQL, and SQL Server.</p>
         <a href="/docs/lql/">Documentation &rarr;</a>
       </div>
 
       <div class="card">
         <div class="card-icon" style="background: var(--signal-blue);">SY</div>
         <h3>Sync</h3>
-        <p>Offline-first bidirectional synchronization for mobile and web applications.</p>
+        <p>Offline-first bidirectional synchronisation for mobile, web, and cross-microservice domains.</p>
         <a href="/docs/sync/">Documentation &rarr;</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon" style="background: var(--success);">GK</div>
-        <h3>Gatekeeper</h3>
-        <p>WebAuthn authentication and Role-Based Access Control for your APIs.</p>
-        <a href="/docs/gatekeeper/">Documentation &rarr;</a>
       </div>
 
       <div class="card">
         <div class="card-icon" style="background: var(--warning);">MI</div>
         <h3>Migrations</h3>
-        <p>YAML-based database migrations with the Migration CLI tool.</p>
+        <p>YAML-based database migrations via the <code>DataProviderMigrate</code> CLI tool. SQLite and PostgreSQL.</p>
         <a href="/docs/migrations/">Documentation &rarr;</a>
       </div>
 
       <div class="card">
-        <div class="card-icon" style="background: var(--error);">HC</div>
-        <h3>Healthcare Samples</h3>
-        <p>FHIR-compliant microservices with ICD-10 RAG semantic search and bidirectional sync. <a href="https://github.com/MelbourneDeveloper/HealthcareSamples" target="_blank" rel="noopener">Separate repo</a>.</p>
+        <div class="card-icon" style="background: var(--error);">CC</div>
+        <h3>Clinical Coding Platform</h3>
+        <p>Reference implementation built on the full toolkit. FHIR R5, ICD-10 semantic search, bidirectional sync, React dashboard. <a href="https://github.com/MelbourneDeveloper/ClinicalCoding" target="_blank" rel="noopener">GitHub</a>.</p>
         <a href="/docs/samples/">Documentation &rarr;</a>
       </div>
     </div>
@@ -125,13 +118,14 @@ description: "Simplifying Database Connectivity in .NET with source-generated SQ
 
     <div style="max-width: 700px; margin: 0 auto;">
 {% highlight "bash" %}
-# Install the DataProvider package
-dotnet add package DataProvider
+# Install the three CLI tools
+dotnet new tool-manifest
+dotnet tool install DataProvider --version {{ versions.dataprovider }}
+dotnet tool install DataProviderMigrate --version {{ versions.dataproviderMigrate }}
+dotnet tool install Lql --version {{ versions.lql }}
 
-# Create your first query
-using DataProvider;
-
-var orders = connection.Query<Order>("SELECT * FROM Orders");
+# Add the runtime package for your database
+dotnet add package Nimblesite.DataProvider.SQLite --version {{ versions.nimblesite }}
 {% endhighlight %}
     </div>
 

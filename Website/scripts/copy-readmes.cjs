@@ -10,6 +10,20 @@ const REPO_ROOT = path.join(__dirname, '../..');
 const DOCS_DIR = path.join(__dirname, '../src/docs');
 const ASSETS_DIR = path.join(__dirname, '../src/assets/images');
 
+// Single source of truth for published NuGet versions. Override in CI via env vars.
+const DEFAULT_VERSION = '0.9.6-beta';
+const VERSIONS = {
+  DATAPROVIDER_VERSION: process.env.DATAPROVIDER_VERSION || DEFAULT_VERSION,
+  DATAPROVIDERMIGRATE_VERSION: process.env.DATAPROVIDERMIGRATE_VERSION || DEFAULT_VERSION,
+  LQL_VERSION: process.env.LQL_VERSION || DEFAULT_VERSION,
+  NIMBLESITE_VERSION: process.env.NIMBLESITE_VERSION || DEFAULT_VERSION,
+};
+
+function injectVersions(content) {
+  // Replace ${VAR_NAME} tokens with the resolved version.
+  return content.replace(/\$\{(DATAPROVIDER_VERSION|DATAPROVIDERMIGRATE_VERSION|LQL_VERSION|NIMBLESITE_VERSION)\}/g, (_, key) => VERSIONS[key]);
+}
+
 // Map of README source paths to docs output and frontmatter
 const README_MAPPINGS = [
   {
@@ -49,21 +63,12 @@ const README_MAPPINGS = [
     }
   },
   {
-    source: path.join(REPO_ROOT, 'Gatekeeper/README.md'),
-    output: path.join(DOCS_DIR, 'gatekeeper.md'),
-    frontmatter: {
-      layout: 'layouts/docs.njk',
-      title: 'Gatekeeper',
-      description: 'WebAuthn authentication and role-based access control.'
-    }
-  },
-  {
     source: path.join(REPO_ROOT, 'Migration/README.md'),
     output: path.join(DOCS_DIR, 'migrations.md'),
     frontmatter: {
       layout: 'layouts/docs.njk',
       title: 'Migrations',
-      description: 'Database-agnostic schema migration framework for .NET.'
+      description: 'Database-agnostic YAML schema migrations via the DataProviderMigrate CLI tool.'
     }
   }
 ];
@@ -98,6 +103,9 @@ function processReadme(mapping) {
 
   // Convert relative image paths
   content = content.replace(/!\[([^\]]*)\]\((?!http)([^)]+)\)/g, '![$1](/assets/images/$2)');
+
+  // Inject versions (${DATAPROVIDER_VERSION} etc.) so READMEs stay version-agnostic.
+  content = injectVersions(content);
 
   const output = generateFrontmatter(mapping.frontmatter) + content;
 

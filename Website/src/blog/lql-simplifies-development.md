@@ -1,31 +1,30 @@
 ---
 layout: layouts/blog.njk
 title: "LQL: How Lambda Query Language Simplifies .NET Development"
-description: A deep dive into LQL and its benefits for .NET data access, including the new F# Type Provider.
+description: A deep dive into LQL — the functional pipeline-style DSL that transpiles to PostgreSQL, SQLite, or SQL Server from one source file.
 date: 2024-04-14
-dateModified: 2024-04-14
+dateModified: 2026-04-12
 author: DataProvider Team
 tags:
   - .NET
   - LQL
-  - F#
   - post
 ---
 
-LQL (Lambda Query Language) is a functional pipeline-style DSL that transpiles to SQL. Write database logic once, run it anywhere.
+LQL (Lambda Query Language) is a functional pipeline-style DSL that transpiles to SQL. Write database logic once, run it against any supported target.
 
 ## Why LQL?
 
-Traditional SQL strings are error-prone and differ across database vendors. LQL provides:
+Raw SQL strings are error-prone and differ across database vendors. LQL provides:
 
-- **Write once, deploy everywhere**: Same query works on PostgreSQL, SQLite, and SQL Server
-- **Compile-time validation**: Catch errors before runtime (especially with F# Type Provider)
-- **Functional pipeline syntax**: Readable, composable query building
-- **IDE support**: VS Code extension with syntax highlighting and IntelliSense
+- **Write once, deploy everywhere** — the same query transpiles to PostgreSQL, SQLite, and SQL Server
+- **Build-time transpilation** — the `Lql` CLI converts `.lql` files to dialect-specific SQL during your build
+- **Type-safe consumption** — the `DataProvider` CLI turns the generated SQL into extension methods that return `Result<T, SqlError>`
+- **IDE support** — the VS Code extension ships with syntax highlighting and a language server (Rust + ANTLR)
 
-## Basic Example
+## Basic example
 
-```lql
+```
 Users
 |> filter(fn(row) => row.Age > 18 and row.Status = 'active')
 |> join(Orders, on = Users.Id = Orders.UserId)
@@ -35,42 +34,39 @@ Users
 |> limit(10)
 ```
 
-This transpiles to correct SQL for PostgreSQL, SQLite, or SQL Server.
+Transpile it to SQLite or PostgreSQL:
 
-## F# Type Provider: Compile-Time Validation
-
-The new F# Type Provider takes LQL to the next level by validating queries at compile time. Invalid LQL causes a build error, not a runtime crash.
-
-```fsharp
-open Lql
-
-// These are validated when you compile - errors caught immediately
-type GetUsers = LqlCommand<"Users |> select(Users.Id, Users.Name, Users.Email)">
-type ActiveUsers = LqlCommand<"Users |> filter(fn(row) => row.Status = 'active') |> select(*)">
-
-// Access the generated SQL
-let sql = GetUsers.Sql  // SQL string ready to execute
+```bash
+dotnet tool install Lql --version {{ versions.lql }}
+dotnet Lql sqlite   --input TopSpenders.lql --output TopSpenders.generated.sql
+dotnet Lql postgres --input TopSpenders.lql --output TopSpenders.generated.sql
 ```
 
-Invalid queries fail the build with descriptive error messages:
+## Runtime transpilation
 
-```fsharp
-// Build error: "Invalid LQL syntax at line 1, column 15"
-type BadQuery = LqlCommand<"Users |> selectt(*)">  // typo in 'select'
+If you prefer to transpile LQL at runtime instead of build time, reference the dialect library:
+
+```bash
+dotnet add package Nimblesite.Lql.Postgres --version {{ versions.nimblesite }}
 ```
 
-The type provider supports all LQL operations:
-- Select, filter, join, left_join
-- Group by, having, order by
-- Limit, offset, distinct
-- Arithmetic expressions and aggregations (sum, avg, count, min, max)
+```csharp
+using Nimblesite.Lql.Core;
+using Nimblesite.Lql.Postgres;
+using Nimblesite.Sql.Model;
 
-Install it with:
-
-```xml
-<PackageReference Include="Lql.TypeProvider.FSharp" Version="*" />
+var statement = new LqlStatement(lqlSource);
+Result<string, SqlError> result = statement.ToPostgreSql();
 ```
 
-## Getting Started
+`ToSqlite()` and `ToSqlServer()` are also available.
 
-Check out the [LQL documentation](/docs/lql/) to get started.
+## Pipeline operators
+
+The transpiler supports the full set of pipeline operators — `filter`, `select`, `join` / `left_join` / `right_join` / `full_join`, `group_by`, `having`, `order_by`, `limit`, `offset`, `distinct` — plus aggregates (`sum`, `avg`, `count`, `min`, `max`) and arithmetic expressions.
+
+## Getting started
+
+- [LQL documentation](/docs/lql/)
+- [Installation guide](/docs/installation/)
+- [Clinical Coding Platform](/docs/samples/) — LQL in production-style use

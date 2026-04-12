@@ -1,9 +1,9 @@
 ---
 layout: layouts/blog.njk
 title: Getting Started with the DataProvider Toolkit
-description: An introduction to using the DataProvider toolkit in .NET
+description: An introduction to using the DataProvider toolkit in .NET — install the CLI tools, add a runtime package, and generate your first type-safe query.
 date: 2024-04-20
-dateModified: 2024-04-20
+dateModified: 2026-04-12
 author: DataProvider Team
 tags:
   - .NET
@@ -11,33 +11,54 @@ tags:
   - post
 ---
 
-DataProvider is a powerful toolkit for .NET developers that simplifies database connectivity and data access. In this post, we'll walk through the basics of getting started.
+DataProvider is a complete toolkit for .NET data access. In this post we walk through the basics: installing the CLI tools, adding the runtime package, and generating your first type-safe query.
 
 ## Installation
 
-First, add the DataProvider package to your project:
+DataProvider ships as three **dotnet CLI tools** plus runtime libraries. Add a local tool manifest and install the tools you need:
 
 ```bash
-dotnet add package DataProvider
+dotnet new tool-manifest
+dotnet tool install DataProvider --version {{ versions.dataprovider }}
+dotnet tool install DataProviderMigrate --version {{ versions.dataproviderMigrate }}
+dotnet tool install Lql --version {{ versions.lql }}
+```
+
+Then add the runtime package for your database:
+
+```bash
+dotnet add package Nimblesite.DataProvider.SQLite --version {{ versions.nimblesite }}
 ```
 
 ## Your First Query
 
-With DataProvider installed, you can start executing queries immediately:
+Write a query in LQL, transpile it to SQL, and generate a type-safe C# extension method:
 
 ```csharp
-using DataProvider;
+using Microsoft.Data.Sqlite;
+using Nimblesite.DataProvider.Core;
+using MyApp.Generated;
 
-var orders = connection.Query<Order>(
-    "SELECT * FROM Orders WHERE Status = @status",
-    new { status = "Active" }
-);
+await using var connection = new SqliteConnection("Data Source=app.db");
+await connection.OpenAsync();
+
+var result = await connection.GetActiveOrdersAsync(status: "Active");
+
+if (result is Result<IReadOnlyList<GetActiveOrdersRow>, SqlError>.Ok ok)
+{
+    foreach (var order in ok.Value)
+        Console.WriteLine($"{order.Id}: {order.CustomerName}");
+}
 ```
+
+Every generated method returns `Result<T, SqlError>` — no exceptions, no reflection, pure ADO.NET under the hood.
 
 ## Type Safety
 
-DataProvider generates type-safe extension methods at compile time, giving you IntelliSense support and compile-time checking.
+The `DataProvider` CLI validates every query against your schema at build time and emits C# extension methods with fully-typed row records. Invalid queries become **compilation errors**.
 
 ## Next Steps
 
-Check out our [documentation](/docs/getting-started/) for more detailed guides and examples.
+- [Installation](/docs/installation/) — the full package reference
+- [Getting Started](/docs/getting-started/) — end-to-end walkthrough
+- [Clinical Coding Platform](/docs/samples/) — reference implementation

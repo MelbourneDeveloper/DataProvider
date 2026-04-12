@@ -8,14 +8,46 @@ layout: layouts/base.njk
       <h4>Namespaces</h4>
       <ul>
         <li><a href="/apidocs/" {% if page.url == '/apidocs/' %}class="active"{% endif %}>Overview</a></li>
-        <li><a href="/apidocs/DataProvider/">DataProvider</a></li>
-        <li><a href="/apidocs/DataProvider/SQLite/">DataProvider.SQLite</a></li>
-        <li><a href="/apidocs/DataProvider/SqlServer/">DataProvider.SqlServer</a></li>
-        <li><a href="/apidocs/Sync/">Sync</a></li>
-        <li><a href="/apidocs/Sync/SQLite/">Sync.SQLite</a></li>
-        <li><a href="/apidocs/Sync/Postgres/">Sync.Postgres</a></li>
-        <li><a href="/apidocs/Migration/">Migration</a></li>
-        <li><a href="/apidocs/Gatekeeper/Api/">Gatekeeper</a></li>
+      </ul>
+      <h5>DataProvider</h5>
+      <ul>
+        <li><a href="/apidocs/Nimblesite/DataProvider/Core/">Core</a></li>
+        <li><a href="/apidocs/Nimblesite/DataProvider/Core/CodeGeneration/">Core.CodeGeneration</a></li>
+        <li><a href="/apidocs/Nimblesite/DataProvider/Core/Parsing/">Core.Parsing</a></li>
+        <li><a href="/apidocs/Nimblesite/DataProvider/SQLite/">SQLite</a></li>
+        <li><a href="/apidocs/Nimblesite/DataProvider/SQLite/Parsing/">SQLite.Parsing</a></li>
+        <li><a href="/apidocs/Nimblesite/DataProvider/Postgres/">Postgres</a></li>
+        <li><a href="/apidocs/Nimblesite/DataProvider/Postgres/CodeGeneration/">Postgres.CodeGeneration</a></li>
+        <li><a href="/apidocs/Nimblesite/DataProvider/Postgres/Parsing/">Postgres.Parsing</a></li>
+        <li><a href="/apidocs/Nimblesite/DataProvider/SqlServer/">SqlServer</a></li>
+      </ul>
+      <h5>Migrations</h5>
+      <ul>
+        <li><a href="/apidocs/DataProviderMigrate/">DataProviderMigrate (CLI)</a></li>
+        <li><a href="/apidocs/Nimblesite/DataProvider/Migration/Core/">Migration.Core</a></li>
+        <li><a href="/apidocs/Nimblesite/DataProvider/Migration/SQLite/">Migration.SQLite</a></li>
+        <li><a href="/apidocs/Nimblesite/DataProvider/Migration/Postgres/">Migration.Postgres</a></li>
+      </ul>
+      <h5>LQL</h5>
+      <ul>
+        <li><a href="/apidocs/Nimblesite/Lql/Core/">Core</a></li>
+        <li><a href="/apidocs/Nimblesite/Lql/Core/FunctionMapping/">Core.FunctionMapping</a></li>
+        <li><a href="/apidocs/Nimblesite/Lql/Core/Parsing/">Core.Parsing</a></li>
+        <li><a href="/apidocs/Nimblesite/Lql/SQLite/">SQLite</a></li>
+        <li><a href="/apidocs/Nimblesite/Lql/Postgres/">Postgres</a></li>
+        <li><a href="/apidocs/Nimblesite/Lql/SqlServer/">SqlServer</a></li>
+      </ul>
+      <h5>Sync</h5>
+      <ul>
+        <li><a href="/apidocs/Nimblesite/Sync/Core/">Core</a></li>
+        <li><a href="/apidocs/Nimblesite/Sync/Http/">Http</a></li>
+        <li><a href="/apidocs/Nimblesite/Sync/Postgres/">Postgres</a></li>
+        <li><a href="/apidocs/Nimblesite/Sync/SQLite/">SQLite</a></li>
+      </ul>
+      <h5>Reporting & SQL Model</h5>
+      <ul>
+        <li><a href="/apidocs/Nimblesite/Reporting/Engine/">Reporting.Engine</a></li>
+        <li><a href="/apidocs/Nimblesite/Sql/Model/">Sql.Model</a></li>
       </ul>
     </div>
 
