@@ -84,7 +84,8 @@ function generateFrontmatter(fm) {
 
 function processReadme(mapping) {
   if (!fs.existsSync(mapping.source)) {
-    console.log(`SKIP: ${mapping.source} not found`);
+    console.error(`ERROR: ${mapping.source} not found — every mapped README must exist`);
+    process.exitCode = 1;
     return false;
   }
 
@@ -163,13 +164,21 @@ function main() {
   }
 
   let count = 0;
+  const missing = [];
   for (const mapping of README_MAPPINGS) {
     if (processReadme(mapping)) {
       count++;
+    } else {
+      missing.push(mapping.source);
     }
   }
 
   console.log(`\nCopied ${count} README files to docs.`);
+
+  if (missing.length > 0) {
+    console.error(`\nFATAL: ${missing.length} README(s) missing — build cannot continue.`);
+    process.exit(1);
+  }
 
   // Copy images referenced in READMEs
   copyImages();

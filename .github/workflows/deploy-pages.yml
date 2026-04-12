@@ -79,3 +79,4 @@ jobs:
           external_repository: Nimblesite/DataProviderWebsite
           publish_branch: gh-pages
           publish_dir: ./Website/_site
+          cname: dataprovider.tech
