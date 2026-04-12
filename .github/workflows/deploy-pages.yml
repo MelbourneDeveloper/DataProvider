@@ -7,6 +7,12 @@ on:
         description: 'Package version from the release tag'
         required: false
         type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version to advertise on the site (e.g. 0.9.6-beta). Leave blank to use the default in versions.cjs.'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -28,7 +34,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -54,6 +60,11 @@ jobs:
 
       - name: Build Eleventy site
         working-directory: Website
+        env:
+          DATAPROVIDER_VERSION: ${{ inputs.version }}
+          DATAPROVIDERMIGRATE_VERSION: ${{ inputs.version }}
+          LQL_VERSION: ${{ inputs.version }}
+          NIMBLESITE_VERSION: ${{ inputs.version }}
         run: npm run build
 
       - name: Add GitHub Pages workflow to build output
