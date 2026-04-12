@@ -37,7 +37,24 @@ const DOC_PAGES = [
   "/docs/migrations/",
   "/apidocs/",
   "/apidocs/Nimblesite/DataProvider/Core/",
+  "/apidocs/Nimblesite/DataProvider/Core/CodeGeneration/",
+  "/apidocs/Nimblesite/DataProvider/SQLite/",
+  "/apidocs/Nimblesite/DataProvider/Postgres/",
+  "/apidocs/Nimblesite/DataProvider/SqlServer/",
+  "/apidocs/Nimblesite/DataProvider/Migration/Core/",
+  "/apidocs/Nimblesite/DataProvider/Migration/SQLite/",
+  "/apidocs/Nimblesite/DataProvider/Migration/Postgres/",
+  "/apidocs/DataProviderMigrate/",
+  "/apidocs/Nimblesite/Lql/Core/",
+  "/apidocs/Nimblesite/Lql/Postgres/",
+  "/apidocs/Nimblesite/Lql/SQLite/",
+  "/apidocs/Nimblesite/Lql/SqlServer/",
   "/apidocs/Nimblesite/Sync/Core/",
+  "/apidocs/Nimblesite/Sync/Http/",
+  "/apidocs/Nimblesite/Sync/Postgres/",
+  "/apidocs/Nimblesite/Sync/SQLite/",
+  "/apidocs/Nimblesite/Reporting/Engine/",
+  "/apidocs/Nimblesite/Sql/Model/",
   "/blog/",
   "/blog/getting-started-dataprovider/",
   "/blog/connecting-sql-server/",
@@ -275,20 +292,80 @@ test.describe("No Result<T,E> marketing lead-ins", () => {
 });
 
 test.describe("API reference (DocFX-generated)", () => {
-  test("/apidocs/ landing page lists Nimblesite namespaces", async ({ page }) => {
+  test("/apidocs/ landing page lists every shipping namespace family", async ({ page }) => {
     const response = await page.goto("/apidocs/");
     expect(response?.status()).toBe(200);
 
     const body = await getBodyText(page);
-    expect(body).toContain("Nimblesite.DataProvider.Core");
-    expect(body).toContain("Nimblesite.Sync.Core");
+
+    // Group headings — confirm the index is grouped by family
+    expect(body).toContain("DataProvider");
+    expect(body).toContain("Migrations");
+    expect(body).toContain("LQL");
+    expect(body).toContain("Sync");
+    expect(body).toContain("Reporting");
+    expect(body).toContain("SQL Model");
+
+    // Every shipping namespace must be listed
+    const expectedNamespaces = [
+      "Nimblesite.DataProvider.Core",
+      "Nimblesite.DataProvider.Core.CodeGeneration",
+      "Nimblesite.DataProvider.SQLite",
+      "Nimblesite.DataProvider.Postgres",
+      "Nimblesite.DataProvider.SqlServer",
+      "Nimblesite.DataProvider.Migration.Core",
+      "Nimblesite.DataProvider.Migration.SQLite",
+      "Nimblesite.DataProvider.Migration.Postgres",
+      "DataProviderMigrate",
+      "Nimblesite.Lql.Core",
+      "Nimblesite.Lql.Postgres",
+      "Nimblesite.Lql.SQLite",
+      "Nimblesite.Lql.SqlServer",
+      "Nimblesite.Sync.Core",
+      "Nimblesite.Sync.Http",
+      "Nimblesite.Sync.Postgres",
+      "Nimblesite.Sync.SQLite",
+      "Nimblesite.Reporting.Engine",
+      "Nimblesite.Sql.Model",
+    ];
+    for (const ns of expectedNamespaces) {
+      expect(body, `namespace "${ns}" missing from /apidocs/ index`).toContain(ns);
+    }
+
+    // The H5 React project must be explicitly noted as excluded
+    expect(body).toContain("Nimblesite.Reporting.React");
+    expect(body).toContain("H5");
   });
 
-  test("/apidocs/Nimblesite/DataProvider/Core/ namespace page renders", async ({ page }) => {
-    const response = await page.goto("/apidocs/Nimblesite/DataProvider/Core/");
-    expect(response?.status()).toBe(200);
-    const body = await getBodyText(page);
-    expect(body.length).toBeGreaterThan(200);
+  test("every namespace landing page returns 200 with content", async ({ page }) => {
+    const namespaces = [
+      "/apidocs/Nimblesite/DataProvider/Core/",
+      "/apidocs/Nimblesite/DataProvider/Core/CodeGeneration/",
+      "/apidocs/Nimblesite/DataProvider/SQLite/",
+      "/apidocs/Nimblesite/DataProvider/Postgres/",
+      "/apidocs/Nimblesite/DataProvider/SqlServer/",
+      "/apidocs/Nimblesite/DataProvider/Migration/Core/",
+      "/apidocs/Nimblesite/DataProvider/Migration/SQLite/",
+      "/apidocs/Nimblesite/DataProvider/Migration/Postgres/",
+      "/apidocs/DataProviderMigrate/",
+      "/apidocs/Nimblesite/Lql/Core/",
+      "/apidocs/Nimblesite/Lql/Postgres/",
+      "/apidocs/Nimblesite/Lql/SQLite/",
+      "/apidocs/Nimblesite/Lql/SqlServer/",
+      "/apidocs/Nimblesite/Sync/Core/",
+      "/apidocs/Nimblesite/Sync/Http/",
+      "/apidocs/Nimblesite/Sync/Postgres/",
+      "/apidocs/Nimblesite/Sync/SQLite/",
+      "/apidocs/Nimblesite/Reporting/Engine/",
+      "/apidocs/Nimblesite/Sql/Model/",
+    ];
+
+    for (const ns of namespaces) {
+      const response = await page.goto(ns);
+      expect(response?.status(), `${ns} should return 200`).toBe(200);
+      const body = await getBodyText(page);
+      expect(body.length, `${ns} should have content`).toBeGreaterThan(150);
+    }
   });
 });
 
