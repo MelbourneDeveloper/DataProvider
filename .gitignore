@@ -491,3 +491,5 @@ Lql/LqlWebsite-Eleventy/_site/
 
 Lql/lql-lsp-rust/target/
 *.vsix
+Reporting/Nimblesite.Reporting.React/wwwroot/js/Nimblesite.Reporting.React.js
+Reporting/Nimblesite.Reporting.React/wwwroot/js/Nimblesite.Reporting.React.meta.js
