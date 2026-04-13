@@ -1,32 +1,6 @@
 namespace Nimblesite.DataProvider.Migration.Core;
 
 /// <summary>
-/// Static helper for DDL generation delegates.
-/// Each database provider implements these as static methods.
-/// </summary>
-public static class DdlGenerator
-{
-    /// <summary>
-    /// Converts a schema operation to platform-specific DDL SQL.
-    /// </summary>
-    /// <param name="operation">The operation to convert</param>
-    /// <param name="generateDdl">Platform-specific DDL generator function</param>
-    /// <returns>DDL SQL string</returns>
-    public static string Generate(
-        SchemaOperation operation,
-        Func<SchemaOperation, string> generateDdl
-    ) => generateDdl(operation);
-
-    /// <summary>
-    /// Generates DDL for all operations.
-    /// </summary>
-    public static IReadOnlyList<string> GenerateAll(
-        IReadOnlyList<SchemaOperation> operations,
-        Func<SchemaOperation, string> generateDdl
-    ) => operations.Select(generateDdl).ToList().AsReadOnly();
-}
-
-/// <summary>
 /// Migration runner for executing schema operations.
 /// </summary>
 public static class MigrationRunner
