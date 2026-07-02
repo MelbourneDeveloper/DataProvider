@@ -122,6 +122,117 @@ public sealed class PostgresDeclarativeTriggerE2ETests(PostgresContainerFixture 
         Assert.Empty(ops);
     }
 
+    private const string PascalCaseGuardYaml = """
+        name: tenant_app
+        tables:
+          - name: TenantMembers
+            columns:
+              - name: Id
+                type: Uuid
+                isNullable: false
+              - name: TenantId
+                type: Uuid
+                isNullable: false
+              - name: Role
+                type: VarChar(50)
+                isNullable: false
+            primaryKey:
+              columns:
+                - Id
+            triggers:
+              - name: assert_not_last_owner
+                events: [Update, Delete]
+                raiseWhen: |
+                  old.Role = 'owner' and not exists(
+                    TenantMembers
+                    |> filter(fn(m) => m.TenantId = old.TenantId and m.Role = 'owner' and m.Id <> old.Id)
+                  )
+                errorMessage: cannot remove the last owner of a tenant
+        """;
+
+    [Fact]
+    public void PgTriggerGuard_PascalCaseIdentifiers_EnforcedAtRuntime()
+    {
+        // Implements [MIG-TRIGGER-GUARD-LQL]: exists() pipeline columns must
+        // be quoted on Postgres or mixed-case columns fold to lowercase and
+        // every UPDATE/DELETE fails with 42703 at trigger-fire time.
+        PostgresTestDb.ApplySchema(
+            _connection,
+            SchemaYamlSerializer.FromYaml(PascalCaseGuardYaml),
+            _logger
+        );
+        var ownerA = Guid.NewGuid();
+        var ownerB = Guid.NewGuid();
+        var tenant = Guid.NewGuid();
+        InsertPascalMember(ownerA, tenant, "owner");
+        InsertPascalMember(ownerB, tenant, "owner");
+
+        // Two owners: deleting one must succeed (trigger fires cleanly).
+        Execute("DELETE FROM \"public\".\"TenantMembers\" WHERE \"Id\" = @i", ownerA);
+
+        // Last owner: must be blocked by the declared guard message.
+        var ex = Assert.Throws<PostgresException>(() =>
+            Execute("DELETE FROM \"public\".\"TenantMembers\" WHERE \"Id\" = @i", ownerB)
+        );
+        Assert.Contains("last owner", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PgTrigger_DestructiveRerun_PreservesUnmanagedTriggerAndGuardFunction()
+    {
+        // Implements [MIG-TRIGGER-PG]: only usr_-prefixed triggers are
+        // migration-managed. Unmanaged triggers (e.g. Sync change tracking)
+        // must survive destructive runs, and the guard function must not be
+        // dropped out from under its trigger.
+        ApplyGuardSchema();
+        Execute(
+            """
+            CREATE TRIGGER zz_unmanaged_touch BEFORE UPDATE ON "public"."tenant_members"
+            FOR EACH ROW EXECUTE FUNCTION suppress_redundant_updates_trigger()
+            """
+        );
+
+        PostgresTestDb.ApplySchema(
+            _connection,
+            SchemaYamlSerializer.FromYaml(GuardYaml),
+            _logger,
+            allowDestructive: true
+        );
+
+        using var cmd = _connection.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM pg_trigger WHERE tgname = 'zz_unmanaged_touch'";
+        Assert.Equal(1L, Assert.IsType<long>(cmd.ExecuteScalar()));
+
+        // Guard still enforced after the destructive rerun.
+        var owner = Guid.NewGuid();
+        var tenant = Guid.NewGuid();
+        InsertMember(owner, tenant, "owner");
+        var ex = Assert.Throws<PostgresException>(() => DeleteMember(owner));
+        Assert.Contains("last owner", ex.Message, StringComparison.Ordinal);
+    }
+
+    private void Execute(string sql, Guid? id = null)
+    {
+        using var cmd = _connection.CreateCommand();
+        cmd.CommandText = sql;
+        if (id is { } value)
+        {
+            cmd.Parameters.AddWithValue("@i", value);
+        }
+        cmd.ExecuteNonQuery();
+    }
+
+    private void InsertPascalMember(Guid id, Guid tenantId, string role)
+    {
+        using var cmd = _connection.CreateCommand();
+        cmd.CommandText =
+            "INSERT INTO \"public\".\"TenantMembers\"(\"Id\", \"TenantId\", \"Role\") VALUES (@i, @t, @r)";
+        cmd.Parameters.AddWithValue("@i", id);
+        cmd.Parameters.AddWithValue("@t", tenantId);
+        cmd.Parameters.AddWithValue("@r", role);
+        cmd.ExecuteNonQuery();
+    }
+
     private void ApplyGuardSchema() =>
         PostgresTestDb.ApplySchema(_connection, SchemaYamlSerializer.FromYaml(GuardYaml), _logger);
 

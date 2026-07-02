@@ -16,7 +16,7 @@ tables:
       - name: assert_not_last_owner
         timing: Before            # Before (default) or After
         events: [Update, Delete]  # Insert | Update | Delete
-        forEachRow: true          # default true
+        forEachRow: true          # default true; false is rejected (guards are row-level)
         raiseWhen: |              # LQL guard predicate; row refs via old./new.
           old.role = 'owner' and not exists(
             tenant_members
@@ -52,6 +52,20 @@ database. Row column references use `old.<column>` / `new.<column>`
 composition, and `exists(...)` / `not exists(...)` pipeline subqueries.
 Transpiles identically (same semantics) on every supported platform.
 
+Validation (all fail the migration loudly rather than diverging at runtime):
+
+- `old.` references require every event to be Update/Delete; `new.`
+  references require Insert/Update (OLD does not exist on INSERT, NEW does
+  not exist on DELETE).
+- `forEachRow: false` is rejected -- guards are row-level on every platform
+  (SQLite has no statement triggers; Postgres statement triggers see NULL
+  OLD/NEW and would silently never fire).
+- The token `__TRG_` is reserved for internal sentinels; predicates
+  containing it are rejected so user literals can never be rewritten.
+
+On Postgres, transpiled `exists()` pipeline SQL gets an identifier-quoting
+pass so mixed-case column names are not case-folded.
+
 ## [MIG-TRIGGER-SQLITE] SQLite emission and inspection
 
 One trigger per event named `usr_{event}_{trigger}_{table}`:
@@ -63,7 +77,14 @@ trigger name, `rls_` triggers excluded) so re-diff is a no-op.
 ## [MIG-TRIGGER-PG] PostgreSQL emission and inspection
 
 One plpgsql function `{table}_{trigger}_trgfn` raising `errorMessage` when the
-predicate holds, plus one trigger `{trigger}` (`BEFORE {events} ... FOR EACH
-ROW EXECUTE FUNCTION`). Drop removes trigger and function. Inspector reads
-triggers back from `information_schema.triggers` grouped by trigger name so
-re-diff is a no-op.
+predicate holds (`RAISE ... USING MESSAGE` avoids `%` format interpretation;
+the dollar-quote tag is chosen to never occur in the body), plus one trigger
+`usr_{trigger}` (`BEFORE {events} ... FOR EACH ROW EXECUTE FUNCTION`). Drop
+removes trigger and function. Identifiers over PostgreSQL's 63-byte limit are
+rejected loudly (silent truncation would desynchronise create/drop/inspect).
+
+Inspector reads only `usr_`-prefixed triggers back from
+`information_schema.triggers` grouped by trigger name (prefix stripped) so
+re-diff is a no-op and triggers created outside the migration tool are never
+dropped by destructive runs. `*_trgfn` guard functions are excluded from
+support-function read-back because they are owned by the trigger lifecycle.

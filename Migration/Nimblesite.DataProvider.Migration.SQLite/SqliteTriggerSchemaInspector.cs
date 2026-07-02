@@ -10,15 +10,20 @@ namespace Nimblesite.DataProvider.Migration.SQLite;
 /// </summary>
 internal static class SqliteTriggerSchemaInspector
 {
-    private static readonly string[] EventTokens = ["insert", "update", "delete"];
-
     public static IReadOnlyList<TriggerDefinition> Inspect(
         SqliteConnection connection,
         string tableName
     ) =>
         SqliteTriggerNames
-            .Read(connection, tableName, $"usr_%_{tableName}")
-            .Select(name => SqliteTriggerNames.Parse(name, "usr_", tableName, EventTokens))
+            .Read(connection, tableName, $"{TriggerDdlSupport.ManagedTriggerPrefix}%_{tableName}")
+            .Select(name =>
+                SqliteTriggerNames.Parse(
+                    name,
+                    TriggerDdlSupport.ManagedTriggerPrefix,
+                    tableName,
+                    SqliteTriggerNames.DmlEventTokens
+                )
+            )
             .OfType<ParsedTriggerName>()
             .GroupBy(p => p.BaseName, StringComparer.OrdinalIgnoreCase)
             .Select(ToTrigger)

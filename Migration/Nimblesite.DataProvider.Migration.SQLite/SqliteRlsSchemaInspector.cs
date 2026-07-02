@@ -4,8 +4,6 @@ namespace Nimblesite.DataProvider.Migration.SQLite;
 
 internal static class SqliteRlsSchemaInspector
 {
-    private static readonly string[] EventTokens = ["insert", "update", "delete"];
-
     public static RlsPolicySetDefinition? Inspect(SqliteConnection connection, string tableName)
     {
         var triggers = SqliteTriggerNames.Read(connection, tableName, $"rls_%_{tableName}");
@@ -27,7 +25,12 @@ internal static class SqliteRlsSchemaInspector
 
     private static SqliteRlsTriggerPolicy? ToTriggerPolicy(string name, string tableName)
     {
-        var parsed = SqliteTriggerNames.Parse(name, "rls_", tableName, EventTokens);
+        var parsed = SqliteTriggerNames.Parse(
+            name,
+            "rls_",
+            tableName,
+            SqliteTriggerNames.DmlEventTokens
+        );
         return parsed is null
             ? null
             : new SqliteRlsTriggerPolicy(parsed.BaseName, ToOperation(parsed.EventToken));

@@ -29,7 +29,7 @@ internal static class SqliteTestDb
     }
 
     public static SchemaDefinition Inspect(SqliteConnection connection) =>
-        ((SchemaResultOk)SqliteSchemaInspector.Inspect(connection, Logger)).Value;
+        Assert.IsType<SchemaResultOk>(SqliteSchemaInspector.Inspect(connection, Logger)).Value;
 
     public static void ApplySchema(
         SqliteConnection connection,
@@ -37,12 +37,34 @@ internal static class SqliteTestDb
         bool allowDestructive = false
     )
     {
+        var result = TryApplySchema(connection, schema, allowDestructive);
+        var error = result is MigrationApplyResultError failure ? failure.Value.Message : null;
+        Assert.True(result is MigrationApplyResultOk, $"Migration failed: {error}");
+    }
+
+    /// <summary>
+    /// Inspect → diff → apply without asserting success, for tests that
+    /// expect the migration to fail loudly.
+    /// </summary>
+    public static MigrationApplyResult TryApplySchema(
+        SqliteConnection connection,
+        SchemaDefinition schema,
+        bool allowDestructive = false
+    )
+    {
         var current = Inspect(connection);
-        var ops = (
-            (OperationsResultOk)
+        var ops = Assert
+            .IsType<OperationsResultOk>(
                 SchemaDiff.Calculate(current, schema, allowDestructive, logger: Logger)
-        ).Value;
-        Apply(connection, ops, allowDestructive ? MigrationOptions.Destructive : null);
+            )
+            .Value;
+        return MigrationRunner.Apply(
+            connection,
+            ops,
+            SqliteDdlGenerator.Generate,
+            allowDestructive ? MigrationOptions.Destructive : MigrationOptions.Default,
+            Logger
+        );
     }
 
     public static void Apply(
@@ -58,10 +80,8 @@ internal static class SqliteTestDb
             options ?? MigrationOptions.Default,
             Logger
         );
-        Assert.True(
-            result is MigrationApplyResultOk,
-            $"Migration failed: {(result as MigrationApplyResultError)?.Value}"
-        );
+        var error = result is MigrationApplyResultError failure ? failure.Value.Message : null;
+        Assert.True(result is MigrationApplyResultOk, $"Migration failed: {error}");
     }
 
     public static void SetUser(SqliteConnection connection, string userId)

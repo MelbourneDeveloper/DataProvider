@@ -7,6 +7,9 @@ namespace Nimblesite.DataProvider.Migration.SQLite;
 /// </summary>
 internal static class SqliteTriggerNames
 {
+    /// <summary>DML event tokens used in managed trigger names.</summary>
+    public static IReadOnlyList<string> DmlEventTokens { get; } = ["insert", "update", "delete"];
+
     public static List<string> Read(SqliteConnection connection, string tableName, string pattern)
     {
         using var command = connection.CreateCommand();

@@ -13,13 +13,14 @@ internal static class PostgresTestDb
         bool allowDestructive = false
     )
     {
-        var current = (
-            (SchemaResultOk)PostgresSchemaInspector.Inspect(connection, "public", logger)
-        ).Value;
-        var ops = (
-            (OperationsResultOk)
+        var current = Assert
+            .IsType<SchemaResultOk>(PostgresSchemaInspector.Inspect(connection, "public", logger))
+            .Value;
+        var ops = Assert
+            .IsType<OperationsResultOk>(
                 SchemaDiff.Calculate(current, desired, allowDestructive, logger: logger)
-        ).Value;
+            )
+            .Value;
 
         var apply = MigrationRunner.Apply(
             connection,
@@ -28,9 +29,7 @@ internal static class PostgresTestDb
             allowDestructive ? MigrationOptions.Destructive : MigrationOptions.Default,
             logger
         );
-        Assert.True(
-            apply is MigrationApplyResultOk,
-            $"Migration failed: {(apply as MigrationApplyResultError)?.Value}"
-        );
+        var error = apply is MigrationApplyResultError failure ? failure.Value.Message : null;
+        Assert.True(apply is MigrationApplyResultOk, $"Migration failed: {error}");
     }
 }

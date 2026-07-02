@@ -4,9 +4,12 @@ namespace Nimblesite.DataProvider.Migration.Postgres;
 // docs/specs/declarative-triggers-spec.md (GitHub issue 82).
 
 /// <summary>
-/// Reads triggers back from <c>information_schema.triggers</c> (one row per
-/// event) grouped by trigger name so the diff can match declarative trigger
-/// guards by name.
+/// Reads migration-managed triggers back from
+/// <c>information_schema.triggers</c> (one row per event) grouped by trigger
+/// name so the diff can match declarative trigger guards by name. Only
+/// <c>usr_</c>-prefixed triggers are read: triggers created outside the
+/// migration tool (e.g. Sync change tracking) stay invisible to the diff so
+/// destructive runs never drop them.
 /// </summary>
 internal static class PostgresTriggerSchemaInspector
 {
@@ -21,10 +24,15 @@ internal static class PostgresTriggerSchemaInspector
             SELECT trigger_name, event_manipulation, action_timing, action_orientation
             FROM information_schema.triggers
             WHERE event_object_schema = @schema AND event_object_table = @table
+              AND trigger_name LIKE @managedPattern ESCAPE '\'
             ORDER BY trigger_name
             """;
         command.Parameters.AddWithValue("@schema", schemaName);
         command.Parameters.AddWithValue("@table", tableName);
+        command.Parameters.AddWithValue(
+            "@managedPattern",
+            $"{TriggerDdlSupport.ManagedTriggerPrefix.Replace("_", "\\_", StringComparison.Ordinal)}%"
+        );
 
         var rows = new List<PostgresTriggerRow>();
         using (var reader = command.ExecuteReader())
@@ -51,7 +59,8 @@ internal static class PostgresTriggerSchemaInspector
     private static TriggerDefinition ToTrigger(IGrouping<string, PostgresTriggerRow> group) =>
         new()
         {
-            Name = group.Key,
+            // Strip the managed prefix: the model holds the declared name.
+            Name = group.Key[TriggerDdlSupport.ManagedTriggerPrefix.Length..],
             Timing = group.Any(r => r.Timing.Equals("AFTER", StringComparison.OrdinalIgnoreCase))
                 ? TriggerTiming.After
                 : TriggerTiming.Before,
