@@ -53,6 +53,7 @@ public static partial class SchemaDiff
         {
             var operations = new List<SchemaOperation>();
             var rlsOperations = new List<SchemaOperation>();
+            var triggerOperations = new List<SchemaOperation>();
 
             operations.AddRange(CalculateRoleDiff(current, desired, logger));
 
@@ -91,6 +92,9 @@ public static partial class SchemaDiff
 
                     rlsOperations.AddRange(
                         CalculateRlsDiff(null, desiredTable, allowDestructive, logger)
+                    );
+                    triggerOperations.AddRange(
+                        CalculateTriggerDiff(null, desiredTable, allowDestructive, logger)
                     );
                 }
                 else
@@ -136,6 +140,9 @@ public static partial class SchemaDiff
                     rlsOperations.AddRange(
                         CalculateRlsDiff(currentTable, desiredTable, allowDestructive, logger)
                     );
+                    triggerOperations.AddRange(
+                        CalculateTriggerDiff(currentTable, desiredTable, allowDestructive, logger)
+                    );
                 }
             }
 
@@ -172,6 +179,7 @@ public static partial class SchemaDiff
             operations.AddRange(functionOps.Where(op => !IsSupportCleanupOperation(op)));
             operations.AddRange(grantOps.Where(op => !IsSupportCleanupOperation(op)));
             operations.AddRange(rlsOperations);
+            operations.AddRange(triggerOperations);
             operations.AddRange(functionOps.Where(IsSupportCleanupOperation));
             operations.AddRange(grantOps.Where(IsSupportCleanupOperation));
 

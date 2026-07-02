@@ -18,6 +18,7 @@ public static class SchemaYamlSerializer
         .WithTypeConverter(new PortableTypeYamlConverter())
         .WithTypeConverter(new ForeignKeyActionYamlConverter())
         .WithTypeConverter(new RlsOperationYamlConverter())
+        .WithTypeConverter(new TriggerEnumYamlConverter())
         .WithTypeConverter(new PostgresGrantTargetYamlConverter())
         .ConfigureDefaultValuesHandling(
             DefaultValuesHandling.OmitDefaults
@@ -35,6 +36,7 @@ public static class SchemaYamlSerializer
         .WithTypeConverter(new PortableTypeYamlConverter())
         .WithTypeConverter(new ForeignKeyActionYamlConverter())
         .WithTypeConverter(new RlsOperationYamlConverter())
+        .WithTypeConverter(new TriggerEnumYamlConverter())
         .WithTypeConverter(new PostgresGrantTargetYamlConverter())
         .WithTypeMapping<IReadOnlyList<TableDefinition>, List<TableDefinition>>()
         .WithTypeMapping<IReadOnlyList<PostgresRoleDefinition>, List<PostgresRoleDefinition>>()
@@ -60,6 +62,8 @@ public static class SchemaYamlSerializer
         >()
         .WithTypeMapping<IReadOnlyList<RlsPolicyDefinition>, List<RlsPolicyDefinition>>()
         .WithTypeMapping<IReadOnlyList<RlsOperation>, List<RlsOperation>>()
+        .WithTypeMapping<IReadOnlyList<TriggerDefinition>, List<TriggerDefinition>>()
+        .WithTypeMapping<IReadOnlyList<TriggerEvent>, List<TriggerEvent>>()
         .WithTypeMapping<IReadOnlyList<string>, List<string>>()
         .Build();
 
@@ -353,6 +357,44 @@ internal sealed class RlsOperationYamlConverter : IYamlTypeConverter
 }
 
 /// <summary>
+/// YAML type converter for the <see cref="TriggerTiming"/> and
+/// <see cref="TriggerEvent"/> enums. Implements [MIG-TRIGGER-YAML].
+/// </summary>
+internal sealed class TriggerEnumYamlConverter : IYamlTypeConverter
+{
+    /// <inheritdoc />
+    public bool Accepts(Type type) => type == typeof(TriggerTiming) || type == typeof(TriggerEvent);
+
+    /// <inheritdoc />
+    public object? ReadYaml(IParser parser, Type type, ObjectDeserializer rootDeserializer)
+    {
+        var scalar = parser.Consume<Scalar>();
+        return type == typeof(TriggerTiming) ? ParseTiming(scalar.Value) : ParseEvent(scalar.Value);
+    }
+
+    /// <inheritdoc />
+    public void WriteYaml(IEmitter emitter, object? value, Type type, ObjectSerializer serializer)
+    {
+        emitter.Emit(new Scalar(value?.ToString() ?? string.Empty));
+    }
+
+    private static object ParseTiming(string value) =>
+        value.ToUpperInvariant() switch
+        {
+            "AFTER" => TriggerTiming.After,
+            _ => TriggerTiming.Before,
+        };
+
+    private static object ParseEvent(string value) =>
+        value.ToUpperInvariant() switch
+        {
+            "UPDATE" => TriggerEvent.Update,
+            "DELETE" => TriggerEvent.Delete,
+            _ => TriggerEvent.Insert,
+        };
+}
+
+/// <summary>
 /// YAML type converter for the <see cref="PostgresGrantTarget"/> enum.
 /// Implements [RLS-PG-SUPPORT-DDL].
 /// </summary>
@@ -409,6 +451,8 @@ internal sealed class PropertyDefaultValueFilter(IObjectGraphVisitor<IEmitter> n
             // RlsPolicySetDefinition / RlsPolicyDefinition semantic defaults
             { "enabled", (typeof(bool), true) },
             { "isPermissive", (typeof(bool), true) },
+            // TriggerDefinition semantic defaults ([MIG-TRIGGER-YAML])
+            { "forEachRow", (typeof(bool), true) },
             // PostgreSQL support object semantic defaults
             { "language", (typeof(string), "sql") },
             { "volatility", (typeof(string), "stable") },

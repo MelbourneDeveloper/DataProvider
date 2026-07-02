@@ -40,6 +40,8 @@ public static class SqliteDdlGenerator
             CreateRlsPolicyOperation op => SqliteRlsDdlBuilder.GenerateCreatePolicy(op),
             DropRlsPolicyOperation op => SqliteRlsDdlBuilder.GenerateDropPolicy(op),
             DisableRlsOperation op => SqliteRlsDdlBuilder.GenerateDisable(op),
+            CreateTriggerOperation op => SqliteTriggerDdlBuilder.GenerateCreate(op),
+            DropTriggerOperation op => SqliteTriggerDdlBuilder.GenerateDrop(op),
             _ => throw new NotSupportedException(
                 $"Unknown operation type: {operation.GetType().Name}"
             ),
