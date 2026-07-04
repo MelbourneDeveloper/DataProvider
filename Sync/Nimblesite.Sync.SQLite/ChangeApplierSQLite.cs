@@ -44,11 +44,6 @@ public static class ChangeApplierSQLite
         }
     }
 
-    [SuppressMessage(
-        "Security",
-        "CA2100:Review SQL queries for security vulnerabilities",
-        Justification = "Table names come from internal sync log, not user input"
-    )]
     private static BoolSyncResult ApplyInsert(SqliteConnection connection, SyncLogEntry entry)
     {
         if (string.IsNullOrEmpty(entry.Payload))
@@ -62,6 +57,20 @@ public static class ChangeApplierSQLite
             return new BoolSyncError(new SyncErrorDatabase("Invalid payload JSON"));
         }
 
+        return ApplyUpsert(connection, entry, data);
+    }
+
+    [SuppressMessage(
+        "Security",
+        "CA2100:Review SQL queries for security vulnerabilities",
+        Justification = "Table names come from internal sync log, not user input"
+    )]
+    private static BoolSyncResult ApplyUpsert(
+        SqliteConnection connection,
+        SyncLogEntry entry,
+        Dictionary<string, JsonElement> data
+    )
+    {
         var columns = string.Join(", ", data.Keys);
         var parameters = string.Join(", ", data.Keys.Select(k => $"@{k}"));
 
@@ -140,20 +149,7 @@ public static class ChangeApplierSQLite
         }
 
         // Apply the update using UPSERT
-        var columns = string.Join(", ", data.Keys);
-        var parameters = string.Join(", ", data.Keys.Select(k => $"@{k}"));
-
-        using var cmd = connection.CreateCommand();
-        cmd.CommandText =
-            $"INSERT OR REPLACE INTO {entry.TableName} ({columns}) VALUES ({parameters})";
-
-        foreach (var kvp in data)
-        {
-            cmd.Parameters.AddWithValue($"@{kvp.Key}", JsonElementToValue(kvp.Value));
-        }
-
-        cmd.ExecuteNonQuery();
-        return new BoolSyncOk(true);
+        return ApplyUpsert(connection, entry, data);
     }
 
     [SuppressMessage(

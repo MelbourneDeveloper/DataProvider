@@ -140,7 +140,10 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                     var notNull = reader.GetInt32(3) == 1; // notnull column
                     var isPrimaryKey = reader.GetInt32(5) > 0; // pk column
 
-                    var csharpType = MapSqliteTypeToCSharpType(sqliteType, !notNull);
+                    var csharpType = SqliteTypeMapper.MapSqliteTypeToCSharpType(
+                        sqliteType,
+                        !notNull
+                    );
 
                     columns.Add(
                         new DatabaseColumn
@@ -184,37 +187,6 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                 new SqlError($"Failed to get table metadata for {tableName}", ex)
             );
         }
-    }
-
-    /// <summary>
-    /// Maps SQLite types to C# types
-    /// </summary>
-    private static string MapSqliteTypeToCSharpType(string sqliteType, bool isNullable)
-    {
-        var baseType = sqliteType.ToUpperInvariant() switch
-        {
-            var t when t.Contains("INT", StringComparison.OrdinalIgnoreCase) => "long",
-            var t
-                when t.Contains("REAL", StringComparison.OrdinalIgnoreCase)
-                    || t.Contains("FLOAT", StringComparison.OrdinalIgnoreCase)
-                    || t.Contains("DOUBLE", StringComparison.OrdinalIgnoreCase) => "double",
-            var t
-                when t.Contains("DECIMAL", StringComparison.OrdinalIgnoreCase)
-                    || t.Contains("NUMERIC", StringComparison.OrdinalIgnoreCase) => "double",
-            var t when t.Contains("BOOL", StringComparison.OrdinalIgnoreCase) => "bool",
-            var t
-                when t.Contains("DATE", StringComparison.OrdinalIgnoreCase)
-                    || t.Contains("TIME", StringComparison.OrdinalIgnoreCase) => "string", // SQLite stores dates as text
-            var t when t.Contains("BLOB", StringComparison.OrdinalIgnoreCase) => "byte[]",
-            _ => "string",
-        };
-
-        if (isNullable && baseType != "string" && baseType != "byte[]")
-        {
-            return baseType + "?";
-        }
-
-        return baseType;
     }
 
     // =============================

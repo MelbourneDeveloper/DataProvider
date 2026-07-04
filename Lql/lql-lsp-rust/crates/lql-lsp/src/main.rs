@@ -138,6 +138,12 @@ impl LqlBackend {
         (Some(word), None)
     }
 
+    /// Returns a clone of the current source text for `uri`, or `None` if the
+    /// document is not open. Centralizes the documents-map lock and lookup.
+    fn document_source(&self, uri: &Url) -> Option<String> {
+        self.documents.lock().unwrap().get(uri).cloned()
+    }
+
     fn compute_completion_context(source: &str, position: Position) -> CompletionContext {
         let line = source.lines().nth(position.line as usize).unwrap_or("");
         let col = (position.character as usize).min(line.len());
@@ -340,12 +346,9 @@ impl LanguageServer for LqlBackend {
         let uri = &params.text_document_position.text_document.uri;
         let position = params.text_document_position.position;
 
-        let source = {
-            let docs = self.documents.lock().unwrap();
-            match docs.get(uri) {
-                Some(s) => s.clone(),
-                None => return Ok(None),
-            }
+        let source = match self.document_source(uri) {
+            Some(s) => s,
+            None => return Ok(None),
         };
 
         let scope = build_scope(&source);
@@ -449,12 +452,9 @@ impl LanguageServer for LqlBackend {
         let uri = &params.text_document_position_params.text_document.uri;
         let position = params.text_document_position_params.position;
 
-        let source = {
-            let docs = self.documents.lock().unwrap();
-            match docs.get(uri) {
-                Some(s) => s.clone(),
-                None => return Ok(None),
-            }
+        let source = match self.document_source(uri) {
+            Some(s) => s,
+            None => return Ok(None),
         };
 
         let (word, qualified) = Self::get_qualified_at_position(&source, position);
@@ -489,12 +489,9 @@ impl LanguageServer for LqlBackend {
     ) -> Result<Option<DocumentSymbolResponse>> {
         let uri = &params.text_document.uri;
 
-        let source = {
-            let docs = self.documents.lock().unwrap();
-            match docs.get(uri) {
-                Some(s) => s.clone(),
-                None => return Ok(None),
-            }
+        let source = match self.document_source(uri) {
+            Some(s) => s,
+            None => return Ok(None),
         };
 
         let symbols = extract_symbols(&source);
@@ -530,12 +527,9 @@ impl LanguageServer for LqlBackend {
     async fn formatting(&self, params: DocumentFormattingParams) -> Result<Option<Vec<TextEdit>>> {
         let uri = &params.text_document.uri;
 
-        let source = {
-            let docs = self.documents.lock().unwrap();
-            match docs.get(uri) {
-                Some(s) => s.clone(),
-                None => return Ok(None),
-            }
+        let source = match self.document_source(uri) {
+            Some(s) => s,
+            None => return Ok(None),
         };
 
         let formatted = format_lql(&source);
