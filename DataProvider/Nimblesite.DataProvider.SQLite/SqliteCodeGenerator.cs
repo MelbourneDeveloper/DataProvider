@@ -486,12 +486,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                     var text =
                         sqlFile.GetText(context.CancellationToken)
                         ?? SourceText.From(sqlText, Encoding.UTF8);
-                    var span = new TextSpan(0, Math.Min(1, text.Length));
-                    var lineSpan = new LinePositionSpan(
-                        new LinePosition(0, 0),
-                        new LinePosition(0, Math.Min(1, text.Length))
-                    );
-                    var location = Location.Create(sqlFile.Path, span, lineSpan);
+                    var location = CreateSqlFileLocation(sqlFile, text);
 
                     var diagCol = Diagnostic.Create(
                         new DiagnosticDescriptor(
@@ -567,12 +562,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                     var text =
                         sqlFile.GetText(context.CancellationToken)
                         ?? SourceText.From(sqlText, Encoding.UTF8);
-                    var span = new TextSpan(0, Math.Min(1, text.Length));
-                    var lineSpan = new LinePositionSpan(
-                        new LinePosition(0, 0),
-                        new LinePosition(0, Math.Min(1, text.Length))
-                    );
-                    var location = Location.Create(sqlFile.Path, span, lineSpan);
+                    var location = CreateSqlFileLocation(sqlFile, text);
 
                     var diagGen = Diagnostic.Create(
                         new DiagnosticDescriptor(
@@ -596,12 +586,7 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                 var text =
                     sqlFile.GetText(context.CancellationToken)
                     ?? SourceText.From(string.Empty, Encoding.UTF8);
-                var span = new TextSpan(0, Math.Min(1, text.Length));
-                var lineSpan = new LinePositionSpan(
-                    new LinePosition(0, 0),
-                    new LinePosition(0, Math.Min(1, text.Length))
-                );
-                var location = Location.Create(sqlFile.Path, span, lineSpan);
+                var location = CreateSqlFileLocation(sqlFile, text);
 
                 var diag = Diagnostic.Create(
                     new DiagnosticDescriptor(
@@ -741,5 +726,18 @@ public sealed class SqliteCodeGenerator : IIncrementalGenerator
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Builds a diagnostic <see cref="Location"/> pointing at the start of a .sql additional file.
+    /// </summary>
+    private static Location CreateSqlFileLocation(AdditionalText sqlFile, SourceText text)
+    {
+        var span = new TextSpan(0, Math.Min(1, text.Length));
+        var lineSpan = new LinePositionSpan(
+            new LinePosition(0, 0),
+            new LinePosition(0, Math.Min(1, text.Length))
+        );
+        return Location.Create(sqlFile.Path, span, lineSpan);
     }
 }

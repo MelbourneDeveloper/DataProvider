@@ -106,14 +106,10 @@ public static class ChangeApplierSQLite
         }
 
         // Extract PK info
-        var pkData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(entry.PkValue);
-        if (pkData == null || pkData.Count == 0)
+        if (ParsePkValue(entry.PkValue) is not (string pkColumn, object pkValue))
         {
             return new BoolSyncError(new SyncErrorDatabase("Invalid pk_value JSON"));
         }
-
-        var pkColumn = pkData.Keys.First();
-        var pkValue = JsonElementToValue(pkData[pkColumn]);
 
         // Check for version-based conflict resolution
         // If record has a Version column, only apply if incoming version is newer
@@ -159,14 +155,10 @@ public static class ChangeApplierSQLite
     )]
     private static BoolSyncResult ApplyDelete(SqliteConnection connection, SyncLogEntry entry)
     {
-        var pkData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(entry.PkValue);
-        if (pkData == null || pkData.Count == 0)
+        if (ParsePkValue(entry.PkValue) is not (string pkColumn, object pkValue))
         {
             return new BoolSyncError(new SyncErrorDatabase("Invalid pk_value JSON"));
         }
-
-        var pkColumn = pkData.Keys.First();
-        var pkValue = JsonElementToValue(pkData[pkColumn]);
 
         using var cmd = connection.CreateCommand();
         cmd.CommandText = $"DELETE FROM {entry.TableName} WHERE {pkColumn} = @pk";
@@ -174,6 +166,18 @@ public static class ChangeApplierSQLite
         cmd.ExecuteNonQuery();
 
         return new BoolSyncOk(true);
+    }
+
+    private static (string PkColumn, object PkValue)? ParsePkValue(string pkValue)
+    {
+        var pkData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(pkValue);
+        if (pkData == null || pkData.Count == 0)
+        {
+            return null;
+        }
+
+        var pkColumn = pkData.Keys.First();
+        return (pkColumn, JsonElementToValue(pkData[pkColumn]));
     }
 
     private static object JsonElementToValue(JsonElement element) =>

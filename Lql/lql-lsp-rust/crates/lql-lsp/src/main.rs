@@ -646,6 +646,19 @@ async fn main() {
 mod tests {
     use super::*;
 
+    async fn open_doc(backend: &LqlBackend, uri: &Url, text: &str) {
+        backend
+            .did_open(DidOpenTextDocumentParams {
+                text_document: TextDocumentItem {
+                    uri: uri.clone(),
+                    language_id: "lql".to_string(),
+                    version: 1,
+                    text: text.to_string(),
+                },
+            })
+            .await;
+    }
+
     // ── format_lql ──
 
     #[test]
@@ -1155,17 +1168,7 @@ mod tests {
         let uri = Url::parse("file:///test.lql").unwrap();
 
         // Open a document
-        service
-            .inner()
-            .did_open(DidOpenTextDocumentParams {
-                text_document: TextDocumentItem {
-                    uri: uri.clone(),
-                    language_id: "lql".to_string(),
-                    version: 1,
-                    text: "users |> ".to_string(),
-                },
-            })
-            .await;
+        open_doc(service.inner(), &uri, "users |> ").await;
 
         // Request completions
         let params = CompletionParams {
@@ -1191,17 +1194,7 @@ mod tests {
         let (service, _socket) = LspService::new(LqlBackend::new);
         let uri = Url::parse("file:///test.lql").unwrap();
 
-        service
-            .inner()
-            .did_open(DidOpenTextDocumentParams {
-                text_document: TextDocumentItem {
-                    uri: uri.clone(),
-                    language_id: "lql".to_string(),
-                    version: 1,
-                    text: "select".to_string(),
-                },
-            })
-            .await;
+        open_doc(service.inner(), &uri, "select").await;
 
         let params = HoverParams {
             text_document_position_params: TextDocumentPositionParams {
@@ -1223,17 +1216,7 @@ mod tests {
         let (service, _socket) = LspService::new(LqlBackend::new);
         let uri = Url::parse("file:///test.lql").unwrap();
 
-        service
-            .inner()
-            .did_open(DidOpenTextDocumentParams {
-                text_document: TextDocumentItem {
-                    uri: uri.clone(),
-                    language_id: "lql".to_string(),
-                    version: 1,
-                    text: "let x = users\nlet y = orders".to_string(),
-                },
-            })
-            .await;
+        open_doc(service.inner(), &uri, "let x = users\nlet y = orders").await;
 
         let params = DocumentSymbolParams {
             text_document: TextDocumentIdentifier { uri: uri.clone() },
@@ -1254,17 +1237,7 @@ mod tests {
         let (service, _socket) = LspService::new(LqlBackend::new);
         let uri = Url::parse("file:///test.lql").unwrap();
 
-        service
-            .inner()
-            .did_open(DidOpenTextDocumentParams {
-                text_document: TextDocumentItem {
-                    uri: uri.clone(),
-                    language_id: "lql".to_string(),
-                    version: 1,
-                    text: "users".to_string(),
-                },
-            })
-            .await;
+        open_doc(service.inner(), &uri, "users").await;
 
         service
             .inner()
@@ -1299,17 +1272,7 @@ mod tests {
         let (service, _socket) = LspService::new(LqlBackend::new);
         let uri = Url::parse("file:///test.lql").unwrap();
 
-        service
-            .inner()
-            .did_open(DidOpenTextDocumentParams {
-                text_document: TextDocumentItem {
-                    uri: uri.clone(),
-                    language_id: "lql".to_string(),
-                    version: 1,
-                    text: "users".to_string(),
-                },
-            })
-            .await;
+        open_doc(service.inner(), &uri, "users").await;
 
         service
             .inner()
@@ -1335,17 +1298,7 @@ mod tests {
         let (service, _socket) = LspService::new(LqlBackend::new);
         let uri = Url::parse("file:///test.lql").unwrap();
 
-        service
-            .inner()
-            .did_open(DidOpenTextDocumentParams {
-                text_document: TextDocumentItem {
-                    uri: uri.clone(),
-                    language_id: "lql".to_string(),
-                    version: 1,
-                    text: "users\n|> select(\nusers.id\n)".to_string(),
-                },
-            })
-            .await;
+        open_doc(service.inner(), &uri, "users\n|> select(\nusers.id\n)").await;
 
         let params = DocumentFormattingParams {
             text_document: TextDocumentIdentifier { uri },
@@ -1368,17 +1321,7 @@ mod tests {
         let (service, _socket) = LspService::new(LqlBackend::new);
         let uri = Url::parse("file:///test.lql").unwrap();
 
-        service
-            .inner()
-            .did_open(DidOpenTextDocumentParams {
-                text_document: TextDocumentItem {
-                    uri: uri.clone(),
-                    language_id: "lql".to_string(),
-                    version: 1,
-                    text: "users\n".to_string(),
-                },
-            })
-            .await;
+        open_doc(service.inner(), &uri, "users\n").await;
 
         let params = DocumentFormattingParams {
             text_document: TextDocumentIdentifier { uri },
@@ -1398,17 +1341,7 @@ mod tests {
         let (service, _socket) = LspService::new(LqlBackend::new);
         let uri = Url::parse("file:///test.lql").unwrap();
 
-        service
-            .inner()
-            .did_open(DidOpenTextDocumentParams {
-                text_document: TextDocumentItem {
-                    uri: uri.clone(),
-                    language_id: "lql".to_string(),
-                    version: 1,
-                    text: "zzz_unknown".to_string(),
-                },
-            })
-            .await;
+        open_doc(service.inner(), &uri, "zzz_unknown").await;
 
         let params = HoverParams {
             text_document_position_params: TextDocumentPositionParams {
@@ -1426,17 +1359,7 @@ mod tests {
         let (service, _socket) = LspService::new(LqlBackend::new);
         let uri = Url::parse("file:///test.lql").unwrap();
 
-        service
-            .inner()
-            .did_open(DidOpenTextDocumentParams {
-                text_document: TextDocumentItem {
-                    uri: uri.clone(),
-                    language_id: "lql".to_string(),
-                    version: 1,
-                    text: "users |> ".to_string(),
-                },
-            })
-            .await;
+        open_doc(service.inner(), &uri, "users |> ").await;
 
         let params = CompletionParams {
             text_document_position: TextDocumentPositionParams {
@@ -1490,17 +1413,7 @@ mod tests {
         let (service, _socket) = LspService::new(LqlBackend::new);
         let uri = Url::parse("file:///test.lql").unwrap();
 
-        service
-            .inner()
-            .did_open(DidOpenTextDocumentParams {
-                text_document: TextDocumentItem {
-                    uri: uri.clone(),
-                    language_id: "lql".to_string(),
-                    version: 1,
-                    text: "let my_query = users\nmy_query |> ".to_string(),
-                },
-            })
-            .await;
+        open_doc(service.inner(), &uri, "let my_query = users\nmy_query |> ").await;
 
         let params = CompletionParams {
             text_document_position: TextDocumentPositionParams {

@@ -256,7 +256,7 @@ public static class SubscriptionRepository
         }
     }
 
-    private static SyncSubscription ReadSubscription(SqliteDataReader reader) =>
+    internal static SyncSubscription ReadSubscription(SqliteDataReader reader) =>
         new(
             SubscriptionId: reader.GetString(0),
             OriginId: reader.GetString(1),
@@ -267,7 +267,7 @@ public static class SubscriptionRepository
             ExpiresAt: reader.IsDBNull(6) ? null : reader.GetString(6)
         );
 
-    private static SubscriptionType ParseSubscriptionType(string type) =>
+    internal static SubscriptionType ParseSubscriptionType(string type) =>
         type.ToLowerInvariant() switch
         {
             "record" => SubscriptionType.Record,
