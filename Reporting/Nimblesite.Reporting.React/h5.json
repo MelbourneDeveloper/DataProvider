@@ -1,0 +1,7 @@
+{
+  "output": "wwwroot/js",
+  "outputBy": "Project",
+  "sourceMaps": {
+    "enabled": true
+  }
+}

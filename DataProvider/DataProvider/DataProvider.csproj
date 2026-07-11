@@ -1,20 +1,44 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <!-- Source Generator Properties -->
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>EPC12;CA2100</NoWarn>
+    <IsPackable>true</IsPackable>
+    <PackageId>DataProvider</PackageId>
+    <AssemblyName>DataProvider</AssemblyName>
+    <RootNamespace>DataProvider</RootNamespace>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>DataProvider</ToolCommandName>
+    <Description>Unified DataProvider codegen tool. Generates type-safe data access code for Postgres, SQLite, and SqlServer from live database schemas.</Description>
+    <Authors>ChristianFindlay</Authors>
+    <Company>Nimblesite</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/Nimblesite/DataProvider</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
-
-  <!-- You are not allowed to reference database platform specific dependencies here -->
-
   <ItemGroup>
-    <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
+    <ProjectReference Include="../Nimblesite.DataProvider.Core/Nimblesite.DataProvider.Core.csproj" />
+    <ProjectReference Include="../Nimblesite.DataProvider.SQLite/Nimblesite.DataProvider.SQLite.csproj" />
+    <ProjectReference Include="../Nimblesite.DataProvider.Postgres/Nimblesite.DataProvider.Postgres.csproj" />
+    <ProjectReference Include="../Nimblesite.DataProvider.SqlServer/Nimblesite.DataProvider.SqlServer.csproj" />
+    <ProjectReference Include="../../Other/Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj" />
+    <ProjectReference Include="../../Migration/Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Core.csproj" />
   </ItemGroup>
-
-  <!-- Disable problematic analyzer rules for generated code -->
-  <PropertyGroup>
-    <NoWarn>$(NoWarn);EPC13;EPS06;CA1002;CA1822;CA1859</NoWarn>
-  </PropertyGroup>
-
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="Npgsql" Version="9.0.2" />
+    <!-- [MIG-TYPES-VECTOR] §5.4.5: pgvector type mapping for Npgsql so schema
+         introspection recognises the vector extension type and generated code
+         can bind float[] via Pgvector.Vector. -->
+    <PackageReference Include="Pgvector" Version="0.3.2" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+  </ItemGroup>
 </Project>

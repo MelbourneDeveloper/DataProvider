@@ -1,205 +1,155 @@
 # DataProvider
 
-A .NET source generator that creates compile-time safe database extension methods from SQL queries. DataProvider eliminates runtime SQL errors by validating queries at compile time and generating strongly-typed C# code.
+A build-time CLI code generator for .NET that creates compile-time safe database extension methods from SQL and LQL query files. Every generated method returns `Result<T, SqlError>` — no exceptions, no reflection, no runtime overhead.
 
-## Features
+Supports **SQLite**, **PostgreSQL**, and **SQL Server**.
 
-- **Compile-Time Safety** - SQL queries are validated during compilation, catching errors before runtime
-- **Auto-Generated Extensions** - Creates extension methods on `IDbConnection` and `IDbTransaction`
-- **Schema Inspection** - Automatically inspects database schema to generate appropriate types
-- **Result Type Pattern** - All operations return `Result<T>` types for explicit error handling
-- **Multi-Database Support** - Currently supports SQLite and SQL Server
-- **LQL Integration** - Seamlessly works with Lambda Query Language files
+## How it works
 
-## How It Works
+DataProvider is a **dotnet CLI tool**, not a Roslyn analyzer. It runs during the build, reads your SQL/LQL files plus a `DataProvider.json` manifest, and emits `.g.cs` files that your project compiles normally. The three tools form a pipeline:
 
-1. **Define SQL Queries** - Place `.sql` or `.lql` files in your project
-2. **Configure Generation** - Set up `DataProvider.json` configuration
-3. **Build Project** - Source generators create extension methods during compilation
-4. **Use Generated Code** - Call type-safe methods with full IntelliSense support
-
-## Installation
-
-### SQLite
-```xml
-<PackageReference Include="DataProvider.SQLite" Version="*" />
+```mermaid
+flowchart LR
+    Yaml["example-schema.yaml"] -->|DataProviderMigrate| Db["invoices.db"]
+    Lql["GetCustomers.lql"] -->|Lql| Sql["GetCustomers.generated.sql"]
+    Config["DataProvider.json"] --> Gen["DataProvider"]
+    Sql --> Gen
+    Gen --> Cs["Generated/*.g.cs"]
 ```
 
-### SQL Server
-```xml
-<PackageReference Include="DataProvider.SqlServer" Version="*" />
+## Install
+
+```bash
+dotnet new tool-manifest
+dotnet tool install DataProvider --version ${DATAPROVIDER_VERSION}
+dotnet add package Nimblesite.DataProvider.SQLite --version ${NIMBLESITE_VERSION}
 ```
 
-## Configuration
+Replace `SQLite` with `Postgres` or `SqlServer` as needed.
 
-Create a `DataProvider.json` file in your project root:
+## Runtime packages
+
+| Package | Purpose |
+|---------|---------|
+| `Nimblesite.DataProvider.Core` | Shared runtime types (`Result<T,E>`, `SqlError`) |
+| `Nimblesite.DataProvider.SQLite` | SQLite runtime |
+| `Nimblesite.DataProvider.Postgres` | PostgreSQL runtime |
+| `Nimblesite.DataProvider.SqlServer` | SQL Server runtime |
+
+## DataProvider.json
+
+Describes what to generate from your SQL/LQL files and tables:
 
 ```json
 {
-  "ConnectionString": "Data Source=mydatabase.db",
-  "Namespace": "MyApp.DataAccess",
-  "OutputDirectory": "Generated",
-  "Queries": [
+  "connectionString": "Data Source=app.db",
+  "queries": [
     {
-      "Name": "GetCustomers",
-      "SqlFile": "Queries/GetCustomers.sql"
-    },
+      "name": "GetCustomers",
+      "sqlFile": "GetCustomers.generated.sql"
+    }
+  ],
+  "tables": [
     {
-      "Name": "GetOrders",
-      "SqlFile": "Queries/GetOrders.lql"
+      "schema": "main",
+      "name": "Customer",
+      "primaryKeyColumns": ["Id"],
+      "generateInsert": true,
+      "generateUpdate": true,
+      "generateDelete": true
     }
   ]
 }
 ```
 
-## Usage Examples
+## Running the generator
 
-### Simple Query
+Manually:
 
-SQL file (`GetCustomers.sql`):
-```sql
-SELECT Id, Name, Email 
-FROM Customers 
-WHERE IsActive = @isActive
-```
-
-Generated C# usage:
-```csharp
-using var connection = new SqliteConnection(connectionString);
-var result = await connection.GetCustomersAsync(isActive: true);
-
-if (result.IsSuccess)
-{
-    foreach (var customer in result.Value)
-    {
-        Console.WriteLine($"{customer.Name}: {customer.Email}");
-    }
-}
-else
-{
-    Console.WriteLine($"Error: {result.Error.Message}");
-}
-```
-
-### With LQL
-
-LQL file (`GetOrders.lql`):
-```lql
-Order
-|> join(Customer, on = Order.CustomerId = Customer.Id)
-|> filter(fn(row) => row.Order.OrderDate >= @startDate)
-|> select(Order.Id, Order.Total, Customer.Name)
-```
-
-This automatically generates:
-```csharp
-var orders = await connection.GetOrdersAsync(
-    startDate: DateTime.Now.AddDays(-30)
-);
-```
-
-### Transaction Support
-
-```csharp
-using var connection = new SqliteConnection(connectionString);
-connection.Open();
-using var transaction = connection.BeginTransaction();
-
-var insertResult = await transaction.InsertCustomerAsync(
-    name: "John Doe",
-    email: "john@example.com"
-);
-
-if (insertResult.IsSuccess)
-{
-    transaction.Commit();
-}
-else
-{
-    transaction.Rollback();
-}
-```
-
-## Grouping Configuration
-
-For complex result sets with joins, configure grouping in a `.grouping.json` file:
-
-```json
-{
-  "PrimaryKey": "Id",
-  "GroupBy": ["Id"],
-  "Collections": {
-    "Addresses": {
-      "ForeignKey": "CustomerId",
-      "Properties": ["Street", "City", "State"]
-    }
-  }
-}
-```
-
-## Architecture
-
-DataProvider follows functional programming principles:
-
-- **No Classes** - Uses records and static extension methods
-- **No Exceptions** - Returns `Result<T>` types for all operations
-- **Pure Functions** - Static methods with no side effects
-- **Expression-Based** - Prefers expressions over statements
-
-## Project Structure
-
-```
-DataProvider/
-├── DataProvider/              # Core library and base types
-├── DataProvider.SQLite/       # SQLite implementation
-│   ├── Parsing/              # ANTLR grammar and parsers
-│   └── SchemaInspection/     # Schema discovery
-├── DataProvider.SqlServer/    # SQL Server implementation
-│   └── SchemaInspection/
-├── DataProvider.Example/      # Example usage
-└── DataProvider.Tests/        # Unit tests
-```
-
-## Testing
-
-Run tests with:
 ```bash
-dotnet test DataProvider.Tests/DataProvider.Tests.csproj
+dotnet DataProvider sqlite --project-dir . --config DataProvider.json --out ./Generated
+dotnet DataProvider postgres --project-dir . --config DataProvider.json --out ./Generated --connection-string "Host=localhost;Database=mydb;..."
 ```
 
-## Performance
+Or wire it into MSBuild so every build regenerates code:
 
-- **Zero Runtime Overhead** - All SQL parsing and validation happens at compile time
-- **Minimal Allocations** - Uses value types and expressions where possible
-- **Async/Await** - Full async support for all database operations
+```xml
+<Target Name="RunDataProvider" BeforeTargets="CoreCompile">
+  <Exec Command="dotnet DataProvider sqlite --project-dir . --config DataProvider.json --out ./Generated" />
+  <ItemGroup>
+    <Compile Include="Generated/**/*.g.cs" />
+  </ItemGroup>
+</Target>
+```
 
-## Error Handling
+## Using generated methods (default template)
 
-All methods return `Result<T>` types:
+Out of the box, the generator emits methods that make errors explicit in the return type — no thrown exceptions on the query path:
 
 ```csharp
-var result = await connection.ExecuteQueryAsync();
+using Microsoft.Data.Sqlite;
+using Nimblesite.DataProvider.Core;
+using MyApp.Generated;
 
-var output = result switch
+await using var connection = new SqliteConnection("Data Source=app.db");
+await connection.OpenAsync();
+
+var result = await connection.GetCustomersAsync(customerId: null);
+
+switch (result)
 {
-    { IsSuccess: true } => ProcessData(result.Value),
-    { Error: SqlError error } => HandleError(error),
-    _ => "Unknown error"
-};
+    case Result<IReadOnlyList<GetCustomersRow>, SqlError>.Ok ok:
+        foreach (var customer in ok.Value)
+            Console.WriteLine($"{customer.Id}: {customer.CustomerName}");
+        break;
+
+    case Result<IReadOnlyList<GetCustomersRow>, SqlError>.Error err:
+        Console.Error.WriteLine($"Query failed: {err.Value.Message}");
+        break;
+}
 ```
 
-## Contributing
+Generated row types are immutable records. Generated insert/update/delete methods follow the same default shape.
 
-1. Follow the functional programming style (no classes, no exceptions)
-2. Keep files under 450 lines
-3. All public members must have XML documentation
-4. Run `dotnet csharpier .` before committing
-5. Ensure all tests pass
+## Customising generated code
 
-## License
+The default output shape is **fully pluggable**. The code generator is driven by a `CodeGenerationConfig` record that holds a set of `Func<>` delegates — one per piece of the emitted code. Swap any of them and the generator emits whatever you want: raw `Task<T>`, `Option<T>`, thrown exceptions, custom result types, bespoke naming conventions, you name it.
 
-MIT License
+Key extension points (see `Nimblesite.DataProvider.Core.CodeGeneration.CodeGenerationConfig`):
 
-## Author
+| Delegate | What it controls |
+|---|---|
+| `GenerateDataAccessMethod` | The signature and body of each query method (this is where you change the return type) |
+| `GenerateModelType` | How row/parameter records are emitted |
+| `GenerateGroupedModels` | How nested grouping models (parent + child collections) are emitted |
+| `GenerateSourceFile` | The overall file layout (`using`s, namespace, class wrapper) |
 
-MelbourneDeveloper - [ChristianFindlay.com](https://christianfindlay.com)
+Minimal custom template (programmatic):
+
+```csharp
+using Nimblesite.DataProvider.Core.CodeGeneration;
+
+var config = new CodeGenerationConfig(getColumnMetadata, tableOpGenerator)
+{
+    // Emit methods that throw instead of returning Result<T, SqlError>
+    GenerateDataAccessMethod = (className, methodName, sql, parameters, columns, connType) =>
+        $$"""
+        public static async Task<IReadOnlyList<{{className}}Row>> {{methodName}}Async(
+            this {{connType}} connection /* … */)
+        {
+            // your bespoke body
+        }
+        """
+};
+
+// Pass the config to the platform-specific generator
+SqliteCodeGenerator.GenerateCodeWithMetadata(config: config, /* … */);
+```
+
+> **Today this hook is programmatic-only** — custom templates are wired up in code that drives the generator library directly. The `DataProvider` CLI does not yet accept a `--template` flag or a `template` field in `DataProvider.json`; support for CLI-level template selection is tracked as future work. If you need a custom template right now, reference `Nimblesite.DataProvider.Core` from a small generator project and call `GenerateCodeWithMetadata` yourself.
+
+## Related
+
+- [LQL](../Lql/README.md) — cross-database query language that transpiles to SQL
+- [Migrations](../Migration/README.md) — YAML schema definitions consumed by `DataProviderMigrate`
+- Migration spec: [docs/specs/migration-spec.md](../docs/specs/migration-spec.md#74-dataprovidermigrate-cli-mig-cli)

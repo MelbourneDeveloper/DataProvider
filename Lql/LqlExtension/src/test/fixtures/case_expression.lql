@@ -1,0 +1,10 @@
+orders
+|> select(
+    orders.id,
+    orders.total_amount,
+    case
+        when orders.total_amount > 1000 then orders.total_amount * 0.95
+        when orders.total_amount > 500 then orders.total_amount * 0.97
+        else orders.total_amount
+    end as discounted_amount
+)

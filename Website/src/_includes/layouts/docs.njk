@@ -1,0 +1,86 @@
+---
+layout: layouts/base.njk
+---
+
+{% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "{{ title }}",
+  "description": "{{ description }}",
+  "url": "{{ site.url }}{{ page.url }}",
+  "publisher": {
+    "@type": "Organization",
+    "name": "{{ site.name }}"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{ site.url }}{{ page.url }}"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "{{ site.url }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Documentation",
+      "item": "{{ site.url }}/docs/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "{{ title }}"
+    }
+  ]
+}
+</script>
+{% endblock %}
+
+<div class="docs-layout">
+  <aside class="sidebar" id="docs-sidebar">
+    {% for section in navigation.docs %}
+    <div class="sidebar-section">
+      <h4>{{ section.title }}</h4>
+      <ul>
+        {% for item in section.items %}
+        <li>
+          <a href="{{ item.url }}" {% if page.url == item.url %}class="active"{% endif %}>
+            {{ item.text }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </aside>
+
+  <article class="docs-content">
+    <h1>{{ title }}</h1>
+    {{ content | safe }}
+
+    {% if prevPage or nextPage %}
+    <nav style="display: flex; justify-content: space-between; margin-top: var(--space-12); padding-top: var(--space-6); border-top: 1px solid var(--border-color);">
+      {% if prevPage %}
+      <a href="{{ prevPage.url }}" class="btn btn-secondary">&larr; {{ prevPage.title }}</a>
+      {% else %}
+      <span></span>
+      {% endif %}
+
+      {% if nextPage %}
+      <a href="{{ nextPage.url }}" class="btn btn-secondary">{{ nextPage.title }} &rarr;</a>
+      {% endif %}
+    </nav>
+    {% endif %}
+  </article>
+</div>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<RuleSet Name="Lql Test Rules" Description="Code analysis rules for Lql test projects" ToolsVersion="17.0">
-  <IncludeAll Action="Error" />
-  
- <Rules AnalyzerId="Microsoft.CodeAnalysis.NetAnalyzers" RuleNamespace="Microsoft.CodeAnalysis.NetAnalyzers">
-    <Rule Id="CA1707" Action="None" />  
-  </Rules>
-
-</RuleSet> 

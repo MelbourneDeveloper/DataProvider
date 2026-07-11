@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="Nimblesite.DataProvider.Core Rules" Description="Comprehensive code analysis rules for Nimblesite.DataProvider.Core projects" ToolsVersion="17.0">
+    <IncludeAll Action="Error" />
+    <Rules AnalyzerId="Microsoft.CodeAnalysis.NetAnalyzers" RuleNamespace="Microsoft.CodeAnalysis.NetAnalyzers">
+        <Rule Id="CA1515" Action="None" />
+        <Rule Id="CA1031" Action="None" />
+    </Rules>
+</RuleSet>

@@ -2,13 +2,17 @@
 <RunSettings>
   <DataCollectionRunSettings>
     <DataCollectors>
-      <DataCollector friendlyName="XPlat code coverage">
+      <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
-          <Format>json,lcov,opencover</Format>
-          <Exclude>[*]*.g*</Exclude> <!-- Exclude generated files -->
-          <ExcludeByFile>**/obj/**/*,**/bin/**/*</ExcludeByFile>
-          <ExcludeByAttribute>System.Diagnostics.DebuggerNonUserCode,System.Diagnostics.DebuggerHidden,System.ComponentModel.EditorBrowsableAttribute,System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage,Microsoft.CodeAnalysis.GeneratorAttribute</ExcludeByAttribute>
+          <Format>json,cobertura</Format>
+          <Exclude>[*]*.Generated*,[*]*.g.*</Exclude>
+          <ExcludeByFile>**/obj/**/*,**/bin/**/*,**/Migrations/**/*</ExcludeByFile>
+          <ExcludeByAttribute>
+            DebuggerNonUserCode,DebuggerHidden,EditorBrowsable,
+            ExcludeFromCodeCoverage,GeneratorAttribute,CompilerGenerated
+          </ExcludeByAttribute>
           <SkipAutoProps>true</SkipAutoProps>
+          <DeterministicReport>true</DeterministicReport>
         </Configuration>
       </DataCollector>
     </DataCollectors>

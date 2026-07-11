@@ -1,0 +1,82 @@
+name: Deploy Website to GitHub Pages
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Package version from the release tag'
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version to advertise on the site (e.g. 0.9.6-beta). Leave blank to use the default in versions.cjs.'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: Website/package-lock.json
+
+      - name: Install docfx
+        run: dotnet tool install -g docfx
+
+      - name: Generate API metadata with docfx
+        working-directory: Website/docfx
+        run: docfx metadata docfx.json
+
+      - name: Install npm dependencies
+        working-directory: Website
+        run: npm ci
+
+      - name: Generate API docs markdown from DocFX YAML
+        working-directory: Website
+        run: node scripts/generate-api-docs.cjs
+
+      - name: Build Eleventy site
+        working-directory: Website
+        env:
+          DATAPROVIDER_VERSION: ${{ inputs.version }}
+          DATAPROVIDERMIGRATE_VERSION: ${{ inputs.version }}
+          LQL_VERSION: ${{ inputs.version }}
+          NIMBLESITE_VERSION: ${{ inputs.version }}
+        run: npm run build
+
+      - name: Add GitHub Pages workflow to build output
+        run: |
+          mkdir -p ./Website/_site/.github/workflows
+          cp ./Website/deploy-pages-target.yml ./Website/_site/.github/workflows/deploy-pages.yml
+
+      - name: Deploy to DataProviderWebsite repo
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          deploy_key: ${{ secrets.DATAPROVIDER_WEBSITE_DEPLOY_KEY }}
+          external_repository: Nimblesite/DataProviderWebsite
+          publish_branch: gh-pages
+          publish_dir: ./Website/_site
+          cname: dataprovider.tech

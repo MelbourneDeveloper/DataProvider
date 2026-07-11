@@ -87,7 +87,7 @@
             "patterns": [
                 {
                     "name": "entity.name.function.query.lql",
-                    "match": "\\b(select|filter|join|group_by|order_by|having|limit|offset|union|union_all|insert|update|delete)\\b"
+                    "match": "\\b(select|select_distinct|filter|join|left_join|cross_join|group_by|order_by|having|limit|offset|union|union_all|insert|distinct)\\b"
                 },
                 {
                     "name": "entity.name.function.aggregate.lql",

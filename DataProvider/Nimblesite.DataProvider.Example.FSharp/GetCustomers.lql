@@ -1,0 +1,4 @@
+Customer
+|> join(Address, on = Customer.Id = Address.CustomerId)
+|> select(Customer.Id, Customer.CustomerName, Customer.Email, Customer.Phone, Customer.CreatedDate, Address.Id AS AddressId, Address.CustomerId, Address.Street, Address.City, Address.State, Address.ZipCode, Address.Country)
+|> order_by(Customer.CustomerName)

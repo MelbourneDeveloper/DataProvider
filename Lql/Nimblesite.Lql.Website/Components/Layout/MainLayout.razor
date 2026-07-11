@@ -1,0 +1,27 @@
+@inherits LayoutComponentBase
+
+<div class="page">
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">
+                    <img src="lql-icon.png" alt="LQL Logo">
+                    <span class="logo-text">LQL</span>
+                </a>
+                <div class="site-toggle">
+                    <a href="/" class="site-toggle-btn">Docs</a>
+                    <a href="/playground/" class="site-toggle-btn active">Playground</a>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="/">Docs</a></li>
+                        <li><a href="https://github.com/Nimblesite/DataProvider" target="_blank">GitHub</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+    <main>
+        @Body
+    </main>
+</div>

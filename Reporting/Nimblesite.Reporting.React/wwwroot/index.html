@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Report Viewer</title>
+  <link rel="stylesheet" href="css/report.css" />
+</head>
+<body>
+  <div id="loading-screen">
+    <p>Loading Report Viewer...</p>
+  </div>
+  <div id="root"></div>
+
+  <script>
+    // Configuration - only set defaults if not already injected (e.g. by Playwright)
+    window.reportConfig = window.reportConfig || {
+      apiBaseUrl: 'http://localhost:5100',
+      reportId: '' // Leave empty to show report list
+    };
+  </script>
+
+  <!-- React vendor files (bundled, not CDN) -->
+  <script src="js/vendor/react.development.js"></script>
+  <script src="js/vendor/react-dom.development.js"></script>
+
+  <!-- Report viewer application -->
+  <script src="js/reporting.js"></script>
+</body>
+</html>

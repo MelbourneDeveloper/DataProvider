@@ -1,0 +1,168 @@
+@page "/"
+@using Nimblesite.Lql.Core
+@using Nimblesite.Lql.Postgres
+@using Nimblesite.Lql.SqlServer
+@using Nimblesite.Sql.Model
+@using Outcome
+
+<PageTitle>LQL Transpiler Playground</PageTitle>
+
+<section id="playground" class="playground">
+    <div class="playground-container">
+        <div class="playground-header">
+            <h1>LQL Transpiler Playground</h1>
+            <p>Paste LQL and inspect the generated PostgreSQL or SQL Server output.</p>
+        </div>
+
+        <div class="playground-content">
+            <div class="input-section">
+                <h3 class="section-title">LQL Input</h3>
+                <div class="controls">
+                    <select @bind="selectedDialect" class="dialect-selector">
+                        <option value="PostgreSQL">PostgreSQL</option>
+                        <option value="SqlServer">SQL Server</option>
+                    </select>
+                    <button @onclick="ConvertLql" class="convert-btn" disabled="@isConverting">
+                        @(isConverting ? "Converting..." : "Convert to SQL")
+                    </button>
+                </div>
+                <textarea @bind="lqlInput" @bind:event="oninput" class="lql-input"
+                          placeholder="users |> select(users.id, users.name, users.email)"></textarea>
+            </div>
+
+            <div class="output-section">
+                <h3 class="section-title">@selectedDialect Output</h3>
+                <div class="sql-output">@sqlOutput</div>
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="error-message">
+                        <strong>Error:</strong> @errorMessage
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="examples-section">
+            <h3 class="section-title">Example Queries</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">Click any example to load it into the editor.</p>
+            <div class="example-buttons">
+                <button @onclick="() => LoadExample(SimpleSelectExample)" class="example-btn">Simple Select</button>
+                <button @onclick="() => LoadExample(JoinExample)" class="example-btn">Join Tables</button>
+                <button @onclick="() => LoadExample(FilterExample)" class="example-btn">Filter Data</button>
+                <button @onclick="() => LoadExample(AggregateExample)" class="example-btn">Aggregation</button>
+                <button @onclick="() => LoadExample(ComplexExample)" class="example-btn">Complex Query</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private const string SimpleSelectExample = "users |> select(users.id, users.name, users.email)";
+
+    private const string JoinExample =
+        "users\n" +
+        "|> join(orders, on = users.id = orders.user_id)\n" +
+        "|> select(users.name, orders.total, orders.status)";
+
+    private const string FilterExample =
+        "employees\n" +
+        "|> select(employees.id, employees.name, employees.salary)\n" +
+        "|> filter(fn(row) => row.employees.salary > 50000 and row.employees.department = 'Engineering')";
+
+    private const string AggregateExample =
+        "orders\n" +
+        "|> group_by(orders.user_id)\n" +
+        "|> select(\n" +
+        "    orders.user_id,\n" +
+        "    count(*) as order_count,\n" +
+        "    sum(orders.total) as total_amount,\n" +
+        "    avg(orders.total) as avg_amount\n" +
+        ")\n" +
+        "|> having(fn(group) => count(*) > 2)\n" +
+        "|> order_by(total_amount desc)";
+
+    private const string ComplexExample =
+        "let joined =\n" +
+        "    users\n" +
+        "    |> join(orders, on = users.id = orders.user_id)\n" +
+        "    |> filter(fn(row) => row.orders.status = 'completed')\n" +
+        "\n" +
+        "joined\n" +
+        "|> group_by(users.id)\n" +
+        "|> select(\n" +
+        "    users.name,\n" +
+        "    count(*) as total_orders,\n" +
+        "    sum(orders.total) as revenue,\n" +
+        "    avg(orders.total) as avg_order_value\n" +
+        ")\n" +
+        "|> filter(fn(row) => row.revenue > 1000)\n" +
+        "|> order_by(revenue desc)\n" +
+        "|> limit(10)";
+
+    private string lqlInput = SimpleSelectExample;
+    private string sqlOutput = "Enter LQL code and click 'Convert to SQL' to see the result.";
+    private string errorMessage = "";
+    private string selectedDialect = "PostgreSQL";
+    private bool isConverting;
+
+    private void ConvertLql()
+    {
+        if (string.IsNullOrWhiteSpace(lqlInput))
+        {
+            errorMessage = "Please enter some LQL code to convert.";
+            sqlOutput = "";
+            return;
+        }
+
+        isConverting = true;
+        errorMessage = "";
+        sqlOutput = "Converting...";
+
+        var statementResult = LqlStatementConverter.ToStatement(lqlInput);
+        if (statementResult is Result<LqlStatement, SqlError>.Error<LqlStatement, SqlError> parseFailure)
+        {
+            errorMessage = parseFailure.Value.DetailedMessage ?? parseFailure.Value.Message;
+            sqlOutput = "";
+            isConverting = false;
+            return;
+        }
+
+        if (statementResult is not Result<LqlStatement, SqlError>.Ok<LqlStatement, SqlError> statementOk)
+        {
+            errorMessage = "LQL parser returned an unknown result.";
+            sqlOutput = "";
+            isConverting = false;
+            return;
+        }
+
+        var sqlResult = selectedDialect switch
+        {
+            "PostgreSQL" => statementOk.Value.ToPostgreSql(),
+            "SqlServer" => statementOk.Value.ToSqlServer(),
+            _ => new Result<string, SqlError>.Error<string, SqlError>(new SqlError($"Unsupported dialect: {selectedDialect}")),
+        };
+
+        if (sqlResult is Result<string, SqlError>.Error<string, SqlError> sqlFailure)
+        {
+            errorMessage = sqlFailure.Value.DetailedMessage ?? sqlFailure.Value.Message;
+            sqlOutput = "";
+            isConverting = false;
+            return;
+        }
+
+        if (sqlResult is Result<string, SqlError>.Ok<string, SqlError> sqlOk)
+        {
+            sqlOutput = sqlOk.Value;
+            errorMessage = "";
+        }
+
+        isConverting = false;
+    }
+
+    private void LoadExample(string example)
+    {
+        lqlInput = example;
+        errorMessage = "";
+        sqlOutput = "Click 'Convert to SQL' to see the result.";
+    }
+}

@@ -1,0 +1,70 @@
+{
+    "queries": [
+        {
+            "name": "GetInvoices",
+            "sqlFile": "GetInvoices.sql",
+            "groupingFile": "GetInvoices.grouping.json"
+        },
+        {
+            "name": "GetOrders",
+            "sqlFile": "GetOrders.sql",
+            "groupingFile": "GetOrders.grouping.json"
+        },
+        {
+            "name": "GetCustomersLql",
+            "sqlFile": "GetCustomersLql.sql",
+            "groupingFile": "GetCustomersLql.grouping.json"
+        }
+    ],
+    "tables": [
+        {
+            "schema": "main",
+            "name": "Customer",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "Invoice",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "InvoiceLine",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "Address",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "Orders",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "primaryKeyColumns": ["Id"]
+        },
+        {
+            "schema": "main",
+            "name": "OrderItem",
+            "generateInsert": true,
+            "generateUpdate": true,
+            "generateDelete": true,
+            "primaryKeyColumns": ["Id"]
+        }
+    ],
+    "connectionString": "Data Source=invoices.db"
+}

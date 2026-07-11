@@ -1,0 +1,8 @@
+orders
+|> select(
+    orders.id,
+    orders.user_id,
+    orders.total,
+    row_number() over (partition by orders.user_id order by orders.total desc),
+    sum(orders.total) over (partition by orders.user_id) as user_total
+)

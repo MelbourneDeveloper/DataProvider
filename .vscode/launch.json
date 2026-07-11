@@ -2,25 +2,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Dashboard (Fresh)",
-            "type": "node-terminal",
-            "request": "launch",
-            "command": "${workspaceFolder}/Samples/start.sh --fresh",
-            "cwd": "${workspaceFolder}/Samples"
-        },
-        {
-            "name": "Dashboard (Continue)",
-            "type": "node-terminal",
-            "request": "launch",
-            "command": "${workspaceFolder}/Samples/start.sh",
-            "cwd": "${workspaceFolder}/Samples"
-        },
-        {
             "name": "Launch Blazor LQL Website",
             "type": "coreclr",
             "request": "launch",
+            "preLaunchTask": "kill-lql-website-port",
             "program": "dotnet",
-            "args": ["run", "--project", "Lql/Website"],
+            "args": ["run", "--project", "Lql/LqlWebsite"],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "serverReadyAction": {
@@ -36,6 +23,17 @@
             "program": "${workspaceFolder}/DataProvider/DataProvider.Example/bin/Debug/net9.0/DataProvider.Example.dll",
             "args": [],
             "cwd": "${workspaceFolder}/DataProvider/DataProvider.Example",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Run DataProvider.Example.FSharp",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/DataProvider/DataProvider.Example.FSharp/bin/Debug/net9.0/DataProvider.Example.FSharp.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/DataProvider/DataProvider.Example.FSharp",
             "console": "internalConsole",
             "stopAtEntry": false
         },

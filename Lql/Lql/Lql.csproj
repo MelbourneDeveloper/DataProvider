@@ -1,29 +1,30 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <NoWarn>CA1515;CA1866;CA1310;CA1834;</NoWarn>
+    <OutputType>Exe</OutputType>
+    <PublishAot>false</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <AssemblyName>Lql</AssemblyName>
+    <RootNamespace>Lql</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>Lql</PackageId>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>Lql</ToolCommandName>
+    <Description>LQL (Lambda Query Language) transpiler CLI tool. Subcommands: postgres, sqlite.</Description>
+    <Authors>ChristianFindlay</Authors>
+    <Company>Nimblesite</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/Nimblesite/DataProvider</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <!-- Suppress analyzer rules that are inappropriate for CLI applications -->
+    <NoWarn>$(NoWarn);RS1035</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
-    <PackageReference Include="Antlr4BuildTasks" Version="12.8.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <Antlr4 Include="Parsing/Lql.g4">
-      <Generator>MSBuild:Compile</Generator>
-      <CustomToolNamespace>LqlTranspiler.Generated</CustomToolNamespace>
-      <Listener>false</Listener>
-      <Visitor>true</Visitor>
-    </Antlr4>
+    <ProjectReference Include="../Nimblesite.Lql.Postgres/Nimblesite.Lql.Postgres.csproj" />
+    <ProjectReference Include="../Nimblesite.Lql.SQLite/Nimblesite.Lql.SQLite.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="../../Other/Selecta/Selecta.csproj" />
-  </ItemGroup>
-
 </Project>

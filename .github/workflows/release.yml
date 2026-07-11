@@ -1,0 +1,123 @@
+name: Release NuGet Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Pack solution
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: |
+          set -euo pipefail
+          dotnet pack DataProvider.sln -c Release \
+            -p:Version="$VERSION" \
+            -p:PackageVersion="$VERSION" \
+            -o ./nupkgs
+
+      - name: Push packages to NuGet
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NUGET_API_KEY:-}" ]; then
+            echo "NUGET_API_KEY secret is not set." >&2
+            exit 1
+          fi
+          shopt -s nullglob
+          packages=(./nupkgs/*.nupkg)
+          if [ ${#packages[@]} -eq 0 ]; then
+            echo "No packages produced — failing." >&2
+            exit 1
+          fi
+          for pkg in "${packages[@]}"; do
+            echo "::group::Push $pkg"
+            dotnet nuget push "$pkg" \
+              --api-key "$NUGET_API_KEY" \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+            echo "::endgroup::"
+          done
+
+      - name: Update version in Directory.Build.props
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: |
+          set -euo pipefail
+          # Tag-triggered runs check out a detached HEAD. Find the unique remote
+          # branch that contains the tagged commit so we know where to push the
+          # version-bump back to. If 0 or >1 branches contain it, fail loudly —
+          # we will not guess.
+          git fetch --no-tags --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          mapfile -t BRANCHES < <(git branch -r --contains HEAD --format='%(refname:short)' \
+            | sed 's|^origin/||' \
+            | grep -vx 'HEAD' \
+            | sort -u)
+          if [ ${#BRANCHES[@]} -eq 0 ]; then
+            echo "No remote branch contains the tagged commit. Refusing to push." >&2
+            exit 1
+          fi
+          if [ ${#BRANCHES[@]} -gt 1 ]; then
+            echo "Tagged commit belongs to multiple branches: ${BRANCHES[*]}. Refusing to guess." >&2
+            exit 1
+          fi
+          TARGET_BRANCH="${BRANCHES[0]}"
+          echo "Pushing version bump to origin/$TARGET_BRANCH"
+          sed -i 's|<Version>.*</Version>|<Version>'"$VERSION"'</Version>|' Directory.Build.props
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Directory.Build.props
+          git diff --cached --quiet || git commit -m "chore: bump version to $VERSION [skip ci]"
+          git push origin "HEAD:refs/heads/$TARGET_BRANCH"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "${{ github.ref_name }}" --generate-notes
+
+  deploy-lql-website:
+    needs: publish
+    uses: ./.github/workflows/deploy-lql-website.yml
+    with:
+      version: ${{ needs.publish.outputs.version }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+  deploy-website:
+    needs: [publish, deploy-lql-website]
+    uses: ./.github/workflows/deploy-pages.yml
+    with:
+      version: ${{ needs.publish.outputs.version }}
+    secrets: inherit
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

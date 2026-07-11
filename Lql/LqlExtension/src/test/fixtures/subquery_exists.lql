@@ -1,0 +1,6 @@
+users
+|> filter(fn(row) => exists(
+    orders
+    |> filter(fn(o) => o.orders.user_id = row.users.id and o.orders.status = 'completed')
+))
+|> select(users.id, users.name)

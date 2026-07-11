@@ -1,238 +1,99 @@
 # Lambda Query Language (LQL)
 
-A functional pipeline-style DSL that transpiles to SQL. LQL provides an intuitive, composable way to write database queries using lambda expressions and pipeline operators, making complex queries more readable and maintainable.
+A functional, pipeline-style DSL that transpiles to SQL. Write database logic once and run it against **PostgreSQL**, **SQLite**, or **SQL Server**.
 
-## Website
-
-Visit [lql.dev](https://lql.dev) for interactive playground and documentation.
-
-## Features
-
-- **Pipeline Syntax** - Chain operations using `|>` operator
-- **Lambda Expressions** - Use familiar lambda syntax for filtering
-- **Cross-Database Support** - Transpiles to PostgreSQL, SQLite, and SQL Server
-- **Type Safety** - Integrates with DataProvider for compile-time validation
-- **VS Code Extension** - Syntax highlighting and IntelliSense support
-- **CLI Tools** - Command-line transpilation and validation
-
-## Syntax Overview
-
-### Basic Pipeline
-```lql
-users |> select(id, name, email)
+```
+Users
+|> filter(fn(row) => row.Age > 18 and row.Status = 'active')
+|> join(Orders, on = Users.Id = Orders.UserId)
+|> select(Users.Name, sum(Orders.Total) as TotalSpent)
+|> group_by(Users.Id)
+|> order_by(TotalSpent desc)
 ```
 
-### With Filtering
-```lql
-employees
-|> filter(fn(row) => row.salary > 50000)
-|> select(id, name, salary)
-```
+LQL is **database platform independent**. The same `.lql` source must produce semantically identical results on every target dialect.
 
-### Joins
-```lql
-Customer
-|> join(Order, on = Customer.Id = Order.CustomerId)
-|> select(Customer.Name, Order.Total)
-```
+## Install
 
-### Complex Queries
-```lql
-let high_value_customers = Customer
-|> join(Order, on = Customer.Id = Order.CustomerId)
-|> filter(fn(row) => row.Order.Total > 1000)
-|> group_by(Customer.Id, Customer.Name)
-|> having(fn(row) => SUM(row.Order.Total) > 5000)
-|> select(Customer.Name, SUM(Order.Total) AS TotalSpent)
-|> order_by(TotalSpent DESC)
-|> limit(10)
-```
+### Build-time transpilation (recommended)
 
-## Pipeline Operations
-
-| Operation | Description | SQL Equivalent |
-|-----------|-------------|----------------|
-| `select(cols...)` | Choose columns | `SELECT` |
-| `filter(fn(row) => ...)` | Filter rows | `WHERE` |
-| `join(table, on = ...)` | Join tables | `JOIN` |
-| `left_join(table, on = ...)` | Left join | `LEFT JOIN` |
-| `group_by(cols...)` | Group rows | `GROUP BY` |
-| `having(fn(row) => ...)` | Filter groups | `HAVING` |
-| `order_by(col [ASC/DESC])` | Sort results | `ORDER BY` |
-| `limit(n)` | Limit rows | `LIMIT` |
-| `offset(n)` | Skip rows | `OFFSET` |
-| `distinct()` | Unique rows | `DISTINCT` |
-| `union(query)` | Combine queries | `UNION` |
-| `union_all(query)` | Combine with duplicates | `UNION ALL` |
-
-## Installation
-
-### CLI Tool (SQLite)
 ```bash
-dotnet tool install -g LqlCli.SQLite
+dotnet new tool-manifest
+dotnet tool install Lql --version ${LQL_VERSION}
 ```
 
-### VS Code Extension
-Search for "LQL" in VS Code Extensions or:
+Then transpile during the build:
+
 ```bash
-code --install-extension lql-lang
+dotnet Lql sqlite   --input GetCustomers.lql --output GetCustomers.generated.sql
+dotnet Lql postgres --input GetCustomers.lql --output GetCustomers.generated.sql
 ```
 
-### NuGet Packages
-```xml
-<!-- For SQLite -->
-<PackageReference Include="Lql.SQLite" Version="*" />
+### Runtime transpilation
 
-<!-- For SQL Server -->
-<PackageReference Include="Lql.SqlServer" Version="*" />
+Reference one of the library packages to transpile LQL in your application code:
 
-<!-- For PostgreSQL -->
-<PackageReference Include="Lql.Postgres" Version="*" />
-```
-
-## CLI Usage
-
-### Transpile to SQL
 ```bash
-lql --input query.lql --output query.sql
+dotnet add package Nimblesite.Lql.SQLite   --version ${NIMBLESITE_VERSION}
+dotnet add package Nimblesite.Lql.Postgres --version ${NIMBLESITE_VERSION}
+dotnet add package Nimblesite.Lql.SqlServer --version ${NIMBLESITE_VERSION}
 ```
 
-### Validate Syntax
-```bash
-lql --input query.lql --validate
-```
-
-### Print to Console
-```bash
-lql --input query.lql
-```
-
-## Programmatic Usage
+## Runtime API
 
 ```csharp
-using Lql;
-using Lql.SQLite;
+using Nimblesite.Lql.Core;
+using Nimblesite.Lql.Postgres;
+using Nimblesite.Sql.Model;
 
-// Parse LQL
-var lqlCode = "users |> filter(fn(row) => row.age > 21) |> select(name, email)";
-var statement = LqlCodeParser.Parse(lqlCode);
+var lql = """
+Customer
+|> filter(fn(row) => Customer.Active = true)
+|> select(Customer.Id, Customer.Name)
+""";
 
-// Convert to SQL
-var context = new SQLiteContext();
-var sql = statement.ToSql(context);
+var statement = new LqlStatement(lql);
+Result<string, SqlError> result = statement.ToPostgreSql();
 
-Console.WriteLine(sql);
-// Output: SELECT name, email FROM users WHERE age > 21
+var sql = result switch
+{
+    Result<string, SqlError>.Ok ok => ok.Value,
+    Result<string, SqlError>.Error err =>
+        throw new InvalidOperationException(err.Value.Message)
+};
 ```
 
-## Function Support
+`statement.ToSqlite()` and `statement.ToSqlServer()` are also available from their respective packages.
 
-### Aggregate Functions
-- `COUNT()`, `SUM()`, `AVG()`, `MIN()`, `MAX()`
+## Projects
 
-### String Functions
-- `UPPER()`, `LOWER()`, `LENGTH()`, `CONCAT()`
+| Project | Description |
+|---------|-------------|
+| `Nimblesite.Lql.Core` | Core transpiler library and AST |
+| `Lql` | Unified CLI transpiler tool (subcommands: `postgres`, `sqlite`) |
+| `Nimblesite.Lql.Postgres` | `ToPostgreSql()` extension |
+| `Nimblesite.Lql.SQLite` | `ToSqlite()` extension |
+| `Nimblesite.Lql.SqlServer` | `ToSqlServer()` extension |
+| `LqlExtension` | VS Code extension (TypeScript) |
+| `lql-lsp-rust` | Language server (Rust, ANTLR-generated parser) |
+| `Nimblesite.Lql.TypeProvider.FSharp` | F# type provider for compile-time validation |
 
-### Date Functions
-- `NOW()`, `DATE()`, `YEAR()`, `MONTH()`
+## Pipeline operators
 
-### Conditional
-- `CASE WHEN ... THEN ... ELSE ... END`
-- `COALESCE()`, `NULLIF()`
+| Operator | Purpose |
+|----------|---------|
+| `filter(fn(row) => ...)` | WHERE |
+| `select(col1, col2, ...)` | SELECT projection |
+| `join(Table, on = ...)` | INNER JOIN (plus `left_join`, `right_join`, `full_join`) |
+| `group_by(col)` | GROUP BY |
+| `order_by(col [asc|desc])` | ORDER BY |
+| `limit(n)` | LIMIT / TOP |
+| `distinct()` | DISTINCT |
 
-## Expression Support
+Aggregates include `count`, `sum`, `avg`, `min`, `max`. Parameters are declared with `@name`.
 
-### Arithmetic
-```lql
-products |> select(price * quantity AS total)
-```
+## Related documentation
 
-### Comparisons
-```lql
-orders |> filter(fn(row) => row.date >= '2024-01-01' AND row.status != 'cancelled')
-```
-
-### Pattern Matching
-```lql
-customers |> filter(fn(row) => row.name LIKE 'John%')
-```
-
-### Subqueries
-```lql
-orders |> filter(fn(row) => row.customer_id IN (
-    customers |> filter(fn(c) => c.country = 'USA') |> select(id)
-))
-```
-
-## VS Code Extension Features
-
-- Syntax highlighting
-- Auto-completion
-- Error diagnostics
-- Format on save
-- Snippets for common patterns
-
-## Architecture
-
-```
-Lql/
-├── Lql/                    # Core transpiler
-│   ├── Parsing/           # ANTLR grammar and parser
-│   ├── FunctionMapping/   # Database-specific functions
-│   └── Pipeline steps     # AST transformation
-├── Lql.SQLite/            # SQLite dialect
-├── Lql.SqlServer/         # SQL Server dialect
-├── Lql.Postgres/          # PostgreSQL dialect
-├── LqlCli.SQLite/         # CLI tool
-├── LqlExtension/          # VS Code extension
-└── Website/               # lql.dev website
-```
-
-## Testing
-
-```bash
-dotnet test Lql.Tests/Lql.Tests.csproj
-```
-
-## Examples
-
-See the `Lql.Tests/TestData/Lql/` directory for comprehensive examples of LQL queries and their SQL equivalents.
-
-## Error Handling
-
-LQL provides detailed error messages:
-
-```lql
-// Invalid: Identifier cannot start with number
-123table |> select(id)
-// Error: Syntax error at line 1:0 - Identifier cannot start with a number
-
-// Invalid: Undefined variable
-undefined_var |> select(name)
-// Error: Syntax error at line 1:0 - Undefined variable
-```
-
-## Integration with DataProvider
-
-LQL files are automatically processed by DataProvider source generators:
-
-1. Write `.lql` files in your project
-2. DataProvider transpiles to SQL during build
-3. Generates type-safe C# extension methods
-4. Use with full IntelliSense support
-
-## Contributing
-
-1. Follow functional programming principles
-2. Add tests for new features
-3. Update grammar file for syntax changes
-4. Ensure all dialects are supported
-5. Run tests before submitting PRs
-
-## License
-
-MIT License
-
-## Author
-
-MelbourneDeveloper - [ChristianFindlay.com](https://christianfindlay.com)
+- LQL language spec: [docs/specs/lql-spec.md](../docs/specs/lql-spec.md)
+- LQL design system: [docs/specs/lql-design-system.md](../docs/specs/lql-design-system.md)
+- LSP reference (used by IDE): [lql-lsp-rust/crates/lql-reference.md](lql-lsp-rust/crates/lql-reference.md)

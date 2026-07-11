@@ -1,0 +1,90 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": [
+            "DataProvider/DataProvider.csproj",
+            "Nimblesite.DataProvider.Core/Nimblesite.DataProvider.Core.csproj",
+            "Nimblesite.DataProvider.SQLite/Nimblesite.DataProvider.SQLite.csproj",
+            "Nimblesite.DataProvider.Postgres/Nimblesite.DataProvider.Postgres.csproj",
+            "Nimblesite.DataProvider.SqlServer/Nimblesite.DataProvider.SqlServer.csproj"
+          ],
+          "src": "../../DataProvider"
+        },
+        {
+          "files": [
+            "Lql/Lql.csproj",
+            "Nimblesite.Lql.Core/Nimblesite.Lql.Core.csproj",
+            "Nimblesite.Lql.Postgres/Nimblesite.Lql.Postgres.csproj",
+            "Nimblesite.Lql.SQLite/Nimblesite.Lql.SQLite.csproj",
+            "Nimblesite.Lql.SqlServer/Nimblesite.Lql.SqlServer.csproj"
+          ],
+          "src": "../../Lql"
+        },
+        {
+          "files": [
+            "Nimblesite.Sync.Core/Nimblesite.Sync.Core.csproj",
+            "Nimblesite.Sync.SQLite/Nimblesite.Sync.SQLite.csproj",
+            "Nimblesite.Sync.Postgres/Nimblesite.Sync.Postgres.csproj",
+            "Nimblesite.Sync.Http/Nimblesite.Sync.Http.csproj"
+          ],
+          "src": "../../Sync"
+        },
+        {
+          "files": [
+            "DataProviderMigrate/DataProviderMigrate.csproj",
+            "Nimblesite.DataProvider.Migration.Core/Nimblesite.DataProvider.Migration.Core.csproj",
+            "Nimblesite.DataProvider.Migration.SQLite/Nimblesite.DataProvider.Migration.SQLite.csproj",
+            "Nimblesite.DataProvider.Migration.Postgres/Nimblesite.DataProvider.Migration.Postgres.csproj"
+          ],
+          "src": "../../Migration"
+        },
+        {
+          "files": [
+            "Nimblesite.Reporting.Engine/Nimblesite.Reporting.Engine.csproj",
+            "Nimblesite.Reporting.Api/Nimblesite.Reporting.Api.csproj"
+          ],
+          "src": "../../Reporting"
+        },
+        {
+          "files": [
+            "Nimblesite.Sql.Model/Nimblesite.Sql.Model.csproj"
+          ],
+          "src": "../../Other"
+        }
+      ],
+      "dest": "api",
+      "includePrivateMembers": false,
+      "disableGitFeatures": false,
+      "disableDefaultFilter": false,
+      "noRestore": false,
+      "namespaceLayout": "flattened",
+      "memberLayout": "samePage",
+      "filter": "filterConfig.yml",
+      "allowCompilationErrors": true
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": ["api/**.yml", "api/index.md"]
+      },
+      {
+        "files": ["toc.yml", "*.md"]
+      }
+    ],
+    "resource": [
+      {
+        "files": ["images/**"]
+      }
+    ],
+    "output": "_apidocs",
+    "globalMetadataFiles": [],
+    "fileMetadataFiles": [],
+    "template": ["default"],
+    "postProcessors": [],
+    "keepFileLink": false,
+    "disableGitFeatures": false
+  }
+}
